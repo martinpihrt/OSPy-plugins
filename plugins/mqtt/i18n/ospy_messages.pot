@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2017-08-21 20:32+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/mqtt/__init__.py:78
+msgid "MQTT plug-in"
+msgstr ""
+
+#: plugins/mqtt/__init__.py:108
+msgid "Message received"
+msgstr ""
+
+#: plugins/mqtt/__init__.py:118
+msgid "Paho-mqtt is not installed."
+msgstr ""
+
+#: plugins/mqtt/__init__.py:119
+msgid "Please wait installing paho-mqtt..."
+msgstr ""
+
+#: plugins/mqtt/__init__.py:126
+msgid "MQTT Plugin requires paho mqtt."
+msgstr ""
+
+#: plugins/mqtt/__init__.py:127
+msgid "try: pip install paho-mqtt manually."
+msgstr ""
+
+#: plugins/mqtt/__init__.py:134
+msgid "Connecting to broker"
+msgstr ""
+
+#: plugins/mqtt/__init__.py:143
+msgid "MQTT plugin couldnot initalize client"
+msgstr ""
+
+#: plugins/mqtt/__init__.py:149
+msgid "Subscribing to topic"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:3 plugins/mqtt/templates/mqtt.html:21
+msgid "MQTT settings"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:22
+msgid "This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. On this page, the shared client is configured"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:23
+msgid "Having a shared MQTT client simplifies configuration and lowers overhead on the OSPy process, network and broker"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:24
+msgid "This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs paho-mqtt in to the system himself. On first use (if run installation paho-mqtt) please wait for status"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:25
+msgid "We can use a public Broker server to test"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:29
+msgid "Use MQTT"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:35
+msgid "MQTT Broker Host"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:39
+msgid "MQTT Broker Username"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:43
+msgid "MQTT Broker Password"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:47
+msgid "MQTT Broker Port"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:51
+msgid "MQTT Publish up/down topic"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:52
+msgid "Leave blank to not publish OSPy status"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:55
+msgid "MQTT Client ID"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:59
+msgid "Status"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:68
+msgid "Submit"
+msgstr ""
+
+#: plugins/mqtt/templates/mqtt.html:69
+msgid "Cancel"
+msgstr ""
+

@@ -1,0 +1,133 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2016-08-18 11:32+UTC\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/weather_based_rain_delay/__init__.py:101
+msgid "Checking rain status"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/__init__.py:120
+msgid "No action."
+msgstr ""
+
+#: plugins/weather_based_rain_delay/__init__.py:120
+msgid "No rain detected"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/__init__.py:124
+msgid "Removing rain delay."
+msgstr ""
+
+#: plugins/weather_based_rain_delay/__init__.py:124
+#: plugins/weather_based_rain_delay/__init__.py:128
+msgid "Good weather detected"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/__init__.py:133
+msgid "Plug-in is disabled."
+msgstr ""
+
+#: plugins/weather_based_rain_delay/__init__.py:139
+msgid "Weather-based Rain Delay plug-in"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:3
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:21
+msgid "Weather-based Rain Delay"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:22
+msgid "When weather-based rain delay is enabled, the weather will be checked for rain every hour. If the weather reports any condition suggesting rain, a rain delay is automatically issued using the below set delay duration"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:26
+msgid "Use Automatic Rain Delay"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:32
+msgid "Delay Duration (hours)"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:38
+msgid "Weather Provider"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:47
+msgid "Wunderground API Key"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:53
+msgid "Use NetAtmo Real data"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:59
+msgid "NetAtmo Client ID"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:65
+msgid "NetAtmo Client Secret"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:71
+msgid "NetAtmo User Name"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:77
+msgid "NetAtmo password"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:83
+msgid "NetAtmo MAC"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:89
+msgid "NetAtmo Rain module MAC"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:95
+msgid "Delay apply to water level in mm"
+msgstr ""
+
+#:
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:101
+msgid "Delay apply based on history rain in hours"
+msgstr ""
+
+#:
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:107
+msgid "Check interval"
+msgstr ""
+
+#:
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:117
+msgid "Use Cleanup delay"
+msgstr ""
+
+#:
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:123
+msgid "Status"
+msgstr ""
+
+#:
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:132
+msgid "Submit"
+msgstr ""
+
+#:
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:133
+msgid "Cancel"
+msgstr ""
+

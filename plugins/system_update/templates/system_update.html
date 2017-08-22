@@ -1,0 +1,79 @@
+$def with(plugin_options, events, stat)
+
+$var title: $_('System update from GitHub')
+$var page: plugins
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('System update from GitHub')</div>
+    <p>$_('This plugin compares the local copy with the remote repository and can automatically update the local copy').</p>
+    <form id="pluginForm" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use update plugin'):</td>
+                <td>
+                    <input name='use_update' type='checkbox'${" checked" if plugin_options['use_update'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Remote repository'):</b></td>
+                <td>
+                     $stat["remote"]
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Remote branch'):</b></td>
+                <td>
+                     $stat["remote_branch"]
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Local OSPy version'):</b></td>
+                <td>
+                     $stat["ver_str"]
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Local OSPy date'):</b></td>
+                <td>
+                     $stat["ver_date"]
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Automatic update'):</td>
+                <td>
+                    <input name='auto_update' type='checkbox'${" checked" if plugin_options['auto_update'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
+                    <a href="$plugins.plugin_url('system_update.refresh_page')" class="button refresh">$_('Update Status')</a>
+                </td>
+            </tr>
+            
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    $if stat['can_update']:
+        <a href="$plugins.plugin_url('system_update.update_page')" class="button"><b>$_('Update OSPy')</b></a>
+    $else:
+        <a class="button cancel"><b>$_('Up-to-date')</b></a>
+    <a href="$plugins.plugin_url('system_update.restart_page')" class="button reboot danger">$_('Restart OSPy')</a>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

@@ -1,0 +1,85 @@
+$def with(plugin_options, status, events)
+
+$var title: $_('Voltage and Temperature Monitor')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+ });
+</script>
+    
+
+<div id="plugin">
+    <div class="title">$_('Voltage and Temperature Monitor')</div>
+    <p>$_('This plugin needs an enabled I2C bus and connected I2C A/D converter PCF8591 on I2C address 0x48').</p>
+    <p>$_('For measuring temperature use temp probe LM35D (0-100') &deg;$_('C) on AD0-3 converter').</p>
+    <p>$_('If the label is not blank, the value is displayed in the value display').</p>
+    <p>$_('Download log as') <a href="$plugins.plugin_url('volt_temp_da.log_csv')">csv</a>. <a href="$plugins.plugin_url('volt_temp_da.delete_log_page')">$_('Delete')</a> $_('log file').</p>
+    <form id="pluginForm" action="$plugins.plugin_url('volt_temp_da.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Enabled'):</td>
+                <td>
+                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Enable logging'):</td>
+                <td>
+                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
+                <td>
+                    <input name='log_records' type='number' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('I/O Voltage'):</td>
+                <td>
+                    <input name='voltage' type='number' value='$plugin_options["voltage"]' min="0" max="15"> V
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Interval for logging'):</td>
+                <td>
+                    <input name='log_interval' type='number' value='$plugin_options["log_interval"]'> $_('minutes (Minimum is 1)')
+                </td>
+            </tr>
+            $for i in range(4):
+                <tr>
+                    <td style='text-transform: none;'>$_('Label for input') ${i}:</td>
+                    <td>
+                        <input name='ad${i}_label' type='text' value='$plugin_options['ad%d_label' % i]'> $_('Measure as temperature'): <input name='ad${i}_temp' type='checkbox'${" checked" if plugin_options['ad%d_temp' % i] else ""}>
+                    </td>
+                </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('DA output value'):</td>
+                <td>
+                    <input name='da_value' type='number' min="0" max="255" value='$plugin_options["da_value"]'> (0-255 = 0-$plugin_options['voltage'] $_('Volt'))
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+                                  
+                     

@@ -1,0 +1,63 @@
+$def with(plugin_options, events)
+
+$var title: $_('Pressure monitor settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Pressure monitor settings')</div>
+    <p>$_('This plugin checked pressure in pipe, if master station is switched on must be activated pressure sensor.')</p>
+    <p>$_('If is not sensor activated in a certain time, switches off all station  and sends email with error. Prevent safety for master station pump.')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('pressure_monitor.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use pressure sensor for master station'):</td>
+                <td>
+                    <input name='use_press_monitor' type='checkbox'${" checked" if plugin_options['use_press_monitor'] else ""}> ($_('Pressure sensor is connected between GPIO 18 - pin 12 and ground'))  
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Normally open'):</td>
+                <td>
+                    <input name='normally' type='checkbox'${" checked" if plugin_options['normally'] else ""}>  
+                </td>
+            </tr>
+
+            <tr>
+                <td style='text-transform: none;'>$_('Send email with error'):</td>
+                <td>
+                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> ($_('For this function required email plugin'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Max time to activate pressure sensor'):</td>
+                <td>
+                    <input name='time' type='number' min="0" max="999" value='$plugin_options["time"]'> ($_('max 999 seconds'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

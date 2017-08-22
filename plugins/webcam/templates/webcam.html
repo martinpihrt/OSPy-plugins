@@ -1,0 +1,73 @@
+$def with(plugin_options, events)
+
+$var title: $_('Webcam Monitor')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+ });
+</script>
+    
+
+<div id="plugin">
+    <div class="title">$_('Webcam Monitor')</div>
+    <p>$_('This plugin needs fswebcam').</p>
+    <p>$_('If not installed fswebcam, plugin installs fswebcam in to the system himself').</p>
+    <p>$_('On first use please wait for status').</p>
+    <p>$_('Download image as') <a href="$plugins.plugin_url('webcam.download_page')">jpg</a>.
+    <form id="pluginForm" action="$plugins.plugin_url('webcam.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Enabled'):</td>
+                <td>
+                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Resolution'):</td>
+                <td>
+                    <input name='resolution' type='text' value='$plugin_options["resolution"]'> ($_('default is 1280x720'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Flip image horizontally'):</td>
+                <td>
+                    <input name='flip_h' type='checkbox'${" checked" if plugin_options['flip_h'] else ""}>             
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Flip image vertically'):</td>
+                <td>
+                    <input name='flip_v' type='checkbox'${" checked" if plugin_options['flip_v'] else ""}>             
+                </td>
+            </tr>
+
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="6" cols="55" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="image">
+    $if plugin_options['installed_fswebcam']:
+       <p>$_('OpenSprinkler camera')</p>
+       <a href="$plugins.plugin_url('webcam.download_page')" target="_blank"><img src="$plugins.plugin_url('webcam.download_page')" width="640" height="480" alt="Webcam OpenSprinkler"></a> 
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+                                  
+                     

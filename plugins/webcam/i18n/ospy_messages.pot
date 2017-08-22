@@ -1,0 +1,106 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2016-07-04 13:37+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/webcam/__init__.py:66
+msgid "Fswebcam is not installed."
+msgstr ""
+
+#: plugins/webcam/__init__.py:67
+msgid "Please wait installing...."
+msgstr ""
+
+#: plugins/webcam/__init__.py:81
+msgid "Please wait..."
+msgstr ""
+
+#: plugins/webcam/__init__.py:93
+msgid "Ready..."
+msgstr ""
+
+#: plugins/webcam/__init__.py:96
+msgid "Cannot find USB camera (/dev/video0)."
+msgstr ""
+
+#: plugins/webcam/__init__.py:101
+msgid "Plugin is disabled..."
+msgstr ""
+
+#: plugins/webcam/__init__.py:105
+msgid "Webcam plug-in"
+msgstr ""
+
+#: plugins/webcam/__init__.py:145
+msgid "No image file from downloading. Retry"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:3
+#: plugins/webcam/templates/webcam.html:21
+msgid "Webcam Monitor"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:22
+msgid "This plugin needs fswebcam"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:23
+msgid "If not installed fswebcam, plugin installs fswebcam in to the system himself"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:24
+msgid "On first use please wait for status"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:25
+msgid "Download image as"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:29
+msgid "Enabled"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:35
+msgid "Resolution"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:37
+msgid "default is 1280x720"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:41
+msgid "Flip image horizontally"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:47
+msgid "Flip image vertically"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:54
+msgid "Status"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:64
+msgid "OpenSprinkler camera"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:69
+msgid "Submit"
+msgstr ""
+
+#: plugins/webcam/templates/webcam.html:70
+msgid "Cancel"
+msgstr ""
+

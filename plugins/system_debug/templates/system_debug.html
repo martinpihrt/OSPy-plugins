@@ -1,0 +1,45 @@
+$def with(plugin_options,overview)
+
+$var title: $_('System Debug Information')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('System Debug Information')</div>
+    <p>$_('This plugin prints debug information from events.log file').</p>
+    <form id="pluginForm" action="$plugins.plugin_url('system_debug.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum number of records'):</td>
+                <td>
+                    <input name='log_records' type='number' min='1' max='2000' value='$plugin_options["log_records"]'> (max 2000)
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="40" cols="50" readonly>$'\n'.join(overview)</textarea><br/>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <a href="?delete" class="button cancel danger"><b>$_('Delete file')</b></a> 
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button> 
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <p>$_('Download event-log as') <a href="$plugins.plugin_url('system_debug.log_page')">txt</a>.     
+</div>
+

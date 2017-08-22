@@ -1,0 +1,55 @@
+$def with (plugin_options, events)
+
+$var title: $_('Pulse output')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+
+</script>
+
+
+<div id="plugin">
+    <div class="title">$_('Pulse output')</div>
+    <p>$_('This plugin pulses a selected circuit with a 1 Hz signal with adjusted time. (For discover the location of a valve)').</p>
+    <br>
+    <form id="pluginForm" action="$plugins.plugin_url('pulse.start_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output'):</td>
+                <td>
+                    <select name="test_output">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["test_output"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Time to test'):</td>
+                <td>
+                    <input name='test_time' type='number' value='$plugin_options["test_time"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+
+    <button id="cSubmit" class="submit"><b>$_('Start test')</b></button>
+    <a href="?stop" class="button cancel danger"><b>$_('Stop test')</b></a>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

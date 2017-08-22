@@ -1,0 +1,122 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2016-06-15 10:36+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/ups_adj/__init__.py:98
+msgid "OK"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:100
+msgid "FAULT"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:109
+msgid "UPS plugin detected fault on power line."
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:120
+msgid "Time to shutdown"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:120
+msgid "sec"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:126
+msgid "Power line is not restore in time -> sends email and shutdown system."
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:130
+msgid "UPS plugin - power line is not restore in time -> shutdown system!"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:143
+msgid "UPS plugin - power line has restored - OK."
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:154
+msgid "UPS plug-in"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:168
+msgid "UPS plugin is started."
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:185
+msgid "Email was sent"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:187
+msgid "Email was not sent"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:3
+#: plugins/ups_adj/templates/ups_adj.html:21
+msgid "UPS monitor settings"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:22
+msgid "This plugin checked power line for system. UPS (uninterrupted power supply)."
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:23
+msgid "If is error with power line in a certain time, sends plugin email with error and shutdown system (and generate pulse to GPIO)."
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:27
+msgid "Use UPS"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:29
+msgid "Power line is connected via optocoupler between GPIO 23 - pin 16 and ground"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:33
+msgid "Send email with error"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:35
+msgid "For this function required email plugin"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:39
+msgid "Max time for shutdown countdown"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:41
+msgid "max 999 minutes"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:45
+msgid "Power line state"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:51
+msgid "Status"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:57
+msgid "Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS."
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:61
+msgid "Submit"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:62
+msgid "Cancel"
+msgstr ""
+

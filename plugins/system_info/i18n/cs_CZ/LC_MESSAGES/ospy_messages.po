@@ -1,0 +1,87 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <martinpihrt@gmail.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-08 12:37+0200\n"
+"PO-Revision-Date: 2016-06-08 12:46+0200\n"
+"Language-Team: pihrt.com\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/system_info/__init__.py:38
+msgid "System release"
+msgstr "Verze systému"
+
+#: plugins/system_info/__init__.py:39
+msgid "System name"
+msgstr "Název systému"
+
+#: plugins/system_info/__init__.py:40
+msgid "Node"
+msgstr "Popis v síti"
+
+#: plugins/system_info/__init__.py:41
+msgid "Machine"
+msgstr "Procesor"
+
+#: plugins/system_info/__init__.py:42
+msgid "Distribution"
+msgstr "Distribuce"
+
+#: plugins/system_info/__init__.py:43
+msgid "Total memory"
+msgstr "Celková paměť"
+
+#: plugins/system_info/__init__.py:44
+msgid "Free memory"
+msgstr "Volná paměť"
+
+#: plugins/system_info/__init__.py:49
+msgid "Network: Unknown"
+msgstr "Síť: neznámé připojení"
+
+#: plugins/system_info/__init__.py:50
+msgid "Uptime"
+msgstr "V provozu"
+
+#: plugins/system_info/__init__.py:51
+msgid "CPU temp"
+msgstr "Teplota CPU"
+
+#: plugins/system_info/__init__.py:52
+msgid "MAC adress"
+msgstr "MAC adresa"
+
+#: plugins/system_info/__init__.py:54
+msgid "I2C HEX Adress"
+msgstr "I2C adresy v HEX"
+
+#: plugins/system_info/__init__.py:59 plugins/system_info/__init__.py:62
+msgid "System info plug-in"
+msgstr "Systémové informace rozšíření"
+
+#: plugins/system_info/templates/system_info.html:3
+#: plugins/system_info/templates/system_info.html:16
+msgid "System Information"
+msgstr "Systémové informace"
+
+#: plugins/system_info/templates/system_info.html:17
+msgid "This plugin prints all available system information"
+msgstr "Toto rozšíření zobrazuje všechny dostupné systémové informace"
+
+#: plugins/system_info/templates/system_info.html:21
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/system_info/templates/system_info.html:30
+msgid "Cancel"
+msgstr "Zpět"

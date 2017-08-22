@@ -1,0 +1,47 @@
+$def with(plugin_options, events)
+
+$var title: $_('MQTT Zones settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('MQTT Zones settings')</div>
+    <p>$_('This MQTT Zones plug-in relies on to MQTT, broadcasts the current status of all zones.').</p>
+    <form id="pluginForm" action="$plugins.plugin_url('mqtt_zones.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use MQTT'):</td>
+                <td>
+                    <input name='use_mqtt' type='checkbox'${" checked" if plugin_options['use_mqtt'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Publish Zones topic'):</td>
+                <td>$_('The topic to broadcast zone updates on')<br />
+                   <input name='zone_topic' type='text' value='$plugin_options["zone_topic"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

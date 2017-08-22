@@ -1,0 +1,135 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2016-08-16 16:35+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/water_meter/__init__.py:70
+msgid "Could not import smbus."
+msgstr ""
+
+#: plugins/water_meter/__init__.py:96
+msgid "Water Meter plug-in is enabled."
+msgstr ""
+
+#: plugins/water_meter/__init__.py:100
+msgid "Could not find PCF8583."
+msgstr ""
+
+#: plugins/water_meter/__init__.py:102
+msgid "Please wait for min/hour data..."
+msgstr ""
+
+#: plugins/water_meter/__init__.py:104 plugins/water_meter/__init__.py:116
+#: plugins/water_meter/__init__.py:230
+msgid "Water in liters"
+msgstr ""
+
+#: plugins/water_meter/__init__.py:105
+msgid "Saved water summary"
+msgstr ""
+
+#: plugins/water_meter/__init__.py:117
+msgid "Water per minutes"
+msgstr ""
+
+#: plugins/water_meter/__init__.py:118
+msgid "Water per hours"
+msgstr ""
+
+#: plugins/water_meter/__init__.py:119 plugins/water_meter/__init__.py:231
+msgid "Water summary"
+msgstr ""
+
+#: plugins/water_meter/__init__.py:133
+msgid "Water Meter plug-in is disabled."
+msgstr ""
+
+#: plugins/water_meter/__init__.py:141 plugins/water_meter/__init__.py:177
+msgid "Water Meter plug-in"
+msgstr ""
+
+#: plugins/water_meter/__init__.py:174
+msgid "Setup PCF8583 as event counter is OK"
+msgstr ""
+
+#: plugins/water_meter/__init__.py:177
+msgid "Setup PCF8583 as event counter - FAULT"
+msgstr ""
+
+#: plugins/water_meter/__init__.py:229
+msgid "Water summary was reseting..."
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:3
+#: plugins/water_meter/templates/water_meter.html:23
+msgid "Water meter settings"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:24
+msgid "This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:25
+msgid "This plugin measures the amount of water flowing per sec, min, hour and the total amount of water"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:26
+msgid "Visit"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:26
+msgid "for more information"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:30
+msgid "Use Water Meter"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:36
+msgid "I2C address 0x50"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:38
+msgid "if checked 0x51"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:42
+msgid "Number of pulses per liter"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:48
+msgid "Water meter state"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:50
+msgid "liter per second"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:54
+msgid "Status"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:65
+msgid "Submit"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:66
+msgid "Cancel"
+msgstr ""
+
+#: plugins/water_meter/templates/water_meter.html:67
+msgid "Reset summary"
+msgstr ""
+

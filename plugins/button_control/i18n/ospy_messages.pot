@@ -1,0 +1,212 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2017-06-29 13:41+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/button_control/__init__.py:83
+msgid "System reboot"
+msgstr ""
+
+#: plugins/button_control/__init__.py:88
+msgid "System shutdown"
+msgstr ""
+
+#: plugins/button_control/__init__.py:93
+msgid "All stations now stopped"
+msgstr ""
+
+#: plugins/button_control/__init__.py:99
+msgid "Scheduler is now enabled"
+msgstr ""
+
+#: plugins/button_control/__init__.py:104
+msgid "Scheduler is now disabled"
+msgstr ""
+
+#: plugins/button_control/__init__.py:109
+msgid "Run now program 1"
+msgstr ""
+
+#: plugins/button_control/__init__.py:118
+msgid "Run now program 2"
+msgstr ""
+
+#: plugins/button_control/__init__.py:127
+msgid "Run now program 3"
+msgstr ""
+
+#: plugins/button_control/__init__.py:137
+msgid "Run now program 4"
+msgstr ""
+
+#: plugins/button_control/__init__.py:147
+msgid "Run now program 5"
+msgstr ""
+
+#: plugins/button_control/__init__.py:157
+msgid "Run now program 6"
+msgstr ""
+
+#: plugins/button_control/__init__.py:167
+msgid "Run now program 7"
+msgstr ""
+
+#: plugins/button_control/__init__.py:177
+msgid "Run now program 8"
+msgstr ""
+
+#: plugins/button_control/__init__.py:190
+#: plugins/button_control/__init__.py:255
+#: plugins/button_control/__init__.py:269
+msgid "Button plug-in"
+msgstr ""
+
+#: plugins/button_control/__init__.py:229
+msgid "Switch 8 pressed"
+msgstr ""
+
+#: plugins/button_control/__init__.py:232
+msgid "Switch 7 pressed"
+msgstr ""
+
+#: plugins/button_control/__init__.py:235
+msgid "Switch 6 pressed"
+msgstr ""
+
+#: plugins/button_control/__init__.py:238
+msgid "Switch 5 pressed"
+msgstr ""
+
+#: plugins/button_control/__init__.py:241
+msgid "Switch 4 pressed"
+msgstr ""
+
+#: plugins/button_control/__init__.py:244
+msgid "Switch 3 pressed"
+msgstr ""
+
+#: plugins/button_control/__init__.py:247
+msgid "Switch 2 pressed"
+msgstr ""
+
+#: plugins/button_control/__init__.py:250
+msgid "Switch 1 pressed"
+msgstr ""
+
+#: plugins/button_control/__init__.py:255
+msgid "Read button - FAULT"
+msgstr ""
+
+#: plugins/button_control/__init__.py:269
+msgid "Set LED - FAULT"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:3
+#: plugins/button_control/templates/button_control.html:19
+msgid "Button control settings"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:20
+msgid "This plugin uses a circuit board with MCP23017 controller connected to the OSPy Sprinkler board via the I2C interface"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:21
+msgid "This plug-in includes eight buttons with optional functions and signalisating via eicht LEDs"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:22
+msgid "Visit"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:22
+msgid "for more information"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:26
+msgid "Use button control"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:33
+msgid "Button"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:33
+msgid "controls"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:36
+msgid "Reboot OS system"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:37
+msgid "Shutdown OS system"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:38
+msgid "Stop all station"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:39
+msgid "Enable scheduler"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:40
+msgid "Disable scheduler"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:41
+msgid "Run program 1"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:42
+msgid "Run program 2"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:43
+msgid "Run program 3"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:44
+msgid "Run program 4"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:45
+msgid "Run program 5"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:46
+msgid "Run program 6"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:47
+msgid "Run program 7"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:48
+msgid "Run program 8"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:53
+msgid "Status"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:62
+msgid "Submit"
+msgstr ""
+
+#: plugins/button_control/templates/button_control.html:63
+msgid "Cancel"
+msgstr ""
+

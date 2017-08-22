@@ -1,0 +1,139 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2016-08-10 11:38+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/remote_ftp_control/__init__.py:76
+msgid "Creating ramdisk into"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:79
+#: plugins/remote_ftp_control/__init__.py:95
+#: plugins/remote_ftp_control/__init__.py:113
+#: plugins/remote_ftp_control/__init__.py:120
+#: plugins/remote_ftp_control/__init__.py:213
+#: plugins/remote_ftp_control/__init__.py:345
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:3
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:19
+msgid "Remote FTP control settings"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:86
+msgid "Adding into fstab"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:87
+msgid "Saving config to"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:92
+msgid "Now please restart your operating system!"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:106
+msgid "FTP connection established."
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:149
+msgid "FTP received data from file data.txt"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:155
+#: plugins/remote_ftp_control/__init__.py:184
+msgid "Scheduler mode is activated."
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:160
+#: plugins/remote_ftp_control/__init__.py:167
+#: plugins/remote_ftp_control/__init__.py:175
+msgid "Manual mode is activated."
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:169
+msgid "Activated stations"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:177
+msgid "Deactivated stations"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:186
+msgid "Activated program"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:197
+msgid "Stop all stations and disable system."
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:202
+msgid "Enable system."
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:333
+msgid "Could not save stavy.php to ramdisk!"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:337
+msgid "Data file stavy.php has send on to FTP server"
+msgstr ""
+
+#: plugins/remote_ftp_control/__init__.py:340
+msgid "Data file data.txt has send on to FTP server"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:20
+msgid "This plug-in makes downloading and uploading text file on the remotely via FTP for remotely control OSPy system every 30 seconds"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:21
+msgid "When you first start the plug-in detects whether ramdisk is present, otherwise it creates and writes fstab"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:22
+msgid "If plug-in says: \"restart your linux os system\" You must manual reboot os via options/reboot os"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:26
+msgid "Use plug-in"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:32
+msgid "The FTP server address"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:38
+msgid "The FTP user name"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:44
+msgid "The FTP user password"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:50
+msgid "The FTP server location for files"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:56
+msgid "Status"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:65
+msgid "Submit"
+msgstr ""
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:66
+msgid "Cancel"
+msgstr ""
+

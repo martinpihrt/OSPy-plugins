@@ -1,0 +1,64 @@
+$def with(plugin_options, events)
+
+$var title: $_('Remote Notifications')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("#cTest").click(function() {
+            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('remote_notifications.settings_page')?test")
+            jQuery("#pluginForm").submit();
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Remote Notifications')</div>
+    <p>$_('This plugin can send Notifications on the Remote Webserver. This plugin requre SQL server and Webserver with PHP.')</p>
+    <p>$_('This plugin send data as get command to remote PHP web pages.')</p>
+    <p>$_('This plugin requred correct settings this plugins: UPS Monitor, Tank Humi Monitor.')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('remote_notifications.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use plugin'):</td>
+                <td>
+                    <input name='use' type='checkbox'${" checked" if plugin_options['use'] else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Remote server address'):</td> 
+                <td>
+                    <input name='rem_adr' type='text' value='$plugin_options["rem_adr"]'> ($_('ex: https://server.com/automatOSPy/'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('API for access'):</td>
+                <td>
+                    <input name='api' type='text' value='$plugin_options["api"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cTest" class="submit"><b>$_('Send test data to server')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+                                  
+                     

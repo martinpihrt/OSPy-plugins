@@ -1,0 +1,79 @@
+$def with(plugin_options)
+
+$var title: $_('Monthly Water Level')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Monthly Water Level')</div>
+    <p>$_('Enter an adjustment for each month (% irrigation time)')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('monthly_water_level.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('January'):</td>
+                <td><input type="number" name="jan" value="$plugin_options[0]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('February'):</td>
+                <td><input type="number" name="feb" value="$plugin_options[1]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('March'):</td>
+                <td><input type="number" name="mar" value="$plugin_options[2]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('April'):</td>
+                <td><input type="number" name="apr" value="$plugin_options[3]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('May'):</td>
+                <td><input type="number" name="may" value="$plugin_options[4]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('June'):</td>
+                <td><input type="number" name="jun" value="$plugin_options[5]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('July'):</td>
+                <td><input type="number" name="jul" value="$plugin_options[6]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('August'):</td>
+                <td><input type="number" name="aug" value="$plugin_options[7]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('September'):</td>
+                <td><input type="number" name="sep" value="$plugin_options[8]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('October'):</td>
+                <td><input type="number" name="oct" value="$plugin_options[9]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('November'):</td>
+                <td><input type="number" name="nov" value="$plugin_options[10]"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('December'):</td>
+                <td><input type="number" name="dec" value="$plugin_options[11]"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

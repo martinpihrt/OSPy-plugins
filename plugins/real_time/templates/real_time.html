@@ -1,0 +1,67 @@
+$def with(plugin_options, events)
+
+$var title: $_('Real Time and NTP Time sync system time')
+$var page: plugins
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Real Time and NTP Time sync system time')</div>
+    <p>$_('When is enabled synchronization RTC Time and NTP time, system time adjusted every hour from NTP server (is posible) or RTC time (if exists). Time from NTP server is saved to real time DS 1307 (on I2C bus) as HW time.')</p>
+    <p>$_('NTP servers in Czech Republic') <a href="http://bass.wz.cz/ntp.html"> NTP</a> $_('NTP servers in World') <a href="http://tf.nist.gov/tf-cgi/servers.cgi"> NTP</a>.</p><br>
+    <form id="pluginForm" action="$plugins.plugin_url('real_time.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use Real Time'):</td>
+                <td>
+                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use NTP Time'):</td>
+                <td>
+                    <input name='use_ntp' type='checkbox'${" checked" if plugin_options['use_ntp'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Primary NTP server IP adress'):</td>
+                <td>
+                    <input name='ntp_server' type='text' value="$plugin_options['ntp_server']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Secondary NTP server IP adress'):</td>
+                <td>
+                    <input name='ntp_server_two' type='text' value="$plugin_options['ntp_server_two']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('NTP port'):</td>
+                <td>
+                    <input name='ntp_port' type='number' size="30" value="$plugin_options['ntp_port']"> ($_('default 123'))
+                </td>
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

@@ -1,0 +1,143 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2017-06-30 13:55+0200\n"
+"PO-Revision-Date: 2017-06-30 14:07+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/mqtt/__init__.py:75
+msgid "Paho-mqtt is not installed."
+msgstr "Paho-mqtt není nainstalován."
+
+#: plugins/mqtt/__init__.py:76
+msgid "Please wait installing paho-mqtt..."
+msgstr "Prosím čekejte instaluji paho-mqtt..."
+
+#: plugins/mqtt/__init__.py:82
+msgid "MQTT Plugin requires paho mqtt."
+msgstr "MQTT rozšíření vyžaduje paho-mqtt."
+
+#: plugins/mqtt/__init__.py:83
+msgid "try: pip install paho-mqtt manually."
+msgstr "Zkuste: pip instal paho-mqtt manuálně."
+
+#: plugins/mqtt/__init__.py:134
+msgid "Connecting to broker"
+msgstr "Připojuji se k brokeru"
+
+#: plugins/mqtt/__init__.py:143
+msgid "MQTT plugin couldnot initalize client"
+msgstr "Rozšíření MQTT nemůže nastavit klienta"
+
+#: plugins/mqtt/__init__.py:91
+msgid "MQTT plug-in"
+msgstr "Rozšíření MQTT"
+
+#: plugins/mqtt/__init__.py:124
+msgid "MQTT plugin got unexpected message on topic:"
+msgstr "MQTT rozšíření dostalo neočekávanou zprávu na téma:"
+
+#: plugins/mqtt/__init__.py:140
+msgid "MQTT plugin couldnot initalize client:"
+msgstr "MQTT rozšíření nemohlo inicializovat klienta:"
+
+#: plugins/mqtt/__init__.py:149
+msgid "Subscribing to topic"
+msgstr "Přihlášení k tématu"
+
+#: plugins/mqtt/__init__.py:145
+msgid "MQTT publish:"
+msgstr "MQTT publikuje:"
+
+#: plugins/mqtt/templates/mqtt.html:3 plugins/mqtt/templates/mqtt.html:21
+msgid "MQTT settings"
+msgstr "Nastavení MQTT"
+
+#: plugins/mqtt/templates/mqtt.html:22
+msgid ""
+"This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to "
+"use to publish information and or receive commands over MQTT. On this page, "
+"the shared client is configured"
+msgstr ""
+"Toto rozšíření MQTT přidává klienta MQTT jako démona v OSPy pro další "
+"rozšíření, která se používají k publikování informací a přijímání příkazů "
+"přes MQTT protokol. Na této stránce se nakonfiguruje sdílený klient"
+
+#: plugins/mqtt/templates/mqtt.html:23
+msgid ""
+"Having a shared MQTT client simplifies configuration and lowers overhead on "
+"the OSPy process, network and broker"
+msgstr ""
+"Sdílený klient MQTT zjednodušuje konfiguraci a snižuje režii operačního "
+"systému OSPy, sítě a zprostředkovatele"
+
+#: plugins/mqtt/templates/mqtt.html:24
+msgid ""
+"This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs "
+"paho-mqtt in to the system himself. On first use (if run installation paho-"
+"mqtt) please wait for status"
+msgstr ""
+"Toto rozšíření vyžaduje paho-mqtt. Pokud není nainstalován paho-mqtt, "
+"rozšíření nainstaluje paho-mqtt do systému automaticky. Při prvním použití "
+"(pokud běží instalace paho-mqtt) počkejte na dokončení (informace ve "
+"stavovém okně)"
+
+#: plugins/mqtt/templates/mqtt.html:25
+msgid "We can use a public Broker server to test"
+msgstr "Pro otestování můžeme použít veřejný Broker server"
+
+#: plugins/mqtt/templates/mqtt.html:29
+msgid "Use MQTT"
+msgstr "Používat MQTT"
+
+#: plugins/mqtt/templates/mqtt.html:35
+msgid "MQTT Broker Host"
+msgstr "MQTT Broker hostitel"
+
+#: plugins/mqtt/templates/mqtt.html:39
+msgid "MQTT Broker Port"
+msgstr "MQTT Broker port"
+
+#: plugins/mqtt/templates/mqtt.html:39
+msgid "MQTT Broker Username"
+msgstr "MQTT Broker uživatelské jméno"
+
+#: plugins/mqtt/templates/mqtt.html:43
+msgid "MQTT Broker Password"
+msgstr "MQTT Broker heslo"
+
+#: plugins/mqtt/templates/mqtt.html:43
+msgid "MQTT Publish up/down topic"
+msgstr "MQTT publikované téma up/down"
+
+#: plugins/mqtt/templates/mqtt.html:44
+msgid "Leave blank to not publish OSPy status"
+msgstr "Nechcete-li zveřejnit status OSPy, ponechte prázdné"
+
+#: plugins/mqtt/templates/mqtt.html:47
+msgid "MQTT Client ID"
+msgstr "ID klienta MQTT"
+
+#: plugins/mqtt/templates/mqtt.html:51
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/mqtt/templates/mqtt.html:60
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/mqtt/templates/mqtt.html:61
+msgid "Cancel"
+msgstr "Zpět"

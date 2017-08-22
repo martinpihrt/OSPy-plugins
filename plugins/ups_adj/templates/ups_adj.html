@@ -1,0 +1,63 @@
+$def with(plugin_options, status, events)
+
+$var title: $_('UPS monitor settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('UPS monitor settings')</div>
+    <p>$_('This plugin checked power line for system. UPS (uninterrupted power supply).')</p>
+    <p>$_('If is error with power line in a certain time, sends plugin email with error and shutdown system (and generate pulse to GPIO).')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('ups_adj.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use UPS'):</td>
+                <td>
+                    <input name='ups' type='checkbox'${" checked" if plugin_options['ups'] else ""}> ($_('Power line is connected via optocoupler between GPIO 23 - pin 16 and ground'))  
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send email with error'):</td>
+                <td>
+                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> ($_('For this function required email plugin'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Max time for shutdown countdown'):</td>
+                <td>
+                    <input name='time' type='number' min="0" max="999" value='$plugin_options["time"]'> ($_('max 999 minutes'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Power line state'):</td>
+                <td>
+                   $status['power%d']
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    <p>$_('Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS.')</p>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

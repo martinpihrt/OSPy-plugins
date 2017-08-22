@@ -1,0 +1,143 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-15 10:36+0200\n"
+"PO-Revision-Date: 2016-06-15 11:00+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/ups_adj/__init__.py:98
+msgid "OK"
+msgstr "V pořádku"
+
+#: plugins/ups_adj/__init__.py:100
+msgid "FAULT"
+msgstr "Chyba"
+
+#: plugins/ups_adj/__init__.py:109
+msgid "UPS plugin detected fault on power line."
+msgstr "Rozšíření UPS zjistilo problém s napájením ze sítě."
+
+#: plugins/ups_adj/__init__.py:120
+msgid "Time to shutdown"
+msgstr "Čas do vypnutí systému"
+
+#: plugins/ups_adj/__init__.py:120
+msgid "sec"
+msgstr "vteřin(a/y)"
+
+#: plugins/ups_adj/__init__.py:126
+msgid "Power line is not restore in time -> sends email and shutdown system."
+msgstr ""
+"Napájecí napětí sítě nebylo obnoveno do stanovené doby -> zasílám E-mail s "
+"chybovou zprávou a vypínám operační systém (Linux)."
+
+#: plugins/ups_adj/__init__.py:130
+msgid "UPS plugin - power line is not restore in time -> shutdown system!"
+msgstr ""
+"Rozšíření UPS - napájecí napětí ze sítě nebylo obnoveno do stanovené doby -> "
+"vypínám operační systém (Linux)."
+
+#: plugins/ups_adj/__init__.py:143
+msgid "UPS plugin - power line has restored - OK."
+msgstr "Rozšíření UPS - napájecí napětí ze sítě bylo obnoveno (vše v pořádku)."
+
+#: plugins/ups_adj/__init__.py:154
+msgid "UPS plug-in"
+msgstr "Rozšíření UPS"
+
+#: plugins/ups_adj/__init__.py:168
+msgid "UPS plugin is started."
+msgstr "Rozšíření UPS bylo spuštěno."
+
+#: plugins/ups_adj/__init__.py:185
+msgid "Email was sent"
+msgstr "E-mail byl odeslán"
+
+#: plugins/ups_adj/__init__.py:187
+msgid "Email was not sent"
+msgstr "E-mail nebyl odeslán"
+
+#: plugins/ups_adj/templates/ups_adj.html:3
+#: plugins/ups_adj/templates/ups_adj.html:21
+msgid "UPS monitor settings"
+msgstr "Rozšíření UPS nastavení"
+
+#: plugins/ups_adj/templates/ups_adj.html:22
+msgid ""
+"This plugin checked power line for system. UPS (uninterrupted power supply)."
+msgstr ""
+"Toto rozšíření kontroluje napětí sítě (napájení záložního zdroje UPS - "
+"Uninterrupted Power Supply)."
+
+#: plugins/ups_adj/templates/ups_adj.html:23
+msgid ""
+"If is error with power line in a certain time, sends plugin email with error "
+"and shutdown system (and generate pulse to GPIO)."
+msgstr ""
+"Pokud vypadne napájecí napětí sítě UPS zdroje a nebude obnoveno do stanovené "
+"doby, zašle toto rozšíření E-mail s chybou a následně vypne operační systém "
+"(zároveň se vygeneruje krátký puls na GPIO konektoru)."
+
+#: plugins/ups_adj/templates/ups_adj.html:27
+msgid "Use UPS"
+msgstr "Použít UPS rozšíření"
+
+#: plugins/ups_adj/templates/ups_adj.html:29
+msgid ""
+"Power line is connected via optocoupler between GPIO 23 - pin 16 and ground"
+msgstr ""
+"Napájecí napětí 230V je přivedeno na optočlen, který spíná konektor GPIO-23 "
+"pin 16 na zem"
+
+#: plugins/ups_adj/templates/ups_adj.html:33
+msgid "Send email with error"
+msgstr "Zaslat E-mail v případě chyby"
+
+#: plugins/ups_adj/templates/ups_adj.html:35
+msgid "For this function required email plugin"
+msgstr "Pro tuto funkci je vyžadováno rozšíření \"Email notifications\""
+
+#: plugins/ups_adj/templates/ups_adj.html:39
+msgid "Max time for shutdown countdown"
+msgstr "Maximální doba pro obnovení napájení"
+
+#: plugins/ups_adj/templates/ups_adj.html:41
+msgid "max 999 minutes"
+msgstr "maximum 999 minut"
+
+#: plugins/ups_adj/templates/ups_adj.html:45
+msgid "Power line state"
+msgstr "Stav napájení (síť 230V)"
+
+#: plugins/ups_adj/templates/ups_adj.html:51
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/ups_adj/templates/ups_adj.html:57
+msgid ""
+"Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS "
+"for shutdown battery in UPS."
+msgstr ""
+"Výstup z konektoru GPIO-24 pin 18 je přes optočlen (otevřený kolektor) možné "
+"použít pro vypnutí a odstavení záložního zdroje UPS - tedy baterií zdroje "
+"UPS (pokud tuto funkci Vaše UPS podporuje)."
+
+#: plugins/ups_adj/templates/ups_adj.html:61
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/ups_adj/templates/ups_adj.html:62
+msgid "Cancel"
+msgstr "Zpět"

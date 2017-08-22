@@ -1,0 +1,126 @@
+$def with(plugin_options, events)
+
+$var title: $_('LCD settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('LCD settings')</div>
+    <p>$_('This plugin shows information on a 16x2 character LCD with') PCF8574.</p>
+    <p>$_('Automatically detects the display at the following I2C addresses'): 0x20-0x27, 0x38-0x3F.</p>
+    <p>$_('Compatible with the HD44780 controller').</p>
+    <p>$_('Visit') <a href="http://www.pihrt.com/elektronika/258-moje-rapsberry-pi-i2c-lcd-16x2">Martin Pihrt blog</a> $_('for more information').</p><br>
+    <form id="pluginForm" action="$plugins.plugin_url('lcd_display.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use I2C LCD'):</td>
+                <td>
+                    <input name='use_lcd' type='checkbox'${" checked" if plugin_options['use_lcd'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use print lines to debug files'):</td>
+                <td>
+                    <input name='debug_line' type='checkbox'${" checked" if plugin_options['debug_line'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;' rowspan='12'>$_('Display'):</td>
+                <td> $_('System Name'):</td>
+                <td>
+                    <input name='d_system_name' type='checkbox'${" checked" if plugin_options['d_system_name'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('SW Version Date'):</td>
+                <td>
+                    <input name='d_sw_version_date' type='checkbox'${" checked" if plugin_options['d_sw_version_date'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('IP'):</td>
+                <td>
+                    <input name='d_ip' type='checkbox'${" checked" if plugin_options['d_ip'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Port'):</td>
+                <td>
+                    <input name='d_port' type='checkbox'${" checked" if plugin_options['d_port'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('CPU Temp'):</td>
+                <td>
+                    <input name='d_cpu_temp' type='checkbox'${" checked" if plugin_options['d_cpu_temp'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Time and Date'):</td>
+                <td>
+                    <input name='d_time_date' type='checkbox'${" checked" if plugin_options['d_time_date'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Uptime'):</td>
+                <td>
+                    <input name='d_uptime' type='checkbox'${" checked" if plugin_options['d_uptime'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Rain Sensor'):</td>
+                <td>
+                    <input name='d_rain_sensor' type='checkbox'${" checked" if plugin_options['d_rain_sensor'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Last Run Program'):</td>
+                <td>
+                    <input name='d_last_run' type='checkbox'${" checked" if plugin_options['d_last_run'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Pressure Sensor'):</td>
+                <td>
+                    <input name='d_pressure_sensor' type='checkbox'${" checked" if plugin_options['d_pressure_sensor'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Water Tank Level'):</td>
+                <td>
+                    <input name='d_water_tank_level' type='checkbox'${" checked" if plugin_options['d_water_tank_level'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Running Stations'):</td>
+                <td>
+                    <input name='d_running_stations' type='checkbox'${" checked" if plugin_options['d_running_stations'] else ""}>
+                </td>
+            </tr>          
+
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

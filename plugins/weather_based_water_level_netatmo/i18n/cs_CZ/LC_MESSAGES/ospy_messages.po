@@ -1,0 +1,162 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-08-18 09:15+0200\n"
+"PO-Revision-Date: 2016-08-18 09:27+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.8\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/weather_based_water_level/__init__.py:92
+msgid "Checking weather status"
+msgstr "Kontroluji stav počasí"
+
+#: plugins/weather_based_water_level/__init__.py:154
+msgid "No information available!"
+msgstr "Informace nejsou k dispozici!"
+
+#: plugins/weather_based_water_level/__init__.py:156
+msgid "Using"
+msgstr "Použiji"
+
+#: plugins/weather_based_water_level/__init__.py:156
+msgid "days of information."
+msgstr "dnů z načtených záznamů."
+
+#: plugins/weather_based_water_level/__init__.py:187
+msgid "Water needed"
+msgstr "Potřeba vody pro"
+
+#: plugins/weather_based_water_level/__init__.py:187
+msgid "days"
+msgstr "den/dnů"
+
+#: plugins/weather_based_water_level/__init__.py:189
+msgid "Irrigation needed"
+msgstr "Zavlažování potřebuje"
+
+#: plugins/weather_based_water_level/__init__.py:190
+msgid "Weather Adjustment"
+msgstr "Nastavené množství vody v závislosti na předpovědi počasí"
+
+#: plugins/weather_based_water_level/__init__.py:192
+msgid "History rain by Netatmo"
+msgstr "Historie deště od NetAtmo"
+
+#: plugins/weather_based_water_level/__init__.py:193
+msgid "History rain by Wunderground"
+msgstr "Historie deště od Wunderground"
+
+#: plugins/weather_based_water_level/__init__.py:194
+msgid "Forecast rain by Wunderground"
+msgstr "Předpověď deště od Wunderground"
+
+#: plugins/weather_based_water_level/__init__.py:203
+msgid "Plug-in is disabled."
+msgstr "Rozšíření je zakázáno."
+
+#: plugins/weather_based_water_level/__init__.py:209
+msgid "Weather-based water level plug-in"
+msgstr "Nastavené množství vody dle historie počasí rozšíření"
+
+#: plugins/weather_based_water_level/__init__.py:268
+msgid "Retrying."
+msgstr "Další pokus."
+
+#: plugins/weather_based_water_level/__init__.py:308
+#: plugins/weather_based_water_level/__init__.py:339
+#: plugins/weather_based_water_level/__init__.py:362
+msgid "No Location ID found!"
+msgstr "Nenalezena ID vašeho umístění!"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:3
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:21
+msgid "Weather-based Water Level"
+msgstr "Množství vody dle historie počasí"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:22
+msgid ""
+"When weather-based water level is enabled, the weather will be checked every "
+"hour and the water level will be adjusted accordingly"
+msgstr ""
+"Je-li aktivováno toto rozšíření (množství vody dle historie počasí), bude se "
+"počasí kontrolovat každou hodinu, úroveň množství vody bude odpovídajícím "
+"způsobem upravena dle min a max % v nastavení"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:26
+msgid "Use Automatic Water Level Adjustment"
+msgstr "Používat automatické nastavení množství vody"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:32
+msgid "Min percentage"
+msgstr "Minimum (%)"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:38
+msgid "Max percentage"
+msgstr "Maximum (%)"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:44
+msgid "History days used"
+msgstr "Počet dnů historie předpovědi"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:50
+msgid "Forecast days used"
+msgstr "Použít dnů předpovědi"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:56
+msgid "Wunderground API Key"
+msgstr "Wunderground API klíč"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:62
+msgid "Use NetAtmo Real data"
+msgstr "Používat NetAtmo Real data"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:68
+msgid "NetAtmo Client ID"
+msgstr "NetAtmo ID klienta"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:74
+msgid "NetAtmo Client Secret"
+msgstr "NetAtmo tajný klíč klienta"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:80
+msgid "NetAtmo User Name"
+msgstr "NetAtmo uživatelské jméno"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:86
+msgid "NetAtmo password"
+msgstr "NetAtmo heslo"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:92
+msgid "NetAtmo MAC"
+msgstr "NetAtmo MAC adresa"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:98
+msgid "NetAtmo Rain module MAC"
+msgstr "NetAtmo MAC adresa pro dešťový modul"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:105
+msgid "Daily water level in mm"
+msgstr "Denní hladina vody v mm"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:111
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:120
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:121
+msgid "Cancel"
+msgstr "Zpět"

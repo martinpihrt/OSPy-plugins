@@ -1,0 +1,120 @@
+$def with(plugin_options, events)
+
+$var title: $_('SMS settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('SMS Settings')</div>
+    <p>$_('For this plugin is needed to SMS modem with the telephone service provider').</p>
+    <p>$_('This plugin needs Gammu. If not installed Gammu and Python-Gammu, plugin installs Gammu and Python-Gammu in to the system himself').</p>
+    <p>$_('On first use please wait for status').</p>
+    <p>$_('Visit') <a href="http://www.pihrt.com/elektronika/259-moje-rapsberry-pi-sms-ovladani-rpi">Martin Pihrt blog</a> $_('for more information').</p>
+    <form id="pluginForm" action="$plugins.plugin_url('sms_adj.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use SMS modem'):</td>
+                <td>
+                    <input name='use_sms' type='checkbox'${" checked" if plugin_options['use_sms'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Signal strength in the status window'):</td>
+                <td>
+                    <input name='use_strength' type='checkbox'${" checked" if plugin_options['use_strength'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Number 1'):</td>
+                <td>
+                    <input name='tel1' type='text' value='$plugin_options["tel1"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Number 2'):</td>
+                <td>
+                    <input name='tel2' type='text' value='$plugin_options["tel2"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Command for info'):</td>
+                <td>
+                    <input name='txt1' type='text' value='$plugin_options["txt1"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Command for stop irrigation'):</td>
+                <td>
+                    <input name='txt2' type='text' value='$plugin_options["txt2"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Command for start irrigation'):</td>
+                <td>
+                    <input name='txt3' type='text' value='$plugin_options["txt3"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Command for reboot system'):</td>
+                <td>
+                    <input name='txt4' type='text' value='$plugin_options["txt4"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Command for poweroff system'):</td>
+                <td>
+                    <input name='txt5' type='text' value='$plugin_options["txt5"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Command for update OSPi from GITHUB'):</td>
+                <td>
+                    <input name='txt6' type='text' value='$plugin_options["txt6"]'>
+                </td>
+            </tr>
+             <tr>
+                <td style='text-transform: none;'>$_('Command for send foto from webcam'):</td>
+                <td>
+                    <input name='txt7' type='text' value='$plugin_options["txt7"]'> ($_('For this function required email and webcam plugin')) 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Command for help'):</td>
+                <td>
+                    <input name='txt8' type='text' value='$plugin_options["txt8"]'> ($_('Send SMS with all available commands')) 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Command for run now program'):</td>
+                <td>
+                    <input name='txt9' type='text' value='$plugin_options["txt9"]'> ($_('Example: runxx = run now program xx if exists')) 
+                </td>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+                                  
+                     

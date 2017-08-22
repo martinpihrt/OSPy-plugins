@@ -1,0 +1,114 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-15 06:40+0200\n"
+"PO-Revision-Date: 2016-06-15 07:07+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/system_watchdog/__init__.py:58
+msgid "Watchdog is not installed. For continue press button install watchdog."
+msgstr ""
+"Watchdog není nainstalován. Pro pokračování stiskněte tlačítko "
+"\"Nainstalovat Watchdog\"."
+
+#: plugins/system_watchdog/__init__.py:76
+#: plugins/system_watchdog/__init__.py:90
+#: plugins/system_watchdog/__init__.py:121
+#: plugins/system_watchdog/__init__.py:124
+msgid "System watchodg plug-in"
+msgstr "Systémový Watchdog rozšíření"
+
+#: plugins/system_watchdog/__init__.py:124
+msgid "Error in Converting"
+msgstr "Chyba v převodu"
+
+#: plugins/system_watchdog/__init__.py:156
+msgid "Saving config to /etc/watchdog.conf"
+msgstr "Ukládám nastavení do /etc/watchdog.conf"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:3
+#: plugins/system_watchdog/templates/system_watchdog.html:29
+msgid "System Watchdog"
+msgstr "Systémový Watchdog"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:30
+msgid ""
+"This plugin enable or disable HW Watchdog daemon in OSPy system. On the "
+"Raspberry Pi is hardware watchdog - Broadcom BCM2708 chip"
+msgstr ""
+"Toto rozšíření umožňuje zapnout, nebo vypnout HW Watchdog pomocí tohoto "
+"rozšíření OSPy systému. Raspberry Pi má na své desce nezávislý HW obvod "
+"Broadcom BCM2708"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:31
+msgid ""
+"This can be very useful if your Raspberry Pi is located remotely and locks "
+"up. However, this would not the preferred method of restarting the unit and"
+msgstr ""
+"To může být velmi užitečné, pokud se Raspberry Pi z nějakého důvodu zasekne "
+"- zamrzne. Nejedná se však o vhodný způsob restartování systému Linux a"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:32
+msgid ""
+"in extreme cases this can result in file-system damage that could prevent "
+"the Raspberry Pi from booting. If this occurs regularly you better find the "
+"root"
+msgstr ""
+"v extrémních případech může dojít k poškození souborového systému, který by "
+"mohl zabránit ve spuštění systému Raspberry Pi (bootování). Pokud k tomuto "
+"jevu dochází pravidelně najděte v systému"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:33
+msgid ""
+"cause of the problem rather than fight the symptoms. The watchdog daemon "
+"will send /dev/watchdog a heartbeat every 4 seconds. If /dev/watchdog does "
+"not"
+msgstr ""
+"příčinu problému. Démon Watchdog posílá do /dev/watchdog pravidelný šťouch "
+"každé 4 sekundy. V případě že /dev/watchdog neobdrží"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:34
+msgid ""
+"receive this signal it will brute-force restart your Raspberry Pi. This "
+"plugin needs Watchdog. If not installed, plugin installs Watchdog in to the "
+"system himself"
+msgstr ""
+"tento signál, provede tvrdý restart systému Linux Raspberry Pi. Toto "
+"rozšíření potřebuje Watchdog. Pokud není nainstalován, tak ho toto "
+"rozšíření nainstaluje do systému po stisknutí tlačítka automaticky"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:38
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:42
+msgid "Refresh"
+msgstr "Obnovit"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:44
+msgid "Install Watchdog"
+msgstr "Nainstalovat Watchdog"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:54
+msgid "Stop Watchdog Service"
+msgstr "Zastavit službu Watchdog"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:56
+msgid "Start Watchdog Service"
+msgstr "Spustit službu Watchdog"
+
+#: plugins/system_watchdog/templates/system_watchdog.html:57
+msgid "Cancel"
+msgstr "Zpět"

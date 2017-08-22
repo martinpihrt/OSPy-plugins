@@ -1,0 +1,70 @@
+$def with(plugin_options, events, client_id)
+
+$var title: $_('MQTT settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('MQTT settings')</div>
+    <p>$_('This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. On this page, the shared client is configured').</p>
+    <p>$_('Having a shared MQTT client simplifies configuration and lowers overhead on the OSPy process, network and broker').
+    <p>$_('This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs paho-mqtt in to the system himself. On first use (if run installation paho-mqtt) please wait for status').</p>
+    <p>$_('We can use a public Broker server to test'): http://www.hivemq.com/demos/websocket-client/.</p>
+    <form id="pluginForm" action="$plugins.plugin_url('mqtt.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use MQTT'):</td>
+                <td>
+                    <input name='use_mqtt' type='checkbox'${" checked" if plugin_options['use_mqtt'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Broker Host'):</td>
+                <td><input type="text" name="broker_host" value="${plugin_options['broker_host']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Broker Username'):</td>
+                <td><input type="text" name="user_name" value="${plugin_options['user_name']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Broker Password'):</td>
+                <td><input type="password" name="user_password" value="${plugin_options['user_password']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Broker Port'):</td>
+                <td><input type="number" name="broker_port" max="65635" min="80" value="${plugin_options['broker_port']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Publish up/down topic'):</td>
+                <td><input type="text" name="publish_up_down" value="${plugin_options['publish_up_down']}"> $_('Leave blank to not publish OSPy status').</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Client ID'):</td>  <!--Edit-->
+                <td>${client_id}</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

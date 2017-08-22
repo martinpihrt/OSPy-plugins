@@ -1,0 +1,134 @@
+$def with(plugin_options, events)
+
+$var title: $_('Weather-based Rain Delay')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Weather-based Rain Delay')</div>
+    <p>$_('When weather-based rain delay is enabled, the weather will be checked for rain every hour. If the weather reports any condition suggesting rain, a rain delay is automatically issued using the below set delay duration').</p>
+    <form id="pluginForm" action="$plugins.plugin_url('weather_based_rain_delay.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use Automatic Rain Delay'):</td>
+                <td>
+                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Delay Duration (hours)'):</td>
+                <td>
+                    <input name='delay_duration' type='number' min="0" max="96" value='$plugin_options["delay_duration"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Weather Provider'):</td>
+                <td>
+                    <select name="weather_provider">
+                        <option value="yahoo" ${"selected" if plugin_options["weather_provider"]=="yahoo" else ""}>Yahoo!</option>
+                        <option value="wunderground" ${"selected" if plugin_options["weather_provider"]=="wunderground" else ""}>Wunderground</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Wunderground API Key'):</td>
+                <td>
+                    <input name='wapikey' size="45" type='text' value='$plugin_options["wapikey"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use NetAtmo Real data'):</td>
+                <td>
+                    <input name='use_netatmo' type='checkbox'${" checked" if plugin_options['use_netatmo'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('NetAtmo Client ID'):</td>
+                <td>
+                    <input name='netatmo_id' size="45" type='text' value="$plugin_options['netatmo_id']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('NetAtmo Client Secret'):</td>
+                <td>
+                    <input name='netatmo_secret' size="45" type='text' value="$plugin_options['netatmo_secret']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('NetAtmo User Name'):</td>
+                <td>
+                    <input name='netatmo_user' size="45" type='text' value="$plugin_options['netatmo_user']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('NetAtmo password'):</td>
+                <td>
+                    <input name='netatmo_pass' size="45" type='text' value="$plugin_options['netatmo_pass']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('NetAtmo MAC'):</td>
+                <td>
+                    <input name='netatmomac' size="45" type='text' value="$plugin_options['netatmomac']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('NetAtmo Rain module MAC'):</td>
+                <td>
+                    <input name='netatmorain' size="45" type='text' value="$plugin_options['netatmorain']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Delay apply to water level in mm'):</td>
+                <td>
+                    <input name='netatmo_level' type='number' min="0.0" max="100.0" step="0.1" placeholder="0.0" value="$plugin_options['netatmo_level']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Delay apply based on history rain in hours'):</td>
+                <td>
+                    <input name='netatmo_hour' type='number' min="0" max="100" value="$plugin_options['netatmo_hour']">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Check interval'):</td>
+                <td>
+                    <select name="netatmo_interval">
+                        <option value="15" ${"selected" if plugin_options["netatmo_interval"]=="15" else ""}>15</option>
+                        <option value="30" ${"selected" if plugin_options["netatmo_interval"]=="30" else ""}>30</option>
+                        <option value="60" ${"selected" if plugin_options["netatmo_interval"]=="60" else ""}>60</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use Cleanup delay'):</td>
+                <td>
+                    <input name='use_cleanup' type='checkbox'${" checked" if plugin_options['use_cleanup'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

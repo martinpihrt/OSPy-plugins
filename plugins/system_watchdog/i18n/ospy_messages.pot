@@ -1,0 +1,85 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2016-06-15 06:38+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/system_watchdog/__init__.py:58
+msgid "Watchdog is not installed. For continue press button install watchdog."
+msgstr ""
+
+#: plugins/system_watchdog/__init__.py:76
+#: plugins/system_watchdog/__init__.py:90
+#: plugins/system_watchdog/__init__.py:121
+#: plugins/system_watchdog/__init__.py:124
+msgid "System watchodg plug-in"
+msgstr ""
+
+#: plugins/system_watchdog/__init__.py:124
+msgid "Error in Converting"
+msgstr ""
+
+#: plugins/system_watchdog/__init__.py:156
+msgid "Saving config to /etc/watchdog.conf"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:3
+#: plugins/system_watchdog/templates/system_watchdog.html:29
+msgid "System Watchdog"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:30
+msgid "This plugin enable or disable HW Watchdog daemon in OSPy system. On the Raspberry Pi is hardware watchdog - Broadcom BCM2708 chip"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:31
+msgid "This can be very useful if your Raspberry Pi is located remotely and locks up. However, this would not the preferred method of restarting the unit and"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:32
+msgid "in extreme cases this can result in file-system damage that could prevent the Raspberry Pi from booting. If this occurs regularly you better find the root"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:33
+msgid "cause of the problem rather than fight the symptoms. The watchdog daemon will send /dev/watchdog a heartbeat every 4 seconds. If /dev/watchdog does not"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:34
+msgid "receive this signal it will brute-force restart your Raspberry Pi. This plugin needs Watchdog. If not installed, plugin installs Watchdog in to the system himself"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:38
+msgid "Status"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:42
+msgid "Refresh"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:44
+msgid "Install Watchdog"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:54
+msgid "Stop Watchdog Service"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:56
+msgid "Start Watchdog Service"
+msgstr ""
+
+#: plugins/system_watchdog/templates/system_watchdog.html:57
+msgid "Cancel"
+msgstr ""
+

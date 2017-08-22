@@ -1,0 +1,127 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-14 12:58+0200\n"
+"PO-Revision-Date: 2016-06-14 13:07+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/real_time/__init__.py:77
+msgid "Local time"
+msgstr "Místní čas"
+
+#: plugins/real_time/__init__.py:82 plugins/real_time/__init__.py:89
+#: plugins/real_time/__init__.py:98 plugins/real_time/__init__.py:109
+#: plugins/real_time/__init__.py:117 plugins/real_time/__init__.py:131
+#: plugins/real_time/__init__.py:142
+msgid "Real Time plug-in"
+msgstr "Skutečný čas rozšíření"
+
+#: plugins/real_time/__init__.py:91
+msgid "NTP time"
+msgstr "NTP čas"
+
+#: plugins/real_time/__init__.py:93
+msgid "Primary NTP server has fault, now trying secondary NTP server."
+msgstr "Hlavní NTP server má chybu, zkusím záložní NTP server."
+
+
+#: plugins/real_time/__init__.py:95
+msgid "RTC time"
+msgstr "RTC čas"
+
+#: plugins/real_time/__init__.py:103
+msgid "Saving NTP time to RTC time."
+msgstr "Ukládám NTP čas do RTC obvodu."
+
+#: plugins/real_time/__init__.py:106
+msgid "RTC time is now"
+msgstr "Čas RTC obvodu je nyní"
+
+#: plugins/real_time/__init__.py:113
+msgid "Saving NTP time to local system time."
+msgstr "Nastavuji NTP čas do hodin systému."
+
+#: plugins/real_time/__init__.py:121
+msgid "Read RTC time and save to local system time."
+msgstr "Načítám čas z RTC a nastavuji s ním systémový čas."
+
+#: plugins/real_time/__init__.py:145
+msgid "Waiting one hour for the next update."
+msgstr "Čekám jednu hodinu pro další aktualizaci."
+
+#: plugins/real_time/__init__.py:138
+msgid "Plug-in is disabled."
+msgstr "Rozšíření je zakázáno."
+
+#: plugins/real_time/templates/real_time.html:3
+#: plugins/real_time/templates/real_time.html:20
+msgid "Real Time and NTP Time sync system time"
+msgstr ""
+"Obvod skutečného času RTC a síťového času NTP nastavuje místní čas systému"
+
+#: plugins/real_time/templates/real_time.html:21
+msgid ""
+"When is enabled synchronization RTC Time and NTP time, system time adjusted "
+"every hour from NTP server (is posible) or RTC time (if exists). Time from "
+"NTP server is saved to real time DS 1307 (on I2C bus) as HW time."
+msgstr ""
+"Je-li povoleno toto rozšíření bude se systémový čas nastavovat každou "
+"hodinu z NTP serveru (pokud je dostupný), nebo z RTC obvodu (pokud HW "
+"existuje). Čas od NTP serveru je uložen v obvodu reálného času DS 1307 (na "
+"sběrnici I2C) jako HW čas."
+
+#: plugins/real_time/templates/real_time.html:22
+msgid "NTP servers in Czech Republic"
+msgstr "NTP servery v České Republice"
+
+#: plugins/real_time/templates/real_time.html:22
+msgid "NTP servers in World"
+msgstr "NTP servery ve světě"
+
+#: plugins/real_time/templates/real_time.html:25
+msgid "Use Real Time"
+msgstr "Použít reálný čas RTC"
+
+#: plugins/real_time/templates/real_time.html:31
+msgid "Use NTP Time"
+msgstr "Použít síťový čas NTP"
+
+#: plugins/real_time/templates/real_time.html:38
+msgid "Primary NTP server IP adress"
+msgstr "Adresa hlavního NTP serveru"
+
+#: plugins/real_time/templates/real_time.html:44
+msgid "Secondary NTP server IP adress"
+msgstr "Adresa záložního NTP serveru"
+                                    
+#: plugins/real_time/templates/real_time.html:43
+msgid "NTP port"
+msgstr "Port pro NTP"
+
+#: plugins/real_time/templates/real_time.html:45
+msgid "default 123"
+msgstr "výchozí je 123"
+
+#: plugins/real_time/templates/real_time.html:49
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/real_time/templates/real_time.html:58
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/real_time/templates/real_time.html:59
+msgid "Cancel"
+msgstr "Zpět"

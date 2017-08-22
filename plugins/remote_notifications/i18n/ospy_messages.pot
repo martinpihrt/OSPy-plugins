@@ -1,0 +1,86 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2016-06-14 13:57+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/remote_notifications/__init__.py:68
+msgid "Remote was sent"
+msgstr ""
+
+#: plugins/remote_notifications/__init__.py:70
+msgid "Remote was not sent"
+msgstr ""
+
+#: plugins/remote_notifications/__init__.py:181
+msgid "Remote plug-in"
+msgstr ""
+
+#: plugins/remote_notifications/__init__.py:211
+msgid "Remote server reply"
+msgstr ""
+
+#: plugins/remote_notifications/__init__.py:213
+msgid "Remote plug-in is not properly configured"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:3
+#: plugins/remote_notifications/templates/remote_notifications.html:25
+msgid "Remote Notifications"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:26
+msgid "This plugin can send Notifications on the Remote Webserver. This plugin requre SQL server and Webserver with PHP."
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:27
+msgid "This plugin send data as get command to remote PHP web pages."
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:28
+msgid "This plugin requred correct settings this plugins: UPS Monitor, Tank Humi Monitor."
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:32
+msgid "Use plugin"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:38
+msgid "Remote server address"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:40
+msgid "ex: https://server.com/automatOSPy/"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:44
+msgid "API for access"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:50
+msgid "Status"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:59
+msgid "Submit"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:60
+msgid "Send test data to server"
+msgstr ""
+
+#: plugins/remote_notifications/templates/remote_notifications.html:61
+msgid "Cancel"
+msgstr ""
+

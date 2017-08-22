@@ -1,0 +1,177 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-15 07:21+0200\n"
+"PO-Revision-Date: 2016-06-15 07:58+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/tank_humi_monitor/__init__.py:90
+msgid "Water tank monitor is enabled."
+msgstr "Sledování hladiny vody v nádrži je povoleno."
+
+#: plugins/tank_humi_monitor/__init__.py:97
+msgid "Water level"
+msgstr "Hladina vody"
+
+#: plugins/tank_humi_monitor/__init__.py:97
+#: plugins/tank_humi_monitor/__init__.py:105
+#: plugins/tank_humi_monitor/__init__.py:204
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:36
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:42
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:48
+msgid "cm"
+msgstr "cm"
+
+#: plugins/tank_humi_monitor/__init__.py:105
+msgid "ERROR: Water in Tank"
+msgstr "CHYBA: voda v nádrži"
+
+#: plugins/tank_humi_monitor/__init__.py:114
+msgid "Water level: Error I2C device not found."
+msgstr "CHYBA I2C: obvod pro sledování hladiny vody nebyl nalezen."
+
+#: plugins/tank_humi_monitor/__init__.py:131
+#: plugins/tank_humi_monitor/__init__.py:141
+#: plugins/tank_humi_monitor/__init__.py:151
+#: plugins/tank_humi_monitor/__init__.py:161
+#: plugins/tank_humi_monitor/__init__.py:171
+#: plugins/tank_humi_monitor/__init__.py:181
+#: plugins/tank_humi_monitor/__init__.py:191
+#: plugins/tank_humi_monitor/__init__.py:201
+msgid "Error I2C device not found."
+msgstr "CHYBA I2C: zařízení nenalezeno."
+
+#: plugins/tank_humi_monitor/__init__.py:204
+msgid "Scheduler is now disabled and all Stations turn Off."
+msgstr "Plánovač je nyní zakázán a všechny stanice byly vypnuty."
+
+#: plugins/tank_humi_monitor/__init__.py:204
+msgid "System detected error: Water Tank has minimum Water Level"
+msgstr ""
+"System OSPy zaznamenal chybu: v nádrži s vodou je minimální hladina vody"
+
+#: plugins/tank_humi_monitor/__init__.py:208
+msgid "Email was sent"
+msgstr "E-mail byl odeslán"
+
+#: plugins/tank_humi_monitor/__init__.py:211
+msgid "Email was not sent"
+msgstr "E-mail nebyl odeslán"
+
+#: plugins/tank_humi_monitor/__init__.py:217
+msgid "Water tank and humidity Monitor plug-in"
+msgstr "Sledování hladiny vody a vlhkosti rozšíření"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:3
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:21
+msgid "Water tank and humidity monitor settings"
+msgstr "Sledování hladiny vody v nádrži a vlhkosti půdy"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:22
+msgid ""
+"This plugin check water level in water tank via ultrasonic sensor (I2C "
+"address 0x04)"
+msgstr ""
+"Toto rozšíření kontroluje hladinu vody v nádrži pomocí ultrazvukového "
+"snímače (připojeného  přes I2C na adrese 0x04) umístěného ve víku nádrže"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:23
+msgid ""
+"If water level is small plugins stop irigation system and sends email with "
+"error. Prevent safety for master station pump."
+msgstr ""
+"Když klesne hladina vody na minimum zastaví toto rozšíření všechny stanice, "
+"zakáže plánovač a odešle zprávu s chybou na E-mail. Rozšíření slouží pro "
+"hlavní stanici (čerpadlo) jako preventivní ochrana (aby čerpadlo neběželo "
+"bez vody naprázdno)."
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:24
+msgid ""
+"This plugin check humidity on the 8 sensors for 8 stations and adjusts run "
+"time for stations according to moisture (I2C address 0x05)."
+msgstr ""
+"Toto rozšíření také sleduje vlhkost půdy pomocí 8 sond v půdě (pro stanice "
+"1-8) a upravuje čas běhu programu dle skutečné vlhkosti půdy (připojeno "
+"pomocí I2C sběrnice na adrese 0x05). TODO: zatím je hotové pouze měření"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:28
+msgid "Use ultrasonic measuring the water level in the tank"
+msgstr "Použít měření hladiny vody ultrazvukem"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:30
+msgid "I2C address 0x04"
+msgstr "I2C adresa 0x04"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:34
+msgid "The distance from the sensor to the minimum water level in the tank"
+msgstr ""
+"Vzdálenost od ultrazvukového snímače (shora) k minimální hladině vody v "
+"nádrži"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:40
+msgid "The distance from the sensor to the maximum water level in the tank"
+msgstr ""
+"Vzdálenost od ultrazvukového snímače (shora) k maximální hladině vody v "
+"nádrži"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:46
+msgid "The water level from the bottom to the minimum water level in the tank"
+msgstr "Minimální hladina vody v nádrži (ode dna nádrže)"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:52
+msgid "Send an e-mail with an error that there is minimum water in the tank"
+msgstr ""
+"Odeslat E-mail s chybou, když klesne hladina v nádrži s vodou na minimum"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:54
+msgid "For this function required email plugin"
+msgstr ""
+"Toto rozšíření vyžaduje rozšíření \"E-mail notifications\" pro odesílání "
+"zpráv"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:58
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:64
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:70
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:76
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:82
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:88
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:94
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:100
+msgid "Use measuring frequenci probe"
+msgstr "Použít měření frekvence u sond"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:60
+msgid "All probe I2C address 0x05"
+msgstr "Všechny sondy snímače jsou na I2C adrese 0x05"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:106
+msgid "Frequenci from sensor for 0% humidity"
+msgstr "Kmitočet ze snímače pro 0% vlhkosti"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:112
+msgid "Frequenci from sensor for 100% humidity"
+msgstr "Kmitočet ze snímače pro 100% vlhkosti"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:118
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:127
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/tank_humi_monitor/templates/tank_humi_monitor.html:128
+msgid "Cancel"
+msgstr "Zpět"

@@ -1,0 +1,230 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2017-08-10 20:43+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/weather_based_water_level/__init__.py:73
+msgid "Checking weather status"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:100
+msgid "No information available!"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:102
+msgid "Using"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:102
+msgid "days of information."
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:128
+msgid "Water needed"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:128
+msgid "days"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:129
+msgid "Total rainfall"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:131
+msgid "Irrigation needed"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:132
+msgid "Weather Adjustment"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:137
+msgid "Temperature"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:153
+msgid "Protection activated."
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:160
+msgid "Plug-in is disabled."
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:166
+msgid "Weather-based water level plug-in"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:3
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:17
+msgid "Weather-based Water Level"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:18
+msgid "When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:19
+msgid "In addition, it is now able to protect plants from frost during the selected months"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:23
+msgid "Use Automatic Water Level Adjustment"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:27
+msgid "Protect against freezing"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:28
+msgid "Run once every hour if temperature is below a certain temperature"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:33
+msgid "Min percentage"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:37
+msgid "Protect temperature"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:38
+msgid "Below which temperature"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:38
+msgid "the stations should start"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:44
+msgid "Max percentage"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:48
+msgid "Protect minutes"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:49
+msgid "How long to run each station if it is freezing"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:54
+msgid "History days used"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:60
+msgid "Forecast days used"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:64
+msgid "Protect stations"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:73
+msgid "Status"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:77
+msgid "Protect months"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:80
+msgid "January"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:81
+msgid "February"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:82
+msgid "March"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:83
+msgid "April"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:84
+msgid "May"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:85
+msgid "June"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:86
+msgid "July"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:87
+msgid "August"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:88
+msgid "September"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:89
+msgid "October"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:90
+msgid "November"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:91
+msgid "December"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:99
+msgid "Submit"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:100
+msgid "Cancel"
+msgstr ""
+

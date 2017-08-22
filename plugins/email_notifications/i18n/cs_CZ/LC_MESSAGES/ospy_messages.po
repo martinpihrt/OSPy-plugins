@@ -1,0 +1,152 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <martinpihrt@gmail.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-08 06:35+0200\n"
+"PO-Revision-Date: 2016-06-08 07:23+0200\n"
+"Language-Team: pihrt.com\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/email_notifications/__init__.py:44
+msgid "Report from OSPy"
+msgstr "Hlášení z OSPy"
+
+#: plugins/email_notifications/__init__.py:77
+msgid "Email was sent"
+msgstr "Email byl odeslán"
+
+#: plugins/email_notifications/__init__.py:79
+msgid "Email was not sent!"
+msgstr "Email nebyl odeslán!"
+
+#: plugins/email_notifications/__init__.py:86
+msgid "System was powered on."
+msgstr "System byl spuštěn."
+
+#: plugins/email_notifications/__init__.py:95
+msgid "Error -  events.log file not exists!"
+msgstr "Chyba - soubor events.log nenalezen!"
+
+#: plugins/email_notifications/__init__.py:106
+msgid "System detected rain."
+msgstr "System detekoval déšť."
+
+#: plugins/email_notifications/__init__.py:125
+msgid "Error - I2C device not found!"
+msgstr "Chyba - I2C zařízení nenalezeno!"
+
+#: plugins/email_notifications/__init__.py:127
+msgid "Not available"
+msgstr "Není k dispozici"
+
+#: plugins/email_notifications/__init__.py:128
+msgid "Finished run"
+msgstr "Ukončené zalévání"
+
+#: plugins/email_notifications/__init__.py:129
+msgid "Program"
+msgstr "Program"
+
+#: plugins/email_notifications/__init__.py:130
+msgid "Station"
+msgstr "Stanice"
+
+#: plugins/email_notifications/__init__.py:131
+msgid "Start time"
+msgstr "Začátek"
+
+#: plugins/email_notifications/__init__.py:132
+msgid "Duration"
+msgstr "Trvání"
+
+#: plugins/email_notifications/__init__.py:133
+msgid "Water level in tank"
+msgstr "Množství vody v zásobníku"
+
+#: plugins/email_notifications/__init__.py:142
+msgid "E-mail plug-in"
+msgstr "E-mail rozšíření"
+
+#: plugins/email_notifications/__init__.py:215
+msgid "This is test e-mail from e-mail notification plugin."
+msgstr ""
+"Toto je testovací email od rozšíření email notifications systému OSPy."
+
+#: plugins/email_notifications/__init__.py:193
+msgid "E-mail plug-in is not properly configured!"
+msgstr "E-mail rozšíření není správně nastaveno!"
+
+#: plugins/email_notifications/templates/email_notifications.html:3
+#: plugins/email_notifications/templates/email_notifications.html:25
+msgid "Email Notifications"
+msgstr "E-mail hlášení"
+
+#: plugins/email_notifications/templates/email_notifications.html:26
+msgid ""
+"This plugin can send E-mails. For this plugin you need a GMail account as "
+"provider"
+msgstr ""
+"Toto rozšíření odesílá E-maily. Pro toto rozšíření je vyžadován účet u "
+"poskytovatele Google GMail"
+
+#: plugins/email_notifications/templates/email_notifications.html:30
+msgid "Send E-mail after power on"
+msgstr "Odeslat email po zapnutí"
+
+#: plugins/email_notifications/templates/email_notifications.html:32
+msgid "with events.log file"
+msgstr "se souborem events.log"
+
+#: plugins/email_notifications/templates/email_notifications.html:36
+msgid "Send E-mail if rain is detected"
+msgstr "Odeslat email pokud začne pršet"
+
+#: plugins/email_notifications/templates/email_notifications.html:43
+msgid "Send E-mail if a program has finished"
+msgstr "Odeslat email pokud běžel výstup"
+
+#: plugins/email_notifications/templates/email_notifications.html:49
+msgid "Your GMail username"
+msgstr "Jméno do GMailu"
+
+#: plugins/email_notifications/templates/email_notifications.html:51
+msgid "(name or name@gmail.com)"
+msgstr "(jméno nebo jméno@gmail.com)"
+
+#: plugins/email_notifications/templates/email_notifications.html:55
+msgid "Your GMail password"
+msgstr "Heslo do GMailu"
+
+#: plugins/email_notifications/templates/email_notifications.html:61
+msgid "Send E-mail to"
+msgstr "Odeslat email komu"
+
+#: plugins/email_notifications/templates/email_notifications.html:67
+msgid "E-mail subject"
+msgstr "Předmět zprávy"
+
+#: plugins/email_notifications/templates/email_notifications.html:73
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/email_notifications/templates/email_notifications.html:82
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/email_notifications/templates/email_notifications.html:83
+msgid "Send a test e-mail"
+msgstr "Odeslat test email"
+
+#: plugins/email_notifications/templates/email_notifications.html:84
+msgid "Cancel"
+msgstr "Zpět"

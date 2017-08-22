@@ -1,0 +1,122 @@
+$def with(plugin_options, events)
+
+$var title: $_('Air Temperature and Humidity Monitor')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+ });
+</script>
+    
+
+<div id="plugin">
+    <div class="title">$_('Air Temperature and Humidity Monitor')</div>
+    <p>$_('This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for Humidity: 20 - 90 %RH. Range for Temperature 0 - 50 Celsius')</p>    
+    <p>$_('This plugin allows the control of some stations (eg Fan) depending on the humidity of the sensor').</p> 
+    <p>$_('This plug-in allows you to connect 1-8 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03)').</p> 
+    <p>$_('Download log as') <a href="$plugins.plugin_url('air_temp_humi.log_csv')">csv</a>. <a href="$plugins.plugin_url('air_temp_humi.delete_log_page')">$_('Delete')</a> $_('log file').</p>
+    <form id="pluginForm" action="$plugins.plugin_url('air_temp_humi.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Enabled'):</td>
+                <td>
+                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Enable logging'):</td>
+                <td>
+                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
+                <td>
+                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Interval for logging'):</td>
+                <td>
+                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> $_('minutes (Minimum is 1)')
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Label for sensor'):</td>
+                <td>
+                <input name='label' type='text' value='$plugin_options['label']'> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Allow regulation'):</td>
+                <td>
+                    <input name='enabled_reg' type='checkbox'${" checked" if plugin_options['enabled_reg'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Hysteresis'):</td>
+                <td>
+                    <input name='hysteresis' type='number' min='1' value='$plugin_options["hysteresis"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Humidity for output ON'):</td>
+                <td>
+                    <input name='humidity_on' type='number' min='1' max='99' value='$plugin_options["humidity_on"]'> ($_('Humidity + hysteresis/2 > ON'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Humidity for output OFF'):</td>
+                <td>
+                    <input name='humidity_off' type='number' min='1' max='99' value='$plugin_options["humidity_off"]'> ($_('Humidity - hysteresis/2 < OFF'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output'):</td>
+                <td>
+                    <select name="control_output">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["control_output"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>  
+            <tr>
+                <td style='text-transform: none;' </td>
+                <hr> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Enable DS18B20'):</td>
+                <td>
+                    <input name='ds_enabled' type='checkbox'${" checked" if plugin_options['ds_enabled'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Used DS18B20'):</td>
+                <td>
+                    <input name='ds_used' type='number' min='1' max='8' value='$plugin_options["ds_used"]'> ($_('On the hardware board select also the DIP switch. For correct number of drives.'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+                                  
+                     

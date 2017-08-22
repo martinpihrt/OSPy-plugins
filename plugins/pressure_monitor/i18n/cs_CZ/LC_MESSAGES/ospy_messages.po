@@ -1,0 +1,129 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-15 10:11+0200\n"
+"PO-Revision-Date: 2016-06-15 10:27+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/pressure_monitor/__init__.py:95
+msgid "Master station is ON."
+msgstr "Hlavní stanice je zapnuta."
+
+#: plugins/pressure_monitor/__init__.py:101
+msgid "Time to test pressure sensor"
+msgstr "Čas kontroly tlaku snímačem"
+
+#: plugins/pressure_monitor/__init__.py:102
+msgid "sec"
+msgstr "vteřin(a,y)"
+
+#: plugins/pressure_monitor/__init__.py:111
+msgid ""
+"Pressure sensor is not activated in time -> stops all stations and send "
+"email."
+msgstr ""
+"Snímač tlaku nebyl aktivován do nastavené doby -> zastavuji všechny stanice "
+"a odesílám zprávu E-mailem."
+
+#: plugins/pressure_monitor/__init__.py:125
+msgid "Master station is OFF."
+msgstr "Hlavní stanice je vypnuta."
+
+#: plugins/pressure_monitor/__init__.py:135
+msgid "Pressure monitor plug-in is disabled."
+msgstr "Rozšíření monitor tlaku vody je zakázáno."
+
+#: plugins/pressure_monitor/__init__.py:141
+msgid "Not used master station."
+msgstr "Hlavní stanice není použita."
+
+#: plugins/pressure_monitor/__init__.py:145
+msgid "System detected error: pressure sensor."
+msgstr "Rozšíření monitor tlaku zjistilo chybu: snímač tlaku se neaktivoval."
+
+#: plugins/pressure_monitor/__init__.py:149
+msgid "Email was sent"
+msgstr "E-mail byl odeslán"
+
+#: plugins/pressure_monitor/__init__.py:152
+msgid "Email was not sent"
+msgstr "E-mail nebyl odeslán"
+
+#: plugins/pressure_monitor/__init__.py:157
+msgid "Pressure monitor plug-in"
+msgstr "Monitor tlaku rozšíření"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:3
+#: plugins/pressure_monitor/templates/pressure_monitor.html:21
+msgid "Pressure monitor settings"
+msgstr "Monitor tlaku nastavení"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:22
+msgid ""
+"This plugin checked pressure in pipe, if master station is switched on must "
+"be activated pressure sensor."
+msgstr ""
+"Toto rozšíření kontroluje tlak vody v potrubí, když je sepnuta hlavní "
+"stanice musí být aktivován snímač tlaku."
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:23
+msgid ""
+"If is not sensor activated in a certain time, switches off all station  and "
+"sends email with error. Prevent safety for master station pump."
+msgstr ""
+"Pokud není snímač tlaku aktivován do nastavené doby, vypne toto rozšíření "
+"všechny stanice a odešle chybovou zprávu E-mailem. Toto rozšíření slouží "
+"jako preventivní ochrana běhu čerpadla bez vody naprázdno (z důvodu: není "
+"voda, prasklé potrubí, zamrznutí potrubí atd...)"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:27
+msgid "Use pressure sensor for master station"
+msgstr "Použít snímač tlaku pro hlavní stanici"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:29
+msgid "Pressure sensor is connected between GPIO 18 - pin 12 and ground"
+msgstr "Snímač tlaku je zapojen na GPIO-18 konektor pin 12 a zem"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:33
+msgid "Normally open"
+msgstr "V klidu kontakt rozpojen"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:40
+msgid "Send email with error"
+msgstr "Zaslat E-mail s chybovou zprávou"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:42
+msgid "For this function required email plugin"
+msgstr "Pro tuto funkci je vyžadováno rozšíření \"Email notifications\""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:46
+msgid "Max time to activate pressure sensor"
+msgstr "Maximální čas pro aktivaci snímače"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:48
+msgid "max 999 seconds"
+msgstr "maximum 999 vteřin"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:52
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:61
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+msgid "Cancel"
+msgstr "Zpět"

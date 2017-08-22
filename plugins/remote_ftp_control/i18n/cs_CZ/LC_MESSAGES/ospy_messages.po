@@ -1,0 +1,156 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-08-09 21:28+0200\n"
+"PO-Revision-Date: 2016-08-10 11:45+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/remote_ftp_control/__init__.py:75
+msgid "Creating ramdisk into"
+msgstr "Vytvářím ramdisk v umístění"
+
+#: plugins/remote_ftp_control/__init__.py:78
+#: plugins/remote_ftp_control/__init__.py:94
+#: plugins/remote_ftp_control/__init__.py:112
+#: plugins/remote_ftp_control/__init__.py:119
+#: plugins/remote_ftp_control/__init__.py:217
+#: plugins/remote_ftp_control/__init__.py:299
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:3
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:19
+msgid "Remote FTP control settings"
+msgstr "Vzdálené ovládání přes FTP nastavení"
+
+#: plugins/remote_ftp_control/__init__.py:85
+msgid "Adding into fstab"
+msgstr "Přidávám do souboru fstab"
+
+#: plugins/remote_ftp_control/__init__.py:86
+msgid "Saving config to"
+msgstr "Ukládám nastavení do"
+
+#: plugins/remote_ftp_control/__init__.py:91
+msgid "Now please restart your operating system!"
+msgstr "Nyní prosím restartujte váš operační systém (linux)!"
+
+#: plugins/remote_ftp_control/__init__.py:105
+msgid "FTP connection established."
+msgstr "FTP spojení bylo navázáno."
+
+#: plugins/remote_ftp_control/__init__.py:148
+msgid "FTP received data from file data.txt"
+msgstr "FTP přijatá data ze souboru data.txt"
+
+#: plugins/remote_ftp_control/__init__.py:155
+#: plugins/remote_ftp_control/__init__.py:192
+msgid "Scheduler mode is activated."
+msgstr "Plánovač je nyní aktivní."
+
+#: plugins/remote_ftp_control/__init__.py:162
+#: plugins/remote_ftp_control/__init__.py:171
+#: plugins/remote_ftp_control/__init__.py:181
+msgid "Manual mode is activated."
+msgstr "Manuální ovládání je nyní aktivní."
+
+#: plugins/remote_ftp_control/__init__.py:173
+msgid "Activated stations"
+msgstr "Aktivovaná stanice"
+
+#: plugins/remote_ftp_control/__init__.py:183
+msgid "Deactivated stations"
+msgstr "Vypnutá stanice"
+
+#: plugins/remote_ftp_control/__init__.py:194
+msgid "Activated program"
+msgstr "Aktivován program"
+
+#: plugins/remote_ftp_control/__init__.py:206
+msgid "Stop all stations and disable scheduler."
+msgstr "Zastaveny všechny stanice a zakázán systém."
+
+#: plugins/remote_ftp_control/__init__.py:202
+msgid "Enable system."
+msgstr "Systém povolen."
+
+#: plugins/remote_ftp_control/__init__.py:287
+msgid "Could not save stavy.php to ramdisk!"
+msgstr "Nelze uložit soubor stavy.php do ramdisku!"
+
+#: plugins/remote_ftp_control/__init__.py:291
+msgid "Data file stavy.php has send on to FTP server"
+msgstr "Soubor stavy.php byl odeslán na FTP server"
+
+#: plugins/remote_ftp_control/__init__.py:294
+msgid "Data file data.txt has send on to FTP server"
+msgstr "Soubor data.txt byl odeslán na FTP server"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:20
+msgid ""
+"This plug-in makes downloading and uploading text file on the remotely via "
+"FTP for remotely control OSPy system every 30 seconds"
+msgstr ""
+"Toto rozšíření stahuje a nahrává textové soubory pomocí FTP na vzdálený "
+"webový server pro ovládání OSPy systému každých 30 vteřin"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:21
+msgid ""
+"When you first start the plug-in detects whether ramdisk is present, "
+"otherwise it creates and writes fstab"
+msgstr ""
+"Pokud spouštíte toto rozšíření prvně je zkontrolováno, zda existuje ramdisk "
+"a záznam v tabulce fstab (pokud ne toto rozšíření ramdisk i záznam vytvoří "
+"automaticky)"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:22
+msgid ""
+"If plug-in says: \"restart your linux os system\" You must manual reboot os "
+"via options/reboot os"
+msgstr ""
+"Pokud toto rozšíření říká: \"restartujte váš operační systém Linux\" musíte "
+"provést ručně restart vašeho systému (lze to provést v záložce nastavení/"
+"restartovat systém) - toto je nutnost pro vytvoření ramdisku ve vašem "
+"systému. Ramdisk umožňuje zápis bez omezení oproti například ukládání na "
+"flashdisk"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:26
+msgid "Use plug-in"
+msgstr "Používat toto rozšíření"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:32
+msgid "The FTP server address"
+msgstr "Adresa FTP serveru"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:38
+msgid "The FTP user name"
+msgstr "Uživatelské jméno na FTP serveru"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:44
+msgid "The FTP user password"
+msgstr "Uživatelské heslo na FTP serveru"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:50
+msgid "The FTP server location for files"
+msgstr "Umístění souborů na FTP serveru"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:56
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:65
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/remote_ftp_control/templates/remote_ftp_control.html:66
+msgid "Cancel"
+msgstr "Zrušit"

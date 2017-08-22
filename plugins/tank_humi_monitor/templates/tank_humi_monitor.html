@@ -1,0 +1,129 @@
+$def with(plugin_options, events)
+
+$var title: $_('Water tank and humidity monitor settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Water tank and humidity monitor settings')</div>
+    <p>$_('This plugin check water level in water tank via ultrasonic sensor (I2C address 0x04)').</p>
+    <p>$_('If water level is small plugins stop irigation system and sends email with error. Prevent safety for master station pump.')</p>
+    <p>$_('This plugin check humidity on the 8 sensors for 8 stations and adjusts run time for stations according to moisture (I2C address 0x05).')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('tank_humi_monitor.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use ultrasonic measuring the water level in the tank'):</td>
+                <td>
+                    <input name='use_sonic' type='checkbox'${" checked" if plugin_options['use_sonic'] else ""}> $_('I2C address 0x04')
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('The distance from the sensor to the minimum water level in the tank'):</td>
+                <td>
+                    <input name='distance_bottom' type='number' min="2" max="300" value='$plugin_options["distance_bottom"]'> (2-300 $_('cm'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('The distance from the sensor to the maximum water level in the tank'):</td>
+                <td>
+                    <input name='distance_top' type='number' min="2" max="300" value='$plugin_options["distance_top"]'> (2-300 $_('cm'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('The water level from the bottom to the minimum water level in the tank'):</td>
+                <td>
+                    <input name='water_minimum' type='number' min="2" max="300" value='$plugin_options["water_minimum"]'> (2-300 $_('cm'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send an e-mail with an error that there is minimum water in the tank'):</td>
+                <td>
+                    <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}> ($_('For this function required email plugin'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 1:</td> 
+                <td>
+                    <input name='use_freq_1' type='checkbox'${" checked" if plugin_options['use_freq_1'] else ""}> $_('All probe I2C address 0x05')
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 2:</td> 
+                <td>
+                    <input name='use_freq_2' type='checkbox'${" checked" if plugin_options['use_freq_2'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 3:</td> 
+                <td>
+                    <input name='use_freq_3' type='checkbox'${" checked" if plugin_options['use_freq_3'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 4:</td> 
+                <td>
+                    <input name='use_freq_4' type='checkbox'${" checked" if plugin_options['use_freq_4'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 5:</td> 
+                <td>
+                    <input name='use_freq_5' type='checkbox'${" checked" if plugin_options['use_freq_5'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 6:</td> 
+                <td>
+                    <input name='use_freq_6' type='checkbox'${" checked" if plugin_options['use_freq_6'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 7:</td> 
+                <td>
+                    <input name='use_freq_7' type='checkbox'${" checked" if plugin_options['use_freq_7'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 8:</td> 
+                <td>
+                    <input name='use_freq_8' type='checkbox'${" checked" if plugin_options['use_freq_8'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Frequenci from sensor for 0% humidity'):</td>
+                <td>
+                    <input name='minimum_freq' type='number' min="0" max="100000" value='$plugin_options["minimum_freq"]'> (0-100000 Hz)
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Frequenci from sensor for 100% humidity'):</td>
+                <td>
+                    <input name='maximum_freq' type='number' min="0" max="100000" value='$plugin_options["maximum_freq"]'> (0-100000 Hz)
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="12" cols="42" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

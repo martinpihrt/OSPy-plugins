@@ -1,0 +1,107 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-07-04 13:38+0200\n"
+"PO-Revision-Date: 2016-07-04 13:45+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.8\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/webcam/__init__.py:66
+msgid "Fswebcam is not installed."
+msgstr "Fswebcam není nainstalován."
+
+#: plugins/webcam/__init__.py:67
+msgid "Please wait installing...."
+msgstr "Prosím čekejte instaluji..."
+
+#: plugins/webcam/__init__.py:81
+msgid "Please wait..."
+msgstr "Prosím čekejte..."
+
+#: plugins/webcam/__init__.py:93
+msgid "Ready..."
+msgstr "Připraven..."
+
+#: plugins/webcam/__init__.py:96
+msgid "Cannot find USB camera (/dev/video0)."
+msgstr "Nemohu nalézt USB kameru v (/dev/video0)."
+
+#: plugins/webcam/__init__.py:101
+msgid "Plugin is disabled..."
+msgstr "Rozšíření je zakázáno..."
+
+#: plugins/webcam/__init__.py:105
+msgid "Webcam plug-in"
+msgstr "Rozšíření webkamera"
+
+#: plugins/webcam/__init__.py:145
+msgid "No image file from downloading. Retry"
+msgstr "Ke stažení není k dispozici žádný obrázek. Opakujte"
+
+#: plugins/webcam/templates/webcam.html:3
+#: plugins/webcam/templates/webcam.html:21
+msgid "Webcam Monitor"
+msgstr "Webkamera"
+
+#: plugins/webcam/templates/webcam.html:22
+msgid "This plugin needs fswebcam"
+msgstr "Toto rozšíření vyžaduje modul fswebcam"
+
+#: plugins/webcam/templates/webcam.html:23
+msgid "If not installed fswebcam, plugin installs fswebcam in to the system himself"
+msgstr "Pokud není nainstalován fswebcam, toto rozšíření ho nainstaluje do systému automaticky."
+
+#: plugins/webcam/templates/webcam.html:24
+msgid "On first use please wait for status"
+msgstr "Při prvním použití prosím vyčkejte na stavové okno"
+
+#: plugins/webcam/templates/webcam.html:25
+msgid "Download image as"
+msgstr "Stáhnout obrázek jako"
+
+#: plugins/webcam/templates/webcam.html:29
+msgid "Enabled"
+msgstr "Povolit rozšíření"
+
+#: plugins/webcam/templates/webcam.html:35
+msgid "Resolution"
+msgstr "Rozlišení"
+
+#: plugins/webcam/templates/webcam.html:37
+msgid "default is 1280x720"
+msgstr "výchozí je 1280x720"
+
+#: plugins/webcam/templates/webcam.html:41
+msgid "Flip image horizontally"
+msgstr "Převrátit obraz vodorovně "
+
+#: plugins/webcam/templates/webcam.html:47
+msgid "Flip image vertically"
+msgstr "Převrátit obraz svisle"
+
+#: plugins/webcam/templates/webcam.html:54
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/webcam/templates/webcam.html:64
+msgid "OpenSprinkler camera"
+msgstr "OpenSprinkler kamera"
+
+#: plugins/webcam/templates/webcam.html:69
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/webcam/templates/webcam.html:70
+msgid "Cancel"
+msgstr "Zpět"

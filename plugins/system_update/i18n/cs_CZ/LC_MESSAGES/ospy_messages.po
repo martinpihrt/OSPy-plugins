@@ -1,0 +1,119 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <martinpihrt@gmail.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-08 13:14+0200\n"
+"PO-Revision-Date: 2016-06-08 13:25+0200\n"
+"Language-Team: pihrt.com\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/system_update/__init__.py:45
+msgid "None!"
+msgstr "Není novější verze!"
+
+#: plugins/system_update/__init__.py:96
+msgid "Up-to-date."
+msgstr "Aktuální verze."
+
+#: plugins/system_update/__init__.py:99
+msgid "New version is available!"
+msgstr "Je k dispozici nová verze!"
+
+#: plugins/system_update/__init__.py:100 plugins/system_update/__init__.py:106
+msgid "Currently running revision"
+msgstr "Aktuální spuštěná verze"
+
+#: plugins/system_update/__init__.py:101 plugins/system_update/__init__.py:107
+msgid "Available revision"
+msgstr "Verze k dispozici"
+
+#: plugins/system_update/__init__.py:102
+msgid "Changes"
+msgstr "Změny"
+
+#: plugins/system_update/__init__.py:105
+msgid "Running unknown version!"
+msgstr "Spuštěna neznámá verze"
+
+#: plugins/system_update/__init__.py:129
+msgid "System update plug-in"
+msgstr "Aktualizace systému rozšíření"
+
+#: plugins/system_update/__init__.py:150
+msgid "Update result"
+msgstr "Výsledek aktualizace"
+
+#: plugins/system_update/templates/system_update.html:3
+#: plugins/system_update/templates/system_update.html:20
+msgid "System update from GitHub"
+msgstr "Aktualizace systému z GitHubu"
+
+#: plugins/system_update/templates/system_update.html:21
+msgid ""
+"This plugin compares the local copy with the remote repository and can "
+"automatically update the local copy"
+msgstr ""
+"Toto rozšíření porovnává místní kopii systému OSPy pomocí vzdáleného "
+"úložiště Git a automaticky aktualizuje místní kopii OSPy"
+
+#: plugins/system_update/templates/system_update.html:25
+msgid "Use update plugin"
+msgstr "Používat toto rozšíření"
+
+#: plugins/system_update/templates/system_update.html:31
+msgid "Remote repository"
+msgstr "Vzdálené uložiště"
+
+#: plugins/system_update/templates/system_update.html:37
+msgid "Remote branch"
+msgstr "Vzdálená větev"
+
+#: plugins/system_update/templates/system_update.html:43
+msgid "Local OSPy version"
+msgstr "Místní OSPy verze"
+
+#: plugins/system_update/templates/system_update.html:49
+msgid "Local OSPy date"
+msgstr "Datum místní OSPy verze"
+
+#: plugins/system_update/templates/system_update.html:55
+msgid "Automatic update"
+msgstr "Automatická aktualizace"
+
+#: plugins/system_update/templates/system_update.html:61
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/system_update/templates/system_update.html:64
+msgid "Update Status"
+msgstr "Zjistit stav"
+
+#: plugins/system_update/templates/system_update.html:72
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/system_update/templates/system_update.html:74
+msgid "Update OSPy"
+msgstr "Aktualizovat OSPy"
+
+#: plugins/system_update/templates/system_update.html:76
+msgid "Up-to-date"
+msgstr "Aktuální"
+
+#: plugins/system_update/templates/system_update.html:77
+msgid "Restart OSPy"
+msgstr "Restartovat OSPy"
+
+#: plugins/system_update/templates/system_update.html:78
+msgid "Cancel"
+msgstr "Zpět"

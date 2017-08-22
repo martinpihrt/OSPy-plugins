@@ -1,0 +1,175 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2016-08-18 09:13+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/weather_based_water_level/__init__.py:92
+msgid "Checking weather status"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:154
+msgid "No information available!"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:156
+msgid "Using"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:156
+msgid "days of information."
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:187
+msgid "Water needed"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:187
+msgid "days"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:189
+msgid "Irrigation needed"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:190
+msgid "Weather Adjustment"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:192
+msgid "History rain by Netatmo"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:193
+msgid "History rain by Wunderground"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:194
+msgid "Forecast rain by Wunderground"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:203
+msgid "Plug-in is disabled."
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:209
+msgid "Weather-based water level plug-in"
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:268
+msgid "Retrying."
+msgstr ""
+
+#: plugins/weather_based_water_level/__init__.py:308
+#: plugins/weather_based_water_level/__init__.py:339
+#: plugins/weather_based_water_level/__init__.py:362
+msgid "No Location ID found!"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:3
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:21
+msgid "Weather-based Water Level"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:22
+msgid "When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:26
+msgid "Use Automatic Water Level Adjustment"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:32
+msgid "Min percentage"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:38
+msgid "Max percentage"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:44
+msgid "History days used"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:50
+msgid "Forecast days used"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:56
+msgid "Wunderground API Key"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:62
+msgid "Use NetAtmo Real data"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:68
+msgid "NetAtmo Client ID"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:74
+msgid "NetAtmo Client Secret"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:80
+msgid "NetAtmo User Name"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:86
+msgid "NetAtmo password"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:92
+msgid "NetAtmo MAC"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:98
+msgid "NetAtmo Rain module MAC"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:105
+msgid "Daily water level in mm"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:111
+msgid "Status"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:120
+msgid "Submit"
+msgstr ""
+
+#:
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:121
+msgid "Cancel"
+msgstr ""
+
