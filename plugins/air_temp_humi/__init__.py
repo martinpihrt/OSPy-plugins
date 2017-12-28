@@ -178,10 +178,10 @@ class Sender(Thread):
 
                             if(priznak!=255):
                                self.status['DS%d' % i] = teplota
-                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': ' + str(teplota))
+                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': ' + str(teplota) + ' \u2103')
                             else:
                                self.status['DS%d' % i] = -127
-                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': err')
+                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': Err')
 
                        except Exception:
                           log.error(NAME, '\n' + _('Can not read data from I2C bus.') + ':\n' + traceback.format_exc())
