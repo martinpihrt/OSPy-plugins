@@ -34,12 +34,12 @@ plugin_options = PluginOptions(
      'log_records': 0,
      'label': 'Air Probe',
      'enabled_reg': False,
-     'hysteresis': 5,       # %rv hysteresis 5 is 2,5
+     'hysteresis': 5,       # %rv hysteresis 5 is +-2,5
      'humidity_on': 60,     # %rv for on
      'humidity_off': 50,    # %rv for off
      'control_output': 9,   # station 10 if exist else station 1
      'ds_enabled': False,   # enable DS18B20 I2C support
-     'ds_used': 1           # count DS18b20, default 1x
+     'ds_used': 1           # count DS18b20, default 1x max 6x
      }
 )
 
@@ -65,8 +65,6 @@ class Sender(Thread):
         self.status['DS3']  = 0
         self.status['DS4']  = 0
         self.status['DS5']  = 0
-        self.status['DS6']  = 0
-        self.status['DS7']  = 0
 
         self._sleep_time = 0
         self.start()
@@ -149,19 +147,44 @@ class Sender(Thread):
                           bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)  
 
                           temp_data = bus.read_i2c_block_data(0x03, 0)
+                          #log.info(NAME, _('Data: ') + str(temp_data))
 
-                          # Each float from the hw board is 4 bytes long.
+                          # Each float from the hw board is 5 bytes long.
+                          pom=0
                           for i in range(0, plugin_options['ds_used']):
-                            bytes = temp_data[4*i:4*i+4]
-                            self.status['DS%d' % i] = struct.unpack('f', "".join(map(chr, bytes)))[0]
-                            # Python 2 struct.unpack takes the data to be unpacked 
-                            # in string format, so the bytes need to be joined
-                            # together first
-                            # only for test print struct.unpack('f', "".join(map(chr, bytes)))[0]
-                            log.info(NAME, _('Temperature') + ' DS' + str(i) + ': ' + u'%.1f \u2103' % struct.unpack('f', "".join(map(chr, bytes)))[0])
+                            priznak=0
+                            jed=0
+                            des=0
+                            sto=0
+                            tis=0
+                            soucet=0
+                            jed = temp_data[pom+4]        # 4 byte
+                            des = temp_data[pom+3]*10     # 3
+                            sto = temp_data[pom+2]*100    # 2
+                            tis = temp_data[pom+1]*1000   # 1  
+                            priznak = temp_data[pom]      # 0 byte
+
+                            pom += 5
+
+                            soucet = tis+sto+des+jed
+
+                            if(soucet > 1270):
+                               priznak=255 # error value not printing
+                        
+                            if(priznak==1):
+                               soucet = soucet * -1  # negation number
+
+                            teplota = soucet/10.0
+
+                            if(priznak!=255):
+                               self.status['DS%d' % i] = teplota
+                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': ' + str(teplota))
+                            else:
+                               self.status['DS%d' % i] = -127
+                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': err')
 
                        except Exception:
-                          log.error(NAME, '\n' + _('Can not read data from I2C bus.'))
+                          log.error(NAME, '\n' + _('Can not read data from I2C bus.') + ':\n' + traceback.format_exc())
                           pass
                        
                     self._sleep(5)
@@ -290,8 +313,6 @@ def update_log(status):
     data['ds3']  = str(status['DS3'])
     data['ds4']  = str(status['DS4'])
     data['ds5']  = str(status['DS5'])
-    data['ds6']  = str(status['DS6'])
-    data['ds7']  = str(status['DS7'])
      
     log_data.insert(0, data)
     if plugin_options['log_records'] > 0:
@@ -352,8 +373,6 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         data += ";\t DS3 Temperature C"
         data += ";\t DS4 Temperature C"
         data += ";\t DS5 Temperature C"
-        data += ";\t DS6 Temperature C"
-        data += ";\t DS7 Temperature C"
         data += '\n'
 
         for record in log_records:
@@ -367,8 +386,6 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
             data += ";\t" + record["ds3"]
             data += ";\t" + record["ds4"]
             data += ";\t" + record["ds5"]
-            data += ";\t" + record["ds6"]
-            data += ";\t" + record["ds7"]
             data += '\n'
 
         web.header('Content-Type', 'text/csv')
