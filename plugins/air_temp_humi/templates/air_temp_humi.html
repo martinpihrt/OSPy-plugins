@@ -21,7 +21,7 @@ $var page: plugins
     <div class="title">$_('Air Temperature and Humidity Monitor')</div>
     <p>$_('This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for Humidity: 20 - 90 %RH. Range for Temperature 0 - 50 Celsius')</p>    
     <p>$_('This plugin allows the control of some stations (eg Fan) depending on the humidity of the sensor').</p> 
-    <p>$_('This plug-in allows you to connect 1-8 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03)').</p> 
+    <p>$_('This plug-in allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03)').</p> 
     <p>$_('Download log as') <a href="$plugins.plugin_url('air_temp_humi.log_csv')">csv</a>. <a href="$plugins.plugin_url('air_temp_humi.delete_log_page')">$_('Delete')</a> $_('log file').</p>
     <form id="pluginForm" action="$plugins.plugin_url('air_temp_humi.settings_page')" method="post">
         <table class="optionList">
@@ -102,7 +102,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Used DS18B20'):</td>
                 <td>
-                    <input name='ds_used' type='number' min='1' max='8' value='$plugin_options["ds_used"]'> ($_('On the hardware board select also the DIP switch. For correct number of drives.'))
+                    <input name='ds_used' type='number' min='1' max='6' value='$plugin_options["ds_used"]'> ($_('On the hardware board select also the DIP switch. For correct number of drives.'))
                 </td>
             </tr>
             <tr>
