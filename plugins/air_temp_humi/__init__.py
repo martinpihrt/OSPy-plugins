@@ -178,7 +178,7 @@ class Sender(Thread):
 
                             if(priznak!=255):
                                self.status['DS%d' % i] = teplota
-                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': ' + str(teplota) + ' \u2103')
+                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': ' + u'%.1f \u2103' % teplota)
                             else:
                                self.status['DS%d' % i] = -127
                                log.info(NAME, _('Temperature') + ' DS' + str(i) + ': Err')
