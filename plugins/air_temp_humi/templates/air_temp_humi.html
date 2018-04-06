@@ -102,13 +102,54 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Used DS18B20'):</td>
                 <td>
-                    <input name='ds_used' type='number' min='1' max='6' value='$plugin_options["ds_used"]'> ($_('On the hardware board select also the DIP switch. For correct number of drives.'))
+                    <input name='ds_used' type='number' min='1' max='6' value='$plugin_options["ds_used"]'>
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Label for sensor') DS1:</td>
+                <td>
+                <input name='label_ds0' type='text' value='$plugin_options['label_ds0']'> 
+                </td>
+            </tr>
+            $if plugin_options["ds_used"]>1:
+              <tr>
+                 <td style='text-transform: none;'>$_('Label for sensor') DS2:</td>
+                 <td>
+                 <input name='label_ds1' type='text' value='$plugin_options['label_ds1']'> 
+                 </td>
+              </tr>
+            $if plugin_options["ds_used"]>2:
+              <tr>
+                 <td style='text-transform: none;'>$_('Label for sensor') DS3:</td>
+                 <td>
+                 <input name='label_ds2' type='text' value='$plugin_options['label_ds2']'> 
+                 </td>
+              </tr>
+            $if plugin_options["ds_used"]>3:
+              <tr>
+                 <td style='text-transform: none;'>$_('Label for sensor') DS4:</td>
+                 <td>
+                 <input name='label_ds3' type='text' value='$plugin_options['label_ds3']'> 
+                 </td>
+              </tr>
+            $if plugin_options["ds_used"]>4:
+              <tr>
+                 <td style='text-transform: none;'>$_('Label for sensor') DS5:</td>
+                 <td>
+                 <input name='label_ds4' type='text' value='$plugin_options['label_ds4']'> 
+                 </td>
+              </tr>
+            $if plugin_options["ds_used"]>5:
+              <tr>
+                 <td style='text-transform: none;'>$_('Label for sensor') DS6:</td>
+                 <td>
+                 <input name='label_ds5' type='text' value='$plugin_options['label_ds5']'> 
+                 </td>
+              </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="11" cols="45" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
