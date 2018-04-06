@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2017-08-02 14:34+CEST\n"
+"POT-Creation-Date: 2018-04-06 06:07+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,48 +15,49 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/air_temp_humi/__init__.py:109 plugins/air_temp_humi/__init__.py:163
+#: plugins/air_temp_humi/__init__.py:114 plugins/air_temp_humi/__init__.py:190
+#: plugins/air_temp_humi/__init__.py:193
 msgid "Temperature"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:110
+#: plugins/air_temp_humi/__init__.py:115
 msgid "Humidity"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:112
+#: plugins/air_temp_humi/__init__.py:117
 msgid "OFF"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:112
+#: plugins/air_temp_humi/__init__.py:117
 msgid "ON"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:113
+#: plugins/air_temp_humi/__init__.py:118
 #: plugins/air_temp_humi/templates/air_temp_humi.html:87
 msgid "Output"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:130
+#: plugins/air_temp_humi/__init__.py:135
 msgid "Station output was turned on."
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:138
+#: plugins/air_temp_humi/__init__.py:143
 msgid "Station output was turned off."
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:166
-msgid "Can not read data from I2C bus."
+#: plugins/air_temp_humi/__init__.py:193 plugins/air_temp_humi/__init__.py:196
+msgid "Error"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:172
+#: plugins/air_temp_humi/__init__.py:202
 msgid "Air Temperature and Humidity Monitor plug-in"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:304
+#: plugins/air_temp_humi/__init__.py:350
 msgid "Saving log to file."
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:391
+#: plugins/air_temp_humi/__init__.py:432
 msgid "Deleted log file"
 msgstr ""
 
@@ -74,7 +75,7 @@ msgid "This plugin allows the control of some stations (eg Fan) depending on the
 msgstr ""
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:24
-msgid "This plug-in allows you to connect 1-8 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03)"
+msgid "This plug-in allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03)"
 msgstr ""
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:25
@@ -114,6 +115,12 @@ msgid "minutes (Minimum is 1)"
 msgstr ""
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:53
+#: plugins/air_temp_humi/templates/air_temp_humi.html:109
+#: plugins/air_temp_humi/templates/air_temp_humi.html:116
+#: plugins/air_temp_humi/templates/air_temp_humi.html:123
+#: plugins/air_temp_humi/templates/air_temp_humi.html:130
+#: plugins/air_temp_humi/templates/air_temp_humi.html:137
+#: plugins/air_temp_humi/templates/air_temp_humi.html:144
 msgid "Label for sensor"
 msgstr ""
 
@@ -153,19 +160,15 @@ msgstr ""
 msgid "Used DS18B20"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:105
-msgid "On the hardware board select also the DIP switch. For correct number of drives."
-msgstr ""
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:109
+#: plugins/air_temp_humi/templates/air_temp_humi.html:150
 msgid "Status"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:118
+#: plugins/air_temp_humi/templates/air_temp_humi.html:159
 msgid "Submit"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:119
+#: plugins/air_temp_humi/templates/air_temp_humi.html:160
 msgid "Cancel"
 msgstr ""
 
