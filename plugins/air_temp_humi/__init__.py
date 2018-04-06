@@ -6,6 +6,7 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
+from datetime import datetime
 import traceback
 import os
 from threading import Thread, Event
@@ -39,6 +40,12 @@ plugin_options = PluginOptions(
      'humidity_off': 50,    # %rv for off
      'control_output': 9,   # station 10 if exist else station 1
      'ds_enabled': False,   # enable DS18B20 I2C support
+     'label_ds0': 'label',  # label for DS1
+     'label_ds1': 'label',  # label for DS2
+     'label_ds2': 'label',  # label for DS3
+     'label_ds3': 'label',  # label for DS4
+     'label_ds4': 'label',  # label for DS5
+     'label_ds5': 'label',  # label for DS6
      'ds_used': 1           # count DS18b20, default 1x max 6x
      }
 )
@@ -59,12 +66,12 @@ class Sender(Thread):
         self.status['temp'] = 0
         self.status['humi'] = 0
         self.status['outp'] = 0
-        self.status['DS0']  = 0
-        self.status['DS1']  = 0
-        self.status['DS2']  = 0
-        self.status['DS3']  = 0
-        self.status['DS4']  = 0
-        self.status['DS5']  = 0
+        self.status['DS0']  = -127
+        self.status['DS1']  = -127
+        self.status['DS2']  = -127
+        self.status['DS3']  = -127
+        self.status['DS4']  = -127
+        self.status['DS5']  = -127
 
         self._sleep_time = 0
         self.start()
@@ -95,6 +102,8 @@ class Sender(Thread):
                     try:
                        Temperature, Humidity = DHT11_read_data()
                     except:
+                       log.clear(NAME)
+                       log.info(NAME, datetime_string())
                        self._sleep(0.3)                                     
                       
                     if Humidity and Temperature != 0:
@@ -178,13 +187,13 @@ class Sender(Thread):
 
                             if(priznak!=255):
                                self.status['DS%d' % i] = teplota
-                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': ' + u'%.1f \u2103' % teplota)
+                               log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % teplota)
                             else:
                                self.status['DS%d' % i] = -127
-                               log.info(NAME, _('Temperature') + ' DS' + str(i) + ': Err')
+                               log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ': ' + _('Error'))
 
                        except Exception:
-                          log.error(NAME, '\n' + _('Can not read data from I2C bus.') + ':\n' + traceback.format_exc())
+                          log.error(NAME, '\n' + _('Error') + ':\n' + traceback.format_exc())
                           pass
                        
                     self._sleep(5)
@@ -304,22 +313,41 @@ def write_log(json_data):
 def update_log(status):
     log_data = read_log()
     data = {'datetime': datetime_string()}
+    data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+    data['time'] = str(datetime.now().strftime('%H:%M:%S'))
     data['temp'] = str(status['temp'])
     data['humi'] = str(status['humi'])
     data['outp'] = str(status['outp'])
-    data['ds0']  = str(status['DS0'])
-    data['ds1']  = str(status['DS1'])
-    data['ds2']  = str(status['DS2'])
-    data['ds3']  = str(status['DS3'])
-    data['ds4']  = str(status['DS4'])
-    data['ds5']  = str(status['DS5'])
+    if plugin_options['ds_used'] > 0:
+      data['ds0']  = str(status['DS0'])
+    else:
+      data['ds0']  = str('not used')
+    if plugin_options['ds_used'] > 1:
+      data['ds1']  = str(status['DS1'])
+    else:
+      data['ds1']  = str('not used')
+    if plugin_options['ds_used'] > 2:
+      data['ds2']  = str(status['DS2'])
+    else:
+      data['ds2']  = str('not used')
+    if plugin_options['ds_used'] > 3:
+      data['ds3']  = str(status['DS3'])
+    else:
+      data['ds3']  = str('not used')
+    if plugin_options['ds_used'] > 4:
+      data['ds4']  = str(status['DS4'])
+    else:
+      data['ds4']  = str('not used')
+    if plugin_options['ds_used'] > 5:
+      data['ds5']  = str(status['DS5'])
+    else:
+      data['ds5']  = str('not used')
      
     log_data.insert(0, data)
     if plugin_options['log_records'] > 0:
         log_data = log_data[:plugin_options['log_records']]
     write_log(log_data)
     log.info(NAME, _('Saving log to file.'))
-
 
 
 ################################################################################
@@ -363,20 +391,24 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
 
     def GET(self):
         log_records = read_log()
-        data = "Date/Time"
+        data  = "Date/Time"
+        data += ";\t Date"
+        data += ";\t Time"
         data += ";\t Temperature C"
         data += ";\t Humidity %RH" 
         data += ";\t Output"
-        data += ";\t DS0 Temperature C"
         data += ";\t DS1 Temperature C"
         data += ";\t DS2 Temperature C"
         data += ";\t DS3 Temperature C"
         data += ";\t DS4 Temperature C"
         data += ";\t DS5 Temperature C"
+        data += ";\t DS6 Temperature C"
         data += '\n'
 
         for record in log_records:
-            data += record['datetime']
+            data +=         record['datetime']
+            data += ";\t" + record['date']
+            data += ";\t" + record['time']
             data += ";\t" + record["temp"]
             data += ";\t" + record["humi"]
             data += ";\t" + record["outp"]
