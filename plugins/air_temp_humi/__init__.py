@@ -27,6 +27,9 @@ import i18n
 NAME = 'Air Temperature and Humidity Monitor'
 LINK = 'settings_page'
 
+tempDS = [-127,-127,-127,-127,-127,-127]
+
+
 plugin_options = PluginOptions(
     NAME,
     {'enabled': False,
@@ -95,7 +98,7 @@ class Sender(Thread):
         last_millis = 0 # timer for save log
         var1 = True     # Auxiliary variable for once on
         var2 = True     # Auxiliary variable for once off
-
+   
         while not self._stop.is_set():
             try:
                 if plugin_options['enabled']:  # if plugin is enabled   
@@ -146,58 +149,17 @@ class Sender(Thread):
                        # Activate again if needed:
                        if station.remaining_seconds != 0:
                           station.active = True
-
  
                     if plugin_options['ds_enabled']:  # if in plugin is enabled DS18B20
-                       try:
-                          import smbus  
-                          import struct
-
-                          bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)  
-
-                          temp_data = bus.read_i2c_block_data(0x03, 0)
-                          #log.info(NAME, _('Data: ') + str(temp_data))
-
-                          # Each float from the hw board is 5 bytes long.
-                          pom=0
-                          for i in range(0, plugin_options['ds_used']):
-                            priznak=0
-                            jed=0
-                            des=0
-                            sto=0
-                            tis=0
-                            soucet=0
-                            jed = temp_data[pom+4]        # 4 byte
-                            des = temp_data[pom+3]*10     # 3
-                            sto = temp_data[pom+2]*100    # 2
-                            tis = temp_data[pom+1]*1000   # 1  
-                            priznak = temp_data[pom]      # 0 byte
-
-                            pom += 5
-
-                            soucet = tis+sto+des+jed
-
-                            if(soucet > 1270):
-                               priznak=255 # error value not printing
+                       DS18B20_read_data() # get read DS18B20 temperature data to global tempDS[xx]
                         
-                            if(priznak==1):
-                               soucet = soucet * -1  # negation number
+                       for i in range(0, plugin_options['ds_used']):
+                          self.status['DS%d' % i] = tempDS[i]
+                          log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
 
-                            teplota = soucet/10.0
-
-                            if(priznak!=255):
-                               self.status['DS%d' % i] = teplota
-                               log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % teplota)
-                            else:
-                               self.status['DS%d' % i] = -127
-                               log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ': ' + _('Error'))
-
-                       except Exception:
-                          log.error(NAME, '\n' + _('Error') + ':\n' + traceback.format_exc())
-                          pass
-                       
+                    #print DS18B20_read_string_data() # for testing only
                     self._sleep(5)
-
+ 
             except Exception:
                 log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
@@ -220,12 +182,62 @@ def stop():
        sender.join()
        sender = None 
 
+
+def DS18B20_read_data():
+    import smbus  
+    try:
+       bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)     
+
+       i2c_data = bus.read_i2c_block_data(0x03, 0)
+ 
+       # Test recieved data on to byte xx = 255
+       if i2c_data[1] == 255 or i2c_data[6] == 255:         
+          log.error(NAME, _('Data is not correct. Please try again later.'))
+          return [255,255,255,255,255,255] # data has error 
+
+       # Each float temperature from the hw board is 5 bytes long (5byte * 6 probe = 30 bytes).
+       pom = 0
+       teplota = [0,0,0,0,0,0]
+       for i in range(0, plugin_options['ds_used']):
+          priznak=0
+          jed=0
+          des=0
+          sto=0
+          tis=0
+          soucet=0
+          jed = i2c_data[pom+4]        # 4 byte
+          des = i2c_data[pom+3]*10     # 3
+          sto = i2c_data[pom+2]*100    # 2
+          tis = i2c_data[pom+1]*1000   # 1  
+          priznak = i2c_data[pom]      # 0 byte
+          pom += 5
+          soucet = tis+sto+des+jed
+          if(priznak==1):
+            soucet = soucet * -1      # negation number
+          teplota[i]  = soucet/10.0
+          tempDS[i] = teplota[i]      # global temperature for all probe DS18B20
+
+    except Exception:
+      log.debug(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())       
+      time.sleep(0.5)
+      pass
+      return [255,255,255,255,255,255] # try data has error     
+    return teplota     # data is ok
+
+
+def DS18B20_read_string_data():
+    txt = ['','','','','','']
+    for i in range(0, plugin_options['ds_used']):
+       txt[i] = str(tempDS[i])
+    return str(txt)
+
+
 def bin2dec(string_num):
     return str(int(string_num, 2))
 
+
 def DHT11_read_data():
-    data = []        
-   
+    data = []         
     GPIO.setup(19,GPIO.OUT) # pin 19 GPIO10
     GPIO.output(19,True)
     time.sleep(0.025)
@@ -431,5 +443,3 @@ class delete_log_page(ProtectedPage):  # delete log file from web
         write_log([])
         log.info(NAME, _('Deleted log file'))
         raise web.seeother(plugin_url(settings_page), True)
-
-
