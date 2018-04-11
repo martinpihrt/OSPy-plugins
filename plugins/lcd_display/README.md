@@ -27,6 +27,7 @@ Last Run Program:
 Pressure Sensor:  
 Water Tank Level:  
 Running Stations:  
+DS18B20 Temperature: 
 
 
 * Status:
@@ -50,9 +51,13 @@ Running Stations:
   Inactive  
   Last program:  
   None  
-  Pressure sensor:  
+  Pressure sensor:    
   Not available  
-
+  DS1-6 Temperature:  
+  23.5, -127, 23.5, 36.5, 78.0, -127
+  
+  (-127 is not connected probe to hardware board...)  
+  
 The hardware should be connected as follows:
 <a href="/plugins/lcd_display/static/images/schematics.png"><img src="/plugins/lcd_display/static/images/schematics.png" width="100%"></a>
 

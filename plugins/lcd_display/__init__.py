@@ -47,7 +47,8 @@ lcd_options = PluginOptions(
         "d_last_run": True,
         "d_pressure_sensor": True,
         "d_water_tank_level": True,
-        "d_running_stations": True 
+        "d_running_stations": True,
+        "d_temperature": True
     }
 )
 
@@ -87,7 +88,7 @@ class LCDSender(Thread):
                     line1 = get_report(report_index)
                     line2 = get_report(report_index + 1)
 
-                    if report_index >= 21:
+                    if report_index >= 23:
                         report_index = 0
 
                     line1 = get_report(report_index)
@@ -314,6 +315,24 @@ def get_report(index):
              else: 
                 result = None
 
+           elif index == 22:    
+             if lcd_options['d_temperature']:    
+                result = "Teplota DS1-6:"
+             else: 
+                result = None
+           elif index == 23:
+             if lcd_options['d_temperature']:
+                try:
+                   from plugins import air_temp_humi
+                 
+                   result = air_temp_humi.DS18B20_read_string_data()
+                  
+                except Exception:
+                   result = "neni k dispozici"
+             else: 
+                result = None
+
+
            return ASCI_convert(result)
 
 
@@ -475,6 +494,23 @@ def get_report(index):
                    result = "Not Available"
              else: 
                 result = None
+
+          elif index == 22:    
+            if lcd_options['d_temperature']:    
+               result = "DS Temperature:"
+            else: 
+               result = None
+          elif index == 23:
+            if lcd_options['d_temperature']:
+               try:
+                  from plugins import air_temp_humi
+                 
+                  result = air_temp_humi.DS18B20_read_string_data()
+                                     
+               except Exception:
+                  result = "Not Available"
+            else: 
+               result = None
 
           return result
 
