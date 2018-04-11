@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-04-06 06:07+CEST\n"
+"POT-Creation-Date: 2018-04-11 11:20+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,49 +15,48 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/air_temp_humi/__init__.py:114 plugins/air_temp_humi/__init__.py:190
-#: plugins/air_temp_humi/__init__.py:193
+#: plugins/air_temp_humi/__init__.py:117 plugins/air_temp_humi/__init__.py:158
 msgid "Temperature"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:115
+#: plugins/air_temp_humi/__init__.py:118
 msgid "Humidity"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:117
+#: plugins/air_temp_humi/__init__.py:120
 msgid "OFF"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:117
+#: plugins/air_temp_humi/__init__.py:120
 msgid "ON"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:118
+#: plugins/air_temp_humi/__init__.py:121
 #: plugins/air_temp_humi/templates/air_temp_humi.html:87
 msgid "Output"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:135
+#: plugins/air_temp_humi/__init__.py:138
 msgid "Station output was turned on."
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:143
+#: plugins/air_temp_humi/__init__.py:146
 msgid "Station output was turned off."
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:193 plugins/air_temp_humi/__init__.py:196
-msgid "Error"
-msgstr ""
-
-#: plugins/air_temp_humi/__init__.py:202
+#: plugins/air_temp_humi/__init__.py:164 plugins/air_temp_humi/__init__.py:220
 msgid "Air Temperature and Humidity Monitor plug-in"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:350
+#: plugins/air_temp_humi/__init__.py:194
+msgid "Data is not correct. Please try again later."
+msgstr ""
+
+#: plugins/air_temp_humi/__init__.py:361
 msgid "Saving log to file."
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:432
+#: plugins/air_temp_humi/__init__.py:443
 msgid "Deleted log file"
 msgstr ""
 
