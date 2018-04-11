@@ -38,7 +38,7 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;' rowspan='12'>$_('Display'):</td>
+                <td style='text-transform: none;' rowspan='13'>$_('Display'):</td>
                 <td> $_('System Name'):</td>
                 <td>
                     <input name='d_system_name' type='checkbox'${" checked" if plugin_options['d_system_name'] else ""}>
@@ -109,7 +109,13 @@ $var page: plugins
                 <td>
                     <input name='d_running_stations' type='checkbox'${" checked" if plugin_options['d_running_stations'] else ""}>
                 </td>
-            </tr>          
+            </tr> 
+            <tr>
+                <td> $_('DS18B20 Temperature'):</td>
+                <td>
+                    <input name='d_temperature' type='checkbox'${" checked" if plugin_options['d_temperature'] else ""}>
+                </td>
+            </tr>         
 
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
