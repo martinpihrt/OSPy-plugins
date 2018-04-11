@@ -114,6 +114,10 @@ msgstr "Hladina vody v tanku"
 msgid "Running Stations"
 msgstr "Aktuálně spuštěné stanice"
 
+#: plugins/lcd_display/templates/lcd_display.html:114
+msgid "DS18B20 Temperature"
+msgstr "Teploty z DS18B20"
+
 #: plugins/lcd_display/templates/lcd_display.html:47
 msgid "Status"
 msgstr "Stav"
