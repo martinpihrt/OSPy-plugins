@@ -187,11 +187,10 @@ def DS18B20_read_data():
     import smbus  
     try:
        bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)     
-
        i2c_data = bus.read_i2c_block_data(0x03, 0)
- 
-       # Test recieved data on to byte xx = 255
-       if i2c_data[1] == 255 or i2c_data[6] == 255:         
+
+       # Test recieved data byte 1 and 2
+       if i2c_data[1] == 255 or i2c_data[2] == 255:         
           log.error(NAME, _('Data is not correct. Please try again later.'))
           return [255,255,255,255,255,255] # data has error 
 
@@ -226,9 +225,9 @@ def DS18B20_read_data():
 
 
 def DS18B20_read_string_data():
-    txt = ['','','','','','']
+    txt = [-127,-127,-127,-127,-127,-127,]
     for i in range(0, plugin_options['ds_used']):
-       txt[i] = str(tempDS[i])
+       txt[i] = tempDS[i]
     return str(txt)
 
 
