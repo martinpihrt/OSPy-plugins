@@ -2,29 +2,29 @@
 # Copyright (C) YEAR ORGANIZATION
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
-"POT-Creation-Date: 2017-05-09 12:49+0200\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2018-04-11 11:19+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+
 
 #: plugins/lcd_display/__init__.py:109
-msgid "LCD display plug-in:\n"
+msgid ""
+"LCD display plug-in:\n"
 msgstr ""
 
-#: plugins/lcd_display/__init__.py:493
+#: plugins/lcd_display/__init__.py:528
 msgid "Could not import smbus."
 msgstr ""
 
-#: plugins/lcd_display/__init__.py:506
+#: plugins/lcd_display/__init__.py:541
 msgid "Could not find any PCF8574 controller."
 msgstr ""
 
@@ -113,14 +113,19 @@ msgstr ""
 msgid "Running Stations"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:115
+#: plugins/lcd_display/templates/lcd_display.html:114
+msgid "DS18B20 Temperature"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:121
 msgid "Status"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:124
+#: plugins/lcd_display/templates/lcd_display.html:130
 msgid "Submit"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:125
+#: plugins/lcd_display/templates/lcd_display.html:131
 msgid "Cancel"
 msgstr ""
+
