@@ -47,9 +47,9 @@ msgstr "Výstup (stanice) byl zapnut."
 msgid "Station output was turned off."
 msgstr "Výstup (stanice) byl vypnut."
 
-#: plugins/air_temp_humi/__init__.py:193 plugins/air_temp_humi/__init__.py:196
-msgid "Error"
-msgstr "Chyba"
+#: plugins/air_temp_humi/__init__.py:194
+msgid "Data is not correct. Please try again later."
+msgstr "Data z čidel nejsou v pořádku. Zkuste to prosím za chvilku."
 
 #: plugins/air_temp_humi/__init__.py:202
 msgid "Air Temperature and Humidity Monitor plug-in"
