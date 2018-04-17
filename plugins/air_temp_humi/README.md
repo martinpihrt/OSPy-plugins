@@ -46,7 +46,7 @@ Plugin setup
 * Used DS18B20:  
   Value count for connected DS18B20 devices (1-6).
   
-* Label for sensor DS 1-6:
+* Label for sensor DS 1-6:  
   Type label for Your probe Dallas DS18B20.
 
 * Status:  
@@ -56,4 +56,4 @@ Plugin setup
 The hardware should be connected as follows (without separate I2C Bus):
 <a href="/plugins/air_temp_humi/static/images/schematics.png"><img src="/plugins/air_temp_humi/static/images/schematics.png" width="100%"></a>
 
-Visit [Martin Pihrt's blog](https://pihrt.com/elektronika/380-moje-raspberry-pi-plugin-ospy-mereni-teploty-pomoci-ds18b20). for more information.
+Visit [Martin Pihrt's blog](https://pihrt.com/elektronika/380-moje-raspberry-pi-plugin-ospy-mereni-teploty-pomoci-ds18b20). for more information HW board with DS18B20 probe.
