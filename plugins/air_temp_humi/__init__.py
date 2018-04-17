@@ -22,6 +22,11 @@ from ospy.stations import stations
 
 import RPi.GPIO as GPIO
 
+# Thank's: https://github.com/szazo/DHT11_Python
+import dht11 
+
+instance = dht11.DHT11(pin=19) # DHT on GPIO 10 pin
+
 import i18n
 
 NAME = 'Air Temperature and Humidity Monitor'
@@ -102,18 +107,22 @@ class Sender(Thread):
         while not self._stop.is_set():
             try:
                 if plugin_options['enabled']:  # if plugin is enabled   
+                    log.clear(NAME)
+                    log.info(NAME, datetime_string())
                     try:
-                       Temperature, Humidity = DHT11_read_data()
+                
+                       result = instance.read()
+                       if result.is_valid():
+                           Temperature = result.temperature
+                           Humidity = result.humidity
                     except:
                        log.clear(NAME)
                        log.info(NAME, datetime_string())
-                       self._sleep(0.3)                                     
+                       log.info(NAME, _('DHT11 data is not valid'))                                     
                       
                     if Humidity and Temperature != 0:
-                       log.clear(NAME)
                        self.status['temp'] = Temperature
                        self.status['humi'] = Humidity
-                       log.info(NAME, datetime_string())
                        log.info(NAME, _('Temperature') + ' DHT: ' + u'%.1f \u2103' % Temperature)
                        log.info(NAME, _('Humidity') + ' DHT: ' + u'%.1f' % Humidity + ' %RH')
                        if plugin_options['enabled_reg']:
@@ -229,82 +238,7 @@ def DS18B20_read_string_data():
     for i in range(0, plugin_options['ds_used']):
        txt[i] = tempDS[i]
     return str(txt)
-
-
-def bin2dec(string_num):
-    return str(int(string_num, 2))
-
-
-def DHT11_read_data():
-    data = []         
-    GPIO.setup(19,GPIO.OUT) # pin 19 GPIO10
-    GPIO.output(19,True)
-    time.sleep(0.025)
-    GPIO.output(19,False)
-    time.sleep(0.02)
-    GPIO.setup(19, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    for i in range(0,500):
-       data.append(GPIO.input(19))
- 
-    bit_count = 0
-    tmp = 0
-    count = 0
-    HumidityBit = ""
-    TemperatureBit = ""
-    crc = ""
-
-    try:
-        while data[count] == 1:
-          tmp = 1
-          count = count + 1
-
-        for i in range(0, 32):
-          bit_count = 0
-
-          while data[count] == 0:
-             tmp = 1
-             count = count + 1
-          
-          while data[count] == 1:
-             bit_count = bit_count + 1
-             count = count + 1 
-
-          if bit_count > 3:
-             if i>=0 and i<8:
-                HumidityBit = HumidityBit + "1"
-             if i>=16 and i<24:
-                TemperatureBit = TemperatureBit + "1"
-          else:
-             if i>=0 and i<8:
-                HumidityBit = HumidityBit + "0"
-             if i>=16 and i<24:
-                TemperatureBit = TemperatureBit + "0"
-   
-        for i in range(0,8):
-          bit_count = 0
-
-          while data[count] == 0: 
-              tmp = 1
-              count = count + 1
-
-          while data[count] == 1:
-              bit_count = bit_count + 1
-              count = count + 1
-
-          if bit_count > 3:
-              crc = crc + "1"
-          else:
-              crc = crc + "0"
-
-          Humidity = bin2dec(HumidityBit)
-          Temperature = bin2dec(TemperatureBit)
-
-          if int(Humidity) + int(Temperature) - int(bin2dec(crc)) == 0:
-             return int(Temperature),int(Humidity)              
-    except:
-       pass
-       time.sleep(0.5)
-            
+           
    
 def read_log():
     """Read log from json file."""
