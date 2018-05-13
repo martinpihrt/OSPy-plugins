@@ -17,6 +17,7 @@ from ospy.stations import stations
 from ospy.options import options
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
+from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 
@@ -47,7 +48,8 @@ tank_options = PluginOptions(
     }
 )
 
-bus = smbus.SMBus(1)# Raspberry Pi I2C bus 0 for old RPi, 1 for new RPi
+bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
+
 address_ping = 0x04 # device address for sonic ping HW board
 address_humi = 0x05 # device address for humidity HW board
 
