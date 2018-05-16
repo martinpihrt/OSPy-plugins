@@ -91,6 +91,7 @@ class StatusChecker(Thread):
 
         command = 'git log HEAD..%s --oneline' % remote_branch
         changes = '  ' + '\n  '.join(subprocess.check_output(command.split()).split('\n'))
+        changes = changes.decode('utf-8')
 
         if new_revision == version.revision and new_date == version.ver_date:
             log.info(NAME, _('Up-to-date.'))
