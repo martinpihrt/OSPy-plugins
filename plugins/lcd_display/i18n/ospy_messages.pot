@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-04-11 11:19+CEST\n"
+"POT-Creation-Date: 2018-05-25 09:02+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,16 +15,15 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/lcd_display/__init__.py:109
-msgid ""
-"LCD display plug-in:\n"
+#: plugins/lcd_display/__init__.py:110
+msgid "LCD display plug-in:"
 msgstr ""
 
-#: plugins/lcd_display/__init__.py:528
+#: plugins/lcd_display/__init__.py:529
 msgid "Could not import smbus."
 msgstr ""
 
-#: plugins/lcd_display/__init__.py:541
+#: plugins/lcd_display/__init__.py:542
 msgid "Could not find any PCF8574 controller."
 msgstr ""
 
@@ -58,74 +57,98 @@ msgid "Use I2C LCD"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:35
-msgid "Use print lines to debug files"
+msgid "HW version I2C PCF8574<->LCD"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:38
+msgid "Lower 4 bits of expander are commands bits"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:39
+msgid "Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD2004 board)"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:40
+msgid "Top 4 bits of expander are commands bits AND P0-6 P1-5 P2-4"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:41
-msgid "Display"
+msgid "LCD2004 board where lower 4 are commands, but backlight is pin 3"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:42
-msgid "System Name"
+msgid "LCD board www.pihrt.com"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:48
-msgid "SW Version Date"
+#: plugins/lcd_display/templates/lcd_display.html:47
+msgid "Use print lines to debug files"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:53
+msgid "Display"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:54
-msgid "IP"
+msgid "System Name"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:60
-msgid "Port"
+msgid "SW Version Date"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:66
-msgid "CPU Temp"
+msgid "IP"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:72
-msgid "Time and Date"
+msgid "Port"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:78
-msgid "Uptime"
+msgid "CPU Temp"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:84
-msgid "Rain Sensor"
+msgid "Time and Date"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:90
-msgid "Last Run Program"
+msgid "Uptime"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:96
-msgid "Pressure Sensor"
+msgid "Rain Sensor"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:102
-msgid "Water Tank Level"
+msgid "Last Run Program"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:108
-msgid "Running Stations"
+msgid "Pressure Sensor"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:114
+msgid "Water Tank Level"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:120
+msgid "Running Stations"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:126
 msgid "DS18B20 Temperature"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:121
+#: plugins/lcd_display/templates/lcd_display.html:133
 msgid "Status"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:130
+#: plugins/lcd_display/templates/lcd_display.html:142
 msgid "Submit"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:131
+#: plugins/lcd_display/templates/lcd_display.html:143
 msgid "Cancel"
 msgstr ""
 
