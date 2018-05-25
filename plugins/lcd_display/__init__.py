@@ -3,8 +3,8 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # This plugin sends data to I2C for LCD 16x2 char with PCF8574.
-# Visit for more: www.pihrt.com/elektronika/258-moje-rapsberry-pi-i2c-lcd-16x2.
-# This plugin requires python pylcd2.py library
+# Visit for more: https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2.
+# This plugin requires python pylcd.py library
 
 
 import json
@@ -48,7 +48,8 @@ lcd_options = PluginOptions(
         "d_pressure_sensor": True,
         "d_water_tank_level": True,
         "d_running_stations": True,
-        "d_temperature": True
+        "d_temperature": True,
+        "hw_PCF8574": 4               # 0-4, default is 4 www.pihrt.com 16x2 LCD board: "https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2"
     }
 )
 
@@ -106,7 +107,7 @@ class LCDSender(Thread):
                 self._sleep(2)
 
             except Exception:
-                log.error(NAME, _('LCD display plug-in:\n') + traceback.format_exc())
+                log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -548,9 +549,9 @@ def update_lcd(line1, line2=None):
         find_lcd_address()
 
     if lcd_options['address'] != 0:
-        import pylcd2  # Library for LCD 16x2 PCF8574
+        import pylcd  # Library for LCD 16x2 PCF8574
 
-        lcd = pylcd2.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1)
+        lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
         # DF - alter RPi version test fallback to value that works on BBB
     else:
         lcd = dummy_lcd
