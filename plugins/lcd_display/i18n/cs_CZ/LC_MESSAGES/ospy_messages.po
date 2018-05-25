@@ -6,13 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-07 13:21+0200\n"
-"PO-Revision-Date: 2017-05-09 12:56+0200\n"
+"PO-Revision-Date: 2018-05-25 09:13+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+"X-Generator: Poedit 2.0.5\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
@@ -22,12 +22,12 @@ msgid "LCD Display"
 msgstr "LCD Displej"
 
 #: plugins/lcd_display/__init__.py:95
-msgid "LCD display plug-in:\n"
-msgstr "LCD Displej rozšíření:\n"
+msgid "LCD display plug-in:"
+msgstr "Rozšíření LCD Displej:"
 
 #: plugins/lcd_display/__init__.py:298
 msgid "Could not import smbus."
-msgstr "Nemohu načíst smbus."
+msgstr "Nemohu načíst sběrnici smbus."
 
 #: plugins/lcd_display/__init__.py:311
 msgid "Could not find any PCF8574 controller."
@@ -57,6 +57,30 @@ msgstr "Navštivte"
 #: plugins/lcd_display/templates/lcd_display.html:29
 msgid "Use I2C LCD"
 msgstr "Používat I2C displej"
+
+#: plugins/lcd_display/templates/lcd_display.html:35
+msgid "HW version I2C PCF8574<->LCD"
+msgstr "Verze zapojení PCF8574 a LCD"
+
+#: plugins/lcd_display/templates/lcd_display.html:38
+msgid "Lower 4 bits of expander are commands bits"
+msgstr "Spodní 4 bity PCF8574 jako řídící bity"
+
+#: plugins/lcd_display/templates/lcd_display.html:39
+msgid "Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD2004 board)"
+msgstr "Horní 4 bity PCF8574 jako řídící bity a P0-4 P1-5 P2-6 (použijte pro desku s LCD2004)"
+
+#: plugins/lcd_display/templates/lcd_display.html:40
+msgid "Top 4 bits of expander are commands bits AND P0-6 P1-5 P2-4"
+msgstr "Horní 4 bity PCF8574 jako řídící bity a P0-6 P1-5 P2-4"
+
+#: plugins/lcd_display/templates/lcd_display.html:41
+msgid "LCD2004 board where lower 4 are commands, but backlight is pin 3"
+msgstr "LCD2004 spodní 4 bity jako řídící, podsvícení je pin 3"
+
+#: plugins/lcd_display/templates/lcd_display.html:42
+msgid "LCD board www.pihrt.com"
+msgstr "LCD deska www.pihrt.com"
 
 #: plugins/lcd_display/templates/lcd_display.html:41
 msgid "Use print lines to debug files"
