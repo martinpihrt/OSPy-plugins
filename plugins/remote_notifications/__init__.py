@@ -20,7 +20,6 @@ from ospy.stations import stations
 from ospy.inputs import inputs
 from ospy.log import log, EVENT_FILE
 from ospy.helpers import datetime_string, get_input
-
 import i18n
 
 
@@ -84,6 +83,7 @@ class RemoteSender(Thread):
         station = ""      # name end station for station=abcde in get data
         humi = ""         # humidity in station for humi=xx in get data
         line = ""         # actual state from UPS plugin for line=0 or line=1 in get data
+        temper = ""       # temperature  from air temp plugin 
 
         finished_count = len([run for run in log.finished_runs() if not run['blocked']]) 
 
@@ -153,6 +153,13 @@ class RemoteSender(Thread):
                                 
                         except Exception:
                             humi = ""
+
+                        ### temperature ###
+                        try:
+                            from plugins import air_temp_humi
+                            temper = air_temp_humi.DS18B20_read_string_data()
+                        except Exception:
+                            temper = " "
    
                         for run in finished[finished_count:]:
                             dur = (run['end'] - run['start']).total_seconds()
@@ -169,8 +176,9 @@ class RemoteSender(Thread):
                     body += ('&humi=' + str(humi))
                     body += ('&line=' + str(line))
                     body += ('&lastrun=' + str(lastrun)) 
-                    body += ('&station=' + str(station))
+                    body += ('&station=' + sanity_msg(station))
                     body += ('&duration=' + str(duration))
+                    body += ('&temper=' + sanity_msg(temper))
                     body += ('&api=' + remote_options['api'])  # API password
                     self.try_send(body)                        # Send GET data to remote server 
                     send_msg = False                           # Disable send data    
@@ -202,6 +210,11 @@ def stop():
         remote_sender = None
 
 
+def sanity_msg(msg):
+     msg = re.sub(r"[^A-Za-z0-9-+]+", '_', msg)
+     return msg
+
+
 def send_data(text):
     """Send GET data"""
     if remote_options['use'] != '' and remote_options['api'] != '' and remote_options['rem_adr'] != '':
@@ -231,7 +244,7 @@ class settings_page(ProtectedPage):
             remote_sender.update()
 
             if test:
-                body = ('tank=')
+                body  = ('tank=')
                 body += ('&rain=')
                 body += ('&humi=')
                 body += ('&line=')
@@ -239,6 +252,7 @@ class settings_page(ProtectedPage):
                 body += ('&station=')
                 body += ('&duration=')
                 body += ('&program=')
+                body += ('&temper=')
                 body += ('&api=' + remote_options['api'])  # API password
                 remote_sender.try_send(body)
 
