@@ -1,1 +1,136 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2018-06-06 13:08+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: plugins/relay_16/__init__.py:69
+msgid "is disabled."
+msgstr ""
+
+#: plugins/relay_16/__init__.py:69 plugins/relay_16/__init__.py:76
+#: plugins/relay_16/__init__.py:89 plugins/relay_16/__init__.py:95
+#: plugins/relay_16/__init__.py:97 plugins/relay_16/__init__.py:100
+#: plugins/relay_16/__init__.py:104 plugins/relay_16/__init__.py:121
+#: plugins/relay_16/__init__.py:128 plugins/relay_16/__init__.py:138
+#: plugins/relay_16/__init__.py:145 plugins/relay_16/__init__.py:163
+msgid "Relay 16 plug-in"
+msgstr ""
+
+#: plugins/relay_16/__init__.py:76
+msgid "Outputs set."
+msgstr ""
+
+#: plugins/relay_16/__init__.py:89
+msgid "Possible GPIO pins"
+msgstr ""
+
+#: plugins/relay_16/__init__.py:97
+msgid "Sorry Raspberry Pi 1 is old version."
+msgstr ""
+
+#: plugins/relay_16/__init__.py:100
+msgid "Relay board plugin only supported on Raspberry Pi."
+msgstr ""
+
+#: plugins/relay_16/__init__.py:121 plugins/relay_16/__init__.py:128
+msgid "ON"
+msgstr ""
+
+#: plugins/relay_16/__init__.py:121 plugins/relay_16/__init__.py:128
+#: plugins/relay_16/__init__.py:138 plugins/relay_16/__init__.py:145
+msgid "Setings Relay Output"
+msgstr ""
+
+#: plugins/relay_16/__init__.py:121 plugins/relay_16/__init__.py:128
+#: plugins/relay_16/__init__.py:138 plugins/relay_16/__init__.py:145
+msgid "Station"
+msgstr ""
+
+#: plugins/relay_16/__init__.py:121 plugins/relay_16/__init__.py:145
+msgid "to HIGH"
+msgstr ""
+
+#: plugins/relay_16/__init__.py:128 plugins/relay_16/__init__.py:138
+msgid "to LOW"
+msgstr ""
+
+#: plugins/relay_16/__init__.py:138 plugins/relay_16/__init__.py:145
+msgid "OFF"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:3
+msgid "Direct 16 Relay Outputs"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:21
+msgid "Direct 16 Relay Outputs - Settings"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:22
+msgid "Help"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:23
+msgid "Warning"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:23
+msgid "please readme in HELP."
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:24
+msgid "This plugin allows OSPy to control relay boards with up to 16 relays."
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:28
+msgid "Enable relays"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:32
+msgid "Relay channels"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:53
+msgid "Number of relays connected to the Raspberry Pi (relay boards are commonly 1-16)."
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:58
+msgid "Trigger Level"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:61
+msgid "Low"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:62
+msgid "High"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:63
+msgid "Low level trigger means the relay turns on when the input is low and turns off when the input is high. Hith level trigger does the opposite."
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:68
+msgid "Status"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:78
+msgid "Submit"
+msgstr ""
+
+#: plugins/relay_16/templates/relay_16.html:79
+msgid "Cancel"
+msgstr ""
 
