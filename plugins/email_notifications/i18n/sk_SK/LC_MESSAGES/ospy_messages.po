@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-08 07:21+CEST\n"
-"PO-Revision-Date: 2018-06-18 12:39+0200\n"
+"PO-Revision-Date: 2018-06-18 12:53+0200\n"
 "Language-Team: LANGUAGE <pihrt.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -19,7 +19,7 @@ msgstr ""
 
 #: plugins/email_notifications/__init__.py:44
 msgid "Report from OSPy"
-msgstr "Hlásenie zo OSPy"
+msgstr "Hlásenie z OSPy"
 
 #: plugins/email_notifications/__init__.py:77
 msgid "Email was sent"
@@ -79,7 +79,7 @@ msgstr "Doplnok E-mail"
 
 #: plugins/email_notifications/__init__.py:194
 msgid "E-mail plug-in is not properly configured!"
-msgstr "E-mailu nie je správne nakonfigurovaný!"
+msgstr "E-mail nie je správne nakonfigurovaný!"
 
 #: plugins/email_notifications/__init__.py:215
 msgid "This is test e-mail from e-mail notification plugin."
