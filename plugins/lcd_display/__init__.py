@@ -336,6 +336,183 @@ def get_report(index):
 
            return ASCI_convert(result)
 
+    if (options.lang == 'sk_SK'):
+        if station_state and lcd_options['d_running_stations']:  # print on LCD only this text
+           if index == 0 or index == 2 or index == 4 or index == 6 or index == 8 or index == 10 or index == 12 or index == 14 or index == 16 or index == 18 or index == 20:  # start text to 16x1
+             result = "Stanice v chode:"
+           elif index == 1 or index ==3 or index == 5 or index == 7 or index == 9 or index == 11 or index == 13 or index == 15 or index == 17 or index == 19 or index == 21:
+             result = station_result
+           return result
+
+        else:
+           if index == 0:  # start text to 16x1
+             if lcd_options['d_system_name']:
+                result = "ID systemu:"
+             else: 
+                result = None
+           elif index == 1:
+             if lcd_options['d_system_name']:
+                result = options.name
+             else:
+                result = None 
+
+           elif index == 2:
+             if lcd_options['d_sw_version_date']:
+                result = "FW Verzia:"
+             else: 
+                result = None
+           elif index == 3:
+             if lcd_options['d_sw_version_date']:
+                result = version.ver_str + ' (' + version.ver_date + ')' 
+             else: 
+                result = None
+
+           elif index == 4:
+             if lcd_options['d_ip']:
+                result = "IP adresa:" 
+             else: 
+                result = None
+           elif index == 5:
+             if lcd_options['d_ip']:
+                 ip = helpers.get_ip()
+                 result = str(ip)
+             else: 
+                result = None
+
+           elif index == 6:
+             if lcd_options['d_port']:
+                result = "Port:"
+             else: 
+                result = None
+           elif index == 7:
+             if lcd_options['d_port']:
+                result = str(options.web_port)
+             else: 
+                result = None
+
+           elif index == 8:
+             if lcd_options['d_cpu_temp']:
+                result = "Teplota CPU:"
+             else: 
+                result = None
+           elif index == 9:
+             if lcd_options['d_cpu_temp']:
+                result = helpers.get_cpu_temp(options.temp_unit) + ' ' + options.temp_unit
+             else: 
+                result = None
+
+           elif index == 10:
+             if lcd_options['d_time_date']:
+                result = datetime.now().strftime('Dat %d.%m.%Y')
+             else: 
+                result = None
+           elif index == 11:
+             if lcd_options['d_time_date']:
+                result = datetime.now().strftime('Cas %H:%M:%S')
+             else: 
+                result = None
+
+           elif index == 12:
+             if lcd_options['d_uptime']:
+                result = "V prevadzke:"
+             else: 
+                result = None
+           elif index == 13:
+             if lcd_options['d_uptime']:
+                result = helpers.uptime() 
+             else: 
+                result = None
+
+           elif index == 14:
+             if lcd_options['d_rain_sensor']:
+                result = "Cidlo dazda:"
+             else: 
+                result = None
+           elif index == 15:
+             if lcd_options['d_rain_sensor']:
+                if inputs.rain_sensed():
+                    result = "aktivny"
+                else:
+                    result = "neaktivny"
+             else: 
+                result = None
+
+           elif index == 16:
+             if lcd_options['d_last_run']:
+                result = 'Naposledy bezal'
+             else: 
+                result = None
+           elif index == 17:
+             if lcd_options['d_last_run']:
+                finished = [run for run in log.finished_runs() if not run['blocked']]
+                if finished:
+                   result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + finished[-1]['program_name']
+                   result = result.replace('Run-Once', 'Jednorazovy')
+                   result = result.replace('Manual', 'Rucne')
+                else:
+                   result = 'ziadny program'
+             else: 
+                result = None
+
+           elif index == 18:
+             if lcd_options['d_pressure_sensor']:
+                result = "Cidlo tlaku:"
+             else: 
+                result = None
+           elif index == 19:
+             if lcd_options['d_pressure_sensor']:
+                try:
+                   from plugins import pressure_monitor
+                   state_press = pressure_monitor.get_check_pressure()
+                   if state_press:
+                      result = "neaktivny"
+                   else:
+                      result = "aktivny"
+
+                except Exception:
+                   result = "neni k dispozicii"
+             else: 
+                result = None
+
+           elif index == 20:    
+             if lcd_options['d_water_tank_level']:    
+                result = "Nadrz s vodou:"
+             else: 
+                result = None
+           elif index == 21:
+             if lcd_options['d_water_tank_level']:
+                try:
+                   from plugins import tank_humi_monitor
+                   cm = tank_humi_monitor.get_sonic_tank_cm()
+                   if cm > 0: 
+                      result = str(cm) + ' cm'
+                   else:
+                      result = "chyba - I2C zarizeni nenajdene!"
+
+                except Exception:
+                   result = "neni k dispozicii"
+             else: 
+                result = None
+
+           elif index == 22:    
+             if lcd_options['d_temperature']:    
+                result = "Teplota DS1-6:"
+             else: 
+                result = None
+           elif index == 23:
+             if lcd_options['d_temperature']:
+                try:
+                   from plugins import air_temp_humi
+                 
+                   result = air_temp_humi.DS18B20_read_string_data()
+                  
+                except Exception:
+                   result = "neni k dispozicii"
+             else: 
+                result = None
+
+
+           return ASCI_convert(result)
 
     if (options.lang == 'en_US') or (options.lang == 'default'):
         if station_state and lcd_options['d_running_stations']:  # print on LCD only this text

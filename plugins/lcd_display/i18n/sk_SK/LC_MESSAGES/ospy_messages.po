@@ -1,0 +1,159 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-05-25 09:02+CEST\n"
+"PO-Revision-Date: 2018-06-18 13:07+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/lcd_display/__init__.py:110
+msgid "LCD display plug-in:"
+msgstr "Doplnok LCD displej:"
+
+#: plugins/lcd_display/__init__.py:529
+msgid "Could not import smbus."
+msgstr "Nepodarilo sa importovať smbus."
+
+#: plugins/lcd_display/__init__.py:542
+msgid "Could not find any PCF8574 controller."
+msgstr "Nepodarilo sa nájsť žiadny ovládač PCF8574."
+
+#: plugins/lcd_display/templates/lcd_display.html:3
+#: plugins/lcd_display/templates/lcd_display.html:21
+msgid "LCD settings"
+msgstr "Nastavenie LCD"
+
+#: plugins/lcd_display/templates/lcd_display.html:22
+msgid "This plugin shows information on a 16x2 character LCD with"
+msgstr "Tento doplnok zobrazuje informácie na 16 miestnom LCD displeji"
+
+#: plugins/lcd_display/templates/lcd_display.html:23
+msgid "Automatically detects the display at the following I2C addresses"
+msgstr "Automaticky rozpozná adresy I2C pre zobrazenia"
+
+#: plugins/lcd_display/templates/lcd_display.html:24
+msgid "Compatible with the HD44780 controller"
+msgstr "Kompatibilný s ovládačom HD44780"
+
+#: plugins/lcd_display/templates/lcd_display.html:25
+msgid "Visit"
+msgstr "Navštívte"
+
+#: plugins/lcd_display/templates/lcd_display.html:25
+msgid "for more information"
+msgstr "pre viac informácií"
+
+#: plugins/lcd_display/templates/lcd_display.html:29
+msgid "Use I2C LCD"
+msgstr "Použiti I2C LCD"
+
+#: plugins/lcd_display/templates/lcd_display.html:35
+msgid "HW version I2C PCF8574<->LCD"
+msgstr "HW verzia I2C PCF8574 <-> LCD"
+
+#: plugins/lcd_display/templates/lcd_display.html:38
+msgid "Lower 4 bits of expander are commands bits"
+msgstr "Dolné 4 bity expandéra sú príkazové bity"
+
+#: plugins/lcd_display/templates/lcd_display.html:39
+msgid ""
+"Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD2004 "
+"board)"
+msgstr ""
+"Horné 4 bity expandéra sú príkazové bity A P0-4 P1-5 P2-6 (Použite pre dosku "
+"LCD2004)"
+
+#: plugins/lcd_display/templates/lcd_display.html:40
+msgid "Top 4 bits of expander are commands bits AND P0-6 P1-5 P2-4"
+msgstr "Horné 4 bity expandéra sú príkazové bity AND P0-6 P1-5 P2-4"
+
+#: plugins/lcd_display/templates/lcd_display.html:41
+msgid "LCD2004 board where lower 4 are commands, but backlight is pin 3"
+msgstr "Doska LCD2004, kde sú nižšie 4 príkazy, ale podsvietenie je pin 3"
+
+#: plugins/lcd_display/templates/lcd_display.html:42
+msgid "LCD board www.pihrt.com"
+msgstr "LCD doska www.pihrt.com"
+
+#: plugins/lcd_display/templates/lcd_display.html:47
+msgid "Use print lines to debug files"
+msgstr "Zaznamenať výpisy do ladiaceho súboru"
+
+#: plugins/lcd_display/templates/lcd_display.html:53
+msgid "Display"
+msgstr "Zobraziť"
+
+#: plugins/lcd_display/templates/lcd_display.html:54
+msgid "System Name"
+msgstr "Názov systému"
+
+#: plugins/lcd_display/templates/lcd_display.html:60
+msgid "SW Version Date"
+msgstr "Dátum verzie softvéru"
+
+#: plugins/lcd_display/templates/lcd_display.html:66
+msgid "IP"
+msgstr "IP"
+
+#: plugins/lcd_display/templates/lcd_display.html:72
+msgid "Port"
+msgstr "Port"
+
+#: plugins/lcd_display/templates/lcd_display.html:78
+msgid "CPU Temp"
+msgstr "CPU Temp"
+
+#: plugins/lcd_display/templates/lcd_display.html:84
+msgid "Time and Date"
+msgstr "Dátum a čas"
+
+#: plugins/lcd_display/templates/lcd_display.html:90
+msgid "Uptime"
+msgstr "Doba provádzky"
+
+#: plugins/lcd_display/templates/lcd_display.html:96
+msgid "Rain Sensor"
+msgstr "Dažďový senzor"
+
+#: plugins/lcd_display/templates/lcd_display.html:102
+msgid "Last Run Program"
+msgstr "Naposledy spustený program"
+
+#: plugins/lcd_display/templates/lcd_display.html:108
+msgid "Pressure Sensor"
+msgstr "Tlakový snímač"
+
+#: plugins/lcd_display/templates/lcd_display.html:114
+msgid "Water Tank Level"
+msgstr "Hladina vodnej nádrže"
+
+#: plugins/lcd_display/templates/lcd_display.html:120
+msgid "Running Stations"
+msgstr "Spustené stanice"
+
+#: plugins/lcd_display/templates/lcd_display.html:126
+msgid "DS18B20 Temperature"
+msgstr "Teploty DS18B20"
+
+#: plugins/lcd_display/templates/lcd_display.html:133
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/lcd_display/templates/lcd_display.html:142
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/lcd_display/templates/lcd_display.html:143
+msgid "Cancel"
+msgstr "Zrušiť"
