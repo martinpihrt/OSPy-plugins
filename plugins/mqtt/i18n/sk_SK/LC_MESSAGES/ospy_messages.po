@@ -1,0 +1,134 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2017-08-21 20:32+CEST\n"
+"PO-Revision-Date: 2018-06-19 11:04+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/mqtt/__init__.py:78
+msgid "MQTT plug-in"
+msgstr "MQTT doplnok"
+
+#: plugins/mqtt/__init__.py:108
+msgid "Message received"
+msgstr "Prijatá správa"
+
+#: plugins/mqtt/__init__.py:118
+msgid "Paho-mqtt is not installed."
+msgstr "Paho-mqtt nie je nainštalovaný."
+
+#: plugins/mqtt/__init__.py:119
+msgid "Please wait installing paho-mqtt..."
+msgstr "Počkajte prosím na inštaláciu paho-mqtt..."
+
+#: plugins/mqtt/__init__.py:126
+msgid "MQTT Plugin requires paho mqtt."
+msgstr "Doplnok MQTT vyžaduje paho mqtt."
+
+#: plugins/mqtt/__init__.py:127
+msgid "try: pip install paho-mqtt manually."
+msgstr "skúste: pip install paho-mqtt manuálne."
+
+#: plugins/mqtt/__init__.py:134
+msgid "Connecting to broker"
+msgstr "Pripojenie k Brokeru"
+
+#: plugins/mqtt/__init__.py:143
+msgid "MQTT plugin couldnot initalize client"
+msgstr "Doplnok MQTT nemohol inicializovať klienta"
+
+#: plugins/mqtt/__init__.py:149
+msgid "Subscribing to topic"
+msgstr "Odoberanie témy"
+
+#: plugins/mqtt/templates/mqtt.html:3 plugins/mqtt/templates/mqtt.html:21
+msgid "MQTT settings"
+msgstr "Nastavenia MQTT"
+
+#: plugins/mqtt/templates/mqtt.html:22
+msgid ""
+"This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to "
+"use to publish information and or receive commands over MQTT. On this page, "
+"the shared client is configured"
+msgstr ""
+"Tento doplnok MQTT pridáva do klienta MQTT ako démona v OSPy ďalšie doplnky, "
+"ktoré sa používajú na publikovanie informácií a prijímanie príkazov cez "
+"MQTT. Na tejto stránke je nakonfigurovaný zdieľaný klient"
+
+#: plugins/mqtt/templates/mqtt.html:23
+msgid ""
+"Having a shared MQTT client simplifies configuration and lowers overhead on "
+"the OSPy process, network and broker"
+msgstr ""
+"S zdieľaným klientom MQTT zjednodušuje konfiguráciu a znižuje režijné "
+"náklady na proces OSPy, sieť a makléra (Broker)"
+
+#: plugins/mqtt/templates/mqtt.html:24
+msgid ""
+"This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs "
+"paho-mqtt in to the system himself. On first use (if run installation paho-"
+"mqtt) please wait for status"
+msgstr ""
+"Tento doplnok potrebuje paho-mqtt. Ak nie je nainštalovaný paho-mqtt, "
+"nainštaluje doplnok paho-mqtt do systému sám. Pri prvom použití (ak spustíte "
+"inštaláciu paho-mqtt) čakajte na koniec"
+
+#: plugins/mqtt/templates/mqtt.html:25
+msgid "We can use a public Broker server to test"
+msgstr "Na otestovanie môžeme použiť verejný server Broker"
+
+#: plugins/mqtt/templates/mqtt.html:29
+msgid "Use MQTT"
+msgstr "Použiť doplnok"
+
+#: plugins/mqtt/templates/mqtt.html:35
+msgid "MQTT Broker Host"
+msgstr "MQTT Broker Host"
+
+#: plugins/mqtt/templates/mqtt.html:39
+msgid "MQTT Broker Username"
+msgstr "MQTT Broker používateľské meno"
+
+#: plugins/mqtt/templates/mqtt.html:43
+msgid "MQTT Broker Password"
+msgstr "MQTT Broker heslo"
+
+#: plugins/mqtt/templates/mqtt.html:47
+msgid "MQTT Broker Port"
+msgstr "MQTT Broker Port"
+
+#: plugins/mqtt/templates/mqtt.html:51
+msgid "MQTT Publish up/down topic"
+msgstr "MQTT Publikujte tému nahor / nadol"
+
+#: plugins/mqtt/templates/mqtt.html:52
+msgid "Leave blank to not publish OSPy status"
+msgstr "Ponechajte prázdne, aby sa nezverejnil stav OSPy"
+
+#: plugins/mqtt/templates/mqtt.html:55
+msgid "MQTT Client ID"
+msgstr "ID klienta MQTT"
+
+#: plugins/mqtt/templates/mqtt.html:59
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/mqtt/templates/mqtt.html:68
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/mqtt/templates/mqtt.html:69
+msgid "Cancel"
+msgstr "Zrušiť"
