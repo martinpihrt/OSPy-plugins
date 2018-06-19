@@ -1,0 +1,127 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-15 10:24+CEST\n"
+"PO-Revision-Date: 2018-06-19 12:54+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/pressure_monitor/__init__.py:95
+msgid "Master station is ON."
+msgstr "Hlavná stanica je zapnutá."
+
+#: plugins/pressure_monitor/__init__.py:101
+msgid "Time to test pressure sensor"
+msgstr "Čas do testovanie snímača tlaku"
+
+#: plugins/pressure_monitor/__init__.py:102
+msgid "sec"
+msgstr "sekund"
+
+#: plugins/pressure_monitor/__init__.py:111
+msgid ""
+"Pressure sensor is not activated in time -> stops all stations and send "
+"email."
+msgstr ""
+"Snímač tlaku nie je aktivovaný včas -> teraz zastavím všetky stanice a "
+"pošlem e-mail."
+
+#: plugins/pressure_monitor/__init__.py:125
+msgid "Master station is OFF."
+msgstr "Hlavná stanica je vypnutá."
+
+#: plugins/pressure_monitor/__init__.py:135
+msgid "Pressure monitor plug-in is disabled."
+msgstr "Doplnok monitorovania tlaku je zakázaný."
+
+#: plugins/pressure_monitor/__init__.py:141
+msgid "Not used master station."
+msgstr "Hlavná stanica nieje použitá."
+
+#: plugins/pressure_monitor/__init__.py:145
+msgid "System detected error: pressure sensor."
+msgstr "Systémová chyba: snímač tlaku."
+
+#: plugins/pressure_monitor/__init__.py:149
+msgid "Email was sent"
+msgstr "E-mail bol odoslaný"
+
+#: plugins/pressure_monitor/__init__.py:152
+msgid "Email was not sent"
+msgstr "E-mail nebol odoslaný"
+
+#: plugins/pressure_monitor/__init__.py:157
+msgid "Pressure monitor plug-in"
+msgstr "Doplnok monitorovania tlaku"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:3
+#: plugins/pressure_monitor/templates/pressure_monitor.html:21
+msgid "Pressure monitor settings"
+msgstr "Nastavenie monitorovania tlaku"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:22
+msgid ""
+"This plugin checked pressure in pipe, if master station is switched on must "
+"be activated pressure sensor."
+msgstr ""
+"Tento doplnok kontroluje tlak v potrubí, ak je hlavná stanica zapnutá, musí "
+"byť aktivovaný snímač tlaku (je tlak v potrubí)."
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:23
+msgid ""
+"If is not sensor activated in a certain time, switches off all station  and "
+"sends email with error. Prevent safety for master station pump."
+msgstr ""
+"Ak nie je aktivovaný senzor v určitom čase, plugin vypne všetky stanice a "
+"pošle e-mail s chybou. Zabránenie chyby čerpadla hlavnej stanice."
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:27
+msgid "Use pressure sensor for master station"
+msgstr "Použit snímač tlaku pre hlavnú stanicu"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:29
+msgid "Pressure sensor is connected between GPIO 18 - pin 12 and ground"
+msgstr "Snímač tlaku je pripojený medzi  GPIO 18 (pinom 12) a zemou"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:33
+msgid "Normally open"
+msgstr "Normálne otvorený"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:40
+msgid "Send email with error"
+msgstr "E-mail bol odoslaný s chybou"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:42
+msgid "For this function required email plugin"
+msgstr "Pre túto funkciu je potrebný doplnok pre e-mail"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:46
+msgid "Max time to activate pressure sensor"
+msgstr "Max čas do testovanie snímača tlaku"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:48
+msgid "max 999 seconds"
+msgstr "max 999 sekund"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:52
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:61
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+msgid "Cancel"
+msgstr "Zrušiť"
