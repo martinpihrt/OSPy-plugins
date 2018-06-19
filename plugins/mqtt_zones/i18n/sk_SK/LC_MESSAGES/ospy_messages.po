@@ -1,0 +1,79 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2017-08-14 09:22+CEST\n"
+"PO-Revision-Date: 2018-06-19 11:23+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/mqtt_zones/__init__.py:65
+msgid "MQTT Zones Plugin started."
+msgstr "Doplnok MQTT Zóny naštartoval."
+
+#: plugins/mqtt_zones/__init__.py:73
+msgid "MQTT Zones Plugin requires MQTT plugin."
+msgstr "Doplnok MQTT zóny vyžaduje MQTT doplnok."
+
+#: plugins/mqtt_zones/__init__.py:120
+msgid "MQTT Zones Plugin public"
+msgstr "Doplnok MQTT zóny zverejnil"
+
+#: plugins/mqtt_zones/__init__.py:125
+msgid "MQTT Zones plug-in"
+msgstr "Doplnok MQTT zóny"
+
+#: plugins/mqtt_zones/__init__.py:128
+msgid "MQTT Zones Plugin is disabled."
+msgstr "Doplnok MQTT Zóny je zakázaný."
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:3
+#: plugins/mqtt_zones/templates/mqtt_zones.html:19
+msgid "MQTT Zones settings"
+msgstr "Nastavenia MQTT pre zóny"
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:20
+msgid ""
+"This MQTT Zones plug-in relies on to MQTT, broadcasts the current status of "
+"all zones."
+msgstr ""
+"Tento doplnok MQTT Zóny závisí na MQTT doplnku, vysiela aktuálny stav "
+"všetkých zón (stanic)."
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:21
+msgid "First plug-in author is Daniel Casner, ported to OSPy Martin Pihrt"
+msgstr "Prvý autor doplnku je Daniel Casner (SIP), port na OSPy Martin Pihrt"
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:25
+msgid "Use MQTT"
+msgstr "Použiť doplnok"
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:31
+msgid "MQTT Publish Zones topic"
+msgstr "MQTT Publikovať zóny tému"
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:32
+msgid "The topic to broadcast zone updates on"
+msgstr "Téma vysielania pri aktualizácii zóny (stanice)"
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:37
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:46
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/mqtt_zones/templates/mqtt_zones.html:47
+msgid "Cancel"
+msgstr "Zrušiť"
