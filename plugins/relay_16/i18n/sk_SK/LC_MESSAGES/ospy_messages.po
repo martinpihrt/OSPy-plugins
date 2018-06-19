@@ -1,0 +1,145 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-06-06 13:08+CEST\n"
+"PO-Revision-Date: 2018-06-19 13:10+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/relay_16/__init__.py:69
+msgid "is disabled."
+msgstr "je zakázaný."
+
+#: plugins/relay_16/__init__.py:69 plugins/relay_16/__init__.py:76
+#: plugins/relay_16/__init__.py:89 plugins/relay_16/__init__.py:95
+#: plugins/relay_16/__init__.py:97 plugins/relay_16/__init__.py:100
+#: plugins/relay_16/__init__.py:104 plugins/relay_16/__init__.py:121
+#: plugins/relay_16/__init__.py:128 plugins/relay_16/__init__.py:138
+#: plugins/relay_16/__init__.py:145 plugins/relay_16/__init__.py:163
+msgid "Relay 16 plug-in"
+msgstr "Doplnok 16 reléových výstupov"
+
+#: plugins/relay_16/__init__.py:76
+msgid "Outputs set."
+msgstr "Výstupov je nastavené."
+
+#: plugins/relay_16/__init__.py:89
+msgid "Possible GPIO pins"
+msgstr "Možné piny GPIO"
+
+#: plugins/relay_16/__init__.py:97
+msgid "Sorry Raspberry Pi 1 is old version."
+msgstr "Ospravedlňujeme sa Raspberry Pi 1 je stará verzia."
+
+#: plugins/relay_16/__init__.py:100
+msgid "Relay board plugin only supported on Raspberry Pi."
+msgstr "Doplnok je podporovaný iba na Raspberry Pi."
+
+#: plugins/relay_16/__init__.py:121 plugins/relay_16/__init__.py:128
+msgid "ON"
+msgstr "Zap"
+
+#: plugins/relay_16/__init__.py:121 plugins/relay_16/__init__.py:128
+#: plugins/relay_16/__init__.py:138 plugins/relay_16/__init__.py:145
+msgid "Setings Relay Output"
+msgstr "Nastavenie výstupu"
+
+#: plugins/relay_16/__init__.py:121 plugins/relay_16/__init__.py:128
+#: plugins/relay_16/__init__.py:138 plugins/relay_16/__init__.py:145
+msgid "Station"
+msgstr "Stanice"
+
+#: plugins/relay_16/__init__.py:121 plugins/relay_16/__init__.py:145
+msgid "to HIGH"
+msgstr "na VYSOKU uroveň"
+
+#: plugins/relay_16/__init__.py:128 plugins/relay_16/__init__.py:138
+msgid "to LOW"
+msgstr "na NÍZKU uroveň"
+
+#: plugins/relay_16/__init__.py:138 plugins/relay_16/__init__.py:145
+msgid "OFF"
+msgstr "Vyp"
+
+#: plugins/relay_16/templates/relay_16.html:3
+msgid "Direct 16 Relay Outputs"
+msgstr "Priamy 16 reléových výstupov"
+
+#: plugins/relay_16/templates/relay_16.html:21
+msgid "Direct 16 Relay Outputs - Settings"
+msgstr "Priamy 16 reléových výstupov - nastavenie"
+
+#: plugins/relay_16/templates/relay_16.html:22
+msgid "Help"
+msgstr "Pomoc"
+
+#: plugins/relay_16/templates/relay_16.html:23
+msgid "Warning"
+msgstr "Výstraha"
+
+#: plugins/relay_16/templates/relay_16.html:23
+msgid "please readme in HELP."
+msgstr "prosím prečítajte si POMOC."
+
+#: plugins/relay_16/templates/relay_16.html:24
+msgid "This plugin allows OSPy to control relay boards with up to 16 relays."
+msgstr "Tento doplnok umožňuje cez OSPy ovládať relé dosky s až 16 relé."
+
+#: plugins/relay_16/templates/relay_16.html:28
+msgid "Enable relays"
+msgstr "Povoliť relé"
+
+#: plugins/relay_16/templates/relay_16.html:32
+msgid "Relay channels"
+msgstr "Počet relé (kanálov)"
+
+#: plugins/relay_16/templates/relay_16.html:53
+msgid ""
+"Number of relays connected to the Raspberry Pi (relay boards are commonly "
+"1-16)."
+msgstr ""
+"Počet relé pripojených k Raspberry Pi (relé dosky sú obyčajne 1, 2, 4, 8, "
+"16)."
+
+#: plugins/relay_16/templates/relay_16.html:58
+msgid "Trigger Level"
+msgstr "Spúšťacia úroveň"
+
+#: plugins/relay_16/templates/relay_16.html:61
+msgid "Low"
+msgstr "Nízka"
+
+#: plugins/relay_16/templates/relay_16.html:62
+msgid "High"
+msgstr "Vysoka"
+
+#: plugins/relay_16/templates/relay_16.html:63
+msgid ""
+"Low level trigger means the relay turns on when the input is low and turns "
+"off when the input is high. Hith level trigger does the opposite."
+msgstr ""
+"Spúšť nízkej úrovne znamená, že relé sa zapne, keď je vstup nízky a vypne "
+"sa, keď je vstup vysoký. Spúšť s úrovňou úrovní má opak."
+
+#: plugins/relay_16/templates/relay_16.html:68
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/relay_16/templates/relay_16.html:78
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/relay_16/templates/relay_16.html:79
+msgid "Cancel"
+msgstr "Zrušiť"
