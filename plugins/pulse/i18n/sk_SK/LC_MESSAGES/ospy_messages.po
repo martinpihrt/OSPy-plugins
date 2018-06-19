@@ -1,0 +1,66 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <martinpihrt@gmail.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-08 11:30+CEST\n"
+"PO-Revision-Date: 2018-06-19 10:36+0200\n"
+"Language-Team: LANGUAGE <pihrt.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/pulse/__init__.py:49
+msgid "Test started for"
+msgstr "Test začal na dobu"
+
+#: plugins/pulse/__init__.py:61
+msgid "Test stopped."
+msgstr "Test sa zastavil."
+
+#: plugins/pulse/templates/pulse.html:3 plugins/pulse/templates/pulse.html:21
+msgid "Pulse output"
+msgstr "Pulzný výstup"
+
+#: plugins/pulse/templates/pulse.html:22
+msgid ""
+"This plugin pulses a selected circuit with a 1 Hz signal with adjusted time. "
+"(For discover the location of a valve)"
+msgstr ""
+"Tento doplnok impulzuje vybraným výstupem 1 Hz signálom s nastaveným časom. "
+"(Pre objavenie polohy ventilu)."
+
+#: plugins/pulse/templates/pulse.html:27
+msgid "Select Output"
+msgstr "Vyberte výstup"
+
+#: plugins/pulse/templates/pulse.html:31
+msgid "Output"
+msgstr "Výstup"
+
+#: plugins/pulse/templates/pulse.html:36
+msgid "Time to test"
+msgstr "Čas testovanie"
+
+#: plugins/pulse/templates/pulse.html:42
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/pulse/templates/pulse.html:52
+msgid "Start test"
+msgstr "Spustiť test"
+
+#: plugins/pulse/templates/pulse.html:53
+msgid "Stop test"
+msgstr "Zastaviť test"
+
+#: plugins/pulse/templates/pulse.html:54
+msgid "Cancel"
+msgstr "Zrušiť"
