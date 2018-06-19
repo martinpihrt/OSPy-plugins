@@ -1,0 +1,138 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-15 10:36+CEST\n"
+"PO-Revision-Date: 2018-06-19 11:37+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/ups_adj/__init__.py:98
+msgid "OK"
+msgstr "OK"
+
+#: plugins/ups_adj/__init__.py:100
+msgid "FAULT"
+msgstr "CHYBA"
+
+#: plugins/ups_adj/__init__.py:109
+msgid "UPS plugin detected fault on power line."
+msgstr "UPS doplnok zistil chybu na elektrickej linke."
+
+#: plugins/ups_adj/__init__.py:120
+msgid "Time to shutdown"
+msgstr "Čas do vypnutia"
+
+#: plugins/ups_adj/__init__.py:120
+msgid "sec"
+msgstr "sekund"
+
+#: plugins/ups_adj/__init__.py:126
+msgid "Power line is not restore in time -> sends email and shutdown system."
+msgstr ""
+"Napájacia linka sa neobnovila v čase -> posielam e-mail a vypínam systém."
+
+#: plugins/ups_adj/__init__.py:130
+msgid "UPS plugin - power line is not restore in time -> shutdown system!"
+msgstr "UPS doplnok - Napájacia linka sa neobnovila v čase -> vypínam systém!"
+
+#: plugins/ups_adj/__init__.py:143
+msgid "UPS plugin - power line has restored - OK."
+msgstr "UPS doplnok - Napájacia linka sa obnovila - OK."
+
+#: plugins/ups_adj/__init__.py:154
+msgid "UPS plug-in"
+msgstr "UPS doplnok"
+
+#: plugins/ups_adj/__init__.py:168
+msgid "UPS plugin is started."
+msgstr "Doplnok UPS naštartoval."
+
+#: plugins/ups_adj/__init__.py:185
+msgid "Email was sent"
+msgstr "E-mail bol odoslaný"
+
+#: plugins/ups_adj/__init__.py:187
+msgid "Email was not sent"
+msgstr "E-mail nebol odoslaný"
+
+#: plugins/ups_adj/templates/ups_adj.html:3
+#: plugins/ups_adj/templates/ups_adj.html:21
+msgid "UPS monitor settings"
+msgstr "UPS doplnok nastavenie"
+
+#: plugins/ups_adj/templates/ups_adj.html:22
+msgid ""
+"This plugin checked power line for system. UPS (uninterrupted power supply)."
+msgstr ""
+"Tento doplnok kontroluje napájanie pre systém. UPS (neprerušovaný zdroj "
+"napájania)."
+
+#: plugins/ups_adj/templates/ups_adj.html:23
+msgid ""
+"If is error with power line in a certain time, sends plugin email with error "
+"and shutdown system (and generate pulse to GPIO)."
+msgstr ""
+"Ak sa v určitom čase vyskytne chyba s napájacou linkou, pošle sa e-mail s "
+"chybou a vypne systém (a generuje impulz na GPIO)."
+
+#: plugins/ups_adj/templates/ups_adj.html:27
+msgid "Use UPS"
+msgstr "Použiť doplnok"
+
+#: plugins/ups_adj/templates/ups_adj.html:29
+msgid ""
+"Power line is connected via optocoupler between GPIO 23 - pin 16 and ground"
+msgstr ""
+"Napájacie vedenie je pripojené prostredníctvom optočlena medzi GPIO 23 - "
+"pinom 16 a zemou"
+
+#: plugins/ups_adj/templates/ups_adj.html:33
+msgid "Send email with error"
+msgstr "E-mail bol odoslaný s chybou"
+
+#: plugins/ups_adj/templates/ups_adj.html:35
+msgid "For this function required email plugin"
+msgstr "Pre túto funkciu je potrebný doplnok pre e-mail"
+
+#: plugins/ups_adj/templates/ups_adj.html:39
+msgid "Max time for shutdown countdown"
+msgstr "Maximálny čas odpočítavania"
+
+#: plugins/ups_adj/templates/ups_adj.html:41
+msgid "max 999 minutes"
+msgstr "max 999 minút"
+
+#: plugins/ups_adj/templates/ups_adj.html:45
+msgid "Power line state"
+msgstr "Stav elektrického vedenia"
+
+#: plugins/ups_adj/templates/ups_adj.html:51
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/ups_adj/templates/ups_adj.html:57
+msgid ""
+"Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS "
+"for shutdown battery in UPS."
+msgstr ""
+"Výstup je na GPIO 24 - pin 18 (cez otvorený kolektor optočlena na uzemnenie) "
+"ako signal pre UPS na vypínanie batérie v UPS."
+
+#: plugins/ups_adj/templates/ups_adj.html:61
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/ups_adj/templates/ups_adj.html:62
+msgid "Cancel"
+msgstr "Zrušiť"
