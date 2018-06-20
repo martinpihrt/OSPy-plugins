@@ -1,0 +1,178 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-07-11 16:51+CEST\n"
+"PO-Revision-Date: 2018-06-20 12:22+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/wind_monitor/__init__.py:77
+msgid "Could not import smbus."
+msgstr "Nepodarilo sa importovať smbus."
+
+#: plugins/wind_monitor/__init__.py:110
+msgid "Please wait 10 sec..."
+msgstr "Čakajte prosím 10 sec..."
+
+#: plugins/wind_monitor/__init__.py:111
+msgid "Speed"
+msgstr "Rýchlosť"
+
+#: plugins/wind_monitor/__init__.py:111 plugins/wind_monitor/__init__.py:112
+msgid "m/sec"
+msgstr "m/sec"
+
+#: plugins/wind_monitor/__init__.py:112
+msgid "Speed Peak 24 hour"
+msgstr "Maximálna rýchlosť za 24 hodín"
+
+#: plugins/wind_monitor/__init__.py:113
+msgid "Pulses"
+msgstr "Impulzy"
+
+#: plugins/wind_monitor/__init__.py:113
+msgid "pulses/sec"
+msgstr "impulzy/sec"
+
+#: plugins/wind_monitor/__init__.py:117
+msgid "Wind speed > 150 km/h (42 m/sec)"
+msgstr "Rýchlosť vetra > 150 km/h (42 m/SEC)"
+
+#: plugins/wind_monitor/__init__.py:126
+msgid "Stops all stations and sends email if enabled sends email."
+msgstr "Zastaví všetky stanice a odošle e-mail."
+
+#: plugins/wind_monitor/__init__.py:134
+msgid "Wind speed monitor plug-in is disabled."
+msgstr "Doplnok monitorovania vetra je zakázaný."
+
+#: plugins/wind_monitor/__init__.py:138
+msgid ""
+"System detected error: wind speed monitor. All stations set to OFF. Wind is"
+msgstr ""
+"Chyba systému: detektor rýchlosti vetra. Všetky stanice sú teraz vypnuté. "
+"Vietor je"
+
+#: plugins/wind_monitor/__init__.py:142
+msgid "Email was sent"
+msgstr "E-mail bol odoslaný"
+
+#: plugins/wind_monitor/__init__.py:146
+msgid "Email was not sent"
+msgstr "E-mail nebol odoslaný"
+
+#: plugins/wind_monitor/__init__.py:153
+msgid "Wind Speed monitor plug-in"
+msgstr "Doplnok monitor rýchlosti vetra"
+
+#: plugins/wind_monitor/__init__.py:187
+msgid "Setup PCF8583 as event counter - OK"
+msgstr "Nastavenie PCF8583 ako počítadlo udalostí - OK"
+
+#: plugins/wind_monitor/__init__.py:187 plugins/wind_monitor/__init__.py:190
+msgid "Wind speed monitor plug-in"
+msgstr "Doplnok monitor rýchlosti vetra"
+
+#: plugins/wind_monitor/__init__.py:190
+msgid "Setup PCF8583 as event counter - FAULT"
+msgstr "Nastavenie PCF8583 ako počítadlo udalostí - CHYBA"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:3
+#: plugins/wind_monitor/templates/wind_monitor.html:21
+msgid "Wind Speed Monitor settings"
+msgstr "Doplnok monitor rýchlosti vetra - nastavenie"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:22
+msgid ""
+"This plugin checked wind speed, if station is switched on and actual wind "
+"speed is > wind speed value in options, switches off all station  and sends "
+"email with error. Prevent safety for fault watering."
+msgstr ""
+"Tento doplnok mera rýchlosť vetra, ak je stanica zapnutá a skutočná "
+"rýchlosť vetra je > jako hodnota rýchlosti vetra v možnostiach, vypne "
+"všetky stanice a pošle e-mail s chybou."
+
+#: plugins/wind_monitor/templates/wind_monitor.html:23
+msgid ""
+"This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C "
+"address 0x50 (0x51)."
+msgstr ""
+"Tento doplnok potrebuje povolenú zbernicu I2C a pripojený čítač PCF8583 na "
+"adrese I2C 0x50 (0x51)."
+
+#: plugins/wind_monitor/templates/wind_monitor.html:24
+msgid "(1m/s = 3,6 km/h or 1m/s = 2,237 mile/h)."
+msgstr "(1 m/s = 3,6 km/h alebo 1 m/s = 2237 míľ/h)."
+
+#: plugins/wind_monitor/templates/wind_monitor.html:25
+msgid "Maximum detected speed is 150 km/h (42 m/sec)."
+msgstr "Maximálna detekovaná rýchlosť je 150 km/h (42 m/s)."
+
+#: plugins/wind_monitor/templates/wind_monitor.html:29
+msgid "Use wind monitor"
+msgstr "Použíť monitor vetra"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:35
+msgid "I2C address 0x50"
+msgstr "I2C adresa 0x50"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:37
+msgid "if checked 0x51"
+msgstr "ak je začiarknuté políčko I2C 0x51"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:41
+msgid "Send email with error"
+msgstr "Odoslat E-mail s chybou"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:43
+msgid "For this function required email plugin"
+msgstr "Pre túto funkciu je potrebný doplnok E-mail notification"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:47
+msgid "Number of pulses"
+msgstr "Počet impulzov"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:49
+msgid "pulses/rotation"
+msgstr "pulzov/rotácie"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:53
+msgid "Number of wind speed per rotation"
+msgstr "Rýchlosť vetra za rotáciu"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:55
+#: plugins/wind_monitor/templates/wind_monitor.html:61
+#: plugins/wind_monitor/templates/wind_monitor.html:67
+msgid "m/s"
+msgstr "m/s"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:59
+msgid "Max wind speed for stop stations"
+msgstr "Maximálna rýchlosť vetra pre zastavovanie staníc"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:65
+msgid "Wind speed state (every 10 sec)"
+msgstr "Stav rýchlosti vetra (každých 10 sekúnd)"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:71
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:80
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:81
+msgid "Cancel"
+msgstr "Zrušiť"
