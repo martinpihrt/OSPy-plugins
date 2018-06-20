@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-06-06 13:08+CEST\n"
-"PO-Revision-Date: 2018-06-19 13:10+0200\n"
+"PO-Revision-Date: 2018-06-20 11:12+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -74,11 +74,11 @@ msgstr "Vyp"
 
 #: plugins/relay_16/templates/relay_16.html:3
 msgid "Direct 16 Relay Outputs"
-msgstr "Priamy 16 reléových výstupov"
+msgstr "16 reléových výstupov"
 
 #: plugins/relay_16/templates/relay_16.html:21
 msgid "Direct 16 Relay Outputs - Settings"
-msgstr "Priamy 16 reléových výstupov - nastavenie"
+msgstr "16 reléových výstupov - nastavenie"
 
 #: plugins/relay_16/templates/relay_16.html:22
 msgid "Help"
@@ -129,8 +129,8 @@ msgid ""
 "Low level trigger means the relay turns on when the input is low and turns "
 "off when the input is high. Hith level trigger does the opposite."
 msgstr ""
-"Spúšť nízkej úrovne znamená, že relé sa zapne, keď je vstup nízky a vypne "
-"sa, keď je vstup vysoký. Spúšť s úrovňou úrovní má opak."
+"Spúšť NÍZKEJ úrovne znamená, že doska relé sa zapne, keď je vstup dosky 0V "
+"a vypne sa, keď je vstup dosky 3.3V. Spúšť s VYSOKOU úrovňou má opak."
 
 #: plugins/relay_16/templates/relay_16.html:68
 msgid "Status"

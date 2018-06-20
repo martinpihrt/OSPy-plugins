@@ -49,7 +49,7 @@ msgid "This plugin send data as get command to remote PHP web pages."
 msgstr ""
 
 #: plugins/remote_notifications/templates/remote_notifications.html:28
-msgid "This plugin requred correct settings this plugins: UPS Monitor, Tank Humi Monitor."
+msgid "This plugin requred correct settings this plugins: UPS Monitor, Tank Humi Monitor, Air Temperature and Humidity Monitor."
 msgstr ""
 
 #: plugins/remote_notifications/templates/remote_notifications.html:32

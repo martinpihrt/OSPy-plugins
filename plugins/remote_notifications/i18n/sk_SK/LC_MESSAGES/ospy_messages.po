@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-14 13:57+CEST\n"
-"PO-Revision-Date: 2018-06-19 13:37+0200\n"
+"PO-Revision-Date: 2018-06-20 11:06+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -19,11 +19,11 @@ msgstr ""
 
 #: plugins/remote_notifications/__init__.py:68
 msgid "Remote was sent"
-msgstr "Remote bolo odoslané"
+msgstr "Remote - bolo odoslané"
 
 #: plugins/remote_notifications/__init__.py:70
 msgid "Remote was not sent"
-msgstr "Remote nebolo odoslané"
+msgstr "Remote - nebolo odoslané"
 
 #: plugins/remote_notifications/__init__.py:181
 msgid "Remote plug-in"
@@ -62,7 +62,7 @@ msgid ""
 "Monitor."
 msgstr ""
 "Tento doplnok vyžaduje správne nastavenie týchto doplnkov: UPS Monitor, "
-"Tank Humi Monitor."
+"Tank Humi Monitor, Air Temperature and Humidity Monitor."
 
 #: plugins/remote_notifications/templates/remote_notifications.html:32
 msgid "Use plugin"
