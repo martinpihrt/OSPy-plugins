@@ -1,0 +1,123 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-07-02 19:42+CEST\n"
+"PO-Revision-Date: 2018-06-21 13:52+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/volt_temp_da/__init__.py:86
+msgid "Could not import smbus."
+msgstr "Nepodarilo sa importovať smbus."
+
+#: plugins/volt_temp_da/__init__.py:114
+msgid "Voltage and Temperature Monitor plug-in"
+msgstr "Doplnok monitor napätia a teploty"
+
+#: plugins/volt_temp_da/__init__.py:264
+msgid "Deleted log file"
+msgstr "Odstránený súbor denníka"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:3
+#: plugins/volt_temp_da/templates/volt_temp_da.html:21
+msgid "Voltage and Temperature Monitor"
+msgstr "Monitor napätia a teploty"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:22
+msgid ""
+"This plugin needs an enabled I2C bus and connected I2C A/D converter PCF8591 "
+"on I2C address 0x48"
+msgstr ""
+"Tento doplnok potrebuje povolenou I2C sbernicu a I2C A/D prevodník PCF8591 "
+"na I2C adrese 0x48"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:23
+msgid "C) on AD0-3 converter"
+msgstr "C) na AD0-3 prevodník"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:23
+msgid "For measuring temperature use temp probe LM35D (0-100"
+msgstr "Pre meranie teploty použitie tplotné sondy LM35D (0-100"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:24
+msgid "If the label is not blank, the value is displayed in the value display"
+msgstr "Ak štítok nie je prázdny, hodnota sa zobrazí v zobrazení hodnoty"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:25
+msgid "Delete"
+msgstr "Vymazať"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:25
+msgid "Download log as"
+msgstr "Stiahnite si denník ako"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:25
+msgid "log file"
+msgstr "súbor denníka"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:29
+msgid "Enabled"
+msgstr "Povoliť"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:35
+msgid "Enable logging"
+msgstr "Povoliť protokolovanie"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:41
+msgid "Maximum number of log records"
+msgstr "Maximálny počet záznamov denníka"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:43
+msgid "0 = unlimited"
+msgstr "0 = neobmedzené"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:47
+msgid "I/O Voltage"
+msgstr "I/O Napätie"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:53
+msgid "Interval for logging"
+msgstr "Interval pre protokolovanie"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:55
+msgid "minutes (Minimum is 1)"
+msgstr "minút (minimálne 1)"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:60
+msgid "Label for input"
+msgstr "Štítok pre snímač"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:62
+msgid "Measure as temperature"
+msgstr "Merať ako teplotu"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:66
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:72
+msgid "DA output value"
+msgstr "Výstupná hodnota DA"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:74
+msgid "Volt"
+msgstr "Voltov"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:81
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/volt_temp_da/templates/volt_temp_da.html:82
+msgid "Cancel"
+msgstr "Zrušiť"
