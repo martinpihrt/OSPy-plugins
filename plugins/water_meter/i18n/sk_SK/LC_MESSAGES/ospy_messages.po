@@ -1,0 +1,144 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-08-16 16:35+CEST\n"
+"PO-Revision-Date: 2018-06-21 13:46+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/water_meter/__init__.py:70
+msgid "Could not import smbus."
+msgstr "Nepodarilo sa importovať smbus."
+
+#: plugins/water_meter/__init__.py:96
+msgid "Water Meter plug-in is enabled."
+msgstr "Vodný merač je zapnutý."
+
+#: plugins/water_meter/__init__.py:100
+msgid "Could not find PCF8583."
+msgstr "Nepodarilo sa nájsť žiadny ovládač PCF8574."
+
+#: plugins/water_meter/__init__.py:102
+msgid "Please wait for min/hour data..."
+msgstr "Prosím, počkajte na dokončenie."
+
+#: plugins/water_meter/__init__.py:104 plugins/water_meter/__init__.py:116
+#: plugins/water_meter/__init__.py:230
+msgid "Water in liters"
+msgstr "Voda v litroch"
+
+#: plugins/water_meter/__init__.py:105
+msgid "Saved water summary"
+msgstr "Uložený súhrn vody"
+
+#: plugins/water_meter/__init__.py:117
+msgid "Water per minutes"
+msgstr "Voda za minúty"
+
+#: plugins/water_meter/__init__.py:118
+msgid "Water per hours"
+msgstr "Voda za hodinu"
+
+#: plugins/water_meter/__init__.py:119 plugins/water_meter/__init__.py:231
+msgid "Water summary"
+msgstr "Súhrn vody"
+
+#: plugins/water_meter/__init__.py:133
+msgid "Water Meter plug-in is disabled."
+msgstr "Vodný merač je vypnutý."
+
+#: plugins/water_meter/__init__.py:141 plugins/water_meter/__init__.py:177
+msgid "Water Meter plug-in"
+msgstr "Doplnok vodomer"
+
+#: plugins/water_meter/__init__.py:174
+msgid "Setup PCF8583 as event counter is OK"
+msgstr "Nastavenie PCF8583 ako počítadlo udalostí - OK"
+
+#: plugins/water_meter/__init__.py:177
+msgid "Setup PCF8583 as event counter - FAULT"
+msgstr "Nastavenie PCF8583 ako počítadlo udalostí - CHYBA"
+
+#: plugins/water_meter/__init__.py:229
+msgid "Water summary was reseting..."
+msgstr "Súhrn vody bol vynulovaný..."
+
+#: plugins/water_meter/templates/water_meter.html:3
+#: plugins/water_meter/templates/water_meter.html:23
+msgid "Water meter settings"
+msgstr "Doplnok vodomer - nastavenie"
+
+#: plugins/water_meter/templates/water_meter.html:24
+msgid ""
+"This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C "
+"address 0x50"
+msgstr ""
+"Tento doplnok potrebuje povolenú zbernicu I2C a pripojený čítač PCF8583 na "
+"adrese I2C 0x50 (0x51)"
+
+#: plugins/water_meter/templates/water_meter.html:25
+msgid ""
+"This plugin measures the amount of water flowing per sec, min, hour and the "
+"total amount of water"
+msgstr ""
+"Tento plugin meria množstvo vody tečúcej za sekundu, min, hodinu a celkové "
+"množstvo vody"
+
+#: plugins/water_meter/templates/water_meter.html:26
+msgid "Visit"
+msgstr "Navštívte"
+
+#: plugins/water_meter/templates/water_meter.html:26
+msgid "for more information"
+msgstr "pre viac informácií"
+
+#: plugins/water_meter/templates/water_meter.html:30
+msgid "Use Water Meter"
+msgstr "Použiť vodomer"
+
+#: plugins/water_meter/templates/water_meter.html:36
+msgid "I2C address 0x50"
+msgstr "I2C adresa 0x50"
+
+#: plugins/water_meter/templates/water_meter.html:38
+msgid "if checked 0x51"
+msgstr "ak je začiarknuté políčko I2C 0x51"
+
+#: plugins/water_meter/templates/water_meter.html:42
+msgid "Number of pulses per liter"
+msgstr "Počet impulzov na liter"
+
+#: plugins/water_meter/templates/water_meter.html:48
+msgid "Water meter state"
+msgstr "Stav stavu vodomera"
+
+#: plugins/water_meter/templates/water_meter.html:50
+msgid "liter per second"
+msgstr "liter za sekundu"
+
+#: plugins/water_meter/templates/water_meter.html:54
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/water_meter/templates/water_meter.html:65
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/water_meter/templates/water_meter.html:66
+msgid "Cancel"
+msgstr "Zrušiť"
+
+#: plugins/water_meter/templates/water_meter.html:67
+msgid "Reset summary"
+msgstr "Vymazat súhrn"
