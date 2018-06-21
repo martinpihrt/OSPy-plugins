@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-15 10:36+CEST\n"
-"PO-Revision-Date: 2018-06-20 11:16+0200\n"
+"PO-Revision-Date: 2018-06-20 15:03+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -44,15 +44,15 @@ msgstr ""
 
 #: plugins/ups_adj/__init__.py:130
 msgid "UPS plugin - power line is not restore in time -> shutdown system!"
-msgstr "UPS doplnok - Napájacia linka sa neobnovila v čase -> vypínam systém!"
+msgstr "Doplnok UPS - Napájacia linka sa neobnovila v čase -> vypínam systém!"
 
 #: plugins/ups_adj/__init__.py:143
 msgid "UPS plugin - power line has restored - OK."
-msgstr "UPS doplnok - Napájacia linka sa obnovila - OK."
+msgstr "Doplnok UPS - Napájacia linka sa obnovila - OK."
 
 #: plugins/ups_adj/__init__.py:154
 msgid "UPS plug-in"
-msgstr "UPS doplnok"
+msgstr "Doplnok UPS"
 
 #: plugins/ups_adj/__init__.py:168
 msgid "UPS plugin is started."
@@ -69,7 +69,7 @@ msgstr "E-mail nebol odoslaný"
 #: plugins/ups_adj/templates/ups_adj.html:3
 #: plugins/ups_adj/templates/ups_adj.html:21
 msgid "UPS monitor settings"
-msgstr "UPS doplnok nastavenie"
+msgstr "Doplnok UPS - nastavenie"
 
 #: plugins/ups_adj/templates/ups_adj.html:22
 msgid ""

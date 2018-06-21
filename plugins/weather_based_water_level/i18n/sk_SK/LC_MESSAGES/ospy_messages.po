@@ -1,0 +1,206 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2017-08-10 20:43+CEST\n"
+"PO-Revision-Date: 2018-06-21 07:36+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/weather_based_water_level/__init__.py:73
+msgid "Checking weather status"
+msgstr "Kontrola stavu počasia"
+
+#: plugins/weather_based_water_level/__init__.py:100
+msgid "No information available!"
+msgstr "Nie sú k dispozícii žiadne informácie!"
+
+#: plugins/weather_based_water_level/__init__.py:102
+msgid "Using"
+msgstr "Použijem"
+
+#: plugins/weather_based_water_level/__init__.py:102
+msgid "days of information."
+msgstr "dní informácií."
+
+#: plugins/weather_based_water_level/__init__.py:128
+msgid "Water needed"
+msgstr "Potrebná voda"
+
+#: plugins/weather_based_water_level/__init__.py:128
+msgid "days"
+msgstr "dní"
+
+#: plugins/weather_based_water_level/__init__.py:129
+msgid "Total rainfall"
+msgstr "Celkové dažde"
+
+#: plugins/weather_based_water_level/__init__.py:131
+msgid "Irrigation needed"
+msgstr "Pre potreby zavlažovania"
+
+#: plugins/weather_based_water_level/__init__.py:132
+msgid "Weather Adjustment"
+msgstr "Nastavenie počasia"
+
+#: plugins/weather_based_water_level/__init__.py:137
+msgid "Temperature"
+msgstr "Teplota"
+
+#: plugins/weather_based_water_level/__init__.py:153
+msgid "Protection activated."
+msgstr "Ochrana je aktivovaná."
+
+#: plugins/weather_based_water_level/__init__.py:160
+msgid "Plug-in is disabled."
+msgstr "Doplnok je zakázaný."
+
+#: plugins/weather_based_water_level/__init__.py:166
+msgid "Weather-based water level plug-in"
+msgstr "Doplnok hladina vody založené na počasí"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:3
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:17
+msgid "Weather-based Water Level"
+msgstr "Hladina vody založené na počasí"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:18
+msgid ""
+"When weather-based water level is enabled, the weather will be checked every "
+"hour and the water level will be adjusted accordingly"
+msgstr ""
+"Ak je povolene automatické nastavenie hladiny vody, počasie sa bude "
+"kontrolovať každú hodinu a hladina vody sa podľa toho upraví"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:19
+msgid ""
+"In addition, it is now able to protect plants from frost during the selected "
+"months"
+msgstr ""
+"Navyše je schopný chrániť rastliny pred mrazom počas vybraných mesiacov"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:23
+msgid "Use Automatic Water Level Adjustment"
+msgstr "Použiť automatické nastavenie hladiny vody"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:27
+msgid "Protect against freezing"
+msgstr "Chrániť proti zamrznutiu"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:28
+msgid "Run once every hour if temperature is below a certain temperature"
+msgstr "Spustiť raz za hodinu, ak je teplota pod určitou teplotou"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:33
+msgid "Min percentage"
+msgstr "Min percento"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:37
+msgid "Protect temperature"
+msgstr "Teplota pre ochranu"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:38
+msgid "Below which temperature"
+msgstr "Pod akou teplotou"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:38
+msgid "the stations should start"
+msgstr "by mali stanice začať"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:44
+msgid "Max percentage"
+msgstr "Max percento"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:48
+msgid "Protect minutes"
+msgstr "Ochrana minút"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:49
+msgid "How long to run each station if it is freezing"
+msgstr "Ako dlho prevádzkovať každú stanicu, ak je zmrazenie"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:54
+msgid "History days used"
+msgstr "História dní"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:60
+msgid "Forecast days used"
+msgstr "Predpovedané dni"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:64
+msgid "Protect stations"
+msgstr "Chrániť stanice"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:73
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:77
+msgid "Protect months"
+msgstr "Chráňte mesiace"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:80
+msgid "January"
+msgstr "Január"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:81
+msgid "February"
+msgstr "Február"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:82
+msgid "March"
+msgstr "Marec"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:83
+msgid "April"
+msgstr "Apríl"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:84
+msgid "May"
+msgstr "Máj"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:85
+msgid "June"
+msgstr "Jún"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:86
+msgid "July"
+msgstr "Júl"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:87
+msgid "August"
+msgstr "August"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:88
+msgid "September"
+msgstr "September"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:89
+msgid "October"
+msgstr "Október"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:90
+msgid "November"
+msgstr "November"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:91
+msgid "December"
+msgstr "December"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:99
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/weather_based_water_level/templates/weather_based_water_level.html:100
+msgid "Cancel"
+msgstr "Zrušiť"
