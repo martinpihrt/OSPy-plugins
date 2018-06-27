@@ -1,0 +1,155 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-06-27 12:26+CEST\n"
+"PO-Revision-Date: 2018-06-27 13:08+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.8\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: cs_CZ\n"
+
+#: plugins/voice_notification/__init__.py:71
+msgid "Voice notification is disabled."
+msgstr "Hlasová upozornění jsou vypnutá."
+
+#: plugins/voice_notification/__init__.py:73
+msgid "Voice notification is enabled."
+msgstr "Hlasová upozornění jsou zapnutá."
+
+#: plugins/voice_notification/__init__.py:88
+msgid "Pygame is not installed."
+msgstr "Pygame není nainstalováno."
+
+#: plugins/voice_notification/__init__.py:89
+msgid "Please wait installing pygame..."
+msgstr "Prosím počkejte, instaluji pygame..."
+
+#: plugins/voice_notification/__init__.py:93
+msgid "Pygame is now installed."
+msgstr "Pygame je nyní nainstalováno."
+
+#: plugins/voice_notification/__init__.py:125
+msgid "Repeating playing nr. 2..."
+msgstr "Opakování přehrávání č. 2..."
+
+#: plugins/voice_notification/__init__.py:132
+msgid "Repeating playing nr. 3..."
+msgstr "Opakování přehrávání č. 3..."
+
+#: plugins/voice_notification/__init__.py:138
+msgid "Stopping..."
+msgstr "Zastavuji..."
+
+#: plugins/voice_notification/__init__.py:142
+msgid "Voice Notification plug-in"
+msgstr "Rozšíření hlasová upozornění"
+
+#: plugins/voice_notification/__init__.py:183
+msgid "Loading..."
+msgstr "Nahrávám..."
+
+#: plugins/voice_notification/__init__.py:185
+msgid "Set pygame volume to 1.0"
+msgstr "Nastavuji hlasitost pygame na"
+
+#: plugins/voice_notification/__init__.py:187
+msgid "Set master volume to"
+msgstr "Nastavuji hlasitost na"
+
+#: plugins/voice_notification/__init__.py:190
+msgid "Playing..."
+msgstr "Přehrávám..."
+
+#: plugins/voice_notification/templates/voice_notification.html:3
+msgid "Voice Notification"
+msgstr "Hlasová upozornění"
+
+#: plugins/voice_notification/templates/voice_notification.html:21
+msgid "Voice Notification - Settings"
+msgstr "Hlasová upozornění - nastavení"
+
+#: plugins/voice_notification/templates/voice_notification.html:22
+msgid ""
+"This plugin allows you to use voice notifications for different events in "
+"the OSPy system."
+msgstr ""
+"Toto rozšíření umožňuje používat hlasová upozornění pro různé události v "
+"systému OSPy."
+
+#: plugins/voice_notification/templates/voice_notification.html:23
+msgid ""
+"Into the Connector from Output on Raspberry Pi connect Amplifier and "
+"Speakers for voice notification."
+msgstr ""
+"Do výstupního konektoru na Raspberry Pi připojte zesilovač a reproduktory."
+
+#: plugins/voice_notification/templates/voice_notification.html:24
+msgid ""
+"This plugin requires pygame installed. If pygame is not installed on the "
+"system, plugin it will install it himself. Pygame is comes already installed "
+"on the default raspberian installation."
+msgstr ""
+"Toto rozšíření vyžaduje nainstalované pygame. Není-li pygame nainstalováno, "
+"rozšíření jej nainstaluje samo. Pygame bývá již nainstalováno na čisté "
+"instalaci Raspbianu."
+
+#: plugins/voice_notification/templates/voice_notification.html:25
+msgid "Visit"
+msgstr "Navštivte"
+
+#: plugins/voice_notification/templates/voice_notification.html:25
+msgid "for more information"
+msgstr "pro další informace"
+
+#: plugins/voice_notification/templates/voice_notification.html:29
+msgid "Enable voice"
+msgstr "Použít rozšíření"
+
+#: plugins/voice_notification/templates/voice_notification.html:34
+msgid "Enable pre start voice"
+msgstr "Upozornit před zapnutím"
+
+#: plugins/voice_notification/templates/voice_notification.html:39
+msgid "Pre run time"
+msgstr "Přehrát dříve o"
+
+#: plugins/voice_notification/templates/voice_notification.html:44
+msgid "Repeat playback"
+msgstr "Opakovat přehrávání"
+
+#: plugins/voice_notification/templates/voice_notification.html:49
+msgid "Master volume"
+msgstr "Hlasitost"
+
+#: plugins/voice_notification/templates/voice_notification.html:54
+msgid "Play only from"
+msgstr "Přehrávat v čase od"
+
+#: plugins/voice_notification/templates/voice_notification.html:59
+msgid "Play only to"
+msgstr "Přehrávat v čase do"
+
+#: plugins/voice_notification/templates/voice_notification.html:64
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/voice_notification/templates/voice_notification.html:73
+msgid "Upload mp3"
+msgstr "Nahrát mp3"
+
+#: plugins/voice_notification/templates/voice_notification.html:77
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/voice_notification/templates/voice_notification.html:78
+msgid "Cancel"
+msgstr "Zpět"

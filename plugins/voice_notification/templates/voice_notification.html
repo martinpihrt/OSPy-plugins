@@ -1,0 +1,79 @@
+$def with(plugin_options, events)
+
+$var title: $_('Voice Notification')
+$var page: plugins
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("#cUpload").click(function() {
+            jQuery("#uploadForm").submit();
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Voice Notification - Settings')</div>
+    <p>$_('This plugin allows you to use voice notifications for different events in the OSPy system.')</p>
+    <p>$_('Into the Connector from Output on Raspberry Pi connect Amplifier and Speakers for voice notification.')</p>
+    <p>$_('This plugin requires pygame installed. If pygame is not installed on the system, plugin it will install it himself. Pygame is comes already installed on the default raspberian installation.')</p>
+    <p>$_('Visit') <a href="https://www.pygame.org/wiki/GettingStarted">www.pygame.org</a> and <a href="https://pihrt.com/elektronika/248-moje-rapsberry-pi-zavlazovani-zahrady">www.pihrt.com</a> $_('for more information').</p><br>
+    <form id="pluginForm" action="$plugins.plugin_url('voice_notification.settings_page')" method="post">
+        <table class="optionList">
+        <tr>
+          <td style='text-transform: none;'>$_('Enable voice'):</td>
+          <td title='$_('If the check box is marked, the extension will be active.')'>
+          <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Enable pre start voice'):</td>
+          <td title='$_('The sound is played before turning on the station.')'>
+          <input type="checkbox" name="voice_start_station" ${"checked" if plugin_options['voice_start_station'] else ""}> (voice.mp3)</td> 
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Pre run time'):</td>
+          <td title='$_('How many seconds before turning on stations play sound.')'>   
+          <input name='pre_time' type='number' min="1" max="59" value="$plugin_options['pre_time']"> (1 - 59s)</td> 
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Repeat playback'):</td>
+          <td title='$_('How many times to repeat the same message.')'>   
+          <input name='repeating' type='number' min="1" max="3" value="$plugin_options['repeating']"> (1 - 3x)</td> 
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Master volume'):</td>
+          <td title='$_('Setting the Raspberry Pi output volume (0-100%).')'>   
+          <input name='volume' type='number' min="0" max="100" value="$plugin_options['volume']"> (0 - 100%)</td> 
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Play only from'):</td>
+          <td title='$_('Play notifications only from this time (hours).')'>   
+          <input name='start_hour' type='number' min="0" max="23" value="$plugin_options['start_hour']"> (0 - 23h)</td> 
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Play only to'):</td>
+          <td title='$_('Play notifications only to this time (hours).')'>   
+          <input name='stop_hour' type='number' min="0" max="23" value="$plugin_options['stop_hour']"> (0 - 23h)</td>
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Status'):</td>
+          <td>
+          <textarea style="font-family: monospace;" rows="15" cols="40" readonly>$'\n'.join(events)</textarea></td>
+        </tr>
+        </table>
+    <br>
+    </form>
+    <form id="uploadForm" action="$plugins.plugin_url('voice_notification.upload_page')" method="post" enctype="multipart/form-data">
+        <input type="file" name="uploadfile" class="upload"/>
+        <button id="cUpload" class="button upload">$_('Upload mp3')</button>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
