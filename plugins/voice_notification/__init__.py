@@ -17,7 +17,7 @@ from ospy.log import log
 from ospy.options import options
 from ospy.options import rain_blocks
 from ospy.inputs import inputs
-from ospy.programs import programs
+from ospy.scheduler import predicted_schedule
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage
 from plugins import PluginOptions, plugin_url
@@ -26,6 +26,8 @@ import i18n
 
 NAME = 'Voice Notification'
 LINK = 'settings_page'
+
+MP3_FILE_FOLDER = './plugins/voice_notification/static/mp3'
 
 plugin_options = PluginOptions(
     NAME,
@@ -93,23 +95,21 @@ class VoiceChecker(Thread):
                          log.info(NAME, _('Pygame is now installed.')) 
 
                    if plugin_options['voice_start_station']: # start notifications
-
-                      current_time = datetime.datetime.now()
-                      pre_datetime = current_time - datetime.timedelta(seconds=int(plugin_options['pre_time']))
+                      current_time  = datetime.datetime.now()
+                      user_pre_time = current_time + datetime.timedelta(seconds=int(plugin_options['pre_time']))
+                      check_start   = current_time - datetime.timedelta(days=1)
+                      check_end     = current_time + datetime.timedelta(days=1)
+ 
+                      rain = not options.manual_mode and (rain_blocks.block_end() > datetime.datetime.now() or inputs.rain_sensed())
 
                       if current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']: # play notifications only from xx hour to yy hour
-
                          play = False 
-                                                 
-                         rain = not options.manual_mode and (rain_blocks.block_end() > datetime.datetime.now() or inputs.rain_sensed())
-                         active = log.active_runs()
-                         
-
-                         #for entry in active:
-                         #   ignore_rain = stations.get(entry['station']).ignore_rain
-                         #   if entry['start'] > pre_datetime  and (not rain or ignore_rain) and not entry['blocked']:
-                         #      play = True
-                                   
+                         if not options.manual_mode:
+                             schedule = predicted_schedule(check_start, check_end)
+                             for entry in schedule:
+                                 if entry['start'] <= user_pre_time < entry['end']:
+                                    if not entry['blocked']: 
+                                       play = True    
  
                          if play != last_play:
                             last_play = play 
@@ -181,12 +181,15 @@ def play_voice(self, song):
 
     mixer.init()
     log.info(NAME, _('Loading...')) 
-    mixer.music.load(os.path.join("/home/pi/OSPy/plugins/voice_notification/static/mp3", song))
+
+    mixer.music.load(os.path.join(MP3_FILE_FOLDER, song)) # ex: /home/pi/OSPy/plugins/voice_notification/static/mp3/voice.mp3
     log.info(NAME, _('Set pygame volume to 1.0'))
     mixer.music.set_volume(1.0)  # 0.0 min to 1.0 max 
+
     log.info(NAME, _('Set master volume to') + ' ' + str(plugin_options['volume']) + '%')
     cmd = "sudo amixer  sset PCM,0 " + str(plugin_options['volume']) + "%"
     run_command(self, cmd)
+
     log.info(NAME, _('Playing...'))  
     mixer.music.play()
        
@@ -201,19 +204,19 @@ class settings_page(ProtectedPage):
         return self.plugin_render.voice_notification(plugin_options, log.events(NAME))
 
     def POST(self):
+        if web.input().uploadfile == 'voice.mp3':
+           #fout = open(os.path.join(MP3_FILE_FOLDER, 'voice.mp3'),'w') 
+           #i = web.input(uploadfile={})
+           #fout.write(i.uploadfile.read()) 
+           #fout.close() 
+           log.info(NAME, _('Saving OK.'))  
+ 
         plugin_options.web_update(web.input())
+
         if checker is not None:
             checker.update()
+
         raise web.seeother(plugin_url(settings_page), True)
-
-
-class upload_page(ProtectedPage):
-    """Upload mp3 file to static/mp3/xxx"""
-
-    def POST(self):
-# todo upload mp3 file  
-        raise web.seeother(plugin_url(settings_page), True)
-
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format"""
