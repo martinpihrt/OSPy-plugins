@@ -37,8 +37,9 @@ plugin_options = PluginOptions(
         'pre_time': 5,                  # sound is played 5 second before turning on the station
         'repeating': 1,                 # how many times to repeat the same message
         'volume': 80,                   # master volume 80%
-        'start_hour': 7,                # voice notification only from 7 
-        'stop_hour': 20                 # to 20 hours 
+        'start_hour': 0,                # voice notification only from 0 
+        'stop_hour': 23,                # to 23 hours 
+        'skip_stations': []             # skip voice notification if activated stations xxx
     })
 
 
@@ -77,7 +78,7 @@ class VoiceChecker(Thread):
         once_test = True  # for test installing pygame
         play = False      # for enabling play
         last_play = False # for disabling nonstop playing
-   
+    
         while not self._stop.is_set():
             try: 
                 if plugin_options['enabled']:   # plugin is enabled
@@ -101,15 +102,23 @@ class VoiceChecker(Thread):
                       check_end     = current_time + datetime.timedelta(days=1)
  
                       rain = not options.manual_mode and (rain_blocks.block_end() > datetime.datetime.now() or inputs.rain_sensed())
-
+     
                       if current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']: # play notifications only from xx hour to yy hour
-                         play = False 
-                         if not options.manual_mode:
+                         play = False             
+                         if not options.manual_mode:  # if now not manual control
                              schedule = predicted_schedule(check_start, check_end)
                              for entry in schedule:
-                                 if entry['start'] <= user_pre_time < entry['end']:
+                                 if entry['start'] <= user_pre_time < entry['end']: # is possible program in this interval?
                                     if not entry['blocked']: 
-                                       play = True    
+                                        for station_num in plugin_options['skip_stations']:
+                                            if entry['station'] == station_num:     # station skiping
+                                                log.clear(NAME)
+                                                log.info(NAME, _('Skiping playing on station') + ': ' + str(entry['station']+1) + '.')   
+                                                self._sleep(1)
+                                                return
+
+                                        play = True     
+                                    
  
                          if play != last_play:
                             last_play = play 
@@ -211,7 +220,7 @@ class settings_page(ProtectedPage):
            #fout.close() 
            log.info(NAME, _('Saving OK.'))  
  
-        plugin_options.web_update(web.input())
+        plugin_options.web_update(web.input(**plugin_options)) #for multiple select
 
         if checker is not None:
             checker.update()
