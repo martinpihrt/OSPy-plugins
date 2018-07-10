@@ -61,6 +61,14 @@ $var page: plugins
           <input name='stop_hour' type='number' min="0" max="23" value="$plugin_options['stop_hour']"> (0 - 23h)</td>
         </tr>
         <tr>
+          <td style='text-transform: none;'>$_('Skip stations'):</td>
+          <td title="$_('Skip voice notification for these stations.')"> 
+          <select multiple name="skip_stations" width="350" style="width: 350px">
+              $for station in [station for station in stations if station.enabled]:
+                 <option value="${str(station.index)}" ${"selected" if station.index in plugin_options["skip_stations"] else ""}>${station.name} (Output ${str(station.index+1)})</option>
+          </select>
+          </td>
+        <tr>
           <td style='text-transform: none;'>$_('Status'):</td>
           <td>
           <textarea style="font-family: monospace;" rows="15" cols="40" readonly>$'\n'.join(events)</textarea></td>
