@@ -14,6 +14,10 @@ $var page: plugins
         jQuery("#cUpload").click(function() {
             jQuery("#uploadForm").submit();
         });
+        jQuery("#cTest").click(function() {
+            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('voice_notification.settings_page')?test")
+            jQuery("#pluginForm").submit();
+        });
     });
 </script>
 
@@ -80,4 +84,5 @@ $var page: plugins
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <button id="cTest" class="upload"><b>$_('Test playing')</b></button>
 </div>
