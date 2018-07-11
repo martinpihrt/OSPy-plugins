@@ -190,3 +190,11 @@ msgstr "Odoslať"
 #: plugins/voice_notification/templates/voice_notification.html:78
 msgid "Cancel"
 msgstr "Zrušiť"
+
+#: plugins/voice_notification/templates/voice_notification.html:87
+msgid "Test playing"
+msgstr "Testovanie prehrávania"
+
+#: plugins/voice_notification/__init__.py:234
+msgid "Testing button..."
+msgstr "Testovacie tlačidlo..."
