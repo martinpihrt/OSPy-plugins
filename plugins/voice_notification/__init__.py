@@ -20,7 +20,9 @@ from ospy.inputs import inputs
 from ospy.scheduler import predicted_schedule
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage
+from ospy.helpers import get_input
 from plugins import PluginOptions, plugin_url
+
 
 import i18n
 
@@ -213,17 +215,24 @@ class settings_page(ProtectedPage):
         return self.plugin_render.voice_notification(plugin_options, log.events(NAME))
 
     def POST(self):
+        plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
+        qdict = web.input()
+        test = get_input(qdict, 'test', False, lambda x: True)
+
         if web.input().uploadfile == 'voice.mp3':
            #fout = open(os.path.join(MP3_FILE_FOLDER, 'voice.mp3'),'w') 
            #i = web.input(uploadfile={})
            #fout.write(i.uploadfile.read()) 
            #fout.close() 
            log.info(NAME, _('Saving OK.'))  
- 
-        plugin_options.web_update(web.input(**plugin_options)) #for multiple select
 
         if checker is not None:
             checker.update()
+
+            if test:
+               log.clear(NAME) 
+               log.info(NAME, _('Testing button...'))
+               play_voice(self, "voice.mp3") # play for test
 
         raise web.seeother(plugin_url(settings_page), True)
 
