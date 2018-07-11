@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-06-27 12:26+CEST\n"
-"PO-Revision-Date: 2018-06-27 13:08+0200\n"
+"PO-Revision-Date: 2018-07-11 17:19+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -132,7 +132,7 @@ msgstr "Upozornit před zapnutím"
 
 #: plugins/voice_notification/templates/voice_notification.html:35
 msgid "The sound is played before turning on the station."
-msgstr "Spustit zvuk x vteřin před začátkem zalévání."
+msgstr "Spustit zvuk x vteřin před zapnutím stanice."
 
 #: plugins/voice_notification/templates/voice_notification.html:39
 msgid "Pre run time"
@@ -173,6 +173,14 @@ msgstr "Přehrávat v čase do"
 #: plugins/voice_notification/templates/voice_notification.html:60
 msgid "Play notifications only to this time (hours)."
 msgstr "Přehrávat hlášení pouze v tomto čase (od hodiny)."
+
+#: plugins/voice_notification/templates/voice_notification.html:64
+msgid "Skip stations"
+msgstr "Přeskočit stanice"
+
+#: plugins/voice_notification/templates/voice_notification.html:65
+msgid "Skip voice notification for these stations."
+msgstr "Přeskočit hlasové upozornění u těchto stanic."
 
 #: plugins/voice_notification/templates/voice_notification.html:64
 msgid "Status"
