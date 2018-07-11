@@ -178,3 +178,11 @@ msgstr ""
 #: plugins/voice_notification/templates/voice_notification.html:78
 msgid "Cancel"
 msgstr ""
+
+#: plugins/voice_notification/templates/voice_notification.html:87
+msgid "Test playing"
+msgstr ""
+
+#: plugins/voice_notification/__init__.py:234
+msgid "Testing button..."
+msgstr ""
