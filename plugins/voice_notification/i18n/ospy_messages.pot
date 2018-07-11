@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-06-29 12:04+CEST\n"
+"POT-Creation-Date: 2018-07-11 17:14+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,23 +15,23 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/voice_notification/__init__.py:73
+#: plugins/voice_notification/__init__.py:71
 msgid "Voice notification is disabled."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:75
+#: plugins/voice_notification/__init__.py:73
 msgid "Voice notification is enabled."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:90
+#: plugins/voice_notification/__init__.py:88
 msgid "Pygame is not installed."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:91
+#: plugins/voice_notification/__init__.py:89
 msgid "Please wait installing pygame..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:95
+#: plugins/voice_notification/__init__.py:93
 msgid "Pygame is now installed."
 msgstr ""
 
@@ -55,15 +55,15 @@ msgstr ""
 msgid "Loading..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:186
+#: plugins/voice_notification/__init__.py:185
 msgid "Set pygame volume to 1.0"
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:189
+#: plugins/voice_notification/__init__.py:187
 msgid "Set master volume to"
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:193
+#: plugins/voice_notification/__init__.py:190
 msgid "Playing..."
 msgstr ""
 
@@ -160,14 +160,21 @@ msgid "Play notifications only to this time (hours)."
 msgstr ""
 
 #: plugins/voice_notification/templates/voice_notification.html:64
+msgid "Skip stations"
+msgstr ""
+
+#: plugins/voice_notification/templates/voice_notification.html:65
+msgid "Skip voice notification for these stations."
+msgstr ""
+
+#: plugins/voice_notification/templates/voice_notification.html:64
 msgid "Status"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:73
+#: plugins/voice_notification/templates/voice_notification.html:77
 msgid "Submit"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:74
+#: plugins/voice_notification/templates/voice_notification.html:78
 msgid "Cancel"
 msgstr ""
-
