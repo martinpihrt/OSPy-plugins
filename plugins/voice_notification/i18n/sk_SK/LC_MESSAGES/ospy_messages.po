@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-06-27 12:26+CEST\n"
-"PO-Revision-Date: 2018-06-27 13:20+0200\n"
+"PO-Revision-Date: 2018-07-11 17:43+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -115,29 +115,65 @@ msgstr "pre viac informácií"
 msgid "Enable voice"
 msgstr "Povoliť doplnok"
 
+#: plugins/voice_notification/templates/voice_notification.html:30
+msgid "If the check box is marked, the extension will be active."
+msgstr "Ak je označené začiarkavacie políčko, rozšírenie bude aktívne."
+
 #: plugins/voice_notification/templates/voice_notification.html:34
 msgid "Enable pre start voice"
 msgstr "Povolenie hlasu pred štartom"
+
+#: plugins/voice_notification/templates/voice_notification.html:35
+msgid "The sound is played before turning on the station."
+msgstr "Zvuk sa prehráva pred zapnutím stanice."
 
 #: plugins/voice_notification/templates/voice_notification.html:39
 msgid "Pre run time"
 msgstr "Čas pred spustením"
 
+#: plugins/voice_notification/templates/voice_notification.html:40
+msgid "How many seconds before turning on stations play sound."
+msgstr "Koľko sekúnd pred zapnutím stanice bude prehrávanie zvuku."
+
 #: plugins/voice_notification/templates/voice_notification.html:44
 msgid "Repeat playback"
 msgstr "Opakovať"
+
+#: plugins/voice_notification/templates/voice_notification.html:45
+msgid "How many times to repeat the same message."
+msgstr "Koľkokrát opakovať rovnakú správu."
 
 #: plugins/voice_notification/templates/voice_notification.html:49
 msgid "Master volume"
 msgstr "Hlavná hlasitosť"
 
+#: plugins/voice_notification/templates/voice_notification.html:50
+msgid "Setting the Raspberry Pi output volume (0-100%)."
+msgstr "Nastavenie Raspberry Pi výstupu (0-100%)."
+
 #: plugins/voice_notification/templates/voice_notification.html:54
 msgid "Play only from"
 msgstr "Prehrať iba od"
 
+#: plugins/voice_notification/templates/voice_notification.html:55
+msgid "Play notifications only from this time (hours)."
+msgstr "Hrať oznámenia len od tohto času (hodiny)."
+
 #: plugins/voice_notification/templates/voice_notification.html:59
 msgid "Play only to"
 msgstr "Prehrať iba do"
+
+#: plugins/voice_notification/templates/voice_notification.html:60
+msgid "Play notifications only to this time (hours)."
+msgstr "Hrať oznámenia iba do tohto času (hodiny)."
+
+#: plugins/voice_notification/templates/voice_notification.html:64
+msgid "Skip stations"
+msgstr "Preskočiť stanice"
+
+#: plugins/voice_notification/templates/voice_notification.html:65
+msgid "Skip voice notification for these stations."
+msgstr "Preskočit hlasové upozornenie pre tieto stanice."
 
 #: plugins/voice_notification/templates/voice_notification.html:64
 msgid "Status"
