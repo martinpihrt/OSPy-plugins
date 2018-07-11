@@ -193,3 +193,11 @@ msgstr "Potvrdit"
 #: plugins/voice_notification/templates/voice_notification.html:78
 msgid "Cancel"
 msgstr "Zpět"
+
+#: plugins/voice_notification/templates/voice_notification.html:87
+msgid "Test playing"
+msgstr "Test zvuku"
+
+#: plugins/voice_notification/__init__.py:234
+msgid "Testing button..."
+msgstr "Tlačítko testu bylo zmačknuto..."
