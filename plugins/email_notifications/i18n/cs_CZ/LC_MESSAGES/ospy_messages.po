@@ -150,3 +150,9 @@ msgstr "Odeslat test email"
 #: plugins/email_notifications/templates/email_notifications.html:84
 msgid "Cancel"
 msgstr "Zpět"
+
+msgid "Sent"
+msgstr "Odesláno"
+
+msgid "Unsent"
+msgstr "Neodesláno"

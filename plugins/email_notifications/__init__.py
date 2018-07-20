@@ -5,6 +5,9 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
+from calendar import timegm
+import io
+#import codecs
 import os
 import os.path
 import traceback
@@ -22,7 +25,7 @@ from plugins import PluginOptions, plugin_url
 from ospy.options import options
 from ospy.stations import stations
 from ospy.inputs import inputs
-from ospy.log import log, EVENT_FILE
+from ospy.log import log, EVENT_FILE, logEM
 from ospy.helpers import datetime_string, get_input
 
 import i18n
@@ -40,7 +43,11 @@ email_options = PluginOptions(
         'emlrun': False,
         'emlusr': '',
         'emlpwd': '',
-        'emladr': '',
+        'emladr0': '',
+        'emladr1': '',
+        'emladr2': '',
+        'emladr3': '',
+        'emladr4': '',
         'emlsubject': _('Report from OSPy')
     }
 )
@@ -69,14 +76,21 @@ class EmailSender(Thread):
         while self._sleep_time > 0 and not self._stop.is_set():
             time.sleep(1)
             self._sleep_time -= 1
-
-    def try_mail(self, text, attachment=None):
+                   
+    def try_mail(self, text, attachment=None, subject=None):
         log.clear(NAME)
         try:
             email(text, attach=attachment)  # send email with attachment from
             log.info(NAME, _('Email was sent') + ':\n' + text)
+            if not options.run_logEM:
+                log.info(NAME, _('Email logging is disabled in options...'))
+            logEM.save_email_log(subject or email_options['emlsubject'], text, _('Sent'))
+
         except Exception:
             log.error(NAME, _('Email was not sent!') + '\n' + traceback.format_exc())
+            logEM.save_email_log(subject or email_options['emlsubject'], text, _('Unsent'))
+            if not options.run_logEM:
+                log.info(NAME, _('Email logging is disabled in options...'))
 
     def run(self):
         last_rain = False
@@ -165,14 +179,21 @@ def stop():
 
 def email(text, subject=None, attach=None):
     """Send email with with attachments. If subject is None, the default will be used."""
-    if email_options['emlusr'] != '' and email_options['emlpwd'] != '' and email_options['emladr'] != '':
+    if email_options['emlusr'] != '' and email_options['emlpwd'] != '' and email_options['emladr0'] != '':
+
+        recipients_list = [email_options['emladr'+str(i)] for i in range(5) if email_options['emladr'+str(i)]!='']
+
         gmail_user = email_options['emlusr']  # User name
         gmail_name = options.name  # OSPi name
         gmail_pwd = email_options['emlpwd']  # User password
+        mail_server = smtplib.SMTP("smtp.gmail.com", 587)
+        mail_server.ehlo()
+        mail_server.starttls()
+        mail_server.ehlo()
+        mail_server.login(gmail_user, gmail_pwd)
         # --------------
         msg = MIMEMultipart()
         msg['From'] = gmail_name
-        msg['To'] = email_options['emladr']
         msg['Subject'] = subject or email_options['emlsubject']
 
         html = """\
@@ -189,20 +210,20 @@ def email(text, subject=None, attach=None):
         part_text = MIMEText(html.encode('utf-8'), 'html', 'utf-8')
         msg.attach(part_text)
 
-        if attach is not None and os.path.isfile(attach) and os.access(attach, os.R_OK):  # If insert attachments
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(open(attach, 'rb').read())
-            encode_base64(part)
-            part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(attach))
-            msg.attach(part)
-        mail_server = smtplib.SMTP("smtp.gmail.com", 587)
-        mail_server.ehlo()
-        mail_server.starttls()
-        mail_server.ehlo()
-        mail_server.login(gmail_user, gmail_pwd)
-        mail_server.sendmail(gmail_name, email_options['emladr'],
-                             msg.as_string())  # name + e-mail address in the From: field
-        mail_server.close()
+        if len(recipients_list) > 0:
+            recipients_str = ', '.join(recipients_list)
+            msg['To'] = recipients_str
+            if attach is not None and os.path.isfile(attach) and os.access(attach, os.R_OK):  # If insert attachments
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(open(attach, 'rb').read())
+                encode_base64(part)
+                part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(attach))
+                msg.attach(part)
+            mail_server.sendmail(gmail_name, recipients_list, msg.as_string())   # name + e-mail address in the From: field
+
+        #mail_server.close()
+        mail_server.quit()    
+
     else:
         raise Exception(_('E-mail plug-in is not properly configured!'))
 

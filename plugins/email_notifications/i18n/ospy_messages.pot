@@ -144,3 +144,9 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+msgid "Sent"
+msgstr ""
+
+msgid "Unsent"
+msgstr ""
+

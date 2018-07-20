@@ -149,3 +149,9 @@ msgstr "Odoslanie testovacieho e-mailu"
 #: plugins/email_notifications/templates/email_notifications.html:84
 msgid "Cancel"
 msgstr "Zrušiť"
+
+msgid "Sent"
+msgstr "Odoslané"
+
+msgid "Unsent"
+msgstr "Neodoslané"
