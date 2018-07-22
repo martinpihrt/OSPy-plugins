@@ -6,16 +6,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-15 10:36+0200\n"
-"PO-Revision-Date: 2016-06-15 11:00+0200\n"
+"PO-Revision-Date: 2018-07-22 15:32+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+"X-Generator: Poedit 2.0.8\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
+
+msgid "E-mail subject"
+msgstr "Předmět e-mailu"
 
 #: plugins/ups_adj/__init__.py:98
 msgid "OK"
@@ -47,7 +50,7 @@ msgstr ""
 msgid "UPS plugin - power line is not restore in time -> shutdown system!"
 msgstr ""
 "Rozšíření UPS - napájecí napětí ze sítě nebylo obnoveno do stanovené doby -> "
-"vypínám operační systém (Linux)."
+"vypínám operační systém (Linux)!"
 
 #: plugins/ups_adj/__init__.py:143
 msgid "UPS plugin - power line has restored - OK."
@@ -107,7 +110,7 @@ msgstr "Zaslat E-mail v případě chyby"
 
 #: plugins/ups_adj/templates/ups_adj.html:35
 msgid "For this function required email plugin"
-msgstr "Pro tuto funkci je vyžadováno rozšíření \"Email notifications\""
+msgstr "Pro tuto funkci je vyžadováno rozšíření Email notifications"
 
 #: plugins/ups_adj/templates/ups_adj.html:39
 msgid "Max time for shutdown countdown"
