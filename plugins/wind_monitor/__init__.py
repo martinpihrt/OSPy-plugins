@@ -28,12 +28,13 @@ LINK = 'settings_page'
 wind_options = PluginOptions(
     NAME,
     {
-        "use_wind_monitor": False,
-        "address": False,            # True = 0x51, False = 0x50 for PCF8583
-        "sendeml": True,             # True = send email with error
-        "pulses": 2,                 # 2 pulses per rotation
-        "metperrot": 1.492,          # 1.492 meter per hour per rotation
-        "maxspeed": 20               # 20 max speed to deactivate stations  
+        'use_wind_monitor': False,
+        'address': False,            # True = 0x51, False = 0x50 for PCF8583
+        'sendeml': True,             # True = send email with error
+        'pulses': 2,                 # 2 pulses per rotation
+        'metperrot': 1.492,          # 1.492 meter per hour per rotation
+        'maxspeed': 20,              # 20 max speed to deactivate stations  
+        'emlsubject': _('Report from OSPy WIND SPEED MONITOR plugin')
     }
 )
 
@@ -135,11 +136,10 @@ class WindSender(Thread):
                        disable_text = False                        
 
                 if send:
-                    TEXT = (datetime_string() + ': ' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h.' )
+                    msg = (datetime_string() + ': ' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h.' )
                     try:
-                        from plugins.email_notifications import email 
-                        email(TEXT)                             # send email without attachments
-                        log.info(NAME, _('Email was sent') + ': ' + TEXT)
+                        send_email(msg)
+                        log.info(NAME, _('Email was sent') + ': ' + msg)
                         send = False
                     except Exception:
                         log.clear(NAME)
@@ -172,6 +172,32 @@ def stop():
         wind_sender.stop()
         wind_sender.join()
         wind_sender = None
+
+
+def send_email(msg):
+    """Send email"""
+    message = datetime_string() + ': ' + msg
+    try:
+        from plugins.email_notifications import email
+
+        Subject = wind_options['emlsubject']
+
+        email(message, subject=Subject)
+
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:        
+           logEM.save_email_log(Subject, message, _('Sent'))
+
+        log.info(NAME, _('Email was sent') + ': ' + message)
+
+    except Exception:
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:
+           logEM.save_email_log(Subject, message, _('Sent'))
+
+        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
 
 def set_counter(i2cbus):
