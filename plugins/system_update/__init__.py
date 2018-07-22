@@ -12,9 +12,11 @@ import traceback
 import web
 from ospy.webpages import ProtectedPage
 from ospy.helpers import restart
-from ospy.log import log
+from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url
 from ospy import version
+from ospy.options import options
+from ospy.helpers import datetime_string
 
 import i18n
 
@@ -26,7 +28,8 @@ plugin_options = PluginOptions(
     NAME,
     {
         'auto_update': False,
-        'use_update': False
+        'use_update': False,
+        'emlsubject': _('Report from OSPy SYSTEM UPDATE plugin')
     }
 )
 
@@ -102,6 +105,10 @@ class StatusChecker(Thread):
             log.info(NAME, _('Available revision') + ': %d (%s)' % (new_revision, new_date))
             log.info(NAME, _('Changes') +':\n' + changes)
             self.status['can_update'] = True
+            msg =  _('New OSPy version is available!') + '<br>' 
+            msg += _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + '<br>'
+            msg += _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.'
+            send_email(str(msg))
         else:
             log.info(NAME, _('Running unknown version!'))
             log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
@@ -138,24 +145,28 @@ checker = None
 # Helper functions:                                                            #
 ################################################################################
 def perform_update():
-    # ignore local chmod permission
-    command = "git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
-    subprocess.check_output(command.split())
+    try:
+       # ignore local chmod permission
+       command = "git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
+       subprocess.check_output(command.split())
 
-    command = "git reset --hard"
-    subprocess.check_output(command.split())
+       command = "git reset --hard"
+       subprocess.check_output(command.split())
 
-    command = "git pull"
-    output = subprocess.check_output(command.split())
+       command = "git pull"
+       output = subprocess.check_output(command.split())
     
-    # Go back to master (refactor is old):
-    if checker is not None:
-        if checker.status['remote_branch'] == 'origin/refactor':
-            command = 'git checkout master'
-            subprocess.check_output(command.split())
+       # Go back to master (refactor is old):
+       if checker is not None:
+          if checker.status['remote_branch'] == 'origin/refactor':
+             command = 'git checkout master'
+             subprocess.check_output(command.split())
 
-    log.debug(NAME, _('Update result') + ': ' + output)
-    restart(3)
+       log.debug(NAME, _('Update result') + ': ' + output)
+       restart(3)
+
+    except Exception:
+       log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
 
 
 def start():
@@ -170,6 +181,33 @@ def stop():
         checker.stop()
         checker.join()
         checker = None
+
+
+def send_email(msg):
+    """Send email"""
+    message = datetime_string() + ': ' + msg
+    try:
+        from plugins.email_notifications import email
+
+        Subject = plugin_options['emlsubject']
+
+        email(message, subject=Subject) # send email
+
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:        
+           logEM.save_email_log(Subject, message, _('Sent'))
+
+        log.info(NAME, _('Email was sent') + ': ' + message)
+
+    except Exception:
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:
+           logEM.save_email_log(Subject, message, _('Sent'))
+
+        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
+
 
 
 ################################################################################
