@@ -13,7 +13,12 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
+                                
+msgid "E-mail subject"
+msgstr ""
 
+msgid "For this function required email plugin"
+msgstr ""
 
 #: plugins/system_update/__init__.py:45
 msgid "None!"
