@@ -96,6 +96,9 @@ msgstr ""
 msgid "Max time to activate pressure sensor"
 msgstr ""
 
+msgid "E-mail subject"
+msgstr ""
+
 #: plugins/pressure_monitor/templates/pressure_monitor.html:48
 msgid "max 999 seconds"
 msgstr ""
