@@ -42,9 +42,15 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Power line state'):</td>
-                <td>
+                <td style='text-transform: none; vertical-align: top;'>$_('Power line state'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
                    $status['power%d']
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td>
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
                 </td>
             </tr>
             <tr>
