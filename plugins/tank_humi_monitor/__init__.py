@@ -15,7 +15,7 @@ import web
 from ospy.options import level_adjustments
 from ospy.stations import stations
 from ospy.options import options
-from ospy.log import log
+from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url
 from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
@@ -30,21 +30,22 @@ LINK = 'settings_page'
 tank_options = PluginOptions(
     NAME,
     {
-       "use_sonic": True,      # default use sonic sensor
-       "distance_bottom": 33,  # default 33 cm sensor <-> bottom tank
-       "distance_top": 2,      # default 2 cm sensor <-> top tank
-       "water_minimum": 6,     # default 6 cm water level <-> bottom tank
-       "use_send_email": True, # default send email
-       "use_freq_1": False,    # default not use freq sensor 1
-       "use_freq_2": False,    # default not use freq sensor 2
-       "use_freq_3": False,    # default not use freq sensor 3
-       "use_freq_4": False,    # default not use freq sensor 4
-       "use_freq_5": False,    # default not use freq sensor 5
-       "use_freq_6": False,    # default not use freq sensor 6
-       "use_freq_7": False,    # default not use freq sensor 7
-       "use_freq_8": False,    # default not use freq sensor 8
-       "minimum_freq": 400000, # default freq from sensor for 0% humi
-       "maximum_freq": 100000  # default freq from sensor for 100% humi	
+       'use_sonic': True,      # default use sonic sensor
+       'distance_bottom': 33,  # default 33 cm sensor <-> bottom tank
+       'distance_top': 2,      # default 2 cm sensor <-> top tank
+       'water_minimum': 6,     # default 6 cm water level <-> bottom tank
+       'use_send_email': True, # default send email
+       'use_freq_1': False,    # default not use freq sensor 1
+       'use_freq_2': False,    # default not use freq sensor 2
+       'use_freq_3': False,    # default not use freq sensor 3
+       'use_freq_4': False,    # default not use freq sensor 4
+       'use_freq_5': False,    # default not use freq sensor 5
+       'use_freq_6': False,    # default not use freq sensor 6
+       'use_freq_7': False,    # default not use freq sensor 7
+       'use_freq_8': False,    # default not use freq sensor 8
+       'minimum_freq': 400000, # default freq from sensor for 0% humi
+       'maximum_freq': 100000, # default freq from sensor for 100% humi
+       'emlsubject': _('Report from OSPy TANK HUMI plugin')	
     }
 )
 
@@ -203,11 +204,10 @@ class Sender(Thread):
                        log.info(NAME, datetime_string() + ' F8: ' + _('Error I2C device not found.'))
 
                 if send:
-                    TEXT = (datetime_string() + '\n' + _('System detected error: Water Tank has minimum Water Level') + ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + _('Scheduler is now disabled and all Stations turn Off.'))
+                    msg = (datetime_string() + '\n' + _('System detected error: Water Tank has minimum Water Level') + ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + _('Scheduler is now disabled and all Stations turn Off.'))
                     try:
-                        from plugins.email_notifications import email
-                        email(TEXT)
-                        log.info(NAME, _('Email was sent') + ': ' + TEXT)
+                        send_email(msg)
+                        log.info(NAME, _('Email was sent') + ': ' + msg)
                         send = False
                     except Exception as err:
                         log.error(NAME, _('Email was not sent') + '! ' + str(err))
@@ -329,6 +329,32 @@ def get_station_is_on():
                 return True
             else:
                 return False
+
+def send_email(msg):
+    """Send email"""
+    message = datetime_string() + ': ' + msg
+    try:
+        from plugins.email_notifications import email
+
+        Subject = tank_options['emlsubject']
+
+        email(message, subject=Subject)
+
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:        
+           logEM.save_email_log(Subject, message, _('Sent'))
+
+        log.info(NAME, _('Email was sent') + ': ' + message)
+
+    except Exception:
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:
+           logEM.save_email_log(Subject, message, _('Sent'))
+
+        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
+
 
 ################################################################################
 # Web pages:                                                                   #
