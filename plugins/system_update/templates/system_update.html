@@ -58,6 +58,12 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td>
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'> ($_('For this function required email plugin'))
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
                     <textarea style="font-family: monospace;" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
