@@ -13,7 +13,7 @@ from threading import Thread, Event
 import web
 from ospy.stations import stations
 from ospy.options import options
-from ospy.log import log
+from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
@@ -26,10 +26,11 @@ LINK = 'settings_page'
 pressure_options = PluginOptions(
     NAME,
     {
-        "time": 10,
-        "use_press_monitor": False,
-        "normally": False,
-        "sendeml": True
+        'time': 10,
+        'use_press_monitor': False,
+        'normally': False,
+        'sendeml': True,
+        'emlsubject': _('Report from OSPy PRESSURE MONITOR plugin')
     }
 )
 
@@ -142,11 +143,10 @@ class PressureSender(Thread):
                         three_text = False
 
                 if send:
-                    TEXT = (datetime_string() + ': ' + _('System detected error: pressure sensor.'))
+                    msg = (datetime_string() + ': ' + _('System detected error: pressure sensor.'))
                     try:
-                        from plugins.email_notifications import email
-                        email(TEXT)                                     # send email without attachments
-                        log.info(NAME, _('Email was sent') + ': ' + TEXT)
+                        send_email(msg)
+                        log.info(NAME, _('Email was sent') + ': ' + msg)
                         send = False
                     except Exception:
                         log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
@@ -175,6 +175,32 @@ def stop():
         pressure_sender.stop()
         pressure_sender.join()
         pressure_sender = None
+
+
+def send_email(msg):
+    """Send email"""
+    message = datetime_string() + ': ' + msg
+    try:
+        from plugins.email_notifications import email
+
+        Subject = pressure_options['emlsubject']
+
+        email(message, subject=Subject)
+
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:        
+           logEM.save_email_log(Subject, message, _('Sent'))
+
+        log.info(NAME, _('Email was sent') + ': ' + message)
+
+    except Exception:
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:
+           logEM.save_email_log(Subject, message, _('Sent'))
+
+        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
 
 def get_check_pressure():
