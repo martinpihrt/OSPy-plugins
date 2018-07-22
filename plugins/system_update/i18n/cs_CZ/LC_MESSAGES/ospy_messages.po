@@ -17,6 +17,15 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
 
+msgid "Send E-mail if update is available"
+msgstr "Odeslat E-mail pokud je k dispozici nová aktualizace"
+
+msgid "Send"
+msgstr "Odesláno"
+
+msgid "Unsend"
+msgstr "Neodesláno"
+
 msgid "E-mail subject"
 msgstr "Předmět e-mailu"
 

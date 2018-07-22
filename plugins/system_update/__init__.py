@@ -29,7 +29,8 @@ plugin_options = PluginOptions(
     {
         'auto_update': False,
         'use_update': False,
-        'emlsubject': _('Report from OSPy SYSTEM UPDATE plugin')
+        'use_eml': False,
+        'eml_subject': _('Report from OSPy SYSTEM UPDATE plugin')
     }
 )
 
@@ -108,7 +109,8 @@ class StatusChecker(Thread):
             msg =  _('New OSPy version is available!') + '<br>' 
             msg += _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + '<br>'
             msg += _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.'
-            send_email(str(msg))
+            if plugin_options['use_eml']:
+                send_email(msg)
         else:
             log.info(NAME, _('Running unknown version!'))
             log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
@@ -189,7 +191,7 @@ def send_email(msg):
     try:
         from plugins.email_notifications import email
 
-        Subject = plugin_options['emlsubject']
+        Subject = plugin_options['eml_subject']
 
         email(message, subject=Subject) # send email
 

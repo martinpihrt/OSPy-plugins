@@ -17,6 +17,12 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: sk_SK\n"
 
+msgid "Sent"
+msgstr "Odoslané"
+
+msgid "Unsent"
+msgstr "Neodoslané"
+
 msgid "E-mail subject"
 msgstr "Predmet e-mailu"
 

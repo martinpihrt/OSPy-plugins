@@ -16,7 +16,7 @@ msgstr ""
 
 
 #: plugins/email_notifications/__init__.py:44
-msgid "Report from OSPy"
+msgid "Report from OSPy SYSTEM"
 msgstr ""
 
 #: plugins/email_notifications/__init__.py:77

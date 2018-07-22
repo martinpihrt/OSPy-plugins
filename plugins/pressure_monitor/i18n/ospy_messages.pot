@@ -14,6 +14,11 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
+msgid "Send"
+msgstr ""
+
+msgid "Unsend"
+msgstr ""
 
 #: plugins/pressure_monitor/__init__.py:95
 msgid "Master station is ON."

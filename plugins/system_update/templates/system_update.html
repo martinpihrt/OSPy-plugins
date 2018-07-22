@@ -58,9 +58,15 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Send E-mail if update is available'):</td>
+                <td>
+                    <input name='use_eml' type='checkbox'${" checked" if plugin_options['use_eml'] else ""}> ($_('For this function required email plugin'))
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
                 <td>
-                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'> ($_('For this function required email plugin'))
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
                 </td>
             </tr>
             <tr>

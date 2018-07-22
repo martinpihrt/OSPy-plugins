@@ -18,8 +18,8 @@ msgstr ""
 "Language: cs_CZ\n"
 
 #: plugins/email_notifications/__init__.py:44
-msgid "Report from OSPy"
-msgstr "Hlášení z OSPy"
+msgid "Report from OSPy SYSTEM"
+msgstr "Hlášení z OSPy SYSTÉMU"
 
 #: plugins/email_notifications/__init__.py:77
 msgid "Email was sent"

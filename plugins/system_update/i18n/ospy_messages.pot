@@ -14,6 +14,15 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
                                 
+msgid "Send E-mail if update is available"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+msgid "Unsend"
+msgstr ""
+
 msgid "E-mail subject"
 msgstr ""
 
