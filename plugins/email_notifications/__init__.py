@@ -5,9 +5,6 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
-from calendar import timegm
-import io
-#import codecs
 import os
 import os.path
 import traceback
@@ -48,7 +45,7 @@ email_options = PluginOptions(
         'emladr2': '',
         'emladr3': '',
         'emladr4': '',
-        'emlsubject': _('Report from OSPy')
+        'emlsubject': _('Report from OSPy SYSTEM')
     }
 )
 
@@ -176,15 +173,17 @@ def stop():
         email_sender.join()
         email_sender = None
 
+def safeStr(obj):
+    try: 
+       return str(obj)
+    except:
+       return "u'" + u' '.join(obj).encode('utf-8').strip() + "'"
 
 def email(text, subject=None, attach=None):
     """Send email with with attachments. If subject is None, the default will be used."""
     if email_options['emlusr'] != '' and email_options['emlpwd'] != '' and email_options['emladr0'] != '':
-
         recipients_list = [email_options['emladr'+str(i)] for i in range(5) if email_options['emladr'+str(i)]!='']
-
         gmail_user = email_options['emlusr']  # User name
-        gmail_name = options.name  # OSPi name
         gmail_pwd = email_options['emlpwd']  # User password
         mail_server = smtplib.SMTP("smtp.gmail.com", 587)
         mail_server.ehlo()
@@ -193,7 +192,8 @@ def email(text, subject=None, attach=None):
         mail_server.login(gmail_user, gmail_pwd)
         # --------------
         msg = MIMEMultipart()
-        msg['From'] = gmail_name
+
+        msg['From'] = options.name
         msg['Subject'] = subject or email_options['emlsubject']
 
         html = """\
@@ -219,9 +219,8 @@ def email(text, subject=None, attach=None):
                 encode_base64(part)
                 part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(attach))
                 msg.attach(part)
-            mail_server.sendmail(gmail_name, recipients_list, msg.as_string())   # name + e-mail address in the From: field
+            mail_server.sendmail('OSPy email sender', recipients_list, msg.as_string())   # name + e-mail address in the From: field
 
-        #mail_server.close()
         mail_server.quit()    
 
     else:
