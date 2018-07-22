@@ -6,16 +6,22 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-08 13:14+0200\n"
-"PO-Revision-Date: 2016-06-08 13:25+0200\n"
+"PO-Revision-Date: 2018-07-22 15:23+0200\n"
 "Language-Team: pihrt.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+"X-Generator: Poedit 2.0.8\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
+
+msgid "E-mail subject"
+msgstr "Předmět e-mailu"
+
+msgid "For this function required email plugin"
+msgstr "Pro tuto funkci je vyžadováno rozšíření Email notifications"
 
 #: plugins/system_update/__init__.py:45
 msgid "None!"
@@ -43,7 +49,7 @@ msgstr "Změny"
 
 #: plugins/system_update/__init__.py:105
 msgid "Running unknown version!"
-msgstr "Spuštěna neznámá verze"
+msgstr "Spuštěna neznámá verze!"
 
 #: plugins/system_update/__init__.py:129
 msgid "System update plug-in"
