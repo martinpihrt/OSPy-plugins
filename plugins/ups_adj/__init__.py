@@ -12,10 +12,11 @@ from threading import Thread, Event
 
 import web
 from ospy.helpers import poweroff
-from ospy.log import log
+from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
+from ospy.options import options
 
 import i18n
 
@@ -25,9 +26,10 @@ LINK = 'settings_page'
 ups_options = PluginOptions(
     NAME,
     {
-        "time": 60, # in minutes
-        "ups": False,
-        "sendeml": False,
+        'time': 60, # in minutes
+        'ups': False,
+        'sendeml': False,
+        'emlsubject': _('Report from OSPy UPS plugin')
     }
 )
 
@@ -88,6 +90,8 @@ class UPSSender(Thread):
         once_three = True
 
         last_time = int(time.time())
+
+        self._sleep(2)
 
         while not self._stop.is_set():
             try:
@@ -181,9 +185,24 @@ def send_email(msg):
     message = datetime_string() + ': ' + msg
     try:
         from plugins.email_notifications import email
-        email(message)
+
+        Subject = ups_options['emlsubject']
+
+        email(message, subject=Subject)
+
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:        
+           logEM.save_email_log(ups_options['emlsubject'], message, _('Sent'))
+
         log.info(NAME, _('Email was sent') + ': ' + message)
+
     except Exception:
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:
+           logEM.save_email_log(ups_options['emlsubject'], message, _('Sent'))
+
         log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
 
