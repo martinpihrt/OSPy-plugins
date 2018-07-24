@@ -70,8 +70,12 @@ msgid "Playing..."
 msgstr "Přehrávám..."
 
 #: plugins/voice_notification/__init__.py:212
-msgid "Saving OK."
-msgstr "Uloženo OK."
+msgid "Saving MP3 file OK."
+msgstr "Soubor MP3 uložen OK."
+
+#: plugins/voice_notification/__init__.py:253
+msgid "Error. MP3 file name is not voice.mp3"
+msgstr "Chyba. MP3 soubor se nemenuje voice.mp3"
 
 #: plugins/voice_notification/templates/voice_notification.html:3
 msgid "Voice Notification"
@@ -185,6 +189,14 @@ msgstr "Přeskočit hlasové upozornění u těchto stanic."
 #: plugins/voice_notification/templates/voice_notification.html:64
 msgid "Status"
 msgstr "Stav"
+
+#: plugins/voice_notification/templates/voice_notification.html:91
+msgid "Upload mp3 file"
+msgstr "Nahrát MP3 soubor"
+
+#: plugins/voice_notification/templates/voice_notification.html:96
+msgid "Upload"
+msgstr "Nahrát"
 
 #: plugins/voice_notification/templates/voice_notification.html:77
 msgid "Submit"
