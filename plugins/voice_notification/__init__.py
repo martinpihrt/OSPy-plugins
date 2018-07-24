@@ -219,13 +219,6 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         test = get_input(qdict, 'test', False, lambda x: True)
 
-        if web.input().uploadfile == 'voice.mp3':
-           #fout = open(os.path.join(MP3_FILE_FOLDER, 'voice.mp3'),'w') 
-           #i = web.input(uploadfile={})
-           #fout.write(i.uploadfile.read()) 
-           #fout.close() 
-           log.info(NAME, _('Saving OK.'))  
-
         if checker is not None:
             checker.update()
 
@@ -235,6 +228,35 @@ class settings_page(ProtectedPage):
                play_voice(self, "voice.mp3") # play for test
 
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class upload_page(ProtectedPage):
+    
+    def GET(self):
+        return self.plugin_render.voice_notification(plugin_options, log.events(NAME))
+
+    def POST(self):
+        x = web.input(myfile={})
+
+        #web.debug(x['myfile'].filename)    # This is the filename
+        #web.debug(x['myfile'].value)       # This is the file contents
+        #web.debug(x['myfile'].file.read()) # Or use a file(-like) object
+
+        try:
+           if x['myfile'].filename == 'voice.mp3':
+              fout = open(os.path.join(MP3_FILE_FOLDER, 'voice.mp3'),'w') 
+              fout.write(x['myfile'].file.read()) 
+              fout.close() 
+              log.info(NAME, _('Saving MP3 file OK.')) 
+
+           else:
+              log.info(NAME, _('Error. MP3 file name is not voice.mp3')) 
+        
+        except Exception:
+              log.error(NAME, _('Voice Notification plug-in') + ':\n' + traceback.format_exc())
+
+        raise web.seeother(plugin_url(settings_page), True)
+
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format"""

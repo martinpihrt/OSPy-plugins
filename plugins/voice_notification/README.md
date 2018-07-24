@@ -33,7 +33,7 @@ Plugin setup
 * Status:  
   Status window from the plugin.
 
-I working on this plugin... 
-10.7.2018 function plugin - without uploading mp3 file 
+* Upload mp3 file:  
+  MP3 file must have a name "voice.mp3"!
 
 Visit [Martin Pihrt's blog](https://pihrt.com). for more information.  
