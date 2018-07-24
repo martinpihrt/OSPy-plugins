@@ -6,16 +6,24 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-06-27 12:26+CEST\n"
-"PO-Revision-Date: 2018-07-11 17:43+0200\n"
+"PO-Revision-Date: 2018-07-24 17:10+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.0.8\n"
+"X-Generator: Poedit 2.1\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: sk_SK\n"
+
+#: plugins/voice_notification/__init__.py:253
+msgid "Error. MP3 file name is not voice.mp3"
+msgstr "Chyba. MP3 názov súboru nie je voice. mp3"
+
+#: plugins/voice_notification/__init__.py:250
+msgid "Saving MP3 file OK."
+msgstr "Ukladanie MP3 súboru OK."
 
 #: plugins/voice_notification/__init__.py:71
 msgid "Voice notification is disabled."
@@ -180,8 +188,12 @@ msgid "Status"
 msgstr "Stav"
 
 #: plugins/voice_notification/templates/voice_notification.html:73
-msgid "Upload mp3"
+msgid "Upload mp3 file"
 msgstr "Nahrať mp3"
+
+#: plugins/voice_notification/templates/voice_notification.html:96
+msgid "Upload"
+msgstr "Nahrať"
 
 #: plugins/voice_notification/templates/voice_notification.html:77
 msgid "Submit"
