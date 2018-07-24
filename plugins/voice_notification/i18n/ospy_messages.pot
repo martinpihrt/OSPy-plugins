@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-07-11 17:14+CEST\n"
+"POT-Creation-Date: 2018-07-24 16:58+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,174 +15,160 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/voice_notification/__init__.py:71
+#: plugins/voice_notification/__init__.py:76
 msgid "Voice notification is disabled."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:73
+#: plugins/voice_notification/__init__.py:78
 msgid "Voice notification is enabled."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:88
+#: plugins/voice_notification/__init__.py:93
 msgid "Pygame is not installed."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:89
+#: plugins/voice_notification/__init__.py:94
 msgid "Please wait installing pygame..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:93
+#: plugins/voice_notification/__init__.py:98
 msgid "Pygame is now installed."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:125
+#: plugins/voice_notification/__init__.py:118
+msgid "Skiping playing on station"
+msgstr ""
+
+#: plugins/voice_notification/__init__.py:136
 msgid "Repeating playing nr. 2..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:132
+#: plugins/voice_notification/__init__.py:143
 msgid "Repeating playing nr. 3..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:138
+#: plugins/voice_notification/__init__.py:149
 msgid "Stopping..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:142
+#: plugins/voice_notification/__init__.py:153
+#: plugins/voice_notification/__init__.py:256
 msgid "Voice Notification plug-in"
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:183
+#: plugins/voice_notification/__init__.py:194
 msgid "Loading..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:185
+#: plugins/voice_notification/__init__.py:197
 msgid "Set pygame volume to 1.0"
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:187
+#: plugins/voice_notification/__init__.py:200
 msgid "Set master volume to"
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:190
+#: plugins/voice_notification/__init__.py:204
 msgid "Playing..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:212
-msgid "Saving OK."
+#: plugins/voice_notification/__init__.py:227
+msgid "Testing button..."
+msgstr ""
+
+#: plugins/voice_notification/__init__.py:250
+msgid "Saving MP3 file OK."
+msgstr ""
+
+#: plugins/voice_notification/__init__.py:253
+msgid "Error. MP3 file name is not voice.mp3"
 msgstr ""
 
 #: plugins/voice_notification/templates/voice_notification.html:3
 msgid "Voice Notification"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:21
+#: plugins/voice_notification/templates/voice_notification.html:28
 msgid "Voice Notification - Settings"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:22
+#: plugins/voice_notification/templates/voice_notification.html:29
 msgid "This plugin allows you to use voice notifications for different events in the OSPy system."
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:23
+#: plugins/voice_notification/templates/voice_notification.html:30
 msgid "Into the Connector from Output on Raspberry Pi connect Amplifier and Speakers for voice notification."
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:24
+#: plugins/voice_notification/templates/voice_notification.html:31
 msgid "This plugin requires pygame installed. If pygame is not installed on the system, plugin it will install it himself. Pygame is comes already installed on the default raspberian installation."
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:25
+#: plugins/voice_notification/templates/voice_notification.html:32
 msgid "Visit"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:25
+#: plugins/voice_notification/templates/voice_notification.html:32
 msgid "and"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:25
+#: plugins/voice_notification/templates/voice_notification.html:32
 msgid "for more information"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:29
+#: plugins/voice_notification/templates/voice_notification.html:36
 msgid "Enable voice"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:30
-msgid "If the check box is marked, the extension will be active."
-msgstr ""
-
-#: plugins/voice_notification/templates/voice_notification.html:34
+#: plugins/voice_notification/templates/voice_notification.html:41
 msgid "Enable pre start voice"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:35
-msgid "The sound is played before turning on the station."
-msgstr ""
-
-#: plugins/voice_notification/templates/voice_notification.html:39
+#: plugins/voice_notification/templates/voice_notification.html:46
 msgid "Pre run time"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:40
-msgid "How many seconds before turning on stations play sound."
-msgstr ""
-
-#: plugins/voice_notification/templates/voice_notification.html:44
+#: plugins/voice_notification/templates/voice_notification.html:51
 msgid "Repeat playback"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:45
-msgid "How many times to repeat the same message."
-msgstr ""
-
-#: plugins/voice_notification/templates/voice_notification.html:49
+#: plugins/voice_notification/templates/voice_notification.html:56
 msgid "Master volume"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:50
-msgid "Setting the Raspberry Pi output volume (0-100%)."
-msgstr ""
-
-#: plugins/voice_notification/templates/voice_notification.html:54
+#: plugins/voice_notification/templates/voice_notification.html:61
 msgid "Play only from"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:55
-msgid "Play notifications only from this time (hours)."
-msgstr ""
-
-#: plugins/voice_notification/templates/voice_notification.html:59
+#: plugins/voice_notification/templates/voice_notification.html:66
 msgid "Play only to"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:60
-msgid "Play notifications only to this time (hours)."
-msgstr ""
-
-#: plugins/voice_notification/templates/voice_notification.html:64
+#: plugins/voice_notification/templates/voice_notification.html:71
 msgid "Skip stations"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:65
-msgid "Skip voice notification for these stations."
-msgstr ""
-
-#: plugins/voice_notification/templates/voice_notification.html:64
+#: plugins/voice_notification/templates/voice_notification.html:79
 msgid "Status"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:77
+#: plugins/voice_notification/templates/voice_notification.html:91
+msgid "Upload mp3 file"
+msgstr ""
+
+#: plugins/voice_notification/templates/voice_notification.html:96
+msgid "Upload"
+msgstr ""
+
+#: plugins/voice_notification/templates/voice_notification.html:105
 msgid "Submit"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:78
+#: plugins/voice_notification/templates/voice_notification.html:106
 msgid "Cancel"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:87
+#: plugins/voice_notification/templates/voice_notification.html:107
 msgid "Test playing"
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:234
-msgid "Testing button..."
-msgstr ""
