@@ -18,6 +18,9 @@ $var page: plugins
             jQuery("#pluginForm").attr('action', "$plugins.plugin_url('voice_notification.settings_page')?test")
             jQuery("#pluginForm").submit();
         });
+        jQuery("#cUpload").click(function() {
+            jQuery("#pluginFormUpload").submit();
+        });
     });
 </script>
 
@@ -78,11 +81,28 @@ $var page: plugins
           <textarea style="font-family: monospace;" rows="15" cols="40" readonly>$'\n'.join(events)</textarea></td>
         </tr>
         </table>
-    <br>
-    <input type="file" name="uploadfile" class="upload"/>
+    </form>
 </div>
+
+<div style="margin: 10px 0px 10px 0px;">
+   <form id="pluginFormUpload" action="$plugins.plugin_url('voice_notification.upload_page')" method="POST" enctype="multipart/form-data">
+     <table class="optionList">
+        <tr>
+          <td style='text-transform: none;'>$_('Upload mp3 file'):</td>
+          <td title="$_('MP3 file must have a name') voice.mp3">
+              <input type="file" name="myfile" class="upload"/>
+          </td>
+          <td>
+              <button id="cUpload" class="button upload">$_('Upload')</button>
+          </td>
+          </tr>
+        <tr>
+     </table> 
+   </form>
+</div>
+
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <button id="cTest" class="upload"><b>$_('Test playing')</b></button>
+    <button id="cTest" class="button backup">$_('Test playing')</button>
 </div>
