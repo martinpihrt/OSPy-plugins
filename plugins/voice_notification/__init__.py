@@ -38,10 +38,139 @@ plugin_options = PluginOptions(
         'voice_start_station': False,   # start message before turning on the station
         'pre_time': 5,                  # sound is played 5 second before turning on the station
         'repeating': 1,                 # how many times to repeat the same message
-        'volume': 80,                   # master volume 80%
+        'volume': 95,                   # master volume 95%
         'start_hour': 0,                # voice notification only from 0 
         'stop_hour': 23,                # to 23 hours 
-        'skip_stations': []             # skip voice notification if activated stations xxx
+        'skip_stations': [],            # skip voice notification if activated stations xxx
+        'vs0': ' ',                     # station 1 has select voice1.mp3, voice2.mp3 max is voice20.mp3 etc...
+        'vs1': ' ',
+        'vs2': ' ', 
+        'vs3': ' ', 
+        'vs4': ' ', 
+        'vs5': ' ', 
+        'vs6': ' ', 
+        'vs7': ' ', 
+        'vs8': ' ',
+        'vs9': ' ',
+        'vs10': ' ',
+        'vs11': ' ',
+        'vs12': ' ',
+        'vs13': ' ',
+        'vs14': ' ',
+        'vs15': ' ',
+        'vs16': ' ',
+        'vs17': ' ', 
+        'vs18': ' ',
+        'vs19': ' ',
+        'vs20': ' ',
+        'vs21': ' ',
+        'vs22': ' ', 
+        'vs23': ' ', 
+        'vs24': ' ', 
+        'vs25': ' ', 
+        'vs26': ' ', 
+        'vs27': ' ', 
+        'vs28': ' ',
+        'vs29': ' ',
+        'vs30': ' ',
+        'vs31': ' ',
+        'vs32': ' ',
+        'vs33': ' ',
+        'vs34': ' ',
+        'vs35': ' ',
+        'vs36': ' ',
+        'vs37': ' ', 
+        'vs38': ' ',
+        'vs39': ' ',
+        'vs40': ' ',
+        'vs41': ' ',
+        'vs42': ' ', 
+        'vs43': ' ', 
+        'vs44': ' ', 
+        'vs45': ' ', 
+        'vs46': ' ', 
+        'vs47': ' ', 
+        'vs48': ' ',
+        'vs49': ' ',
+        'vs50': ' ',
+        'vs51': ' ',
+        'vs52': ' ',
+        'vs53': ' ',
+        'vs54': ' ',
+        'vs55': ' ',
+        'vs56': ' ',
+        'vs57': ' ', 
+        'vs58': ' ',
+        'vs59': ' ',
+        'vs60': ' ',
+        'vs61': ' ',
+        'vs62': ' ', 
+        'vs63': ' ', 
+        'vs64': ' ', 
+        'vs65': ' ', 
+        'vs66': ' ', 
+        'vs67': ' ', 
+        'vs68': ' ',
+        'vs69': ' ',
+        'vs70': ' ',
+        'vs71': ' ',
+        'vs72': ' ',
+        'vs73': ' ',
+        'vs74': ' ',
+        'vs75': ' ',
+        'vs76': ' ',
+        'vs77': ' ', 
+        'vs78': ' ',
+        'vs79': ' ',
+        'vs80': ' ',
+        'vs81': ' ',
+        'vs82': ' ', 
+        'vs83': ' ', 
+        'vs84': ' ', 
+        'vs85': ' ', 
+        'vs86': ' ', 
+        'vs87': ' ', 
+        'vs88': ' ',
+        'vs89': ' ',
+        'vs90': ' ',
+        'vs91': ' ',
+        'vs92': ' ',
+        'vs93': ' ',
+        'vs94': ' ',
+        'vs95': ' ',
+        'vs96': ' ',
+        'vs97': ' ', 
+        'vs98': ' ',
+        'vs99': ' ',
+        'vs100': ' ',
+        'vs101': ' ',
+        'vs102': ' ', 
+        'vs103': ' ', 
+        'vs104': ' ', 
+        'vs105': ' ', 
+        'vs106': ' ', 
+        'vs107': ' ', 
+        'vs108': ' ',
+        'vs109': ' ',
+        'vs110': ' ',
+        'vs111': ' ',
+        'vs112': ' ',
+        'vs113': ' ',
+        'vs114': ' ',
+        'vs115': ' ',
+        'vs116': ' ',
+        'vs117': ' ', 
+        'vs118': ' ',
+        'vs119': ' ',
+        'vs120': ' ',
+        'vs121': ' ',
+        'vs122': ' ', 
+        'vs123': ' ', 
+        'vs124': ' ', 
+        'vs125': ' ', 
+        'vs126': ' ', 
+        'vs127': ' ', 
+        'vs128': ' '
     })
 
 
@@ -80,6 +209,7 @@ class VoiceChecker(Thread):
         once_test = True  # for test installing pygame
         play = False      # for enabling play
         last_play = False # for disabling nonstop playing
+        post_song  = ' '  # mp3 song filename for vs0 - vs128 (stations song)
     
         while not self._stop.is_set():
             try: 
@@ -106,7 +236,8 @@ class VoiceChecker(Thread):
                       rain = not options.manual_mode and (rain_blocks.block_end() > datetime.datetime.now() or inputs.rain_sensed())
      
                       if current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']: # play notifications only from xx hour to yy hour
-                         play = False             
+                         play = False 
+                         post_song  = ' '            
                          if not options.manual_mode:  # if now not manual control
                              schedule = predicted_schedule(check_start, check_end)
                              for entry in schedule:
@@ -119,6 +250,13 @@ class VoiceChecker(Thread):
                                                 self._sleep(1)
                                                 return
 
+                                        for i in stations.get():
+                                            voiceA = 'voice%d.mp3' % entry['station']
+                                            voiceB = plugin_options['vs%d' % i.index]
+
+                                            if voiceA == voiceB:
+                                               post_song = 'voice%d.mp3' % entry['station'] # name for song for station
+                                                                                                                                      
                                         play = True     
                                     
  
@@ -128,27 +266,29 @@ class VoiceChecker(Thread):
                             if last_play: 
                                log.clear(NAME) 
                                play_voice(self, "voice.mp3") # play voice in folder
-                               while mixer.music.get_busy() == True:
-                                 continue
+                               
+                               if post_song != ' ':
+                                 play_voice(self, post_song) # play post station voice in folder
+                                 
                                self._sleep(2)
 
                                if plugin_options['repeating'] == 2:
                                  log.info(NAME, _('Repeating playing nr. 2...')) 
                                  play_voice(self, "voice.mp3") # play voice in folder
-                                 while mixer.music.get_busy() == True:
-                                   continue
-                               self._sleep(2)
+                                
+                                 if post_song != ' ':
+                                   play_voice(self, post_song) # play post station voice in folder
+                                  
+                                 self._sleep(2)
 
                                if plugin_options['repeating'] == 3:
                                  log.info(NAME, _('Repeating playing nr. 3...')) 
                                  play_voice(self, "voice.mp3") # play voice in folder
-                                 while mixer.music.get_busy() == True:
-                                   continue
-
-                               mixer.music.stop()
-                               log.info(NAME, _('Stopping...'))
-     
+                                
+                                 if post_song != ' ':
+                                   play_voice(self, post_song) # play post station voice in folder
                                    
+                                        
             except Exception:
                 log.error(NAME, _('Voice Notification plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
@@ -188,21 +328,34 @@ def run_command(self, cmd):
 
 def play_voice(self, song):
     """play song"""
-    from pygame import mixer
+    try:
+       from pygame import mixer
 
-    mixer.init()
-    log.info(NAME, _('Loading...')) 
+       mixer.init()
+       log.info(NAME, _('Loading: %s...') % song) 
 
-    mixer.music.load(os.path.join(MP3_FILE_FOLDER, song)) # ex: /home/pi/OSPy/plugins/voice_notification/static/mp3/voice.mp3
-    log.info(NAME, _('Set pygame volume to 1.0'))
-    mixer.music.set_volume(1.0)  # 0.0 min to 1.0 max 
+       patch = (os.path.join(MP3_FILE_FOLDER, song)) # ex: /home/pi/OSPy/plugins/voice_notification/static/mp3/voicexx.mp3
+       mixer.music.load(patch)
 
-    log.info(NAME, _('Set master volume to') + ' ' + str(plugin_options['volume']) + '%')
-    cmd = "sudo amixer  sset PCM,0 " + str(plugin_options['volume']) + "%"
-    run_command(self, cmd)
+       #log.info(NAME, _('Set pygame volume to 1.0'))
+       mixer.music.set_volume(1.0)  # 0.0 min to 1.0 max 
 
-    log.info(NAME, _('Playing...'))  
-    mixer.music.play()
+       log.info(NAME, _('Set master volume to') + ' ' + str(plugin_options['volume']) + '%')
+       cmd = "sudo amixer  sset PCM,0 " + str(plugin_options['volume']) + "%"
+       run_command(self, cmd)
+
+       log.info(NAME, _('Playing...'))  
+       mixer.music.play()
+
+       while mixer.music.get_busy() == True:
+          continue                 
+       
+       mixer.music.stop()
+       log.info(NAME, _('Stopping...'))
+
+    except Exception:
+       log.error(NAME, _('Voice Notification plug-in') + ':\n' + traceback.format_exc())
+
        
 
 ################################################################################
@@ -243,14 +396,16 @@ class upload_page(ProtectedPage):
         #web.debug(x['myfile'].file.read()) # Or use a file(-like) object
 
         try:
-           if x['myfile'].filename == 'voice.mp3':
-              fout = open(os.path.join(MP3_FILE_FOLDER, 'voice.mp3'),'w') 
+           name = ''
+           name = x['myfile'].filename
+           if name in ('voice.mp3', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3'):
+              fout = open(os.path.join(MP3_FILE_FOLDER, name),'w') 
               fout.write(x['myfile'].file.read()) 
               fout.close() 
-              log.info(NAME, _('Saving MP3 file OK.')) 
+              log.info(NAME, _('Saving MP3 %s file OK.') % name) 
 
            else:
-              log.info(NAME, _('Error. MP3 file name is not voice.mp3')) 
+              log.info(NAME, _('Error. MP3 file: %s name is not voice.mp3 or voice0.mp3...voice20.mp3') % name) 
         
         except Exception:
               log.error(NAME, _('Voice Notification plug-in') + ':\n' + traceback.format_exc())

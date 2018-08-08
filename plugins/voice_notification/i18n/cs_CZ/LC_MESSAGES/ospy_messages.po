@@ -6,13 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-06-27 12:26+CEST\n"
-"PO-Revision-Date: 2018-07-11 17:19+0200\n"
+"PO-Revision-Date: 2018-08-08 13:14+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.0.8\n"
+"X-Generator: Poedit 2.0.9\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
@@ -54,12 +54,8 @@ msgid "Voice Notification plug-in"
 msgstr "Rozšíření hlasová upozornění"
 
 #: plugins/voice_notification/__init__.py:183
-msgid "Loading..."
-msgstr "Nahrávám..."
-
-#: plugins/voice_notification/__init__.py:185
-msgid "Set pygame volume to 1.0"
-msgstr "Nastavuji hlasitost pygame na 1.0"
+msgid "Loading: %s..."
+msgstr "Nahrávám: %s..."
 
 #: plugins/voice_notification/__init__.py:187
 msgid "Set master volume to"
@@ -70,12 +66,12 @@ msgid "Playing..."
 msgstr "Přehrávám..."
 
 #: plugins/voice_notification/__init__.py:212
-msgid "Saving MP3 file OK."
-msgstr "Soubor MP3 uložen OK."
+msgid "Saving MP3 %s file OK."
+msgstr "Soubor MP3 %s byl uložen OK."
 
 #: plugins/voice_notification/__init__.py:253
-msgid "Error. MP3 file name is not voice.mp3"
-msgstr "Chyba. MP3 soubor se nemenuje voice.mp3"
+msgid "Error. MP3 file: %s name is not voice.mp3 or voice0.mp3...voice20.mp3"
+msgstr "Došlo k chybě. MP3 soubor: %s není voice.mp3 nebo voice0.mp3...voice20.mp3"
 
 #: plugins/voice_notification/templates/voice_notification.html:3
 msgid "Voice Notification"
@@ -87,28 +83,27 @@ msgstr "Hlasová upozornění - nastavení"
 
 #: plugins/voice_notification/templates/voice_notification.html:22
 msgid ""
-"This plugin allows you to use voice notifications for different events in "
-"the OSPy system."
+"This plugin allows you to use voice notifications for different events in the "
+"OSPy system."
 msgstr ""
-"Toto rozšíření umožňuje používat hlasová upozornění pro různé události v "
-"systému OSPy."
+"Toto rozšíření umožňuje používat hlasová upozornění pro různé události v systému "
+"OSPy."
 
 #: plugins/voice_notification/templates/voice_notification.html:23
 msgid ""
-"Into the Connector from Output on Raspberry Pi connect Amplifier and "
-"Speakers for voice notification."
-msgstr ""
-"Do výstupního konektoru na Raspberry Pi připojte zesilovač a reproduktory."
+"Into the Connector from Output on Raspberry Pi connect Amplifier and Speakers "
+"for voice notification."
+msgstr "Do výstupního konektoru na Raspberry Pi připojte zesilovač a reproduktory."
 
 #: plugins/voice_notification/templates/voice_notification.html:24
 msgid ""
-"This plugin requires pygame installed. If pygame is not installed on the "
-"system, plugin it will install it himself. Pygame is comes already installed "
-"on the default raspberian installation."
+"This plugin requires pygame installed. If pygame is not installed on the system, "
+"plugin it will install it himself. Pygame is comes already installed on the "
+"default raspberian installation."
 msgstr ""
 "Toto rozšíření vyžaduje nainstalované pygame. Není-li pygame nainstalováno, "
-"rozšíření jej nainstaluje samo. Pygame bývá již nainstalováno na čisté "
-"instalaci Raspbianu."
+"rozšíření jej nainstaluje samo. Pygame bývá již nainstalováno na čisté instalaci "
+"Raspbianu."
 
 #: plugins/voice_notification/templates/voice_notification.html:25
 msgid "Visit"
@@ -185,6 +180,14 @@ msgstr "Přeskočit stanice"
 #: plugins/voice_notification/templates/voice_notification.html:65
 msgid "Skip voice notification for these stations."
 msgstr "Přeskočit hlasové upozornění u těchto stanic."
+
+#: plugins/voice_notification/templates/voice_notification.html:80
+msgid "Select voice for stations"
+msgstr "Výběr zvuků pro stanice"
+
+#: plugins/voice_notification/templates/voice_notification.html:80
+msgid "Select voice for this station."
+msgstr "Zvolte zvuk: voicexx.mp3 pro tuto stanici."
 
 #: plugins/voice_notification/templates/voice_notification.html:64
 msgid "Status"

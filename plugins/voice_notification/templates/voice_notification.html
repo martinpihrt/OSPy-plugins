@@ -69,12 +69,26 @@ $var page: plugins
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Skip stations'):</td>
-          <td title="$_('Skip voice notification for these stations.')"> 
+          <td title="$_('Skip voice notification for these stations.')" align="right"> 
           <select multiple name="skip_stations" width="350" style="width: 350px">
               $for station in [station for station in stations if station.enabled]:
-                 <option value="${str(station.index)}" ${"selected" if station.index in plugin_options["skip_stations"] else ""}>${station.name} (Output ${str(station.index+1)})</option>
+                 <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['skip_stations'] else ""}>${station.name} (Output ${str(station.index+1)})</option>
           </select>
           </td>
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Select voice for stations'):</td>
+        </tr>
+        $for station in stations.get():
+            <tr>
+              <td style='text-transform: none;'>${station.name}</td>
+              <td title="$_('Select voice for this station.')"> 
+              <select name="vs${station.index}" width="350" style="width: 350px">
+              $for t in [' ', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']:
+                 <option value="${t}" ${" selected" if plugin_options['vs%d' % station.index]==t else ""}><b>${t}</b></option>
+              </select>
+              </td> 
+            </tr>
         <tr>
           <td style='text-transform: none;'>$_('Status'):</td>
           <td>

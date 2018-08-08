@@ -2,86 +2,90 @@
 # Copyright (C) YEAR ORGANIZATION
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-07-24 16:58+CEST\n"
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-08-08 12:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
-"Content-Transfer-Encoding: ENCODING\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.9\n"
 
-
-#: plugins/voice_notification/__init__.py:76
+#: plugins/voice_notification/__init__.py:93
 msgid "Voice notification is disabled."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:78
+#: plugins/voice_notification/__init__.py:95
 msgid "Voice notification is enabled."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:93
+#: plugins/voice_notification/__init__.py:111
 msgid "Pygame is not installed."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:94
+#: plugins/voice_notification/__init__.py:112
 msgid "Please wait installing pygame..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:98
+#: plugins/voice_notification/__init__.py:116
 msgid "Pygame is now installed."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:118
+#: plugins/voice_notification/__init__.py:137
 msgid "Skiping playing on station"
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:136
-msgid "Repeating playing nr. 2..."
-msgstr ""
-
-#: plugins/voice_notification/__init__.py:143
-msgid "Repeating playing nr. 3..."
-msgstr ""
-
-#: plugins/voice_notification/__init__.py:149
+#: plugins/voice_notification/__init__.py:160
+#: plugins/voice_notification/__init__.py:167
+#: plugins/voice_notification/__init__.py:177
+#: plugins/voice_notification/__init__.py:184
+#: plugins/voice_notification/__init__.py:194
+#: plugins/voice_notification/__init__.py:201
+#: plugins/voice_notification/__init__.py:242
 msgid "Stopping..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:153
-#: plugins/voice_notification/__init__.py:256
-msgid "Voice Notification plug-in"
+#: plugins/voice_notification/__init__.py:172
+msgid "Repeating playing nr. 2..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:194
-msgid "Loading..."
-msgstr ""
-
-#: plugins/voice_notification/__init__.py:197
-msgid "Set pygame volume to 1.0"
-msgstr ""
-
-#: plugins/voice_notification/__init__.py:200
-msgid "Set master volume to"
+#: plugins/voice_notification/__init__.py:189
+msgid "Repeating playing nr. 3..."
 msgstr ""
 
 #: plugins/voice_notification/__init__.py:204
+#: plugins/voice_notification/__init__.py:262
+#: plugins/voice_notification/__init__.py:316
+msgid "Voice Notification plug-in"
+msgstr ""
+
+#: plugins/voice_notification/__init__.py:246
+msgid "Loading: %s..."
+msgstr ""
+
+#: plugins/voice_notification/__init__.py:254
+msgid "Set master volume to"
+msgstr ""
+
+#: plugins/voice_notification/__init__.py:258
 msgid "Playing..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:227
+#: plugins/voice_notification/__init__.py:285
 msgid "Testing button..."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:250
-msgid "Saving MP3 file OK."
+#: plugins/voice_notification/__init__.py:310
+msgid "Saving MP3 %s file OK."
 msgstr ""
 
-#: plugins/voice_notification/__init__.py:253
-msgid "Error. MP3 file name is not voice.mp3"
+#: plugins/voice_notification/__init__.py:313
+msgid "Error. MP3 file: %s name is not voice.mp3 or voice0.mp3...voice20.mp3"
 msgstr ""
 
 #: plugins/voice_notification/templates/voice_notification.html:3
@@ -93,15 +97,22 @@ msgid "Voice Notification - Settings"
 msgstr ""
 
 #: plugins/voice_notification/templates/voice_notification.html:29
-msgid "This plugin allows you to use voice notifications for different events in the OSPy system."
+msgid ""
+"This plugin allows you to use voice notifications for different events in "
+"the OSPy system."
 msgstr ""
 
 #: plugins/voice_notification/templates/voice_notification.html:30
-msgid "Into the Connector from Output on Raspberry Pi connect Amplifier and Speakers for voice notification."
+msgid ""
+"Into the Connector from Output on Raspberry Pi connect Amplifier and "
+"Speakers for voice notification."
 msgstr ""
 
 #: plugins/voice_notification/templates/voice_notification.html:31
-msgid "This plugin requires pygame installed. If pygame is not installed on the system, plugin it will install it himself. Pygame is comes already installed on the default raspberian installation."
+msgid ""
+"This plugin requires pygame installed. If pygame is not installed on the "
+"system, plugin it will install it himself. Pygame is comes already installed "
+"on the default raspberian installation."
 msgstr ""
 
 #: plugins/voice_notification/templates/voice_notification.html:32
@@ -148,27 +159,34 @@ msgstr ""
 msgid "Skip stations"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:79
-msgid "Status"
+#: plugins/voice_notification/templates/voice_notification.html:80
+msgid "Select voice for stations"
+msgstr ""
+
+#: plugins/voice_notification/templates/voice_notification.html:80
+msgid "Select voice for this station."
 msgstr ""
 
 #: plugins/voice_notification/templates/voice_notification.html:91
+msgid "Status"
+msgstr ""
+
+#: plugins/voice_notification/templates/voice_notification.html:103
 msgid "Upload mp3 file"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:96
+#: plugins/voice_notification/templates/voice_notification.html:108
 msgid "Upload"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:105
+#: plugins/voice_notification/templates/voice_notification.html:117
 msgid "Submit"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:106
+#: plugins/voice_notification/templates/voice_notification.html:118
 msgid "Cancel"
 msgstr ""
 
-#: plugins/voice_notification/templates/voice_notification.html:107
+#: plugins/voice_notification/templates/voice_notification.html:119
 msgid "Test playing"
 msgstr ""
-

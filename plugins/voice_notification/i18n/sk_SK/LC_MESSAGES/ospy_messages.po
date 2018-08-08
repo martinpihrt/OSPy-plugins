@@ -6,24 +6,24 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-06-27 12:26+CEST\n"
-"PO-Revision-Date: 2018-07-24 17:10+0200\n"
+"PO-Revision-Date: 2018-08-08 13:13+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.1\n"
+"X-Generator: Poedit 2.0.9\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: sk_SK\n"
 
 #: plugins/voice_notification/__init__.py:253
-msgid "Error. MP3 file name is not voice.mp3"
-msgstr "Chyba. MP3 názov súboru nie je voice. mp3"
+msgid "Error. MP3 file: %s name is not voice.mp3 or voice0.mp3...voice20.mp3"
+msgstr "Chyba. Súbor MP3: názov %s nie je voice.mp3 alebo voice0.mp3...voice20.mp3"
 
 #: plugins/voice_notification/__init__.py:250
-msgid "Saving MP3 file OK."
-msgstr "Ukladanie MP3 súboru OK."
+msgid "Saving MP3 %s file OK."
+msgstr "Ukladanie MP3 súboru: %s OK."
 
 #: plugins/voice_notification/__init__.py:71
 msgid "Voice notification is disabled."
@@ -55,7 +55,7 @@ msgstr "Opakované prehrávanie č. 3..."
 
 #: plugins/voice_notification/__init__.py:138
 msgid "Stopping..."
-msgstr "Zastavenie..."
+msgstr "Zastavovanie..."
 
 #: plugins/voice_notification/__init__.py:142
 msgid "Voice Notification plug-in"
@@ -87,29 +87,29 @@ msgstr "Hlasové upozornenie - nastavenie"
 
 #: plugins/voice_notification/templates/voice_notification.html:22
 msgid ""
-"This plugin allows you to use voice notifications for different events in "
-"the OSPy system."
+"This plugin allows you to use voice notifications for different events in the "
+"OSPy system."
 msgstr ""
 "Tento doplnok vám umožňuje používať hlasové upozornenia pre rôzne udalosti v "
 "systéme OSPy."
 
 #: plugins/voice_notification/templates/voice_notification.html:23
 msgid ""
-"Into the Connector from Output on Raspberry Pi connect Amplifier and "
-"Speakers for voice notification."
+"Into the Connector from Output on Raspberry Pi connect Amplifier and Speakers for "
+"voice notification."
 msgstr ""
-"Do konektora z výstupu na Raspberry Pi pripojte zosilňovač a reproduktory "
-"pre hlasové upozornenie."
+"Do konektora z výstupu na Raspberry Pi pripojte zosilňovač a reproduktory pre "
+"hlasové upozornenie."
 
 #: plugins/voice_notification/templates/voice_notification.html:24
 msgid ""
-"This plugin requires pygame installed. If pygame is not installed on the "
-"system, plugin it will install it himself. Pygame is comes already installed "
-"on the default raspberian installation."
+"This plugin requires pygame installed. If pygame is not installed on the system, "
+"plugin it will install it himself. Pygame is comes already installed on the "
+"default raspberian installation."
 msgstr ""
-"Tento doplnok vyžaduje nainštalovaný pygame. Ak nie je pygame nainštalovaný "
-"v systéme, doplnok ho nainštaluje sám. Pygame je už nainštalovaný vo "
-"Raspbianové inštalácii."
+"Tento doplnok vyžaduje nainštalovaný pygame. Ak nie je pygame nainštalovaný v "
+"systéme, doplnok ho nainštaluje sám. Pygame je už nainštalovaný vo Raspbianové "
+"inštalácii."
 
 #: plugins/voice_notification/templates/voice_notification.html:25
 msgid "Visit"
@@ -182,6 +182,14 @@ msgstr "Preskočiť stanice"
 #: plugins/voice_notification/templates/voice_notification.html:65
 msgid "Skip voice notification for these stations."
 msgstr "Preskočit hlasové upozornenie pre tieto stanice."
+
+#: plugins/voice_notification/templates/voice_notification.html:80
+msgid "Select voice for stations"
+msgstr "Výber zvuků pre stanice"
+
+#: plugins/voice_notification/templates/voice_notification.html:80
+msgid "Select voice for this station."
+msgstr "Vyberte hlas pre túto stanicu."
 
 #: plugins/voice_notification/templates/voice_notification.html:64
 msgid "Status"
