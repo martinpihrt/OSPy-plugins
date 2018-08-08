@@ -124,6 +124,13 @@ class EmailSender(Thread):
                         for run in finished[finished_count:]:
                             duration = (run['end'] - run['start']).total_seconds()
                             minutes, seconds = divmod(duration, 60)
+                            
+                            body += _('Finished run') + ':\n'
+                            body += '<br>' + _('Program') + ': %s\n' % run['program_name']
+                            body += '<br>' + _('Station') + ': %s\n' % stations.get(run['station']).name
+                            body += '<br>' + _('Start time') + ': %s \n' % datetime_string(run['start'])
+                            body += '<br>' + _('Duration') + ': %02d:%02d\n\n' % (minutes, seconds)
+                            
                             cm = None
                             try:
                                 from plugins import tank_humi_monitor
@@ -132,15 +139,22 @@ class EmailSender(Thread):
                                     cm = str(cm) + " cm"
                                 else: 
                                     cm = _('Error - I2C device not found!')
+                                    
+                                body += '<br>' + _('Water level in tank') + ': %s \n\n' % (cm)    
+                            
                             except Exception:
-                                cm = _('Not available')
-
-                            body += _('Finished run') + ':\n'
-                            body += '<br>' + _('Program') + ': %s\n' % run['program_name']
-                            body += '<br>' + _('Station') + ': %s\n' % stations.get(run['station']).name
-                            body += '<br>' + _('Start time') + ': %s \n' % datetime_string(run['start'])
-                            body += '<br>' + _('Duration') + ': %02d:%02d\n\n' % (minutes, seconds)
-                            body += '<br>' + _('Water level in tank') + ': %s \n\n' % (cm)
+                                pass
+                                
+                            result = None    
+                            try:
+                                from plugins import air_temp_humi
+                                result = air_temp_humi.DS18B20_read_string_data()
+                                 
+                                if result: 
+                                    body += '<br>' + _('Temperature DS1-DS6') + ': %s \n\n' % (result)    
+                
+                            except Exception:
+                                pass
 
                         self.try_mail(body)
                         
