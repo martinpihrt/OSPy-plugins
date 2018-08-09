@@ -129,7 +129,7 @@ class EmailSender(Thread):
                             body += '<br>' + _('Program') + ': %s\n' % run['program_name']
                             body += '<br>' + _('Station') + ': %s\n' % stations.get(run['station']).name
                             body += '<br>' + _('Start time') + ': %s \n' % datetime_string(run['start'])
-                            body += '<br>' + _('Duration') + ': %02d:%02d\n\n' % (minutes, seconds)
+                            body += '<br>' + _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
                             
                             cm = None
                             try:
@@ -140,7 +140,7 @@ class EmailSender(Thread):
                                 else: 
                                     cm = _('Error - I2C device not found!')
                                     
-                                body += '<br>' + _('Water level in tank') + ': %s \n\n' % (cm)    
+                                body += '<br>' + _('Water level in tank') + ': %s \n' % (cm)    
                             
                             except Exception:
                                 pass
@@ -151,17 +151,17 @@ class EmailSender(Thread):
                                 result = air_temp_humi.DS18B20_read_string_data()
                                  
                                 if result: 
-                                    body += '<br>' + _('Temperature DS1-DS6') + ': %s \n\n' % (result)    
+                                    body += '<br>' + _('Temperature DS1-DS6') + ': %s \n' % (result)    
                 
                             except Exception:
                                 pass
 
                         self.try_mail(body)
                         
-                    self._sleep(3)
+                    self._sleep(1)
                     finished_count = len(finished)
 
-                self._sleep(5)
+                self._sleep(1)
 
             except Exception:
                 log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())

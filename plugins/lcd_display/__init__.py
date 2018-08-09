@@ -104,7 +104,7 @@ class LCDSender(Thread):
 
                     report_index += 2
 
-                self._sleep(1)
+                self._sleep(2)
 
             except Exception:
                 log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
