@@ -237,36 +237,34 @@ class VoiceChecker(Thread):
      
                       if current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']: # play notifications only from xx hour to yy hour
                          play = False 
-                         post_song  = ' '            
-                         if not options.manual_mode:  # if now not manual control
-                             schedule = predicted_schedule(check_start, check_end)
-                             for entry in schedule:
-                                 if entry['start'] <= user_pre_time < entry['end']: # is possible program in this interval?
-                                    if not entry['blocked']: 
-                                        for station_num in plugin_options['skip_stations']:
-                                            if entry['station'] == station_num:     # station skiping
-                                                log.clear(NAME)
-                                                log.info(NAME, _('Skiping playing on station') + ': ' + str(entry['station']+1) + '.')   
-                                                self._sleep(1)
-                                                return
-
-                                        for i in stations.get():
-                                            voiceA = 'voice%d.mp3' % entry['station']
-                                            voiceB = plugin_options['vs%d' % i.index]
-
-                                            if voiceA == voiceB:
-                                               post_song = 'voice%d.mp3' % entry['station'] # name for song for station
+                         post_song  = ' '     
+                         stat_run_num = -1   
+   
+                         schedule = predicted_schedule(check_start, check_end)
+                         for entry in schedule:
+                            if entry['start'] <= user_pre_time < entry['end']: # is possible program in this interval?
+                               if not entry['blocked']: 
+                                  for station_num in plugin_options['skip_stations']:
+                                     if entry['station'] == station_num:     # station skiping
+                                        log.clear(NAME)
+                                        log.info(NAME, _('Skiping playing on station') + ': ' + str(entry['station']+1) + '.')   
+                                        self._sleep(1)
+                                        return # not playing skipping
                                                                                                                                       
-                                        play = True     
+                                  play = True  
+                                  stat_run_num = entry['station']   
                                     
  
                          if play != last_play:
                             last_play = play 
+
+                            if stat_run_num != -1:
+                               post_song = plugin_options['vs%d' % stat_run_num]
+                               #print post_song
                          
                             if last_play: 
                                log.clear(NAME) 
                                play_voice(self, "voice.mp3") # play voice in folder
-                               
                                if post_song != ' ':
                                  play_voice(self, post_song) # play post station voice in folder
                                  
@@ -275,7 +273,6 @@ class VoiceChecker(Thread):
                                if plugin_options['repeating'] == 2:
                                  log.info(NAME, _('Repeating playing nr. 2...')) 
                                  play_voice(self, "voice.mp3") # play voice in folder
-                                
                                  if post_song != ' ':
                                    play_voice(self, post_song) # play post station voice in folder
                                   
@@ -284,11 +281,9 @@ class VoiceChecker(Thread):
                                if plugin_options['repeating'] == 3:
                                  log.info(NAME, _('Repeating playing nr. 3...')) 
                                  play_voice(self, "voice.mp3") # play voice in folder
-                                
                                  if post_song != ' ':
                                    play_voice(self, post_song) # play post station voice in folder
-                                   
-                                        
+                                             
             except Exception:
                 log.error(NAME, _('Voice Notification plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
@@ -370,17 +365,26 @@ class settings_page(ProtectedPage):
     def POST(self):
         plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
         qdict = web.input()
-        test = get_input(qdict, 'test', False, lambda x: True)
-
+        read_test = None
+        if qdict['test']:
+           read_test = qdict['test']   
+  
         if checker is not None:
             checker.update()
 
-            if test:
-               log.clear(NAME) 
-               log.info(NAME, _('Testing button...'))
-               play_voice(self, "voice.mp3") # play for test
+            if read_test == 'voice.mp3': # play voice.mp3 for test
+                log.clear(NAME) 
+                log.info(NAME, _('Testing button %s...') % read_test)
+                play_voice(self, "voice.mp3") 
 
-        raise web.seeother(plugin_url(settings_page), True)
+            else:          # play voicexx.mp3 for test
+                tsound = ['voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']
+                if read_test in tsound:
+                   log.clear(NAME)
+                   log.info(NAME, _('Testing button %s...') % read_test)
+                   play_voice(self, "%s" % read_test) # play for test
+
+        raise web.seeother(plugin_url(settings_page), True) 
 
 
 class upload_page(ProtectedPage):
