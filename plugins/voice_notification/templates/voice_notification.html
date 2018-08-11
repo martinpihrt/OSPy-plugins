@@ -15,7 +15,7 @@ $var page: plugins
             jQuery("#uploadForm").submit();
         });
         jQuery("#cTest").click(function() {
-            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('voice_notification.settings_page')?test")
+            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('voice_notification.settings_page')?test=voice.mp3")
             jQuery("#pluginForm").submit();
         });
         jQuery("#cUpload").click(function() {
@@ -41,6 +41,7 @@ $var page: plugins
           <td style='text-transform: none;'>$_('Enable pre start voice'):</td>
           <td title="$_('The sound is played before turning on the station.')">
           <input type="checkbox" name="voice_start_station" ${"checked" if plugin_options['voice_start_station'] else ""}> (voice.mp3)</td> 
+          <td><button id="cTest" class="button backup">$_('Test playing')</button></td>
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Pre run time'):</td>
@@ -69,8 +70,11 @@ $var page: plugins
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Skip stations'):</td>
-          <td title="$_('Skip voice notification for these stations.')" align="right"> 
-          <select multiple name="skip_stations" width="350" style="width: 350px">
+        <tr>
+        <tr>
+          <td></td>
+          <td title="$_('Skip voice notification for these stations.')"> 
+          <select multiple name="skip_stations" width="250" style="width: 250px">
               $for station in [station for station in stations if station.enabled]:
                  <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['skip_stations'] else ""}>${station.name} (Output ${str(station.index+1)})</option>
           </select>
@@ -83,11 +87,18 @@ $var page: plugins
             <tr>
               <td style='text-transform: none;'>${station.name}</td>
               <td title="$_('Select voice for this station.')"> 
-              <select name="vs${station.index}" width="350" style="width: 350px">
+              <select name="vs${station.index}" width="250" style="width: 250px">
               $for t in [' ', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']:
                  <option value="${t}" ${" selected" if plugin_options['vs%d' % station.index]==t else ""}><b>${t}</b></option>
               </select>
               </td> 
+              <td>
+              $for t in [' ', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']:
+                 $if plugin_options['vs%d' % station.index]==t and t!=' ':
+                     <form action="$plugins.plugin_url('voice_notification.settings_page')" method="post">
+                     <button type="submit" name="test" value="${t}" class="button backup">$_('Test playing')</button>
+                     </form>
+              </td>
             </tr>
         <tr>
           <td style='text-transform: none;'>$_('Status'):</td>
@@ -118,5 +129,4 @@ $var page: plugins
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <button id="cTest" class="button backup">$_('Test playing')</button>
 </div>
