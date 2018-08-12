@@ -364,25 +364,31 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
-        qdict = web.input()
-        read_test = None
-        if qdict['test']:
-           read_test = qdict['test']   
-  
+
         if checker is not None:
             checker.update()
 
-            if read_test == 'voice.mp3': # play voice.mp3 for test
-                log.clear(NAME) 
-                log.info(NAME, _('Testing button %s...') % read_test)
-                play_voice(self, "voice.mp3") 
+        try:
+           qdict = web.input()
+           read_test = None
 
-            else:          # play voicexx.mp3 for test
-                tsound = ['voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']
-                if read_test in tsound:
-                   log.clear(NAME)
-                   log.info(NAME, _('Testing button %s...') % read_test)
-                   play_voice(self, "%s" % read_test) # play for test
+           if 'test' in qdict:
+              read_test = qdict['test']   
+  
+           if read_test == 'voice.mp3': # play voice.mp3 for test
+              log.clear(NAME) 
+              log.info(NAME, _('Testing button %s...') % read_test)
+              play_voice(self, "voice.mp3") 
+
+           else:          # play voicexx.mp3 for test
+              tsound = ['voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']
+              if read_test in tsound:
+                 log.clear(NAME)
+                 log.info(NAME, _('Testing button %s...') % read_test)
+                 play_voice(self, "%s" % read_test) # play for test
+
+        except Exception:
+              log.error(NAME, _('Voice Notification plug-in') + ':\n' + traceback.format_exc())
 
         raise web.seeother(plugin_url(settings_page), True) 
 
