@@ -89,7 +89,7 @@ class LCDSender(Thread):
                     line1 = get_report(report_index)
                     line2 = get_report(report_index + 1)
 
-                    if report_index >= 23:
+                    if report_index >= 25:
                         report_index = 0
 
                     line1 = get_report(report_index)
@@ -147,26 +147,22 @@ def stop():
         lcd_sender.join()
         lcd_sender = None
 
-
-def get_report(index):
-    result = None
+def get_active_state():
     station_state = False
     station_result = ''
-    
     for station in stations.get(): # check if station runing
       if station.active:
         station_state = True       # yes runing
         station_result += str(station.index+1) + ', ' # station number runing ex: 2, 6, 20,
+    if station_state:
+      return station_result
+    else:
+      return False
 
+
+def get_report(index):
+    result = None
     if (options.lang == 'cs_CZ'):
-        if station_state and lcd_options['d_running_stations']:  # print on LCD only this text
-           if index == 0 or index == 2 or index == 4 or index == 6 or index == 8 or index == 10 or index == 12 or index == 14 or index == 16 or index == 18 or index == 20:  # start text to 16x1
-             result = "Stanice v chodu:"
-           elif index == 1 or index ==3 or index == 5 or index == 7 or index == 9 or index == 11 or index == 13 or index == 15 or index == 17 or index == 19 or index == 21:
-             result = station_result
-           return result
-
-        else:
            if index == 0:  # start text to 16x1
              if lcd_options['d_system_name']:
                 result = "ID systemu:"
@@ -333,18 +329,21 @@ def get_report(index):
              else: 
                 result = None
 
+           elif index == 24:    
+             if lcd_options['d_running_stations']:    
+                result = "Stanice v chodu:"
+             else: 
+                result = None
+           elif index == 25:
+             if get_active_state()==False:   
+                result = "nic nebezi" 
+             else:
+                result = get_active_state()
 
            return ASCI_convert(result)
 
-    if (options.lang == 'sk_SK'):
-        if station_state and lcd_options['d_running_stations']:  # print on LCD only this text
-           if index == 0 or index == 2 or index == 4 or index == 6 or index == 8 or index == 10 or index == 12 or index == 14 or index == 16 or index == 18 or index == 20:  # start text to 16x1
-             result = "Stanice v chode:"
-           elif index == 1 or index ==3 or index == 5 or index == 7 or index == 9 or index == 11 or index == 13 or index == 15 or index == 17 or index == 19 or index == 21:
-             result = station_result
-           return result
 
-        else:
+    if (options.lang == 'sk_SK'):
            if index == 0:  # start text to 16x1
              if lcd_options['d_system_name']:
                 result = "ID systemu:"
@@ -511,19 +510,20 @@ def get_report(index):
              else: 
                 result = None
 
+           elif index == 24:    
+             if lcd_options['d_running_stations']:    
+                result = "Stanice v chode:"
+             else: 
+                result = None
+           elif index == 25:
+             if get_active_state()==False:   
+                result = "nic nebezi" 
+             else:
+                result = get_active_state()
 
            return ASCI_convert(result)
 
     if (options.lang == 'en_US') or (options.lang == 'default'):
-        if station_state and lcd_options['d_running_stations']:  # print on LCD only this text
-           if index == 0 or index == 2 or index == 4 or index == 6 or index == 8 or index == 10 or index == 12 or index == 14 or index == 16 or index == 18 or index == 20:  # start text to 16x1
-             result = "Running stations:"
-           elif index == 1 or index ==3 or index == 5 or index == 7 or index == 9 or index == 11 or index == 13 or index == 15 or index == 17 or index == 19 or index == 21:
-             result = station_result
-           return result
-
-        else:
-
           if index == 0:  
              if lcd_options['d_system_name']:
                 result = options.name
@@ -689,6 +689,17 @@ def get_report(index):
                   result = "Not Available"
             else: 
                result = None
+
+          elif index == 24:    
+            if lcd_options['d_running_stations']:    
+               result = "Station running:"
+            else: 
+                result = None
+          elif index == 25:
+            if get_active_state()==False:   
+               result = "nothing running" 
+            else:
+               result = get_active_state()
 
           return result
 
