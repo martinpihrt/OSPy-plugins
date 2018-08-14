@@ -1,0 +1,46 @@
+$def with(plugin_options, events)
+
+$var title: $_('Signaling Examples settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Signaling Examples settings')</div>
+    <p>$_('This is Example signal plugin provides functions triggered by signals from core program.')</p>
+    <p>$_('Example signals from webpages.py'): signal loggedin, signal value_change, signal option_change, signal rebooted, signal restarted, signal station_names, signal program_change, signal program_deleted, signal program_toggled, signal program_runnow<br></p>
+
+    <form id="pluginForm" action="$plugins.plugin_url('signaling_examples.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use signaling'):</td>
+                <td>
+                    <input name='use_signaling' type='checkbox'${" checked" if plugin_options['use_signaling'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
