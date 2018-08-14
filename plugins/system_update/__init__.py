@@ -74,26 +74,26 @@ class StatusChecker(Thread):
     def _update_rev_data(self):
         """Returns the update revision data."""
 
-        command = 'sudo git remote update'
+        command = 'git remote update'
         subprocess.check_output(command.split())
 
-        command = 'sudo git config --get remote.origin.url'
+        command = 'git config --get remote.origin.url'
         remote = subprocess.check_output(command.split()).strip()
         if remote:
             self.status['remote'] = remote
 
-        command = 'sudo git rev-parse --abbrev-ref --symbolic-full-name @{u}'
+        command = 'git rev-parse --abbrev-ref --symbolic-full-name @{u}'
         remote_branch = subprocess.check_output(command.split()).strip()
         if remote_branch:
             self.status['remote_branch'] = remote_branch
 
-        command = 'sudo git log -1 %s --format=%%cd --date=short' % remote_branch
+        command = 'git log -1 %s --format=%%cd --date=short' % remote_branch
         new_date = subprocess.check_output(command.split()).strip()
 
-        command = 'sudo git rev-list %s --count --first-parent' % remote_branch
+        command = 'git rev-list %s --count --first-parent' % remote_branch
         new_revision = int(subprocess.check_output(command.split()))
 
-        command = 'sudo git log HEAD..%s --oneline' % remote_branch
+        command = 'git log HEAD..%s --oneline' % remote_branch
         changes = '  ' + '\n  '.join(subprocess.check_output(command.split()).split('\n'))
         changes = changes.decode('utf-8')
 
@@ -149,19 +149,19 @@ checker = None
 def perform_update():
     try:
        # ignore local chmod permission
-       command = "sudo git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
+       command = "git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
        subprocess.check_output(command.split())
 
-       command = "sudo git reset --hard"
+       command = "git reset --hard"
        subprocess.check_output(command.split())
 
-       command = "sudo git pull"
+       command = "git pull"
        output = subprocess.check_output(command.split())
     
        # Go back to master (refactor is old):
        if checker is not None:
           if checker.status['remote_branch'] == 'origin/refactor':
-             command = 'sudo git checkout master'
+             command = 'git checkout master'
              subprocess.check_output(command.split())
 
        log.debug(NAME, _('Update result') + ': ' + output)
