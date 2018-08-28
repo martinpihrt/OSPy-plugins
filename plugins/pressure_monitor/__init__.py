@@ -154,9 +154,9 @@ class PressureSender(Thread):
                         log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
                 
                 if get_check_pressure():
-                    self.status['Pstate%d'] = _('ACTIVE')
-                else:                
                     self.status['Pstate%d'] = _('INACTIVE')
+                else:                
+                    self.status['Pstate%d'] = _('ACTIVE')
                 
                 self._sleep(1)
 
