@@ -136,3 +136,15 @@ msgstr "Potvrdit"
 #: plugins/pressure_monitor/templates/pressure_monitor.html:62
 msgid "Cancel"
 msgstr "Zpět"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+msgid "ACTIVE"
+msgstr "AKTIVNÍ"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+msgid "INACTIVE"
+msgstr "NEAKTIVNÍ"
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+msgid "Pressure state"
+msgstr "Stav čidla tlaku"

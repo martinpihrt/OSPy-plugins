@@ -99,7 +99,6 @@ class PressureSender(Thread):
                             log.info(NAME, _('Master station is ON.'))
                             once_text = False
                         if get_check_pressure():                                     # if pressure sensor is on
-                            self.status['Pstate%d'] = _('ACTIVE')
                             actual_time = int(time.time())
                             count_val = int(pressure_options['time'])
                             log.clear(NAME)
@@ -117,16 +116,12 @@ class PressureSender(Thread):
                                     if pressure_options['sendeml']:                    # if enabled send email
                                         send = True
                         
-                        else:                
-                            self.status['Pstate%d'] = _('INACTIVE')
-
                         if not get_check_pressure():
                             last_time = int(time.time())
                             if five_text:
                                 once_text = True
                                 five_text = False
                     else:
-                        self.status['Pstate%d'] = _('MASTER IS OFF')             # text on the web if master is off
                         if stations.master is not None:
                             if two_text:
                                 log.clear(NAME)
@@ -144,7 +139,6 @@ class PressureSender(Thread):
                         four_text = False
 
                 if stations.master is None:                                      # text on the web if master station is none
-                    self.status['Pstate%d'] = _('NOT USED MASTER')
                     if three_text:
                         log.clear(NAME)
                         log.info(NAME, _('Not used master station.'))
@@ -158,7 +152,12 @@ class PressureSender(Thread):
                         send = False
                     except Exception:
                         log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
-
+                
+                if get_check_pressure():
+                    self.status['Pstate%d'] = _('ACTIVE')
+                else:                
+                    self.status['Pstate%d'] = _('INACTIVE')
+                
                 self._sleep(1)
 
             except Exception:

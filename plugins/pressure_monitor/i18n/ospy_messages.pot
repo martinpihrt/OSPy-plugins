@@ -120,3 +120,16 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+msgid "ACTIVE"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+msgid "INACTIVE"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+msgid "Pressure state"
+msgstr ""
+
+
