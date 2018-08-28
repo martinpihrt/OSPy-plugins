@@ -1,4 +1,4 @@
-$def with(plugin_options, events)
+$def with(plugin_options, status, events)
 
 $var title: $_('Pressure monitor settings')
 $var page: plugins
@@ -46,6 +46,12 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Max time to activate pressure sensor'):</td>
                 <td>
                     <input name='time' type='number' min="0" max="999" value='$plugin_options["time"]'> ($_('max 999 seconds'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('Pressure state'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                   $status['Pstate%d']
                 </td>
             </tr>
             <tr>

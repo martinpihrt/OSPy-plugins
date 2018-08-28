@@ -57,6 +57,9 @@ class PressureSender(Thread):
         Thread.__init__(self)
         self.daemon = True
         self._stop = Event()
+        
+        self.status = {}
+        self.status['Pstate%d'] = 0
 
         self._sleep_time = 0
         self.start()
@@ -96,6 +99,7 @@ class PressureSender(Thread):
                             log.info(NAME, _('Master station is ON.'))
                             once_text = False
                         if get_check_pressure():                                     # if pressure sensor is on
+                            self.status['Pstate%d'] = _('ACTIVE')
                             actual_time = int(time.time())
                             count_val = int(pressure_options['time'])
                             log.clear(NAME)
@@ -104,22 +108,25 @@ class PressureSender(Thread):
                             if actual_time - last_time > int(
                                     pressure_options['time']): # wait for activated pressure sensor (time delay)
                                 last_time = actual_time
-                                if get_check_pressure():                              # if pressure sensor is actual on
-                                #  options.scheduler_enabled = False                  # set scheduler to off
+                                if get_check_pressure():                               # if pressure sensor is actual on
+                                #  options.scheduler_enabled = False                   # set scheduler to off
                                     log.finish_run(None)                               # save log
                                     stations.clear()                                   # set all station to off
                                     log.clear(NAME)
                                     log.info(NAME, _('Pressure sensor is not activated in time -> stops all stations and send email.'))
                                     if pressure_options['sendeml']:                    # if enabled send email
                                         send = True
+                        
+                        else:                
+                            self.status['Pstate%d'] = _('INACTIVE')
 
                         if not get_check_pressure():
                             last_time = int(time.time())
                             if five_text:
                                 once_text = True
                                 five_text = False
-
-                    if not get_master_is_on():                                    # text on the web if master is off
+                    else:
+                        self.status['Pstate%d'] = _('MASTER IS OFF')             # text on the web if master is off
                         if stations.master is not None:
                             if two_text:
                                 log.clear(NAME)
@@ -137,6 +144,7 @@ class PressureSender(Thread):
                         four_text = False
 
                 if stations.master is None:                                      # text on the web if master station is none
+                    self.status['Pstate%d'] = _('NOT USED MASTER')
                     if three_text:
                         log.clear(NAME)
                         log.info(NAME, _('Not used master station.'))
@@ -221,7 +229,7 @@ def get_check_pressure():
 
 
 def get_master_is_on():
-    if stations.master is not None or stations.master_two is not None and not options.manual_mode: # if is use master station and not manual control
+    if stations.master is not None or stations.master_two is not None and not options.manual_mode:  # if is use master station and not manual control
         for station in stations.get():
             if station.is_master or station.is_master_two:                                          # if station is master
                 if station.active:                                                                  # if master is active
@@ -238,7 +246,7 @@ class settings_page(ProtectedPage):
     """Load an html page for entering pressure adjustments."""
 
     def GET(self):
-        return self.plugin_render.pressure_monitor(pressure_options, log.events(NAME))
+        return self.plugin_render.pressure_monitor(pressure_options, pressure_sender.status, log.events(NAME))
 
     def POST(self):
         pressure_options.web_update(web.input())
