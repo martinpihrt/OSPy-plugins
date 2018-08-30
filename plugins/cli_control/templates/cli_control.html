@@ -1,0 +1,63 @@
+$def with(plugin_options, events)
+
+$var title: $_('CLI Control settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('CLI Control settings')</div>
+    <p>$_('This plugin can be used to control devices such as remote RF units via Linux commands.')</p>
+    <p>$_('Enter command line commands to be issued when a station is to be started or stopped.')</p>
+    <p>$_('For example a command might look like: wget http://xxx.xxx.xxx.xxx/relay1on')</p> 
+    <p>$_('Leave fields blank for any stations not to be controlled from the command line.')</p>
+
+    <form id="pluginForm" action="$plugins.plugin_url('cli_control.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use CLI Control'):</td>
+                <td>
+                    <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <th class="stationNumber">$_('Station')</th>
+                <th class="columnName">$_('Start Command')</th>
+                <th class="columnName">$_('Stop Command')</th>
+            </tr>
+            $for c in range(0,options.output_count):
+                <tr>
+                    <td class="stationNumber">${c + 1}</td>
+                    <td class="command">                         
+                       <input type="text" size="50" value="${plugin_options['on'][c] if c < len(plugin_options['on']) else ''}" id="con${c}" name="con${c}">
+                    </td>                       
+                    <td>
+                       <input type="text" size="50" value="${plugin_options['off'][c] if c < len(plugin_options['off']) else ''}"  id="coff${c}" name="coff${c}">
+                    </td>                       
+                </tr>   
+            <tr>
+               <td style='text-transform: none;'>$_('Status'):</td>
+               <td colspan="2">
+                    <textarea style="font-family: monospace;" rows="7" cols="105" readonly>$'\n'.join(events)</textarea>
+               </td>
+            </tr>                       
+        </table>      
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

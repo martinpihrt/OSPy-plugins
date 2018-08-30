@@ -14,3 +14,4 @@ Example signals from webpages.py:
   signal('program_deleted')  
   signal('program_toggled')  
   signal('program_runnow')  
+  signal('zone_change')

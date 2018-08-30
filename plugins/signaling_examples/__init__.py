@@ -79,6 +79,8 @@ class Sender(Thread):
            program_toggled.connect(notify_program_toggled)
            program_runnow = signal('program_runnow')
            program_runnow.connect(notify_program_runnow)
+           zone_change = signal('zone_change')
+           zone_change.connect('notify_zone_change')
 
 sender = None
 
@@ -139,6 +141,11 @@ def notify_program_toggled(name, **kw):
 ### program runnow ###
 def notify_program_runnow(name, **kw):
     log.info(NAME, datetime_string() + ': ' + _('Program runnow'))
+
+### zone change ###
+def notify_zone_change(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Zone change'))
+
 
 
 ################################################################################
