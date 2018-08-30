@@ -12,13 +12,13 @@ Plugin setup
 * Check Use CLI Control:  
   If checked enabled plugin is enabled.  
 
-* Station:
+* Station:  
   Station number (Number from set outputs in options.)
   
-* Start Command:
+* Start Command:  
   Start Command for all stations.
 
-* Stop Command:
+* Stop Command:  
   Stop Command for all stations.
 
 * Status:  
