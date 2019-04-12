@@ -91,28 +91,32 @@ class EmailSender(Thread):
 
     def run(self):
         last_rain = False
+        body = ""
         finished_count = len([run for run in log.finished_runs() if not run['blocked']])
 
         if email_options["emlpwron"]:  # if eml_power_on send email is enable (on)
-            body = (datetime_string() + ': ' + _('System was powered on.'))
+            body += '<b>' + _('System') + '</b> ' + datetime_string()
+            body += '<br><p style="color:red;">' + _('System was powered on.') + '</p>'
 
             if email_options["emllog"]:
                 file_exists = os.path.exists(EVENT_FILE)
                 if file_exists:
                    self.try_mail(body, EVENT_FILE)
                 else:
-                   body += '\n' + _('Error -  events.log file not exists!')
-                   print body
+                   body += '<br>' + _('Error -  events.log file not exists!') 
+                   #print body
                    self.try_mail(body)
             else:
                 self.try_mail(body)
 
         while not self._stop.is_set():
+            body = ""
             try:
                 # Send E-amil if rain is detected
                 if email_options["emlrain"]:
                     if inputs.rain_sensed() and not last_rain:
-                        body = (datetime_string() + ': ' + _('System detected rain.'))
+                        body += '<b>' + _('System') + '</b> ' + datetime_string() 
+                        body += '<br><p style="color:red;">' + _('System detected rain.') + '</p>'
                         self.try_mail(body)
                     last_rain = inputs.rain_sensed()
 
@@ -120,12 +124,11 @@ class EmailSender(Thread):
                 if email_options["emlrun"]:
                     finished = [run for run in log.finished_runs() if not run['blocked']]
                     if len(finished) > finished_count:
-                        body = datetime_string() + ':\n'
                         for run in finished[finished_count:]:
                             duration = (run['end'] - run['start']).total_seconds()
                             minutes, seconds = divmod(duration, 60)
-                            
-                            body += _('Finished run') + ':\n'
+                            body += '<b>' + _('System') + '</b> ' + datetime_string()
+                            body += '<br><b>'  + _('Finished run') + '</b>'
                             body += '<br>' + _('Program') + ': %s\n' % run['program_name']
                             body += '<br>' + _('Station') + ': %s\n' % stations.get(run['station']).name
                             body += '<br>' + _('Start time') + ': %s \n' % datetime_string(run['start'])
@@ -139,7 +142,8 @@ class EmailSender(Thread):
                                     cm = str(cm) + " cm"
                                 else: 
                                     cm = _('Error - I2C device not found!')
-                                    
+
+                                body += '<br><b>'  + _('Water') + '</b>'                                    
                                 body += '<br>' + _('Water level in tank') + ': %s \n' % (cm)    
                             
                             except Exception:
@@ -147,11 +151,10 @@ class EmailSender(Thread):
                                 
                             result = None    
                             try:
-                                from plugins import air_temp_humi
-                                result = air_temp_humi.DS18B20_read_string_data()
-                                 
-                                if result: 
-                                    body += '<br>' + _('Temperature DS1-DS6') + ': %s \n' % (result)    
+                                from plugins import air_temp_humi    
+                                body += '<br><b>' + _('Temperature DS1-DS6') + '</b>'
+                                for i in range(0, air_temp_humi.plugin_options['ds_used']):  
+                                    body += '<br>' + u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n'  
                 
                             except Exception:
                                 pass
