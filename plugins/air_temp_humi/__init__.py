@@ -238,7 +238,12 @@ def DS18B20_read_string_data():
     for i in range(0, plugin_options['ds_used']):
        txt[i] = tempDS[i]
     return str(txt)
-           
+
+def DS18B20_read_probe(probe):
+    try:
+       return tempDS[probe]
+    except:
+       return "--"           
    
 def read_log():
     """Read log from json file."""
