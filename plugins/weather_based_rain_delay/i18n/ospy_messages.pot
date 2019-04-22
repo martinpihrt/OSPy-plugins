@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2016-08-18 11:32+UTC\n"
+"POT-Creation-Date: 2019-04-22 18:59+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,8 +15,12 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/weather_based_rain_delay/__init__.py:101
+#: plugins/weather_based_rain_delay/__init__.py:102
 msgid "Checking rain status"
+msgstr ""
+
+#: plugins/weather_based_rain_delay/__init__.py:115
+msgid "Rain detected"
 msgstr ""
 
 #: plugins/weather_based_rain_delay/__init__.py:120
@@ -27,20 +31,19 @@ msgstr ""
 msgid "No rain detected"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/__init__.py:124
-msgid "Removing rain delay."
-msgstr ""
-
-#: plugins/weather_based_rain_delay/__init__.py:124
-#: plugins/weather_based_rain_delay/__init__.py:128
+#: plugins/weather_based_rain_delay/__init__.py:123
 msgid "Good weather detected"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/__init__.py:133
+#: plugins/weather_based_rain_delay/__init__.py:123
+msgid "Removing rain delay."
+msgstr ""
+
+#: plugins/weather_based_rain_delay/__init__.py:131
 msgid "Plug-in is disabled."
 msgstr ""
 
-#: plugins/weather_based_rain_delay/__init__.py:139
+#: plugins/weather_based_rain_delay/__init__.py:137
 msgid "Weather-based Rain Delay plug-in"
 msgstr ""
 
@@ -62,72 +65,62 @@ msgid "Delay Duration (hours)"
 msgstr ""
 
 #: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:38
-msgid "Weather Provider"
-msgstr ""
-
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:47
-msgid "Wunderground API Key"
-msgstr ""
-
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:53
 msgid "Use NetAtmo Real data"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:59
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:44
 msgid "NetAtmo Client ID"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:65
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:50
 msgid "NetAtmo Client Secret"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:71
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:56
 msgid "NetAtmo User Name"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:77
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:62
 msgid "NetAtmo password"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:83
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:68
 msgid "NetAtmo MAC"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:89
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:74
 msgid "NetAtmo Rain module MAC"
 msgstr ""
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:95
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:80
 msgid "Delay apply to water level in mm"
 msgstr ""
 
-#:
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:101
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:86
 msgid "Delay apply based on history rain in hours"
 msgstr ""
 
-#:
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:107
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:92
 msgid "Check interval"
 msgstr ""
 
 #:
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:117
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:102
 msgid "Use Cleanup delay"
 msgstr ""
 
 #:
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:123
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:108
 msgid "Status"
 msgstr ""
 
 #:
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:132
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:117
 msgid "Submit"
 msgstr ""
 
 #:
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:133
+#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:118
 msgid "Cancel"
 msgstr ""
 

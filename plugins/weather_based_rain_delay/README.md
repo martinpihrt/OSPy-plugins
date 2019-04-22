@@ -58,14 +58,6 @@ Plugin setup
 * Delay Duration (hours):  
   Type  delay duration in hours (minimum is 0, maximum is 96 hours).
 
-* Weather Provider:  
-  Select weather provider (Wunderground, Yahoo).  
-
-* Wunderground API Key:  
-  Type Wunderground API Key for Your account.  
-  Account for API is [here](http://www.wunderground.com/weather/api/).  
-  Example: c1511565611663 
-
 * Status:  
   Status window from the plugin.  
 

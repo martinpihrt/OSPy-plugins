@@ -69,14 +69,6 @@ msgstr "Používat automatické zpoždění"
 msgid "Delay Duration (hours)"
 msgstr "Doba zpoždění (v hodinách)"
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:38
-msgid "Weather Provider"
-msgstr "Poskytovatel předpovědi počasí"
-
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:47
-msgid "Wunderground API Key"
-msgstr "Wunderground API klíč"
-
 #: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:53
 msgid "Use NetAtmo Real data"
 msgstr "Použij data z meteostanice NetAtmo"

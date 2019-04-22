@@ -35,21 +35,6 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Weather Provider'):</td>
-                <td>
-                    <select name="weather_provider">
-                        <option value="yahoo" ${"selected" if plugin_options["weather_provider"]=="yahoo" else ""}>Yahoo!</option>
-                        <option value="wunderground" ${"selected" if plugin_options["weather_provider"]=="wunderground" else ""}>Wunderground</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Wunderground API Key'):</td>
-                <td>
-                    <input name='wapikey' size="45" type='text' value='$plugin_options["wapikey"]'>
-                </td>
-            </tr>
-            <tr>
                 <td style='text-transform: none;'>$_('Use NetAtmo Real data'):</td>
                 <td>
                     <input name='use_netatmo' type='checkbox'${" checked" if plugin_options['use_netatmo'] else ""}>

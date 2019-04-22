@@ -15,6 +15,7 @@ from ospy.helpers import stop_onrain
 from ospy.log import log
 from ospy.options import options, rain_blocks
 from ospy.webpages import ProtectedPage
+from ospy.weather import weather
 from plugins import PluginOptions, plugin_url
 from time import strftime
 
@@ -39,8 +40,6 @@ plugin_options = PluginOptions(
     {
         'enabled': False,
         'delay_duration': 24,
-        'weather_provider': 'yahoo',
-        'wapikey': '',
         'use_netatmo': False,
         'netatmo_id':'',
         'netatmo_secret':'',
@@ -101,11 +100,9 @@ class weather_to_delay(Thread):
 
                     log.clear(NAME)
                     log.info(NAME, _('Checking rain status') + '...')
+                    current_data = weather.get_current_data()
 
-                    delaytime = int(plugin_options['netatmo_interval']) * 60
-
-                    weather = get_weather_data() if plugin_options['weather_provider'] == "yahoo" else get_wunderground_weather_data()
-                    delay = code_to_delay(weather['code'])
+                    delaytime = int(plugin_options['netatmo_interval']) * 60                    
 
                     if zrain > 0:
                         log.info(NAME, 'Rain detected: ' + ': %.1fmm' % zrain + '. Adding delay of ' + str(delay))
@@ -113,22 +110,21 @@ class weather_to_delay(Thread):
                         stop_onrain()
 
                     else:
-                        if delay > 0:
-                            log.info(NAME, 'Rain detected: ' + weather['text'] + '. Adding delay of ' + str(delay))
-                            rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delay))
-                            stop_onrain()
+                        if 'precipProbability' in current_data:
+                            if current_data['precipProbability'] > 0.75:
+                               log.info(NAME, _('Rain detected') + ': ' + current_data['summary'] + '. Adding delay of ' + str(plugin_options['delay_duration']))
+                               rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(plugin_options['delay_duration']))
+                               stop_onrain()
 
-                        elif delay == 0:
-                            log.info(NAME, _('No rain detected') + ': ' + weather['text'] + '. ' + _('No action.'))
+                            elif current_data['precipProbability'] > 0.1:
+                                log.info(NAME, _('No rain detected') + ': ' + current_data['summary'] + '. ' + _('No action.'))
 
-                        elif delay < 0:
-                            if plugin_options['use_cleanup']:
-                                log.info(NAME, _('Good weather detected') + ': ' + weather['text'] + '. ' + _('Removing rain delay.'))
+                            else:
+                                log.info(NAME, _('Good weather detected') + ': ' + current_data['summary'] + '. ' + _('Removing rain delay.'))
                                 if NAME in rain_blocks:
                                     del rain_blocks[NAME]
-                            else:
-                                log.info(NAME, _('Good weather detected') + ': ' + weather['text'])
-                    self._sleep(delaytime)
+
+                        self._sleep(3600)
                                          
                 else:
                     log.clear(NAME)
@@ -162,78 +158,6 @@ def stop():
         checker = None
     if NAME in rain_blocks:
         del rain_blocks[NAME]
-
-
-# Resolve location to LID
-def get_wunderground_lid():
-    if re.search("pws:", options.location):
-        lid = options.location
-    else:
-        data = urllib2.urlopen(
-            "http://autocomplete.wunderground.com/aq?h=0&query=" + urllib.quote_plus(options.location))
-        data = json.load(data)
-        if data is None:
-            return ""
-        lid = "zmw:" + data['RESULTS'][0]['zmw']
-
-    return lid
-
-
-def get_woeid():
-    data = urllib2.urlopen(
-        "http://query.yahooapis.com/v1/public/yql?q=select%20woeid%20from%20geo.placefinder%20where%20text=%22" +
-        urllib.quote_plus(options.location) + "%22").read()
-    woeid = re.search("<woeid>(\d+)</woeid>", data)
-    if woeid is None:
-        return 0
-    return woeid.group(1)
-
-
-def get_weather_data():
-    woeid = get_woeid()
-    if woeid == 0:
-        return {}
-    data = urllib2.urlopen("http://weather.yahooapis.com/forecastrss?w=" + woeid).read()
-    if data is None:
-        return {}
-    newdata = re.search("<yweather:condition\s+text=\"([\w|\s]+)\"\s+code=\"(\d+)\"\s+temp=\"(\d+)\"\s+date=\"(.*)\"",
-                        data)
-    weather = {"text": newdata.group(1),
-               "code": newdata.group(2)}
-    return weather
-
-
-def get_wunderground_weather_data():
-    lid = get_wunderground_lid()
-    if lid == "":
-        return []
-    data = urllib2.urlopen(
-        "http://api.wunderground.com/api/" + plugin_options['wapikey'] + "/conditions/q/" + lid + ".json")
-    data = json.load(data)
-    if data is None:
-        return {}
-    if 'error' in data['response']:
-        return {}
-    weather = {"text": data['current_observation']['weather'],
-               "code": data['current_observation']['icon']}
-    return weather
-
-
-# Lookup code and get the set delay
-def code_to_delay(code):
-    if plugin_options['weather_provider'] == "yahoo":
-        adverse_codes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 35, 37, 38, 39, 40, 41, 42,
-                         43, 44, 45, 46, 47]
-        reset_codes = [36]
-    else:
-        adverse_codes = ["flurries", "sleet", "rain", "sleet", "snow", "tstorms"]
-        adverse_codes += ["chance" + code_name for code_name in adverse_codes]
-        reset_codes = ["sunny", "clear", "mostlysunny", "partlycloudy"]
-    if code in adverse_codes:
-        return float(plugin_options['delay_duration'])
-    if code in reset_codes:
-        return -1
-    return 0
 
 
 ################################################################################

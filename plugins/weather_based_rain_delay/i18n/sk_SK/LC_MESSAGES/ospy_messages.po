@@ -70,14 +70,6 @@ msgstr "Použiť deštivé oneskorenie založené na počasí"
 msgid "Delay Duration (hours)"
 msgstr "Čas meškania (hodiny)"
 
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:38
-msgid "Weather Provider"
-msgstr "Poskytovateľ počasia"
-
-#: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:47
-msgid "Wunderground API Key"
-msgstr "Wunderground API kľúč"
-
 #: plugins/weather_based_rain_delay/templates/weather_based_rain_delay.html:53
 msgid "Use NetAtmo Real data"
 msgstr "Použít NetAtmo"
