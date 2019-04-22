@@ -19,7 +19,7 @@ Plugin setup
   Type history days (minimum is 0, maximum is 20).
 
 * Forecast days used:  
-  Type forecast days (minimum is 0, maximum is 10).
+  Type forecast days (minimum is 0, maximum is 7).
 
 * Protect against freezing:  
   If checked Protect against freezing plugin monitors temperature and protects stations from freezing.

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2017-08-10 20:43+CEST\n"
+"POT-Creation-Date: 2019-04-22 19:24+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,51 +19,47 @@ msgstr ""
 msgid "Checking weather status"
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:100
-msgid "No information available!"
-msgstr ""
-
-#: plugins/weather_based_water_level/__init__.py:102
+#: plugins/weather_based_water_level/__init__.py:87
 msgid "Using"
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:102
+#: plugins/weather_based_water_level/__init__.py:87
 msgid "days of information."
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:128
+#: plugins/weather_based_water_level/__init__.py:112
 msgid "Water needed"
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:128
+#: plugins/weather_based_water_level/__init__.py:112
 msgid "days"
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:129
+#: plugins/weather_based_water_level/__init__.py:113
 msgid "Total rainfall"
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:131
+#: plugins/weather_based_water_level/__init__.py:115
 msgid "Irrigation needed"
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:132
+#: plugins/weather_based_water_level/__init__.py:116
 msgid "Weather Adjustment"
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:137
+#: plugins/weather_based_water_level/__init__.py:123
 msgid "Temperature"
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:153
+#: plugins/weather_based_water_level/__init__.py:137
 msgid "Protection activated."
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:160
+#: plugins/weather_based_water_level/__init__.py:144
 msgid "Plug-in is disabled."
 msgstr ""
 
-#: plugins/weather_based_water_level/__init__.py:166
+#: plugins/weather_based_water_level/__init__.py:150
 msgid "Weather-based water level plug-in"
 msgstr ""
 
@@ -94,11 +90,6 @@ msgid "Protect against freezing"
 msgstr ""
 
 #:
-#: plugins/weather_based_water_level/templates/weather_based_water_level.html:28
-msgid "Run once every hour if temperature is below a certain temperature"
-msgstr ""
-
-#:
 #: plugins/weather_based_water_level/templates/weather_based_water_level.html:33
 msgid "Min percentage"
 msgstr ""
@@ -109,16 +100,6 @@ msgid "Protect temperature"
 msgstr ""
 
 #:
-#: plugins/weather_based_water_level/templates/weather_based_water_level.html:38
-msgid "Below which temperature"
-msgstr ""
-
-#:
-#: plugins/weather_based_water_level/templates/weather_based_water_level.html:38
-msgid "the stations should start"
-msgstr ""
-
-#:
 #: plugins/weather_based_water_level/templates/weather_based_water_level.html:44
 msgid "Max percentage"
 msgstr ""
@@ -126,11 +107,6 @@ msgstr ""
 #:
 #: plugins/weather_based_water_level/templates/weather_based_water_level.html:48
 msgid "Protect minutes"
-msgstr ""
-
-#:
-#: plugins/weather_based_water_level/templates/weather_based_water_level.html:49
-msgid "How long to run each station if it is freezing"
 msgstr ""
 
 #:
