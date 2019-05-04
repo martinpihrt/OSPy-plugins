@@ -705,7 +705,7 @@ def get_report(index):
 
 
 def find_lcd_address():
-    search_range = {addr: 'PCF8574' for addr in range(32, 39)}
+    search_range = {addr: 'PCF8574' for addr in range(32, 40)}
     search_range.update({addr: 'PCF8574A' for addr in range(56, 63)})
 
     try:
