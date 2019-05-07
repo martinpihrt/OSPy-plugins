@@ -53,7 +53,7 @@ Plugin setup
   Type history days (minimum is 0, maximum is 20).
 
 * Forecast days used:  
-  Type forecast days (minimum is 0, maximum is 10).
+  Type forecast days (minimum is 0, maximum is 7).
 
 * Status:  
   Status window from the plugin.  

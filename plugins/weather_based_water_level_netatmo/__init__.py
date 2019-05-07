@@ -111,46 +111,30 @@ class WeatherLevelChecker(Thread):
                     else:
                         zrain = 0
 
-                    history = weather.get_wunderground_history(plugin_options['days_history'])
-                    forecast = weather.get_wunderground_forecast(plugin_options['days_forecast'])
-                    today = weather.get_wunderground_conditions()
+                    info = []
+                    days = 0
+                    total_info = {'rain_mm': 0.0}
+                    for day in range(-plugin_options['days_history'], plugin_options['days_forecast']+1):
+                        check_date = datetime.date.today() + datetime.timedelta(days=day)
+                        hourly_data = weather.get_hourly_data(check_date)
+                        if hourly_data:
+                            days += 1
+                        info += hourly_data
 
-                    info = {}
+                        total_info['rain_mm'] += weather.get_rain(check_date)
 
-                    for day in range(-20, 20):
-                        if day in history:
-                            day_info = history[day]
-                        elif day in forecast:
-                            day_info = forecast[day]
-                        else:
-                            continue
+                    log.info(NAME, _('Using') + ' %d ' % days + _('days of information.'))
 
-                        info[day] = day_info
-
-                    if 0 in info and 'rain_mm' in today:
-                        day_time = datetime.datetime.now().time()
-                        day_left = 1.0 - (day_time.hour * 60 + day_time.minute) / 24.0 / 60
-                        info[0]['rain_mm'] = info[0]['rain_mm'] * day_left + today['rain_mm']
-
-                    if not info:
-                        log.info(NAME, str(history))
-                        log.info(NAME, str(today))
-                        log.info(NAME, str(forecast))
-                        raise Exception(_('No information available!'))
-
-                    log.info(NAME, _('Using') + ' %d ' % len(info) + _('days of information.'))
-
-                    total_info = {
-                        'temp_c': sum([val['temp_c'] for val in info.values()]) / len(info),
-                        'rain_mm': sum([val['rain_mm'] for val in info.values()]),
-                        'wind_ms': sum([val['wind_ms'] for val in info.values()]) / len(info),
-                        'humidity': sum([val['humidity'] for val in info.values()]) / len(info)
-                    }
+                    total_info.update({
+                        'temp_c': sum([val['temperature'] for val in info]) / len(info),
+                        'wind_ms': sum([val['windSpeed'] for val in info]) / len(info),
+                        'humidity': sum([val['humidity'] for val in info]) / len(info)
+                    })  
 
                     # We assume that the default 100% provides 4mm water per day (normal need)
                     # We calculate what we will need to provide using the mean data of X days around today
 
-                    water_needed = 4 * len(info)                                # 4mm per day
+                    water_needed = 4 * days                                     # 4mm per day
                     water_needed *= 1 + (total_info['temp_c'] - 20) / 15        # 5 => 0%, 35 => 200%
                     water_needed *= 1 + (total_info['wind_ms'] / 100)           # 0 => 100%, 20 => 120%
                     water_needed *= 1 - (total_info['humidity'] - 50) / 200     # 0 => 125%, 100 => 75%
@@ -159,7 +143,7 @@ class WeatherLevelChecker(Thread):
                     water_left = water_needed - total_info['rain_mm']
                     water_left = round(max(0, min(100, water_left)), 1)
 
-                    water_adjustment = round((water_left / (4 * len(info))) * 100, 1)
+                    water_adjustment = round((water_left / (4 * days)) * 100, 1)
 
                     level_adjustments[NAME] = water_adjustment / 100
 
@@ -171,12 +155,12 @@ class WeatherLevelChecker(Thread):
                         water_left = water_needed - total_info['rain_mm']
                         water_left = round(max(0, min(100, water_left)), 1)
 
-                    water_adjustment = round((water_left / ((plugin_options['netatmo_level']) * len(info))) * 100, 1)
+                    water_adjustment = round((water_left / ((plugin_options['netatmo_level']) * days)) * 100, 1)
 
                     water_adjustment = float(
                         max(plugin_options['wl_min'], min(plugin_options['wl_max'], water_adjustment)))
 
-                    log.info(NAME, _('Water needed') + '(%d ' %len(info) +  _('days') + '): %.1fmm' % water_needed)
+                    log.info(NAME, _('Water needed') + '(%d ' %days +  _('days') + '): %.1fmm' % water_needed)
                     log.info(NAME, _('Total rainfall') + ': %.1fmm' % total_info['rain_mm'])
                     log.info(NAME, _('_______________________________'))
                     log.info(NAME, _('Irrigation needed') + ': %.1fmm' % water_left)
