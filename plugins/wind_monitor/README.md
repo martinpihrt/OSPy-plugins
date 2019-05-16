@@ -11,9 +11,6 @@ Plugin setup
 * Check Use wind monitor:  
   If checked use wind monitor plugin is enabled.    
 
-* Check I2C address 0x50:  
-  If checked address is 0x51.
-
 * Check Send email with error:  
   If checked send email with error e-mail notification plugin sends e-mail with error.  
   For this function required e-mail notification plugin with all setup in plugin.  
