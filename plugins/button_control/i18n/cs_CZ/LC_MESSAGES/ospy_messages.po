@@ -6,13 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-10-18 12:15+0200\n"
-"PO-Revision-Date: 2016-10-18 12:22+0200\n"
+"PO-Revision-Date: 2019-05-16 19:47+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+"X-Generator: Poedit 2.2.1\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
@@ -139,6 +139,14 @@ msgstr ""
 #: plugins/button_control/templates/button_control.html:22
 msgid "Visit"
 msgstr "Navštivte"
+
+#: plugins/button_control/__init__.py:206
+msgid "Button plug-in is disabled."
+msgstr "Rozšíření je zakázané."
+
+#: plugins/button_control/templates/button_control.html:22
+msgid "for more information"
+msgstr "pro další informace"
 
 #: plugins/button_control/templates/button_control.html:26
 msgid "Use button control"

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2017-06-29 13:41+CEST\n"
+"POT-Creation-Date: 2019-05-16 19:44+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,101 +15,105 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/button_control/__init__.py:83
+#: plugins/button_control/__init__.py:85
 msgid "System reboot"
 msgstr ""
 
-#: plugins/button_control/__init__.py:88
+#: plugins/button_control/__init__.py:91
 msgid "System shutdown"
 msgstr ""
 
-#: plugins/button_control/__init__.py:93
+#: plugins/button_control/__init__.py:97
 msgid "All stations now stopped"
 msgstr ""
 
-#: plugins/button_control/__init__.py:99
+#: plugins/button_control/__init__.py:103
 msgid "Scheduler is now enabled"
 msgstr ""
 
-#: plugins/button_control/__init__.py:104
+#: plugins/button_control/__init__.py:108
 msgid "Scheduler is now disabled"
 msgstr ""
 
-#: plugins/button_control/__init__.py:109
+#: plugins/button_control/__init__.py:113
 msgid "Run now program 1"
 msgstr ""
 
-#: plugins/button_control/__init__.py:118
+#: plugins/button_control/__init__.py:124
 msgid "Run now program 2"
 msgstr ""
 
-#: plugins/button_control/__init__.py:127
+#: plugins/button_control/__init__.py:135
 msgid "Run now program 3"
 msgstr ""
 
-#: plugins/button_control/__init__.py:137
+#: plugins/button_control/__init__.py:146
 msgid "Run now program 4"
 msgstr ""
 
-#: plugins/button_control/__init__.py:147
+#: plugins/button_control/__init__.py:157
 msgid "Run now program 5"
 msgstr ""
 
-#: plugins/button_control/__init__.py:157
+#: plugins/button_control/__init__.py:168
 msgid "Run now program 6"
 msgstr ""
 
-#: plugins/button_control/__init__.py:167
+#: plugins/button_control/__init__.py:179
 msgid "Run now program 7"
 msgstr ""
 
-#: plugins/button_control/__init__.py:177
+#: plugins/button_control/__init__.py:190
 msgid "Run now program 8"
 msgstr ""
 
-#: plugins/button_control/__init__.py:190
-#: plugins/button_control/__init__.py:255
-#: plugins/button_control/__init__.py:269
+#: plugins/button_control/__init__.py:206
+msgid "Button plug-in is disabled."
+msgstr ""
+
+#: plugins/button_control/__init__.py:214
+#: plugins/button_control/__init__.py:281
+#: plugins/button_control/__init__.py:296
 msgid "Button plug-in"
 msgstr ""
 
-#: plugins/button_control/__init__.py:229
+#: plugins/button_control/__init__.py:255
 msgid "Switch 8 pressed"
 msgstr ""
 
-#: plugins/button_control/__init__.py:232
+#: plugins/button_control/__init__.py:258
 msgid "Switch 7 pressed"
 msgstr ""
 
-#: plugins/button_control/__init__.py:235
+#: plugins/button_control/__init__.py:261
 msgid "Switch 6 pressed"
 msgstr ""
 
-#: plugins/button_control/__init__.py:238
+#: plugins/button_control/__init__.py:264
 msgid "Switch 5 pressed"
 msgstr ""
 
-#: plugins/button_control/__init__.py:241
+#: plugins/button_control/__init__.py:267
 msgid "Switch 4 pressed"
 msgstr ""
 
-#: plugins/button_control/__init__.py:244
+#: plugins/button_control/__init__.py:270
 msgid "Switch 3 pressed"
 msgstr ""
 
-#: plugins/button_control/__init__.py:247
+#: plugins/button_control/__init__.py:273
 msgid "Switch 2 pressed"
 msgstr ""
 
-#: plugins/button_control/__init__.py:250
+#: plugins/button_control/__init__.py:276
 msgid "Switch 1 pressed"
 msgstr ""
 
-#: plugins/button_control/__init__.py:255
+#: plugins/button_control/__init__.py:281
 msgid "Read button - FAULT"
 msgstr ""
 
-#: plugins/button_control/__init__.py:269
+#: plugins/button_control/__init__.py:296
 msgid "Set LED - FAULT"
 msgstr ""
 

@@ -13,13 +13,12 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision, datetime_string, reboot, restart, poweroff
-from ospy import helpers
 from ospy.stations import stations
 from ospy.scheduler import scheduler
 from ospy.programs import programs
 from ospy.options import options
 from ospy.runonce import run_once
+from ospy import helpers
 
 import i18n
 
@@ -70,12 +69,15 @@ class PluginSender(Thread):
 
     def run(self):       
         log.clear(NAME)  
+        disable_text = True
+
         while not self._stop.is_set():
             try:
                 if plugin_options['use_button']:  # if button plugin is enabled
+                    disable_text = True
                     actual_buttons = read_buttons()
                     
-                    #led_outputs(actual_buttons)
+                    # led_outputs(actual_buttons) # for test
 
                     for i in range(8):
                        tb = "button" + str(i)    
@@ -197,6 +199,16 @@ class PluginSender(Thread):
 
                     self._sleep(1)
 
+                else:
+                    # text on the web if plugin is disabled
+                    if disable_text:  
+                       log.clear(NAME)
+                       log.info(NAME, _('Button plug-in is disabled.'))
+                       disable_text = False  
+                    self._sleep(1)
+
+
+
             except Exception:
                 log.clear(NAME)
                 log.error(NAME, _('Button plug-in') + ':\n' + traceback.format_exc())
@@ -222,10 +234,12 @@ def stop():
         plugin_sender.join()
         plugin_sender = None
         
+
 def read_buttons():
     try:
         import smbus  
-        bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
+
+        bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
         
         # Set 8 GPA pins as input pull-UP
         bus.write_byte_data(0x27,0x0C,0xFF)
@@ -272,7 +286,8 @@ def read_buttons():
 def led_outputs(led):
     try:
         import smbus  
-        bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
+
+        bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
  
         bus.write_byte_data(0x27,0x01,0x00)
         bus.write_byte_data(0x27,0x13,led)
