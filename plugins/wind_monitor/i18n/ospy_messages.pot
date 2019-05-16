@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2016-07-11 16:51+CEST\n"
+"POT-Creation-Date: 2019-05-16 19:01+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,80 +14,93 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
-msgid "Sent"
+
+#: plugins/wind_monitor/__init__.py:37
+msgid "Report from OSPy WIND SPEED MONITOR plugin"
 msgstr ""
 
-msgid "Unsent"
-msgstr ""
-
-msgid "E-mail subject"
-msgstr ""
-
-#: plugins/wind_monitor/__init__.py:77
-msgid "Could not import smbus."
-msgstr ""
-
-#: plugins/wind_monitor/__init__.py:110
+#: plugins/wind_monitor/__init__.py:106
 msgid "Please wait 10 sec..."
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:111
+#: plugins/wind_monitor/__init__.py:107
 msgid "Speed"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:111 plugins/wind_monitor/__init__.py:112
+#: plugins/wind_monitor/__init__.py:107 plugins/wind_monitor/__init__.py:108
 msgid "m/sec"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:112
+#: plugins/wind_monitor/__init__.py:108
 msgid "Speed Peak 24 hour"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:113
+#: plugins/wind_monitor/__init__.py:109
 msgid "Pulses"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:113
+#: plugins/wind_monitor/__init__.py:109
 msgid "pulses/sec"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:117
+#: plugins/wind_monitor/__init__.py:112
 msgid "Wind speed > 150 km/h (42 m/sec)"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:126
+#: plugins/wind_monitor/__init__.py:120
 msgid "Stops all stations and sends email if enabled sends email."
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:134
+#: plugins/wind_monitor/__init__.py:128
 msgid "Wind speed monitor plug-in is disabled."
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:138
+#: plugins/wind_monitor/__init__.py:132
 msgid "System detected error: wind speed monitor. All stations set to OFF. Wind is"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:142
+#: plugins/wind_monitor/__init__.py:135 plugins/wind_monitor/__init__.py:186
 msgid "Email was sent"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:146
+#: plugins/wind_monitor/__init__.py:139 plugins/wind_monitor/__init__.py:194
 msgid "Email was not sent"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:153
+#: plugins/wind_monitor/__init__.py:148
 msgid "Wind Speed monitor plug-in"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:187
+#: plugins/wind_monitor/__init__.py:182 plugins/wind_monitor/__init__.py:190
+msgid "Email logging is disabled in options..."
+msgstr ""
+
+#: plugins/wind_monitor/__init__.py:184 plugins/wind_monitor/__init__.py:192
+msgid "Sent"
+msgstr ""
+
+#: plugins/wind_monitor/__init__.py:206
+msgid "Could not import smbus."
+msgstr ""
+
+#: plugins/wind_monitor/__init__.py:213
+msgid "Found PCF8583 on address"
+msgstr ""
+
+#: plugins/wind_monitor/__init__.py:219
+msgid "Could not find any PCF8583 controller."
+msgstr ""
+
+#: plugins/wind_monitor/__init__.py:231
 msgid "Setup PCF8583 as event counter - OK"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:187 plugins/wind_monitor/__init__.py:190
+#: plugins/wind_monitor/__init__.py:231 plugins/wind_monitor/__init__.py:233
+#: plugins/wind_monitor/__init__.py:234 plugins/wind_monitor/__init__.py:258
 msgid "Wind speed monitor plug-in"
 msgstr ""
 
-#: plugins/wind_monitor/__init__.py:190
+#: plugins/wind_monitor/__init__.py:233
 msgid "Setup PCF8583 as event counter - FAULT"
 msgstr ""
 
@@ -117,45 +130,41 @@ msgid "Use wind monitor"
 msgstr ""
 
 #: plugins/wind_monitor/templates/wind_monitor.html:35
-msgid "I2C address 0x50"
-msgstr ""
-
-#: plugins/wind_monitor/templates/wind_monitor.html:37
-msgid "if checked 0x51"
-msgstr ""
-
-#: plugins/wind_monitor/templates/wind_monitor.html:41
 msgid "Send email with error"
 msgstr ""
 
-#: plugins/wind_monitor/templates/wind_monitor.html:43
+#: plugins/wind_monitor/templates/wind_monitor.html:37
 msgid "For this function required email plugin"
 msgstr ""
 
-#: plugins/wind_monitor/templates/wind_monitor.html:47
+#: plugins/wind_monitor/templates/wind_monitor.html:41
 msgid "Number of pulses"
 msgstr ""
 
-#: plugins/wind_monitor/templates/wind_monitor.html:49
+#: plugins/wind_monitor/templates/wind_monitor.html:43
 msgid "pulses/rotation"
 msgstr ""
 
-#: plugins/wind_monitor/templates/wind_monitor.html:53
+#: plugins/wind_monitor/templates/wind_monitor.html:47
 msgid "Number of wind speed per rotation"
 msgstr ""
 
+#: plugins/wind_monitor/templates/wind_monitor.html:49
 #: plugins/wind_monitor/templates/wind_monitor.html:55
 #: plugins/wind_monitor/templates/wind_monitor.html:61
-#: plugins/wind_monitor/templates/wind_monitor.html:67
 msgid "m/s"
 msgstr ""
 
-#: plugins/wind_monitor/templates/wind_monitor.html:59
+#: plugins/wind_monitor/templates/wind_monitor.html:53
 msgid "Max wind speed for stop stations"
 msgstr ""
 
-#: plugins/wind_monitor/templates/wind_monitor.html:65
+#: plugins/wind_monitor/templates/wind_monitor.html:59
 msgid "Wind speed state (every 10 sec)"
+msgstr ""
+
+#: plugins/wind_monitor/templates/wind_monitor.html:65
+msgid "E-mail subject"
 msgstr ""
 
 #: plugins/wind_monitor/templates/wind_monitor.html:71

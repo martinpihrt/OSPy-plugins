@@ -32,12 +32,6 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('I2C address 0x50'):</td>
-                <td>
-                    <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}> ($_('if checked 0x51')) 
-                </td>
-            </tr>
-            <tr>
                 <td style='text-transform: none;'>$_('Send email with error'):</td>
                 <td>
                     <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> ($_('For this function required email plugin'))

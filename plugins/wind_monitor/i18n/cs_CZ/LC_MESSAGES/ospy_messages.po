@@ -17,6 +17,10 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
 
+#: plugins/wind_monitor/__init__.py:213
+msgid "Found PCF8583 on address"
+msgstr "Nalezen obvod PCF8583 na adrese"
+
 msgid "Sent"
 msgstr "Odeslané"
 

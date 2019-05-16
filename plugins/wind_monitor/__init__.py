@@ -17,8 +17,8 @@ from ospy.options import options
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision
-from ospy.helpers import datetime_string
+from ospy import helpers
+
 
 import i18n
 
@@ -29,7 +29,7 @@ wind_options = PluginOptions(
     NAME,
     {
         'use_wind_monitor': False,
-        'address': False,            # True = 0x51, False = 0x50 for PCF8583
+        'address': 0,                # automatic search in range 0x50 - 0x51 for PCF8583
         'sendeml': True,             # True = send email with error
         'pulses': 2,                 # 2 pulses per rotation
         'metperrot': 1.492,          # 1.492 meter per hour per rotation
@@ -37,6 +37,7 @@ wind_options = PluginOptions(
         'emlsubject': _('Report from OSPy WIND SPEED MONITOR plugin')
     }
 )
+
 
 ################################################################################
 # Main function loop:                                                          #
@@ -48,8 +49,6 @@ class WindSender(Thread):
         self.daemon = True
         self._stop = Event()
    
-        self.bus = None
-        self.pcf = None
         self.status = {}
         self.status['meter'] = 0.0
         self.status['kmeter'] = 0.0
@@ -70,15 +69,10 @@ class WindSender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        try:
-            import smbus  # for PCF 8583
-
-            self.bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
-        except ImportError:
-            log.warning(NAME, _('Could not import smbus.'))
-
-        if self.bus is not None:
-            self.pcf = set_counter(self.bus)     # set pcf8583 as counter
+        if wind_options['address'] == 0:
+            find_lcd_address()
+        else:
+            self.pcf = set_counter()     # set pcf8583 as counter
 
         log.clear(NAME)
         send = False      # send email
@@ -89,11 +83,11 @@ class WindSender(Thread):
 
         while not self._stop.is_set():
             try:
-                if self.bus is not None and wind_options['use_wind_monitor']:  # if wind plugin is enabled
+                if wind_options['use_wind_monitor']:  # if wind plugin is enabled
                     disable_text = True
                                         
-                    puls = counter(self.bus)/10.0 # counter value is value/10sec
-                                                                                                      
+                    puls = counter()/10.0 # counter value is value/10sec
+                                                                                                                         
                     val = puls/(wind_options['pulses']*1.0)
                     val = val*wind_options['metperrot'] 
                     
@@ -112,12 +106,10 @@ class WindSender(Thread):
                     log.info(NAME, _('Speed') + ' ' + str(round(val,2)) + ' ' + _('m/sec'))
                     log.info(NAME, _('Speed Peak 24 hour') + ' ' + str(round(maxval,2)) + ' ' + _('m/sec') )
                     log.info(NAME, _('Pulses') + ' ' + str(puls) + ' ' + _('pulses/sec') )
-
-                      
+            
                     if val >= 42: 
                        log.error(NAME, _('Wind speed > 150 km/h (42 m/sec)'))
-                   
-                   
+                                     
                     if get_station_is_on():                               # if station is on
                        if val >= int(wind_options['maxspeed']):           # if wind speed is > options max speed
                           log.clear(NAME)
@@ -152,7 +144,6 @@ class WindSender(Thread):
                 log.clear(NAME)
                 log.error(NAME, _('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
-                self.pcf = set_counter(self.bus)     # set pcf8583 as counter
 
 
 wind_sender = None
@@ -200,45 +191,69 @@ def send_email(msg):
         log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
 
-def set_counter(i2cbus):
+def find_address():
+    search_range = {addr: 'PCF8583' for addr in range(80, 81)}  # 0x50 converts to 80, 0x51 converts to 81
+
     try:
-        if wind_options['address']:
-            pcf_addr = 0x51
+        import smbus
+
+        bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
+        # DF - alter RPi version test fallback to value that works on BBB
+    except ImportError:
+        log.warning(NAME, _('Could not import smbus.'))
+    else:
+
+        for addr, pcf_type in search_range.iteritems():
+            try:
+                # bus.write_quick(addr)
+                bus.read_byte(addr) # DF - write_quick doesn't work on BBB
+                log.info(NAME, 'Found %s on address 0x%02x' % (pcf_type, addr))
+                wind_options['address'] = addr
+                break
+            except Exception:
+                pass
         else:
-            pcf_addr = 0x50 
-        i2cbus.write_byte_data(pcf_addr, 0x00, 0x20) # status registr setup to "EVENT COUNTER"
-        i2cbus.write_byte_data(pcf_addr, 0x01, 0x00) # reset LSB
-        i2cbus.write_byte_data(pcf_addr, 0x02, 0x00) # reset midle Byte
-        i2cbus.write_byte_data(pcf_addr, 0x03, 0x00) # reset MSB
-        log.info(NAME, _('Wind speed monitor plug-in') + ': ' + _('Setup PCF8583 as event counter - OK'))
-        return 1  
+            log.warning(NAME, _('Could not find any PCF8583 controller.'))
+
+
+def set_counter():
+    try:
+        if wind_options['address'] != 0:
+           import smbus
+           bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
+           bus.write_byte_data(wind_options['address'], 0x00, 0x20) # status registr setup to "EVENT COUNTER"
+           bus.write_byte_data(wind_options['address'], 0x01, 0x00) # reset LSB
+           bus.write_byte_data(wind_options['address'], 0x02, 0x00) # reset midle Byte
+           bus.write_byte_data(wind_options['address'], 0x03, 0x00) # reset MSB
+           log.info(NAME, _('Wind speed monitor plug-in') + ': ' + _('Setup PCF8583 as event counter - OK')) 
     except:
         log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + _('Setup PCF8583 as event counter - FAULT'))
-        return None
+        log.error(NAME, _('Wind speed monitor plug-in') + traceback.format_exc())
 
 
-def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses per second
+def counter(): # reset PCF8583, measure pulses and return number pulses per second
     try:
-        if wind_options['address']:
-            pcf_addr = 0x51
-        else:
-            pcf_addr = 0x50 
-        # reset PCF8583
-        i2cbus.write_byte_data(pcf_addr, 0x01, 0x00) # reset LSB
-        i2cbus.write_byte_data(pcf_addr, 0x02, 0x00) # reset midle Byte
-        i2cbus.write_byte_data(pcf_addr, 0x03, 0x00) # reset MSB
-        time.sleep(10)
-        # read number (pulses in counter) and translate to DEC
-        counter = i2cbus.read_i2c_block_data(pcf_addr, 0x00)
-        num1 = (counter[1] & 0x0F)             # units
-        num10 = (counter[1] & 0xF0) >> 4       # dozens
-        num100 = (counter[2] & 0x0F)           # hundred
-        num1000 = (counter[2] & 0xF0) >> 4     # thousand
-        num10000 = (counter[3] & 0x0F)         # tens of thousands
-        num100000 = (counter[3] & 0xF0) >> 4   # hundreds of thousands
-        pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
-        return pulses
+        if wind_options['address'] != 0:
+           import smbus
+           bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
+           # reset PCF8583
+           bus.write_byte_data(wind_options['address'], 0x01, 0x00) # reset LSB
+           bus.write_byte_data(wind_options['address'], 0x02, 0x00) # reset midle Byte
+           bus.write_byte_data(wind_options['address'], 0x03, 0x00) # reset MSB
+           time.sleep(10)
+           # read number (pulses in counter) and translate to DEC
+           counter = bus.read_i2c_block_data(wind_options['address'], 0x00)
+           num1 = (counter[1] & 0x0F)             # units
+           num10 = (counter[1] & 0xF0) >> 4       # dozens
+           num100 = (counter[2] & 0x0F)           # hundred
+           num1000 = (counter[2] & 0xF0) >> 4     # thousand
+           num10000 = (counter[3] & 0x0F)         # tens of thousands
+           num100000 = (counter[3] & 0xF0) >> 4   # hundreds of thousands
+           pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
+           return pulses
     except:
+        log.error(NAME, _('Wind speed monitor plug-in') + traceback.format_exc())
+        time.sleep(10)
         return 0
 
 
