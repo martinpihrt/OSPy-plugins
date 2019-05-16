@@ -57,6 +57,7 @@ class StatusChecker(Thread):
         """Returns watchdog is instaled."""
         if not os.path.exists("/usr/sbin/watchdog"):       # if watchdog is not installed
            log.info(NAME, _('Watchdog is not installed. For continue press button install watchdog.'))
+           self._sleep(10)
         else:
            self.status['service_install'] = True
 
@@ -70,11 +71,12 @@ class StatusChecker(Thread):
            if 'watchdog' in output:
               self.status['service_state'] = True
            else:
-              self.status['service_state'] = False       
+              self.status['service_state'] = False      
 
         except Exception:
                 self.started.set()
                 log.error(NAME, _('System watchodg plug-in') + ':\n' + traceback.format_exc())
+                self._sleep(60) 
    
        
     def run(self):
@@ -85,6 +87,7 @@ class StatusChecker(Thread):
         while not self._stop.is_set():
             try:
                 self.started.set()
+                self._sleep(60)
 
             except Exception:
                 self.started.set()
