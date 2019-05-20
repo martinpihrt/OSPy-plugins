@@ -223,7 +223,7 @@ class VoiceChecker(Thread):
                          log.info(NAME, _('Pygame is not installed.'))
                          log.info(NAME, _('Please wait installing pygame...'))
                          cmd = "sudo apt-get install python-pygame -y"
-                         run_command(self, cmd)
+                         run_command(cmd)
                          once_test = False
                          log.info(NAME, _('Pygame is now installed.')) 
 
@@ -283,6 +283,7 @@ class VoiceChecker(Thread):
                                  play_voice(self, "voice.mp3") # play voice in folder
                                  if post_song != ' ':
                                    play_voice(self, post_song) # play post station voice in folder
+                self._sleep(1)                   
                                              
             except Exception:
                 log.error(NAME, _('Voice Notification plug-in') + ':\n' + traceback.format_exc())
@@ -310,7 +311,7 @@ def stop():
         checker = None
 
 
-def run_command(self, cmd):
+def run_command(cmd):
     """run command"""
     proc = subprocess.Popen(
     cmd,
@@ -337,7 +338,7 @@ def play_voice(self, song):
 
        log.info(NAME, _('Set master volume to') + ' ' + str(plugin_options['volume']) + '%')
        cmd = "sudo amixer  sset PCM,0 " + str(plugin_options['volume']) + "%"
-       run_command(self, cmd)
+       run_command(cmd)
 
        log.info(NAME, _('Playing...'))  
        mixer.music.play()
