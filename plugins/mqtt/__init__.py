@@ -68,16 +68,27 @@ class Sender(Thread):
 
     def run(self):
        log.clear(NAME) 
+       disable_text = True
        if not self._stop.is_set(): 
           if plugin_options["use_mqtt"]:  
+            disable_text = True   
             try:
                atexit.register(on_restart)
                publish_status()
-                 
+               self._sleep(1)
 
             except Exception:
                log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
                self._sleep(60)
+          else:
+            # text on the web if plugin is disabled
+            if disable_text:  
+               log.clear(NAME)
+               log.info(NAME, _('MQTT plug-in is disabled.'))
+               disable_text = False 
+               self._sleep(1)
+       else:
+          self._sleep(1)
 
 sender = None
 
@@ -96,7 +107,7 @@ def stop():
        sender.join()
        sender = None 
 
-def proc_install(self, cmd):
+def proc_install(cmd):
     """installation"""
     proc = subprocess.Popen(
     cmd,
@@ -113,23 +124,30 @@ def on_message(client, userdata, message):
     #print("Message retain flag=",message.retain)
 
 def get_client():
-    if not os.path.exists("/usr/local/lib/python2.7/dist-packages/paho/mqtt"): 
-      #http://askubuntu.com/questions/448358/automating-apt-get-install-with-assume-yes
-      #sudo pip install paho-mqtt
+    if not os.path.exists("/usr/lib/python2.7/dist-packages/pip"):
       log.clear(NAME)
-      log.info(NAME, _('Paho-mqtt is not installed.'))
-      log.info(NAME, _('Please wait installing paho-mqtt...'))
-      cmd = "sudo pip install paho-mqtt"
-      proc_install(self, cmd)
+      log.info(NAME, _('PIP is not installed.'))
+      log.info(NAME, _('Please wait installing pip...'))
+      log.info(NAME, _('This operation takes longer (minutes)...'))
+      cmd = "sudo apt-get install python-pip -y"
+      proc_install(cmd)
 
     try:
       import paho.mqtt.client as mqtt
     except ImportError:
       log.error(NAME, _('MQTT Plugin requires paho mqtt.'))
-      log.error(NAME, _('try: pip install paho-mqtt manually.'))
+      log.info(NAME, _('Paho-mqtt is not installed.'))
+      log.info(NAME, _('Please wait installing paho-mqtt...'))
+      log.info(NAME, _('This operation takes longer (minutes)...'))
+      cmd = "sudo pip install paho-mqtt"
+      proc_install(cmd)
+    try:
+      import paho.mqtt.client as mqtt
+    except ImportError:      
       mqtt = None
+      log.error(NAME, _('Error try install paho-mqtt manually.'))
  
-    if mqtt is not None:
+    if mqtt is not None and plugin_options["use_mqtt"]:  
       try:
          _client = mqtt.Client(options.name)                  # Use system name as client ID 
          _client.on_message = on_message                      # Attach function to callback
@@ -148,7 +166,7 @@ def get_client():
  
 def publish_status(status="UP"):
     client = get_client()
-    if client:
+    if client and plugin_options["use_mqtt"]:  
        log.info(NAME, _('Subscribing to topic') + ': ' + str(plugin_options['publish_up_down']))
        client.subscribe(plugin_options['publish_up_down'])
        client.publish(plugin_options['publish_up_down'], status)
@@ -158,7 +176,7 @@ def subscribe(topic, callback, qos=0):
     global _subscriptions
     client = get_client()
     
-    if client:
+    if client and plugin_options["use_mqtt"]:
       if topic not in _subscriptions:
          _subscriptions[topic] = [callback]
          client.subscribe(topic, qos)

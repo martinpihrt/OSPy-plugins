@@ -6,32 +6,20 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2017-06-30 13:55+0200\n"
-"PO-Revision-Date: 2017-06-30 14:07+0200\n"
+"PO-Revision-Date: 2019-05-20 11:39+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+"X-Generator: Poedit 2.2.2\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
 
-#: plugins/mqtt/__init__.py:75
-msgid "Paho-mqtt is not installed."
-msgstr "Paho-mqtt není nainstalován."
-
-#: plugins/mqtt/__init__.py:76
-msgid "Please wait installing paho-mqtt..."
-msgstr "Prosím čekejte instaluji paho-mqtt..."
-
-#: plugins/mqtt/__init__.py:82
-msgid "MQTT Plugin requires paho mqtt."
-msgstr "MQTT rozšíření vyžaduje paho-mqtt."
-
 #: plugins/mqtt/__init__.py:83
 msgid "try: pip install paho-mqtt manually."
-msgstr "Zkuste: pip instal paho-mqtt manuálně."
+msgstr "zkuste: pip instal paho-mqtt manuálně."
 
 #: plugins/mqtt/__init__.py:134
 msgid "Connecting to broker"
@@ -44,6 +32,30 @@ msgstr "Rozšíření MQTT nemůže nastavit klienta"
 #: plugins/mqtt/__init__.py:91
 msgid "MQTT plug-in"
 msgstr "Rozšíření MQTT"
+
+#: plugins/mqtt/__init__.py:87
+msgid "MQTT plug-in is disabled."
+msgstr "Rozšíření je zakázáno."
+
+#: plugins/mqtt/__init__.py:121
+msgid "Message received"
+msgstr "Zpráva přijata"
+
+#: plugins/mqtt/__init__.py:129
+msgid "PIP is not installed."
+msgstr "PIP není nainstalováno."
+
+#: plugins/mqtt/__init__.py:130
+msgid "Please wait installing pip..."
+msgstr "Počkejte prosím na instalaci PIP..."
+
+#: plugins/mqtt/__init__.py:131 plugins/mqtt/__init__.py:141
+msgid "This operation takes longer (minutes)..."
+msgstr "Tato operace trvá déle (minuty)..."
+
+#: plugins/mqtt/__init__.py:148
+msgid "Error try install paho-mqtt manually."
+msgstr "Chyba zkuste: pip instal paho-mqtt manuálně."
 
 #: plugins/mqtt/__init__.py:124
 msgid "MQTT plugin got unexpected message on topic:"
@@ -66,33 +78,16 @@ msgid "MQTT settings"
 msgstr "Nastavení MQTT"
 
 #: plugins/mqtt/templates/mqtt.html:22
-msgid ""
-"This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to "
-"use to publish information and or receive commands over MQTT. On this page, "
-"the shared client is configured"
-msgstr ""
-"Toto rozšíření MQTT přidává klienta MQTT jako démona v OSPy pro další "
-"rozšíření, která se používají k publikování informací a přijímání příkazů "
-"přes MQTT protokol. Na této stránce se nakonfiguruje sdílený klient"
+msgid "This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. On this page, the shared client is configured"
+msgstr "Toto rozšíření MQTT přidává klienta MQTT jako démona v OSPy pro další rozšíření, která se používají k publikování informací a přijímání příkazů přes MQTT protokol. Na této stránce se nakonfiguruje sdílený klient"
 
 #: plugins/mqtt/templates/mqtt.html:23
-msgid ""
-"Having a shared MQTT client simplifies configuration and lowers overhead on "
-"the OSPy process, network and broker"
-msgstr ""
-"Sdílený klient MQTT zjednodušuje konfiguraci a snižuje režii operačního "
-"systému OSPy, sítě a zprostředkovatele"
+msgid "Having a shared MQTT client simplifies configuration and lowers overhead on the OSPy process, network and broker"
+msgstr "Sdílený klient MQTT zjednodušuje konfiguraci a snižuje režii operačního systému OSPy, sítě a zprostředkovatele"
 
 #: plugins/mqtt/templates/mqtt.html:24
-msgid ""
-"This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs "
-"paho-mqtt in to the system himself. On first use (if run installation paho-"
-"mqtt) please wait for status"
-msgstr ""
-"Toto rozšíření vyžaduje paho-mqtt. Pokud není nainstalován paho-mqtt, "
-"rozšíření nainstaluje paho-mqtt do systému automaticky. Při prvním použití "
-"(pokud běží instalace paho-mqtt) počkejte na dokončení (informace ve "
-"stavovém okně)"
+msgid "This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs paho-mqtt in to the system himself. On first use (if run installation paho-mqtt) please wait for status"
+msgstr "Toto rozšíření vyžaduje paho-mqtt. Pokud není nainstalován paho-mqtt, rozšíření nainstaluje paho-mqtt do systému automaticky. Při prvním použití (pokud běží instalace paho-mqtt) počkejte na dokončení (informace ve stavovém okně)"
 
 #: plugins/mqtt/templates/mqtt.html:25
 msgid "We can use a public Broker server to test"
