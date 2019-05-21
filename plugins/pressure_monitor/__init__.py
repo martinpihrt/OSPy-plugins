@@ -145,7 +145,7 @@ class PressureSender(Thread):
                         three_text = False
 
                 if send:
-                    msg = (datetime_string() + ': ' + _('System detected error: pressure sensor.'))
+                    msg = '<b>' + _('Pressure monitor plug-in') + '</b> ' + datetime_string() + '<br><p style="color:red;">' + _('System detected error: pressure sensor.') + '</p>'
                     try:
                         send_email(msg)
                         log.info(NAME, _('Email was sent') + ': ' + msg)

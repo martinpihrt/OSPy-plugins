@@ -106,9 +106,10 @@ class StatusChecker(Thread):
             log.info(NAME, _('Available revision') + ': %d (%s)' % (new_revision, new_date))
             log.info(NAME, _('Changes') +':\n' + changes)
             self.status['can_update'] = True
-            msg =  _('New OSPy version is available!') + '<br>' 
+            msg = '<b>' + _('System update plug-in') + '</b> ' + datetime_string() + '<br><p style="color:red;">' 
+            msg += _('New OSPy version is available!') + '<br>' 
             msg += _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + '<br>'
-            msg += _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.'
+            msg += _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.' + '</p>'
             if plugin_options['use_eml']:
                 send_email(msg)
         else:

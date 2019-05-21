@@ -110,7 +110,8 @@ class UPSSender(Thread):
                     if test:                                               # if power line is not active
                         reboot_time = True                                  # start countdown timer
                         if once:
-                            msg = _('UPS plugin detected fault on power line.') # send email with info power line fault
+                            # send email with info power line fault
+                            msg = '<b>' + _('UPS plug-in') + '</b> ' + datetime_string() + '<br><p style="color:red;">' + _('Detected fault on power line.') + '</p>'
                             log.info(NAME, msg)
                             if ups_options['sendeml']:                       # if enabled send email
                                 send_email(msg)
@@ -131,7 +132,8 @@ class UPSSender(Thread):
                                 reboot_time = False
                                 if ups_options['sendeml']:                    # if enabled send email
                                     if once_two:
-                                        msg = _('UPS plugin - power line is not restore in time -> shutdown system!') # send email with info shutdown system
+                                        # send email with info shutdown system
+                                        msg = '<b>' + _('UPS plug-in') + '</b> ' + datetime_string() + '<br><p style="color:red;">' + _('Power line is not restore in time -> shutdown system!') + '</p>'
                                         send_email(msg)
                                         once_two = False
 
@@ -144,7 +146,7 @@ class UPSSender(Thread):
                     if not test:
                         if once_three:
                             if ups_options['sendeml']:                     # if enabled send email
-                                msg = _('UPS plugin - power line has restored - OK.')
+                                msg = '<b>' + _('UPS plug-in') + '</b> ' + datetime_string() + '<br><p style="color:green;">' + _('Power line has restored - OK.') + '</p>'
                                 log.clear(NAME)
                                 log.info(NAME, msg)
                                 send_email(msg)
