@@ -70,7 +70,7 @@ class WindSender(Thread):
 
     def run(self):
         if wind_options['address'] == 0:
-            find_lcd_address()
+            find_address()
         else:
             self.pcf = set_counter()     # set pcf8583 as counter
 
