@@ -128,7 +128,7 @@ class WindSender(Thread):
                        disable_text = False                        
 
                 if send:
-                    msg = '<b>' + _('Wind speed monitor plug-in') + '</b> ' + datetime_string() + '<br><p style="color:red;">' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h. </p>'
+                    msg = '<b>' + _('Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h. </p>'
                     try:
                         send_email(msg)
                         log.info(NAME, _('Email was sent') + ': ' + msg)

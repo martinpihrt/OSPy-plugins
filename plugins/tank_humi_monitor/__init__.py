@@ -204,7 +204,7 @@ class Sender(Thread):
                        log.info(NAME, datetime_string() + ' F8: ' + _('Error I2C device not found.'))
 
                 if send:
-                    msg = '<b>' + _('Water tank and humidity Monitor plug-in') + '</b> ' + datetime_string() + '<br><p style="color:red;">' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + _('Scheduler is now disabled and all Stations turn Off.') + '</p>'
+                    msg = '<b>' + _('Water tank and humidity Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + _('Scheduler is now disabled and all Stations turn Off.') + '</p>'
                     try:
                         send_email(msg)
                         log.info(NAME, _('Email was sent') + ': ' + msg)
