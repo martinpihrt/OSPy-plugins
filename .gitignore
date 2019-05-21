@@ -1,4 +1,5 @@
 *.pyc
 *.csv
+*.mp3
 .idea
 .settings
