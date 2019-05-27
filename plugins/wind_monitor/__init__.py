@@ -14,9 +14,10 @@ from threading import Thread, Event
 import web
 from ospy.stations import stations
 from ospy.options import options
-from ospy.log import log
+from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
+from ospy.helpers import datetime_string
 from ospy import helpers
 
 
@@ -85,57 +86,56 @@ class WindSender(Thread):
             try:
                 if wind_options['use_wind_monitor']:  # if wind plugin is enabled
                     disable_text = True
-                                        
-                    puls = counter()/10.0 # counter value is value/10sec
-                                                                                                                         
-                    val = puls/(wind_options['pulses']*1.0)
-                    val = val*wind_options['metperrot'] 
-                    
-                    if val > maxval:
-                        maxval = val
 
-                    if timer_reset >= 86400: # 1 day
-                       timer_reset = 0
-                       maxval = 0.0
+                    if counter() is not None:                    
+                        puls = counter()/10.0 # counter value is value/10sec
+                        val = puls/(wind_options['pulses']*1.0)
+                        val = val*wind_options['metperrot']                  
+                        if val > maxval:
+                            maxval = val
 
-                    self.status['meter'] = round(val,2)
-                    self.status['kmeter'] = round(val*3.6,2)
+                        if timer_reset >= 86400: # 1 day
+                            timer_reset = 0
+                            maxval = 0.0
 
-                    log.clear(NAME)
-                    log.info(NAME, _('Please wait 10 sec...'))
-                    log.info(NAME, _('Speed') + ' ' + str(round(val,2)) + ' ' + _('m/sec'))
-                    log.info(NAME, _('Speed Peak 24 hour') + ' ' + str(round(maxval,2)) + ' ' + _('m/sec') )
-                    log.info(NAME, _('Pulses') + ' ' + str(puls) + ' ' + _('pulses/sec') )
+                        self.status['meter']  = round(val,2)
+                        self.status['kmeter'] = round(val*3.6,2)
+
+                        log.clear(NAME)
+                        log.info(NAME, _('Please wait 10 sec...'))
+                        log.info(NAME, _('Speed') + ' ' + str(round(val,2)) + ' ' + _('m/sec'))
+                        log.info(NAME, _('Speed Peak 24 hour') + ' ' + str(round(maxval,2)) + ' ' + _('m/sec') )
+                        log.info(NAME, _('Pulses') + ' ' + str(puls) + ' ' + _('pulses/sec') )
             
-                    if val >= 42: 
-                       log.error(NAME, _('Wind speed > 150 km/h (42 m/sec)'))
+                        if val >= 42: 
+                            log.error(NAME, _('Wind speed > 150 km/h (42 m/sec)'))
                                      
-                    if get_station_is_on():                               # if station is on
-                       if val >= int(wind_options['maxspeed']):           # if wind speed is > options max speed
-                          log.clear(NAME)
-                          log.finish_run(None)                            # save log
-                          stations.clear()                                # set all station to off
-                          log.clear(NAME)
-                          log.info(NAME, _('Stops all stations and sends email if enabled sends email.'))
-                          if wind_options['sendeml']:                     # if enabled send email
-                             send = True                    
+                        if get_station_is_on():                               # if station is on
+                            print "zap"
+                            if val >= int(wind_options['maxspeed']):          # if wind speed is > options max speed
+                                log.clear(NAME)
+                                log.finish_run(None)                          # save log
+                                stations.clear()                              # set all station to off
+                                log.clear(NAME)
+                                log.info(NAME, _('Stops all stations and sends email if enabled sends email.'))
+                                if wind_options['sendeml']:                   # if enabled send email
+                                    send = True  
+                    else:
+                        self._sleep(1)                                
                                       
                 else:
                     # text on the web if plugin is disabled
                     if disable_text:  
-                       log.clear(NAME)
-                       log.info(NAME, _('Wind speed monitor plug-in is disabled.'))
-                       disable_text = False                        
+                        log.clear(NAME)
+                        log.info(NAME, _('Wind speed monitor plug-in is disabled.'))
+                        disable_text = False   
+                    self._sleep(1)                        
 
                 if send:
                     msg = '<b>' + _('Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h. </p>'
-                    try:
-                        send_email(msg)
-                        log.info(NAME, _('Email was sent') + ': ' + msg)
-                        send = False
-                    except Exception:
-                        log.clear(NAME)
-                        log.error(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
+                    msglog= _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h.'
+                    send_email(msg, msglog)
+                    send = False
 
                 timer_reset+=10 # measure is 10 sec long
                 
@@ -165,7 +165,7 @@ def stop():
         wind_sender = None
 
 
-def send_email(msg):
+def send_email(msg, msglog):
     """Send email"""
     message = datetime_string() + ': ' + msg
     try:
@@ -178,15 +178,15 @@ def send_email(msg):
         if not options.run_logEM:
            log.info(NAME, _('Email logging is disabled in options...'))
         else:        
-           logEM.save_email_log(Subject, message, _('Sent'))
+           logEM.save_email_log(Subject, msglog, _('Sent'))
 
-        log.info(NAME, _('Email was sent') + ': ' + message)
+        log.info(NAME, _('Email was sent') + ': ' + msglog)
 
     except Exception:
         if not options.run_logEM:
            log.info(NAME, _('Email logging is disabled in options...'))
         else:
-           logEM.save_email_log(Subject, message, _('Sent'))
+           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
 
         log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
@@ -233,28 +233,32 @@ def set_counter():
 
 def counter(): # reset PCF8583, measure pulses and return number pulses per second
     try:
+        pulses = 0
         if wind_options['address'] != 0:
-           import smbus
-           bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
-           # reset PCF8583
-           bus.write_byte_data(wind_options['address'], 0x01, 0x00) # reset LSB
-           bus.write_byte_data(wind_options['address'], 0x02, 0x00) # reset midle Byte
-           bus.write_byte_data(wind_options['address'], 0x03, 0x00) # reset MSB
-           time.sleep(10)
-           # read number (pulses in counter) and translate to DEC
-           counter = bus.read_i2c_block_data(wind_options['address'], 0x00)
-           num1 = (counter[1] & 0x0F)             # units
-           num10 = (counter[1] & 0xF0) >> 4       # dozens
-           num100 = (counter[2] & 0x0F)           # hundred
-           num1000 = (counter[2] & 0xF0) >> 4     # thousand
-           num10000 = (counter[3] & 0x0F)         # tens of thousands
-           num100000 = (counter[3] & 0xF0) >> 4   # hundreds of thousands
-           pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
-           return pulses
+            import smbus
+            bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
+            # reset PCF8583
+            bus.write_byte_data(wind_options['address'], 0x01, 0x00) # reset LSB
+            bus.write_byte_data(wind_options['address'], 0x02, 0x00) # reset midle Byte
+            bus.write_byte_data(wind_options['address'], 0x03, 0x00) # reset MSB
+            time.sleep(10)
+            # read number (pulses in counter) and translate to DEC
+            counter = bus.read_i2c_block_data(wind_options['address'], 0x00)
+            num1 = (counter[1] & 0x0F)             # units
+            num10 = (counter[1] & 0xF0) >> 4       # dozens
+            num100 = (counter[2] & 0x0F)           # hundred
+            num1000 = (counter[2] & 0xF0) >> 4     # thousand
+            num10000 = (counter[3] & 0x0F)         # tens of thousands
+            num100000 = (counter[3] & 0xF0) >> 4   # hundreds of thousands
+            pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
+            return pulses
+        else: 
+            time.sleep(10)  
+            return None  
     except:
         log.error(NAME, _('Wind speed monitor plug-in') + traceback.format_exc())
-        time.sleep(10)
-        return 0
+        time.sleep(60)
+        return None
 
 
 def get_station_is_on(): # return true if stations is ON

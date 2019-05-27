@@ -56,9 +56,18 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Wind speed state (every 10 sec)'):</td>
-                <td>
-                   <b> $status['kmeter'] (km/h)</b> -> $status['meter'] ($_('m/s')) 
+                <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (every 10 sec)'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                   $if plugin_options['use_wind_monitor']:
+                        $if status['meter'] >= plugin_options["maxspeed"]: 
+                            <p style="color:red;">
+                        $elif status['meter'] < (plugin_options["maxspeed"] - 3):
+                            <p style="color:green;">
+                        $else: 
+                            <p style="color:orange;">
+                        <b> $status['kmeter'] (km/h)</b> -> $status['meter'] ($_('m/s'))        
+                    $else:
+                        --    
                 </td>
             </tr>
             <tr>
