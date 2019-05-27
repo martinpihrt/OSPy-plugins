@@ -74,50 +74,55 @@ class EmailSender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
                    
-    def try_mail(self, text, attachment=None, subject=None):
+    def try_mail(self, text, logtext, attachment=None, subject=None):
         log.clear(NAME)
         try:
             email(text, attach=attachment)  # send email with attachment from
             log.info(NAME, _('Email was sent') + ':\n' + text)
             if not options.run_logEM:
                 log.info(NAME, _('Email logging is disabled in options...'))
-            logEM.save_email_log(subject or email_options['emlsubject'], text, _('Sent'))
+            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Sent'))
 
         except Exception:
             log.error(NAME, _('Email was not sent!') + '\n' + traceback.format_exc())
-            logEM.save_email_log(subject or email_options['emlsubject'], text, _('Unsent'))
+            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Email was not sent!'))
             if not options.run_logEM:
                 log.info(NAME, _('Email logging is disabled in options...'))
 
     def run(self):
         last_rain = False
-        body = ""
+        body    = ""
+        logtext = ""
         finished_count = len([run for run in log.finished_runs() if not run['blocked']])
 
         if email_options["emlpwron"]:  # if eml_power_on send email is enable (on)
             body += '<b>' + _('System') + '</b> ' + datetime_string()
             body += '<br><p style="color:red;">' + _('System was powered on.') + '</p>'
+            logtext = _('System was powered on.')
 
             if email_options["emllog"]:
                 file_exists = os.path.exists(EVENT_FILE)
                 if file_exists:
-                   self.try_mail(body, EVENT_FILE)
+                   self.try_mail(body, logtext, EVENT_FILE)
                 else:
                    body += '<br>' + _('Error -  events.log file not exists!') 
                    #print body
-                   self.try_mail(body)
+                   self.try_mail(body, logtext)
             else:
-                self.try_mail(body)
+                self.try_mail(body, logtext)
 
         while not self._stop.is_set():
-            body = ""
+            body    = ""
+            logtext = ""
             try:
                 # Send E-amil if rain is detected
                 if email_options["emlrain"]:
                     if inputs.rain_sensed() and not last_rain:
                         body += '<b>' + _('System') + '</b> ' + datetime_string() 
                         body += '<br><p style="color:red;">' + _('System detected rain.') + '</p>'
-                        self.try_mail(body)
+                        logtext = _('System detected rain.')
+                        self.try_mail(body, logtext)
+                        self._sleep(1)
                     last_rain = inputs.rain_sensed()
 
                 # Send E-mail if a new finished run is found
@@ -133,7 +138,10 @@ class EmailSender(Thread):
                             body += '<br>' + _('Station') + ': %s\n' % stations.get(run['station']).name
                             body += '<br>' + _('Start time') + ': %s \n' % datetime_string(run['start'])
                             body += '<br>' + _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
-                            
+                            logtext  =  _('Finished run') + '-> ' + _('Program') + ': %s\n' % run['program_name'] + ', ' 
+                            logtext +=  _('Station') + ': %s\n' % stations.get(run['station']).name + ', '
+                            logtext +=  _('Start time') + ': %s \n' % datetime_string(run['start'])  + ', '
+                            logtext +=  _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
                             cm = None
                             try:
                                 from plugins import tank_humi_monitor
@@ -144,7 +152,8 @@ class EmailSender(Thread):
                                     cm = _('Error - I2C device not found!')
 
                                 body += '<br><b>'  + _('Water') + '</b>'                                    
-                                body += '<br>' + _('Water level in tank') + ': %s \n' % (cm)    
+                                body += '<br>' + _('Water level in tank') + ': %s \n' % (cm)
+                                logtext += ', ' + _('Water') + '-> ' + _('Water level in tank') + ': %s \n' % (cm)   
                             
                             except Exception:
                                 pass
@@ -153,13 +162,15 @@ class EmailSender(Thread):
                             try:
                                 from plugins import air_temp_humi    
                                 body += '<br><b>' + _('Temperature DS1-DS6') + '</b>'
+                                logtext += ', ' + _('Temperature DS1-DS6') + '-> '
                                 for i in range(0, air_temp_humi.plugin_options['ds_used']):  
                                     body += '<br>' + u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n'  
-                
+                                    logtext +=  u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + ' ' 
+
                             except Exception:
                                 pass
 
-                        self.try_mail(body)
+                        self.try_mail(body, logtext)
                         
                     self._sleep(1)
                     finished_count = len(finished)
