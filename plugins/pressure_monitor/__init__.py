@@ -146,9 +146,9 @@ class PressureSender(Thread):
 
                 if send:
                     msg = '<b>' + _('Pressure monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: pressure sensor.') + '</p>'
+                    msglog = _('Pressure monitor plug-in') + ': ' + _('System detected error: pressure sensor.')
                     try:
-                        send_email(msg)
-                        log.info(NAME, _('Email was sent') + ': ' + msg)
+                        send_email(msg, msglog)
                         send = False
                     except Exception:
                         log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
@@ -158,7 +158,7 @@ class PressureSender(Thread):
                 else:                
                     self.status['Pstate%d'] = _('ACTIVE')
                 
-                self._sleep(1)
+                self._sleep(2)
 
             except Exception:
                 log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
@@ -184,7 +184,7 @@ def stop():
         pressure_sender = None
 
 
-def send_email(msg):
+def send_email(msg, msglog):
     """Send email"""
     message = datetime_string() + ': ' + msg
     try:
@@ -197,15 +197,15 @@ def send_email(msg):
         if not options.run_logEM:
            log.info(NAME, _('Email logging is disabled in options...'))
         else:        
-           logEM.save_email_log(Subject, message, _('Sent'))
+           logEM.save_email_log(Subject, msglog, _('Sent'))
 
-        log.info(NAME, _('Email was sent') + ': ' + message)
+        log.info(NAME, _('Email was sent') + ': ' + msglog)
 
     except Exception:
         if not options.run_logEM:
            log.info(NAME, _('Email logging is disabled in options...'))
         else:
-           logEM.save_email_log(Subject, message, _('Sent'))
+           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
 
         log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 

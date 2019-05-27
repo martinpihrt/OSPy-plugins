@@ -57,8 +57,8 @@ class Sender(Thread):
     def _sleep(self, secs):
         self._sleep_time = secs
         while self._sleep_time > 0 and not self._stop.is_set():
-            time.sleep(1)
-            self._sleep_time -= 1
+          time.sleep(1)
+          self._sleep_time -= 1
 
     def run(self):
        old_statuslist = ' '
@@ -70,10 +70,10 @@ class Sender(Thread):
           if plugin_options['use_mqtt']:  
             once = True
             try:                    
-               statuslist = []
+              statuslist = []
 
-               for station in stations.get():
-                   if station.enabled or station.is_master or station.is_master_two: 
+                for station in stations.get():
+                  if station.enabled or station.is_master or station.is_master_two: 
                       status = {
                         'station': station.index,
                         'status':  'on' if station.active else 'off',
@@ -81,54 +81,55 @@ class Sender(Thread):
                         'reason':  'master' if station.is_master or station.is_master_two else ''}
 
                       if not station.is_master or not station.is_master_two:
-                           if station.active:
+                            if station.active:
                               active = log.active_runs()
                               for interval in active:
-                                 if not interval['blocked'] and interval['station'] == station.index:
+                                  if not interval['blocked'] and interval['station'] == station.index:
                                     status['reason'] = 'program'                              
-                           elif not options.scheduler_enabled:
+                            elif not options.scheduler_enabled:
                               status['reason'] = 'system_off'
-                           elif not station.ignore_rain and inputs.rain_sensed():
+                            elif not station.ignore_rain and inputs.rain_sensed():
                               status['reason'] = 'rain_sensed'
-                           elif not station.ignore_rain and rain_blocks.seconds_left():
+                            elif not station.ignore_rain and rain_blocks.seconds_left():
                               status['reason'] = 'rain_delay'
 
                       statuslist.append(status)
                
 
-               zone_topic = plugin_options['zone_topic']
+                zone_topic = plugin_options['zone_topic']
                
-               if zone_topic:
+                if zone_topic:
                   try:
-                     from plugins import mqtt
+                    from plugins import mqtt
                   except ImportError:
-                     log.error(NAME, _('MQTT Zones Plugin requires MQTT plugin.'))
+                    log.error(NAME, _('MQTT Zones Plugin requires MQTT plugin.'))
 
                   if statuslist != old_statuslist:
-                     old_statuslist = statuslist
+                    old_statuslist = statuslist
                     
-                     client = mqtt.get_client()
-                     if client:           
-                       client.publish(zone_topic, json.dumps(statuslist), qos=1, retain=True)
-                       log.clear(NAME) 
-                       log.info(NAME, _('MQTT Zones Plugin public') + ':\n' + str(statuslist))
+                    client = mqtt.get_client()
+                    if client:           
+                      client.publish(zone_topic, json.dumps(statuslist), qos=1, retain=True)
+                      log.clear(NAME) 
+                      log.info(NAME, _('MQTT Zones Plugin public') + ':\n' + str(statuslist))
 
-               else:
+                else:
                   log.clear(NAME) 
                   log.error(NAME, _('Not setup Zone Topic'))
                   self._sleep(10)
                         
-               self._sleep(1)         
+                self._sleep(1)         
 
             except Exception:
                 log.error(NAME, _('MQTT Zones plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
           else:
-             if once: 
+              if once: 
                 log.info(NAME, _('MQTT Zones Plugin is disabled.'))
                 once = False
-             
+              self._sleep(2)
+                             
 sender = None
 
 ################################################################################
@@ -137,14 +138,14 @@ sender = None
 def start():
     global sender
     if sender is None:
-       sender = Sender()
+      sender = Sender()
       
 def stop():
     global sender
     if sender is not None:
-       sender.stop()
-       sender.join()
-       sender = None 
+      sender.stop()
+      sender.join()
+      sender = None 
        
 ################################################################################
 # Web pages:                                                                   #
@@ -159,7 +160,7 @@ class settings_page(ProtectedPage):
     def POST(self): 
         plugin_options.web_update(web.input())
         if sender is not None:
-           sender.update()
+          sender.update()
         
         raise web.seeother(plugin_url(settings_page), True)
 

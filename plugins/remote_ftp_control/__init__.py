@@ -64,8 +64,8 @@ class PluginSender(Thread):
     def _sleep(self, secs):
         self._sleep_time = secs
         while self._sleep_time > 0 and not self._stop.is_set():
-            time.sleep(1)
-            self._sleep_time -= 1
+          time.sleep(1)
+          self._sleep_time -= 1
 
     def run(self):
         log.clear(NAME)    
@@ -73,8 +73,8 @@ class PluginSender(Thread):
             ramdiskpatch = '/home/pi/ramdisk'
 
             if not os.path.exists(ramdiskpatch): # checking whether there ramdisk
-               os.mkdir(ramdiskpatch)
-               log.info(NAME, _('Creating ramdisk into') + ': ' + str(ramdiskpatch))
+              os.mkdir(ramdiskpatch)
+              log.info(NAME, _('Creating ramdisk into') + ': ' + str(ramdiskpatch))
        
         except Exception:
            log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
@@ -84,37 +84,38 @@ class PluginSender(Thread):
             fstabpatch = '/etc/fstab'
 
             if not fstabdata in open(fstabpatch).read():  # checking and adding a ramdisk to fstab
-               log.info(NAME, _('Adding into fstab') + ': ' + str(fstabdata))
-               log.info(NAME, _('Saving config to') + ': ' + str(fstabpatch))
-               f = open(fstabpatch,"a")  
-               f.write(fstabdata)
-               f.close()
-               # reboot os system
-               log.info(NAME, _('Now please restart your operating system!'))
+              log.info(NAME, _('Adding into fstab') + ': ' + str(fstabdata))
+              log.info(NAME, _('Saving config to') + ': ' + str(fstabpatch))
+              f = open(fstabpatch,"a")  
+              f.write(fstabdata)
+              f.close()
+              # reboot os system
+              log.info(NAME, _('Now please restart your operating system!'))
 
         except Exception:
-           log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+            log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
                 
         smyckyFTP = 30  
         while not self._stop.is_set():
             try:                    
-               if plugin_options['use']:  # if plugin is enabled               
-                 if (smyckyFTP > 29):      # every 30 second FTP download and upload
+                if plugin_options['use']:  # if plugin is enabled               
+                  if (smyckyFTP > 29):      # every 30 second FTP download and upload
                     smyckyFTP = 0   
                     log.clear(NAME)
                     try:
-                          self.ftp = FTP(plugin_options['ftpaddress'], plugin_options['ftpname'], plugin_options['ftppass'])    
-                          log.info(NAME, _('FTP connection established.')) 
+                        self.ftp = FTP(plugin_options['ftpaddress'], plugin_options['ftpname'], plugin_options['ftppass'])    
+                        log.info(NAME, _('FTP connection established.')) 
 
-                          FTP_download(self)  # downloaded from server data.txt and save to ramdisk
-                          FTP_upload(self)    # uploaded to the server data stavy.php from the ramdisk
+                        FTP_download(self)  # downloaded from server data.txt and save to ramdisk
+                        FTP_upload(self)    # uploaded to the server data stavy.php from the ramdisk
 
                     except Exception:
-                       log.clear(NAME)
-                       log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+                        log.clear(NAME)
+                        log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
                        
-                 smyckyFTP += 1 # counter for FTP transmit and reiceive                           
-                 self._sleep(1)
+                  smyckyFTP += 1 # counter for FTP transmit and reiceive                           
+                  
+                self._sleep(1)  
 
             except Exception:
                 log.clear(NAME)
@@ -142,26 +143,26 @@ def stop():
 
 def FTP_download(self):     
     try:  # read command file and save to ramdisk   
-       self.ftp.retrbinary("RETR " + plugin_options['loc'] + "data.txt" , open("/home/pi/ramdisk/data.txt", 'wb').write) 
-       fs = file("/home/pi/ramdisk/data.txt",'r')          
-       obsahaut = fs.readline() 
-       fs.close()     
+        self.ftp.retrbinary("RETR " + plugin_options['loc'] + "data.txt" , open("/home/pi/ramdisk/data.txt", 'wb').write) 
+        fs = file("/home/pi/ramdisk/data.txt",'r')          
+        obsahaut = fs.readline() 
+        fs.close()     
 
-       log.debug(NAME, _('FTP received data from file data.txt') + ': ' + str(obsahaut))
+        log.debug(NAME, _('FTP received data from file data.txt') + ': ' + str(obsahaut))
 
-       change = False
+        change = False
 
-       if (obsahaut == "AU"):   # scheduller
+        if (obsahaut == "AU"):   # scheduller
           options.manual_mode = False        
           log.info(NAME, _('Scheduler mode is activated.'))
           change = True
          
-       if (obsahaut == "MA"):   # manual
+        if (obsahaut == "MA"):   # manual
           options.manual_mode = True       
           log.info(NAME, _('Manual mode is activated.'))
           change = True
 
-       for num_output in range(0,options.output_count):
+        for num_output in range(0,options.output_count):
           s = 'Z' + str(num_output)
           if (obsahaut == s):   # stations xx ON 
              options.manual_mode = True       
@@ -178,7 +179,7 @@ def FTP_download(self):
              log.info(NAME, _('Deactivated stations') + ': ' + str(num_output + 1))
              change = True
 
-       for program in programs.get():
+        for program in programs.get():
           s = 'P' + str(program.index+1)
           if (obsahaut == s):   # Run-now program xx  
              options.manual_mode = False       
@@ -189,7 +190,7 @@ def FTP_download(self):
              change = True
           program.index+1
 
-       if (obsahaut == "STOP"):   # stop all stations and disable scheduler
+        if (obsahaut == "STOP"):   # stop all stations and disable scheduler
             options.scheduler_enabled = False
             programs.run_now_program = None
             run_once.clear()
@@ -198,25 +199,25 @@ def FTP_download(self):
             log.info(NAME, _('Stop all stations and disable system.'))
             change = True
 
-       if (obsahaut == "START"):   # enable scheduler
+        if (obsahaut == "START"):   # enable scheduler
             options.scheduler_enabled = True
             log.info(NAME, _('Enable system.'))
             change = True
 
-       if (change): # delete data.txt command now is OK
-         fs= open('/home/pi/ramdisk/data.txt','w')      
-         fs.write('OK') 
-         fs.close()
-         FTP_upload(self) # send to server actual data
+        if (change): # delete data.txt command now is OK
+          fs= open('/home/pi/ramdisk/data.txt','w')      
+          fs.write('OK') 
+          fs.close()
+          FTP_upload(self) # send to server actual data
        
      
 # TODO save_to_options
 
                                                        
     except Exception: 
-       log.clear(NAME)
-       log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
-       pass
+      log.clear(NAME)
+      log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+      pass
 
 def FTP_upload(self):   
     try:      
@@ -251,19 +252,19 @@ def FTP_upload(self):
 
       namestations = []
       for num in range(0,options.output_count): # stations name as array
-          namestations.append(unicodedata.normalize('NFKD', stations.get(num).name).encode('ascii','ignore'))
+        namestations.append(unicodedata.normalize('NFKD', stations.get(num).name).encode('ascii','ignore'))
       text += "$name" + " = array"  
       text += str(namestations) + ";\r\n"
  
       statestations = []
       for num in range(0,options.output_count): # stations state as array
-          statestations.append(1 if stations.get(num).active else 0)
+        statestations.append(1 if stations.get(num).active else 0)
       text += "$state" + " = array"  
       text += str(statestations) + ";\r\n"
 
       progrname = []
       for program in programs.get():          # program name as array
-          progrname.append(unicodedata.normalize('NFKD', program.name).encode('ascii','ignore'))
+        progrname.append(unicodedata.normalize('NFKD', program.name).encode('ascii','ignore'))
       text += "$progname" + " = array"  
       text += str(progrname) + ";\r\n"
  
@@ -291,39 +292,43 @@ def FTP_upload(self):
 
       tank = ''
       try:
-         from plugins import tank_humi_monitor
-         tank = tank_humi_monitor.get_sonic_tank_cm()
-         if tank < 0: # -1 is error I2C device for ping not found in tank_humi_monitor
+          from plugins import tank_humi_monitor
+          tank = tank_humi_monitor.get_sonic_tank_cm()
+          if tank < 0: # -1 is error I2C device for ping not found in tank_humi_monitor
             tank = ''
       except Exception:
-         tank = ''
+        tank = ''
+
       text = text + "$tank = \'"                    # from tank humi monitor plugins check water level (ex: tank  = "100" in cm or "")
       text = text + str(tank) + "\';\r\n"
 
       press = ''
       try:
-         from plugins import pressure_monitor
-         press = pressure_monitor.get_check_pressure()
+        from plugins import pressure_monitor
+        press = pressure_monitor.get_check_pressure()
       except Exception:
-         press = ''           
+        press = ''           
+
       text = text + "$press = \'"                   # from pressure plugins check press (ex: press  = "1" or "0")
       text = text + str(press) + "\';\r\n"
 
       ups = ''
       try:
-         from plugins import ups_adj
-         ups = ups_adj.get_check_power()            # read state power line from plugin ups adj
+        from plugins import ups_adj
+        ups = ups_adj.get_check_power()            # read state power line from plugin ups adj
       except Exception:
-         ups = ''           
+        ups = ''           
+
       text = text + "$ups = \'"                   
       text = text + str(ups) + "\';\r\n"
 
       result = ''
       finished = [run for run in log.finished_runs() if not run['blocked']]
       if finished:
-         result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + finished[-1]['program_name']
+        result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + finished[-1]['program_name']
       else:
-         result = ''
+        result = ''
+
       text = text + "$lastrun = \'"                 # last run program (ex: start d-m-r v h:m:s program: jmemo programu)
       text = text + str(result) + "\';\r\n"
 
@@ -362,13 +367,13 @@ def FTP_upload(self):
       ------------------------------- """                     
   
       try:
-         fs=file("/home/pi/ramdisk/stavy.php",'w')      
-         fs.write(text) 
-         fs.close()
+        fs=file("/home/pi/ramdisk/stavy.php",'w')      
+        fs.write(text) 
+        fs.close()
 
       except:
-         log.error(NAME, _('Could not save stavy.php to ramdisk!'))
-         pass     
+        log.error(NAME, _('Could not save stavy.php to ramdisk!'))
+        pass     
 
       self.ftp.storbinary("STOR " + plugin_options['loc'] + 'stavy.php'  , open("/home/pi/ramdisk/stavy.php", 'rb'))   
       log.info(NAME, _('Data file stavy.php has send on to FTP server') + ': ' + str(cas))
@@ -397,7 +402,7 @@ class settings_page(ProtectedPage):
     def POST(self): 
         plugin_options.web_update(web.input())
         if plugin_sender is not None:
-            plugin_sender.update()
+          plugin_sender.update()
         raise web.seeother(plugin_url(settings_page), True)
 
 

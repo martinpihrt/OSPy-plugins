@@ -167,7 +167,8 @@ class Sender(Thread):
                           log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
 
                     #print DS18B20_read_string_data() # for testing only
-                    self._sleep(5)
+                    
+                self._sleep(5)    
  
             except Exception:
                 log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())

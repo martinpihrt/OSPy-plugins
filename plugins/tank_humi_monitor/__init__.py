@@ -205,9 +205,9 @@ class Sender(Thread):
 
                 if send:
                     msg = '<b>' + _('Water tank and humidity Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + _('Scheduler is now disabled and all Stations turn Off.') + '</p>'
+                    msglog = _('Water tank and humidity Monitor plug-in') + ': ' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '. ' + _('Scheduler is now disabled and all Stations turn Off.') 
                     try:
-                        send_email(msg)
-                        log.info(NAME, _('Email was sent') + ': ' + msg)
+                        send_email(msg, msglog)
                         send = False
                     except Exception as err:
                         log.error(NAME, _('Email was not sent') + '! ' + str(err))
@@ -330,7 +330,7 @@ def get_station_is_on():
             else:
                 return False
 
-def send_email(msg):
+def send_email(msg, msglog):
     """Send email"""
     message = datetime_string() + ': ' + msg
     try:
@@ -343,15 +343,15 @@ def send_email(msg):
         if not options.run_logEM:
            log.info(NAME, _('Email logging is disabled in options...'))
         else:        
-           logEM.save_email_log(Subject, message, _('Sent'))
+           logEM.save_email_log(Subject, msglog, _('Sent'))
 
-        log.info(NAME, _('Email was sent') + ': ' + message)
+        log.info(NAME, _('Email was sent') + ': ' + msglog)
 
     except Exception:
         if not options.run_logEM:
            log.info(NAME, _('Email logging is disabled in options...'))
         else:
-           logEM.save_email_log(Subject, message, _('Sent'))
+           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
 
         log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
