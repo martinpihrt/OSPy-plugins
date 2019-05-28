@@ -23,6 +23,12 @@ msgstr ""
 msgid "Unsend"
 msgstr ""
 
+msgid "Email was not sent"
+msgstr ""
+
+msgid "Email was sent"
+msgstr ""
+
 msgid "E-mail subject"
 msgstr ""
 

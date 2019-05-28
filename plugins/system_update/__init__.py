@@ -110,8 +110,12 @@ class StatusChecker(Thread):
             msg += _('New OSPy version is available!') + '<br>' 
             msg += _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + '<br>'
             msg += _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.' + '</p>'
+            msglog =   _('System update plug-in') + ': '
+            msglog +=  _('New OSPy version is available!') + '-> ' + _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + ', '
+            msglog +=  _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.'
+
             if plugin_options['use_eml']:
-                send_email(msg)
+                send_email(msg, msglog)
         else:
             log.info(NAME, _('Running unknown version!'))
             log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
@@ -186,7 +190,7 @@ def stop():
         checker = None
 
 
-def send_email(msg):
+def send_email(msg, msglog):
     """Send email"""
     message = datetime_string() + ': ' + msg
     try:
@@ -194,20 +198,20 @@ def send_email(msg):
 
         Subject = plugin_options['eml_subject']
 
-        email(message, subject=Subject) # send email
+        email(message, subject=Subject)
 
         if not options.run_logEM:
            log.info(NAME, _('Email logging is disabled in options...'))
         else:        
-           logEM.save_email_log(Subject, message, _('Sent'))
+           logEM.save_email_log(Subject, msglog, _('Sent'))
 
-        log.info(NAME, _('Email was sent') + ': ' + message)
+        log.info(NAME, _('Email was sent') + ': ' + msglog)
 
     except Exception:
         if not options.run_logEM:
            log.info(NAME, _('Email logging is disabled in options...'))
         else:
-           logEM.save_email_log(Subject, message, _('Sent'))
+           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
 
         log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 

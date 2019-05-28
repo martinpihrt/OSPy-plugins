@@ -14,10 +14,10 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
-msgid "Send"
+msgid "Sent"
 msgstr ""
 
-msgid "Unsend"
+msgid "Unsent"
 msgstr ""
 
 #: plugins/pressure_monitor/__init__.py:95

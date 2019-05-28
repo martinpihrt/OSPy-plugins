@@ -17,10 +17,10 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
 
-msgid "Send"
+msgid "Sent"
 msgstr "Odesláno"
 
-msgid "Unsend"
+msgid "Unsent"
 msgstr "Neodesláno"
 
 msgid "E-mail subject"
