@@ -19,6 +19,7 @@ from ospy.programs import programs
 from ospy.options import options
 from ospy.runonce import run_once
 from ospy import helpers
+from ospy.helpers import datetime_string
 
 import i18n
 
