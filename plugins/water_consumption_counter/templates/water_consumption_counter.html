@@ -27,12 +27,12 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Master Station'):</td>
                 <td>
-                    <input name='liter_per_sec_master_one' type='number' value='$plugin_options["liter_per_sec_master_one"]'> $_('Liters per second')
+                    <input name='liter_per_sec_master_one' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_one"]'> $_('Liters per second')
                 </td>
             </tr>
                 <td style='text-transform: none;'>$_('Second Master Station'):</td>
                 <td>
-                    <input name='liter_per_sec_master_two' type='number' value='$plugin_options["liter_per_sec_master_two"]'> $_('Liters per second')
+                    <input name='liter_per_sec_master_two' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_two"]'> $_('Liters per second')
                 </td>            
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
