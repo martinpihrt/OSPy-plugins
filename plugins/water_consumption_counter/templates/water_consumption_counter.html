@@ -1,0 +1,51 @@
+$def with(plugin_options, events)
+
+$var title: $_('Water Consumption Counter settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Water Consumption Counter settings')</div>
+    <p>$_('This plugin read Water consumption on master station or second master station.')</p>
+    <p>$_('Total sum is the calculated as run of the main (or second) station per second.')</p>
+    <p>$_('This is not an actual flow meter (physical flow sensor).')</p>
+    <p>$_('Used for an overview of water consumption.')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('water_consumption_counter.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Master Station'):</td>
+                <td>
+                    <input name='liter_per_sec_master_one' type='number' value='$plugin_options["liter_per_sec_master_one"]'> $_('Liters per second')
+                </td>
+            </tr>
+                <td style='text-transform: none;'>$_('Second Master Station'):</td>
+                <td>
+                    <input name='liter_per_sec_master_two' type='number' value='$plugin_options["liter_per_sec_master_two"]'> $_('Liters per second')
+                </td>            
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <a href="?reset"     class="button cancel danger">$_('Reset Counter')</a>
+</div>

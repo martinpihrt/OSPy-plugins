@@ -1,0 +1,101 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-06-21 07:13+CEST\n"
+"PO-Revision-Date: 2019-06-21 07:22+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.2.3\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
+"Language: cs_CZ\n"
+
+#: plugins/water_consumption_counter/__init__.py:74
+#: plugins/water_consumption_counter/__init__.py:76
+msgid "Sum master station one:"
+msgstr "Součet hlavní stanice jedna:"
+
+#: plugins/water_consumption_counter/__init__.py:74
+#: plugins/water_consumption_counter/__init__.py:79
+msgid "liter."
+msgstr "litr."
+
+#: plugins/water_consumption_counter/__init__.py:76
+#: plugins/water_consumption_counter/__init__.py:81
+msgid "m3."
+msgstr "m3."
+
+#: plugins/water_consumption_counter/__init__.py:79
+#: plugins/water_consumption_counter/__init__.py:81
+msgid "Sum master station two:"
+msgstr "Součet hlavní stanice dvě:"
+
+#: plugins/water_consumption_counter/__init__.py:83
+msgid "Last counter reset:"
+msgstr "Poslední reset čítače:"
+
+#: plugins/water_consumption_counter/__init__.py:91
+msgid "Water Consumption Counter plug-in"
+msgstr "Počítadlo spotřeby vody rozšíření"
+
+#: plugins/water_consumption_counter/__init__.py:155
+msgid "Counter has reseted"
+msgstr "Počítadlo bylo resetováno"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:3
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:20
+msgid "Water Consumption Counter settings"
+msgstr "Počítadlo spotřeby vody nastavení"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:21
+msgid "This plugin read Water consumption on master station or second master station."
+msgstr ""
+"Tento plugin načítá spotřebu vody na hlavní stanici nebo na druhé hlavní stanici."
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:22
+msgid "Total sum is the calculated as run of the main (or second) station per second."
+msgstr "Celkový součet je vypočtený jako běh hlavní (nebo druhé) stanice za sekundu."
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:23
+msgid "This is not an actual flow meter (physical flow sensor)."
+msgstr "Toto není skutečný průtokoměr (snímač proudění)."
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:24
+msgid "Used for an overview of water consumption."
+msgstr "Používá se pro přehled spotřeby vody."
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:25
+msgid "Master Station"
+msgstr "Hlavní stanice"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:27
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:32
+msgid "Liters per second"
+msgstr "Litry za sekundu"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:30
+msgid "Second Master Station"
+msgstr "Druhá hlavní stanice"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:35
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:45
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:46
+msgid "Cancel"
+msgstr "Zpět"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:47
+msgid "Reset Counter"
+msgstr "Vynulovat čítač"
