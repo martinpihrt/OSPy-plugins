@@ -74,12 +74,12 @@ class Sender(Thread):
                 if plugin_options['sum_one'] <= 1000: 
                     log.info(NAME, _('Sum master station one:') + ' ' + str(plugin_options['sum_one']) + ' ' + _('liter.'))
                 else:
-                    log.info(NAME, _('Sum master station one:') + ' ' + str(plugin_options['sum_one']) + ' ' + _('m3.'))
+                    log.info(NAME, _('Sum master station one:') + ' ' + str(plugin_options['sum_one']/1000) + ' ' + _('m3.'))
 
                 if plugin_options['sum_two'] <= 1000: 
                     log.info(NAME, _('Sum master station two:') + ' ' + str(plugin_options['sum_two']) + ' ' + _('liter.'))
                 else:
-                    log.info(NAME, _('Sum master station two:') + ' ' + str(plugin_options['sum_two']) + ' ' + _('m3.'))
+                    log.info(NAME, _('Sum master station two:') + ' ' + str(plugin_options['sum_two']/1000) + ' ' + _('m3.'))
 
                 log.info(NAME, _('Last counter reset:') + ' ' + plugin_options['last_reset'] + '.')
 
