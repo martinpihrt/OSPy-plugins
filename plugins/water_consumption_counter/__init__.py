@@ -38,6 +38,8 @@ plugin_options = PluginOptions(
 
 master_one_start = datetime.datetime.now() # start time for master 1
 master_one_stop  = datetime.datetime.now() # stop time for master 1
+master_two_start = datetime.datetime.now() # start time for master 2
+master_two_stop  = datetime.datetime.now() # stop time for master 2
 status = { }
 
 ################################################################################
