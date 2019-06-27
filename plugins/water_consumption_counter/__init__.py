@@ -4,10 +4,13 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
+import datetime
 import traceback
 import web
 
 import i18n
+
+from blinker import signal
 
 from ospy import helpers
 from ospy.helpers import datetime_string
@@ -26,13 +29,16 @@ plugin_options = PluginOptions(
     NAME,
     { ### here is your plugin options ###
     'liter_per_sec_master_one': 1.15, # l/s  
-    'liter_per_sec_master_two': 1.15, # l/s
+    'liter_per_sec_master_two': 0.01, # l/s
     'last_reset': '-',                # from helpers datetime_string
-    'sum_one': 0,                     # sum for master 1
-    'sum_two': 0                      # sum for master 2
+    'sum_one': 0.00,                  # sum for master 1
+    'sum_two': 0.00                   # sum for master 2
     }
 )
 
+master_one_start = datetime.datetime.now() # start time for master 1
+master_one_stop  = datetime.datetime.now() # stop time for master 1
+status = { }
 
 ################################################################################
 # Main function loop:                                                          #
@@ -44,8 +50,10 @@ class Sender(Thread):
         self.daemon = True
         self._stop = Event()
 
-        self.status = {}
-
+        global status 
+        
+        status['sum1%d'] = round(plugin_options['sum_one'],2)
+        status['sum2%d'] = round(plugin_options['sum_two'],2)
         self._sleep_time = 0
         self.start()
 
@@ -62,33 +70,20 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):   
-        while not self._stop.is_set():
-            try:
-                if get_master_is_on():       # if master station is on
-                   plugin_options['sum_one'] = plugin_options['sum_one'] + plugin_options['liter_per_sec_master_one'] 
-                
-                if get_master_two_is_on():   # if master 2 station is on
-                   plugin_options['sum_two'] = plugin_options['sum_two'] + plugin_options['liter_per_sec_master_two']                
+        try:
+            master_one_on = signal('master_one_on')
+            master_one_on.connect(notify_master_one_on)
+            master_one_off = signal('master_one_off')
+            master_one_off.connect(notify_master_one_off)
+            master_two_on = signal('master_two_on')
+            master_two_on.connect(notify_master_two_on)
+            master_two_off = signal('master_two_off')
+            master_two_off.connect(notify_master_two_off)  
 
-                log.clear(NAME)
-                if plugin_options['sum_one'] <= 1000: 
-                    log.info(NAME, _('Sum master station one:') + ' ' + str(plugin_options['sum_one']) + ' ' + _('liter.'))
-                else:
-                    log.info(NAME, _('Sum master station one:') + ' ' + str(plugin_options['sum_one']/1000) + ' ' + _('m3.'))
-
-                if plugin_options['sum_two'] <= 1000: 
-                    log.info(NAME, _('Sum master station two:') + ' ' + str(plugin_options['sum_two']) + ' ' + _('liter.'))
-                else:
-                    log.info(NAME, _('Sum master station two:') + ' ' + str(plugin_options['sum_two']/1000) + ' ' + _('m3.'))
-
-                log.info(NAME, _('Last counter reset:') + ' ' + plugin_options['last_reset'] + '.')
-
-                self._sleep(1)   
-
-            except Exception:
-                log.clear(NAME)
-                log.error(NAME, _('Water Consumption Counter plug-in') + traceback.format_exc())       
-                self._sleep(60)
+        except Exception:
+            log.clear(NAME)
+            log.error(NAME, _('Water Consumption Counter plug-in') + traceback.format_exc())       
+            self._sleep(60)
 
 sender = None
 
@@ -110,29 +105,43 @@ def stop():
        sender.join()
        sender = None 
 
-### master on ###
-def get_master_is_on():
-    if stations.master is not None:                            # if is use master station
-        for station in stations.get():
-            if station.is_master:                              # if station is master
-                if station.active:                             # if master is active
-                    return True
-                else:
-                    return False  
-    else:                     
-        return False
+### master one on ###
+def notify_master_one_on(name, **kw):
+    global master_one_start
+    log.clear(NAME)
+    log.info(NAME, datetime_string() + ': ' + _('Master station 1 running, please wait...'))
+    master_one_start = datetime.datetime.now()
 
-### master 2 on ###
-def get_master_two_is_on():
-    if stations.master_two is not None:                        # if is use master 2 station
-        for station in stations.get():
-            if station.is_master_two:                          # if station is master 2
-                if station.active:                             # if master 2 is active
-                    return True
-                else:
-                    return False  
-    else:                     
-        return False
+### master one off ###
+def notify_master_one_off(name, **kw):
+    global master_one_stop, status
+    log.info(NAME, datetime_string() + ': ' + _('Master station 1 stopped, counter finished...')) 
+    master_one_stop  = datetime.datetime.now()
+    master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() 
+    plugin_options['sum_one'] =  master_one_time_delta * plugin_options['liter_per_sec_master_one']
+    if plugin_options['sum_one'] < 1000:
+        status['sum1%d'] = round(plugin_options['sum_one'],2)
+    else:
+        status['sum1%d'] = round(plugin_options['sum_one']/1000,2)
+
+### master two on ###
+def notify_master_two_on(name, **kw):
+    global master_two_start
+    log.clear(NAME)
+    log.info(NAME, datetime_string() + ': ' + _('Master station 2 running, please wait...'))
+    master_two_start = datetime.datetime.now()  
+
+### master two off ###
+def notify_master_two_off(name, **kw):
+    global master_two_stop, status
+    log.info(NAME, datetime_string() + ': ' + _('Master station 2 stopped, counter finished...')) 
+    master_two_stop  = datetime.datetime.now()
+    master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
+    plugin_options['sum_two'] =  master_two_time_delta * plugin_options['liter_per_sec_master_two']
+    if plugin_options['sum_two'] < 1000:
+        status['sum2%d'] = round(plugin_options['sum_two'],2)
+    else:
+        status['sum2%d'] = round(plugin_options['sum_two']/1000,2)
 
 
 ################################################################################
@@ -143,7 +152,7 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global sender
+        global sender, status
 
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
@@ -151,10 +160,12 @@ class settings_page(ProtectedPage):
             plugin_options['sum_one'] = 0
             plugin_options['sum_two'] = 0
             plugin_options['last_reset'] = datetime_string()
+            status['sum1%d'] = 0
+            status['sum2%d'] = 0
             log.info(NAME, datetime_string() + ': ' + _('Counter has reseted'))
             raise web.seeother(plugin_url(settings_page), True)
 
-        return self.plugin_render.water_consumption_counter(plugin_options, log.events(NAME))       
+        return self.plugin_render.water_consumption_counter(plugin_options, status, log.events(NAME))       
 
     def POST(self):
         plugin_options.web_update(web.input()) ### update options from web ###

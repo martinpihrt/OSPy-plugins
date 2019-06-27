@@ -1,4 +1,4 @@
-$def with(plugin_options, events)
+$def with(plugin_options, status, events)
 
 $var title: $_('Water Consumption Counter settings')
 $var page: plugins
@@ -19,7 +19,7 @@ $var page: plugins
 <div id="plugin">
     <div class="title">$_('Water Consumption Counter settings')</div>
     <p>$_('This plugin read Water consumption on master station or second master station.')</p>
-    <p>$_('Total sum is the calculated as run of the main (or second) station per second.')</p>
+    <p>$_('Total sum is the calculated as run of the main (or second) station.')</p>
     <p>$_('This is not an actual flow meter (physical flow sensor).')</p>
     <p>$_('Used for an overview of water consumption.')</p>
     <form id="pluginForm" action="$plugins.plugin_url('water_consumption_counter.settings_page')" method="post">
@@ -35,6 +35,26 @@ $var page: plugins
                     <input name='liter_per_sec_master_two' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_two"]'> $_('Liters per second')
                 </td>            
             <tr>
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('Master Station'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                    <b>$status['sum1%d']</b> 
+                    $if plugin_options["sum_one"] < 1000:
+                        $_('liter.')
+                    $else:
+                        $_('m3.')
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('Second Master Station'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                    <b>$status['sum2%d'] </b>
+                    $if plugin_options["sum_two"] < 1000:
+                        $_('liter.')
+                    $else:
+                        $_('m3.')                    
+                </td>
+            </tr>                            
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
                     <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>

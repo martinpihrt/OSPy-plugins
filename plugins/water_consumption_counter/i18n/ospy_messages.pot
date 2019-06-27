@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2019-06-21 07:20+CEST\n"
+"POT-Creation-Date: 2019-06-27 11:01+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,35 +15,27 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/water_consumption_counter/__init__.py:74
-#: plugins/water_consumption_counter/__init__.py:76
-msgid "Sum master station one:"
-msgstr ""
-
-#: plugins/water_consumption_counter/__init__.py:74
-#: plugins/water_consumption_counter/__init__.py:79
-msgid "liter."
-msgstr ""
-
-#: plugins/water_consumption_counter/__init__.py:76
-#: plugins/water_consumption_counter/__init__.py:81
-msgid "m3."
-msgstr ""
-
-#: plugins/water_consumption_counter/__init__.py:79
-#: plugins/water_consumption_counter/__init__.py:81
-msgid "Sum master station two:"
-msgstr ""
-
 #: plugins/water_consumption_counter/__init__.py:83
-msgid "Last counter reset:"
-msgstr ""
-
-#: plugins/water_consumption_counter/__init__.py:91
 msgid "Water Consumption Counter plug-in"
 msgstr ""
 
-#: plugins/water_consumption_counter/__init__.py:155
+#: plugins/water_consumption_counter/__init__.py:110
+msgid "Master station 1 running, please wait..."
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:116
+msgid "Master station 1 stopped, counter finished..."
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:125
+msgid "Master station 2 running, please wait..."
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:131
+msgid "Master station 2 stopped, counter finished..."
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:153
 msgid "Counter has reseted"
 msgstr ""
 
@@ -60,7 +52,7 @@ msgstr ""
 
 #:
 #: plugins/water_consumption_counter/templates/water_consumption_counter.html:22
-msgid "Total sum is the calculated as run of the main (or second) station per second."
+msgid "Total sum is the calculated as run of the main (or second) station."
 msgstr ""
 
 #:
@@ -75,6 +67,7 @@ msgstr ""
 
 #:
 #: plugins/water_consumption_counter/templates/water_consumption_counter.html:28
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:39
 msgid "Master Station"
 msgstr ""
 
@@ -86,26 +79,39 @@ msgstr ""
 
 #:
 #: plugins/water_consumption_counter/templates/water_consumption_counter.html:33
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:48
 msgid "Second Master Station"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:38
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:42
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:51
+msgid "liter."
+msgstr ""
+
+#:
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:44
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:53
+msgid "m3."
+msgstr ""
+
+#:
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:56
 msgid "Status"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:48
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:66
 msgid "Submit"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:49
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:67
 msgid "Cancel"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:50
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:68
 msgid "Reset Counter"
 msgstr ""
 
