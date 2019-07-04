@@ -37,9 +37,7 @@ plugin_options = PluginOptions(
 )
 
 master_one_start = datetime.datetime.now() # start time for master 1
-master_one_stop  = datetime.datetime.now() # stop time for master 1
 master_two_start = datetime.datetime.now() # start time for master 2
-master_two_stop  = datetime.datetime.now() # stop time for master 2
 status = { }
 
 ################################################################################
@@ -54,8 +52,8 @@ class Sender(Thread):
 
         global status 
         
-        status['sum1%d'] = round(plugin_options['sum_one'],2)
-        status['sum2%d'] = round(plugin_options['sum_two'],2)
+        status['sum1%d'] = plugin_options['sum_one'] #round(plugin_options['sum_one'],2)
+        status['sum2%d'] = plugin_options['sum_two'] #round(plugin_options['sum_two'],2)
         self._sleep_time = 0
         self.start()
 
@@ -103,9 +101,9 @@ def start():
 def stop():
     global sender
     if sender is not None:
-       sender.stop()
-       sender.join()
-       sender = None 
+        sender.stop()
+        sender.join()
+        sender = None 
 
 ### master one on ###
 def notify_master_one_on(name, **kw):
@@ -116,15 +114,15 @@ def notify_master_one_on(name, **kw):
 
 ### master one off ###
 def notify_master_one_off(name, **kw):
-    global master_one_stop, status
+    global status
     log.info(NAME, datetime_string() + ': ' + _('Master station 1 stopped, counter finished...')) 
     master_one_stop  = datetime.datetime.now()
     master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() 
     plugin_options['sum_one'] =  master_one_time_delta * plugin_options['liter_per_sec_master_one']
     if plugin_options['sum_one'] < 1000:
-        status['sum1%d'] = round(plugin_options['sum_one'],2)
+        status['sum1%d'] = plugin_options['sum_one'] #round(plugin_options['sum_one'],2)
     else:
-        status['sum1%d'] = round(plugin_options['sum_one']/1000,2)
+        status['sum1%d'] = plugin_options['sum_one'] #round(plugin_options['sum_one']/1000,2)
 
 ### master two on ###
 def notify_master_two_on(name, **kw):
@@ -135,15 +133,15 @@ def notify_master_two_on(name, **kw):
 
 ### master two off ###
 def notify_master_two_off(name, **kw):
-    global master_two_stop, status
+    global status
     log.info(NAME, datetime_string() + ': ' + _('Master station 2 stopped, counter finished...')) 
     master_two_stop  = datetime.datetime.now()
     master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
     plugin_options['sum_two'] =  master_two_time_delta * plugin_options['liter_per_sec_master_two']
     if plugin_options['sum_two'] < 1000:
-        status['sum2%d'] = round(plugin_options['sum_two'],2)
+        status['sum2%d'] = plugin_options['sum_two'] #round(plugin_options['sum_two'],2)
     else:
-        status['sum2%d'] = round(plugin_options['sum_two']/1000,2)
+        status['sum2%d'] = plugin_options['sum_two'] # round(plugin_options['sum_two']/1000,2)
 
 
 ################################################################################
