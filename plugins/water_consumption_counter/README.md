@@ -14,5 +14,9 @@ Plugin setup
 * Liter/sec second master:  
   The amount of water per second for the second main station.
 
+* Check Send email:
+  If checked send email notification plugin sends e-mail water consumption.  
+  For this function required e-mail notification plugin with all setup in plugin.      
+
 * Button for counter reset:
   The button deletes the total measured consumption values.

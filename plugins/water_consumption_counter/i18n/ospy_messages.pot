@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2019-06-27 11:01+CEST\n"
+"POT-Creation-Date: 2019-07-07 17:38+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,27 +15,76 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/water_consumption_counter/__init__.py:83
+#: plugins/water_consumption_counter/__init__.py:37
+msgid "Report from OSPy Water Consumption Counter plugin"
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:87
+#: plugins/water_consumption_counter/__init__.py:119
+#: plugins/water_consumption_counter/__init__.py:169
+#: plugins/water_consumption_counter/__init__.py:170
+#: plugins/water_consumption_counter/__init__.py:198
+#: plugins/water_consumption_counter/__init__.py:199
 msgid "Water Consumption Counter plug-in"
 msgstr ""
 
-#: plugins/water_consumption_counter/__init__.py:110
+#: plugins/water_consumption_counter/__init__.py:133
+#: plugins/water_consumption_counter/__init__.py:141
+msgid "Email logging is disabled in options..."
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:135
+msgid "Sent"
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:137
+msgid "Email was sent"
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:143
+#: plugins/water_consumption_counter/__init__.py:145
+#: plugins/water_consumption_counter/__init__.py:174
+#: plugins/water_consumption_counter/__init__.py:203
+msgid "Email was not sent"
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:152
 msgid "Master station 1 running, please wait..."
 msgstr ""
 
-#: plugins/water_consumption_counter/__init__.py:116
+#: plugins/water_consumption_counter/__init__.py:158
 msgid "Master station 1 stopped, counter finished..."
 msgstr ""
 
-#: plugins/water_consumption_counter/__init__.py:125
+#: plugins/water_consumption_counter/__init__.py:169
+#: plugins/water_consumption_counter/__init__.py:170
+#: plugins/water_consumption_counter/__init__.py:198
+#: plugins/water_consumption_counter/__init__.py:199
+msgid "liter"
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:169
+#: plugins/water_consumption_counter/__init__.py:198
+msgid "Water Consumption"
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:170
+msgid "Water Consumption for master 1"
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:181
 msgid "Master station 2 running, please wait..."
 msgstr ""
 
-#: plugins/water_consumption_counter/__init__.py:131
+#: plugins/water_consumption_counter/__init__.py:187
 msgid "Master station 2 stopped, counter finished..."
 msgstr ""
 
-#: plugins/water_consumption_counter/__init__.py:153
+#: plugins/water_consumption_counter/__init__.py:199
+msgid "Water Consumption for master 2"
+msgstr ""
+
+#: plugins/water_consumption_counter/__init__.py:225
 msgid "Counter has reseted"
 msgstr ""
 
@@ -67,51 +116,66 @@ msgstr ""
 
 #:
 #: plugins/water_consumption_counter/templates/water_consumption_counter.html:28
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:39
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:52
 msgid "Master Station"
 msgstr ""
 
 #:
 #: plugins/water_consumption_counter/templates/water_consumption_counter.html:30
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:35
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:36
 msgid "Liters per second"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:33
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:48
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:34
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:62
 msgid "Second Master Station"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:42
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:51
-msgid "liter."
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:40
+msgid "Send email with water consumption"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:44
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:53
-msgid "m3."
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:42
+msgid "For this function required email plugin"
+msgstr ""
+
+#:
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:46
+msgid "E-mail subject"
 msgstr ""
 
 #:
 #: plugins/water_consumption_counter/templates/water_consumption_counter.html:56
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:66
+msgid "liter."
+msgstr ""
+
+#:
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:58
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:68
+msgid "m3."
+msgstr ""
+
+#:
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:71
 msgid "Status"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:66
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:81
 msgid "Submit"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:67
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:82
 msgid "Cancel"
 msgstr ""
 
 #:
-#: plugins/water_consumption_counter/templates/water_consumption_counter.html:68
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:83
 msgid "Reset Counter"
 msgstr ""
 

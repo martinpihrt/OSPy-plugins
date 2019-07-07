@@ -30,11 +30,24 @@ $var page: plugins
                     <input name='liter_per_sec_master_one' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_one"]'> $_('Liters per second')
                 </td>
             </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Second Master Station'):</td>
                 <td>
                     <input name='liter_per_sec_master_two' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_two"]'> $_('Liters per second')
                 </td>            
+            </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Send email with water consumption'):</td>
+                <td>
+                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> ($_('For this function required email plugin'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td>
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
+                </td>
+            </tr>                        
             <tr>
                 <td style='text-transform: none; vertical-align: top;'>$_('Master Station'):</td>
                 <td style="background-color: rgb(220, 220, 220);text-align: left;">

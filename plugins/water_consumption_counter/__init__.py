@@ -14,7 +14,7 @@ from blinker import signal
 
 from ospy import helpers
 from ospy.helpers import datetime_string
-from ospy.log import log
+from ospy.log import log, logEM
 from threading import Thread, Event
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
@@ -28,11 +28,13 @@ LINK = 'settings_page'              ### link for page in plugin manager ###
 plugin_options = PluginOptions(
     NAME,
     { ### here is your plugin options ###
-    'liter_per_sec_master_one': 1.15, # l/s  
+    'liter_per_sec_master_one': 0.45, # l/s  
     'liter_per_sec_master_two': 0.01, # l/s
     'last_reset': '-',                # from helpers datetime_string
     'sum_one': 0.00,                  # sum for master 1
-    'sum_two': 0.00                   # sum for master 2
+    'sum_two': 0.00,                  # sum for master 2
+    'sendeml': False,
+    'emlsubject': _('Report from OSPy Water Consumption Counter plugin')
     }
 )
 
@@ -105,6 +107,44 @@ def stop():
         sender.join()
         sender = None 
 
+
+### convert number to decimal ###
+def to_decimal(number):
+    try:
+    	import decimal
+        return decimal.Decimal(number)
+    
+    except decimal.InvalidOperation:
+        log.clear(NAME)
+        log.error(NAME, _('Water Consumption Counter plug-in') + traceback.format_exc()) 
+        return 0.00    
+
+### send email ###
+def send_email(msg, msglog):
+    message = datetime_string() + ': ' + msg
+    try:
+        from plugins.email_notifications import email
+
+        Subject = plugin_options['emlsubject']
+
+        email(message, subject=Subject)
+
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:        
+           logEM.save_email_log(Subject, msglog, _('Sent'))
+
+        log.info(NAME, _('Email was sent') + ': ' + msglog)
+
+    except Exception:
+        if not options.run_logEM:
+           log.info(NAME, _('Email logging is disabled in options...'))
+        else:
+           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
+
+        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
+
+
 ### master one on ###
 def notify_master_one_on(name, **kw):
     global master_one_start
@@ -117,12 +157,22 @@ def notify_master_one_off(name, **kw):
     global status
     log.info(NAME, datetime_string() + ': ' + _('Master station 1 stopped, counter finished...')) 
     master_one_stop  = datetime.datetime.now()
-    master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() 
-    plugin_options['sum_one'] =  master_one_time_delta * plugin_options['liter_per_sec_master_one']
+    master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() # run time in seconds
+    difference = to_decimal(master_one_time_delta) * to_decimal(plugin_options['liter_per_sec_master_one'])
+    plugin_options['sum_one'] =  plugin_options['sum_one'] + round(difference,2)  # to 2 places
+
     if plugin_options['sum_one'] < 1000:
-        status['sum1%d'] = plugin_options['sum_one'] #round(plugin_options['sum_one'],2)
+        status['sum1%d'] = plugin_options['sum_one']       # in liters
     else:
-        status['sum1%d'] = plugin_options['sum_one'] #round(plugin_options['sum_one']/1000,2)
+        status['sum1%d'] = plugin_options['sum_one']/1000  # in m3
+
+    msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + _('liter') + '</p>'
+    msglog = _('Water Consumption Counter plug-in') + ': ' + _('Water Consumption for master 1') + ': ' + str(round(difference,2)) + ' ' + _('liter')
+    try:
+        send_email(msg, msglog)
+    except Exception:
+        log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
+    
 
 ### master two on ###
 def notify_master_two_on(name, **kw):
@@ -137,11 +187,20 @@ def notify_master_two_off(name, **kw):
     log.info(NAME, datetime_string() + ': ' + _('Master station 2 stopped, counter finished...')) 
     master_two_stop  = datetime.datetime.now()
     master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
-    plugin_options['sum_two'] =  master_two_time_delta * plugin_options['liter_per_sec_master_two']
+    difference = to_decimal(master_two_time_delta) * to_decimal(plugin_options['liter_per_sec_master_two'])
+    plugin_options['sum_two'] =  plugin_options['sum_two'] + round(difference,2)  # to 2 places
+  
     if plugin_options['sum_two'] < 1000:
-        status['sum2%d'] = plugin_options['sum_two'] #round(plugin_options['sum_two'],2)
+        status['sum2%d'] = plugin_options['sum_two'] 
     else:
-        status['sum2%d'] = plugin_options['sum_two'] # round(plugin_options['sum_two']/1000,2)
+        status['sum2%d'] = plugin_options['sum_two']/1000
+
+    msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + _('liter') + '</p>'
+    msglog = _('Water Consumption Counter plug-in') + ': ' + _('Water Consumption for master 2') + ': ' + str(round(difference,2)) + ' ' + _('liter')
+    try:
+        send_email(msg, msglog)
+    except Exception:
+        log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())        
 
 
 ################################################################################
@@ -160,8 +219,9 @@ class settings_page(ProtectedPage):
             plugin_options['sum_one'] = 0
             plugin_options['sum_two'] = 0
             plugin_options['last_reset'] = datetime_string()
-            status['sum1%d'] = 0
-            status['sum2%d'] = 0
+            status['sum1%d'] = 0.00
+            status['sum2%d'] = 0.00
+            log.clear(NAME)
             log.info(NAME, datetime_string() + ': ' + _('Counter has reseted'))
             raise web.seeother(plugin_url(settings_page), True)
 

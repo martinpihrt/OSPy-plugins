@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-06-21 07:13+CEST\n"
-"PO-Revision-Date: 2019-06-27 10:49+0200\n"
+"PO-Revision-Date: 2019-07-07 17:46+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -26,6 +26,52 @@ msgstr "litr."
 #: plugins/water_consumption_counter/__init__.py:81
 msgid "m3."
 msgstr "m3."
+
+#: plugins/water_consumption_counter/__init__.py:133
+#: plugins/water_consumption_counter/__init__.py:141
+msgid "Email logging is disabled in options..."
+msgstr "V možnostech je zakázáno protokolování e-mailů..."
+
+#: plugins/water_consumption_counter/__init__.py:135
+msgid "Sent"
+msgstr "Odeslané"
+
+#: plugins/water_consumption_counter/__init__.py:137
+msgid "Email was sent"
+msgstr "E-mail byl odeslán"
+
+#: plugins/water_consumption_counter/__init__.py:143
+#: plugins/water_consumption_counter/__init__.py:145
+#: plugins/water_consumption_counter/__init__.py:174
+#: plugins/water_consumption_counter/__init__.py:203
+msgid "Email was not sent"
+msgstr "E-mail nebyl odeslán"
+
+#: plugins/water_consumption_counter/__init__.py:169
+#: plugins/water_consumption_counter/__init__.py:198
+msgid "Water Consumption"
+msgstr "Spotřeba vody"
+
+#: plugins/water_consumption_counter/__init__.py:170
+msgid "Water Consumption for master 1"
+msgstr "Spotřeba vody pro 1 hlavní stanici"
+
+#: plugins/water_consumption_counter/__init__.py:199
+msgid "Water Consumption for master 2"
+msgstr "Spotřeba vody pro 2 hlavní stanici"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:40
+msgid "Send email with water consumption"
+msgstr "Odeslat e-mail se spotřebou vody"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:42
+msgid "For this function required email plugin"
+msgstr "Pro tuto funkci je vyžadováno rozšíření Email notifications"
+
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:46
+msgid "E-mail subject"
+msgstr "Předmět e-mailu"
+
 
 #: plugins/water_consumption_counter/__init__.py:110
 msgid "Master station 1 running, please wait..."
@@ -104,3 +150,4 @@ msgstr "Zpět"
 #: plugins/water_consumption_counter/templates/water_consumption_counter.html:47
 msgid "Reset Counter"
 msgstr "Vynulovat čítač"
+
