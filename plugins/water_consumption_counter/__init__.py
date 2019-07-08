@@ -162,14 +162,15 @@ def notify_master_one_off(name, **kw):
     plugin_options['sum_one'] =  plugin_options['sum_one'] + round(difference,2)  # to 2 places
 
     if plugin_options['sum_one'] < 1000:
-        status['sum1%d'] = plugin_options['sum_one']       # in liters
+        status['sum1%d'] = round(to_decimal(plugin_options['sum_one']),2)                      # in liters
     else:
-        status['sum1%d'] = plugin_options['sum_one']/1000  # in m3
+        status['sum1%d'] = round(to_decimal(plugin_options['sum_one']) / to_decimal(1000.0),2) # in m3
 
-    msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + _('liter') + '</p>'
+    msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _('liter') + '</p>'
     msglog = _('Water Consumption Counter plug-in') + ': ' + _('Water Consumption for master 1') + ': ' + str(round(difference,2)) + ' ' + _('liter')
     try:
-        send_email(msg, msglog)
+        if plugin_options['sendeml']:
+        	send_email(msg, msglog)
     except Exception:
         log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
     
@@ -191,14 +192,15 @@ def notify_master_two_off(name, **kw):
     plugin_options['sum_two'] =  plugin_options['sum_two'] + round(difference,2)  # to 2 places
   
     if plugin_options['sum_two'] < 1000:
-        status['sum2%d'] = plugin_options['sum_two'] 
+        status['sum2%d'] = round(to_decimal(plugin_options['sum_two']),2) 
     else:
-        status['sum2%d'] = plugin_options['sum_two']/1000
+        status['sum2%d'] = round(to_decimal(plugin_options['sum_two']) / to_decimal(1000.0),2)
 
-    msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + _('liter') + '</p>'
+    msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _('liter') + '</p>'
     msglog = _('Water Consumption Counter plug-in') + ': ' + _('Water Consumption for master 2') + ': ' + str(round(difference,2)) + ' ' + _('liter')
     try:
-        send_email(msg, msglog)
+        if plugin_options['sendeml']:
+        	send_email(msg, msglog)
     except Exception:
         log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())        
 
