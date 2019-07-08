@@ -14,10 +14,6 @@ $var page: plugins
         jQuery("#cUpload").click(function() {
             jQuery("#uploadForm").submit();
         });
-        jQuery("#cTest").click(function() {
-            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('voice_notification.settings_page')?test=voice.mp3")
-            jQuery("#pluginForm").submit();
-        });
         jQuery("#cUpload").click(function() {
             jQuery("#pluginFormUpload").submit();
         });
@@ -41,7 +37,9 @@ $var page: plugins
           <td style='text-transform: none;'>$_('Enable pre start voice'):</td>
           <td title="$_('The sound is played before turning on the station.')">
           <input type="checkbox" name="voice_start_station" ${"checked" if plugin_options['voice_start_station'] else ""}> (voice.mp3)</td> 
-          <td><button id="cTest" class="button backup">$_('Test playing')</button></td>
+          <td>
+              <a href="?test=voice.mp3" class="button upload">$_('Test playing')</a> 
+          </td> 
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Pre run time'):</td>
@@ -93,11 +91,9 @@ $var page: plugins
               </select>
               </td> 
               <td>
-              $for t in [' ', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']:
-                 $if plugin_options['vs%d' % station.index]==t and t!=' ':
-                     <form action="$plugins.plugin_url('voice_notification.settings_page')" method="post">
-                     <button type="submit" name="test" value="${t}" class="button backup">$_('Test playing')</button>
-                     </form>
+              $for t in ['voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']:
+                 $if plugin_options['vs%d' % station.index]==t:
+                     <a href="?test=${t}" class="button upload">$_('Test playing')</a> 
               </td>
             </tr>
         <tr>
