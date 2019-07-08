@@ -22,7 +22,7 @@ LINK = 'settings_page'       ### link for page in plugin manager ###
  
 plugin_options = PluginOptions(
     NAME,
-    {'use_signaling': False        ### for example ###
+    {#'use_signaling': False        ### for example ###
     ### here is your plugin options ### 
     }
 )
@@ -80,7 +80,19 @@ class Sender(Thread):
            program_runnow = signal('program_runnow')
            program_runnow.connect(notify_program_runnow)
            zone_change = signal('zone_change')
-           zone_change.connect('notify_zone_change')
+           zone_change.connect(notify_zone_change)
+           rain_active = signal('rain_active')
+           rain_active.connect(notify_rain_active)
+           rain_not_active = signal('rain_not_active')
+           rain_not_active.connect(notify_rain_not_active)
+           master_one_on = signal('master_one_on')
+           master_one_on.connect(notify_master_one_on)
+           master_one_off = signal('master_one_off')
+           master_one_off.connect(notify_master_one_off)
+           master_two_on = signal('master_two_on')
+           master_two_on.connect(notify_master_two_on)
+           master_two_off = signal('master_two_off')
+           master_two_off.connect(notify_master_two_off)
 
 sender = None
 
@@ -146,6 +158,29 @@ def notify_program_runnow(name, **kw):
 def notify_zone_change(name, **kw):
     log.info(NAME, datetime_string() + ': ' + _('Zone change'))
 
+### rain ###
+def notify_rain_active(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Rain active'))
+
+### not rain ###
+def notify_rain_not_active(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Rain not active'))    
+
+### master 1 on ###
+def notify_master_one_on(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Master one on'))    
+
+### master 1 off ###
+def notify_master_one_off(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Master one off'))    
+
+### master 2 on ###
+def notify_master_two_on(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Master two on'))    
+
+### master 2 off ###
+def notify_master_two_off(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Master two off'))  
 
 
 ################################################################################
