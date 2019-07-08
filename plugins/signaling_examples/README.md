@@ -3,7 +3,7 @@ Signaling Examples Readme
 
 This is Example signal plugin provides functions triggered by signals from core program.  
 
-Example signals from webpages.py:  
+Example signals from: webpages.py, scheduler.py, stations.py:  
   signal('loggedin')<br>  
   signal('value_change')<br>  
   signal('option_change')<br> 
