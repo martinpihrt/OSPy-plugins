@@ -245,7 +245,7 @@ def read_buttons():
         # Set 8 GPA pins as input pull-UP
         bus.write_byte_data(0x27,0x0C,0xFF)
         # Wait for device
-        sleep(0.1) 
+        time.sleep(0.1) 
         # Read state of GPIOA register
         MySwitch = bus.read_byte_data(0x27,0x12)
 
@@ -294,10 +294,10 @@ def led_outputs(led):
  
         bus.write_byte_data(0x27,0x01,0x00)
         # Wait for device
-        sleep(0.1)      
+        time.sleep(0.1)      
         bus.write_byte_data(0x27,0x13,led)
         # Wait for device
-        sleep(0.1)
+        time.sleep(0.1)
         
     except Exception:
         log.error(NAME, _('Button plug-in') + ':' + _('Set LED - FAULT'))
