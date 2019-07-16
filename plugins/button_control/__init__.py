@@ -314,13 +314,13 @@ def led_outputs(led):
 
         bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
  
-        bus.write_byte_data(0x27,0x01,0x00)
-        # Wait for device
-        time.sleep(0.1)      
-        bus.write_byte_data(0x27,0x13,led)
-        # Wait for device
-        time.sleep(0.1)
+        try_io(lambda: bus.write_byte_data(0x27,0x01,0x00)) # bus.write_byte_data(0x27,0x01,0x00)
         
+        # Wait for device
+        time.sleep(0.2) 
+        
+        try_io(lambda: bus.write_byte_data(0x27,0x13,led))  # bus.write_byte_data(0x27,0x13,led)
+              
     except Exception:
         log.error(NAME, _('Button plug-in') + ':' + _('Set LED - FAULT'))
         log.error(NAME, '\n' + traceback.format_exc())
