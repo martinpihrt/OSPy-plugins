@@ -198,7 +198,7 @@ class PluginSender(Thread):
                              program.index+1
                           self._sleep(2)
 
-                    self._sleep(1)
+                    self._sleep(2)
 
                 else:
                     # text on the web if plugin is disabled
@@ -234,7 +234,26 @@ def stop():
         plugin_sender.stop()
         plugin_sender.join()
         plugin_sender = None
+
         
+def try_io(call, tries=10):
+    assert tries > 0
+    error = None
+    result = None
+
+    while tries:
+        try:
+            result = call()
+        except IOError as e:
+            error = e
+            tries -= 1
+        else:
+            break
+
+    if not tries:
+        raise error
+
+    return result
 
 def read_buttons():
     try:
@@ -243,14 +262,17 @@ def read_buttons():
         bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
         
         # Set 8 GPA pins as input pull-UP
-        bus.write_byte_data(0x27,0x0C,0xFF)
+        try_io(lambda: bus.write_byte_data(0x27,0x0C,0xFF)) #bus.write_byte_data(0x27,0x0C,0xFF)  
+     
         # Wait for device
-        time.sleep(0.1) 
-        # Read state of GPIOA register
-        MySwitch = bus.read_byte_data(0x27,0x12)
+        time.sleep(0.2) 
 
+        # Read state of GPIOA register
+        MySwitch = try_io(lambda: bus.read_byte_data(0x27,0x12))  # MySwitch = bus.read_byte_data(0x27,0x12)
+               
         inBut = 255-MySwitch; # inversion number for led off if button is not pressed
-        led_outputs(inBut) # switch on actual led if button is pressed
+
+        led_outputs(inBut)    # switch on actual led if button is pressed
 
         button_number = -1
         if inBut == 128:
