@@ -193,11 +193,31 @@ def stop():
        sender = None 
 
 
+def try_io(call, tries=10):
+    assert tries > 0
+    error = None
+    result = None
+
+    while tries:
+        try:
+            result = call()
+        except IOError as e:
+            error = e
+            tries -= 1
+        else:
+            break
+
+    if not tries:
+        raise error
+
+    return result
+
+
 def DS18B20_read_data():
     import smbus  
     try:
        bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)     
-       i2c_data = bus.read_i2c_block_data(0x03, 0)
+       i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0))
 
        # Test recieved data byte 1 and 2
        if i2c_data[1] == 255 or i2c_data[2] == 255:         
@@ -240,12 +260,14 @@ def DS18B20_read_string_data():
        txt[i] = tempDS[i]
     return str(txt)
 
+
 def DS18B20_read_probe(probe):
     try:
        return tempDS[probe]
     except:
        return "--"           
    
+
 def read_log():
     """Read log from json file."""
     try:
