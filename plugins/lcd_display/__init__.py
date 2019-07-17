@@ -147,6 +147,27 @@ def stop():
         lcd_sender.join()
         lcd_sender = None
 
+
+def try_io(call, tries=10):
+    assert tries > 0
+    error = None
+    result = None
+
+    while tries:
+        try:
+            result = call()
+        except IOError as e:
+            error = e
+            tries -= 1
+        else:
+            break
+
+    if not tries:
+        raise error
+
+    return result
+
+
 def get_active_state():
     station_state = False
     station_result = ''
@@ -720,7 +741,7 @@ def find_lcd_address():
         for addr, pcf_type in search_range.iteritems():
             try:
                 # bus.write_quick(addr)
-                bus.read_byte(addr) # DF - write_quick doesn't work on BBB
+                try_io(lambda: bus.read_byte(addr)) #bus.read_byte(addr) # DF - write_quick doesn't work on BBB
                 log.info(NAME, 'Found %s on address 0x%02x' % (pcf_type, addr))
                 lcd_options['address'] = addr
                 break
@@ -744,13 +765,13 @@ def update_lcd(line1, line2=None):
     else:
         lcd = dummy_lcd
 
-    lcd.lcd_clear()
+    try_io(lambda: lcd.lcd_clear())
     sleep_time = 1
     while line1 is not None:
-        lcd.lcd_puts(line1[:16], 1)
+        try_io(lambda: lcd.lcd_puts(line1[:16], 1))
 
         if line2 is not None:
-           lcd.lcd_puts(line2[:16], 2)
+           try_io(lambda: lcd.lcd_puts(line2[:16], 2))
 
         if max(len(line1), len(line2)) <= 16:
            break
@@ -791,4 +812,3 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(lcd_options)
-
