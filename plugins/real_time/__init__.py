@@ -78,7 +78,7 @@ class RealTimeChecker(Thread):
                     dis_text = True
                     log.info(NAME, _('Local time') + ': ' + datetime_string())
                     try:                                                                 # try use library rtc_DS1307
-                       ds1307 = rtc_DS1307.rtc_DS1307(1)
+                       ds1307 = try_io(lambda: rtc_DS1307.rtc_DS1307(1))
 
                     except:
                        pass
@@ -103,7 +103,7 @@ class RealTimeChecker(Thread):
                        
               
                     try:
-                       rtc_time = ds1307.read_datetime()                                 # try read RTC time from DS1307
+                       rtc_time = try_io(lambda:ds1307.read_datetime())                          # try read RTC time from DS1307
                        log.info(NAME, _('RTC time') + ': ' + str(rtc_time))
 
                     except:
@@ -113,8 +113,8 @@ class RealTimeChecker(Thread):
                     if ntp_time is not None and rtc_time is not None and ntp_time != rtc_time:   # try save NTP time to RTC DS1307 if NTP!=RTC
                        try:
                           log.info(NAME, _('Saving NTP time to RTC time.'))                 
-                          ds1307.write_datetime(ntp_time)
-                          rtc_time = ds1307.read_datetime()                                 
+                          try_io(lambda: ds1307.write_datetime(ntp_time))
+                          rtc_time = try_io(lambda: ds1307.read_datetime())                                 
                           log.info(NAME, _('RTC time is now') + ': ' + str(rtc_time))
 
                        except:
@@ -162,6 +162,25 @@ checker = None
 ################################################################################
 # Helper functions:                                                            #
 ################################################################################
+def try_io(call, tries=10):
+    assert tries > 0
+    error = None
+    result = None
+
+    while tries:
+        try:
+            result = call()
+        except IOError as e:
+            error = e
+            tries -= 1
+        else:
+            break
+
+    if not tries:
+        raise error
+
+    return result
+
 
 def getNTPtime(server_address):
     """Return NTP time as datetime"""
@@ -188,6 +207,7 @@ def getNTPtime(server_address):
     except Exception: 
         pass   
         return None    
+
     
 def start():
     global checker
