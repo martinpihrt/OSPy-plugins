@@ -111,7 +111,6 @@ class WindSender(Thread):
                             log.error(NAME, _('Wind speed > 150 km/h (42 m/sec)'))
                                      
                         if get_station_is_on():                               # if station is on
-                            print "zap"
                             if val >= int(wind_options['maxspeed']):          # if wind speed is > options max speed
                                 log.clear(NAME)
                                 log.finish_run(None)                          # save log
@@ -165,6 +164,26 @@ def stop():
         wind_sender = None
 
 
+def try_io(call, tries=10):
+    assert tries > 0
+    error = None
+    result = None
+
+    while tries:
+        try:
+            result = call()
+        except IOError as e:
+            error = e
+            tries -= 1
+        else:
+            break
+
+    if not tries:
+        raise error
+
+    return result
+
+
 def send_email(msg, msglog):
     """Send email"""
     message = datetime_string() + ': ' + msg
@@ -206,7 +225,7 @@ def find_address():
         for addr, pcf_type in search_range.iteritems():
             try:
                 # bus.write_quick(addr)
-                bus.read_byte(addr) # DF - write_quick doesn't work on BBB
+                try_io(lambda: bus.read_byte(addr)) # DF - write_quick doesn't work on BBB
                 log.info(NAME, 'Found %s on address 0x%02x' % (pcf_type, addr))
                 wind_options['address'] = addr
                 break
@@ -221,10 +240,10 @@ def set_counter():
         if wind_options['address'] != 0:
            import smbus
            bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
-           bus.write_byte_data(wind_options['address'], 0x00, 0x20) # status registr setup to "EVENT COUNTER"
-           bus.write_byte_data(wind_options['address'], 0x01, 0x00) # reset LSB
-           bus.write_byte_data(wind_options['address'], 0x02, 0x00) # reset midle Byte
-           bus.write_byte_data(wind_options['address'], 0x03, 0x00) # reset MSB
+           try_io(lambda: bus.write_byte_data(wind_options['address'], 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
+           try_io(lambda: bus.write_byte_data(wind_options['address'], 0x01, 0x00)) # reset LSB
+           try_io(lambda: bus.write_byte_data(wind_options['address'], 0x02, 0x00)) # reset midle Byte
+           try_io(lambda: bus.write_byte_data(wind_options['address'], 0x03, 0x00)) # reset MSB
            log.info(NAME, _('Wind speed monitor plug-in') + ': ' + _('Setup PCF8583 as event counter - OK')) 
     except:
         log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + _('Setup PCF8583 as event counter - FAULT'))
@@ -238,12 +257,12 @@ def counter(): # reset PCF8583, measure pulses and return number pulses per seco
             import smbus
             bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
             # reset PCF8583
-            bus.write_byte_data(wind_options['address'], 0x01, 0x00) # reset LSB
-            bus.write_byte_data(wind_options['address'], 0x02, 0x00) # reset midle Byte
-            bus.write_byte_data(wind_options['address'], 0x03, 0x00) # reset MSB
+            try_io(lambda: bus.write_byte_data(wind_options['address'], 0x01, 0x00)) # reset LSB
+            try_io(lambda: bus.write_byte_data(wind_options['address'], 0x02, 0x00)) # reset midle Byte
+            try_io(lambda: bus.write_byte_data(wind_options['address'], 0x03, 0x00)) # reset MSB
             time.sleep(10)
             # read number (pulses in counter) and translate to DEC
-            counter = bus.read_i2c_block_data(wind_options['address'], 0x00)
+            counter = try_io(lambda: bus.read_i2c_block_data(wind_options['address'], 0x00))
             num1 = (counter[1] & 0x0F)             # units
             num10 = (counter[1] & 0xF0) >> 4       # dozens
             num100 = (counter[2] & 0x0F)           # hundred
@@ -296,4 +315,3 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(wind_options)
-
