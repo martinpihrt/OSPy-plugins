@@ -34,6 +34,7 @@ tank_options = PluginOptions(
        'distance_bottom': 33,  # default 33 cm sensor <-> bottom tank
        'distance_top': 2,      # default 2 cm sensor <-> top tank
        'water_minimum': 6,     # default 6 cm water level <-> bottom tank
+       'use_stop':      False, # default not stop water system
        'use_send_email': True, # default send email
        'use_freq_1': False,    # default not use freq sensor 1
        'use_freq_2': False,    # default not use freq sensor 2
@@ -106,9 +107,10 @@ class Sender(Thread):
                                mini = False 
     
                             log.info(NAME, datetime_string() + ' ' + _('ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _('cm') + '!')
-                            options.scheduler_enabled = False                  # disable scheduler
-                            log.finish_run(None)                               # save log
-                            stations.clear()                                   # set all station to off  
+                            if tank_options['use_stop']:                            
+                               options.scheduler_enabled = False                  # disable scheduler
+                               log.finish_run(None)                               # save log
+                               stations.clear()                                   # set all station to off  
                                           
 
                         if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: 
@@ -121,8 +123,9 @@ class Sender(Thread):
                        log.info(NAME, 'Water tank monitor is disabled.')
                        once_text = False
                        two_text = True
-                       last_level = 0                
- 
+                       last_level = 0
+                
+# todo better humidity - change plugin 
                 if tank_options['use_freq_1']:
                     humi1 = get_freq(1)
                     if humi1 >= 0:
@@ -212,7 +215,7 @@ class Sender(Thread):
                     except Exception as err:
                         log.error(NAME, _('Email was not sent') + '! ' + str(err))
 
-                self._sleep(10) # 2 for tested 
+                self._sleep(10) 
                 log.clear(NAME)
 
             except Exception:
@@ -239,14 +242,36 @@ def stop():
         if NAME in level_adjustments:
            del level_adjustments[NAME]
 
+
+def try_io(call, tries=10):
+    assert tries > 0
+    error = None
+    result = None
+
+    while tries:
+        try:
+            result = call()
+        except IOError as e:
+            error = e
+            tries -= 1
+        else:
+            break
+
+    if not tries:
+        raise error
+
+    return result
+
+
 def get_sonic_cm():
     try:
         data = [2]
-        data = bus.read_i2c_block_data(address_ping,2)
+        data = try_io(lambda: bus.read_i2c_block_data(address_ping,2))
         cm = data[1] + data[0]*255
         return cm
     except:
         return -1   
+
 
 def get_sonic_tank_cm():
     try:
@@ -263,10 +288,11 @@ def get_sonic_tank_cm():
     except:
         return -1 # if I2C device not exists
 
+
 def get_freq(freq_no):
     try:
         data = [24]
-        data = bus.read_i2c_block_data(address_humi,24)
+        data = try_io(lambda: bus.read_i2c_block_data(address_humi,24))
         if freq_no == 1:
            f = data[2] + (data[1]<<8) + (data[0]<<16)    # freq 1
            #print  data[2], data[1], data[0]
@@ -299,17 +325,19 @@ def get_freq(freq_no):
     except:
         return -1 # if I2C device not exists   
 
+
 def get_humidity(channel): # return humidity 0-100% for channel 1-8
     hum = get_freq(channel)
     if hum < 0:
-       return -1 #if I2C device not exists
+       return -1 # if I2C device not exists
     else:
        hum_lvl = maping(hum,int(tank_options['minimum_freq']),int(tank_options['maximum_freq']),0,100) 
        if hum_lvl >= 100: # max value
           hum_lvl = 100 
-       if hum_lvl <= 0: # min value
+       if hum_lvl <= 0:   # min value
           hum_lvl = 0 
        return hum_lvl
+
 
 def get_tank(): # return water tank level 0-100%, -1 is error i2c not found
     tank_lvl = get_sonic_tank_cm()
@@ -319,9 +347,11 @@ def get_tank(): # return water tank level 0-100%, -1 is error i2c not found
     else:
        return -1
 
+
 def maping(x, in_min, in_max, out_min, out_max):
     # return value from map. example (x=1023,0,1023,0,100) -> x=1023 return 100
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
  
 def get_station_is_on():
         for station in stations.get():
@@ -329,6 +359,7 @@ def get_station_is_on():
                 return True
             else:
                 return False
+
 
 def send_email(msg, msglog):
     """Send email"""
@@ -359,7 +390,6 @@ def send_email(msg, msglog):
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
-
 
 class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
