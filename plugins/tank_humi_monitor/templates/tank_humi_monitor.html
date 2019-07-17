@@ -33,19 +33,19 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('The distance from the sensor to the minimum water level in the tank'):</td>
                 <td>
-                    <input name='distance_bottom' type='number' min="2" max="300" value='$plugin_options["distance_bottom"]'> (2-300 $_('cm'))
+                    <input name='distance_bottom' type='number' min="2" max="400" value='$plugin_options["distance_bottom"]'> (2-400 $_('cm'))
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The distance from the sensor to the maximum water level in the tank'):</td>
                 <td>
-                    <input name='distance_top' type='number' min="2" max="300" value='$plugin_options["distance_top"]'> (2-300 $_('cm'))
+                    <input name='distance_top' type='number' min="2" max="400" value='$plugin_options["distance_top"]'> (2-400 $_('cm'))
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The water level from the bottom to the minimum water level in the tank'):</td>
                 <td>
-                    <input name='water_minimum' type='number' min="2" max="300" value='$plugin_options["water_minimum"]'> (2-300 $_('cm'))
+                    <input name='water_minimum' type='number' min="2" max="400" value='$plugin_options["water_minimum"]'> (2-400 $_('cm'))
                 </td>
             </tr>
             <tr>
@@ -53,6 +53,23 @@ $var page: plugins
                 <td>
                     <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}> ($_('For this function required email plugin'))
                 </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td>
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stop scheduller if is minimum water in the tank'):</td>
+                <td>
+                    <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
+                </td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use measuring frequenci probe') 1:</td> 
@@ -112,12 +129,6 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Frequenci from sensor for 100% humidity'):</td>
                 <td>
                     <input name='maximum_freq' type='number' min="0" max="100000" value='$plugin_options["maximum_freq"]'> (0-100000 Hz)
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('E-mail subject'):</td>
-                <td>
-                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
                 </td>
             </tr>
             <tr>
