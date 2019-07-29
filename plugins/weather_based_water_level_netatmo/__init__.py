@@ -148,7 +148,7 @@ class WeatherLevelChecker(Thread):
                     level_adjustments[NAME] = water_adjustment / 100
 
                     if plugin_options['use_netatmo']:
-                        water_left = water_needed - zrain - forecast_info2['rain_mm']
+                        water_left = water_needed - zrain - total_info['rain_mm']
                         water_left = round(max(0, min(100, water_left)), 1)
 
                     else:
