@@ -208,12 +208,15 @@ def get_report(index):
 
            elif index == 4:
              if lcd_options['d_ip']:
-                result = "IP adresa:" 
+                result = "Mistni IP adresa:" 
              else: 
                 result = None
            elif index == 5:
              if lcd_options['d_ip']:
-                 ip = helpers.get_ip()
+                 ip = "http"
+                 if options.use_ssl:
+                    ip += "s"
+                 ip += "://" + helpers.get_ip() + ':' + str(options.web_port)
                  result = str(ip)
              else: 
                 result = None

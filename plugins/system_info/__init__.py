@@ -42,6 +42,7 @@ def get_overview():
         result.append(_('Distribution') + ': ' + (platform.linux_distribution()[0]) + ' ' + (platform.linux_distribution()[1]))
         result.append(_('Total memory') + ': ' + meminfo['MemTotal'])
         result.append(_('Free memory') + ': ' + meminfo['MemFree'])
+        result.append(_('Python') + ': ' + platform.python_version())
         if netdevs:
             for dev, info in netdevs.iteritems():
                 result.append('%-16s %s MiB %s MiB' % (dev + ': ', info['rx'], info['tx']))
