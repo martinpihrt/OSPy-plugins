@@ -6,16 +6,44 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-08 12:37+0200\n"
-"PO-Revision-Date: 2016-06-08 12:46+0200\n"
+"PO-Revision-Date: 2019-08-01 15:05+0200\n"
 "Language-Team: pihrt.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+"X-Generator: Poedit 2.2.3\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
+
+#: plugins/system_info/__init__.py:65
+msgid "Found ATMEGA328 for Air Temperature and Humidity Monitor plugin (0x03)."
+msgstr "Nalezen ATMEGA328 pro Air Temperature and Humidity Monitor  (0x03)."
+
+#: plugins/system_info/__init__.py:69
+msgid "Found ATMEGA328 for Water Tank and Humidity Monitor plugin (0x04)."
+msgstr "Nalezen ATMEGA328 pro Water Tank and Humidity Monitor (0x04)."
+
+#: plugins/system_info/__init__.py:73
+msgid "Found MCP23017 for Button Control plugin (0x27)."
+msgstr "Nalezen MCP23017 pro Button Control (0x27)."
+
+#: plugins/system_info/__init__.py:79
+msgid "Found PCF8574 for LCD Display plugin (0x20-0x28, 0x38-0x3F)."
+msgstr "Nalezen PCF8574 pro LCD Display (0x20-0x28, 0x38-0x3F)."
+
+#: plugins/system_info/__init__.py:84
+msgid "Found PCF8583 for Wind Speed Monitor or Water Meter plugin (0x50-0x51)."
+msgstr "Nalezen PCF8583 pro Wind Speed Monitor nebo Water Meter (0x50-0x51)."
+
+#: plugins/system_info/__init__.py:88
+msgid "Found DS1307 for Real Time and NTP time plugin (0x68)."
+msgstr "Nalezen DS1307 pro Real Time and NTP time (0x68)."
+
+#: plugins/system_info/__init__.py:102
+msgid "Could not import smbus."
+msgstr "Nelze importovat SMBus."
 
 #: plugins/system_info/__init__.py:38
 msgid "System release"
@@ -56,6 +84,10 @@ msgstr "V provozu"
 #: plugins/system_info/__init__.py:51
 msgid "CPU temp"
 msgstr "Teplota CPU"
+
+#: plugins/system_info/__init__.py:51
+msgid "CPU usage"
+msgstr "Využití CPU"
 
 #: plugins/system_info/__init__.py:52
 msgid "MAC adress"
