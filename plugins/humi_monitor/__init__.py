@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# this plugins check humidity and water level in tank via ultrasonic sensor
+# this plugins check humidity 
+
 __author__ = 'Martin Pihrt'
 
 import json
@@ -24,18 +25,12 @@ from ospy.helpers import datetime_string
 import i18n
 
 
-NAME = 'Water Tank and Humidity Monitor'
+NAME = 'Humidity Monitor'
 LINK = 'settings_page'
 
 tank_options = PluginOptions(
     NAME,
     {
-       'use_sonic': True,      # default use sonic sensor
-       'distance_bottom': 33,  # default 33 cm sensor <-> bottom tank
-       'distance_top': 2,      # default 2 cm sensor <-> top tank
-       'water_minimum': 6,     # default 6 cm water level <-> bottom tank
-       'use_stop':      False, # default not stop water system
-       'use_send_email': True, # default send email
        'use_freq_1': False,    # default not use freq sensor 1
        'use_freq_2': False,    # default not use freq sensor 2
        'use_freq_3': False,    # default not use freq sensor 3
@@ -45,14 +40,12 @@ tank_options = PluginOptions(
        'use_freq_7': False,    # default not use freq sensor 7
        'use_freq_8': False,    # default not use freq sensor 8
        'minimum_freq': 400000, # default freq from sensor for 0% humi
-       'maximum_freq': 100000, # default freq from sensor for 100% humi
-       'emlsubject': _('Report from OSPy TANK HUMI plugin')	
+       'maximum_freq': 100000 # default freq from sensor for 100% humi
     }
 )
 
 bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
 
-address_ping = 0x04 # device address for sonic ping HW board
 address_humi = 0x05 # device address for humidity HW board
 
 ################################################################################
@@ -88,44 +81,9 @@ class Sender(Thread):
         
         while not self._stop.is_set():
             try:
-                if tank_options['use_sonic']: 
-                    if two_text:
-                        log.clear(NAME)
-                        log.info(NAME, _('Water tank monitor is enabled.'))
-                        once_text = True
-                        two_text = False
-
-                    level_in_tank = get_sonic_tank_cm()
-                    
-                    if level_in_tank >= 0: # if I2C device exists
-                        log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(level_in_tank) + ' ' + _('cm') + '.')
-
-                        if level_in_tank <= int(tank_options['water_minimum']) and mini and not options.manual_mode and level_in_tank > -1:
-                        
-                            if tank_options['use_send_email']: 
-                               send = True
-                               mini = False 
-    
-                            log.info(NAME, datetime_string() + ' ' + _('ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _('cm') + '!')
-                            if tank_options['use_stop']:                            
-                               options.scheduler_enabled = False                  # disable scheduler
-                               log.finish_run(None)                               # save log
-                               stations.clear()                                   # set all station to off  
-                                          
-
-                        if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: 
-                            mini = True
-                    else:
-                        log.info(NAME, datetime_string() + ' ' + _('Water level: Error I2C device not found.'))
                 
-                else:
-                    if once_text:
-                       log.info(NAME, 'Water tank monitor is disabled.')
-                       once_text = False
-                       two_text = True
-                       last_level = 0
-                
-# todo better humidity - change plugin 
+# todo better humidity - change plugin! 
+                log.info(NAME, 'Plugin is not ready!!! not use.')
                 if tank_options['use_freq_1']:
                     humi1 = get_freq(1)
                     if humi1 >= 0:
@@ -206,20 +164,12 @@ class Sender(Thread):
                     else:
                        log.info(NAME, datetime_string() + ' F8: ' + _('Error I2C device not found.'))
 
-                if send:
-                    msg = '<b>' + _('Water tank and humidity Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + _('Scheduler is now disabled and all Stations turn Off.') + '</p>'
-                    msglog = _('Water tank and humidity Monitor plug-in') + ': ' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '. ' + _('Scheduler is now disabled and all Stations turn Off.') 
-                    try:
-                        send_email(msg, msglog)
-                        send = False
-                    except Exception as err:
-                        log.error(NAME, _('Email was not sent') + '! ' + str(err))
-
+        
                 self._sleep(10) 
                 log.clear(NAME)
 
             except Exception:
-                log.error(NAME, _('Water tank and humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _('Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -262,31 +212,6 @@ def try_io(call, tries=10):
 
     return result
 
-
-def get_sonic_cm():
-    try:
-        data = [2]
-        data = try_io(lambda: bus.read_i2c_block_data(address_ping,2))
-        cm = data[1] + data[0]*255
-        return cm
-    except:
-        return -1   
-
-
-def get_sonic_tank_cm():
-    try:
-        cm = get_sonic_cm()
-        if cm < 0:
-           return -1
- 
-        tank_cm = maping(cm,int(tank_options['distance_bottom']),int(tank_options['distance_top']),int(tank_options['distance_top']),int(tank_options['distance_bottom']))
-        if tank_cm >= 0:
-           return tank_cm
-
-        else:
-           return 0 
-    except:
-        return -1 # if I2C device not exists
 
 
 def get_freq(freq_no):
@@ -339,14 +264,6 @@ def get_humidity(channel): # return humidity 0-100% for channel 1-8
        return hum_lvl
 
 
-def get_tank(): # return water tank level 0-100%, -1 is error i2c not found
-    tank_lvl = get_sonic_tank_cm()
-    if tank_lvl >= 0:
-       tank_proc = maping(tank_lvl,int(tank_options['distance_top']),int(tank_options['distance_bottom']),0,100) 
-       return tank_proc
-    else:
-       return -1
-
 
 def maping(x, in_min, in_max, out_min, out_max):
     # return value from map. example (x=1023,0,1023,0,100) -> x=1023 return 100
@@ -361,32 +278,6 @@ def get_station_is_on():
                 return False
 
 
-def send_email(msg, msglog):
-    """Send email"""
-    message = datetime_string() + ': ' + msg
-    try:
-        from plugins.email_notifications import email
-
-        Subject = tank_options['emlsubject']
-
-        email(message, subject=Subject)
-
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:        
-           logEM.save_email_log(Subject, msglog, _('Sent'))
-
-        log.info(NAME, _('Email was sent') + ': ' + msglog)
-
-    except Exception:
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:
-           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
-
-        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
-
-
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -395,7 +286,7 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        return self.plugin_render.tank_humi_monitor(tank_options, log.events(NAME))
+        return self.plugin_render.humi_monitor(tank_options, log.events(NAME))
 
     def POST(self):
         tank_options.web_update(web.input())

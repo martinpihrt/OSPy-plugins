@@ -1,0 +1,97 @@
+$def with(plugin_options, events)
+
+$var title: $_('Humidity monitor settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Humidity monitor settings')</div>
+    <p>$_('This plugin check humidity on the 8 sensors for 8 stations and adjusts run time for stations according to moisture on ') I&sup2;C $_('address 0x05.')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('humi_monitor.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 1:</td> 
+                <td>
+                    <input name='use_freq_1' type='checkbox'${" checked" if plugin_options['use_freq_1'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 2:</td> 
+                <td>
+                    <input name='use_freq_2' type='checkbox'${" checked" if plugin_options['use_freq_2'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 3:</td> 
+                <td>
+                    <input name='use_freq_3' type='checkbox'${" checked" if plugin_options['use_freq_3'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 4:</td> 
+                <td>
+                    <input name='use_freq_4' type='checkbox'${" checked" if plugin_options['use_freq_4'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 5:</td> 
+                <td>
+                    <input name='use_freq_5' type='checkbox'${" checked" if plugin_options['use_freq_5'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 6:</td> 
+                <td>
+                    <input name='use_freq_6' type='checkbox'${" checked" if plugin_options['use_freq_6'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 7:</td> 
+                <td>
+                    <input name='use_freq_7' type='checkbox'${" checked" if plugin_options['use_freq_7'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Use measuring frequenci probe') 8:</td> 
+                <td>
+                    <input name='use_freq_8' type='checkbox'${" checked" if plugin_options['use_freq_8'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Frequenci from sensor for 0% humidity'):</td>
+                <td>
+                    <input name='minimum_freq' type='number' min="0" max="100000" value='$plugin_options["minimum_freq"]'> (0-100000 Hz)
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Frequenci from sensor for 100% humidity'):</td>
+                <td>
+                    <input name='maximum_freq' type='number' min="0" max="100000" value='$plugin_options["maximum_freq"]'> (0-100000 Hz)
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="12" cols="42" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

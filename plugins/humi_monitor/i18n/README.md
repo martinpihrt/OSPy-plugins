@@ -6,4 +6,4 @@ https://poedit.net/ and save to your prefered language. Two files (*.mo *.po)
 transfer via email to: martinpihrt@gmail.com for move files  
 add to OSPy on my fork on the github.
 
-for generate ospy_messages.pot use: sudo python pygettext.py -a -v -d messages -o plugins/tank_humi_monitor/i18n/ospy_messages.pot plugins/tank_humi_monitor/\*.py plugins/tank_humi_monitor/templates/\*.html 
+for generate ospy_messages.pot use: sudo python pygettext.py -a -v -d messages -o plugins/humi_monitor/i18n/ospy_messages.pot plugins/humi_monitor/\*.py plugins/humi_monitor/templates/\*.html 
