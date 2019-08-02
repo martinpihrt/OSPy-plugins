@@ -1,0 +1,86 @@
+$def with(plugin_options, events)
+
+$var title: $_('Water tank monitor settings')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Water tank monitor settings')</div>
+    <p>$_('This plugin check water level in water tank via ultrasonic sensor on') I&sup2;C $_('address 0x04').</p>
+    <p>$_('If water level is small plugins stop irigation system and sends email with error. Prevent safety for master station pump.')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('tank_monitor.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use ultrasonic measuring the water level in the tank'):</td>
+                <td>
+                    <input name='use_sonic' type='checkbox'${" checked" if plugin_options['use_sonic'] else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('The distance from the sensor to the minimum water level in the tank'):</td>
+                <td>
+                    <input name='distance_bottom' type='number' min="2" max="400" value='$plugin_options["distance_bottom"]'> (2-400 $_('cm'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('The distance from the sensor to the maximum water level in the tank'):</td>
+                <td>
+                    <input name='distance_top' type='number' min="2" max="400" value='$plugin_options["distance_top"]'> (2-400 $_('cm'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('The water level from the bottom to the minimum water level in the tank'):</td>
+                <td>
+                    <input name='water_minimum' type='number' min="2" max="400" value='$plugin_options["water_minimum"]'> (2-400 $_('cm'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Cylinder diameter for volume calculation'):</td>
+                <td>
+                    <input name='diameter' type='number' min="2" max="4000" value='$plugin_options["diameter"]'> (2-4000 $_('cm'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send an e-mail with an error that there is minimum water in the tank'):</td>
+                <td>
+                    <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}> ($_('For this function required email plugin'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td>
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stop scheduller if is minimum water in the tank'):</td>
+                <td>
+                    <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="50" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
