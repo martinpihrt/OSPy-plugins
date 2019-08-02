@@ -52,7 +52,7 @@ DS18B20 Temperature: <br>
   System uptime:  
   5:12:11  
   My IP is:  
-  192.168.4.184  
+  https://192.168.4.184/8080  
   My port is:  
   8080  
   Rain sensor:  
@@ -61,6 +61,8 @@ DS18B20 Temperature: <br>
   None  
   Pressure sensor:    
   Not available  
+  Water Tank Level:
+  Level 120 cm 100%, volume 1.25 m3, ping 86 cm
   DS1-6 Temperature:  
   23.5, -127, 23.5, 36.5, 78.0, -127
   

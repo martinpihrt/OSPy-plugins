@@ -191,7 +191,7 @@ def get_report(index):
                 result = None
            elif index == 1:
              if lcd_options['d_system_name']:
-                result = options.name
+                result = ASCI_convert(options.name)
              else:
                 result = None 
 
@@ -288,7 +288,7 @@ def get_report(index):
              if lcd_options['d_last_run']:
                 finished = [run for run in log.finished_runs() if not run['blocked']]
                 if finished:
-                   result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + finished[-1]['program_name']
+                   result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + ASCI_convert(finished[-1]['program_name'])
                    result = result.replace('Run-Once', 'Jednorazovy')
                    result = result.replace('Manual', 'Rucne')
                 else:
@@ -324,10 +324,13 @@ def get_report(index):
            elif index == 21:
              if lcd_options['d_water_tank_level']:
                 try:
-                   from plugins import tank_humi_monitor
-                   cm = tank_humi_monitor.get_sonic_tank_cm()
+                   from plugins import tank_monitor
+                   cm = tank_monitor.get_sonic_tank_cm()
+                   ping = tank_monitor.get_sonic_cm()
+                   volume = tank_monitor.get_volume()
+                   percent = tank_monitor.get_tank()
                    if cm > 0: 
-                      result = str(cm) + ' cm'
+                      result = 'Hladina ' + str(cm) + ' cm ' + str(percent) + ' %, objem ' + str(volume) + ' m3, ping ' + str(ping) + ' cm'
                    else:
                       result = "chyba - I2C zarizeni nenalezeno!"
 
@@ -364,7 +367,7 @@ def get_report(index):
              else:
                 result = get_active_state()
 
-           return ASCI_convert(result)
+           return result 
 
 
     if (options.lang == 'sk_SK'):
@@ -375,7 +378,7 @@ def get_report(index):
                 result = None
            elif index == 1:
              if lcd_options['d_system_name']:
-                result = options.name
+                result = ASCI_convert(options.name)
              else:
                 result = None 
 
@@ -469,7 +472,7 @@ def get_report(index):
              if lcd_options['d_last_run']:
                 finished = [run for run in log.finished_runs() if not run['blocked']]
                 if finished:
-                   result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + finished[-1]['program_name']
+                   result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + ASCI_convert(finished[-1]['program_name'])
                    result = result.replace('Run-Once', 'Jednorazovy')
                    result = result.replace('Manual', 'Rucne')
                 else:
@@ -505,10 +508,13 @@ def get_report(index):
            elif index == 21:
              if lcd_options['d_water_tank_level']:
                 try:
-                   from plugins import tank_humi_monitor
-                   cm = tank_humi_monitor.get_sonic_tank_cm()
+                   from plugins import tank_monitor
+                   cm = tank_monitor.get_sonic_tank_cm()
+                   ping = tank_monitor.get_sonic_cm()
+                   volume = tank_monitor.get_volume()
+                   percent = tank_monitor.get_tank()
                    if cm > 0: 
-                      result = str(cm) + ' cm'
+                      result = 'Hladina ' + str(cm) + ' cm ' + str(percent) + ' %, objem ' + str(volume) + ' m3, ping ' + str(ping) + ' cm'
                    else:
                       result = "chyba - I2C zarizeni nenajdene!"
 
@@ -545,12 +551,12 @@ def get_report(index):
              else:
                 result = get_active_state()
 
-           return ASCI_convert(result)
+           return result
 
     if (options.lang == 'en_US') or (options.lang == 'default'):
           if index == 0:  
              if lcd_options['d_system_name']:
-                result = options.name
+                result = ASCI_convert(options.name)
              else: 
                 result = None
           elif index == 1:
@@ -649,7 +655,7 @@ def get_report(index):
              if lcd_options['d_last_run']:
                 finished = [run for run in log.finished_runs() if not run['blocked']]
                 if finished:
-                   result = finished[-1]['start'].strftime('%H:%M: ') + finished[-1]['program_name']
+                   result = finished[-1]['start'].strftime('%H:%M: ') + ASCI_convert(finished[-1]['program_name'])
                    result = result.replace('Run-Once', 'Jednorazovy') 
                 else:
                    result = 'None'
@@ -685,10 +691,13 @@ def get_report(index):
           elif index == 21:
              if lcd_options['d_water_tank_level']:    
                 try:
-                   from plugins import tank_humi_monitor
-                   cm = tank_humi_monitor.get_sonic_tank_cm()
+                   from plugins import tank_monitor
+                   cm = tank_monitor.get_sonic_tank_cm()
+                   ping = tank_monitor.get_sonic_cm()
+                   volume = tank_monitor.get_volume()
+                   percent = tank_monitor.get_tank()
                    if cm > 0: 
-                      result = str(cm) + ' cm'
+                      result = 'Level ' + str(cm) + ' cm ' + str(percent) + ' %, volume ' + str(volume) + ' m3, ping ' + str(ping) + ' cm'
                    else:
                       result = "Error - I2C Device Not Found!"
 
@@ -788,7 +797,7 @@ def update_lcd(line1, line2=None):
                 line2 = line2[1:]
 
         time.sleep(sleep_time)
-        sleep_time = 0.25
+        sleep_time = 0.5
 
 
 ################################################################################
