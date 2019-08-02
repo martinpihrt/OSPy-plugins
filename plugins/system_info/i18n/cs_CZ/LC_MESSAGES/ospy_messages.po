@@ -22,8 +22,12 @@ msgid "Found ATMEGA328 for Air Temperature and Humidity Monitor plugin (0x03)."
 msgstr "Nalezen ATMEGA328 pro Air Temperature and Humidity Monitor  (0x03)."
 
 #: plugins/system_info/__init__.py:69
-msgid "Found ATMEGA328 for Water Tank and Humidity Monitor plugin (0x04)."
-msgstr "Nalezen ATMEGA328 pro Water Tank and Humidity Monitor (0x04)."
+msgid "Found ATMEGA328 for Water Tank Monitor plugin (0x04)."
+msgstr "Nalezen ATMEGA328 pro Water Tank Monitor (0x04)."
+
+#: plugins/system_info/__init__.py:69
+msgid "Found ATMEGA328 for Humidity Monitor plugin (0x05)."
+msgstr "Nalezen ATMEGA328 pro Humidity Monitor (0x05)."
 
 #: plugins/system_info/__init__.py:73
 msgid "Found MCP23017 for Button Control plugin (0x27)."

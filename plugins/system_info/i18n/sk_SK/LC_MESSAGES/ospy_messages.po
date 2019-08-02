@@ -6,14 +6,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-08 12:36+CEST\n"
-"PO-Revision-Date: 2019-08-01 15:07+0200\n"
+"PO-Revision-Date: 2019-08-02 17:33+0200\n"
 "Language-Team: LANGUAGE <pihrt.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 2.2.3\n"
-"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Last-Translator: pihrt.com <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: sk_SK\n"
 
@@ -22,8 +22,12 @@ msgid "Found ATMEGA328 for Air Temperature and Humidity Monitor plugin (0x03)."
 msgstr "Nájdené ATMEGA328 pre teplotu vzduchu a vlhkosti monitora plugin (0x03)."
 
 #: plugins/system_info/__init__.py:69
-msgid "Found ATMEGA328 for Water Tank and Humidity Monitor plugin (0x04)."
-msgstr "Nájdené ATMEGA328 pre vodné nádrže a vlhkosti monitora plugin (0x04)."
+msgid "Found ATMEGA328 for Water Tank Monitor plugin (0x04)."
+msgstr "Nájdené ATMEGA328 pre vodné nádrže monitor plugin (0x04)."
+
+#: plugins/system_info/__init__.py:69
+msgid "Found ATMEGA328 for Humidity Monitor plugin (0x05)."
+msgstr "Nájdené ATMEGA328 pre vlhkosť monitora plugin (0x05)."
 
 #: plugins/system_info/__init__.py:73
 msgid "Found MCP23017 for Button Control plugin (0x27)."

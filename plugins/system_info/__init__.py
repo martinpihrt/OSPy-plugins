@@ -64,9 +64,13 @@ def get_overview():
         if find_address(0x03):
             result.append(_('Found ATMEGA328 for Air Temperature and Humidity Monitor plugin (0x03).'))
 
-        # I2C test for Water Tank and Humidity Monitor plugin
+        # I2C test for Water Tank Monitor plugin
         if find_address(0x04):
-            result.append(_('Found ATMEGA328 for Water Tank and Humidity Monitor plugin (0x04).'))
+            result.append(_('Found ATMEGA328 for Water Tank Monitor plugin (0x04).'))
+
+        # I2C test for Humidity Monitor plugin
+        if find_address(0x05):
+            result.append(_('Found ATMEGA328 for Humidity Monitor plugin (0x05).'))
 
         # I2C test for Button Control plugin
         if find_address(0x27):
