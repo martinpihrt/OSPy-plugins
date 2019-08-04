@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-02 16:25+CEST\n"
-"PO-Revision-Date: 2019-08-02 16:44+0200\n"
+"PO-Revision-Date: 2019-08-04 11:47+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -65,7 +65,7 @@ msgstr "Nádrž s vodou: chyba I2C zařízení nebylo nalezeno."
 
 #: plugins/tank_monitor/__init__.py:116 plugins/tank_monitor/__init__.py:117
 msgid "System detected error: Water Tank has minimum Water Level"
-msgstr "Systém zjistil chybu: nádrž na vodu má minimální hladinu vody."
+msgstr "Systém zjistil chybu: nádrž na vodu má minimální hladinu vody"
 
 #: plugins/tank_monitor/__init__.py:116 plugins/tank_monitor/__init__.py:117
 #: plugins/tank_monitor/__init__.py:128
@@ -166,3 +166,19 @@ msgstr "Potvrdit"
 #: plugins/tank_monitor/templates/tank_monitor.html:85
 msgid "Cancel"
 msgstr "Zpět"
+
+#: plugins/tank_monitor/__init__.py:308
+msgid "Minimum and maximum has reseted."
+msgstr "Minimum a maximum bylo vymazáno."
+
+#: plugins/tank_monitor/templates/tank_monitor.html:86
+msgid "Reset min/max level"
+msgstr "Vymazat min/max"
+
+#: plugins/tank_monitor/__init__.py:114
+msgid "Minimum Water level"
+msgstr "Minimální hladina"
+
+#: plugins/tank_monitor/__init__.py:113
+msgid "Maximum Water level"
+msgstr "Maximální hladina"

@@ -1,85 +1,136 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
-# FIRST AUTHOR <martinpihrt@gmail.com>, 2016.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2016-06-08 07:21+CEST\n"
+"POT-Creation-Date: 2019-08-04 11:40+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <martinpihrt@gmail.com>\n"
-"Language-Team: LANGUAGE <pihrt.com>\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/email_notifications/__init__.py:44
+#: plugins/email_notifications/__init__.py:48
 msgid "Report from OSPy SYSTEM"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:77
+#: plugins/email_notifications/__init__.py:81
 msgid "Email was sent"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:79
+#: plugins/email_notifications/__init__.py:83
+#: plugins/email_notifications/__init__.py:90
+msgid "Email logging is disabled in options..."
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:84
+msgid "Sent"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:87
+#: plugins/email_notifications/__init__.py:88
 msgid "Email was not sent!"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:86
+#: plugins/email_notifications/__init__.py:99
+#: plugins/email_notifications/__init__.py:121
+#: plugins/email_notifications/__init__.py:135
+msgid "System"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:100
+#: plugins/email_notifications/__init__.py:101
 msgid "System was powered on."
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:95
+#: plugins/email_notifications/__init__.py:108
 msgid "Error -  events.log file not exists!"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:106
+#: plugins/email_notifications/__init__.py:122
+#: plugins/email_notifications/__init__.py:123
 msgid "System detected rain."
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:125
-msgid "Error - I2C device not found!"
-msgstr ""
-
-#: plugins/email_notifications/__init__.py:127
-msgid "Not available"
-msgstr ""
-
-#: plugins/email_notifications/__init__.py:128
+#: plugins/email_notifications/__init__.py:136
+#: plugins/email_notifications/__init__.py:141
 msgid "Finished run"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:129
+#: plugins/email_notifications/__init__.py:137
+#: plugins/email_notifications/__init__.py:141
 msgid "Program"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:130
+#: plugins/email_notifications/__init__.py:138
+#: plugins/email_notifications/__init__.py:142
 msgid "Station"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:131
+#: plugins/email_notifications/__init__.py:139
+#: plugins/email_notifications/__init__.py:143
 msgid "Start time"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:132
+#: plugins/email_notifications/__init__.py:140
+#: plugins/email_notifications/__init__.py:144
 msgid "Duration"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:133
+#: plugins/email_notifications/__init__.py:154
+msgid "Level"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:154
+#: plugins/email_notifications/__init__.py:156
+msgid "cm"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:156
+msgid "Ping"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:157
+msgid "Volume"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:157
+msgid "m3"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:159
+msgid "Error - I2C device not found!"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:161
+#: plugins/email_notifications/__init__.py:163
+msgid "Water"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:162
+#: plugins/email_notifications/__init__.py:163
 msgid "Water level in tank"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:142
+#: plugins/email_notifications/__init__.py:171
+#: plugins/email_notifications/__init__.py:172
+msgid "Temperature DS1-DS6"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:188
 msgid "E-mail plug-in"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:194
+#: plugins/email_notifications/__init__.py:262
 msgid "E-mail plug-in is not properly configured!"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:215
+#: plugins/email_notifications/__init__.py:283
 msgid "This is test e-mail from e-mail notification plugin."
 msgstr ""
 
@@ -121,32 +172,30 @@ msgid "Your GMail password"
 msgstr ""
 
 #: plugins/email_notifications/templates/email_notifications.html:61
+#: plugins/email_notifications/templates/email_notifications.html:67
+#: plugins/email_notifications/templates/email_notifications.html:73
+#: plugins/email_notifications/templates/email_notifications.html:79
+#: plugins/email_notifications/templates/email_notifications.html:85
 msgid "Send E-mail to"
 msgstr ""
 
-#: plugins/email_notifications/templates/email_notifications.html:67
+#: plugins/email_notifications/templates/email_notifications.html:91
 msgid "E-mail subject"
 msgstr ""
 
-#: plugins/email_notifications/templates/email_notifications.html:73
+#: plugins/email_notifications/templates/email_notifications.html:97
 msgid "Status"
 msgstr ""
 
-#: plugins/email_notifications/templates/email_notifications.html:82
+#: plugins/email_notifications/templates/email_notifications.html:106
 msgid "Submit"
 msgstr ""
 
-#: plugins/email_notifications/templates/email_notifications.html:83
+#: plugins/email_notifications/templates/email_notifications.html:107
 msgid "Send a test e-mail"
 msgstr ""
 
-#: plugins/email_notifications/templates/email_notifications.html:84
+#: plugins/email_notifications/templates/email_notifications.html:108
 msgid "Cancel"
-msgstr ""
-
-msgid "Sent"
-msgstr ""
-
-msgid "Unsent"
 msgstr ""
 

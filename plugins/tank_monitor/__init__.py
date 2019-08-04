@@ -11,7 +11,7 @@ import traceback
 from threading import Thread, Event
 
 import web
-from ospy.stations import stations
+from ospy import helpers
 from ospy.options import options
 from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url
@@ -35,12 +35,11 @@ tank_options = PluginOptions(
        'use_stop':      False, # not stop water system
        'use_send_email': False,# not send email
        'emlsubject': _('Report from OSPy TANK plugin'),
-	'address_ping': 0x04    # device address for sonic ping HW board
+	     'address_ping': 0x04    # device address for sonic ping HW board
     }
 )
 
- 
-
+status = { }
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -50,6 +49,17 @@ class Sender(Thread):
         Thread.__init__(self)
         self.daemon = True
         self._stop = Event()
+
+        global status
+
+        status['maxlevel'] = 0.0
+        status['minlevel'] = 400.0
+        status['level']    = -1
+        status['percent']  = -1
+        status['ping']     = -1
+        status['volume']   = -1
+        status['datemaxlevel'] = datetime_string()
+        status['dateminlevel'] = datetime_string()
 
         self._sleep_time = 0
         self.start()
@@ -71,7 +81,7 @@ class Sender(Thread):
         two_text = True
         send = False
         mini = True
-        
+
         while not self._stop.is_set():
             try:
                 if tank_options['use_sonic']: 
@@ -81,11 +91,27 @@ class Sender(Thread):
                         once_text = True
                         two_text = False
 
-                    level_in_tank = get_sonic_tank_cm()
-                    
+                    sonic_cm = get_sonic_cm()
+                    level_in_tank = get_sonic_tank_cm(sonic_cm)
+
+                    status['level']   = level_in_tank
+                    status['ping']    = sonic_cm
+                    status['volume']  = get_volume(level_in_tank)
+                    status['percent'] = get_tank(level_in_tank)
+                   
                     if level_in_tank >= 0: # if I2C device exists
-                        log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(level_in_tank) + ' ' + _('cm') + ' (' + str(get_tank()) + ' ' + ('%).'))
-                        log.info(NAME, _('Ping') + ': ' + str(get_sonic_cm()) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(get_volume()) + ' ' + _('m3.'))
+                        log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
+                        log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3.'))
+
+                        if level_in_tank > status['maxlevel']:   # maximum level
+                            status['maxlevel']  = level_in_tank
+                            status['datemaxlevel'] = datetime_string()
+                        if level_in_tank < status['minlevel']:   # minimum level
+                            status['minlevel']  = level_in_tank
+                            status['dateminlevel'] = datetime_string()
+
+                        log.info(NAME, str(status['datemaxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(status['maxlevel']) + ' ' + _('cm.'))   
+                        log.info(NAME, str(status['dateminlevel']) + ' ' + _('Minimum Water level') + ': ' + str(status['minlevel']) + ' ' + _('cm.'))                             
 
                         if level_in_tank <= int(tank_options['water_minimum']) and mini and not options.manual_mode and level_in_tank > -1:
                         
@@ -121,7 +147,7 @@ class Sender(Thread):
                     except Exception as err:
                         log.error(NAME, _('Email was not sent') + '! ' + str(err))
 
-                self._sleep(10) 
+                self._sleep(5) 
                 log.clear(NAME)
 
             except Exception:
@@ -181,9 +207,9 @@ def get_sonic_cm():
         return -1   
 
 
-def get_sonic_tank_cm():
+def get_sonic_tank_cm(level):
     try:
-        cm = get_sonic_cm()
+        cm = level
         if cm < 0:
            return -1
  
@@ -197,8 +223,8 @@ def get_sonic_tank_cm():
         return -1 # if I2C device not exists
 
 
-def get_tank(): # return water tank level 0-100%, -1 is error i2c not found
-    tank_lvl = get_sonic_tank_cm()
+def get_tank(level): # return water tank level 0-100%, -1 is error i2c not found
+    tank_lvl = level
     if tank_lvl >= 0:
        tank_proc = maping(tank_lvl,int(tank_options['distance_top']),int(tank_options['distance_bottom']),0,100) 
        return tank_proc
@@ -206,8 +232,8 @@ def get_tank(): # return water tank level 0-100%, -1 is error i2c not found
        return -1
 
 
-def get_volume(): # return volume calculation from cylinder diameter and water column height in m3
-    tank_lvl = get_sonic_tank_cm()
+def get_volume(level): # return volume calculation from cylinder diameter and water column height in m3
+    tank_lvl = level
     if tank_lvl >= 0:
        
        try:       
@@ -228,6 +254,12 @@ def maping(x, in_min, in_max, out_min, out_max):
     # return value from map. example (x=1023,0,1023,0,100) -> x=1023 return 100
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
+
+def get_all_values():
+    global status
+
+    return status['level'] , status['percent'], status['ping'], status['volume'], status['minlevel'], status['maxlevel'] 
+   
  
 def send_email(msg, msglog):
     """Send email"""
@@ -263,7 +295,21 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
+        global sender, status
+
+        qdict = web.input()
+        reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
+        if sender is not None and reset:
+            status['min'] = 400.00
+            status['max'] = 0.00
+            status['dateminlevel'] = datetime_string()
+            status['datemaxlevel'] = datetime_string()
+            log.clear(NAME)
+            log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
+            raise web.seeother(plugin_url(settings_page), True)
+
         return self.plugin_render.tank_monitor(tank_options, log.events(NAME))
+
 
     def POST(self):
         tank_options.web_update(web.input())

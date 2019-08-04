@@ -144,16 +144,23 @@ class EmailSender(Thread):
                             logtext +=  _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
                             cm = None
                             try:
-                                from plugins import tank_humi_monitor
-                                cm = tank_humi_monitor.get_sonic_tank_cm()
+                                from plugins import tank_monitor
+                                cm = tank_monitor.get_all_values()[0]
+                                percent = tank_monitor.get_all_values()[1]
+                                ping = tank_monitor.get_all_values()[2]
+                                volume = tank_monitor.get_all_values()[3]
+                                msg = ' '
                                 if cm > 0:
-                                    cm = str(cm) + " cm"
+                                    msg =  _('Level') + ': ' + str(cm) + ' ' + _('cm')
+                                    msg += ' (' + str(percent) + ' %), '
+                                    msg += _('Ping') + ': ' + str(ping) + ' ' + _('cm')
+                                    msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('m3')
                                 else: 
-                                    cm = _('Error - I2C device not found!')
+                                    msg = _('Error - I2C device not found!')
 
                                 body += '<br><b>'  + _('Water') + '</b>'                                    
-                                body += '<br>' + _('Water level in tank') + ': %s \n' % (cm)
-                                logtext += ', ' + _('Water') + '-> ' + _('Water level in tank') + ': %s \n' % (cm)   
+                                body += '<br>' + _('Water level in tank') + ': %s \n' % (msg)
+                                logtext += ', ' + _('Water') + '-> ' + _('Water level in tank') + ': %s \n' % (msg)   
                             
                             except Exception:
                                 pass

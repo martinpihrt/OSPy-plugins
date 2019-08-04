@@ -325,12 +325,13 @@ def get_report(index):
              if lcd_options['d_water_tank_level']:
                 try:
                    from plugins import tank_monitor
-                   cm = tank_monitor.get_sonic_tank_cm()
-                   ping = tank_monitor.get_sonic_cm()
-                   volume = tank_monitor.get_volume()
-                   percent = tank_monitor.get_tank()
+                   cm = tank_monitor.get_all_values()[0]
+                   percent = tank_monitor.get_all_values()[1]
+                   ping = tank_monitor.get_all_values()[2]
+                   volume = tank_monitor.get_all_values()[3]
+
                    if cm > 0: 
-                      result = 'Hladina ' + str(cm) + ' cm ' + str(percent) + ' %, objem ' + str(volume) + ' m3, ping ' + str(ping) + ' cm'
+                      result = 'Hladina ' + str(cm) + ' cm (' + str(percent) + ' %), objem ' + str(volume) + ' m3, ping ' + str(ping) + ' cm' 
                    else:
                       result = "chyba - I2C zarizeni nenalezeno!"
 
@@ -349,7 +350,7 @@ def get_report(index):
                 try:
                    from plugins import air_temp_humi
                  
-                   result = air_temp_humi.DS18B20_read_string_data()
+                   result = ASCI_convert(air_temp_humi.DS18B20_read_string_data())
                   
                 except Exception:
                    result = "neni k dispozici"
@@ -509,10 +510,10 @@ def get_report(index):
              if lcd_options['d_water_tank_level']:
                 try:
                    from plugins import tank_monitor
-                   cm = tank_monitor.get_sonic_tank_cm()
-                   ping = tank_monitor.get_sonic_cm()
-                   volume = tank_monitor.get_volume()
-                   percent = tank_monitor.get_tank()
+                   cm = tank_monitor.get_all_values()[0]
+                   percent = tank_monitor.get_all_values()[1]
+                   ping = tank_monitor.get_all_values()[2]
+                   volume = tank_monitor.get_all_values()[3]
                    if cm > 0: 
                       result = 'Hladina ' + str(cm) + ' cm ' + str(percent) + ' %, objem ' + str(volume) + ' m3, ping ' + str(ping) + ' cm'
                    else:
@@ -533,7 +534,7 @@ def get_report(index):
                 try:
                    from plugins import air_temp_humi
                  
-                   result = air_temp_humi.DS18B20_read_string_data()
+                   result = ASCI_convert(air_temp_humi.DS18B20_read_string_data())
                   
                 except Exception:
                    result = "neni k dispozicii"
@@ -692,10 +693,10 @@ def get_report(index):
              if lcd_options['d_water_tank_level']:    
                 try:
                    from plugins import tank_monitor
-                   cm = tank_monitor.get_sonic_tank_cm()
-                   ping = tank_monitor.get_sonic_cm()
-                   volume = tank_monitor.get_volume()
-                   percent = tank_monitor.get_tank()
+                   cm = tank_monitor.get_all_values()[0]
+                   percent = tank_monitor.get_all_values()[1]
+                   ping = tank_monitor.get_all_values()[2]
+                   volume = tank_monitor.get_all_values()[3]
                    if cm > 0: 
                       result = 'Level ' + str(cm) + ' cm ' + str(percent) + ' %, volume ' + str(volume) + ' m3, ping ' + str(ping) + ' cm'
                    else:
@@ -716,7 +717,7 @@ def get_report(index):
                try:
                   from plugins import air_temp_humi
                  
-                  result = air_temp_humi.DS18B20_read_string_data()
+                  result = ASCI_convert(air_temp_humi.DS18B20_read_string_data())
                                      
                except Exception:
                   result = "Not Available"

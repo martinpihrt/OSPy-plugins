@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2019-08-02 16:25+CEST\n"
+"POT-Creation-Date: 2019-08-04 11:41+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,25 +15,21 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: plugins/tank_monitor/__init__.py:24
-msgid "Water Tank Monitor"
-msgstr ""
-
 #: plugins/tank_monitor/__init__.py:37
 msgid "Report from OSPy TANK plugin"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:80
+#: plugins/tank_monitor/__init__.py:90
 msgid "Water tank monitor is enabled."
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:87
+#: plugins/tank_monitor/__init__.py:103
 msgid "Water level"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:87 plugins/tank_monitor/__init__.py:88
-#: plugins/tank_monitor/__init__.py:96 plugins/tank_monitor/__init__.py:116
-#: plugins/tank_monitor/__init__.py:117
+#: plugins/tank_monitor/__init__.py:103 plugins/tank_monitor/__init__.py:104
+#: plugins/tank_monitor/__init__.py:122 plugins/tank_monitor/__init__.py:142
+#: plugins/tank_monitor/__init__.py:143
 #: plugins/tank_monitor/templates/tank_monitor.html:35
 #: plugins/tank_monitor/templates/tank_monitor.html:41
 #: plugins/tank_monitor/templates/tank_monitor.html:47
@@ -41,50 +37,66 @@ msgstr ""
 msgid "cm"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:88
+#: plugins/tank_monitor/__init__.py:104
 msgid "Ping"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:88
+#: plugins/tank_monitor/__init__.py:104
 msgid "Volume"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:88
+#: plugins/tank_monitor/__init__.py:104
 msgid "m3."
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:96
+#: plugins/tank_monitor/__init__.py:113
+msgid "Maximum Water level"
+msgstr ""
+
+#: plugins/tank_monitor/__init__.py:113 plugins/tank_monitor/__init__.py:114
+msgid "cm."
+msgstr ""
+
+#: plugins/tank_monitor/__init__.py:114
+msgid "Minimum Water level"
+msgstr ""
+
+#: plugins/tank_monitor/__init__.py:122
 msgid "ERROR: Water in Tank"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:106
+#: plugins/tank_monitor/__init__.py:132
 msgid "Water level: Error I2C device not found."
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:116 plugins/tank_monitor/__init__.py:117
+#: plugins/tank_monitor/__init__.py:142 plugins/tank_monitor/__init__.py:143
 msgid "System detected error: Water Tank has minimum Water Level"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:116 plugins/tank_monitor/__init__.py:117
-#: plugins/tank_monitor/__init__.py:128
+#: plugins/tank_monitor/__init__.py:142 plugins/tank_monitor/__init__.py:143
+#: plugins/tank_monitor/__init__.py:154
 msgid "Water Tank Monitor plug-in"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:122 plugins/tank_monitor/__init__.py:253
-#: plugins/tank_monitor/__init__.py:255
+#: plugins/tank_monitor/__init__.py:148 plugins/tank_monitor/__init__.py:285
+#: plugins/tank_monitor/__init__.py:287
 msgid "Email was not sent"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:243 plugins/tank_monitor/__init__.py:251
+#: plugins/tank_monitor/__init__.py:275 plugins/tank_monitor/__init__.py:283
 msgid "Email logging is disabled in options..."
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:245
+#: plugins/tank_monitor/__init__.py:277
 msgid "Sent"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:247
+#: plugins/tank_monitor/__init__.py:279
 msgid "Email was sent"
+msgstr ""
+
+#: plugins/tank_monitor/__init__.py:308
+msgid "Minimum and maximum has reseted."
 msgstr ""
 
 #: plugins/tank_monitor/templates/tank_monitor.html:3
@@ -150,5 +162,9 @@ msgstr ""
 
 #: plugins/tank_monitor/templates/tank_monitor.html:85
 msgid "Cancel"
+msgstr ""
+
+#: plugins/tank_monitor/templates/tank_monitor.html:86
+msgid "Reset min/max level"
 msgstr ""
 
