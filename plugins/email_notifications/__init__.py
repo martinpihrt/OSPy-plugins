@@ -132,14 +132,16 @@ class EmailSender(Thread):
                         for run in finished[finished_count:]:
                             duration = (run['end'] - run['start']).total_seconds()
                             minutes, seconds = divmod(duration, 60)
+                            pname = run['program_name']
+                            sname = stations.get(run['station']).name
                             body += '<b>' + _('System') + '</b> ' + datetime_string()
                             body += '<br><b>'  + _('Finished run') + '</b>'
-                            body += '<br>' + _('Program') + ': %s\n' % run['program_name']
-                            body += '<br>' + _('Station') + ': %s\n' % stations.get(run['station']).name
+                            body += '<br>' + _('Program') + u': %s \n' % pname
+                            body += '<br>' + _('Station') + u': %s \n' % sname
                             body += '<br>' + _('Start time') + ': %s \n' % datetime_string(run['start'])
                             body += '<br>' + _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
-                            logtext  =  _('Finished run') + '-> ' + _('Program') + ': %s\n' % run['program_name'] + ', ' 
-                            logtext +=  _('Station') + ': %s\n' % stations.get(run['station']).name + ', '
+                            logtext  =  _('Finished run') + '-> ' + _('Program') + u': %s\n' % pname + ', ' 
+                            logtext +=  _('Station') + u': %s\n' % sname + ', '
                             logtext +=  _('Start time') + ': %s \n' % datetime_string(run['start'])  + ', '
                             logtext +=  _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
                             cm = None
@@ -280,8 +282,9 @@ class settings_page(ProtectedPage):
             email_sender.update()
 
             if test:
-                body = (datetime_string() + ': ' + _('This is test e-mail from e-mail notification plugin.'))
-                email_sender.try_mail(body)
+                body = datetime_string() + ': ' + _('This is test e-mail from e-mail notification plugin.')
+                logtext = _('This is test e-mail from e-mail notification plugin.')
+                email_sender.try_mail(body, logtext)
 
 
         raise web.seeother(plugin_url(settings_page), True)
