@@ -1,0 +1,42 @@
+$def with(status, events)
+
+$var title: $_('Usage Statistics')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Usage Statistics')</div>
+    <p>$_('This plugin prints all available statistics from all users OSPy systems').</p>
+    <p>$_('In the OSPy system is embedded statistical sending anonymous data (specifically python version, general information about the operating system - architecture, distribution, system, OSPy system version).')</p>
+    <p>$_('Read from source www.pihrt.com') <a href="https://pihrt.com/ospystats/statistics.json">json</a></p>
+    $if status['pageOKstate']:
+       <font color="green">
+       $status['pageOK']
+       </font>
+    $else:
+       <font color="red">
+       $status['pageOK']
+       </font>
+
+    <form id="pluginForm">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="20" cols="80" readonly>$'\n'.join(events)</textarea><br/>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

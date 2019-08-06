@@ -1,0 +1,96 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-08-06 12:59+CEST\n"
+"PO-Revision-Date: 2019-08-06 13:10+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.2.3\n"
+"Last-Translator: pihrt.com <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
+"Language: sk_SK\n"
+
+#: plugins/usage_statistics/__init__.py:33
+#: plugins/usage_statistics/__init__.py:80
+msgid "Error: data cannot be downloaded from"
+msgstr "Chyba: údaje nie je možné prevziať z"
+
+#: plugins/usage_statistics/__init__.py:67
+msgid "ID"
+msgstr "ID"
+
+#: plugins/usage_statistics/__init__.py:68
+msgid "Log"
+msgstr "Log"
+
+#: plugins/usage_statistics/__init__.py:69
+msgid "OSPy"
+msgstr "OSPy"
+
+#: plugins/usage_statistics/__init__.py:70
+msgid "CPU"
+msgstr "CPU"
+
+#: plugins/usage_statistics/__init__.py:71
+msgid "Distribution"
+msgstr "Distribúcie"
+
+#: plugins/usage_statistics/__init__.py:72
+msgid "System"
+msgstr "Systém"
+
+#: plugins/usage_statistics/__init__.py:73
+msgid "Python"
+msgstr "Python"
+
+#: plugins/usage_statistics/__init__.py:75
+msgid "The data from"
+msgstr "Údaje z"
+
+#: plugins/usage_statistics/__init__.py:75
+msgid "was downloaded correctly."
+msgstr "bol stiahnutý správne."
+
+#: plugins/usage_statistics/__init__.py:92
+msgid "Usage statistics plug-in"
+msgstr "Doplnok štatistika používania"
+
+#: plugins/usage_statistics/templates/usage_statistics.html:3
+#: plugins/usage_statistics/templates/usage_statistics.html:16
+msgid "Usage Statistics"
+msgstr "Štatistika používania"
+
+#: plugins/usage_statistics/templates/usage_statistics.html:17
+msgid "This plugin prints all available statistics from all users OSPy systems"
+msgstr ""
+"Tento plugin vytlačí všetky dostupné štatistiky od všetkých užívateľov OSPy "
+"systémov"
+
+#: plugins/usage_statistics/templates/usage_statistics.html:18
+msgid ""
+"In the OSPy system is embedded statistical sending anonymous data "
+"(specifically python version, general information about the operating system "
+"- architecture, distribution, system, OSPy system version)."
+msgstr ""
+"V OSPy systém je vložený štatistické posielanie anonymných dát (konkrétne "
+"python verzia, všeobecné informácie o operačnom systéme-architektúra, "
+"distribúcia, systém, OSPy  version)."
+
+#: plugins/usage_statistics/templates/usage_statistics.html:19
+msgid "Read from source www.pihrt.com"
+msgstr "Čítať zo zdroja www.pihrt.com"
+
+#: plugins/usage_statistics/templates/usage_statistics.html:32
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/usage_statistics/templates/usage_statistics.html:41
+msgid "Cancel"
+msgstr "Zrušiť"
