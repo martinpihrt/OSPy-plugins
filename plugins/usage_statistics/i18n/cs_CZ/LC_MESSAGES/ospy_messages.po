@@ -17,6 +17,10 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
 "Language: cs_CZ\n"
 
+#: plugins/usage_statistics/__init__.py:82
+msgid "Your ID is: "
+msgstr "Vaše ID je: "
+
 #: plugins/usage_statistics/__init__.py:33
 #: plugins/usage_statistics/__init__.py:80
 msgid "Error: data cannot be downloaded from"

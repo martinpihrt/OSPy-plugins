@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2019-08-06 12:59+CEST\n"
+"POT-Creation-Date: 2019-08-08 19:49+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,47 +16,51 @@ msgstr ""
 
 
 #: plugins/usage_statistics/__init__.py:33
-#: plugins/usage_statistics/__init__.py:80
+#: plugins/usage_statistics/__init__.py:89
 msgid "Error: data cannot be downloaded from"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:67
+#: plugins/usage_statistics/__init__.py:68
 msgid "ID"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:68
+#: plugins/usage_statistics/__init__.py:69
 msgid "Log"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:69
+#: plugins/usage_statistics/__init__.py:70
 msgid "OSPy"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:70
+#: plugins/usage_statistics/__init__.py:71
 msgid "CPU"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:71
+#: plugins/usage_statistics/__init__.py:72
 msgid "Distribution"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:72
+#: plugins/usage_statistics/__init__.py:73
 msgid "System"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:73
+#: plugins/usage_statistics/__init__.py:74
 msgid "Python"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:75
+#: plugins/usage_statistics/__init__.py:76
 msgid "The data from"
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:75
+#: plugins/usage_statistics/__init__.py:76
 msgid "was downloaded correctly."
 msgstr ""
 
-#: plugins/usage_statistics/__init__.py:92
+#: plugins/usage_statistics/__init__.py:82
+msgid "Your ID is: "
+msgstr ""
+
+#: plugins/usage_statistics/__init__.py:101
 msgid "Usage statistics plug-in"
 msgstr ""
 
@@ -77,11 +81,11 @@ msgstr ""
 msgid "Read from source www.pihrt.com"
 msgstr ""
 
-#: plugins/usage_statistics/templates/usage_statistics.html:32
+#: plugins/usage_statistics/templates/usage_statistics.html:35
 msgid "Status"
 msgstr ""
 
-#: plugins/usage_statistics/templates/usage_statistics.html:41
+#: plugins/usage_statistics/templates/usage_statistics.html:44
 msgid "Cancel"
 msgstr ""
 

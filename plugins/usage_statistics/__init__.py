@@ -31,6 +31,7 @@ class StatusChecker(Thread):
 
         self.status = {
             'pageOK': _('Error: data cannot be downloaded from') +  ' www.pihrt.com!',
+            'pageID': ' ',
             'pageOKstate': False
             }
 
@@ -74,7 +75,15 @@ class StatusChecker(Thread):
 
            self.status['pageOK'] =  _('The data from') +  ' www.pihrt.com ' +  _('was downloaded correctly.') + ' ' + datetime_string()
            self.status['pageOKstate'] = True
-           
+
+           try:
+              f = open("./ospy/statistics/user_id", "r")
+              userID = (f.read()) 
+              self.status['pageID'] = _('Your ID is: ') + str(userID)
+           except:
+              #log.error(NAME, _('Usage statistics plug-in') + ':\n' + traceback.format_exc())
+              pass
+
 
         except Exception:
            self.status['pageOK'] = _('Error: data cannot be downloaded from') +  ' www.pihrt.com!'
