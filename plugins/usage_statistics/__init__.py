@@ -63,7 +63,7 @@ class StatusChecker(Thread):
            IDlenght = len(jsonStr['user'])
 
            log.clear(NAME)
-           for i in range(0, IDlenght):
+           for i in range(0, IDlenght-1):
               log.info(NAME, _('ID') + ': ' + str(jsonStr['user'][i]['id']))
               log.info(NAME, _('Log') + ': ' + str(jsonStr['user'][i]['log']))
               log.info(NAME, _('OSPy') + ': ' + str(jsonStr['user'][i]['ospy']))
@@ -72,7 +72,7 @@ class StatusChecker(Thread):
               log.info(NAME, _('System') + ': ' + str(jsonStr['user'][i]['system']))
               log.info(NAME, _('Python') + ': ' + str(jsonStr['user'][i]['python']) + '\n')
 
-           self.status['pageOK'] =  _('The data from') +  ' www.pihrt.com ' +  _('was downloaded correctly.') 
+           self.status['pageOK'] =  _('The data from') +  ' www.pihrt.com ' +  _('was downloaded correctly.') + ' ' + datetime_string()
            self.status['pageOKstate'] = True
            
 
