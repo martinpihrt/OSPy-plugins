@@ -99,7 +99,7 @@ class Sender(Thread):
                     status['volume']  = get_volume(level_in_tank)
                     status['percent'] = get_tank(level_in_tank)
                    
-                    if level_in_tank >= 0: # if I2C device exists
+                    if level_in_tank > 0: # if I2C device exists
                         log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
                         log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3.'))
 
@@ -113,7 +113,7 @@ class Sender(Thread):
                         log.info(NAME, str(status['datemaxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(status['maxlevel']) + ' ' + _('cm.'))   
                         log.info(NAME, str(status['dateminlevel']) + ' ' + _('Minimum Water level') + ': ' + str(status['minlevel']) + ' ' + _('cm.'))                             
 
-                        if level_in_tank <= int(tank_options['water_minimum']) and mini and not options.manual_mode and level_in_tank > -1:
+                        if level_in_tank <= int(tank_options['water_minimum']) and mini and not options.manual_mode:
                         
                             if tank_options['use_send_email']: 
                                send = True
@@ -218,7 +218,7 @@ def get_sonic_tank_cm(level):
            return tank_cm
 
         else:
-           return 0 
+           return -1 
     except:
         return -1 # if I2C device not exists
 
