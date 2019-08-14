@@ -6,13 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-07 13:21+0200\n"
-"PO-Revision-Date: 2018-05-25 09:13+0200\n"
+"PO-Revision-Date: 2019-08-14 13:15+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.0.5\n"
+"X-Generator: Poedit 2.2.3\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
@@ -43,8 +43,20 @@ msgid "This plugin shows information on a 16x2 character LCD with"
 msgstr "Toto rozšíření zobrazuje stavové zprávy na 16x2 znakovém LCD s"
 
 #: plugins/lcd_display/templates/lcd_display.html:23
-msgid "Automatically detects the display at the following I2C addresses"
-msgstr "Automaticky načte připojený displej na I2C adrese"
+msgid "Automatically detects the display at the following"
+msgstr "Automaticky detekuje displej na"
+
+#: plugins/lcd_display/templates/lcd_display.html:23
+msgid "addresses"
+msgstr "adrese"
+
+#: plugins/lcd_display/templates/lcd_display.html:25
+msgid "Warning: The LCD display must not have the same"
+msgstr "Upozornění: LCD displej nesmí mít stejnou"
+
+#: plugins/lcd_display/templates/lcd_display.html:25
+msgid "address as other extensions. For example, if you use the Button Control extension, it has a 0x27 address, like some LCD displays. If you have the same address, change it on the LCD board!"
+msgstr "adresu, jako jiná rozšíření. Pokud například používáte rozšíření Button Control, tak ten má adresu 0x27, tak jako některé LCD displeje. Pokud máte stejnou adresu, tak ji na LCD desce změňte!"
 
 #: plugins/lcd_display/templates/lcd_display.html:24
 msgid "Compatible with the HD44780 controller"
@@ -54,9 +66,21 @@ msgstr "Slučitelný s řadiči HD44780"
 msgid "Visit"
 msgstr "Navštivte"
 
+#: plugins/lcd_display/__init__.py:824
+msgid "I2C address has re-finded."
+msgstr "I2C adresa byla znovu nalezena."
+
 #: plugins/lcd_display/templates/lcd_display.html:29
-msgid "Use I2C LCD"
-msgstr "Používat I2C displej"
+msgid "LCD"
+msgstr "LCD"
+
+#: plugins/lcd_display/templates/lcd_display.html:29
+msgid "Use"
+msgstr "Používat"
+
+#: plugins/lcd_display/templates/lcd_display.html:144
+msgid "Re-find I2C address"
+msgstr "Znovu najít I2C adresu"
 
 #: plugins/lcd_display/templates/lcd_display.html:35
 msgid "HW version I2C PCF8574<->LCD"

@@ -34,7 +34,7 @@ lcd_options = PluginOptions(
     NAME,
     {
         "use_lcd": True,
-        "debug_line": False,
+        "debug_line": True,
         "address": 0,
         "d_system_name": True,
         "d_sw_version_date": True,
@@ -213,11 +213,11 @@ def get_report(index):
                 result = None
            elif index == 5:
              if lcd_options['d_ip']:
-                 ip = "http"
-                 if options.use_ssl:
-                    ip += "s"
-                 ip += "://" + helpers.get_ip() + ':' + str(options.web_port)
-                 result = str(ip)
+                ip = "http"
+                if options.use_ssl:
+                   ip += "s"
+                ip += "://" + helpers.get_ip() + ':' + str(options.web_port)
+                result = str(ip)
              else: 
                 result = None
 
@@ -401,8 +401,11 @@ def get_report(index):
                 result = None
            elif index == 5:
              if lcd_options['d_ip']:
-                 ip = helpers.get_ip()
-                 result = str(ip)
+                ip = "http"
+                if options.use_ssl:
+                   ip += "s"
+                ip += "://" + helpers.get_ip() + ':' + str(options.web_port)
+                result = str(ip)
              else: 
                 result = None
 
@@ -584,7 +587,10 @@ def get_report(index):
                 result = None
           elif index == 5:
              if lcd_options['d_ip']:
-                ip = helpers.get_ip()
+                ip = "http"
+                if options.use_ssl:
+                   ip += "s"
+                ip += "://" + helpers.get_ip() + ':' + str(options.web_port)
                 result = str(ip)
              else: 
                 result = None
@@ -808,6 +814,17 @@ class settings_page(ProtectedPage):
     """Load an html page for entering lcd adjustments."""
 
     def GET(self):
+        global lcd_sender
+
+        qdict = web.input()
+        refind = helpers.get_input(qdict, 'refind', False, lambda x: True)
+        if lcd_sender is not None and refind:
+            lcd_options['address'] = 0
+            log.clear(NAME)
+            log.info(NAME, _('I2C address has re-finded.'))
+            find_lcd_address()
+            raise web.seeother(plugin_url(settings_page), True)
+
         return self.plugin_render.lcd_display(lcd_options, log.events(NAME))
         
  

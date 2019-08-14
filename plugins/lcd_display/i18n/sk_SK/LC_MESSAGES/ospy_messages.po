@@ -6,13 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-05-25 09:02+CEST\n"
-"PO-Revision-Date: 2018-06-18 13:07+0200\n"
+"PO-Revision-Date: 2019-08-14 13:12+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.0.8\n"
+"X-Generator: Poedit 2.2.3\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: sk_SK\n"
@@ -29,8 +29,7 @@ msgstr "Nepodarilo sa importovať smbus."
 msgid "Could not find any PCF8574 controller."
 msgstr "Nepodarilo sa nájsť žiadny ovládač PCF8574."
 
-#: plugins/lcd_display/templates/lcd_display.html:3
-#: plugins/lcd_display/templates/lcd_display.html:21
+#: plugins/lcd_display/templates/lcd_display.html:3 plugins/lcd_display/templates/lcd_display.html:21
 msgid "LCD settings"
 msgstr "Nastavenie LCD"
 
@@ -39,8 +38,20 @@ msgid "This plugin shows information on a 16x2 character LCD with"
 msgstr "Tento doplnok zobrazuje informácie na 16 miestnom LCD displeji"
 
 #: plugins/lcd_display/templates/lcd_display.html:23
-msgid "Automatically detects the display at the following I2C addresses"
-msgstr "Automaticky rozpozná adresy I2C pre zobrazenia"
+msgid "Automatically detects the display at the following"
+msgstr "Automaticky rozpozná"
+
+#: plugins/lcd_display/templates/lcd_display.html:23
+msgid "addresses"
+msgstr "adresy"
+
+#: plugins/lcd_display/templates/lcd_display.html:25
+msgid "Warning: The LCD display must not have the same"
+msgstr "Varovanie: Displej LCD nesmie mať tu istu"
+
+#: plugins/lcd_display/templates/lcd_display.html:25
+msgid "address as other extensions. For example, if you use the Button Control extension, it has a 0x27 address, like some LCD displays. If you have the same address, change it on the LCD board!"
+msgstr "adresu ako iné rozšírenia. Napríklad, ak používate rozšírenie Button Control, má adresu 0x27, ako niektoré displeje LCD. Ak máte rovnakú adresu, zmeňte ju na doske LCD!"
 
 #: plugins/lcd_display/templates/lcd_display.html:24
 msgid "Compatible with the HD44780 controller"
@@ -54,9 +65,21 @@ msgstr "Navštívte"
 msgid "for more information"
 msgstr "pre viac informácií"
 
+#: plugins/lcd_display/__init__.py:824
+msgid "I2C address has re-finded."
+msgstr "I2C adresa bola prehledána."
+
 #: plugins/lcd_display/templates/lcd_display.html:29
-msgid "Use I2C LCD"
-msgstr "Použiti I2C LCD"
+msgid "LCD"
+msgstr "LCD"
+
+#: plugins/lcd_display/templates/lcd_display.html:29
+msgid "Use"
+msgstr "Použiti"
+
+#: plugins/lcd_display/templates/lcd_display.html:144
+msgid "Re-find I2C address"
+msgstr "Znova nájsť adresu I2C"
 
 #: plugins/lcd_display/templates/lcd_display.html:35
 msgid "HW version I2C PCF8574<->LCD"
@@ -67,12 +90,8 @@ msgid "Lower 4 bits of expander are commands bits"
 msgstr "Dolné 4 bity expandéra sú príkazové bity"
 
 #: plugins/lcd_display/templates/lcd_display.html:39
-msgid ""
-"Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD2004 "
-"board)"
-msgstr ""
-"Horné 4 bity expandéra sú príkazové bity A P0-4 P1-5 P2-6 (Použite pre dosku "
-"LCD2004)"
+msgid "Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD2004 board)"
+msgstr "Horné 4 bity expandéra sú príkazové bity A P0-4 P1-5 P2-6 (Použite pre dosku LCD2004)"
 
 #: plugins/lcd_display/templates/lcd_display.html:40
 msgid "Top 4 bits of expander are commands bits AND P0-6 P1-5 P2-4"
