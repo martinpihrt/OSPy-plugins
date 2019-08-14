@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-08 12:37+0200\n"
-"PO-Revision-Date: 2019-08-01 15:05+0200\n"
+"PO-Revision-Date: 2019-08-14 11:51+0200\n"
 "Language-Team: pihrt.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -16,6 +16,10 @@ msgstr ""
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
+
+#: plugins/system_info/__init__.py:88
+msgid "Warning: MCP23017 found for Button Control plugin (0x27). The address for PCF8574 must be different, not 0x27! If it is the same, change it on the LCD display board."
+msgstr "Upozornění: MCP23017 byl nalezen pro Button Control (0x27). Adresa pro PCF8574 musí být odlišná, ne 0x27! Pokud je stejná, změňte ji na LCD displeji."
 
 #: plugins/system_info/__init__.py:65
 msgid "Found ATMEGA328 for Air Temperature and Humidity Monitor plugin (0x03)."

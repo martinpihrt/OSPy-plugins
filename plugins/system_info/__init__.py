@@ -13,6 +13,10 @@ from ospy.options import options
 import subprocess
 from ospy.log import log
 
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 import i18n
 
 NAME = 'System Information'
@@ -80,6 +84,8 @@ def get_overview():
         search_range = {addr: 'PCF8574' for addr in range(32, 40)}
         search_range.update({addr: 'PCF8574A' for addr in range(56, 63)})    
         if find_address(search_range, range=True):
+            if find_address(0x27):
+                result.append(_('Warning: MCP23017 found for Button Control plugin (0x27). The address for PCF8574 must be different, not 0x27! If it is the same, change it on the LCD display board.'))
             result.append(_('Found PCF8574 for LCD Display plugin (0x20-0x28, 0x38-0x3F).'))
 
         # I2C test for Wind Speed Monitor/ Water Meter meter plugin
