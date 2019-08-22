@@ -28,14 +28,18 @@ tank_options = PluginOptions(
     NAME,
     {
        'use_sonic': True,      # use sonic sensor
-       'distance_bottom': 179, # sensor <-> bottom tank
-       'distance_top': 86,     # sensor <-> top tank
-       'water_minimum': 40,    # water level <-> bottom tank
+       'distance_bottom': 213, # sensor <-> bottom tank
+       'distance_top': 52,     # sensor <-> top tank
+       'water_minimum': 60,    # water level <-> bottom tank
        'diameter': 98,         # cylinder diameter for volume calculation
        'use_stop':      False, # not stop water system
-       'use_send_email': False,# not send email
+       'use_send_email': True, # send email
        'emlsubject': _('Report from OSPy TANK plugin'),
-	     'address_ping': 0x04    # device address for sonic ping HW board
+	   'address_ping': 0x04,   # device address for sonic ping HW board
+       'log_maxlevel': 400,    # maximal level (log)
+       'log_minlevel': 0,      # minimal level (log)
+       'log_date_maxlevel': datetime_string(), # maximal level (date log)
+       'log_date_minlevel': datetime_string()  # minimal level (date log)
     }
 )
 
@@ -52,14 +56,10 @@ class Sender(Thread):
 
         global status
 
-        status['maxlevel'] = 0.0
-        status['minlevel'] = 400.0
         status['level']    = -1
         status['percent']  = -1
         status['ping']     = -1
         status['volume']   = -1
-        status['datemaxlevel'] = datetime_string()
-        status['dateminlevel'] = datetime_string()
 
         self._sleep_time = 0
         self.start()
@@ -81,6 +81,9 @@ class Sender(Thread):
         two_text = True
         send = False
         mini = True
+        sonic_cm = get_sonic_cm()
+        level_in_tank = get_sonic_tank_cm(sonic_cm)
+        self._sleep(5)
 
         while not self._stop.is_set():
             try:
@@ -103,29 +106,46 @@ class Sender(Thread):
                         log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
                         log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3.'))
 
-                        if level_in_tank > status['maxlevel']:   # maximum level
-                            status['maxlevel']  = level_in_tank
-                            status['datemaxlevel'] = datetime_string()
-                        if level_in_tank < status['minlevel']:   # minimum level
-                            status['minlevel']  = level_in_tank
-                            status['dateminlevel'] = datetime_string()
+                        qdict = {}
+                        if level_in_tank > tank_options['log_maxlevel']:   # maximum level
+                            if tank_options['use_sonic']:
+                                qdict['use_sonic'] = u'on' 
+                            if tank_options['use_stop']:
+                                qdict['use_stop']  = u'on'
+                            if tank_options['use_send_email']:     
+                                qdict['use_send_email'] = u'on' 
+                            qdict['log_maxlevel'] = level_in_tank
+                            qdict['log_date_maxlevel'] = datetime_string()
+                            tank_options.web_update(qdict)
 
-                        log.info(NAME, str(status['datemaxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(status['maxlevel']) + ' ' + _('cm.'))   
-                        log.info(NAME, str(status['dateminlevel']) + ' ' + _('Minimum Water level') + ': ' + str(status['minlevel']) + ' ' + _('cm.'))                             
+                        if level_in_tank < tank_options['log_minlevel']:   # minimum level
+                            if tank_options['use_sonic']:
+                                qdict['use_sonic'] = u'on' 
+                            if tank_options['use_stop']:
+                                qdict['use_stop']  = u'on'
+                            if tank_options['use_send_email']:     
+                                qdict['use_send_email'] = u'on' 
+                            qdict['log_minlevel'] = level_in_tank
+                            qdict['log_date_minlevel'] = datetime_string()
+                            tank_options.web_update(qdict)
+                            
+                        log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
+                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')                              
 
                         if level_in_tank <= int(tank_options['water_minimum']) and mini and not options.manual_mode:
-                        
-                            if tank_options['use_send_email']: 
-                               send = True
-                               mini = False 
+                                self._sleep(5)                                             # wait 5 seconds and measure again
+                                level_in_tank = get_sonic_tank_cm(sonic_cm)                # we get a new value
+                                if level_in_tank <= int(tank_options['water_minimum']):    # yes, the value is lower -> send email                            
+                                    if tank_options['use_send_email']:                     # if enabled email
+                                        send = True                                        # send
+                                        mini = False 
     
-                            log.info(NAME, datetime_string() + ' ' + _('ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _('cm') + '!')
-                            if tank_options['use_stop']:                            
-                               options.scheduler_enabled = False                  # disable scheduler
-                               log.finish_run(None)                               # save log
-                               stations.clear()                                   # set all station to off  
-                                          
-
+                                    if tank_options['use_stop']:                           # if stop scheduler                    
+                                        options.scheduler_enabled = False                  # disable scheduler
+                                        log.finish_run(None)                               # save log
+                                        stations.clear()                                   # set all station to off                                          
+                                        log.info(NAME, datetime_string() + ' ' + _('ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _('cm') + '!')
+                                   
                         if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: 
                             mini = True
                     else:
@@ -295,17 +315,27 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global sender, status
+        global sender
 
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
+
         if sender is not None and reset:
-            status['min'] = 400.00
-            status['max'] = 0.00
-            status['dateminlevel'] = datetime_string()
-            status['datemaxlevel'] = datetime_string()
+            qdict['log_minlevel'] = 400
+            qdict['log_maxlevel'] = 0
+            qdict['log_date_maxlevel'] = datetime_string()
+            qdict['log_date_minlevel'] = datetime_string()
+            if tank_options['use_sonic']:
+                qdict['use_sonic'] = u'on' 
+            if tank_options['use_stop']:
+                qdict['use_stop']  = u'on'
+            if tank_options['use_send_email']:     
+                qdict['use_send_email'] = u'on' 
+                
+            tank_options.web_update(qdict)    
             log.clear(NAME)
             log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
+            
             raise web.seeother(plugin_url(settings_page), True)
 
         return self.plugin_render.tank_monitor(tank_options, log.events(NAME))
