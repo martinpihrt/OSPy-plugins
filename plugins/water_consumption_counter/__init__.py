@@ -54,8 +54,8 @@ class Sender(Thread):
 
         global status 
         
-        status['sum1%d'] = plugin_options['sum_one'] #round(plugin_options['sum_one'],2)
-        status['sum2%d'] = plugin_options['sum_two'] #round(plugin_options['sum_two'],2)
+        status['sum1%d'] = round(plugin_options['sum_one'],2)
+        status['sum2%d'] = round(plugin_options['sum_two'],2)
         self._sleep_time = 0
         self.start()
 
@@ -159,7 +159,11 @@ def notify_master_one_off(name, **kw):
     master_one_stop  = datetime.datetime.now()
     master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() # run time in seconds
     difference = to_decimal(master_one_time_delta) * to_decimal(plugin_options['liter_per_sec_master_one'])
-    plugin_options['sum_one'] =  plugin_options['sum_one'] + round(difference,2)  # to 2 places
+    qdict = {}
+    qdict['sum_one'] =  plugin_options['sum_one'] + round(difference,2)  # to 2 places
+    if plugin_options['sendeml']:     
+       qdict['sendeml'] = u'on'
+    plugin_options.web_update(qdict)
 
     if plugin_options['sum_one'] < 1000:
         status['sum1%d'] = round(to_decimal(plugin_options['sum_one']),2)                      # in liters
@@ -189,7 +193,11 @@ def notify_master_two_off(name, **kw):
     master_two_stop  = datetime.datetime.now()
     master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
     difference = to_decimal(master_two_time_delta) * to_decimal(plugin_options['liter_per_sec_master_two'])
-    plugin_options['sum_two'] =  plugin_options['sum_two'] + round(difference,2)  # to 2 places
+    qdict = {}
+    qdict['sum_two'] =  plugin_options['sum_two'] + round(difference,2)  # to 2 places
+    if plugin_options['sendeml']:     
+       qdict['sendeml'] = u'on'
+    plugin_options.web_update(qdict)
   
     if plugin_options['sum_two'] < 1000:
         status['sum2%d'] = round(to_decimal(plugin_options['sum_two']),2) 
@@ -218,9 +226,12 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
         if sender is not None and reset:
-            plugin_options['sum_one'] = 0
-            plugin_options['sum_two'] = 0
-            plugin_options['last_reset'] = datetime_string()
+            qdict['sum_one'] = 0
+            qdict['sum_two'] = 0
+            qdict['last_reset'] = datetime_string()
+            if plugin_options['sendeml']:     
+                qdict['sendeml'] = u'on'
+            plugin_options.web_update(qdict)
             status['sum1%d'] = 0.00
             status['sum2%d'] = 0.00
             log.clear(NAME)

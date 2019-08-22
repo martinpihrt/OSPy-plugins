@@ -35,7 +35,7 @@ tank_options = PluginOptions(
        'use_stop':      False, # not stop water system
        'use_send_email': True, # send email
        'emlsubject': _('Report from OSPy TANK plugin'),
-	   'address_ping': 0x04,   # device address for sonic ping HW board
+       'address_ping': 0x04,   # device address for sonic ping HW board
        'log_maxlevel': 400,    # maximal level (log)
        'log_minlevel': 0,      # minimal level (log)
        'log_date_maxlevel': datetime_string(), # maximal level (date log)
@@ -278,7 +278,7 @@ def maping(x, in_min, in_max, out_min, out_max):
 def get_all_values():
     global status
 
-    return status['level'] , status['percent'], status['ping'], status['volume'], status['minlevel'], status['maxlevel'] 
+    return status['level'] , status['percent'], status['ping'], status['volume'], tank_options['log_minlevel'], tank_options['log_maxlevel'], tank_options['log_date_minlevel'], tank_options['log_date_maxlevel']
    
  
 def send_email(msg, msglog):
