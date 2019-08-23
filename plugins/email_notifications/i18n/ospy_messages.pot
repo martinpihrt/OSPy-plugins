@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2019-08-04 11:40+CEST\n"
+"POT-Creation-Date: 2019-08-23 08:47+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,7 +39,7 @@ msgstr ""
 
 #: plugins/email_notifications/__init__.py:99
 #: plugins/email_notifications/__init__.py:121
-#: plugins/email_notifications/__init__.py:135
+#: plugins/email_notifications/__init__.py:137
 msgid "System"
 msgstr ""
 
@@ -57,80 +57,105 @@ msgstr ""
 msgid "System detected rain."
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:136
-#: plugins/email_notifications/__init__.py:141
-msgid "Finished run"
-msgstr ""
-
-#: plugins/email_notifications/__init__.py:137
-#: plugins/email_notifications/__init__.py:141
-msgid "Program"
-msgstr ""
-
 #: plugins/email_notifications/__init__.py:138
-#: plugins/email_notifications/__init__.py:142
-msgid "Station"
+#: plugins/email_notifications/__init__.py:143
+msgid "Finished run"
 msgstr ""
 
 #: plugins/email_notifications/__init__.py:139
 #: plugins/email_notifications/__init__.py:143
-msgid "Start time"
+msgid "Program"
 msgstr ""
 
 #: plugins/email_notifications/__init__.py:140
 #: plugins/email_notifications/__init__.py:144
+msgid "Station"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:141
+#: plugins/email_notifications/__init__.py:145
+msgid "Start time"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:142
+#: plugins/email_notifications/__init__.py:146
 msgid "Duration"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:154
-msgid "Level"
-msgstr ""
-
-#: plugins/email_notifications/__init__.py:154
-#: plugins/email_notifications/__init__.py:156
-msgid "cm"
-msgstr ""
-
-#: plugins/email_notifications/__init__.py:156
-msgid "Ping"
-msgstr ""
-
 #: plugins/email_notifications/__init__.py:157
-msgid "Volume"
+msgid "Measured from day"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:157
-msgid "m3"
-msgstr ""
-
-#: plugins/email_notifications/__init__.py:159
-msgid "Error - I2C device not found!"
+#: plugins/email_notifications/__init__.py:158
+msgid "Master Station"
 msgstr ""
 
 #: plugins/email_notifications/__init__.py:161
-#: plugins/email_notifications/__init__.py:163
+#: plugins/email_notifications/__init__.py:169
+msgid "Liter"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:164
+#: plugins/email_notifications/__init__.py:172
+#: plugins/email_notifications/__init__.py:194
+msgid "m3"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:166
+msgid "Second Master Station"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:174
+#: plugins/email_notifications/__init__.py:176
+msgid "Water Consumption Counter"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:191
+msgid "Level"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:191
+#: plugins/email_notifications/__init__.py:193
+msgid "cm"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:193
+msgid "Ping"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:194
+msgid "Volume"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:196
+msgid "Error - I2C device not found!"
+msgstr ""
+
+#: plugins/email_notifications/__init__.py:198
+#: plugins/email_notifications/__init__.py:200
 msgid "Water"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:162
-#: plugins/email_notifications/__init__.py:163
+#: plugins/email_notifications/__init__.py:199
+#: plugins/email_notifications/__init__.py:200
 msgid "Water level in tank"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:171
-#: plugins/email_notifications/__init__.py:172
+#: plugins/email_notifications/__init__.py:208
+#: plugins/email_notifications/__init__.py:209
 msgid "Temperature DS1-DS6"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:188
+#: plugins/email_notifications/__init__.py:225
 msgid "E-mail plug-in"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:262
+#: plugins/email_notifications/__init__.py:300
 msgid "E-mail plug-in is not properly configured!"
 msgstr ""
 
-#: plugins/email_notifications/__init__.py:283
+#: plugins/email_notifications/__init__.py:321
+#: plugins/email_notifications/__init__.py:322
 msgid "This is test e-mail from e-mail notification plugin."
 msgstr ""
 

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-06-21 07:13+CEST\n"
-"PO-Revision-Date: 2019-07-07 17:46+0200\n"
+"PO-Revision-Date: 2019-08-23 08:36+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -71,7 +71,6 @@ msgstr "Pro tuto funkci je vyžadováno rozšíření Email notifications"
 #: plugins/water_consumption_counter/templates/water_consumption_counter.html:46
 msgid "E-mail subject"
 msgstr "Předmět e-mailu"
-
 
 #: plugins/water_consumption_counter/__init__.py:110
 msgid "Master station 1 running, please wait..."
@@ -151,3 +150,6 @@ msgstr "Zpět"
 msgid "Reset Counter"
 msgstr "Vynulovat čítač"
 
+#: plugins/water_consumption_counter/templates/water_consumption_counter.html:72
+msgid "Last counter reset"
+msgstr "Poslední reset čítače"

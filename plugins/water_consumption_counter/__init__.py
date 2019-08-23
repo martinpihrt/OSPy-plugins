@@ -30,7 +30,7 @@ plugin_options = PluginOptions(
     { ### here is your plugin options ###
     'liter_per_sec_master_one': 0.45, # l/s  
     'liter_per_sec_master_two': 0.01, # l/s
-    'last_reset': '-',                # from helpers datetime_string
+    'last_reset': datetime_string(),  # last reset counter
     'sum_one': 0.00,                  # sum for master 1
     'sum_two': 0.00,                  # sum for master 2
     'sendeml': False,
@@ -40,7 +40,6 @@ plugin_options = PluginOptions(
 
 master_one_start = datetime.datetime.now() # start time for master 1
 master_two_start = datetime.datetime.now() # start time for master 2
-status = { }
 
 ################################################################################
 # Main function loop:                                                          #
@@ -51,11 +50,6 @@ class Sender(Thread):
         Thread.__init__(self)
         self.daemon = True
         self._stop = Event()
-
-        global status 
-        
-        status['sum1%d'] = round(plugin_options['sum_one'],2)
-        status['sum2%d'] = round(plugin_options['sum_two'],2)
         self._sleep_time = 0
         self.start()
 
@@ -154,21 +148,17 @@ def notify_master_one_on(name, **kw):
 
 ### master one off ###
 def notify_master_one_off(name, **kw):
-    global status
     log.info(NAME, datetime_string() + ': ' + _('Master station 1 stopped, counter finished...')) 
     master_one_stop  = datetime.datetime.now()
     master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() # run time in seconds
     difference = to_decimal(master_one_time_delta) * to_decimal(plugin_options['liter_per_sec_master_one'])
+
     qdict = {}
     qdict['sum_one'] =  plugin_options['sum_one'] + round(difference,2)  # to 2 places
     if plugin_options['sendeml']:     
        qdict['sendeml'] = u'on'
-    plugin_options.web_update(qdict)
 
-    if plugin_options['sum_one'] < 1000:
-        status['sum1%d'] = round(to_decimal(plugin_options['sum_one']),2)                      # in liters
-    else:
-        status['sum1%d'] = round(to_decimal(plugin_options['sum_one']) / to_decimal(1000.0),2) # in m3
+    plugin_options.web_update(qdict)  
 
     msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _('liter') + '</p>'
     msglog = _('Water Consumption Counter plug-in') + ': ' + _('Water Consumption for master 1') + ': ' + str(round(difference,2)) + ' ' + _('liter')
@@ -188,29 +178,31 @@ def notify_master_two_on(name, **kw):
 
 ### master two off ###
 def notify_master_two_off(name, **kw):
-    global status
     log.info(NAME, datetime_string() + ': ' + _('Master station 2 stopped, counter finished...')) 
     master_two_stop  = datetime.datetime.now()
     master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
     difference = to_decimal(master_two_time_delta) * to_decimal(plugin_options['liter_per_sec_master_two'])
+
     qdict = {}
     qdict['sum_two'] =  plugin_options['sum_two'] + round(difference,2)  # to 2 places
     if plugin_options['sendeml']:     
        qdict['sendeml'] = u'on'
+
     plugin_options.web_update(qdict)
   
-    if plugin_options['sum_two'] < 1000:
-        status['sum2%d'] = round(to_decimal(plugin_options['sum_two']),2) 
-    else:
-        status['sum2%d'] = round(to_decimal(plugin_options['sum_two']) / to_decimal(1000.0),2)
-
     msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _('liter') + '</p>'
     msglog = _('Water Consumption Counter plug-in') + ': ' + _('Water Consumption for master 2') + ': ' + str(round(difference,2)) + ' ' + _('liter')
     try:
         if plugin_options['sendeml']:
         	send_email(msg, msglog)
     except Exception:
-        log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())        
+        log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())      
+
+
+### return all consum counter as summar ###
+def get_all_values():
+
+    return plugin_options['last_reset'], plugin_options['sum_one'], plugin_options['sum_two']
 
 
 ################################################################################
@@ -232,13 +224,12 @@ class settings_page(ProtectedPage):
             if plugin_options['sendeml']:     
                 qdict['sendeml'] = u'on'
             plugin_options.web_update(qdict)
-            status['sum1%d'] = 0.00
-            status['sum2%d'] = 0.00
+
             log.clear(NAME)
             log.info(NAME, datetime_string() + ': ' + _('Counter has reseted'))
             raise web.seeother(plugin_url(settings_page), True)
 
-        return self.plugin_render.water_consumption_counter(plugin_options, status, log.events(NAME))       
+        return self.plugin_render.water_consumption_counter(plugin_options, log.events(NAME))       
 
     def POST(self):
         plugin_options.web_update(web.input()) ### update options from web ###

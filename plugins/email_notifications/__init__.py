@@ -144,9 +144,11 @@ class EmailSender(Thread):
                             logtext +=  _('Station') + u': %s\n' % sname + ', '
                             logtext +=  _('Start time') + ': %s \n' % datetime_string(run['start'])  + ', '
                             logtext +=  _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
-                            cm = None
+
+                            # Water Tank Monitor
                             try:
                                 from plugins import tank_monitor
+
                                 cm = tank_monitor.get_all_values()[0]
                                 percent = tank_monitor.get_all_values()[1]
                                 ping = tank_monitor.get_all_values()[2]
@@ -164,19 +166,56 @@ class EmailSender(Thread):
                                 body += '<br>' + _('Water level in tank') + ': %s \n' % (msg)
                                 logtext += ', ' + _('Water') + '-> ' + _('Water level in tank') + ': %s \n' % (msg)   
                             
-                            except Exception:
+                            except:
+                                pass
+
+
+                            # Water Consumption Counter
+                            try:
+                                self._sleep(2) # wait for the meter to save consumption
+
+                                from plugins import water_consumption_counter
+
+                                consum_from = water_consumption_counter.get_all_values()[0]
+                                consum_one  = water_consumption_counter.get_all_values()[1]
+                                consum_two  = water_consumption_counter.get_all_values()[2]
+
+                                msg = ' '
+                                msg +=  _('Measured from day') + ': ' + str(consum_from) + ', '
+                                msg +=  _('Master Station') + ': ' 
+                                if consum_one < 1000:
+                                    msg += str(consum_one) + ' ' 
+                                    msg += _('Liter') + ', '
+                                else: 
+                                    msg += str(round((consum_one/1000.0), 2)) + ' ' 
+                                    msg += _('m3') + ', '
+
+                                msg +=  _('Second Master Station') + ': '  
+                                if consum_two < 1000:
+                                    msg += str(consum_two) + ' '
+                                    msg += _('Liter') 
+                                else: 
+                                    msg += str(round((consum_two/1000.0), 2)) + ' ' 
+                                    msg += _('m3')
+
+                                body += '<br><b>'  + _('Water Consumption Counter') + '</b>'                                    
+                                body += '<br>%s \n' % (msg)
+                                logtext += ', ' + _('Water Consumption Counter') + ': %s \n' % (msg)   
+                            
+                            except:
                                 pass
                                 
-                            result = None    
+                            # Air Temperature and Humidity Monitor   
                             try:
                                 from plugins import air_temp_humi    
+
                                 body += '<br><b>' + _('Temperature DS1-DS6') + '</b>'
                                 logtext += ', ' + _('Temperature DS1-DS6') + '-> '
                                 for i in range(0, air_temp_humi.plugin_options['ds_used']):  
                                     body += '<br>' + u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n'  
                                     logtext +=  u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + ' ' 
 
-                            except Exception:
+                            except:
                                 pass
 
                         self.try_mail(body, logtext)
@@ -249,6 +288,7 @@ def email(text, subject=None, attach=None):
 
         if len(recipients_list) > 0:
             recipients_str = ', '.join(recipients_list)
+
             msg['To'] = recipients_str
             if attach is not None and os.path.isfile(attach) and os.access(attach, os.R_OK):  # If insert attachments
                 part = MIMEBase('application', 'octet-stream')

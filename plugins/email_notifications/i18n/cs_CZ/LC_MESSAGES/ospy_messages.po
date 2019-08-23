@@ -6,13 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-08 06:35+0200\n"
-"PO-Revision-Date: 2016-06-08 07:23+0200\n"
+"PO-Revision-Date: 2019-08-23 08:51+0200\n"
 "Language-Team: pihrt.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+"X-Generator: Poedit 2.2.3\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
@@ -156,3 +156,31 @@ msgstr "Odesláno"
 
 msgid "Unsent"
 msgstr "Neodesláno"
+
+#: plugins/email_notifications/__init__.py:157
+msgid "Measured from day"
+msgstr "Měřeno od dne"
+
+#: plugins/email_notifications/__init__.py:158
+msgid "Master Station"
+msgstr "Hlavní stanice"
+
+#: plugins/email_notifications/__init__.py:161
+#: plugins/email_notifications/__init__.py:169
+msgid "Liter"
+msgstr "Litr"
+
+#: plugins/email_notifications/__init__.py:164
+#: plugins/email_notifications/__init__.py:172
+#: plugins/email_notifications/__init__.py:194
+msgid "m3"
+msgstr "m3"
+
+#: plugins/email_notifications/__init__.py:166
+msgid "Second Master Station"
+msgstr "Druhá hlavní stanice"
+
+#: plugins/email_notifications/__init__.py:174
+#: plugins/email_notifications/__init__.py:176
+msgid "Water Consumption Counter"
+msgstr "Čítač spotřeby vody"
