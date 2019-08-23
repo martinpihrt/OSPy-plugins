@@ -1,0 +1,60 @@
+$def with(plugin_options, events)
+
+$var title: $_('MQTT Slave Plugin')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('MQTT Slave Plugin settings')</div>
+    <p>$_('This MQTT Relies on the base MQTT plugin.')</p>
+    <p>$_('Allows this OSPy system to be controlled by another (master) OSPy system over MQTT.')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('mqtt_slave.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use MQTT'):</td>
+                <td>
+                    <input name='use_mqtt' type='checkbox'${" checked" if plugin_options['use_mqtt'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Zone topic'):</td>
+                <td title="$_('The topic to subscribe to for control commands.')">
+                   <input name='control_topic' type='text' value='$plugin_options["control_topic"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('First station number'):</td>
+                <td title="$_('The number from the master of this slaves first station')">
+                   <input name='first_station' type='number' value='$plugin_options["first_station"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Station count'):</td>
+                <td title="$_('The number of station this slave uses.')">
+                   <input name='station_count' type='number' value='$plugin_options["station_count"]'>
+                </td>
+            </tr>                        
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
