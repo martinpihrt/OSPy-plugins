@@ -13,18 +13,14 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
-        jQuery("button#cReset").click(function(){
-            jQuery("#pluginForm2").submit();       
-        }); 
-
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_('Water meter settings')</div>
-    <p>$_('This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50').</p>
+    <p>$_('This plugin needs an enabled') I&sup2;C $_('bus and connected counter PCF8583 on') I&sup2;C $_('address 0x50 or 0x51.')</p>
     <p>$_('This plugin measures the amount of water flowing per sec, min, hour and the total amount of water').</p>
-    <p>$_('Visit') <a href="http://pihrt.com/elektronika/298-moje-raspberry-pi-plugin-prutokomer">Martin Pihrt's blog</a> $_('for more information').</p><br>
+    <p>$_('Visit') <a href="http://pihrt.com/elektronika/298-moje-raspberry-pi-plugin-prutokomer">Martin Pihrt blog</a> $_('for more information').</p><br>
     <form id="pluginForm" action="$plugins.plugin_url('water_meter.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -34,7 +30,7 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('I2C address 0x50'):</td>
+                <td style='text-transform: none;'>I&sup2;C $_('address 0x50'):</td>
                 <td>
                     <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}> ($_('if checked 0x51'))  
                 </td>
@@ -46,9 +42,9 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Water meter state'):</td>
-                <td>
-                   $status['meter'] ($_('liter per second'))
+                <td style='text-transform: none; vertical-align: top;'>$_('Water meter state'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                   <b>$status['meter']</b> ($_('liter per second'))
                 </td>
             </tr>
             <tr>
@@ -59,13 +55,9 @@ $var page: plugins
             </tr>
         </table>
     </form>
-    <form id="pluginForm2" action="$plugins.plugin_url('water_meter.reset_page')" method="post">
-    </form>
-
 </div>
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <button id="cReset" class="cancel danger">$_('Reset summary')</button>
-
+    <a href="?reset"     class="button cancel danger">$_('Reset summary')</a>
 </div>

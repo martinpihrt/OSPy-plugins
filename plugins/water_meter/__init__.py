@@ -14,7 +14,8 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision
+from ospy.helpers import datetime_string
+from ospy import helpers
 
 import i18n
 
@@ -23,10 +24,11 @@ LINK = 'settings_page'
 
 options = PluginOptions(
     NAME,
-    {'enabled': False,
-     'pulses': 10.0,
-     'address': False, # True = 0x51, False = 0x50 for PCF8583
-     'sum': 0
+    {'enabled': False,                          # enable or disable this plugin
+     'pulses': 10.0,                            # pulses/liter
+     'address': False,                          # True = 0x51, False = 0x50 for PCF8583
+     'sum': 0,                                  # saved summary
+     'log_date_last_reset':  datetime_string()  # last summary reset
     }
 )
 
@@ -64,8 +66,8 @@ class WaterSender(Thread):
     def run(self):
         try:
             import smbus  # for PCF 8583
+            self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
 
-            self.bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         except ImportError:
             log.warning(NAME, _('Could not import smbus.'))
 
@@ -102,7 +104,7 @@ class WaterSender(Thread):
                             log.info(NAME, _('Please wait for min/hour data...'))
                             log.info(NAME, '________________________________')
                             log.info(NAME, _('Water in liters'))
-                            log.info(NAME, _('Saved water summary') + ': ' + str(sum_water))
+                            log.info(NAME, str(options['log_date_last_reset']) + ' '+ _('Saved water summary') + ': ' + str(sum_water))
 
                     if self.pcf is not None:
                         sum_water = sum_water + val
@@ -116,11 +118,18 @@ class WaterSender(Thread):
                             log.info(NAME, _('Water in liters'))
                             log.info(NAME, _('Water per minutes') + ': ' + str(minute_water))
                             log.info(NAME, _('Water per hours') + ': ' + str(hour_water))
-                            log.info(NAME, _('Water summary') + ': ' + str(sum_water))
+                            log.info(NAME, str(options['log_date_last_reset']) + ' ' + _('Water summary') + ': ' + str(sum_water))
                             minute_water = 0
 
-                            options.__setitem__('sum',
-                                                sum_water)          # save summary water to options only 1 minutes
+                            # save summary water to options only 1 minutes
+                            # options.__setitem__('sum', sum_water)  
+                            qdict = {}       
+                            if options['enabled']:
+                                qdict['enabled'] = u'on' 
+                            if options['address']:
+                                qdict['address']  = u'on'
+                            qdict['sum'] = sum_water
+                            options.web_update(qdict)   
 
                         if actual_time - last_hour_time >= 3600:          # hour counter
                             last_hour_time = actual_time
@@ -161,35 +170,66 @@ def stop():
         water_sender.join()
         water_sender = None
 
+
+def try_io(call, tries=10):
+    assert tries > 0
+    error = None
+    result = None
+
+    while tries:
+        try:
+            result = call()
+        except IOError as e:
+            error = e
+            tries -= 1
+            time.sleep(0.01)
+        else:
+            break
+
+    if not tries:
+        raise error
+
+    return result        
+
+
 def set_counter(i2cbus):
     try:
         if options['address']:
-            pcf_addr = 0x51
+            addr = 0x51
         else:
-            pcf_addr = 0x50 
-        i2cbus.write_byte_data(pcf_addr, 0x00, 0x20) # status registr setup to "EVENT COUNTER"
-        i2cbus.write_byte_data(pcf_addr, 0x01, 0x00) # reset LSB
-        i2cbus.write_byte_data(pcf_addr, 0x02, 0x00) # reset midle Byte
-        i2cbus.write_byte_data(pcf_addr, 0x03, 0x00) # reset MSB
-        log.info(NAME, _('Setup PCF8583 as event counter is OK'))
+            addr = 0x50 
+        #i2cbus.write_byte_data(addr, 0x00, 0x20) # status registr setup to "EVENT COUNTER"
+        #i2cbus.write_byte_data(addr, 0x01, 0x00) # reset LSB
+        #i2cbus.write_byte_data(addr, 0x02, 0x00) # reset midle Byte
+        #i2cbus.write_byte_data(addr, 0x03, 0x00) # reset MSB
+        try_io(lambda: i2cbus.write_byte_data(addr, 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
+        try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
+        try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
+        try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB        
+        log.debug(NAME, _('Setup PCF8583 as event counter is OK'))
         return 1  
     except:
         log.error(NAME, _('Water Meter plug-in') + ':\n' + _('Setup PCF8583 as event counter - FAULT'))
+        log.error(NAME, _('Water Meter plug-in') + traceback.format_exc())
         return None
 
 def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses per second
     try:
         if options['address']:
-            pcf_addr = 0x51
+            addr = 0x51
         else:
-            pcf_addr = 0x50 
+            addr = 0x50 
         # reset PCF8583
-        i2cbus.write_byte_data(pcf_addr, 0x01, 0x00) # reset LSB
-        i2cbus.write_byte_data(pcf_addr, 0x02, 0x00) # reset midle Byte
-        i2cbus.write_byte_data(pcf_addr, 0x03, 0x00) # reset MSB
+        #i2cbus.write_byte_data(addr, 0x01, 0x00) # reset LSB
+        #i2cbus.write_byte_data(addr, 0x02, 0x00) # reset midle Byte
+        #i2cbus.write_byte_data(addr, 0x03, 0x00) # reset MSB
+        try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
+        try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
+        try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB        
         time.sleep(1)
         # read number (pulses in counter) and translate to DEC
-        counter = i2cbus.read_i2c_block_data(pcf_addr, 0x00)
+        #counter = i2cbus.read_i2c_block_data(addr, 0x00)
+        counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
         num1 = (counter[1] & 0x0F)             # units
         num10 = (counter[1] & 0xF0) >> 4       # dozens
         num100 = (counter[2] & 0x0F)           # hundred
@@ -199,7 +239,11 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
         return pulses
     except:
+    	log.error(NAME, _('Water Meter plug-in') + traceback.format_exc())
         return 0
+
+def get_all_values():
+    return options['sum'], options['log_date_last_reset']             
 
 ################################################################################
 # Web pages:                                                                   #
@@ -209,26 +253,30 @@ class settings_page(ProtectedPage):
     """Load an html page for entering water meter adjustments."""
 
     def GET(self):
+        global water_sender
+
+        qdict = web.input()
+        reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
+
+        if water_sender is not None and reset:
+            if options['enabled']:
+                qdict['enabled'] = u'on' 
+            if options['address']:
+                qdict['address']  = u'on'
+            qdict['sum'] = 0
+            qdict['log_date_last_reset'] =  datetime_string()
+                
+            options.web_update(qdict)    
+            log.clear(NAME)
+            log.info(NAME, str(options['log_date_last_reset']) + ' ' + _('Water summary was reseting...'))
+            log.info(NAME, _('Please wait for min/hour data...'))
+            
+            raise web.seeother(plugin_url(settings_page), True)
+
         return self.plugin_render.water_meter(options, water_sender.status, log.events(NAME))
 
     def POST(self):
         options.web_update(web.input())
-
-        if water_sender is not None:
-            water_sender.update()
-
-        raise web.seeother(plugin_url(settings_page), True)
-
-
-class reset_page(ProtectedPage):
-    """Reset summary counter."""
-
-    def POST(self):
-        options.__setitem__('sum', 0)
-        log.clear(NAME)
-        log.info(NAME, _('Water summary was reseting...'))
-        log.info(NAME, _('Water in liters'))
-        log.info(NAME, _('Water summary') + ': ' + str(options['sum']))
 
         if water_sender is not None:
             water_sender.update()
