@@ -6,20 +6,48 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-07-11 16:51+CEST\n"
-"PO-Revision-Date: 2019-05-16 19:03+0200\n"
+"PO-Revision-Date: 2019-08-27 16:33+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.2.1\n"
+"X-Generator: Poedit 2.2.3\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: sk_SK\n"
 
-#: plugins/wind_monitor/__init__.py:213
-msgid "Found PCF8583 on address"
-msgstr "Nájdené PCF8583 na adrese"
+#: plugins/wind_monitor/__init__.py:41 plugins/wind_monitor/__init__.py:311
+msgid "Measuring..."
+msgstr "Meranie..."
+
+#: plugins/wind_monitor/__init__.py:117
+msgid "Maximal speed"
+msgstr "Maximálna rýchlosť"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:23
+msgid "This plugin needs an enabled"
+msgstr "Tento plugin potrebuje povolenú"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:23
+msgid "address 0x50 or 0x51."
+msgstr "adrese 0x50 (0x51)."
+
+#: plugins/wind_monitor/templates/wind_monitor.html:23
+msgid "bus and connected counter PCF8583 on"
+msgstr "zbernicu a pripojený čítač PCF8583 na"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:35
+msgid "address 0x50"
+msgstr "adresa 0x50"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:97
+msgid "Reset max speed"
+msgstr "Smazat maximálnu rýchlosť"
+
+#: plugins/wind_monitor/__init__.py:315
+msgid "Maximal speed has reseted."
+msgstr "Počítadlo sa smazalo."
 
 msgid "Sent"
 msgstr "Odoslané"

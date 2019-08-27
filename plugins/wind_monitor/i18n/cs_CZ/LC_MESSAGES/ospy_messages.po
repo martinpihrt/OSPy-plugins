@@ -6,20 +6,48 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2016-06-15 11:42+0200\n"
-"PO-Revision-Date: 2018-07-22 19:02+0200\n"
+"PO-Revision-Date: 2019-08-27 16:27+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.0.9\n"
+"X-Generator: Poedit 2.2.3\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
 
-#: plugins/wind_monitor/__init__.py:213
-msgid "Found PCF8583 on address"
-msgstr "Nalezen obvod PCF8583 na adrese"
+#: plugins/wind_monitor/__init__.py:41 plugins/wind_monitor/__init__.py:311
+msgid "Measuring..."
+msgstr "Měření..."
+
+#: plugins/wind_monitor/__init__.py:117
+msgid "Maximal speed"
+msgstr "Maximální rychlost"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:23
+msgid "This plugin needs an enabled"
+msgstr "Toto rozšíření vyžaduje povolenou"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:23
+msgid "address 0x50 or 0x51."
+msgstr "adrese 0x50 nebo 0x51."
+
+#: plugins/wind_monitor/templates/wind_monitor.html:23
+msgid "bus and connected counter PCF8583 on"
+msgstr "sběrnici a připojený obvod PCF8583 na"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:35
+msgid "address 0x50"
+msgstr "adresa 0x50"
+
+#: plugins/wind_monitor/templates/wind_monitor.html:97
+msgid "Reset max speed"
+msgstr "Vynulovat maximální rychlost"
+
+#: plugins/wind_monitor/__init__.py:315
+msgid "Maximal speed has reseted."
+msgstr "Maximální rychlost byla vynulována."
 
 msgid "Sent"
 msgstr "Odeslané"
@@ -71,11 +99,8 @@ msgid "Wind speed monitor plug-in is disabled."
 msgstr "Rozšíření monitor rychlosti větru je zakázáno."
 
 #: plugins/wind_monitor/__init__.py:132
-msgid ""
-"System detected error: wind speed monitor. All stations set to OFF. Wind is"
-msgstr ""
-"Rozšíření monitor větru zjistilo chybu: všechny stanice jsou nyní vypnuté. "
-"Rychlost větru je"
+msgid "System detected error: wind speed monitor. All stations set to OFF. Wind is"
+msgstr "Rozšíření monitor větru zjistilo chybu: všechny stanice jsou nyní vypnuté. Rychlost větru je"
 
 #: plugins/wind_monitor/__init__.py:136
 msgid "Email was sent"
@@ -107,23 +132,12 @@ msgid "Wind Speed Monitor settings"
 msgstr "Monitor rychlosti větru nastavení"
 
 #: plugins/wind_monitor/templates/wind_monitor.html:22
-msgid ""
-"This plugin checked wind speed, if station is switched on and actual wind "
-"speed is > wind speed value in options, switches off all station  and sends "
-"email with error. Prevent safety for fault watering."
-msgstr ""
-"Toto rozšíření sleduje rychlost větru. Pokud je zapnuta některá stanice a "
-"aktuální rychlost větru je vyšší než maximální nastavená rychlost dojde k "
-"vypnutí všech stanic a zašle se E-mail se zprávou. Toto rozšíření slouží "
-"jako ochrana proti chybnému zalévání (strhávání proudu vody)."
+msgid "This plugin checked wind speed, if station is switched on and actual wind speed is > wind speed value in options, switches off all station  and sends email with error. Prevent safety for fault watering."
+msgstr "Toto rozšíření sleduje rychlost větru. Pokud je zapnuta některá stanice a aktuální rychlost větru je vyšší než maximální nastavená rychlost dojde k vypnutí všech stanic a zašle se E-mail se zprávou. Toto rozšíření slouží jako ochrana proti chybnému zalévání (strhávání proudu vody)."
 
 #: plugins/wind_monitor/templates/wind_monitor.html:23
-msgid ""
-"This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C "
-"address 0x50 (0x51)."
-msgstr ""
-"Toto rozšíření vyžaduje povolenu I2C sběrnici a připojen obvod PCF8583 jako "
-"čítač na adrese 0x50 nebo 0x51."
+msgid "This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 (0x51)."
+msgstr "Toto rozšíření vyžaduje povolenu I2C sběrnici a připojen obvod PCF8583 jako čítač na adrese 0x50 nebo 0x51."
 
 #: plugins/wind_monitor/templates/wind_monitor.html:24
 msgid "(1m/s = 3,6 km/h or 1m/s = 2,237 mile/h)."

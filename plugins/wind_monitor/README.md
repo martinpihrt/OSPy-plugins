@@ -9,7 +9,10 @@ Prevent safety for fault watering.
 Plugin setup
 -----------
 * Check Use wind monitor:  
-  If checked use wind monitor plugin is enabled.    
+  If checked use wind monitor plugin is enabled.  
+
+* I2C address 0x50:  
+  If checked I2C address is 0x51.    
 
 * Check Send email with error:  
   If checked send email with error e-mail notification plugin sends e-mail with error.  

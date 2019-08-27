@@ -20,7 +20,7 @@ $var page: plugins
 <div id="plugin">
     <div class="title">$_('Wind Speed Monitor settings')</div>
     <p>$_('This plugin checked wind speed, if station is switched on and actual wind speed is > wind speed value in options, switches off all station  and sends email with error. Prevent safety for fault watering.')</p>
-    <p>$_('This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 (0x51).')</p>
+    <p>$_('This plugin needs an enabled') I&sup2;C $_('bus and connected counter PCF8583 on') I&sup2;C $_('address 0x50 or 0x51.')</p>
     <p>$_('(1m/s = 3,6 km/h or 1m/s = 2,237 mile/h).')</p>
     <p>$_('Maximum detected speed is 150 km/h (42 m/sec).')</p>
     <form id="pluginForm" action="$plugins.plugin_url('wind_monitor.settings_page')" method="post">
@@ -31,6 +31,12 @@ $var page: plugins
                     <input name='use_wind_monitor' type='checkbox'${" checked" if plugin_options['use_wind_monitor'] else ""}>   
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>I&sup2;C $_('address 0x50'):</td>
+                <td>
+                    <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}> ($_('if checked 0x51'))  
+                </td>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Send email with error'):</td>
                 <td>
@@ -58,7 +64,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (every 10 sec)'):</td>
                 <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                   $if plugin_options['use_wind_monitor']:
+                    $if plugin_options['use_wind_monitor']:
                         $if status['meter'] >= plugin_options["maxspeed"]: 
                             <p style="color:red;">
                         $elif status['meter'] < (plugin_options["maxspeed"] - 3):
@@ -79,7 +85,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="8" cols="60" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
@@ -88,4 +94,5 @@ $var page: plugins
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <a href="?reset"     class="button cancel danger">$_('Reset max speed')</a>
 </div>
