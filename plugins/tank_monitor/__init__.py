@@ -86,11 +86,7 @@ class Sender(Thread):
         mini = True
         sonic_cm = get_sonic_cm()
         level_in_tank = get_sonic_tank_cm(sonic_cm)
-        last_level_in_tank = level_in_tank
-        self._sleep(2)
-        sonic_cm = get_sonic_cm()
-        level_in_tank = get_sonic_tank_cm(sonic_cm)
-        last_level_in_tank = level_in_tank
+        self._sleep(1)
 
         while not self._stop.is_set():
             try:
@@ -105,33 +101,23 @@ class Sender(Thread):
                     level_in_tank = get_sonic_tank_cm(sonic_cm)
                    
                     if level_in_tank > 0:                                                  # if I2C device exists
-                        if last_level_in_tank != level_in_tank:                            # 1 repeat reading value
-                            self._sleep(2) 
-                            sonic_cm = get_sonic_cm()
-                            level_in_tank = get_sonic_tank_cm(sonic_cm)
-                            last_level_in_tank = level_in_tank
-
-                        if last_level_in_tank != level_in_tank:                            # 2 repeat reading value
-                            self._sleep(2) 
-                            sonic_cm = get_sonic_cm()
-                            level_in_tank = get_sonic_tank_cm(sonic_cm)
-                            last_level_in_tank = level_in_tank    
 
                         status['level']   = level_in_tank
                         status['ping']    = sonic_cm
                         status['volume']  = get_volume(level_in_tank)
                         status['percent'] = get_tank(level_in_tank)    
 
+                        log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
                         log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3.'))
 
                         qdict = {}
                         if level_in_tank > tank_options['log_maxlevel']:                   # maximum level check 1
-                            self._sleep(5)                                                 # wait 5 seconds and measure again
+                            self._sleep(10)                                                # wait seconds and measure again
                             sonic_cm = get_sonic_cm()
                             level_in_tank = get_sonic_tank_cm(sonic_cm)                    # read actual value
                             if level_in_tank > tank_options['log_maxlevel']:               # maximum level check 2
-                                self._sleep(5)                                             # wait 5 seconds and measure again
+                                self._sleep(5)                                             # wait seconds and measure again
                                 sonic_cm = get_sonic_cm()
                                 level_in_tank = get_sonic_tank_cm(sonic_cm)                # read actual value
                                 if level_in_tank > tank_options['log_maxlevel']:           # maximum level check 3
@@ -147,11 +133,11 @@ class Sender(Thread):
                                     # options.__setitem__('log_maxlevel', level_in_tank)  """ not tested - better saving? """
 
                         if level_in_tank < tank_options['log_minlevel']:                   # minimum level check 1
-                            self._sleep(5)                                                 # wait 5 seconds and measure again
+                            self._sleep(10)                                                # wait seconds and measure again
                             sonic_cm = get_sonic_cm()
                             level_in_tank = get_sonic_tank_cm(sonic_cm)                    # read actual value
                             if level_in_tank < tank_options['log_minlevel']:               # minimum level check 2
-                                self._sleep(5)                                             # wait 5 seconds and measure again
+                                self._sleep(5)                                             # wait seconds and measure again
                                 sonic_cm = get_sonic_cm()
                                 level_in_tank = get_sonic_tank_cm(sonic_cm)                # read actual value
                                 if level_in_tank < tank_options['log_minlevel']:           # minimum level check 3
@@ -198,6 +184,7 @@ class Sender(Thread):
                 
                 else:
                     if once_text:
+                       log.clear(NAME)
                        log.info(NAME, 'Water tank monitor is disabled.')
                        once_text = False
                        two_text = True
@@ -212,12 +199,13 @@ class Sender(Thread):
                     except Exception as err:
                         log.error(NAME, _('Email was not sent') + '! ' + str(err))
 
-                self._sleep(5) 
-                log.clear(NAME)
+                self._sleep(2) 
+              
 
             except Exception:
+                log.clear(NAME)
                 log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(10)
+                self._sleep(60)
 
 
 sender = None
@@ -378,7 +366,6 @@ class settings_page(ProtectedPage):
                 qdict['use_send_email'] = u'on' 
                 
             tank_options.web_update(qdict)    
-            log.clear(NAME)
             log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
             
             raise web.seeother(plugin_url(settings_page), True)
