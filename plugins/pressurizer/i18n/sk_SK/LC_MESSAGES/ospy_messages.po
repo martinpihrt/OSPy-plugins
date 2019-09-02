@@ -1,0 +1,126 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-06-27 12:26+CEST\n"
+"PO-Revision-Date: 2019-09-02 20:19+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.2.3\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Language: sk_SK\n"
+
+#: plugins/pressurizer/templates/pressurizer.html:33 plugins/pressurizer/templates/pressurizer.html:48
+msgid "If the check box is marked, the master pump is activated before turning on the stations."
+msgstr "Ak je začiarkavacie políčko označené, pred zapnutím staníc sa aktivuje hlavné čerpadlo."
+
+#: plugins/pressurizer/templates/pressurizer.html:38
+msgid "How many seconds before turning on station has turning on master station."
+msgstr "Koľko sekúnd pred zapnutím stanice zapnete hlavnú stanicu."
+
+#: plugins/pressurizer/templates/pressurizer.html:58
+msgid "If the check box is marked, the relay is activated before turning on the stations."
+msgstr "Ak je začiarkavacie políčko označené, pred zapnutím staníc sa aktivuje relé."
+
+#: plugins/pressurizer/templates/pressurizer.html:43
+msgid "For what time will turn on the master station."
+msgstr "Na akú dobu sa zapne hlavná stanica."
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "Pressurizer is disabled."
+msgstr "Tlakovač je zakázán."
+
+#: plugins/pressurizer/__init__.py:72 plugins/pressurizer/__init__.py:178
+msgid "Pressurizer is enabled."
+msgstr "Tlakovač je povolen."
+
+#: plugins/pressurizer/__init__.py:95
+msgid "Is time for pump running..."
+msgstr "Je čas spustit hlavní stanici..."
+
+#: plugins/pressurizer/__init__.py:107
+msgid "Activating relay."
+msgstr "Aktivovať relé."
+
+#: plugins/pressurizer/__init__.py:113
+msgid "Waiting"
+msgstr "Čaká sa"
+
+#: plugins/pressurizer/__init__.py:124
+msgid "Deactivating relay."
+msgstr "Deaktivovať relé."
+
+#: plugins/pressurizer/__init__.py:125
+msgid "Ready."
+msgstr "Pripravený."
+
+#: plugins/pressurizer/__init__.py:136
+msgid "Pressurizer plug-in"
+msgstr "Rozšíření tlakovač"
+
+#: plugins/pressurizer/__init__.py:183
+msgid "Options has updated."
+msgstr "Možnosti sa aktualizovali."
+
+#: plugins/pressurizer/templates/pressurizer.html:3
+msgid "Pressurizer"
+msgstr "Tlakovač"
+
+#: plugins/pressurizer/templates/pressurizer.html:24
+msgid "Pressurizer - Settings"
+msgstr "Tlakovač - nastavení"
+
+#: plugins/pressurizer/templates/pressurizer.html:25
+msgid ""
+"This plugin allows the main station (master pump relay on OSPy board) to be activated for a certain time before the "
+"station starts."
+msgstr "Tento plugin umožňuje zapnuť hlavní stanici (Master) na určitý čas pred zapnutím stanic."
+
+#: plugins/pressurizer/templates/pressurizer.html:26
+msgid ""
+"This is to ensure that there is pressure in the pipeline before the valves are opened. Some valves require some "
+"switching pressure."
+msgstr "To zabezpeči, že je tlak v potrubí pred otvorením ventilov. Niektoré ventily vyžadujú nejaký spínací tlak."
+
+#: plugins/pressurizer/templates/pressurizer.html:27
+msgid "The set \"Run time\" of the main station must not be longer than the set time before switching on the stations."
+msgstr "Nastavenie \"Spustit na dobu\" nesmí být delší než nastavený \"Čas pred spustením\" staníc."
+
+#: plugins/pressurizer/templates/pressurizer.html:28
+msgid "Example: \"Pre station run time\" = 10 sec, \"Run time\" = max 10 seconds!"
+msgstr "Príklad: \"Čas pred spustením\" = 10 sekúnd, \"Spustit na dobu\" = také maximálně 10 sekúnd a méně!"
+
+#: plugins/pressurizer/templates/pressurizer.html:32
+msgid "Enable"
+msgstr "Povoliť doplnok"
+
+#: plugins/pressurizer/templates/pressurizer.html:37
+msgid "Pre run time"
+msgstr "Čas pred spustením"
+
+#: plugins/pressurizer/templates/pressurizer.html:42
+msgid "Run time"
+msgstr "Spustit na dobu"
+
+#: plugins/pressurizer/templates/pressurizer.html:57
+msgid "Activated relay"
+msgstr "Aktivovať relé"
+
+#: plugins/pressurizer/templates/pressurizer.html:62
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/pressurizer/templates/pressurizer.html:70
+msgid "Submit"
+msgstr "Odoslať"
+
+#: plugins/pressurizer/templates/pressurizer.html:71
+msgid "Cancel"
+msgstr "Zrušiť"

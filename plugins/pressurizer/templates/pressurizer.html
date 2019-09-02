@@ -1,0 +1,62 @@
+$def with(plugin_options, events)
+
+$var title: $_('Pressurizer')
+$var page: plugins
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("#cUpload").click(function() {
+            jQuery("#uploadForm").submit();
+        });
+        jQuery("#cUpload").click(function() {
+            jQuery("#pluginFormUpload").submit();
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Pressurizer - Settings')</div>
+    <p>$_('This plugin allows the main station (master pump relay on OSPy board) to be activated for a certain time before the station starts.')</p>
+    <p>$_('This is to ensure that there is pressure in the pipeline before the valves are opened. Some valves require some switching pressure.')</p>
+    <p>$_('The set "Run time" of the main station must not be longer than the set time before switching on the stations.')</p>
+    <p>$_('Example: "Pre station run time" = 10 sec, "Run time" = max 10 seconds!')</p> 
+    <form id="pluginForm" action="$plugins.plugin_url('pressurizer.settings_page')" method="post">
+        <table class="optionList">
+        <tr>
+          <td style='text-transform: none;'>$_('Enable'):</td>
+          <td title="$_('If the check box is marked, the master pump is activated before turning on the stations.')">
+          <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Pre run time'):</td>
+          <td title="$_('How many seconds before turning on station has turning on master station.')">   
+          <input name='pre_time' type='number' min="1" max="59" value="$plugin_options['pre_time']"> (1 - 59s)</td> 
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Run time'):</td>
+          <td title="$_('For what time will turn on the master station.')">   
+          <input name='run_time' type='number' min="1" max="59" value="$plugin_options['run_time']"> (1 - 59s)</td> 
+        </tr>            
+        <tr>
+          <td style='text-transform: none;'>$_('Activated relay'):</td>
+          <td title="$_('If the check box is marked, the relay is activated before turning on the stations.')">
+          <input type="checkbox" name="relay" ${"checked" if plugin_options['relay'] else ""}></td>
+        </tr>         
+        <tr>
+          <td style='text-transform: none;'>$_('Status'):</td>
+          <td>
+          <textarea style="font-family: monospace;" rows="12" cols="60" readonly>$'\n'.join(events)</textarea></td>
+        </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
