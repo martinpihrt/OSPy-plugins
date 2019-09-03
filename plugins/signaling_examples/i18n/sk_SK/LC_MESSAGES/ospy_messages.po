@@ -6,16 +6,48 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-08-14 14:17+CEST\n"
-"PO-Revision-Date: 2018-08-14 14:23+0200\n"
+"PO-Revision-Date: 2019-09-03 12:46+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.1.1\n"
-"Last-Translator: \n"
+"X-Generator: Poedit 2.2.3\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
 "Language: sk_SK\n"
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Pressurizer plugin master relay on"
+msgstr "Pressurizer majster rele zap"
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Pressurizer plugin master relay off"
+msgstr "Pressurizer majster rele vyp"
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Master one on"
+msgstr "Majster jeden zap"
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Master one off"
+msgstr "Majster jeden vyp"
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Master two on"
+msgstr "Majster dva zap"
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Master two off"
+msgstr "Majster dva vyp"
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Rain not active"
+msgstr "Dážď nie je aktívny"
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Rain active"
+msgstr "Dážď aktívny"
 
 #: plugins/signaling_examples/__init__.py:105
 msgid "Someone logged in"

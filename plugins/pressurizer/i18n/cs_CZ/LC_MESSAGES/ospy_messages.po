@@ -6,16 +6,20 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-30 20:15+CEST\n"
-"PO-Revision-Date: 2019-08-30 20:34+0200\n"
+"PO-Revision-Date: 2019-09-03 10:49+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 2.2.3\n"
-"Last-Translator: \n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
 "Language: cs_CZ\n"
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "This plugin requires setting master station or second master station to enabled. Setup this in options! And also enable the relay as master station in options!"
+msgstr "Toto rozšíření vyžaduje nastavení hlavní stanice nebo druhé hlavní stanice. Nastavte to v možnostech! A také povolte relé u hlavní stanice v možnostech!"
 
 #: plugins/pressurizer/templates/pressurizer.html:33 plugins/pressurizer/templates/pressurizer.html:48
 msgid "If the check box is marked, the master pump is activated before turning on the stations."
@@ -23,15 +27,15 @@ msgstr "Je-li toto políčko označeno, je před zapnutím stanic aktivována hl
 
 #: plugins/pressurizer/templates/pressurizer.html:38
 msgid "How many seconds before turning on station has turning on master station."
-msgstr "Kolik sekund před zapnutím stanice se spustí hlavní stanice."
+msgstr "Kolik sekund před zapnutím stanice se spustí hlavní stanice (relé)."
 
 #: plugins/pressurizer/templates/pressurizer.html:58
 msgid "If the check box is marked, the relay is activated before turning on the stations."
-msgstr "Je-li toto políčko označeno, je relé aktivováno před zapnutím stanic."
+msgstr "Je-li toto políčko zaškrtnuté aktivuje se \"hlavní relé\" na řídící desce OSPy."
 
 #: plugins/pressurizer/templates/pressurizer.html:43
 msgid "For what time will turn on the master station."
-msgstr "Na jak dlouho se zapne hlavní stanice."
+msgstr "Na jak dlouho se zapne hlavní stanice (relé)."
 
 #: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
 msgid "Pressurizer is disabled."
@@ -43,7 +47,7 @@ msgstr "Tlakovač je povolen."
 
 #: plugins/pressurizer/__init__.py:95
 msgid "Is time for pump running..."
-msgstr "Je čas spustit hlavní stanici..."
+msgstr "Je čas spustit hlavní stanici (relé)..."
 
 #: plugins/pressurizer/__init__.py:107
 msgid "Activating relay."
@@ -78,31 +82,22 @@ msgid "Pressurizer - Settings"
 msgstr "Tlakovač - nastavení"
 
 #: plugins/pressurizer/templates/pressurizer.html:25
-msgid ""
-"This plugin allows the main station (master pump relay on OSPy board) to be activated for a certain time before the "
-"station starts."
-msgstr ""
-"Toto rozšíření umožňuje aktivovat hlavní stanici (hlavní čerpadlo - relé na desce OSPy) na určitou dobu před startem "
-"stanic."
+msgid "This plugin allows the main station (master pump relay on OSPy board) to be activated for a certain time before the station starts."
+msgstr "Toto rozšíření umožňuje aktivovat hlavní stanici (hlavní čerpadlo - relé na desce OSPy) na určitou dobu před startem stanic."
 
 #: plugins/pressurizer/templates/pressurizer.html:26
-msgid ""
-"This is to ensure that there is pressure in the pipeline before the valves are opened. Some valves "
-"require some switching pressure."
-msgstr ""
-"Tím se zajistí tlak v potrubí před otevřením ventilů. Některé ventily vyžadují určitý spínací tlak."
+msgid "This is to ensure that there is pressure in the pipeline before the valves are opened. Some valves require some switching pressure."
+msgstr "Tím se zajistí tlak v potrubí před otevřením ventilů. Některé ventily vyžadují určitý spínací (nebo uzavírací) tlak."
 
 #: plugins/pressurizer/templates/pressurizer.html:27
-msgid ""
-"The set \"Run time\" of the main station must not be longer than the set time before switching on "
-"the stations."
-msgstr ""
-"Nastavený \"doba chodu\" hlavního nádraží nesmí být delší než nastavený čas před zapnutím stanic."
+msgid "The set \"Run time\" of the main station must not be longer than the set time before switching on the stations."
+msgstr "Nastavená doba běhu \"Spustit na dobu\" hlavní stanice nesmí být delší než čas \"Spustit na dobu\" nastavený jako čas před startem běhu stanic."
 
 #: plugins/pressurizer/templates/pressurizer.html:28
 msgid "Example: \"Pre station run time\" = 10 sec, \"Run time\" = max 10 seconds!"
 msgstr ""
-"Příklad: \"Spustit dříve o\" = 10 vteřin, \"Spustit na dobu\" = také maximálně 10 vteřin a méně!"
+"Příklad: \"Spustit dříve o\" chci o 10 vteřin, \"Spustit na dobu\" může být nastaven také maximálně na 10 vteřin (nebo méně). V případě špatného nastavení "
+"uživatelem se použije \"Spustit na dobu = Spustit dříve o\"!"
 
 #: plugins/pressurizer/templates/pressurizer.html:32
 msgid "Enable"
@@ -118,7 +113,7 @@ msgstr "Spustit na dobu"
 
 #: plugins/pressurizer/templates/pressurizer.html:57
 msgid "Activated relay"
-msgstr "Aktivovat relé"
+msgstr "Aktivovat relé (master)"
 
 #: plugins/pressurizer/templates/pressurizer.html:62
 msgid "Status"

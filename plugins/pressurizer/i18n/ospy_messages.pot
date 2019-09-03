@@ -16,6 +16,10 @@ msgstr ""
 
 
 #: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "This plugin requires setting master station or second master station to enabled. Setup this in options! And also enable the relay as master station in options!"
+msgstr ""
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
 msgid "Pressurizer is disabled."
 msgstr ""
 

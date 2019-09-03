@@ -22,6 +22,11 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from plugins import PluginOptions, plugin_url
 
+from blinker import signal
+
+pressurizer_master_relay_on = signal('pressurizer_master_relay_on')   # send signal relay on for others in OSPy system
+pressurizer_master_relay_off = signal('pressurizer_master_relay_off') # send signal relay off for others in OSPy system
+
 import i18n
 
 NAME = 'Pressurizer'
@@ -70,6 +75,7 @@ class VoiceChecker(Thread):
             log.info(NAME, _('Pressurizer is enabled.'))
 
         start_master = False                      # for master station ON/OFF  
+        pressurizer_master_relay_off.send()       # send signal relay off from this plugin
      
         while not self._stop.is_set():
             try: 
@@ -80,29 +86,34 @@ class VoiceChecker(Thread):
                     check_end     = current_time + datetime.timedelta(days=1)
 
                     schedule = predicted_schedule(check_start, check_end)
-                    rain = not options.manual_mode and (rain_blocks.block_end() > datetime.datetime.now() or inputs.rain_sensed())  
-
-                    master_station = stations.get(stations.master)               # get master station 1 number
-                    master_station_two = stations.get(stations.master_two)       # get master station 2 number 
+                    rain = not options.manual_mode and (rain_blocks.block_end() > datetime.datetime.now() or inputs.rain_sensed())                                   
+       
+                    if stations.master is None or stations.master_two is None:
+                        start_master = False
+                        log.clear(NAME)
+                        log.info(NAME, datetime_string() + ' ' + _('This plugin requires setting master station or second master station to enabled. Setup this in options! And also enable the relay as master station in options!'))
+                        self._sleep(10)
 
                     for entry in schedule:
                         if entry['start'] <= user_pre_time < entry['end']:       # is possible program in this interval?
                            if not rain and not entry['blocked']:                 # is not blocked and not ignored rain?  
-                                log.clear(NAME)
-                                log.info(NAME, datetime_string() + ' ' + _('Is time for pump running...')) 
-                                start_master = True
-                                 
-                                                                                                     
-                    if start_master:                                        # yes is time for pre run (pump on)
+                                if stations.master is not None or stations.master_two is not None:
+                                    log.clear(NAME)
+                                    log.info(NAME, datetime_string() + ' ' + _('Is time for pump running...')) 
+                                    start_master = True
+
+
+                    if start_master:  # is time for run relay
                         pname = _('Pressurizer plug-in')
                         program_name = "%s " % pname.encode("utf-8", errors="ignore") # program name
 
+                        sname = 0 
+                        
                         for station in stations.get():
                             if station.is_master or station.is_master_two:
-                                sname = station.index-1                               # master index
+                                sname = station.index-1                               # master pump index
 
                         pend = current_time + datetime.timedelta(seconds=int(plugin_options['run_time']))
-
 
                         _entry = {
                             'active': None,
@@ -120,27 +131,33 @@ class VoiceChecker(Thread):
                             'station': sname
                         }
 
-                        log.start_run(_entry)
-                        if plugin_options['relay']:    
-                            outputs.relay_output = True
+
+                        if plugin_options['relay']:  
+                            pressurizer_master_relay_on.send()                  # send signal relay on from this plugin
+                            self._sleep(0.5) 
+                            outputs.relay_output = True                         # activate relay
                             log.info(NAME,  _('Activating relay.')) 
+                            log.start_run(_entry) 
  
-                        wait_for_run = plugin_options['run_time']           # pump run time
-                        if wait_for_run > plugin_options['pre_time']:       # is not run time > pre run time?
-                            wait_for_run = plugin_options['pre_time'] - 1   # scheduller tick is 1 second 
+                            wait_for_run = plugin_options['run_time']           # pump run time
+                            if wait_for_run > plugin_options['pre_time']:       # is not run time > pre run time?
+                                wait_for_run = plugin_options['pre_time'] - 1   # scheduller tick is 1 second 
 
-                        log.info(NAME, datetime_string() + ' ' + _('Waiting') + ' ' + str(wait_for_run)  + ' ' +  _('second.')) 
-
-                        self._sleep(wait_for_run)                           # waiting on run time
-
-                        log.finish_run(_entry)
-                        if plugin_options['relay']:    
-                            outputs.relay_output = False
+                            log.info(NAME, datetime_string() + ' ' + _('Waiting') + ' ' + str(wait_for_run)  + ' ' +  _('second.')) 
+                            self._sleep(int(wait_for_run))                      # waiting on run time
+  
+                            pressurizer_master_relay_off.send()                 # send signal relay off from this plugin
+                            self._sleep(0.5)
+                            outputs.relay_output = False                        # deactivate relay 
                             log.info(NAME, _('Deactivating relay.')) 
+                            log.finish_run(_entry)
 
-                        log.info(NAME, datetime_string() + ' ' + _('Ready.'))
-                        start_master = False 
-                        self._sleep(60)                                     # sleep 60 sec (this is maximum time for run pump), blocked repeting ON/OFF
+                            log.info(NAME, datetime_string() + ' ' + _('Ready.'))
+                            start_master = False 
+                            self._sleep(60)                                     # sleep 60 sec (this is maximum time for run pump), blocked repeating ON/OFF
+
+                    else:
+                        self._sleep(2)        
 
                 else:
                     self._sleep(5)                   

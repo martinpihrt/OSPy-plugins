@@ -93,6 +93,10 @@ class Sender(Thread):
            master_two_on.connect(notify_master_two_on)
            master_two_off = signal('master_two_off')
            master_two_off.connect(notify_master_two_off)
+           pressurizer_master_relay_on = signal('pressurizer_master_relay_on')
+           pressurizer_master_relay_on.connect(notify_pressurizer_master_relay_on)
+           pressurizer_master_relay_off = signal('pressurizer_master_relay_off')
+           pressurizer_master_relay_off.connect(notify_pressurizer_master_relay_off)
 
 sender = None
 
@@ -181,6 +185,14 @@ def notify_master_two_on(name, **kw):
 ### master 2 off ###
 def notify_master_two_off(name, **kw):
     log.info(NAME, datetime_string() + ': ' + _('Master two off'))  
+
+### pressurizer plugin master relay on ###
+def notify_pressurizer_master_relay_on(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Pressurizer plugin master relay on')) 
+
+### pressurizer plugin master relay off ###
+def notify_pressurizer_master_relay_off(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Pressurizer plugin master relay off')) 
 
 
 ################################################################################

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-06-27 12:26+CEST\n"
-"PO-Revision-Date: 2019-09-02 20:19+0200\n"
+"PO-Revision-Date: 2019-09-03 10:43+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -16,6 +16,10 @@ msgstr ""
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: sk_SK\n"
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "This plugin requires setting master station or second master station to enabled. Setup this in options! And also enable the relay as master station in options!"
+msgstr "Tento plugin vyžaduje nastavenie hlavnej stanice alebo druhej hlavnej stanice. Nastavenie v možnostiach! A tiež umožniť relé ako majster v možnostiach!"
 
 #: plugins/pressurizer/templates/pressurizer.html:33 plugins/pressurizer/templates/pressurizer.html:48
 msgid "If the check box is marked, the master pump is activated before turning on the stations."
@@ -78,15 +82,11 @@ msgid "Pressurizer - Settings"
 msgstr "Tlakovač - nastavení"
 
 #: plugins/pressurizer/templates/pressurizer.html:25
-msgid ""
-"This plugin allows the main station (master pump relay on OSPy board) to be activated for a certain time before the "
-"station starts."
+msgid "This plugin allows the main station (master pump relay on OSPy board) to be activated for a certain time before the station starts."
 msgstr "Tento plugin umožňuje zapnuť hlavní stanici (Master) na určitý čas pred zapnutím stanic."
 
 #: plugins/pressurizer/templates/pressurizer.html:26
-msgid ""
-"This is to ensure that there is pressure in the pipeline before the valves are opened. Some valves require some "
-"switching pressure."
+msgid "This is to ensure that there is pressure in the pipeline before the valves are opened. Some valves require some switching pressure."
 msgstr "To zabezpeči, že je tlak v potrubí pred otvorením ventilov. Niektoré ventily vyžadujú nejaký spínací tlak."
 
 #: plugins/pressurizer/templates/pressurizer.html:27

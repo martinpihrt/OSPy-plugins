@@ -3,7 +3,9 @@ Pressurizer Readme
 
 This plugin allows the main station (master pump) to be activated for a certain time before the station starts. 
 This is to ensure that there is pressure in the pipeline before the valves are opened. 
+This plugin requires setting master station or second master station to enabled. Setup this in options! And also enable the relay as master station in options.
 Some valves require some switching pressure. The set "Run time" of the main station must not be longer than the set time before switching on the stations.
+
 
   Example: "Pre station run time" = 10 sec, "Run time" = max 10 seconds!  
 

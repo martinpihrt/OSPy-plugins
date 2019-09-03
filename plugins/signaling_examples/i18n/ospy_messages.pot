@@ -14,6 +14,37 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
+#: plugins/signaling_examples/__init__.py:105
+msgid "Master one on"
+msgstr ""
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Master one off"
+msgstr ""
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Master two on"
+msgstr ""
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Master two off"
+msgstr ""
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Rain not active"
+msgstr ""
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Rain active"
+msgstr ""
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Pressurizer plugin master relay on"
+msgstr ""
+
+#: plugins/signaling_examples/__init__.py:105
+msgid "Pressurizer plugin master relay off"
+msgstr ""
 
 #: plugins/signaling_examples/__init__.py:105
 msgid "Someone logged in"
