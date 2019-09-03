@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-30 20:15+CEST\n"
-"PO-Revision-Date: 2019-09-03 10:49+0200\n"
+"PO-Revision-Date: 2019-09-03 14:22+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -18,8 +18,8 @@ msgstr ""
 "Language: cs_CZ\n"
 
 #: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
-msgid "This plugin requires setting master station or second master station to enabled. Setup this in options! And also enable the relay as master station in options!"
-msgstr "Toto rozšíření vyžaduje nastavení hlavní stanice nebo druhé hlavní stanice. Nastavte to v možnostech! A také povolte relé u hlavní stanice v možnostech!"
+msgid "This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options!"
+msgstr "Toto rozšíření vyžaduje nastavení hlavní stanice v nastavení systému a také povolit relé u hlavní stanice v možnostech!"
 
 #: plugins/pressurizer/templates/pressurizer.html:33 plugins/pressurizer/templates/pressurizer.html:48
 msgid "If the check box is marked, the master pump is activated before turning on the stations."

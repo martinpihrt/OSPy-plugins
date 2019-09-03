@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+!/usr/bin/env python
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt' # first author: "Orginally written by Daniel Casner <daniel@danielcasner.org> Modified from OSPy MP."
+__author__ = 'Martin Pihrt' # first author: "Orginally written by Daniel Casner <daniel@danielcasner.org> Modified from OSPy Martin Pihrt."
 
 import json
 import time
@@ -61,10 +61,9 @@ class Sender(Thread):
 
     def run(self):
         log.clear(NAME) 
-        #log.info(NAME, _('MQTT Slave Plugin started.'))
+        log.info(NAME, _('MQTT Slave Plugin started.'))
         once = True
-        log.info(NAME, _('MQTT Slave Plugin is not ready for use. Working on it!'))
-
+        
         if not self._stop.is_set(): 
             if plugin_options['use_mqtt']:  
                 once = True
@@ -74,16 +73,16 @@ class Sender(Thread):
                 except ImportError:
                     log.error(NAME, _('MQTT Slave Plugin requires MQTT plugin.'))               
                 
-                #try:                    
-                    # subscribe()                             
+                try:                    
+                    subscribe()                             
 
-                #except Exception:
-                #    log.error(NAME, _('MQTT Slave plug-in') + ':\n' + traceback.format_exc())
-                #    self._sleep(5)
+                except Exception:
+                    log.error(NAME, _('MQTT Slave plug-in') + ':\n' + traceback.format_exc())
+                    self._sleep(5)
 
             else:
                 if once: 
-                    #log.info(NAME, _('MQTT Slave Plugin is disabled.'))
+                    log.info(NAME, _('MQTT Slave Plugin is disabled.'))
                     once = False
                 self._sleep(5)
                              
@@ -113,6 +112,8 @@ def on_message(client, msg):
     #num_sta  = num_brds * 8
     try:
         cmd = json.loads(msg.payload)
+        # example: cmd = [{'status': 'off', 'reason': 'master', 'station': 0, 'name': u'\u010cerpadlo'}, {'status': 'off', 'reason': '', 'station': 1, 'name': u'Kv\u011btiny'}, {'status': 'off', 'reason': '', 'station': 2, 'name': u'3'}, {'status': 'off', 'reason': '', 'station': 3, 'name': u'Ventil\xe1tor'}, {'status': 'off', 'reason': '', 'station': 4, 'name': u'5'}, {'status': 'off', 'reason': '', 'station': 5, 'name': u'6'}, {'status': 'off', 'reason': '', 'station': 6, 'name': u'7'}, {'status': 'off', 'reason': '', 'station': 7, 'name': u'8'}, {'status': 'off', 'reason': '', 'station': 8, 'name': u'9'}, {'status': 'off', 'reason': '', 'station': 9, 'name': u'J\xeddlo mp3'}, {'status': 'off', 'reason': '', 'station': 10, 'name': u'Konec mp3'}, {'status': 'off', 'reason': '', 'station': 11, 'name': u'12'}]
+
     except ValueError as e:
         log.info(NAME, _('MQTT Slave could not decode command: ') + msg.payload + e)
         return
@@ -122,20 +123,18 @@ def on_message(client, msg):
     count = int(plugin_options['station_count'])
     local_zones = zones[first : first + count] 
     #for i in range(len(local_zones)):
-        #if (local_zones[i]    # if this element has a value and is not on
-            #and not gv.srvals[i]
-            #):
-            #gv.rs[i][0] = gv.now
-            #gv.rs[i][1] = float('inf')
-            #gv.rs[i][3] = 99
-            #gv.ps[i][0] = 99 
-        #elif (gv.srvals[i]
-        #    and not local_zones[i]
-        #    ):
-        #    gv.rs[i][1] = gv.now
+    #    if (local_zones[i] and not gv.srvals[i]): # if this element has a value and is not on
+    #        gv.rs[i][0] = gv.now
+    #        gv.rs[i][1] = float('inf')
+    #        gv.rs[i][3] = 99
+    #        gv.ps[i][0] = 99 
+    #    elif (gv.srvals[i] and not local_zones[i]):
+    #        gv.rs[i][1] = gv.now
     #if any(gv.rs):
     #    gv.sd['bsy'] = 1
-    #sleep(1)
+
+    self._sleep(1)
+
     
 def subscribe():
     "Subscribe to messages"

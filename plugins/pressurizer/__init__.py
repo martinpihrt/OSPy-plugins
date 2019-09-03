@@ -88,16 +88,16 @@ class VoiceChecker(Thread):
                     schedule = predicted_schedule(check_start, check_end)
                     rain = not options.manual_mode and (rain_blocks.block_end() > datetime.datetime.now() or inputs.rain_sensed())                                   
        
-                    if stations.master is None or stations.master_two is None:
+                    if stations.master is None:
                         start_master = False
                         log.clear(NAME)
-                        log.info(NAME, datetime_string() + ' ' + _('This plugin requires setting master station or second master station to enabled. Setup this in options! And also enable the relay as master station in options!'))
+                        log.info(NAME, datetime_string() + ' ' + _('This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options!'))
                         self._sleep(10)
 
                     for entry in schedule:
                         if entry['start'] <= user_pre_time < entry['end']:       # is possible program in this interval?
                            if not rain and not entry['blocked']:                 # is not blocked and not ignored rain?  
-                                if stations.master is not None or stations.master_two is not None:
+                                if stations.master is not None:
                                     log.clear(NAME)
                                     log.info(NAME, datetime_string() + ' ' + _('Is time for pump running...')) 
                                     start_master = True
