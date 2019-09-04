@@ -43,12 +43,17 @@ $var page: plugins
           <td style='text-transform: none;'>$_('Run time'):</td>
           <td title="$_('For what time will turn on the master station.')">   
           <input name='run_time' type='number' min="1" max="59" value="$plugin_options['run_time']"> (1 - 59s)</td> 
-        </tr>            
+        </tr>  
+        <tr>
+          <td style='text-transform: none;'>$_('Wait after activation'):</td>
+          <td title="$_('How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on).')">   
+          <input name='run_wait' type='number' min="1" max="999" value="$plugin_options['run_wait']"> (1 - 999s)</td> 
+        </tr>                      
         <tr>
           <td style='text-transform: none;'>$_('Activated relay'):</td>
           <td title="$_('If the check box is marked, the relay is activated before turning on the stations.')">
           <input type="checkbox" name="relay" ${"checked" if plugin_options['relay'] else ""}></td>
-        </tr>         
+        </tr>              
         <tr>
           <td style='text-transform: none;'>$_('Status'):</td>
           <td>

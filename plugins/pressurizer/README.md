@@ -19,7 +19,10 @@ Plugin setup
   How many seconds before turning on station has turning on master station (1 - 59 sec).
 
 * Run time:  
-  For what time will turn on the master station (1 - 59 sec).  
+  For what time will turn on the master station (1 - 59 sec). 
+
+* Wait after activation:
+  How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on) 0-999 sec.  
 
 * Activated relay:
   If the check box is marked, the relay is activated before turning on the stations.

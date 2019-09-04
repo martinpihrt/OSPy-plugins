@@ -37,7 +37,8 @@ plugin_options = PluginOptions(
     {
         'enabled': False,               # default is OFF
         'pre_time': 20,                 # how many seconds before turning on station has turning on master station
-        'run_time': 5,                  # for what time will turn on the master station
+        'run_time': 5,                  # for what time will turn on the master station (5 sec)
+        'run_wait': 300,                # How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on) 300 sec = 5 min
         'relay': False,                 # activated master relay?
     })
 
@@ -45,7 +46,7 @@ plugin_options = PluginOptions(
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
-class VoiceChecker(Thread):
+class Checker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
@@ -110,8 +111,8 @@ class VoiceChecker(Thread):
                         sname = 0 
                         
                         for station in stations.get():
-                            if station.is_master or station.is_master_two:
-                                sname = station.index-1                               # master pump index
+                            if station.is_master:
+                                sname = station.index                                 # master pump index
 
                         pend = current_time + datetime.timedelta(seconds=int(plugin_options['run_time']))
 
@@ -141,7 +142,7 @@ class VoiceChecker(Thread):
  
                             wait_for_run = plugin_options['run_time']           # pump run time
                             if wait_for_run > plugin_options['pre_time']:       # is not run time > pre run time?
-                                wait_for_run = plugin_options['pre_time'] - 1   # scheduller tick is 1 second 
+                                wait_for_run = plugin_options['pre_time']       # scheduller tick is 1 second 
 
                             log.info(NAME, datetime_string() + ' ' + _('Waiting') + ' ' + str(wait_for_run)  + ' ' +  _('second.')) 
                             self._sleep(int(wait_for_run))                      # waiting on run time
@@ -154,7 +155,8 @@ class VoiceChecker(Thread):
 
                             log.info(NAME, datetime_string() + ' ' + _('Ready.'))
                             start_master = False 
-                            self._sleep(60)                                     # sleep 60 sec (this is maximum time for run pump), blocked repeating ON/OFF
+                            log.info(NAME, datetime_string() + ' ' + _('Waiting') + ' ' + str(plugin_options['run_wait'])  + ' ' +  _('second.')) 
+                            self._sleep(int(plugin_options['run_wait']))        # How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on)
 
                     else:
                         self._sleep(2)        
@@ -179,7 +181,7 @@ checker = None
 def start():
     global checker
     if checker is None:
-        checker = VoiceChecker()
+        checker = Checker()
 
 
 def stop():

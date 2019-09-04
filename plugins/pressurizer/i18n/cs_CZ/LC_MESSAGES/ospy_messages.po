@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-30 20:15+CEST\n"
-"PO-Revision-Date: 2019-09-03 14:22+0200\n"
+"PO-Revision-Date: 2019-09-04 12:20+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -16,6 +16,18 @@ msgstr ""
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
 "Language: cs_CZ\n"
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "Wait after activation"
+msgstr "Čekat po aktivaci"
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on)."
+msgstr "Jak dlouho po aktivaci relé vyčkat před aktivací jiných stanic (aby se neaktivovalo před každým sepnutím stanic)."
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "second."
+msgstr "vteřin."
 
 #: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
 msgid "This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options!"

@@ -14,6 +14,13 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "Wait after activation"
+msgstr ""
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on)."
+msgstr ""
 
 #: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
 msgid "This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options!"
