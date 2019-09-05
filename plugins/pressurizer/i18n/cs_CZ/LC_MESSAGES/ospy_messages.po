@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-30 20:15+CEST\n"
-"PO-Revision-Date: 2019-09-04 12:20+0200\n"
+"PO-Revision-Date: 2019-09-04 21:08+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -16,6 +16,10 @@ msgstr ""
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
 "Language: cs_CZ\n"
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "All values should be positive and seconds should not exceed 59."
+msgstr "Všechny hodnoty by měly být pozitivní a sekundy nesmí přesáhnout 59."
 
 #: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
 msgid "Wait after activation"

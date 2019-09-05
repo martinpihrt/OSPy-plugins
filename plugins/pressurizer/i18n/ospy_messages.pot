@@ -15,6 +15,10 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 #: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
+msgid "All values should be positive and seconds should not exceed 59."
+msgstr ""
+
+#: plugins/pressurizer/__init__.py:70 plugins/pressurizer/__init__.py:181
 msgid "Wait after activation"
 msgstr ""
 

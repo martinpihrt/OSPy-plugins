@@ -36,9 +36,10 @@ plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,               # default is OFF
-        'pre_time': 20,                 # how many seconds before turning on station has turning on master station
-        'run_time': 5,                  # for what time will turn on the master station (5 sec)
-        'run_wait': 300,                # How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on) 300 sec = 5 min
+        'pre_time': 20,                 # how many seconds before turning on station has turning on master station 0-999s
+        'run_time': 5,                  # for what time will turn on the master station (5 sec) 0-999s
+        'mm':       60,                 # How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on) 0-999 min
+        'ss':       0,                  # 0-59 sec                  
         'relay': False,                 # activated master relay?
     })
 
@@ -155,8 +156,10 @@ class Checker(Thread):
 
                             log.info(NAME, datetime_string() + ' ' + _('Ready.'))
                             start_master = False 
-                            log.info(NAME, datetime_string() + ' ' + _('Waiting') + ' ' + str(plugin_options['run_wait'])  + ' ' +  _('second.')) 
-                            self._sleep(int(plugin_options['run_wait']))        # How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on)
+
+                            seconds = int(plugin_options['mm'] or 0) * 60 + int(plugin_options['ss'] or 0) # (mm:ss)
+                            log.info(NAME, datetime_string() + ' ' + _('Waiting') + ' ' + str(seconds)  + ' ' +  _('second.')) 
+                            self._sleep(seconds) # How long after the relay is activated wait for another stations 
 
                     else:
                         self._sleep(2)        
