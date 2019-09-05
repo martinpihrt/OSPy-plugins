@@ -105,14 +105,15 @@ class Sender(Thread):
                         except ImportError:
                             log.error(NAME, _('MQTT Zones Plugin requires MQTT plugin.'))
 
-                        if statuslist != old_statuslist:
+                        if statuslist != old_statuslist: # if status list is not actual
                             old_statuslist = statuslist
                     
-                        client = mqtt.get_client()
-                        if client:           
-                            client.publish(zone_topic, json.dumps(statuslist), qos=1, retain=True)
-                            log.clear(NAME) 
-                            log.info(NAME, _('MQTT Zones Plugin public') + ':\n' + str(statuslist))
+                            client = mqtt.get_client()
+                            
+                            if client:           
+                                client.publish(zone_topic, json.dumps(statuslist), qos=1, retain=True)
+                                log.clear(NAME) 
+                                log.info(NAME, _('MQTT Zones Plugin public') + ':\n' + str(statuslist))
 
                     else:
                         log.clear(NAME) 
