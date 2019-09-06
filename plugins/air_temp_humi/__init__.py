@@ -33,6 +33,8 @@ NAME = 'Air Temperature and Humidity Monitor'
 LINK = 'settings_page'
 
 tempDS = [-127,-127,-127,-127,-127,-127]
+tempDHT = 0
+humiDHT = 0
 
 
 plugin_options = PluginOptions(
@@ -115,6 +117,11 @@ class Sender(Thread):
                        if result.is_valid():
                            Temperature = result.temperature
                            Humidity = result.humidity
+
+                           global tempDHT, humiDHT
+                           
+                           tempDHT = Temperature
+                           humiDHT = Humidity 
                     except:
                        log.clear(NAME)
                        log.info(NAME, datetime_string())
@@ -265,7 +272,19 @@ def DS18B20_read_probe(probe):
     try:
        return tempDS[probe]
     except:
-       return "--"           
+       return "--"        
+
+
+def DHT_read_temp_value():
+    global tempDHT
+
+    return tempDHT
+
+
+def DHT_read_humi_value():
+    global humiDHT  
+    
+    return humiDHT        
    
 
 def read_log():

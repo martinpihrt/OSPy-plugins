@@ -36,13 +36,13 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('First station number'):</td>
                 <td title="$_('The number from the master of this slaves first station')">
-                   <input name='first_station' type='number' value='$plugin_options["first_station"]'>
+                   <input name='first_station' type='number' min='1' value='$plugin_options["first_station"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Station count'):</td>
                 <td title="$_('The number of station this slave uses.')">
-                   <input name='station_count' type='number' value='$plugin_options["station_count"]'>
+                   <input name='station_count' type='number' min='8' value='$plugin_options["station_count"]'>
                 </td>
             </tr>                        
             <tr>

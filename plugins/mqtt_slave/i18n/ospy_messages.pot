@@ -48,7 +48,7 @@ msgid "This MQTT Relies on the base MQTT plugin."
 msgstr ""
 
 #: plugins/mqtt_slave/templates/mqtt_slave.html:21
-msgid "Allows this OSPy system to be controlled by another (master) SIP system over MQTT."
+msgid "Allows this OSPy system to be controlled by another (master) OSPy system over MQTT."
 msgstr ""
 
 #: plugins/mqtt_slave/templates/mqtt_slave.html:25

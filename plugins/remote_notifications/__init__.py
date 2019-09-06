@@ -74,16 +74,25 @@ class RemoteSender(Thread):
         en_rain = True
         en_line = True
         en_line2 = True
-  
-        # ex: tank=100&rain=1&humi=55&line=1&lastrun=15.4.2016&station=kurnik&duration=5min 3sec&api=a1b2v5f4  
+    
         rain = 0          # rain status for rain=0 or rain=1 in get data
         lastrun = ""      # date and time for lastrun=xxxxx in get data
-        tank = ""         # actual %0-100 in water tank for tank=xx in get data
+        tank = ""         # actual level cm in water tank
+        percent = ""      # actual level % in water tank
+        ping = ""         # actual level ping cm water level 
+        volume=""         # actual level volume in m3 water level 
         duration = ""     # duration in last program for duration=xx:yy in get data
         station = ""      # name end station for station=abcde in get data
         humi = ""         # humidity in station for humi=xx in get data
         line = ""         # actual state from UPS plugin for line=0 or line=1 in get data
-        temper = ""       # temperature  from air temp plugin 
+        temp1 = ""        # temperature 1 from air temp plugin DS18B20 
+        temp2 = ""        # temperature 2 from air temp plugin DS18B20
+        temp3 = ""        # temperature 3 from air temp plugin DS18B20
+        temp4 = ""        # temperature 4 from air temp plugin DS18B20
+        temp5 = ""        # temperature 5 from air temp plugin DS18B20
+        temp6 = ""        # temperature 6 from air temp plugin DS18B20 
+        tempDHT = ""      # temperature  from air temp plugin DHT probe
+        humiDHT = ""      # humidity from air temp plugin DHT probe
 
         finished_count = len([run for run in log.finished_runs() if not run['blocked']]) 
 
@@ -94,12 +103,17 @@ class RemoteSender(Thread):
                 if remote_options["use"]:   
                     ### water tank level ###
                     try:
-                       from plugins import tank_humi_monitor
-                       tank = tank_humi_monitor.get_tank()
-                       if tank < 0: # -1 is error I2C device for ping not found in tank_humi_monitor
-                         tank = ""
+                        from plugins import tank_monitor
+                        tank = tank_monitor.get_all_values()[0]
+                        percent = tank_monitor.get_all_values()[1]
+                        ping = tank_monitor.get_all_values()[2]
+                        volume = tank_monitor.get_all_values()[3]
+         
                     except Exception:
-                       tank = ""
+                        tank = ""
+                        percent = ""
+                        ping = ""
+                        volume = ""
 
                     ### power line state ###
                     try:
@@ -146,8 +160,8 @@ class RemoteSender(Thread):
                         send_msg = True
                         ### humidity in station ###
                         try:
-                            from plugins import tank_humi_monitor
-                            humi = int(tank_humi_monitor.get_humidity((stations.get(run['station']).index)+1)) # 0-7 to 1-8 humidity  
+                            from plugins import humi_monitor
+                            humi = int(humi_monitor.get_humidity((stations.get(run['station']).index)+1)) # 0-7 to 1-8 humidity  
                             if humi < 0:
                                humi = "" 
                                 
@@ -157,9 +171,23 @@ class RemoteSender(Thread):
                         ### temperature ###
                         try:
                             from plugins import air_temp_humi
-                            temper = air_temp_humi.DS18B20_read_string_data()
+                            temp1   = air_temp_humi.DS18B20_read_probe(0)
+                            temp2   = air_temp_humi.DS18B20_read_probe(1)
+                            temp3   = air_temp_humi.DS18B20_read_probe(2)
+                            temp4   = air_temp_humi.DS18B20_read_probe(3) 
+                            temp5   = air_temp_humi.DS18B20_read_probe(4) 
+                            temp6   = air_temp_humi.DS18B20_read_probe(5) 
+                            tempDHT = air_temp_humi.DHT_read_temp_value()
+                            humiDHT = air_temp_humi.DHT_read_humi_value()
                         except Exception:
-                            temper = " "
+                            temp1 = ""
+                            temp2 = ""
+                            temp3 = ""
+                            temp4 = ""
+                            temp5 = ""
+                            temp6 = ""
+                            tempDHT = ""
+                            humiDHT = ""
    
                         for run in finished[finished_count:]:
                             dur = (run['end'] - run['start']).total_seconds()
@@ -171,15 +199,27 @@ class RemoteSender(Thread):
                     finished_count = len(finished)
 
                 if (send_msg): # if enabled send data
-                    body = ('tank=' + str(tank))
+                    body =  ('tank=' + str(tank))
+                    body += ('&percent=' + str(percent))
+                    body += ('&ping=' + str(ping))
+                    body += ('&volume=' + str(volume))
                     body += ('&rain=' + str(rain))
                     body += ('&humi=' + str(humi))
                     body += ('&line=' + str(line))
                     body += ('&lastrun=' + str(lastrun)) 
                     body += ('&station=' + sanity_msg(station))
                     body += ('&duration=' + str(duration))
-                    body += ('&temper=' + sanity_msg(temper))
+                    body += ('&temp1=' + str(temp1))
+                    body += ('&temp2=' + str(temp2))
+                    body += ('&temp3=' + str(temp3))
+                    body += ('&temp4=' + str(temp4))
+                    body += ('&temp5=' + str(temp5))
+                    body += ('&temp6=' + str(temp6))
+                    body += ('&tempDHT=' + str(tempDHT))
+                    body += ('&humiDHT=' + str(humiDHT))
                     body += ('&api=' + remote_options['api'])  # API password
+                    log.clear(NAME)
+                    log.info(NAME, _('Test data...'))
                     self.try_send(body)                        # Send GET data to remote server 
                     send_msg = False                           # Disable send data    
                     
@@ -244,16 +284,27 @@ class settings_page(ProtectedPage):
             remote_sender.update()
 
             if test:
-                body  = ('tank=')
-                body += ('&rain=')
-                body += ('&humi=')
-                body += ('&line=')
-                body += ('&lastrun=')
-                body += ('&station=')
-                body += ('&duration=')
-                body += ('&program=')
-                body += ('&temper=')
+                body  = ('tank=256')
+                body += ('&percent=100')
+                body += ('&ping=25')
+                body += ('&volume=10.2')
+                body += ('&rain=0')
+                body += ('&humi=25')
+                body += ('&line=1')
+                body += ('&lastrun=2019-09-06_08:00:00')
+                body += ('&station=test')
+                body += ('&duration=00:59')
+                body += ('&program=test_data')
+                body += ('&temp1=28.5')
+                body += ('&temp2=12')
+                body += ('&temp3=-51')
+                body += ('&temp4=23.5')
+                body += ('&temp5=45')
+                body += ('&temp6=-127')
+                body += ('&tempDHT=27')
+                body += ('&humiDHT=50')
                 body += ('&api=' + remote_options['api'])  # API password
+
                 remote_sender.try_send(body)
 
         raise web.seeother(plugin_url(settings_page), True)
