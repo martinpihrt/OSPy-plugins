@@ -84,9 +84,12 @@ class Sender(Thread):
         two_text = True
         send = False
         mini = True
+
+        self._sleep(2)
         sonic_cm = get_sonic_cm()
         level_in_tank = get_sonic_tank_cm(sonic_cm)
-        self._sleep(1)
+        self._sleep(2)
+
 
         while not self._stop.is_set():
             try:
@@ -96,11 +99,11 @@ class Sender(Thread):
                         log.info(NAME, _('Water tank monitor is enabled.'))
                         once_text = True
                         two_text = False
-
+ 
                     sonic_cm = get_sonic_cm()
                     level_in_tank = get_sonic_tank_cm(sonic_cm)
-                   
-                    if level_in_tank > 0:                                                  # if I2C device exists
+                  
+                    if level_in_tank > 0:                                                 # if I2C device exists
 
                         status['level']   = level_in_tank
                         status['ping']    = sonic_cm
@@ -110,78 +113,54 @@ class Sender(Thread):
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
                         log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3.'))
+                        log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
+                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.') 
 
                         qdict = {}
-                        if level_in_tank > tank_options['log_maxlevel']:                   # maximum level check 1
-                            self._sleep(10)                                                # wait seconds and measure again
-                            sonic_cm = get_sonic_cm()
-                            level_in_tank = get_sonic_tank_cm(sonic_cm)                    # read actual value
-                            if level_in_tank > tank_options['log_maxlevel']:               # maximum level check 2
-                                self._sleep(5)                                             # wait seconds and measure again
-                                sonic_cm = get_sonic_cm()
-                                level_in_tank = get_sonic_tank_cm(sonic_cm)                # read actual value
-                                if level_in_tank > tank_options['log_maxlevel']:           # maximum level check 3
-                                    if tank_options['use_sonic']:
-                                        qdict['use_sonic'] = u'on' 
-                                    if tank_options['use_stop']:
-                                        qdict['use_stop']  = u'on'
-                                    if tank_options['use_send_email']:     
-                                        qdict['use_send_email'] = u'on' 
-                                    qdict['log_maxlevel'] = level_in_tank
-                                    qdict['log_date_maxlevel'] = datetime_string()
-                                    tank_options.web_update(qdict)                         # save to plugin options
-                                    # options.__setitem__('log_maxlevel', level_in_tank)  """ not tested - better saving? """
+                        if status['level'] > tank_options['log_maxlevel']:                # maximum level check 
+                            if tank_options['use_sonic']:
+                                qdict['use_sonic'] = u'on' 
+                            if tank_options['use_stop']:
+                                qdict['use_stop']  = u'on'
+                            if tank_options['use_send_email']:     
+                                qdict['use_send_email'] = u'on' 
+                            qdict['log_maxlevel'] = status['level']
+                            qdict['log_date_maxlevel'] = datetime_string()
+                            tank_options.web_update(qdict)                                # save to plugin options
+  
+                        if status['level'] < tank_options['log_minlevel']:                # minimum level check 
+                            if tank_options['use_sonic']:
+                                qdict['use_sonic'] = u'on' 
+                            if tank_options['use_stop']:
+                                qdict['use_stop']  = u'on'
+                            if tank_options['use_send_email']:     
+                                qdict['use_send_email'] = u'on'
+                            qdict['log_minlevel'] = status['level']
+                            qdict['log_date_minlevel'] = datetime_string()
+                            tank_options.web_update(qdict)                                 # save to plugin options                          
+                             
 
-                        if level_in_tank < tank_options['log_minlevel']:                   # minimum level check 1
-                            self._sleep(10)                                                # wait seconds and measure again
-                            sonic_cm = get_sonic_cm()
-                            level_in_tank = get_sonic_tank_cm(sonic_cm)                    # read actual value
-                            if level_in_tank < tank_options['log_minlevel']:               # minimum level check 2
-                                self._sleep(5)                                             # wait seconds and measure again
-                                sonic_cm = get_sonic_cm()
-                                level_in_tank = get_sonic_tank_cm(sonic_cm)                # read actual value
-                                if level_in_tank < tank_options['log_minlevel']:           # minimum level check 3
-                                    if tank_options['use_sonic']:
-                                        qdict['use_sonic'] = u'on' 
-                                    if tank_options['use_stop']:
-                                        qdict['use_stop']  = u'on'
-                                    if tank_options['use_send_email']:     
-                                        qdict['use_send_email'] = u'on'
-                                    qdict['log_minlevel'] = level_in_tank
-                                    qdict['log_date_minlevel'] = datetime_string()
-                                    tank_options.web_update(qdict)                         # save to plugin options
-                                    # options.__setitem__('log_maxlevel', level_in_tank)  """ not tested - better saving? """
-                            
-                        log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
-                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')                              
-
-                        if level_in_tank <= int(tank_options['water_minimum']) and mini and not options.manual_mode: # level value is lower, waiting 20s, 2x check and next send email
-                                self._sleep(5)                                             # wait 5 seconds and measure again
-                                sonic_cm = get_sonic_cm()
-                                level_in_tank = get_sonic_tank_cm(sonic_cm)                # we get a new value - check 1
-                                if level_in_tank <= int(tank_options['water_minimum']):    # value is again lower      
-                                    self._sleep(10)                                        # wait 10 seconds and measure again
-                                    sonic_cm = get_sonic_cm()
-                                    level_in_tank = get_sonic_tank_cm(sonic_cm)            # we get a new value - check 2
-                                    if level_in_tank <= int(tank_options['water_minimum']):# yes, the value is lower -> send email                          
-                                        if tank_options['use_send_email']:                 # if enabled email
-                                            send = True                                    # send
-                                            mini = False 
+                        if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode: # level value is lower, waiting 20s, 2x check and next send email
+                            if tank_options['use_send_email']:                             # if email is enabled
+                                send = True                                                # send
+                                mini = False 
     
-                                        if tank_options['use_stop']:                       # if stop scheduler                    
-                                            options.scheduler_enabled = False              # disable scheduler
-                                            log.finish_run(None)                           # save log
-                                            stations.clear()                               # set all station to off                                          
-                                            log.info(NAME, datetime_string() + ' ' + _('ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _('cm') + '!')
+                            if tank_options['use_stop']:                                   # if stop scheduler                    
+                                options.scheduler_enabled = False                          # disable scheduler
+                                log.finish_run(None)                                       # save log
+                                stations.clear()                                           # set all station to off                                          
+                                log.info(NAME, datetime_string() + ' ' + _('ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _('cm') + '!')
                                    
                         if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: # refresh send email if actual level > options minimum +5
                             mini = True
                     else:
+                        log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('Water level: Error I2C device not found.'))
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
-                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')                          
-                        log.debug(NAME, _('Water level') + ': ' + str(level_in_tank) + ' ' + _('cm'))
-                
+                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')    
+
+                    self._sleep(3)                      
+                                        
                 else:
                     if once_text:
                        log.clear(NAME)
@@ -189,6 +168,7 @@ class Sender(Thread):
                        once_text = False
                        two_text = True
                        last_level = 0
+                    self._sleep(1)  
                 
                 if send:
                     msg = '<b>' + _('Water Tank Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + '</p>'
@@ -198,9 +178,7 @@ class Sender(Thread):
                         send = False
                     except Exception as err:
                         log.error(NAME, _('Email was not sent') + '! ' + str(err))
-
-                self._sleep(2) 
-              
+                        self._sleep(60)
 
             except Exception:
                 log.clear(NAME)
@@ -279,8 +257,9 @@ def get_sonic_tank_cm(level):
 def get_tank(level): # return water tank level 0-100%, -1 is error i2c not found
     tank_lvl = level
     if tank_lvl >= 0:
-       tank_proc = maping(tank_lvl,int(tank_options['distance_top']),int(tank_options['distance_bottom']),0,100) 
-       return tank_proc
+       tank_proc = float(tank_lvl)/float(tank_options['distance_bottom'])
+       tank_proc = float(tank_proc)*100.0
+       return int(tank_proc)
     else:
        return -1
 
@@ -291,10 +270,10 @@ def get_volume(level): # return volume calculation from cylinder diameter and wa
        
        try:       
           import math
-          r = tank_options['diameter']/2
+          r = tank_options['diameter']/2.0
           area = math.pi*r*r               # calculate area of circle
           volume = area*tank_lvl           # volume in cm3
-          volume = volume/1000000          # convert from cm3 to m3
+          volume = volume/1000000.0        # convert from cm3 to m3
           volume = round(volume,2)         # round only two decimals
           return volume
        except:
@@ -305,8 +284,7 @@ def get_volume(level): # return volume calculation from cylinder diameter and wa
 
 def maping(x, in_min, in_max, out_min, out_max):
     # return value from map. example (x=1023,0,1023,0,100) -> x=1023 return 100
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-
+    return ((x - in_min) * (out_max - out_min)) / ((in_max - in_min) + out_min)
 
 def get_all_values():
     global status
@@ -348,14 +326,14 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global sender
+        global sender, status
 
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
 
         if sender is not None and reset:
-            qdict['log_minlevel'] = 400
-            qdict['log_maxlevel'] = 0
+            qdict['log_minlevel'] = status['level']
+            qdict['log_maxlevel'] = status['level']
             qdict['log_date_maxlevel'] = datetime_string()
             qdict['log_date_minlevel'] = datetime_string()
             if tank_options['use_sonic']:
@@ -363,9 +341,9 @@ class settings_page(ProtectedPage):
             if tank_options['use_stop']:
                 qdict['use_stop']  = u'on'
             if tank_options['use_send_email']:     
-                qdict['use_send_email'] = u'on' 
-                
-            tank_options.web_update(qdict)    
+                qdict['use_send_email'] = u'on'  
+
+            tank_options.web_update(qdict)    # save to plugin options
             log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
             
             raise web.seeother(plugin_url(settings_page), True)
@@ -378,6 +356,15 @@ class settings_page(ProtectedPage):
 
         if sender is not None:
             sender.update()
+
+        if tank_options['use_sonic']:
+            log.clear(NAME) 
+            log.info(NAME, _('Water tank monitor is enabled.'))
+        else:
+            log.clear(NAME)
+            log.info(NAME, _('Water tank monitor is disabled.'))
+
+        log.info(NAME, _('Options has updated.'))
         raise web.seeother(plugin_url(settings_page), True)
 
 
