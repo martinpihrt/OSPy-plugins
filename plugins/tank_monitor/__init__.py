@@ -376,3 +376,18 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(tank_options)
 
+class data_json(ProtectedPage):
+    """Returns plugin data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data =  {
+          'level': get_all_values()[0],
+          'percent':get_all_values()[1], 
+          'ping': get_all_values()[2],    
+          'volume': get_all_values()[3],
+          'label': tank_options['emlsubject']
+        }
+
+        return json.dumps(data)

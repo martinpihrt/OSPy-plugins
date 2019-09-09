@@ -100,7 +100,7 @@ class WindSender(Thread):
                         val = puls/(wind_options['pulses']*1.0)
                         val = val*wind_options['metperrot']   
 
-                        wind_options['log_speed'] = val # m/sec
+                        wind_options['log_speed'] = round(val,2) # m/sec
 
                         if val > wind_options['log_maxspeed']:
                             wind_options['log_maxspeed'] = val
@@ -344,3 +344,19 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(wind_options)
+
+
+class data_json(ProtectedPage):
+    """Returns plugin data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data =  {
+          'log_maxspeed': round(wind_options['log_maxspeed'],2),    # in m/sec
+          'log_speed': round(wind_options['log_speed'],2),          # in m/sec
+          'log_date_maxspeed': wind_options['log_date_maxspeed'],
+          'label': wind_options['emlsubject']
+        }
+
+        return json.dumps(data)

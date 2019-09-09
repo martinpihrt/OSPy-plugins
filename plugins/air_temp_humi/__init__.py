@@ -369,6 +369,33 @@ class settings_json(ProtectedPage):
         return json.dumps(plugin_options)
 
 
+class data_json(ProtectedPage):
+    """Returns plugin data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data =  {
+          'label': plugin_options['label'],
+          'label_ds0': plugin_options['label_ds0'],  
+          'label_ds1': plugin_options['label_ds1'], 
+          'label_ds2': plugin_options['label_ds2'],
+          'label_ds3': plugin_options['label_ds3'],
+          'label_ds4': plugin_options['label_ds4'],
+          'label_ds5': plugin_options['label_ds5'],
+          'temp_ds0':  DS18B20_read_probe(0),
+          'temp_ds1':  DS18B20_read_probe(1),
+          'temp_ds2':  DS18B20_read_probe(2),
+          'temp_ds3':  DS18B20_read_probe(3),
+          'temp_ds4':  DS18B20_read_probe(4),
+          'temp_ds5':  DS18B20_read_probe(5),
+          'temp_dht':  DHT_read_temp_value(),
+          'humi_dht':  DHT_read_humi_value()
+        }
+
+        return json.dumps(data)
+
+
 class log_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
 
