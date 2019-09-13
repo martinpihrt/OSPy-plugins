@@ -19,6 +19,7 @@ from ospy.stations import stations
 from ospy.options import rain_blocks
 from ospy.programs import ProgramType
 from ospy.inputs import inputs
+from ospy.helpers import datetime_string
 
 
 import i18n
@@ -30,10 +31,11 @@ plugin_options = PluginOptions(
     NAME,
     {
         'use_mqtt': False,
-        'zone_topic': ''
+        'zone_topic': 'stations'
      }
 )
 
+client = None
 
 ################################################################################
 # Main function:                                                               #
@@ -113,7 +115,7 @@ class Sender(Thread):
                             if client:           
                                 client.publish(zone_topic, json.dumps(statuslist), qos=1, retain=True)
                                 log.clear(NAME) 
-                                log.info(NAME, _('MQTT Zones Plugin public') + ':\n' + str(statuslist))
+                                log.info(NAME, datetime_string() + ' ' + _('MQTT Zones Plugin public') + ': ' + str(statuslist))
 
                     else:
                         log.clear(NAME) 
@@ -130,6 +132,8 @@ class Sender(Thread):
                 if once: 
                     log.info(NAME, _('MQTT Zones Plugin is disabled.'))
                     once = False
+                    client.disconnect()
+                    client = None
                 self._sleep(5)
                              
 sender = None
