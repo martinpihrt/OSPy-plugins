@@ -188,10 +188,10 @@ def stop():
 def send_email(msg, msglog):
     """Send email"""
     message = datetime_string() + ': ' + msg
-    try:
-        from plugins.email_notifications import email
+    Subject = ups_options['emlsubject']
 
-        Subject = ups_options['emlsubject']
+    try:
+        from plugins.email_notifications import email        
 
         email(message, subject=Subject)
 
