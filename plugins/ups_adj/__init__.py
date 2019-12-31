@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # this plugins check power line and shutdown ospi system (count down to reconect power line) and shutdown UPS after time.

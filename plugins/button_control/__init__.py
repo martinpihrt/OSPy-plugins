@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # This plugin controls OpenSprinkler OSPy via 8 defined buttons. I2C controller MCP23017 on 0x27 address. 

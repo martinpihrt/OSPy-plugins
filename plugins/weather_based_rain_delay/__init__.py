@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+# -*- coding: utf-8 -*-
 # first author: Martin Pihrt
 __author__ = 'Vaclav Hrabe' # Add netatmo function 
 

@@ -1,6 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt' # first author: "Orginally written by Daniel Casner <daniel@danielcasner.org> Modified from OSPy Martin Pihrt."
+
+#NOT READY FOR USE
 
 import json
 import time
@@ -17,6 +18,7 @@ from ospy.webpages import ProtectedPage
 from ospy.options import options
 from ospy.stations import stations
 
+import paho.mqtt.client as MQTT
 
 import i18n
 
@@ -32,7 +34,6 @@ plugin_options = PluginOptions(
         'station_count': '8'
      }
 )
-
 
 ################################################################################
 # Main function:                                                               #
@@ -60,18 +61,17 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        log.clear(NAME) 
-        
+        log.clear(NAME)     
         if not self._stop.is_set(): 
             if plugin_options['use_mqtt']:  
-                log.info(NAME, _('MQTT Slave Plugin is enabled.')) 
-                subscribe()            
+                _subscribe()  
+                log.clear(NAME)
+                log.info(NAME, _('MQTT Slave Plugin is enabled.'))           
 
             else:
+                _unsubscribe()
+                log.clear(NAME)
                 log.info(NAME, _('MQTT Slave Plugin is disabled.'))
-                unsubscribe()
-
-            self._sleep(2)
                              
 sender = None
 
@@ -89,30 +89,47 @@ def stop():
         sender.stop()
         sender.join()
         sender = None 
+        _unsubscribe()
 
-def on_message(client, msg):
+
+def on_connect(client, userdata, flags, rc):                 # The callback for when the client connects to the broker
+    print("Connected with result code {0}".format(str(rc)))  # Print result of connection attempt
+    client.subscribe(plugin_options['control_topic'])        # Subscribe to the topic..., receive any messages published on it
+
+
+def on_message(client, userdata, message):
     "Callback when MQTT message is received."
     if not options.scheduler_enabled: # ? is scheduler enabled
         log.clear(NAME) 
         log.info(NAME, _('Scheduler is disabled...')) 
-        return
+    #    return
     
     num_sta  = options.output_count   # number of outputs available
     cmd = [{ }]
 
     try:
-        cmd = json.loads(msg.payload)
+        log.clear(NAME) 
+        log.debug(NAME, _('MQTT data') + ': ' + message.payload.decode("utf-8"))
+
+        cmd = json.loads(message.payload)
+
+        #print(message.payload.decode("utf-8")))
+        #print("Message topic=",message.topic)
+        #print("Message qos=",message.qos)
+        #print("Message retain flag=",message.retain)
+
         # data example:
         # [{'status': 'off', 'reason': 'master', 'station': 0, 'name': u'\u010cerpadlo'}, {'status': 'off', 'reason': '', 'station': 1, 'name': u'Kv\u011btiny'}, {'status': 'off', 'reason': '', 'station': 2, 'name': u'3'}, {'status': 'off', 'reason': '', 'station': 3, 'name': u'Ventil\xe1tor'}, {'status': 'off', 'reason': '', 'station': 4, 'name': u'5'}, {'status': 'off', 'reason': '', 'station': 5, 'name': u'6'}, {'status': 'off', 'reason': '', 'station': 6, 'name': u'7'}, {'status': 'off', 'reason': '', 'station': 7, 'name': u'8'}, {'status': 'off', 'reason': '', 'station': 8, 'name': u'9'}, {'status': 'off', 'reason': '', 'station': 9, 'name': u'J\xeddlo mp3'}, {'status': 'off', 'reason': '', 'station': 10, 'name': u'Konec mp3'}, {'status': 'off', 'reason': '', 'station': 11, 'name': u'12'}]
 
     except ValueError as e:
-        log.info(NAME, _('MQTT Slave could not decode command: ') + msg.payload + e)
+        log.info(NAME, _('MQTT Slave could not decode command: ') + message.payload + e)
         return
     
     zones = cmd['zone_list']  #  list of all zones sent from master OSPy system
     first = int(plugin_options['first_station']) - 1
     count = int(plugin_options['station_count'])
     local_zones = zones[first : first + count] 
+
 
     #for station in stations.get():
     #    if station.enabled or station.is_master or station.is_master_two: 
@@ -130,36 +147,35 @@ def on_message(client, msg):
     #if any(gv.rs): je gv.rs	run schedule (list [scheduled start time, scheduled stop time, duration, program index])
     #    gv.sd['bsy'] = 1  je program busy
 
-    self._sleep(1)
-
     
-def subscribe():
+def _subscribe():
     "Subscribe to messages"
     try:
-        from plugins import mqtt
+        from plugins import mqtt            # from OSPY plugin broker host and port
+
         topic = plugin_options['control_topic']
-        client = mqtt.get_client()
+        client = MQTT.Client(topic)         # Create instance of client with client ID 
 
         if client and topic:           
-            client.subscribe(topic, on_message, 2)
             log.clear(NAME) 
-            log.info(NAME, _('MQTT Zones Plugin subscribe') + ': ' + str(topic))
-    
+            log.info(NAME, _('MQTT Slave Plugin subscribe') + ': ' + str(topic))
+            client.on_connect = on_connect  # Define callback function for successful connection
+            client.on_message = on_message  # Define callback function for receipt of a message
+            client.connect(mqtt.plugin_options['broker_host'], mqtt.plugin_options['broker_port'])   
+            client.loop_forever()
+               
     except ImportError:
         log.error(NAME, _('MQTT Slave Plugin requires MQTT plugin.'))                 
 
 
-def unsubscribe():
+def _unsubscribe():
     "Unsubscribe from messages"
     try:
-        from plugins import mqtt
         topic = plugin_options['control_topic']
-        client = mqtt.get_client()
-        
-        if client and topic: 
-            mqtt.unsubscribe(topic, on_message, 2)
-            log.clear(NAME) 
-            log.info(NAME, _('MQTT Zones Plugin unsubscribe') + ': ' + str(topic))
+        client = MQTT.Client(topic) 
+        client.disconnect()
+        log.clear(NAME) 
+        log.info(NAME, _('MQTT Slave Plugin unsubscribe') + ': ' + str(topic))
     
     except ImportError:
         log.error(NAME, _('MQTT Slave Plugin requires MQTT plugin.'))  

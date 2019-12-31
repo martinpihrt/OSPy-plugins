@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # this plugins check pressure in pipe if master station is switched on

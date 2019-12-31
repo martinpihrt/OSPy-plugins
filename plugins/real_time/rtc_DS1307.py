@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # rtc_DS1307.py Python Driver Code
 # SwitchDoc Labs 07/10/2014
 # Shovic V 1.0

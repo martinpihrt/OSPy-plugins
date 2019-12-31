@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+# -*- coding: utf-8 -*-
 # first author: Martin Pihrt
 # Martin Pihrt add i18n language support
 __author__ = 'Vaclav Hrabe' # Add netatmo function 

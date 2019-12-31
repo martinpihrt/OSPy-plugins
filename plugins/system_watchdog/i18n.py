@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# encoding: utf-8
 __author__ = 'Martin Pihrt'
 
 import os

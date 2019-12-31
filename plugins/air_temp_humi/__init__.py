@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # This plugin read data from probe DHT11 (temp and humi). # Raspberry Pi pin 19 as GPIO 10

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # This plugins check wind speed in meter per second. 
@@ -103,19 +102,22 @@ class WindSender(Thread):
                         wind_options['log_speed'] = round(val,2) # m/sec
 
                         if val > wind_options['log_maxspeed']:
-                            wind_options['log_maxspeed'] = val
-                            
                             qdict = {} # save to options max speed and datetime
-                            if wind_options['use_wind_monitor']:
-                                qdict['use_wind_monitor'] = u'on' 
-                            if wind_options['address']:
-                                qdict['address']  = u'on'
-                            if wind_options['sendeml']:     
-                                qdict['sendeml'] = u'on' 
-                            qdict['log_maxspeed'] = round(val,2) # m/sec
-                            qdict['log_date_maxspeed'] = datetime_string()
-                            wind_options.web_update(qdict)                           
 
+                            if wind_options['use_wind_monitor']:
+                               qdict['use_wind_monitor'] = u'on' 
+                            if wind_options['address']:
+                               qdict['address']  = u'on'
+                            if wind_options['sendeml']:     
+                               qdict['sendeml'] = u'on' 
+                            qdict['log_maxspeed'] = val
+                            qmax = datetime_string()
+                            qdict['log_date_maxspeed'] = qmax
+                            wind_options['log_maxspeed'] = val 
+                            wind_options['log_date_maxspeed'] = qmax  
+
+                            wind_options.web_update(qdict)
+                     
                         self.status['meter']  = round(val,2)
                         self.status['kmeter'] = round(val*3.6,2)
 
@@ -319,11 +321,15 @@ class settings_page(ProtectedPage):
             if wind_options['sendeml']:     
                 qdict['sendeml'] = u'on' 
             qdict['log_maxspeed'] = 0
-            qdict['log_date_maxspeed'] =  datetime_string()
-                
-            wind_options.web_update(qdict)    
+            qmax = datetime_string()
+            qdict['log_date_maxspeed'] = qmax
+            wind_options['log_maxspeed'] = 0
+            wind_options['log_date_maxspeed'] = qmax  
+
+            wind_options.web_update(qdict)   
+
             log.clear(NAME)
-            log.info(NAME, datetime_string() + ': ' + _('Maximal speed has reseted.'))
+            log.info(NAME, wind_options['log_date_maxspeed'] + ': ' + _('Maximal speed has reseted.'))
             
             raise web.seeother(plugin_url(settings_page), True)
 

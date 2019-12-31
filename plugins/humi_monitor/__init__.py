@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # this plugins check humidity 
 
 __author__ = 'Martin Pihrt'

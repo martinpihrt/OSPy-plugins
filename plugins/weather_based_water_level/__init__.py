@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+# -*- coding: utf-8 -*-
 __author__ = 'Rimco'  
 # Martin Pihrt add i18n language support
 

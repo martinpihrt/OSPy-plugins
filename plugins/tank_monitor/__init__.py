@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # this plugin check water level in tank via ultrasonic sensor.
 # for more use this hardware: https://pihrt.com/elektronika/339-moje-raspberry-pi-plugin-ospy-vlhkost-pudy-a-mozstvi-vody-v-tankua
 # HW Atmega328 has 30sec timeout for reboot if not accesing via I2C bus.
@@ -84,12 +84,9 @@ class Sender(Thread):
         two_text = True
         send = False
         mini = True
-
-        self._sleep(2)
         sonic_cm = get_sonic_cm()
         level_in_tank = get_sonic_tank_cm(sonic_cm)
-        self._sleep(2)
-
+        self._sleep(5)
 
         while not self._stop.is_set():
             try:
@@ -125,10 +122,12 @@ class Sender(Thread):
                             if tank_options['use_send_email']:     
                                 qdict['use_send_email'] = u'on' 
                             qdict['log_maxlevel'] = status['level']
-                            qdict['log_date_maxlevel'] = datetime_string()
+                            qmax = datetime_string()
+                            tank_options['log_date_maxlevel'] = qmax
+                            qdict['log_date_maxlevel'] = qmax
                             tank_options.web_update(qdict)                                # save to plugin options
   
-                        if status['level'] < tank_options['log_minlevel']:                # minimum level check 
+                        if status['level'] < tank_options['log_minlevel'] and status['level'] > 7:  # minimum level check 
                             if tank_options['use_sonic']:
                                 qdict['use_sonic'] = u'on' 
                             if tank_options['use_stop']:
@@ -136,11 +135,13 @@ class Sender(Thread):
                             if tank_options['use_send_email']:     
                                 qdict['use_send_email'] = u'on'
                             qdict['log_minlevel'] = status['level']
-                            qdict['log_date_minlevel'] = datetime_string()
+                            qmin = datetime_string()
+                            tank_options['log_date_minlevel'] = qmin
+                            qdict['log_date_minlevel'] = qmin
                             tank_options.web_update(qdict)                                 # save to plugin options                          
                              
 
-                        if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode: # level value is lower, waiting 20s, 2x check and next send email
+                        if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 7: # level value is lower
                             if tank_options['use_send_email']:                             # if email is enabled
                                 send = True                                                # send
                                 mini = False 
@@ -334,8 +335,11 @@ class settings_page(ProtectedPage):
         if sender is not None and reset:
             qdict['log_minlevel'] = status['level']
             qdict['log_maxlevel'] = status['level']
-            qdict['log_date_maxlevel'] = datetime_string()
-            qdict['log_date_minlevel'] = datetime_string()
+            qm = datetime_string()
+            qdict['log_date_maxlevel'] = qm
+            qdict['log_date_minlevel'] = qm
+            tank_options['log_date_maxlevel'] = qm
+            tank_options['log_date_minlevel'] = qm
             if tank_options['use_sonic']:
                 qdict['use_sonic'] = u'on' 
             if tank_options['use_stop']:

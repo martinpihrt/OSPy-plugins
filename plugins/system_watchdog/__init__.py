@@ -1,5 +1,3 @@
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # this plugins enable or disable system RPi HW watchdog 
 # help: https://www.raspberrypi.org/forums/viewtopic.php?f=29&t=147501

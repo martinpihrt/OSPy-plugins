@@ -1,5 +1,3 @@
-
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # This plugin sends data to I2C for LCD 16x2 char with PCF8574.

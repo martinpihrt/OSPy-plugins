@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # This plugin pulses a selected circuit with a 1 Hz signal with adjusted time. (For discover the location of a valve).
