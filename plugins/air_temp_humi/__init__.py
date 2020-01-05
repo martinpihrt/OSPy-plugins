@@ -17,6 +17,7 @@ from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision
 from ospy.helpers import datetime_string
+from ospy import helpers
 from ospy.stations import stations
 
 import RPi.GPIO as GPIO
@@ -287,7 +288,8 @@ def DHT_read_humi_value():
    
 
 def read_log():
-    """Read log from json file."""
+    """Read log data from json file."""
+
     try:
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             return json.load(logf)
@@ -295,13 +297,34 @@ def read_log():
         return []
 
 
+def read_graph_log():
+    """Read graph data from json file."""
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []
+
+
 def write_log(json_data):
-    """Write json to log file."""
+    """Write data to log json file."""
+
     with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
         json.dump(json_data, outfile)
 
 
+def write_graph_log(json_data):
+    """Write data to graph json file."""
+
+    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
 def update_log(status):
+    """Update data in json files.""" 
+
+    ### Data for log ###
     log_data = read_log()
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
@@ -338,7 +361,79 @@ def update_log(status):
     if plugin_options['log_records'] > 0:
         log_data = log_data[:plugin_options['log_records']]
     write_log(log_data)
-    log.info(NAME, _('Saving log to file.'))
+
+    ### Data for graph log ###
+    try:  
+        graph_data = read_graph_log()     # example default -> [{"station": "DS1", "balances": {}, {"station": "DS2", "balances": {}},{"station": "DS3", "balances": {}}}]
+        temp0 = graph_data[0]['balances']
+        temp1 = graph_data[1]['balances']
+        temp2 = graph_data[2]['balances']
+        temp3 = graph_data[3]['balances']
+        temp4 = graph_data[4]['balances']
+        temp5 = graph_data[5]['balances']
+        temp6 = graph_data[6]['balances']
+
+        timestamp = int(time.time())
+
+        if status['DS0'] != -127:
+           DS1 = {'total': status['DS0']}
+           temp0.update({timestamp: DS1})
+
+        if status['DS1'] != -127:
+           DS2 = {'total': status['DS1']}
+           temp1.update({timestamp: DS2})
+
+        if status['DS2'] != -127:
+           DS3 = {'total': status['DS2']}
+           temp2.update({timestamp: DS3})
+
+        if status['DS3'] != -127:
+           DS4 = {'total': status['DS3']}
+           temp3.update({timestamp: DS4})
+
+        if status['DS4'] != -127:
+           DS5 = {'total': status['DS4']}
+           temp4.update({timestamp: DS5})
+
+        if status['DS5'] != -127:
+           DS6 = {'total': status['DS5']}
+           temp5.update({timestamp: DS6})
+
+        DHT = {'total': status['temp']}
+        temp6.update({timestamp: DHT})
+     
+        write_graph_log(graph_data)
+
+    except: 
+        create_default_graph()
+        log.debug(NAME, _('Creating default graph log files OK'))
+
+
+    log.info(NAME, _('Saving to log  files OK'))
+
+
+def create_default_graph():
+    """Create default graph json file."""
+
+    name1 = plugin_options['label_ds0']
+    name2 = plugin_options['label_ds1']
+    name3 = plugin_options['label_ds2']
+    name4 = plugin_options['label_ds3']
+    name5 = plugin_options['label_ds4']
+    name6 = plugin_options['label_ds5']
+    name7 = plugin_options['label']
+
+    graph_data = [
+       {"station": name1, "balances": {}},
+       {"station": name2, "balances": {}}, 
+       {"station": name3, "balances": {}},
+       {"station": name4, "balances": {}},
+       {"station": name5, "balances": {}},
+       {"station": name6, "balances": {}},
+       {"station": name7, "balances": {}}
+    ]
+    write_graph_log(graph_data)
+
 
 
 ################################################################################
@@ -346,9 +441,20 @@ def update_log(status):
 ################################################################################
 
 class settings_page(ProtectedPage):
-    """Load an html page for entering adjustments."""
+    """Load an html page for entering adjustments and deleting logs"""
 
     def GET(self):
+        global sender
+        qdict = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+
+        if sender is not None and delete:
+           write_log([])
+           create_default_graph()
+           log.info(NAME, _('Deleted all log files OK'))
+
+           raise web.seeother(plugin_url(settings_page), True)
+
         return self.plugin_render.air_temp_humi(plugin_options, log.events(NAME))
 
     def POST(self):
@@ -396,7 +502,7 @@ class data_json(ProtectedPage):
 
 
 class log_json(ProtectedPage):
-    """Returns plugin settings in JSON format."""
+    """Returns data in JSON format."""
 
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
@@ -404,10 +510,27 @@ class log_json(ProtectedPage):
         return json.dumps(read_log())
 
 
+class graph_json(ProtectedPage):
+    """Returns graph data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        return json.dumps(read_graph_log())
+
+
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
 
     def GET(self):
+
+        name1 = plugin_options['label_ds0']
+        name2 = plugin_options['label_ds1']
+        name3 = plugin_options['label_ds2']
+        name4 = plugin_options['label_ds3']
+        name5 = plugin_options['label_ds4']
+        name6 = plugin_options['label_ds5']
+        
         log_records = read_log()
         data  = "Date/Time"
         data += ";\t Date"
@@ -415,12 +538,12 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         data += ";\t Temperature C"
         data += ";\t Humidity %RH" 
         data += ";\t Output"
-        data += ";\t DS1 Temperature C"
-        data += ";\t DS2 Temperature C"
-        data += ";\t DS3 Temperature C"
-        data += ";\t DS4 Temperature C"
-        data += ";\t DS5 Temperature C"
-        data += ";\t DS6 Temperature C"
+        data += ";\t" + name1
+        data += ";\t" + name2
+        data += ";\t" + name3
+        data += ";\t" + name4
+        data += ";\t" + name5
+        data += ";\t" + name6
         data += '\n'
 
         for record in log_records:
@@ -440,12 +563,3 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
 
         web.header('Content-Type', 'text/csv')
         return data
-
-
-class delete_log_page(ProtectedPage):  # delete log file from web
-    """Delete all log_records"""
-
-    def GET(self):
-        write_log([])
-        log.info(NAME, _('Deleted log file'))
-        raise web.seeother(plugin_url(settings_page), True)

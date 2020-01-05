@@ -3,7 +3,130 @@ $def with(plugin_options, events)
 $var title: $_('Air Temperature and Humidity Monitor')
 $var page: plugins
 
+<script src="/static/scripts/jquery.flot.js"></script>
+<script src="/static/scripts/jquery.flot.time.js"></script>
+<script src="/static/scripts/jquery.flot.resize.js"></script>
+<script src="/static/scripts/jquery.flot.axislabels.js"></script>
+
 <script>
+var graph_text;
+
+function draw_graph(result) {
+    var data = [];
+    graph_text = [];
+    var legend_items = jQuery('#legend-visible').find('.legendColorBox');
+
+    for (var i = 0; i < result.length; i++) {
+        var balances = [];
+        var txt_header = "<table class=\"balanceList\"><tr><th>$_('Reason')</th><th>(&deg;C)</th></tr>";
+        var texts = [];
+        var txt_body = "";
+        var txt_footer = "</table>";
+        for (timestamp in result[i]['balances']) {
+            var balance = result[i]['balances'][timestamp];
+            balances.push([1000*parseInt(timestamp), balance['total']]);
+            var date = new Date(1000*parseInt(timestamp));
+            var hours = date.getHours();
+            var minutes = "0" + date.getMinutes();
+            var seconds = "0" + date.getSeconds();
+            var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+            txt_body += "<tr><td>$_('Actual Temperature')</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+            texts.push("<b>" + result[i]['station'] + "</b> " + toXSDate(date) + "<br>" + formattedTime + "<br>" + txt_header + txt_body + txt_footer);
+            txt_body = "<tr><td>$_('Previous Temperature')</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+        }
+
+        if (i >= legend_items.length || legend_items.eq(i).children().children().attr("data") == 1)
+        {
+            data.push({
+                data: balances,
+                label: result[i]['station'],
+                color: i
+            })
+            graph_text.push(texts);
+        }
+    }
+
+    return jQuery.plot("#graph-placeholder", data, {
+        series: {
+            lines: {
+                show: true
+            },
+            points: {
+                show: true
+            }
+        },
+        grid: {
+            hoverable: true
+        },
+        xaxis: {
+            mode: "time",
+            timeformat: "%Y-%m-%d"
+        },
+        legend: {
+            show: true,
+            container: jQuery("#legend-placeholder")
+        },
+        axisLabels: {
+            show: true
+        },
+        yaxes: [{
+            position: 'left',
+            axisLabel: '$_('Measured temperatures in') &deg;C',
+        }]
+    });
+}
+
+function create_graph(result) {
+    plot = draw_graph(result);
+
+    jQuery('#legend-visible').html(jQuery('#legend-placeholder').html());
+    plot.resize();
+    plot.setupGrid();
+    plot.draw();
+
+    jQuery('#legend-visible').find('.legendColorBox').children().children().css({
+        color: "#ddd"
+    }).attr("data", 1);
+
+    jQuery('#legend-visible').on('click', 'tr', function(){
+        var colorbox = jQuery(this).find('.legendColorBox').children().children();
+        colorbox.css({
+            "border-color": colorbox.css("color"),
+            "color": colorbox.css("border-left-color")
+        });
+        colorbox.attr("data", 1 - colorbox.attr("data"));
+        draw_graph(result);
+    });
+
+    jQuery("<div id='tooltip'></div>").css({
+        position: "absolute",
+        display: "none",
+        "min-width": "120px",
+        "background-color": "#eee",
+        padding: "5px",
+        "border-radius": "5px"
+    }).appendTo("body");
+
+    jQuery("#graph-placeholder").bind("plothover", function (event, pos, item) {
+        if (item) {
+            jQuery("#tooltip").html(graph_text[item.seriesIndex][item.dataIndex]);
+            var x = item.pageX+5;
+            if (item.pageX + jQuery("#tooltip").width() > jQuery(document).width() - 100)
+            {
+                x = item.pageX-jQuery("#tooltip").width()-10;
+            }
+            var y = item.pageY+5;
+            if (item.pageY + jQuery("#tooltip").height() > jQuery(document).height() - 20)
+            {
+                y = item.pageY-jQuery("#tooltip").height()-10;
+            }
+            jQuery("#tooltip").css({top: y, left: x}).fadeIn(200);
+        } else {
+            jQuery("#tooltip").hide();
+        }
+    });
+}
+
     // Initialize behaviors
     jQuery(document).ready(function(){
 
@@ -13,6 +136,11 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+    
+    if (jQuery("#graph-placeholder").length > 0) {
+        setTimeout(function() {jQuery.getJSON("/plugins/air_temp_humi/graph_json", create_graph)}, 500); 
+    }
+
  });
 </script>
     
@@ -22,7 +150,8 @@ $var page: plugins
     <p>$_('This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for Humidity: 20 - 90 %RH. Range for Temperature 0 - 50 Celsius')</p>    
     <p>$_('This plugin allows the control of some stations (eg Fan) depending on the humidity of the sensor').</p> 
     <p>$_('This plug-in allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03)').</p> 
-    <p>$_('Download log as') <a href="$plugins.plugin_url('air_temp_humi.log_csv')">csv</a>. <a href="$plugins.plugin_url('air_temp_humi.delete_log_page')">$_('Delete')</a> $_('log file').</p>
+    <p>$_('Download log as') <a href="$plugins.plugin_url('air_temp_humi.log_csv')">csv</a>.</p>
+    <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p> 
     <form id="pluginForm" action="$plugins.plugin_url('air_temp_humi.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -158,4 +287,14 @@ $var page: plugins
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <a href="?delete" class="button upload">$_('Delete all logs')</a>
 </div>
+
+$if plugin_options['enable_log']:
+   <div id="graph-container" class="graph-container">
+   <div id="legend-placeholder" style="display:none;"></div>
+   <div id="legend-visible" style="float: right; width: auto;"></div>
+   <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
+   <div style="clear: both;"></div>
+   </div>
+

@@ -6,13 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-04-06 06:09+0200\n"
-"PO-Revision-Date: 2018-04-06 07:05+0200\n"
+"PO-Revision-Date: 2020-01-05 09:21+0100\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 1.8.7\n"
+"X-Generator: Poedit 2.2.4\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "Language: cs_CZ\n"
@@ -34,8 +34,7 @@ msgstr "VYP"
 msgid "ON"
 msgstr "ZAP"
 
-#: plugins/air_temp_humi/__init__.py:118
-#: plugins/air_temp_humi/templates/air_temp_humi.html:87
+#: plugins/air_temp_humi/__init__.py:118 plugins/air_temp_humi/templates/air_temp_humi.html:87
 msgid "Output"
 msgstr "Výstup"
 
@@ -70,27 +69,26 @@ msgstr "Měření teploty a vlhkosti vzduchu"
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:22
 msgid ""
-"This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for "
-"Humidity: 20 - 90 %RH. Range for Temperature 0 - 50 Celsius"
+"This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for Humidity: 20 - 90 %RH. "
+"Range for Temperature 0 - 50 Celsius"
 msgstr ""
-"Toto rozšíření využívá snímač DHT11 připojený na konektor GPIO 11 (pin 19 "
-"MOSI). Rozsah měření: 20 - 90% relativní vlhkosti a 0 - 50 stupňů Celsia"
+"Toto rozšíření využívá snímač DHT11 připojený na konektor GPIO 11 (pin 19 MOSI). Rozsah měření: 20 - "
+"90% relativní vlhkosti a 0 - 50 stupňů Celsia"
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:23
 msgid ""
-"This plugin allows the control of some stations (eg Fan) depending on the "
-"humidity of the sensor"
+"This plugin allows the control of some stations (eg Fan) depending on the humidity of the sensor"
 msgstr ""
-"Toto rozšíření umožňuje ovládat některou stanici (například ventilátor) v "
-"závislosti na vlhkosti snímače"
+"Toto rozšíření umožňuje ovládat některou stanici (například ventilátor) v závislosti na vlhkosti "
+"snímače"
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:24
 msgid ""
-"This plug-in allows you to connect 1-6 DS18B20 sensors connected to the "
-"external hardware board via an I2C bus (address 0x03)"
+"This plug-in allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via "
+"an I2C bus (address 0x03)"
 msgstr ""
-"Toto rozšíření umožňuje měřit teplotu z 6 snímačů DS18B20, které jsou "
-"připojeny přes I2C sběrnici na adrese 0x03 k externí desce"
+"Toto rozšíření umožňuje měřit teplotu z 6 snímačů DS18B20, které jsou připojeny přes I2C sběrnici na "
+"adrese 0x03 k externí desce"
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:25
 msgid "Delete"
@@ -110,7 +108,7 @@ msgstr "Použít rozšíření"
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:35
 msgid "Enable logging"
-msgstr "Povolit záznam"
+msgstr "Povolit záznam a graf"
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:41
 msgid "Maximum number of log records"
@@ -185,3 +183,35 @@ msgstr "POTVRDIT"
 #: plugins/air_temp_humi/templates/air_temp_humi.html:160
 msgid "Cancel"
 msgstr "ZPĚT"
+
+#: plugins/air_temp_humi/__init__.py:400
+msgid "Saving to log  files OK."
+msgstr "Ukládání do souborů protokolu OK."
+
+#: plugins/air_temp_humi/__init__.py:435
+msgid "Deleted all log files OK"
+msgstr "Odstraněny všechny soubory protokolu OK"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:149
+msgid "If logging is enabled, a graph with measured data will be displayed at the bottom of the screen"
+msgstr "Je-li povolen záznam, zobrazí se v dolní části obrazovky graf s naměřenými daty"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:285
+msgid "Delete all logs"
+msgstr "Smazat všechny logy"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:285
+msgid "Measured temperatures in"
+msgstr "Měřené teploty v"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:285
+msgid "Actual Temperature"
+msgstr "Skutečná teplota"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:285
+msgid "Previous Temperature"
+msgstr "Předchozí teplota"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:285
+msgid "Reason"
+msgstr "Statistika"

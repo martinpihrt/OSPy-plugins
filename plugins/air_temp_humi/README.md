@@ -13,8 +13,8 @@ Plugin setup
 * Check Enabled:  
   If checked enabled plugin is enabled.
 
-* Check Enable logging:  
-  If checked enabled logging save measure value to logfile (format .csv for Excel).
+* Check Enable logging and show graph:  
+  If checked enabled logging save measure value to logfile (format .csv for Excel) and logfile for graph.
 
 * Maximum number of log records:  
   Type maximum records in log file. 0 is unlimited.  
@@ -51,6 +51,9 @@ Plugin setup
 
 * Status:  
   Status window from the plugin.
+
+* Graph
+  To use the graph it is necessary to enable saving of measured data (from temperature sensors). When using for the first time, name the sensors first and then delete all records (using the button). 
 
 
 The hardware should be connected as follows (without separate I2C Bus):
