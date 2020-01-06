@@ -365,49 +365,48 @@ def update_log(status):
     ### Data for graph log ###
     try:  
         graph_data = read_graph_log()     # example default -> [{"station": "DS1", "balances": {}, {"station": "DS2", "balances": {}},{"station": "DS3", "balances": {}}}]
-        temp0 = graph_data[0]['balances']
-        temp1 = graph_data[1]['balances']
-        temp2 = graph_data[2]['balances']
-        temp3 = graph_data[3]['balances']
-        temp4 = graph_data[4]['balances']
-        temp5 = graph_data[5]['balances']
-        temp6 = graph_data[6]['balances']
-
-        timestamp = int(time.time())
-
-        if status['DS0'] != -127:
-           DS1 = {'total': status['DS0']}
-           temp0.update({timestamp: DS1})
-
-        if status['DS1'] != -127:
-           DS2 = {'total': status['DS1']}
-           temp1.update({timestamp: DS2})
-
-        if status['DS2'] != -127:
-           DS3 = {'total': status['DS2']}
-           temp2.update({timestamp: DS3})
-
-        if status['DS3'] != -127:
-           DS4 = {'total': status['DS3']}
-           temp3.update({timestamp: DS4})
-
-        if status['DS4'] != -127:
-           DS5 = {'total': status['DS4']}
-           temp4.update({timestamp: DS5})
-
-        if status['DS5'] != -127:
-           DS6 = {'total': status['DS5']}
-           temp5.update({timestamp: DS6})
-
-        DHT = {'total': status['temp']}
-        temp6.update({timestamp: DHT})
-     
-        write_graph_log(graph_data)
-
     except: 
         create_default_graph()
         log.debug(NAME, _('Creating default graph log files OK'))
 
+    timestamp = int(time.time())
+
+    if plugin_options['ds_used'] > 0:      # DS1
+        temp0 = graph_data[0]['balances']
+        if status['DS0'] != -127:
+           DS1 = {'total': status['DS0']}
+           temp0.update({timestamp: DS1})
+    if plugin_options['ds_used'] > 1:      # DS2
+        temp1 = graph_data[1]['balances']
+        if status['DS1'] != -127:
+           DS2 = {'total': status['DS1']}
+           temp1.update({timestamp: DS2})
+    if plugin_options['ds_used'] > 2:      # DS3
+        temp2 = graph_data[2]['balances']
+        if status['DS2'] != -127:
+           DS3 = {'total': status['DS2']}
+           temp2.update({timestamp: DS3})
+    if plugin_options['ds_used'] > 3:      # DS4
+        temp3 = graph_data[3]['balances']
+        if status['DS3'] != -127:
+           DS4 = {'total': status['DS3']}
+           temp3.update({timestamp: DS4})
+    if plugin_options['ds_used'] > 4:      # DS5
+        temp4 = graph_data[4]['balances']
+        if status['DS4'] != -127:
+           DS5 = {'total': status['DS4']}
+           temp4.update({timestamp: DS5})
+    if plugin_options['ds_used'] > 5:      # DS6
+        temp5 = graph_data[5]['balances']
+        if status['DS5'] != -127:
+           DS6 = {'total': status['DS5']}
+           temp5.update({timestamp: DS6})
+
+    temp6 = graph_data[6]['balances']      # DHT    
+    DHT = {'total': status['temp']}
+    temp6.update({timestamp: DHT})
+     
+    write_graph_log(graph_data)
 
     log.info(NAME, _('Saving to log  files OK'))
 
@@ -415,12 +414,26 @@ def update_log(status):
 def create_default_graph():
     """Create default graph json file."""
 
-    name1 = plugin_options['label_ds0']
-    name2 = plugin_options['label_ds1']
-    name3 = plugin_options['label_ds2']
-    name4 = plugin_options['label_ds3']
-    name5 = plugin_options['label_ds4']
-    name6 = plugin_options['label_ds5']
+    name1 = ""
+    name2 = ""
+    name3 = ""
+    name4 = ""
+    name5 = ""
+    name6 = ""
+
+    if plugin_options['ds_used'] > 0:
+        name1 = plugin_options['label_ds0']
+    if plugin_options['ds_used'] > 1:
+        name2 = plugin_options['label_ds1']
+    if plugin_options['ds_used'] > 2:
+        name3 = plugin_options['label_ds2']
+    if plugin_options['ds_used'] > 3:
+        name4 = plugin_options['label_ds3']
+    if plugin_options['ds_used'] > 4:
+        name5 = plugin_options['label_ds4']
+    if plugin_options['ds_used'] > 5:
+        name6 = plugin_options['label_ds5']
+
     name7 = plugin_options['label']
 
     graph_data = [
