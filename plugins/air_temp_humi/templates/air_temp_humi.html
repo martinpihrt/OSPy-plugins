@@ -7,6 +7,7 @@ $var page: plugins
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
 <script src="/static/scripts/jquery.flot.axislabels.js"></script>
+<script src="/static/scripts/jquery.flot.selection.js"></script>
 
 <script>
 var graph_text;
@@ -60,7 +61,7 @@ function draw_graph(result) {
         },
         xaxis: {
             mode: "time",
-            timeformat: "%Y-%m-%d"
+            timeformat: "%m-%d"
         },
         legend: {
             show: true,
@@ -72,7 +73,10 @@ function draw_graph(result) {
         yaxes: [{
             position: 'left',
             axisLabel: '$_('Measured temperatures in') &deg;C',
-        }]
+        }],
+        selection: {
+            mode: 'x'
+        }
     });
 }
 
@@ -83,6 +87,7 @@ function create_graph(result) {
     plot.resize();
     plot.setupGrid();
     plot.draw();
+    plot.clearSelection();
 
     jQuery('#legend-visible').find('.legendColorBox').children().children().css({
         color: "#ddd"
@@ -107,6 +112,7 @@ function create_graph(result) {
         "border-radius": "5px"
     }).appendTo("body");
 
+
     jQuery("#graph-placeholder").bind("plothover", function (event, pos, item) {
         if (item) {
             jQuery("#tooltip").html(graph_text[item.seriesIndex][item.dataIndex]);
@@ -125,6 +131,23 @@ function create_graph(result) {
             jQuery("#tooltip").hide();
         }
     });
+
+    jQuery("#graph-placeholder").bind("plotselected", function (event, ranges) {
+        jQuery("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
+        jQuery.each(plot.getXAxes(), function(_, axis) {
+                var opts = axis.options;
+                opts.min = ranges.xaxis.from;
+                opts.max = ranges.xaxis.to;
+        });
+        plot.setupGrid();
+        plot.draw();
+        plot.clearSelection(); 
+    });
+
+    jQuery('#clearSelection').on('click', function(){
+        jQuery.getJSON("/plugins/air_temp_humi/graph_json", create_graph)
+    });
+
 }
 
     // Initialize behaviors
@@ -296,5 +319,6 @@ $if plugin_options['enable_log']:
    <div id="legend-visible" style="float: right; width: auto;"></div>
    <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
    <div style="clear: both;"></div>
+   <button id="clearSelection">$_('Clear selection')</button>
    </div>
 

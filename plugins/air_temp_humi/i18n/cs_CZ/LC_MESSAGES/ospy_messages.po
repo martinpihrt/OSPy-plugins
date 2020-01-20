@@ -5,213 +5,225 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2018-04-06 06:09+0200\n"
-"PO-Revision-Date: 2020-01-05 09:21+0100\n"
+"POT-Creation-Date: 2020-01-20 08:19+CET\n"
+"PO-Revision-Date: 2020-01-20 08:22+0100\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Language-Team: \n"
+"Language: cs_CZ\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 2.2.4\n"
-"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"Language: cs_CZ\n"
 
-#: plugins/air_temp_humi/__init__.py:114 plugins/air_temp_humi/__init__.py:190
-#: plugins/air_temp_humi/__init__.py:193
+#: plugins/air_temp_humi/__init__.py:128
+msgid "DHT11 data is not valid"
+msgstr "DHT11 data nejsou platná"
+
+#: plugins/air_temp_humi/__init__.py:133 plugins/air_temp_humi/__init__.py:174
 msgid "Temperature"
 msgstr "Teplota"
 
-#: plugins/air_temp_humi/__init__.py:115
+#: plugins/air_temp_humi/__init__.py:134
 msgid "Humidity"
 msgstr "Vlhkost"
 
-#: plugins/air_temp_humi/__init__.py:117
+#: plugins/air_temp_humi/__init__.py:136
 msgid "OFF"
 msgstr "VYP"
 
-#: plugins/air_temp_humi/__init__.py:117
+#: plugins/air_temp_humi/__init__.py:136
 msgid "ON"
 msgstr "ZAP"
 
-#: plugins/air_temp_humi/__init__.py:118 plugins/air_temp_humi/templates/air_temp_humi.html:87
+#: plugins/air_temp_humi/__init__.py:137
+#: plugins/air_temp_humi/templates/air_temp_humi.html:246
 msgid "Output"
 msgstr "Výstup"
 
-#: plugins/air_temp_humi/__init__.py:135
+#: plugins/air_temp_humi/__init__.py:154
 msgid "Station output was turned on."
 msgstr "Výstup (stanice) byl zapnut."
 
-#: plugins/air_temp_humi/__init__.py:143
+#: plugins/air_temp_humi/__init__.py:162
 msgid "Station output was turned off."
 msgstr "Výstup (stanice) byl vypnut."
 
-#: plugins/air_temp_humi/__init__.py:194
-msgid "Data is not correct. Please try again later."
-msgstr "Data z čidel nejsou v pořádku. Zkuste to prosím za chvilku."
-
-#: plugins/air_temp_humi/__init__.py:202
+#: plugins/air_temp_humi/__init__.py:181 plugins/air_temp_humi/__init__.py:257
 msgid "Air Temperature and Humidity Monitor plug-in"
 msgstr "Rozšíření měření teploty a vlhkosti vzduchu"
 
-#: plugins/air_temp_humi/__init__.py:350
-msgid "Saving log to file."
-msgstr "Uložen log do souboru."
+#: plugins/air_temp_humi/__init__.py:231
+msgid "Data is not correct. Please try again later."
+msgstr "Data z čidel nejsou v pořádku. Zkuste to prosím za chvilku."
 
-#: plugins/air_temp_humi/__init__.py:432
-msgid "Deleted log file"
-msgstr "Smazán log soubor"
+#: plugins/air_temp_humi/__init__.py:371
+msgid "Creating default graph log files OK"
+msgstr "Vytváření výchozích souborů protokolu grafu OK"
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:3
-#: plugins/air_temp_humi/templates/air_temp_humi.html:21
-msgid "Air Temperature and Humidity Monitor"
-msgstr "Měření teploty a vlhkosti vzduchu"
+#: plugins/air_temp_humi/__init__.py:412
+msgid "Saving to log  files OK"
+msgstr "Ukládání do souborů protokolu OK"
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:22
-msgid ""
-"This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for Humidity: 20 - 90 %RH. "
-"Range for Temperature 0 - 50 Celsius"
-msgstr ""
-"Toto rozšíření využívá snímač DHT11 připojený na konektor GPIO 11 (pin 19 MOSI). Rozsah měření: 20 - "
-"90% relativní vlhkosti a 0 - 50 stupňů Celsia"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:23
-msgid ""
-"This plugin allows the control of some stations (eg Fan) depending on the humidity of the sensor"
-msgstr ""
-"Toto rozšíření umožňuje ovládat některou stanici (například ventilátor) v závislosti na vlhkosti "
-"snímače"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:24
-msgid ""
-"This plug-in allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via "
-"an I2C bus (address 0x03)"
-msgstr ""
-"Toto rozšíření umožňuje měřit teplotu z 6 snímačů DS18B20, které jsou připojeny přes I2C sběrnici na "
-"adrese 0x03 k externí desce"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:25
-msgid "Delete"
-msgstr "Smazat"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:25
-msgid "Download log as"
-msgstr "Stáhnout soubor se záznamem jako"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:25
-msgid "log file"
-msgstr "záznam (log)"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:29
-msgid "Enabled"
-msgstr "Použít rozšíření"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:35
-msgid "Enable logging"
-msgstr "Povolit záznam a graf"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:41
-msgid "Maximum number of log records"
-msgstr "Maximální počet záznamů"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:43
-msgid "0 = unlimited"
-msgstr "0 = bez omezení"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:47
-msgid "Interval for logging"
-msgstr "Opakovat záznam po"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:49
-msgid "minutes (Minimum is 1)"
-msgstr "minutě/tách (minimum je 1)"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:53
-#: plugins/air_temp_humi/templates/air_temp_humi.html:109
-#: plugins/air_temp_humi/templates/air_temp_humi.html:116
-#: plugins/air_temp_humi/templates/air_temp_humi.html:123
-#: plugins/air_temp_humi/templates/air_temp_humi.html:130
-#: plugins/air_temp_humi/templates/air_temp_humi.html:137
-#: plugins/air_temp_humi/templates/air_temp_humi.html:144
-msgid "Label for sensor"
-msgstr "Pojmenování snímače"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:59
-msgid "Allow regulation"
-msgstr "Povolit regulaci"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:65
-msgid "Hysteresis"
-msgstr "Hystereze"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:71
-msgid "Humidity for output ON"
-msgstr "Vlhkost pro zapnutí výstupu"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:73
-msgid "Humidity + hysteresis/2 > ON"
-msgstr "(Aktuální vlhkost + hystereze/2 > zapnutí výstupu)"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:77
-msgid "Humidity for output OFF"
-msgstr "Vlhkost pro vypnutí výstupu"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:79
-msgid "Humidity - hysteresis/2 < OFF"
-msgstr "Aktuální vlhkost - hystereze/2 < vypnutí výstupu"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:83
-msgid "Select Output"
-msgstr "Volba výstupu (stanice)"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:97
-msgid "Enable DS18B20"
-msgstr "Použít I2C a DS18B20"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:103
-msgid "Used DS18B20"
-msgstr "Počet snímačů DS18B20"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:150
-msgid "Status"
-msgstr "Stav"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:159
-msgid "Submit"
-msgstr "POTVRDIT"
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:160
-msgid "Cancel"
-msgstr "ZPĚT"
-
-#: plugins/air_temp_humi/__init__.py:400
-msgid "Saving to log  files OK."
-msgstr "Ukládání do souborů protokolu OK."
-
-#: plugins/air_temp_humi/__init__.py:435
+#: plugins/air_temp_humi/__init__.py:468
 msgid "Deleted all log files OK"
 msgstr "Odstraněny všechny soubory protokolu OK"
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:149
-msgid "If logging is enabled, a graph with measured data will be displayed at the bottom of the screen"
-msgstr "Je-li povolen záznam, zobrazí se v dolní části obrazovky graf s naměřenými daty"
+#: plugins/air_temp_humi/templates/air_temp_humi.html:3
+#: plugins/air_temp_humi/templates/air_temp_humi.html:179
+msgid "Air Temperature and Humidity Monitor"
+msgstr "Měření teploty a vlhkosti vzduchu"
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
+#: plugins/air_temp_humi/templates/air_temp_humi.html:180
+msgid ""
+"This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for "
+"Humidity: 20 - 90 %RH. Range for Temperature 0 - 50 Celsius"
+msgstr ""
+"Toto rozšíření využívá snímač DHT11 připojený na konektor GPIO 11 (pin 19 "
+"MOSI). Rozsah měření: 20 - 90% relativní vlhkosti a 0 - 50 stupňů Celsia"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:181
+msgid ""
+"This plugin allows the control of some stations (eg Fan) depending on the "
+"humidity of the sensor"
+msgstr ""
+"Toto rozšíření umožňuje ovládat některou stanici (například ventilátor) v "
+"závislosti na vlhkosti snímače"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:182
+msgid ""
+"This plug-in allows you to connect 1-6 DS18B20 sensors connected to the "
+"external hardware board via an I2C bus (address 0x03)"
+msgstr ""
+"Toto rozšíření umožňuje měřit teplotu z 6 snímačů DS18B20, které jsou "
+"připojeny přes I2C sběrnici na adrese 0x03 k externí desce"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:183
+msgid "Download log as"
+msgstr "Stáhnout soubor se záznamem jako"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:184
+msgid ""
+"If logging is enabled, a graph with measured data will be displayed at the "
+"bottom of the screen"
+msgstr ""
+"Je-li povolen záznam, zobrazí se v dolní části obrazovky graf s naměřenými "
+"daty"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:188
+msgid "Enabled"
+msgstr "Použít rozšíření"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:194
+msgid "Enable logging"
+msgstr "Povolit záznam a graf"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:200
+msgid "Maximum number of log records"
+msgstr "Maximální počet záznamů"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:202
+msgid "0 = unlimited"
+msgstr "0 = bez omezení"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:206
+msgid "Interval for logging"
+msgstr "Opakovat záznam po"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:208
+msgid "minutes (Minimum is 1)"
+msgstr "minutě/tách (minimum je 1)"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:212
+#: plugins/air_temp_humi/templates/air_temp_humi.html:268
+#: plugins/air_temp_humi/templates/air_temp_humi.html:275
+#: plugins/air_temp_humi/templates/air_temp_humi.html:282
+#: plugins/air_temp_humi/templates/air_temp_humi.html:289
+#: plugins/air_temp_humi/templates/air_temp_humi.html:296
+#: plugins/air_temp_humi/templates/air_temp_humi.html:303
+msgid "Label for sensor"
+msgstr "Pojmenování snímače"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:218
+msgid "Allow regulation"
+msgstr "Povolit regulaci"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:224
+msgid "Hysteresis"
+msgstr "Hystereze"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:230
+msgid "Humidity for output ON"
+msgstr "Vlhkost pro zapnutí výstupu"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:232
+msgid "Humidity + hysteresis/2 > ON"
+msgstr "(Aktuální vlhkost + hystereze/2 > zapnutí výstupu)"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:236
+msgid "Humidity for output OFF"
+msgstr "Vlhkost pro vypnutí výstupu"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:238
+msgid "Humidity - hysteresis/2 < OFF"
+msgstr "Aktuální vlhkost - hystereze/2 < vypnutí výstupu"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:242
+msgid "Select Output"
+msgstr "Volba výstupu (stanice)"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:256
+msgid "Enable DS18B20"
+msgstr "Použít I2C a DS18B20"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:262
+msgid "Used DS18B20"
+msgstr "Počet snímačů DS18B20"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:309
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:318
+msgid "Submit"
+msgstr "POTVRDIT"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:319
+msgid "Cancel"
+msgstr "ZPĚT"
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:320
 msgid "Delete all logs"
 msgstr "Smazat všechny logy"
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
-msgid "Measured temperatures in"
-msgstr "Měřené teploty v"
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Clear selection"
+msgstr "Zrušit výběr"
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
-msgid "Actual Temperature"
-msgstr "Skutečná teplota"
+#~ msgid "Saving log to file."
+#~ msgstr "Uložen log do souboru."
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
-msgid "Previous Temperature"
-msgstr "Předchozí teplota"
+#~ msgid "Deleted log file"
+#~ msgstr "Smazán log soubor"
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
-msgid "Reason"
-msgstr "Statistika"
+#~ msgid "Delete"
+#~ msgstr "Smazat"
+
+#~ msgid "log file"
+#~ msgstr "záznam (log)"
+
+#~ msgid "Saving to log  files OK."
+#~ msgstr "Ukládání do souborů protokolu OK."
+
+#~ msgid "Measured temperatures in"
+#~ msgstr "Měřené teploty v"
+
+#~ msgid "Actual Temperature"
+#~ msgstr "Skutečná teplota"
+
+#~ msgid "Previous Temperature"
+#~ msgstr "Předchozí teplota"
+
+#~ msgid "Reason"
+#~ msgstr "Statistika"

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-01-04 22:18+CET\n"
+"POT-Creation-Date: 2020-01-20 08:19+CET\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -36,7 +36,7 @@ msgid "ON"
 msgstr ""
 
 #: plugins/air_temp_humi/__init__.py:137
-#: plugins/air_temp_humi/templates/air_temp_humi.html:211
+#: plugins/air_temp_humi/templates/air_temp_humi.html:246
 msgid "Output"
 msgstr ""
 
@@ -56,137 +56,130 @@ msgstr ""
 msgid "Data is not correct. Please try again later."
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:400
+#: plugins/air_temp_humi/__init__.py:371
+msgid "Creating default graph log files OK"
+msgstr ""
+
+#: plugins/air_temp_humi/__init__.py:412
 msgid "Saving to log  files OK"
 msgstr ""
 
-#: plugins/air_temp_humi/__init__.py:435
+#: plugins/air_temp_humi/__init__.py:468
 msgid "Deleted all log files OK"
 msgstr ""
 
 #: plugins/air_temp_humi/templates/air_temp_humi.html:3
-#: plugins/air_temp_humi/templates/air_temp_humi.html:144
+#: plugins/air_temp_humi/templates/air_temp_humi.html:179
 msgid "Air Temperature and Humidity Monitor"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:145
+#: plugins/air_temp_humi/templates/air_temp_humi.html:180
 msgid "This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for Humidity: 20 - 90 %RH. Range for Temperature 0 - 50 Celsius"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:146
+#: plugins/air_temp_humi/templates/air_temp_humi.html:181
 msgid "This plugin allows the control of some stations (eg Fan) depending on the humidity of the sensor"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:147
+#: plugins/air_temp_humi/templates/air_temp_humi.html:182
 msgid "This plug-in allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03)"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:148
+#: plugins/air_temp_humi/templates/air_temp_humi.html:183
 msgid "Download log as"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:149
+#: plugins/air_temp_humi/templates/air_temp_humi.html:184
 msgid "If logging is enabled, a graph with measured data will be displayed at the bottom of the screen"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:153
+#: plugins/air_temp_humi/templates/air_temp_humi.html:188
 msgid "Enabled"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:159
+#: plugins/air_temp_humi/templates/air_temp_humi.html:194
 msgid "Enable logging"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:165
+#: plugins/air_temp_humi/templates/air_temp_humi.html:200
 msgid "Maximum number of log records"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:167
+#: plugins/air_temp_humi/templates/air_temp_humi.html:202
 msgid "0 = unlimited"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:171
+#: plugins/air_temp_humi/templates/air_temp_humi.html:206
 msgid "Interval for logging"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:173
+#: plugins/air_temp_humi/templates/air_temp_humi.html:208
 msgid "minutes (Minimum is 1)"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:177
-#: plugins/air_temp_humi/templates/air_temp_humi.html:233
-#: plugins/air_temp_humi/templates/air_temp_humi.html:240
-#: plugins/air_temp_humi/templates/air_temp_humi.html:247
-#: plugins/air_temp_humi/templates/air_temp_humi.html:254
-#: plugins/air_temp_humi/templates/air_temp_humi.html:261
+#: plugins/air_temp_humi/templates/air_temp_humi.html:212
 #: plugins/air_temp_humi/templates/air_temp_humi.html:268
+#: plugins/air_temp_humi/templates/air_temp_humi.html:275
+#: plugins/air_temp_humi/templates/air_temp_humi.html:282
+#: plugins/air_temp_humi/templates/air_temp_humi.html:289
+#: plugins/air_temp_humi/templates/air_temp_humi.html:296
+#: plugins/air_temp_humi/templates/air_temp_humi.html:303
 msgid "Label for sensor"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:183
+#: plugins/air_temp_humi/templates/air_temp_humi.html:218
 msgid "Allow regulation"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:189
+#: plugins/air_temp_humi/templates/air_temp_humi.html:224
 msgid "Hysteresis"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:195
+#: plugins/air_temp_humi/templates/air_temp_humi.html:230
 msgid "Humidity for output ON"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:197
+#: plugins/air_temp_humi/templates/air_temp_humi.html:232
 msgid "Humidity + hysteresis/2 > ON"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:201
+#: plugins/air_temp_humi/templates/air_temp_humi.html:236
 msgid "Humidity for output OFF"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:203
+#: plugins/air_temp_humi/templates/air_temp_humi.html:238
 msgid "Humidity - hysteresis/2 < OFF"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:207
+#: plugins/air_temp_humi/templates/air_temp_humi.html:242
 msgid "Select Output"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:221
+#: plugins/air_temp_humi/templates/air_temp_humi.html:256
 msgid "Enable DS18B20"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:227
+#: plugins/air_temp_humi/templates/air_temp_humi.html:262
 msgid "Used DS18B20"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:274
+#: plugins/air_temp_humi/templates/air_temp_humi.html:309
 msgid "Status"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:283
+#: plugins/air_temp_humi/templates/air_temp_humi.html:318
 msgid "Submit"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:284
+#: plugins/air_temp_humi/templates/air_temp_humi.html:319
 msgid "Cancel"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
+#: plugins/air_temp_humi/templates/air_temp_humi.html:320
 msgid "Delete all logs"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
-msgid "Measured temperatures in"
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Clear selection"
 msgstr ""
 
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
-msgid "Actual Temperature"
-msgstr ""
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
-msgid "Previous Temperature"
-msgstr ""
-
-#: plugins/air_temp_humi/templates/air_temp_humi.html:285
-msgid "Reason"
-msgstr ""
