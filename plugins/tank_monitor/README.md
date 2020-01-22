@@ -15,7 +15,13 @@ Plugin setup
 * The water level from the bottom to the minimum water level in the tank:  
   Enter the level for the minimum water level in the tank. If it falls below this level will stop watering, stop the scheduler and send an email (For this function required email plugin).  
 * Cylinder diameter for volume calculation:
-  Enter the diameter for volume calculation
+  Enter the diameter for volume calculation.
+* Enable logging:
+  Enable logging and graphing.
+* Maximum number of log records:
+  Maximum number of log records (only for csv file).
+* Interval for logging:
+  Logging interval (minimum 1 minute).
 * Status:  
   Status window from the plugin.  
 

@@ -7,17 +7,19 @@ __author__ = 'Martin Pihrt' # www.pihrt.com
 
 import json
 import time
-import datetime
+from datetime import datetime
 import sys
 import traceback
+import os
 
 from threading import Thread, Event
 
 import web
+
 from ospy import helpers
 from ospy.options import options
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
@@ -42,7 +44,10 @@ tank_options = PluginOptions(
        'log_maxlevel': 400,    # maximal level (log)
        'log_minlevel': 0,      # minimal level (log)
        'log_date_maxlevel': datetime_string(), # maximal level (date log)
-       'log_date_minlevel': datetime_string()  # minimal level (date log)
+       'log_date_minlevel': datetime_string(), # minimal level (date log)
+       'enable_log': False,
+       'log_interval': 1,
+       'log_records': 0,
     }
 )
 
@@ -80,6 +85,7 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
+        last_millis = 0 # timer for save log
         once_text = True
         two_text = True
         send = False
@@ -154,6 +160,13 @@ class Sender(Thread):
                                    
                         if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: # refresh send email if actual level > options minimum +5
                             mini = True
+
+                        if tank_options['enable_log']:
+                            millis = int(round(time.time() * 1000))
+                            interval = (tank_options['log_interval'] * 60000)
+                            if (millis - last_millis) > interval:
+                               last_millis = millis
+                               update_log()
                     else:
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('Water level: Error I2C device not found.'))
@@ -319,6 +332,99 @@ def send_email(msg, msglog):
         log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
 
+def read_log():
+    """Read log data from json file."""
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []
+
+
+def read_graph_log():
+    """Read graph data from json file."""
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []
+
+
+def write_log(json_data):
+    """Write data to log json file."""
+
+    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
+def write_graph_log(json_data):
+    """Write data to graph json file."""
+
+    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
+def update_log():
+    """Update data in json files.""" 
+
+    ### Data for log ###
+    log_data = read_log()
+    data = {'datetime': datetime_string()}
+    data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+    data['time'] = str(datetime.now().strftime('%H:%M:%S'))
+    data['minimum'] = str(tank_options['log_minlevel'])
+    data['maximum'] = str(tank_options['log_maxlevel'])
+    data['actual']  = str(get_all_values()[0])
+      
+    log_data.insert(0, data)
+    if tank_options['log_records'] > 0:
+        log_data = log_data[:tank_options['log_records']]
+    write_log(log_data)
+
+    ### Data for graph log ###
+    try:  
+        graph_data = read_graph_log()    
+    except: 
+        create_default_graph()
+        log.debug(NAME, _('Creating default graph log files OK'))
+
+    timestamp = int(time.time())
+
+    minimum = graph_data[0]['balances']
+    minval = {'total': tank_options['log_minlevel']}
+    minimum.update({timestamp: minval})
+
+    maximum = graph_data[1]['balances']
+    maxval = {'total': tank_options['log_maxlevel']}
+    maximum.update({timestamp: maxval})
+
+    actual = graph_data[2]['balances']
+    actval = {'total': get_all_values()[0]}
+    actual.update({timestamp: actval})
+ 
+    write_graph_log(graph_data)
+
+    log.info(NAME, _('Saving to log  files OK'))
+
+
+def create_default_graph():
+    """Create default graph json file."""
+
+    minimum = _('Minimum')
+    maximum = _('Maximum')
+    actual  = _('Actual')
+ 
+    graph_data = [
+       {"station": minimum, "balances": {}},
+       {"station": maximum, "balances": {}}, 
+       {"station": actual, "balances": {}}
+    ]
+    write_graph_log(graph_data)
+
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -329,8 +435,9 @@ class settings_page(ProtectedPage):
     def GET(self):
         global sender, status
 
-        qdict = web.input()
-        reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
+        qdict  = web.input()
+        reset  = helpers.get_input(qdict, 'reset', False, lambda x: True)
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
 
         if sender is not None and reset:
             qdict['log_minlevel'] = status['level']
@@ -351,6 +458,13 @@ class settings_page(ProtectedPage):
             log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
             
             raise web.seeother(plugin_url(settings_page), True)
+
+        if sender is not None and delete:
+           write_log([])
+           create_default_graph()
+           log.info(NAME, _('Deleted all log files OK'))
+
+           raise web.seeother(plugin_url(settings_page), True)
 
         return self.plugin_render.tank_monitor(tank_options, log.events(NAME))
 
@@ -380,6 +494,7 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(tank_options)
 
+
 class data_json(ProtectedPage):
     """Returns plugin data in JSON format."""
 
@@ -395,3 +510,48 @@ class data_json(ProtectedPage):
         }
 
         return json.dumps(data)
+
+class log_json(ProtectedPage):
+    """Returns data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        return json.dumps(read_log())
+
+
+class graph_json(ProtectedPage):
+    """Returns graph data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        return json.dumps(read_graph_log())
+
+
+class log_csv(ProtectedPage):  # save log file from web as csv file type
+    """Simple Log API"""
+
+    def GET(self):
+       
+        log_records = read_log()
+        data  = "Date/Time"
+        data += ";\t Date"
+        data += ";\t Time"
+        data += ";\t Min cm"
+        data += ";\t Max cm" 
+        data += ";\t Act cm"
+        data += '\n'
+
+        for record in log_records:
+            data +=         record['datetime']
+            data += ";\t" + record['date']
+            data += ";\t" + record['time']
+            data += ";\t" + record["minimum"]
+            data += ";\t" + record["maximum"]
+            data += ";\t" + record["actual"]
+            data += '\n'
+
+        web.header('Content-Type', 'text/csv')
+        return data
+

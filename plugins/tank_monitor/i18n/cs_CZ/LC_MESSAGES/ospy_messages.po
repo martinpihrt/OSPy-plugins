@@ -5,180 +5,253 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2019-08-02 16:25+CEST\n"
-"PO-Revision-Date: 2019-08-04 11:47+0200\n"
+"POT-Creation-Date: 2020-01-22 06:27+CET\n"
+"PO-Revision-Date: 2020-01-22 06:33+0100\n"
+"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Language-Team: \n"
+"Language: cs_CZ\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.2.3\n"
-"Last-Translator: pihrt.com <martinpihrt@gmail.com>\n"
+"X-Generator: Poedit 2.2.4\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
-"Language: cs_CZ\n"
 
-#: plugins/tank_monitor/__init__.py:24
-msgid "Water Tank Monitor"
-msgstr "Nádrž s vodou"
-
-#: plugins/tank_monitor/__init__.py:37
+#: plugins/tank_monitor/__init__.py:42
 msgid "Report from OSPy TANK plugin"
 msgstr "Zpráva z rozšíření nádrž s vodou"
 
-#: plugins/tank_monitor/__init__.py:80
+#: plugins/tank_monitor/__init__.py:102 plugins/tank_monitor/__init__.py:480
 msgid "Water tank monitor is enabled."
 msgstr "Nádrž s vodou monitoring je povolen."
 
-#: plugins/tank_monitor/__init__.py:87
+#: plugins/tank_monitor/__init__.py:117
 msgid "Water level"
 msgstr "Hladina vody"
 
-#: plugins/tank_monitor/__init__.py:87 plugins/tank_monitor/__init__.py:88
-#: plugins/tank_monitor/__init__.py:96 plugins/tank_monitor/__init__.py:116
-#: plugins/tank_monitor/__init__.py:117
-#: plugins/tank_monitor/templates/tank_monitor.html:35
-#: plugins/tank_monitor/templates/tank_monitor.html:41
-#: plugins/tank_monitor/templates/tank_monitor.html:47
-#: plugins/tank_monitor/templates/tank_monitor.html:53
+#: plugins/tank_monitor/__init__.py:117 plugins/tank_monitor/__init__.py:118
+#: plugins/tank_monitor/__init__.py:119 plugins/tank_monitor/__init__.py:120
+#: plugins/tank_monitor/__init__.py:159 plugins/tank_monitor/__init__.py:173
+#: plugins/tank_monitor/__init__.py:174 plugins/tank_monitor/__init__.py:188
+#: plugins/tank_monitor/__init__.py:189
+#: plugins/tank_monitor/templates/tank_monitor.html:187
+#: plugins/tank_monitor/templates/tank_monitor.html:193
+#: plugins/tank_monitor/templates/tank_monitor.html:199
+#: plugins/tank_monitor/templates/tank_monitor.html:205
 msgid "cm"
 msgstr "cm"
 
-#: plugins/tank_monitor/__init__.py:88
+#: plugins/tank_monitor/__init__.py:118
 msgid "Ping"
 msgstr "Ping"
 
-#: plugins/tank_monitor/__init__.py:88
+#: plugins/tank_monitor/__init__.py:118
 msgid "Volume"
 msgstr "Objem"
 
-#: plugins/tank_monitor/__init__.py:88
+#: plugins/tank_monitor/__init__.py:118
 msgid "m3."
 msgstr "m3."
 
-#: plugins/tank_monitor/__init__.py:96
+#: plugins/tank_monitor/__init__.py:119 plugins/tank_monitor/__init__.py:173
+msgid "Maximum Water level"
+msgstr "Maximální hladina"
+
+#: plugins/tank_monitor/__init__.py:120 plugins/tank_monitor/__init__.py:174
+msgid "Minimum Water level"
+msgstr "Minimální hladina"
+
+#: plugins/tank_monitor/__init__.py:159
 msgid "ERROR: Water in Tank"
 msgstr "CHYBA: Nádrž s vodou"
 
-#: plugins/tank_monitor/__init__.py:106
+#: plugins/tank_monitor/__init__.py:172
 msgid "Water level: Error I2C device not found."
 msgstr "Nádrž s vodou: chyba I2C zařízení nebylo nalezeno."
 
-#: plugins/tank_monitor/__init__.py:116 plugins/tank_monitor/__init__.py:117
+#: plugins/tank_monitor/__init__.py:188 plugins/tank_monitor/__init__.py:189
 msgid "System detected error: Water Tank has minimum Water Level"
 msgstr "Systém zjistil chybu: nádrž na vodu má minimální hladinu vody"
 
-#: plugins/tank_monitor/__init__.py:116 plugins/tank_monitor/__init__.py:117
-#: plugins/tank_monitor/__init__.py:128
+#: plugins/tank_monitor/__init__.py:188 plugins/tank_monitor/__init__.py:189
+#: plugins/tank_monitor/__init__.py:199
 msgid "Water Tank Monitor plug-in"
 msgstr "Rozšíření nádrž s vodou"
 
-#: plugins/tank_monitor/__init__.py:122 plugins/tank_monitor/__init__.py:253
-#: plugins/tank_monitor/__init__.py:255
+#: plugins/tank_monitor/__init__.py:194 plugins/tank_monitor/__init__.py:330
+#: plugins/tank_monitor/__init__.py:332
 msgid "Email was not sent"
 msgstr "E-mail nebyl odeslán"
 
-#: plugins/tank_monitor/__init__.py:243 plugins/tank_monitor/__init__.py:251
+#: plugins/tank_monitor/__init__.py:320 plugins/tank_monitor/__init__.py:328
 msgid "Email logging is disabled in options..."
 msgstr "V možnostech je zakázáno protokolování e-mailů..."
 
-#: plugins/tank_monitor/__init__.py:245
+#: plugins/tank_monitor/__init__.py:322
 msgid "Sent"
 msgstr "Odeslané"
 
-#: plugins/tank_monitor/__init__.py:247
+#: plugins/tank_monitor/__init__.py:324
 msgid "Email was sent"
 msgstr "E-mail byl odeslán"
 
+#: plugins/tank_monitor/__init__.py:391
+msgid "Creating default graph log files OK"
+msgstr "Vytváření výchozích souborů protokolu grafu OK"
+
+#: plugins/tank_monitor/__init__.py:409
+msgid "Saving to log  files OK"
+msgstr "Ukládání do souborů protokolu OK"
+
+#: plugins/tank_monitor/__init__.py:415
+msgid "Minimum"
+msgstr "Minimum"
+
+#: plugins/tank_monitor/__init__.py:416
+msgid "Maximum"
+msgstr "Maximum"
+
+#: plugins/tank_monitor/__init__.py:417
+msgid "Actual"
+msgstr "Aktuální"
+
+#: plugins/tank_monitor/__init__.py:458
+msgid "Minimum and maximum has reseted."
+msgstr "Minimum a maximum bylo vymazáno."
+
+#: plugins/tank_monitor/__init__.py:465
+msgid "Deleted all log files OK"
+msgstr "Odstraněny všechny soubory protokolu OK"
+
+#: plugins/tank_monitor/__init__.py:483
+msgid "Water tank monitor is disabled."
+msgstr "Sledování hladiny vody v nádrži je povoleno."
+
+#: plugins/tank_monitor/__init__.py:485
+msgid "Options has updated."
+msgstr "Nastavení bylo aktualizováno."
+
 #: plugins/tank_monitor/templates/tank_monitor.html:3
-#: plugins/tank_monitor/templates/tank_monitor.html:21
+#: plugins/tank_monitor/templates/tank_monitor.html:171
 msgid "Water tank monitor settings"
 msgstr "Nádrž s vodou nastavení"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:22
+#: plugins/tank_monitor/templates/tank_monitor.html:172
 msgid "This plugin check water level in water tank via ultrasonic sensor on"
 msgstr ""
 "Tento zásuvný modul kontroluje hladinu vody ve vodní nádrži přes "
 "ultrazvukový senzor na"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:22
+#: plugins/tank_monitor/templates/tank_monitor.html:172
 msgid "address 0x04"
 msgstr "adrese 0x04"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:23
+#: plugins/tank_monitor/templates/tank_monitor.html:173
 msgid ""
 "If water level is small plugins stop irigation system and sends email with "
 "error. Prevent safety for master station pump."
 msgstr ""
-"Rozšíření slouží pro hlavní stanici (čerpadlo) jako preventivní ochrana "
-"(aby čerpadlo neběželo bez vody naprázdno)."
+"Rozšíření slouží pro hlavní stanici (čerpadlo) jako preventivní ochrana (aby "
+"čerpadlo neběželo bez vody naprázdno)."
 
-#: plugins/tank_monitor/templates/tank_monitor.html:27
+#: plugins/tank_monitor/templates/tank_monitor.html:174
+msgid "Download log as"
+msgstr "Stáhnout soubor se záznamem jako"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:175
+msgid ""
+"If logging is enabled, a graph with measured data will be displayed at the "
+"bottom of the screen"
+msgstr ""
+"Je-li povolen záznam, zobrazí se v dolní části obrazovky graf s naměřenými "
+"daty"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:179
 msgid "Use ultrasonic measuring the water level in the tank"
 msgstr "Používat ultrazvukové měření hladiny vody v nádrži"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:33
+#: plugins/tank_monitor/templates/tank_monitor.html:185
 msgid "The distance from the sensor to the minimum water level in the tank"
 msgstr ""
 "Vzdálenost od ultrazvukového snímače (shora) k minimální hladině vody v "
 "nádrži"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:39
+#: plugins/tank_monitor/templates/tank_monitor.html:191
 msgid "The distance from the sensor to the maximum water level in the tank"
 msgstr ""
 "Vzdálenost od ultrazvukového snímače (shora) k maximální hladině vody v "
 "nádrži"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:45
+#: plugins/tank_monitor/templates/tank_monitor.html:197
 msgid "The water level from the bottom to the minimum water level in the tank"
 msgstr "Minimální hladina vody v nádrži (ode dna nádrže) pro report"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:51
+#: plugins/tank_monitor/templates/tank_monitor.html:203
 msgid "Cylinder diameter for volume calculation"
 msgstr "Průměr válce pro výpočet objemu"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:57
+#: plugins/tank_monitor/templates/tank_monitor.html:209
 msgid "Send an e-mail with an error that there is minimum water in the tank"
 msgstr ""
 "Odeslat E-mail s chybou, když klesne hladina v nádrži s vodou na minimum"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:59
+#: plugins/tank_monitor/templates/tank_monitor.html:211
 msgid "For this function required email plugin"
 msgstr ""
 "Toto rozšíření vyžaduje rozšíření \"E-mail notifications\" pro odesílání "
 "zpráv"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:63
+#: plugins/tank_monitor/templates/tank_monitor.html:215
 msgid "E-mail subject"
 msgstr "Předmět e-mailu"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:69
+#: plugins/tank_monitor/templates/tank_monitor.html:221
 msgid "Stop scheduller if is minimum water in the tank"
 msgstr "Zastavit plánovač, pokud je v nádrži minimum vody"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:75
+#: plugins/tank_monitor/templates/tank_monitor.html:227
+msgid "Enable logging"
+msgstr "Povolit záznam a graf"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:233
+msgid "Maximum number of log records"
+msgstr "Maximální počet záznamů"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:235
+msgid "0 = unlimited"
+msgstr "0 = bez omezení"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:239
+msgid "Interval for logging"
+msgstr "Opakovat záznam po"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:241
+msgid "minutes (Minimum is 1)"
+msgstr "minutě/tách (minimum je 1)"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:245
 msgid "Status"
 msgstr "Stav"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:84
+#: plugins/tank_monitor/templates/tank_monitor.html:254
 msgid "Submit"
 msgstr "Potvrdit"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:85
+#: plugins/tank_monitor/templates/tank_monitor.html:255
 msgid "Cancel"
 msgstr "Zpět"
 
-#: plugins/tank_monitor/__init__.py:308
-msgid "Minimum and maximum has reseted."
-msgstr "Minimum a maximum bylo vymazáno."
-
-#: plugins/tank_monitor/templates/tank_monitor.html:86
+#: plugins/tank_monitor/templates/tank_monitor.html:256
 msgid "Reset min/max level"
 msgstr "Vymazat min/max"
 
-#: plugins/tank_monitor/__init__.py:114
-msgid "Minimum Water level"
-msgstr "Minimální hladina"
+#: plugins/tank_monitor/templates/tank_monitor.html:257
+msgid "Delete all logs"
+msgstr "Smazat všechny logy"
 
-#: plugins/tank_monitor/__init__.py:113
-msgid "Maximum Water level"
-msgstr "Maximální hladina"
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Clear selection"
+msgstr "Zrušit výběr"
+
+#~ msgid "Water Tank Monitor"
+#~ msgstr "Nádrž s vodou"
