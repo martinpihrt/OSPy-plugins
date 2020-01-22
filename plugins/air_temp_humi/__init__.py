@@ -367,6 +367,7 @@ def update_log(status):
         graph_data = read_graph_log()     # example default -> [{"station": "DS1", "balances": {}, {"station": "DS2", "balances": {}},{"station": "DS3", "balances": {}}}]
     except: 
         create_default_graph()
+        graph_data = read_graph_log()
         log.debug(NAME, _('Creating default graph log files OK'))
 
     timestamp = int(time.time())

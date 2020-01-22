@@ -202,29 +202,29 @@ msgstr "Odstrániť všetky protokoly"
 msgid "Clear selection"
 msgstr "Vyčistiť výber"
 
-#~ msgid "Saving log to file."
-#~ msgstr "Ukladá sa denník do súboru."
+#: msgid "Saving log to file."
+#: msgstr "Ukladá sa denník do súboru."
 
-#~ msgid "Deleted log file"
-#~ msgstr "Odstránený súbor denníka"
+#: msgid "Deleted log file"
+#: msgstr "Odstránený súbor denníka"
 
-#~ msgid "Delete"
-#~ msgstr "Vymazať"
+#: msgid "Delete"
+#: msgstr "Vymazať"
 
-#~ msgid "log file"
-#~ msgstr "súbor denníka"
+#: msgid "log file"
+#: msgstr "súbor denníka"
 
-#~ msgid "Saving to log  files OK."
-#~ msgstr "Ukladanie do log súborov OK."
+#: msgid "Saving to log  files OK."
+#: msgstr "Ukladanie do log súborov OK."
 
-#~ msgid "Measured temperatures in"
-#~ msgstr "Namerané teploty v"
+#: msgid "Measured temperatures in"
+#: msgstr "Namerané teploty v"
 
-#~ msgid "Actual Temperature"
-#~ msgstr "Skutočná teplota"
+#: msgid "Actual Temperature"
+#: msgstr "Skutočná teplota"
 
-#~ msgid "Previous Temperature"
-#~ msgstr "Predchádzajúca teplota"
+#: msgid "Previous Temperature"
+#: msgstr "Predchádzajúca teplota"
 
-#~ msgid "Reason"
-#~ msgstr "Štatistika"
+#: msgid "Reason"
+#: msgstr "Štatistika"

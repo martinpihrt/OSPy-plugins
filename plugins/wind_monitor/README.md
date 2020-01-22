@@ -30,6 +30,15 @@ Plugin setup
 * Wind speed state:  
   Show actual wind speed in meter per second.
 
+* Enable logging:
+  Enable logging and graphing.
+
+* Maximum number of log records:
+  Maximum number of log records (only for csv file).
+
+* Interval for logging:
+  Logging interval (minimum 1 minute).
+
 * Status:  
   Status window from the plugin.  
 

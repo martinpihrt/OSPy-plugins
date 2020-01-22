@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2020-01-20 08:19+CET\n"
-"PO-Revision-Date: 2020-01-20 08:22+0100\n"
+"PO-Revision-Date: 2020-01-22 09:13+0100\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Language-Team: \n"
 "Language: cs_CZ\n"
@@ -201,29 +201,21 @@ msgstr "Smazat všechny logy"
 msgid "Clear selection"
 msgstr "Zrušit výběr"
 
-#~ msgid "Saving log to file."
-#~ msgstr "Uložen log do souboru."
+#: msgid "Saving log to file." msgstr "Uložen do souboru." "Deleted file"
+#: "Smazán soubor" "Delete" "Smazat" "log "záznam (log)" files OK."
+#: "Ukládání souborů protokolu
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Reason"
+msgstr "Statistika"
 
-#~ msgid "Deleted log file"
-#~ msgstr "Smazán log soubor"
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Actual Temperature"
+msgstr "Aktuální teplota"
 
-#~ msgid "Delete"
-#~ msgstr "Smazat"
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Previous Temperature"
+msgstr "Předchozí teplota"
 
-#~ msgid "log file"
-#~ msgstr "záznam (log)"
-
-#~ msgid "Saving to log  files OK."
-#~ msgstr "Ukládání do souborů protokolu OK."
-
-#~ msgid "Measured temperatures in"
-#~ msgstr "Měřené teploty v"
-
-#~ msgid "Actual Temperature"
-#~ msgstr "Skutečná teplota"
-
-#~ msgid "Previous Temperature"
-#~ msgstr "Předchozí teplota"
-
-#~ msgid "Reason"
-#~ msgstr "Statistika"
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Measured temperatures in"
+msgstr "Měřená teplota v"

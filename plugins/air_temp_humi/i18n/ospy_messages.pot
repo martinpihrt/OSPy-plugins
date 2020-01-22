@@ -183,3 +183,19 @@ msgstr ""
 msgid "Clear selection"
 msgstr ""
 
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Reason"
+msgstr ""
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Actual Temperature"
+msgstr ""
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Previous Temperature"
+msgstr ""
+
+#: plugins/air_temp_humi/templates/air_temp_humi.html:329
+msgid "Measured temperatures in"
+msgstr ""
+

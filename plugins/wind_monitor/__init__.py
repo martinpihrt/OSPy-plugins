@@ -5,8 +5,10 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
+from datetime import datetime
 import sys
 import traceback
+import os
 
 from threading import Thread, Event
 
@@ -14,7 +16,7 @@ import web
 from ospy.stations import stations
 from ospy.options import options
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy import helpers
@@ -37,7 +39,10 @@ wind_options = PluginOptions(
         'emlsubject': _('Report from OSPy WIND SPEED MONITOR plugin'),
         'log_speed': 0,              # actual speed
         'log_maxspeed': 0,           # maximal speed (log) in km/h
-        'log_date_maxspeed': _('Measuring...') # maximal speed (date log)
+        'log_date_maxspeed': _('Measuring...'), # maximal speed (date log)
+        'enable_log': False,
+        'log_interval': 1,
+        'log_records': 0,
     }
 )
 
@@ -72,6 +77,7 @@ class WindSender(Thread):
             self._sleep_time -= 1
 
     def run(self):
+        last_millis = 0 # timer for save log
         log.clear(NAME)
         send = False      # send email
         disable_text = True
@@ -140,6 +146,13 @@ class WindSender(Thread):
                                 log.info(NAME, _('Stops all stations and sends email if enabled sends email.'))
                                 if wind_options['sendeml']:                   # if enabled send email
                                     send = True  
+
+                        if wind_options['enable_log']:
+                            millis = int(round(time.time() * 1000))
+                            interval = (wind_options['log_interval'] * 60000)
+                            if (millis - last_millis) > interval:
+                               last_millis = millis
+                               update_log()
                     else:
                         self._sleep(1)                                
                                       
@@ -296,7 +309,93 @@ def get_station_is_on(): # return true if stations is ON
 
 
 def get_all_values():
-    return wind_options['log_speed'], wind_options['log_maxspeed'], wind_options['log_date_maxspeed']                     
+    return wind_options['log_speed'], wind_options['log_maxspeed'], wind_options['log_date_maxspeed']   
+
+
+def read_log():
+    """Read log data from json file."""
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []
+
+
+def read_graph_log():
+    """Read graph data from json file."""
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []
+
+
+def write_log(json_data):
+    """Write data to log json file."""
+
+    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
+def write_graph_log(json_data):
+    """Write data to graph json file."""
+
+    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
+def update_log():
+    """Update data in json files.""" 
+
+    ### Data for log ###
+    log_data = read_log()
+    data = {'datetime': datetime_string()}
+    data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+    data['time'] = str(datetime.now().strftime('%H:%M:%S'))
+    data['maximum'] = str(get_all_values()[1])
+    data['actual']  = str(get_all_values()[0])
+      
+    log_data.insert(0, data)
+    if wind_options['log_records'] > 0:
+        log_data = log_data[:wind_options['log_records']]
+    write_log(log_data)
+
+    ### Data for graph log ###
+    try:  
+        graph_data = read_graph_log()    
+    except: 
+        create_default_graph()
+        graph_data = read_graph_log()
+        log.debug(NAME, _('Creating default graph log files OK'))
+
+    timestamp = int(time.time())
+
+    maximum = graph_data[0]['balances']
+    maxval = {'total': get_all_values()[1]}
+    maximum.update({timestamp: maxval})
+
+    actual = graph_data[1]['balances']
+    actval = {'total': get_all_values()[0]}
+    actual.update({timestamp: actval})
+ 
+    write_graph_log(graph_data)
+
+    log.info(NAME, _('Saving to log  files OK'))
+
+
+def create_default_graph():
+    """Create default graph json file."""
+
+    maximum = _('Maximum')
+    actual  = _('Actual')
+ 
+    graph_data = [
+       {"station": maximum, "balances": {}}, 
+       {"station": actual, "balances": {}}
+    ]
+    write_graph_log(graph_data)                  
 
 
 ################################################################################
@@ -312,6 +411,7 @@ class settings_page(ProtectedPage):
 
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
 
         if wind_sender is not None and reset:
             if wind_options['use_wind_monitor']:
@@ -320,6 +420,8 @@ class settings_page(ProtectedPage):
                 qdict['address']  = u'on'
             if wind_options['sendeml']:     
                 qdict['sendeml'] = u'on' 
+            if wind_options['enable_log']:
+                qdict['enable_log'] = u'on' 
             qdict['log_maxspeed'] = 0
             qmax = datetime_string()
             qdict['log_date_maxspeed'] = qmax
@@ -333,6 +435,13 @@ class settings_page(ProtectedPage):
             
             raise web.seeother(plugin_url(settings_page), True)
 
+        if wind_sender is not None and delete:
+           write_log([])
+           create_default_graph()
+           log.info(NAME, _('Deleted all log files OK'))
+
+           raise web.seeother(plugin_url(settings_page), True)
+
         return self.plugin_render.wind_monitor(wind_options, wind_sender.status, log.events(NAME))
 
     def POST(self):
@@ -340,6 +449,16 @@ class settings_page(ProtectedPage):
 
         if wind_sender is not None:
             wind_sender.update()
+
+        if wind_options['use_wind_monitor']:
+            log.clear(NAME) 
+            log.info(NAME, _('Wind monitor is enabled.'))
+        else:
+            log.clear(NAME)
+            log.info(NAME, _('Wind monitor is disabled.'))
+
+        log.info(NAME, _('Options has updated.'))
+
         raise web.seeother(plugin_url(settings_page), True)
 
 
@@ -366,3 +485,47 @@ class data_json(ProtectedPage):
         }
 
         return json.dumps(data)
+
+class log_json(ProtectedPage):
+    """Returns data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        return json.dumps(read_log())
+
+
+class graph_json(ProtectedPage):
+    """Returns graph data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        return json.dumps(read_graph_log())
+
+
+class log_csv(ProtectedPage):  # save log file from web as csv file type
+    """Simple Log API"""
+
+    def GET(self):
+       
+        log_records = read_log()
+        data  = "Date/Time"
+        data += ";\t Date"
+        data += ";\t Time"
+        data += ";\t Max m/sec" 
+        data += ";\t Act m/sec"
+        data += '\n'
+
+        for record in log_records:
+            data +=         record['datetime']
+            data += ";\t" + record['date']
+            data += ";\t" + record['time']
+            data += ";\t" + record["maximum"]
+            data += ";\t" + record["actual"]
+            data += '\n'
+
+        web.header('Content-Type', 'text/csv')
+        return data
+
+

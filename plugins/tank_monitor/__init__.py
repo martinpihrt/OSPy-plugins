@@ -388,6 +388,7 @@ def update_log():
         graph_data = read_graph_log()    
     except: 
         create_default_graph()
+        graph_data = read_graph_log()
         log.debug(NAME, _('Creating default graph log files OK'))
 
     timestamp = int(time.time())
@@ -449,6 +450,8 @@ class settings_page(ProtectedPage):
             tank_options['log_date_minlevel'] = qm
             if tank_options['use_sonic']:
                 qdict['use_sonic'] = u'on' 
+            if tank_options['enable_log']:
+                qdict['enable_log'] = u'on'
             if tank_options['use_stop']:
                 qdict['use_stop']  = u'on'
             if tank_options['use_send_email']:     
