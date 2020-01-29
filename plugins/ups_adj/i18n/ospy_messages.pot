@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2016-06-15 10:36+CEST\n"
+"POT-Creation-Date: 2020-01-29 12:54+CET\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,117 +14,160 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
-msgid "Sent"
+
+#: plugins/ups_adj/__init__.py:34
+msgid "Report from OSPy UPS plugin"
 msgstr ""
 
-msgid "Unsent"
-msgstr ""
-
-msgid "E-mail subject"
-msgstr ""
-
-#: plugins/ups_adj/__init__.py:98
+#: plugins/ups_adj/__init__.py:105
 msgid "OK"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:100
+#: plugins/ups_adj/__init__.py:107
 msgid "FAULT"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:109
-msgid "UPS plugin detected fault on power line."
+#: plugins/ups_adj/__init__.py:117 plugins/ups_adj/__init__.py:118
+msgid "Detected fault on power line."
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:120
-msgid "Time to shutdown"
-msgstr ""
-
-#: plugins/ups_adj/__init__.py:120
-msgid "sec"
-msgstr ""
-
-#: plugins/ups_adj/__init__.py:126
-msgid "Power line is not restore in time -> sends email and shutdown system."
-msgstr ""
-
-#: plugins/ups_adj/__init__.py:130
-msgid "UPS plugin - power line is not restore in time -> shutdown system!"
-msgstr ""
-
-#: plugins/ups_adj/__init__.py:143
-msgid "UPS plugin - power line has restored - OK."
-msgstr ""
-
-#: plugins/ups_adj/__init__.py:154
+#: plugins/ups_adj/__init__.py:117 plugins/ups_adj/__init__.py:118
+#: plugins/ups_adj/__init__.py:142 plugins/ups_adj/__init__.py:143
+#: plugins/ups_adj/__init__.py:156 plugins/ups_adj/__init__.py:157
+#: plugins/ups_adj/__init__.py:170
 msgid "UPS plug-in"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:168
+#: plugins/ups_adj/__init__.py:131
+msgid "Time to shutdown"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:131
+msgid "sec"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:137
+msgid "Power line is not restore in time -> sends email and shutdown system."
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:142 plugins/ups_adj/__init__.py:143
+msgid "Power line is not restore in time -> shutdown system!"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:156 plugins/ups_adj/__init__.py:157
+msgid "Power line has restored - OK."
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:184
 msgid "UPS plugin is started."
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:185
+#: plugins/ups_adj/__init__.py:206 plugins/ups_adj/__init__.py:214
+msgid "Email logging is disabled in options..."
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:208
+msgid "Sent"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:210
 msgid "Email was sent"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:187
+#: plugins/ups_adj/__init__.py:216 plugins/ups_adj/__init__.py:218
 msgid "Email was not sent"
 msgstr ""
 
+#: plugins/ups_adj/__init__.py:306
+msgid "Saving to log  files OK"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:312 plugins/ups_adj/__init__.py:380
+msgid "State"
+msgstr ""
+
+#: plugins/ups_adj/__init__.py:318
+msgid "Creating default graph log files OK"
+msgstr ""
+
 #: plugins/ups_adj/templates/ups_adj.html:3
-#: plugins/ups_adj/templates/ups_adj.html:21
+#: plugins/ups_adj/templates/ups_adj.html:171
 msgid "UPS monitor settings"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:22
+#: plugins/ups_adj/templates/ups_adj.html:172
 msgid "This plugin checked power line for system. UPS (uninterrupted power supply)."
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:23
+#: plugins/ups_adj/templates/ups_adj.html:173
 msgid "If is error with power line in a certain time, sends plugin email with error and shutdown system (and generate pulse to GPIO)."
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:27
+#: plugins/ups_adj/templates/ups_adj.html:174
+msgid "Download log as"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:175
+msgid "If logging is enabled, a graph with measured data will be displayed at the bottom of the screen"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:179
 msgid "Use UPS"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:29
+#: plugins/ups_adj/templates/ups_adj.html:181
 msgid "Power line is connected via optocoupler between GPIO 23 - pin 16 and ground"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:33
+#: plugins/ups_adj/templates/ups_adj.html:185
 msgid "Send email with error"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:35
+#: plugins/ups_adj/templates/ups_adj.html:187
 msgid "For this function required email plugin"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:39
+#: plugins/ups_adj/templates/ups_adj.html:191
 msgid "Max time for shutdown countdown"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:41
+#: plugins/ups_adj/templates/ups_adj.html:193
 msgid "max 999 minutes"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:45
+#: plugins/ups_adj/templates/ups_adj.html:197
 msgid "Power line state"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:51
+#: plugins/ups_adj/templates/ups_adj.html:203
+msgid "E-mail subject"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:209
+msgid "Enable logging"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:215
 msgid "Status"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:57
+#: plugins/ups_adj/templates/ups_adj.html:221
 msgid "Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS."
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:61
+#: plugins/ups_adj/templates/ups_adj.html:225
 msgid "Submit"
 msgstr ""
 
-#: plugins/ups_adj/templates/ups_adj.html:62
+#: plugins/ups_adj/templates/ups_adj.html:226
 msgid "Cancel"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:227
+msgid "Delete all logs"
+msgstr ""
+
+#: plugins/ups_adj/templates/ups_adj.html:236
+msgid "Clear selection"
 msgstr ""
 

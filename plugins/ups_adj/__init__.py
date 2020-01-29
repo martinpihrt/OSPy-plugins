@@ -4,7 +4,9 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
+from datetime import datetime
 import sys
+import os
 import traceback
 
 from threading import Thread, Event
@@ -12,10 +14,11 @@ from threading import Thread, Event
 import web
 from ospy.helpers import poweroff
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy.options import options
+from ospy import helpers
 
 import i18n
 
@@ -28,7 +31,8 @@ ups_options = PluginOptions(
         'time': 60, # in minutes
         'ups': False,
         'sendeml': False,
-        'emlsubject': _('Report from OSPy UPS plugin')
+        'emlsubject': _('Report from OSPy UPS plugin'),
+        'enable_log': False
     }
 )
 
@@ -90,8 +94,6 @@ class UPSSender(Thread):
 
         last_time = int(time.time())
 
-        self._sleep(2)
-
         while not self._stop.is_set():
             try:
                 if ups_options['ups']:                                     # if ups plugin is enabled
@@ -107,7 +109,7 @@ class UPSSender(Thread):
                         last_time = int(time.time())
 
                     if test:                                               # if power line is not active
-                        reboot_time = True                                  # start countdown timer
+                        reboot_time = True                                 # start countdown timer
                         if once:
                             # send email with info power line fault
                             msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _('Detected fault on power line.') + '</p>'
@@ -116,6 +118,8 @@ class UPSSender(Thread):
                             if ups_options['sendeml']:                       # if enabled send email
                                 send_email(msg, msglog)
                                 once_three = True
+                            if ups_options['enable_log']:    
+                                update_log(0)
                             once = False
 
                     if reboot_time and test:
@@ -155,6 +159,8 @@ class UPSSender(Thread):
                                 once = True
                                 once_two = True
                                 once_three = False
+                            if ups_options['enable_log']:
+                                update_log(1)
 
                 self._sleep(2)
 
@@ -229,6 +235,86 @@ def get_check_power():
         pass
 
 
+def read_log():
+    """Read log data from json file."""
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []
+
+
+def read_graph_log():
+    """Read graph data from json file."""
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []
+
+
+def write_log(json_data):
+    """Write data to log json file."""
+
+    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
+def write_graph_log(json_data):
+    """Write data to graph json file."""
+
+    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
+def update_log(status):
+    """Update data in json files.""" 
+
+    ### Data for log ###
+    try:
+        log_data = read_log()
+    except:
+        write_log([])
+        log_data = read_log()
+
+    data = {'datetime': datetime_string()}
+    data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+    data['time'] = str(datetime.now().strftime('%H:%M:%S'))
+    data['state'] = status
+      
+    write_log(log_data)
+
+    ### Data for graph log ###
+    try:  
+        graph_data = read_graph_log()    
+    except: 
+        create_default_graph()
+        graph_data = read_graph_log()
+
+    timestamp = int(time.time())
+
+    state = graph_data[0]['balances']
+    stateval = {'total': status}
+    state.update({timestamp: stateval})
+ 
+    write_graph_log(graph_data)
+
+    log.info(NAME, _('Saving to log  files OK'))
+
+
+def create_default_graph():
+    """Create default graph json file."""
+
+    state = _('State')
+ 
+    graph_data = [
+       {"station": state, "balances": {}}
+    ]
+    write_graph_log(graph_data)  
+    log.debug(NAME, _('Creating default graph log files OK'))
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -238,6 +324,17 @@ class settings_page(ProtectedPage):
     """Load an html page for entering USP adjustments."""
 
     def GET(self):
+        global ups_sender
+
+        qdict = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+
+        if ups_sender is not None and delete:
+           write_log([])
+           create_default_graph()
+
+           raise web.seeother(plugin_url(settings_page), True)     
+
         return self.plugin_render.ups_adj(ups_options, ups_sender.status, log.events(NAME))
 
     def POST(self):
@@ -256,3 +353,47 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(ups_options)
 
+class log_json(ProtectedPage):
+    """Returns data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        return json.dumps(read_log())
+
+
+class graph_json(ProtectedPage):
+    """Returns graph data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        return json.dumps(read_graph_log())
+
+
+class log_csv(ProtectedPage):  # save log file from web as csv file type
+    """Simple Log API"""
+
+    def GET(self):
+        state = _('State')
+
+        data  = "Date/Time"
+        data += ";\t Date"
+        data += ";\t Time"
+        data += ";\t %s" % state
+        data += '\n'
+
+        try:
+            log_records = read_log()
+
+            for record in log_records:
+                data +=         record['datetime']
+                data += ";\t" + record['date']
+                data += ";\t" + record['time']
+                data += ";\t" + record["state"]
+                data += '\n'
+        except:
+            pass                  
+
+        web.header('Content-Type', 'text/csv')
+        return data

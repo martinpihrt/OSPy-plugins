@@ -24,6 +24,9 @@ Plugin setup
 * Status:  
   Status window from the plugin.  
 
+* Enable logging:
+  Enable logging and graphing.  
+
 Power line is connected via optocoupler between GPIO 23 - pin 16 and ground.
 Output pulse on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS.  
 
