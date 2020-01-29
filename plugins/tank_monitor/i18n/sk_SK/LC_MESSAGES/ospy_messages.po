@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2020-01-22 06:27+CET\n"
-"PO-Revision-Date: 2020-01-22 06:39+0100\n"
+"PO-Revision-Date: 2020-01-29 11:34+0100\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Language-Team: \n"
 "Language: sk_SK\n"
@@ -246,6 +246,26 @@ msgstr "Odstrániť všetky protokoly"
 msgid "Clear selection"
 msgstr "Vyčistiť výber"
 
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Reason"
+msgstr "Štatistika"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Measured Level in cm or m3"
+msgstr "Nameraná hladina v cm lebo m3"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Previous Value"
+msgstr "Predchádzajúci"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Actual Value"
+msgstr "Aktuálna"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "cm or m3"
+msgstr "cm lebo m3"
+
 #~ msgid "Unsent"
 #~ msgstr "Neodoslané"
 
@@ -267,25 +287,3 @@ msgstr "Vyčistiť výber"
 #~ msgstr ""
 #~ "Tento doplnok skontroluje hladinu vody vo vodnej nádrži pomocou "
 #~ "ultrazvukového snímača (adresa I2C 0x04)"
-
-#~ msgid ""
-#~ "This plugin check humidity on the 8 sensors for 8 stations and adjusts "
-#~ "run time for stations according to moisture (I2C address 0x05)."
-#~ msgstr ""
-#~ "Tento doplnok kontroluje vlhkosť na 8 senzoroch pre 8 staníc a nastavuje "
-#~ "čas chodu staníc podľa vlhkosti (adresy I2C 0x05)."
-
-#~ msgid "I2C address 0x04"
-#~ msgstr "I2C adresa 0x04"
-
-#~ msgid "Use measuring frequenci probe"
-#~ msgstr "Používať meranie frekvencie"
-
-#~ msgid "All probe I2C address 0x05"
-#~ msgstr "Všetky sondy I2C adresa 0x05"
-
-#~ msgid "Frequenci from sensor for 0% humidity"
-#~ msgstr "Frequenca od senzora pre 0% vlhkosti"
-
-#~ msgid "Frequenci from sensor for 100% humidity"
-#~ msgstr "Frequenca od senzora pre 100% vlhkosti"

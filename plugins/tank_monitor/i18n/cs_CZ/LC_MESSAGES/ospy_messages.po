@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2020-01-22 06:27+CET\n"
-"PO-Revision-Date: 2020-01-22 06:33+0100\n"
+"PO-Revision-Date: 2020-01-29 11:39+0100\n"
 "Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Language-Team: \n"
 "Language: cs_CZ\n"
@@ -253,5 +253,22 @@ msgstr "Smazat všechny logy"
 msgid "Clear selection"
 msgstr "Zrušit výběr"
 
-#~ msgid "Water Tank Monitor"
-#~ msgstr "Nádrž s vodou"
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Reason"
+msgstr "Statistika"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Measured Level in cm or m3"
+msgstr "Měřená hladina v cm nebo m3"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Previous Value"
+msgstr "Předešlé"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "Actual Value"
+msgstr "Aktuální"
+
+#: plugins/tank_monitor/templates/tank_monitor.html:266
+msgid "cm or m3"
+msgstr "cm nebo m3"

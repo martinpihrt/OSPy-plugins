@@ -19,7 +19,7 @@ function draw_graph(result) {
 
     for (var i = 0; i < result.length; i++) {
         var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>$_('Reason')</th><th>(cm)</th></tr>";
+        var txt_header = "<table class=\"balanceList\"><tr><th>$_('Reason')</th><th> $_('cm or m3')</th></tr>";
         var texts = [];
         var txt_body = "";
         var txt_footer = "</table>";
@@ -72,7 +72,7 @@ function draw_graph(result) {
         },
         yaxes: [{
             position: 'left',
-            axisLabel: '$_('Measured Level in cm')',
+            axisLabel: '$_('Measured Level in cm or m3')',
         }],
         selection: {
             mode: 'x'

@@ -127,6 +127,8 @@ class Sender(Thread):
                                 qdict['use_stop']  = u'on'
                             if tank_options['use_send_email']:     
                                 qdict['use_send_email'] = u'on' 
+                            if tank_options['enable_log']:
+                                qdict['enable_log'] = u'on'
                             qdict['log_maxlevel'] = status['level']
                             qmax = datetime_string()
                             tank_options['log_date_maxlevel'] = qmax
@@ -140,6 +142,8 @@ class Sender(Thread):
                                 qdict['use_stop']  = u'on'
                             if tank_options['use_send_email']:     
                                 qdict['use_send_email'] = u'on'
+                            if tank_options['enable_log']:
+                                qdict['enable_log'] = u'on'
                             qdict['log_minlevel'] = status['level']
                             qmin = datetime_string()
                             tank_options['log_date_minlevel'] = qmin
@@ -370,18 +374,28 @@ def update_log():
     """Update data in json files.""" 
 
     ### Data for log ###
-    log_data = read_log()
+    try:
+        log_data = read_log()
+    except:   
+        write_log([])
+        log_data = read_log()
+
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
     data['time'] = str(datetime.now().strftime('%H:%M:%S'))
     data['minimum'] = str(tank_options['log_minlevel'])
     data['maximum'] = str(tank_options['log_maxlevel'])
     data['actual']  = str(get_all_values()[0])
+    data['volume']  = str(get_all_values()[3])
       
     log_data.insert(0, data)
     if tank_options['log_records'] > 0:
         log_data = log_data[:tank_options['log_records']]
-    write_log(log_data)
+
+    try:    
+        write_log(log_data)
+    except:    
+        write_log([])
 
     ### Data for graph log ###
     try:  
@@ -389,25 +403,31 @@ def update_log():
     except: 
         create_default_graph()
         graph_data = read_graph_log()
-        log.debug(NAME, _('Creating default graph log files OK'))
 
     timestamp = int(time.time())
 
-    minimum = graph_data[0]['balances']
-    minval = {'total': tank_options['log_minlevel']}
-    minimum.update({timestamp: minval})
+    try:
+        minimum = graph_data[0]['balances']
+        minval = {'total': tank_options['log_minlevel']}
+        minimum.update({timestamp: minval})
 
-    maximum = graph_data[1]['balances']
-    maxval = {'total': tank_options['log_maxlevel']}
-    maximum.update({timestamp: maxval})
+        maximum = graph_data[1]['balances']
+        maxval = {'total': tank_options['log_maxlevel']}
+        maximum.update({timestamp: maxval})
 
-    actual = graph_data[2]['balances']
-    actval = {'total': get_all_values()[0]}
-    actual.update({timestamp: actval})
+        actual = graph_data[2]['balances']
+        actval = {'total': get_all_values()[0]}
+        actual.update({timestamp: actval})
+
+        volume = graph_data[3]['balances']
+        volumeval = {'total': get_all_values()[3]}
+        volume.update({timestamp: volumeval})
  
-    write_graph_log(graph_data)
+        write_graph_log(graph_data)
 
-    log.info(NAME, _('Saving to log  files OK'))
+        log.info(NAME, _('Saving to log  files OK'))
+    except:
+        create_default_graph()
 
 
 def create_default_graph():
@@ -416,13 +436,16 @@ def create_default_graph():
     minimum = _('Minimum')
     maximum = _('Maximum')
     actual  = _('Actual')
+    volume  = _('Volume')
  
     graph_data = [
        {"station": minimum, "balances": {}},
        {"station": maximum, "balances": {}}, 
-       {"station": actual, "balances": {}}
+       {"station": actual,  "balances": {}},
+       {"station": volume,  "balances": {}}
     ]
     write_graph_log(graph_data)
+    log.info(NAME, _('Deleted all log files OK'))
 
 
 
@@ -465,7 +488,6 @@ class settings_page(ProtectedPage):
         if sender is not None and delete:
            write_log([])
            create_default_graph()
-           log.info(NAME, _('Deleted all log files OK'))
 
            raise web.seeother(plugin_url(settings_page), True)
 
@@ -536,25 +558,35 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
 
     def GET(self):
-       
-        log_records = read_log()
+        minimum = _('Minimum')
+        maximum = _('Maximum')
+        actual  = _('Actual')
+        volume  = _('Volume')
+
         data  = "Date/Time"
         data += ";\t Date"
         data += ";\t Time"
-        data += ";\t Min cm"
-        data += ";\t Max cm" 
-        data += ";\t Act cm"
-        data += '\n'
+        data += ";\t %s cm" % minimum
+        data += ";\t %s cm" % maximum
+        data += ";\t %s cm" % actual
+        data += ";\t %s m3" % volume
+        data += '\n'        
 
-        for record in log_records:
-            data +=         record['datetime']
-            data += ";\t" + record['date']
-            data += ";\t" + record['time']
-            data += ";\t" + record["minimum"]
-            data += ";\t" + record["maximum"]
-            data += ";\t" + record["actual"]
-            data += '\n'
+        try:
+            log_records = read_log()
+            for record in log_records:
+                data +=         record['datetime']
+                data += ";\t" + record['date']
+                data += ";\t" + record['time']
+                data += ";\t" + record["minimum"]
+                data += ";\t" + record["maximum"]
+                data += ";\t" + record["actual"]
+                data += ";\t" + record["volume"]
+                data += '\n'
+        except:
+            pass        
 
         web.header('Content-Type', 'text/csv')
         return data
+   
 
