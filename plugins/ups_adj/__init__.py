@@ -282,7 +282,7 @@ def update_log(status):
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
     data['time'] = str(datetime.now().strftime('%H:%M:%S'))
-    data['state'] = status
+    data['state'] = str(status)
       
     write_log(log_data)
 
