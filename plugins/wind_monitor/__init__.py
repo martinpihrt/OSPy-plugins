@@ -116,6 +116,9 @@ class WindSender(Thread):
                                qdict['address']  = u'on'
                             if wind_options['sendeml']:     
                                qdict['sendeml'] = u'on' 
+                            if wind_options['enable_log']:     
+                               qdict['enable_log'] = u'on'                                
+
                             qdict['log_maxspeed'] = val
                             qmax = datetime_string()
                             qdict['log_date_maxspeed'] = qmax
@@ -350,7 +353,12 @@ def update_log():
     """Update data in json files.""" 
 
     ### Data for log ###
-    log_data = read_log()
+    try:
+        log_data = read_log()
+    except:
+        write_log([])
+        log_data = read_log()
+
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
     data['time'] = str(datetime.now().strftime('%H:%M:%S'))
@@ -360,6 +368,7 @@ def update_log():
     log_data.insert(0, data)
     if wind_options['log_records'] > 0:
         log_data = log_data[:wind_options['log_records']]
+
     write_log(log_data)
 
     ### Data for graph log ###
@@ -368,7 +377,6 @@ def update_log():
     except: 
         create_default_graph()
         graph_data = read_graph_log()
-        log.debug(NAME, _('Creating default graph log files OK'))
 
     timestamp = int(time.time())
 
@@ -395,7 +403,8 @@ def create_default_graph():
        {"station": maximum, "balances": {}}, 
        {"station": actual, "balances": {}}
     ]
-    write_graph_log(graph_data)                  
+    write_graph_log(graph_data)  
+    log.debug(NAME, _('Creating default graph log files OK'))                
 
 
 ################################################################################
@@ -508,22 +517,28 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
 
     def GET(self):
-       
-        log_records = read_log()
+        maximum = _('Maximum')
+        actual  = _('Actual')
+
         data  = "Date/Time"
         data += ";\t Date"
         data += ";\t Time"
-        data += ";\t Max m/sec" 
-        data += ";\t Act m/sec"
+        data += ";\t %s m/sec" % maximum
+        data += ";\t %s m/sec" % actual
         data += '\n'
 
-        for record in log_records:
-            data +=         record['datetime']
-            data += ";\t" + record['date']
-            data += ";\t" + record['time']
-            data += ";\t" + record["maximum"]
-            data += ";\t" + record["actual"]
-            data += '\n'
+        try:
+            log_records = read_log()
+
+            for record in log_records:
+                data +=         record['datetime']
+                data += ";\t" + record['date']
+                data += ";\t" + record['time']
+                data += ";\t" + record["maximum"]
+                data += ";\t" + record["actual"]
+                data += '\n'
+        except:
+            pass                  
 
         web.header('Content-Type', 'text/csv')
         return data
