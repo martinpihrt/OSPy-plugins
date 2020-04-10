@@ -105,8 +105,7 @@ class Sender(Thread):
  
                     sonic_cm = get_sonic_cm()
                     level_in_tank = get_sonic_tank_cm(sonic_cm)
-                  
-                    if level_in_tank > 0:                                                 # if I2C device exists
+                    if level_in_tank > 0:                                                 # if level is ok
 
                         status['level']   = level_in_tank
                         status['ping']    = sonic_cm
@@ -135,7 +134,7 @@ class Sender(Thread):
                             qdict['log_date_maxlevel'] = qmax
                             tank_options.web_update(qdict)                                # save to plugin options
   
-                        if status['level'] < tank_options['log_minlevel'] and status['level'] > 7:  # minimum level check 
+                        if status['level'] < tank_options['log_minlevel'] and status['level'] > 2:  # minimum level check 
                             if tank_options['use_sonic']:
                                 qdict['use_sonic'] = u'on' 
                             if tank_options['use_stop']:
@@ -151,7 +150,7 @@ class Sender(Thread):
                             tank_options.web_update(qdict)                                 # save to plugin options                          
                              
 
-                        if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 7: # level value is lower
+                        if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 2: # level value is lower
                             if tank_options['use_send_email']:                             # if email is enabled
                                 send = True                                                # send
                                 mini = False 
@@ -173,7 +172,7 @@ class Sender(Thread):
                                update_log()
                     else:
                         log.clear(NAME)
-                        log.info(NAME, datetime_string() + ' ' + _('Water level: Error I2C device not found.'))
+                        log.info(NAME, datetime_string() + ' ' + _('Water level: Error.'))
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')    
 
@@ -261,8 +260,8 @@ def get_sonic_tank_cm(level):
         cm = level
         if cm < 0:
            return -1
- 
-        tank_cm = maping(cm,int(tank_options['distance_bottom']),int(tank_options['distance_top']),int(tank_options['distance_top']),int(tank_options['distance_bottom']))
+       
+        tank_cm = maping(cm,int(tank_options['distance_bottom']),int(tank_options['distance_top']),0,(int(tank_options['distance_bottom'])-int(tank_options['distance_top'])))
         if tank_cm >= 0:
            return tank_cm
 
@@ -275,7 +274,7 @@ def get_sonic_tank_cm(level):
 def get_tank(level): # return water tank level 0-100%, -1 is error i2c not found
     tank_lvl = level
     if tank_lvl >= 0:
-       tank_proc = float(tank_lvl)/float(tank_options['distance_bottom'])
+       tank_proc = float(tank_lvl)/float(tank_options['distance_bottom']-tank_options['distance_top'])
        tank_proc = float(tank_proc)*100.0
        return int(tank_proc)
     else:
