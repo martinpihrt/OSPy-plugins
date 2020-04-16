@@ -3,15 +3,25 @@
 * 25.2.2020 Martin Pihrt OSPy plugin
  *  Arduino 1.8.12
  *  
+Lze pouzit:
+a) 4 wire
 Ultrazvukový vodotěsný modul pro měření vzdálenosti JSN-SR04T
+https://www.banggood.com/cs/SN-SR04T-DC-5V-Ultrasonic-Module-Distance-Meter-Measuring-Transducer-Sensor-IO-Port-Waterproof-p-1376233.html
 Jako malá nevýhoda pak může být brána minimální detekovatelná vzdálenost 25 cm nebo poměrně velký detekční úhel.
 Measuring range‎: ‎25-450 cm
 Measuring angle‎: ‎45-75 degrees
 Mounting hole‎: ‎18 mm
-
 V případě, že neměří dobře je nutné otočit ladící trimr (cívku) a doštelovat....
+nebo nevodotěsný modul HCSR04
+https://rpishop.cz/senzory/815-ultrazvukovy-senzor-hc-sr04.html
 
-změna 1.1 na 1.2 přidaná podpora pro parallax čidlo (má trig a echo na jednom vodiči)
+b) 3 wire
+nevodotěsný modul parallax
+https://www.parallax.com/product/28015
+Measuring range‎: 3-300 cm
+
+FW
+změna 1.1 na 1.2 přidaná podpora pro parallax čidlo (má trig a echo na jednom vodiči), zruseno: pokud neprijde pozadavek z i2c udela se reset
 změna 1.0 na 1.1 i2c pozadavek wdt na 30sec (pokud neprijde pozadavek z i2c udela se reset), pokud vše běží jak má, tak led bliká (po 50ms) tj. rychle, jinak sviti.
 */
 
@@ -32,7 +42,7 @@ změna 1.0 na 1.1 i2c pozadavek wdt na 30sec (pokud neprijde pozadavek z i2c ude
 
 #define ledPIN 3           // led 3
 
-#define cal    0           // kalibrace čidla +3cm pokud je treba
+#define cal    0           // kalibrace čidla +- cm pokud je treba
 
 #define ADDRESS 0x04       // adresa slave I2C
 
@@ -135,8 +145,7 @@ int para_ping(){ // https://www.parallax.com/product/28015
      pinMode(trig_echo_PIN, INPUT);
      int duration = pulseIn(trig_echo_PIN, HIGH);
      int cm = microsecondsToCentimeters(duration);
-     //return cm; // vraci vzdalenost v cm z cidla
-     return 120;
+     return cm; // vraci vzdalenost v cm z cidla
   #endif   
 }
 
