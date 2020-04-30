@@ -353,6 +353,25 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(ups_options)
 
+class data_json(ProtectedPage):
+    """Returns plugin data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        test = get_check_power()
+        if not test:
+           text = _('OK')
+        else:
+           text = _('FAULT')
+
+        data =  {
+          'label': ups_options['emlsubject'],
+          'ups_state':  text
+        }
+
+        return json.dumps(data)
+
 class log_json(ProtectedPage):
     """Returns data in JSON format."""
 

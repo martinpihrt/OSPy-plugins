@@ -262,3 +262,24 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(pressure_options)
 
+
+class data_json(ProtectedPage):
+    """Returns plugin data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+  
+        if get_check_pressure():
+           text = _('INACTIVE')
+        else:                
+           text = _('ACTIVE')
+  
+        data =  {
+          'label': pressure_options['emlsubject'],
+          'pres_state':  text
+        }
+
+        return json.dumps(data)
+
+
