@@ -1,6 +1,7 @@
 __author__ = 'Martin Pihrt'
 # this plugins enable or disable system RPi HW watchdog 
 # help: https://www.raspberrypi.org/forums/viewtopic.php?f=29&t=147501
+# testing: :(){ :|:&};:
 
 from threading import Thread, Event
 import time
@@ -143,12 +144,28 @@ class install_page(ProtectedPage):
 
     def GET(self):
         log.clear(NAME)
-        cmd = "sudo echo 'bcm2708_wdog' >> /etc/modules"
+        cmd = "sudo echo 'bcm2708_wdog' >> /etc/modules"     
         log.debug(NAME, cmd)
         run_process(cmd)
+        cmd = "sudo echo 'bcm2835_wdog' >> /etc/modules"    
+        log.debug(NAME, cmd)
+        run_process(cmd)
+        cmd = "sudo echo 'bcm2711_wdt' >> /etc/modules"      
+        log.debug(NAME, cmd)
+        run_process(cmd)
+
+
         cmd = "sudo modprobe bcm2708_wdog"
         log.debug(NAME, cmd)
         run_process(cmd)
+        cmd = "sudo modprobe bcm2835_wdog"
+        log.debug(NAME, cmd)
+        run_process(cmd)
+        cmd = "sudo modprobe bcm2711_wdog"
+        log.debug(NAME, cmd)
+        run_process(cmd)
+
+
         cmd = "sudo apt-get install -y watchdog chkconfig"
         log.debug(NAME, cmd)
         run_process(cmd)
