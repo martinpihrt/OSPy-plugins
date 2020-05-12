@@ -178,13 +178,18 @@ function create_graph(result) {
     <form id="pluginForm" action="$plugins.plugin_url('air_temp_humi.settings_page')" method="post">
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Enabled'):</td>
+                <td style='text-transform: none;'><b>$_('Enable plugin'):</b></td>
                 <td>
-                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>   
+                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}> ($_('Enable the plugin and then enable the dht, ds18b20 and logging'))   
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Enable logging'):</td>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
                 <td>
                     <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
                 </td>
@@ -202,11 +207,22 @@ function create_graph(result) {
                 </td>
             </tr>
             <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>       
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable DHT11'):</b></td>
+                <td>
+                    <input name='enable_dht' type='checkbox'${" checked" if plugin_options['enable_dht'] else ""}>   
+                </td>
+            </tr>                 
+            <tr>
                 <td style='text-transform: none;'>$_('Label for sensor'):</td>
                 <td>
                 <input name='label' type='text' value='$plugin_options['label']'> 
                 </td>
-            </tr>
+            </tr>           
             <tr>
                 <td style='text-transform: none;'>$_('Allow regulation'):</td>
                 <td>
@@ -246,7 +262,7 @@ function create_graph(result) {
                </th>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Enable DS18B20'):</td>
+                <td style='text-transform: none;'><b>$_('Enable DS18B20'):</b></td>
                 <td>
                     <input name='ds_enabled' type='checkbox'${" checked" if plugin_options['ds_enabled'] else ""}>   
                 </td>
@@ -299,7 +315,12 @@ function create_graph(result) {
                  </td>
               </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Status'):</td>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>              
+            <tr>
+                <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>
                     <textarea style="font-family: monospace;" rows="11" cols="45" readonly>$'\n'.join(events)</textarea>
                 </td>
