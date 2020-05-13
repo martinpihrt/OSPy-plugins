@@ -139,13 +139,6 @@ class Sender(Thread):
                           OT = _('ON') if self.status['outp'] is 1 else _('OFF') 
                           log.info(NAME, _('Output') + ': ' + u'%s' % OT)
 
-                        if plugin_options['enable_log']:
-                          millis = int(round(time.time() * 1000))
-                          interval = (plugin_options['log_interval'] * 60000)
-                          if (millis - last_millis) > interval:
-                             last_millis = millis
-                             update_log(self.status)
-
                         station = stations.get(plugin_options['control_output'])
 
                         if plugin_options['enabled_reg']:  # if regulation is enabled
@@ -176,7 +169,12 @@ class Sender(Thread):
                           self.status['DS%d' % i] = tempDS[i]
                           log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
 
-                    #print DS18B20_read_string_data() # for testing only
+                    if plugin_options['enable_log']:  # enabled logging
+                          millis = int(round(time.time() * 1000))
+                          interval = (plugin_options['log_interval'] * 60000)
+                          if (millis - last_millis) > interval:
+                             last_millis = millis
+                             update_log(self.status)
                     
                 self._sleep(5)    
  
