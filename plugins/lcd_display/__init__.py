@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 __author__ = 'Martin Pihrt'
 # This plugin sends data to I2C for LCD 16x2 char with PCF8574.
 # Visit for more: https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2.
@@ -47,6 +48,8 @@ lcd_options = PluginOptions(
         "d_water_tank_level": True,
         "d_running_stations": True,
         "d_temperature": True,
+        "d_sched_manu": True,
+        "d_syst_enabl": True,
         "hw_PCF8574": 4               # 0-4, default is 4 www.pihrt.com 16x2 LCD board: "https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2"
     }
 )
@@ -87,7 +90,7 @@ class LCDSender(Thread):
                     line1 = get_report(report_index)
                     line2 = get_report(report_index + 1)
 
-                    if report_index >= 25:
+                    if report_index >= 29:
                         report_index = 0
 
                     line1 = get_report(report_index)
@@ -366,6 +369,28 @@ def get_report(index):
              else:
                 result = get_active_state()
 
+           elif index == 26:    
+             if lcd_options['d_sched_manu']:    
+                result = "Rezim ovladani:"
+             else: 
+                result = None
+           elif index == 27:
+             if options.manual_mode:   
+                result = "rucni rezim" 
+             else:
+                result = "planovac"
+
+           elif index == 28:    
+             if lcd_options['d_syst_enabl']:    
+                result = "Planovac je:"
+             else: 
+                result = None
+           elif index == 29:
+             if options.scheduler_enabled:   
+                result = "povoleny" 
+             else:
+                result = "zakazany"                              
+
            return result 
 
 
@@ -553,6 +578,28 @@ def get_report(index):
              else:
                 result = get_active_state()
 
+           elif index == 26:    
+             if lcd_options['d_sched_manu']:    
+                result = "Rezim ovladania:"
+             else: 
+                result = None
+           elif index == 27:
+             if options.manual_mode:   
+                result = "rucny rezim" 
+             else:
+                result = "planovac"
+
+           elif index == 28:    
+             if lcd_options['d_syst_enabl']:    
+                result = "Planovac je:"
+             else: 
+                result = None
+           elif index == 29:
+             if options.scheduler_enabled:   
+                result = "povoleny" 
+             else:
+                result = "zakazany"                
+
            return result
 
     if (options.lang == 'en_US') or (options.lang == 'default'):
@@ -738,6 +785,28 @@ def get_report(index):
                result = "nothing running" 
             else:
                result = get_active_state()
+
+          elif index == 26:    
+            if lcd_options['d_sched_manu']:    
+               result = "Control:"
+            else: 
+               result = None
+          elif index == 27:
+            if options.manual_mode:   
+               result = "manual mode" 
+            else:
+               result = "scheduler"
+
+          elif index == 28:    
+            if lcd_options['d_syst_enabl']:    
+               result = "Scheduler:"
+            else: 
+               result = None
+          elif index == 29:
+            if options.scheduler_enabled:   
+               result = "enabled" 
+            else:
+               result = "disabled"               
 
           return result
 

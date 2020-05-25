@@ -51,7 +51,7 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;' rowspan='13'>$_('Display'):</td>
+                <td style='text-transform: none;' rowspan='15'>$_('Display'):</td>
                 <td> $_('System Name'):</td>
                 <td>
                     <input name='d_system_name' type='checkbox'${" checked" if plugin_options['d_system_name'] else ""}>
@@ -118,17 +118,30 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td> $_('DS18B20 Temperature'):</td>
+                <td>
+                    <input name='d_temperature' type='checkbox'${" checked" if plugin_options['d_temperature'] else ""}>
+                </td>
+            </tr>              
+            <tr>
                 <td> $_('Running Stations'):</td>
                 <td>
                     <input name='d_running_stations' type='checkbox'${" checked" if plugin_options['d_running_stations'] else ""}>
                 </td>
             </tr> 
             <tr>
-                <td> $_('DS18B20 Temperature'):</td>
+                <td> $_('Schedule - Manual'):</td>
                 <td>
-                    <input name='d_temperature' type='checkbox'${" checked" if plugin_options['d_temperature'] else ""}>
+                    <input name='d_sched_manu' type='checkbox'${" checked" if plugin_options['d_sched_manu'] else ""}>
                 </td>
-            </tr>         
+            </tr>  
+            <tr>
+                <td> $_('System enabled'):</td>
+                <td>
+                    <input name='d_syst_enabl' type='checkbox'${" checked" if plugin_options['d_syst_enabl'] else ""}>
+                </td>
+            </tr>                   
+            <tr>       
 
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>

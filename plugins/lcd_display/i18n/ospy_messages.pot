@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2019-08-14 13:06+CEST\n"
+"POT-Creation-Date: 2020-05-25 07:24+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,15 +19,15 @@ msgstr ""
 msgid "LCD display plug-in:"
 msgstr ""
 
-#: plugins/lcd_display/__init__.py:757
+#: plugins/lcd_display/__init__.py:823
 msgid "Could not import smbus."
 msgstr ""
 
-#: plugins/lcd_display/__init__.py:770
+#: plugins/lcd_display/__init__.py:836
 msgid "Could not find any PCF8574 controller."
 msgstr ""
 
-#: plugins/lcd_display/__init__.py:824
+#: plugins/lcd_display/__init__.py:890
 msgid "I2C address has re-finded."
 msgstr ""
 
@@ -153,26 +153,34 @@ msgid "Water Tank Level"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:121
-msgid "Running Stations"
-msgstr ""
-
-#: plugins/lcd_display/templates/lcd_display.html:127
 msgid "DS18B20 Temperature"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:134
-msgid "Status"
+#: plugins/lcd_display/templates/lcd_display.html:127
+msgid "Running Stations"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:143
-msgid "Submit"
+#: plugins/lcd_display/templates/lcd_display.html:133
+msgid "Schedule - Manual"
 msgstr ""
 
-#: plugins/lcd_display/templates/lcd_display.html:144
-msgid "Cancel"
+#: plugins/lcd_display/templates/lcd_display.html:139
+msgid "System enabled"
 msgstr ""
 
 #: plugins/lcd_display/templates/lcd_display.html:145
+msgid "Status"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:154
+msgid "Submit"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:155
+msgid "Cancel"
+msgstr ""
+
+#: plugins/lcd_display/templates/lcd_display.html:156
 msgid "Re-find I2C address"
 msgstr ""
 
