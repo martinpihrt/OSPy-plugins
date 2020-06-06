@@ -18,7 +18,7 @@ from ospy.programs import programs
 from ospy.options import options
 from ospy.runonce import run_once
 from ospy import helpers
-from ospy.helpers import datetime_string
+from ospy.helpers import get_rpi_revision, datetime_string, reboot, restart, poweroff
 
 import i18n
 
