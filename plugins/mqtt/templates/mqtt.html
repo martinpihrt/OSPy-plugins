@@ -19,15 +19,18 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('MQTT settings')</div>
+    <p><b>MQTT client</b></p>
     <p>$_('This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. On this page, the shared client is configured').</p>
     <p>$_('Having a shared MQTT client simplifies configuration and lowers overhead on the OSPy process, network and broker').
     <p>$_('This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs paho-mqtt in to the system himself. On first use (if run installation paho-mqtt) please wait for status').</p>
     <p>$_('We can use a public Broker server to test'): http://www.hivemq.com/demos/websocket-client/.</p>
+    <p><b>MQTT secondary</b></p>
+    <p>$_('The MQTT plugin allows multiple secondary OSPy controlers to be running with the control OSPy system running. This means that one OSPy system can act as the control driver for secondary systems that also use OSPy and have the mqtt_secondary plugin installed. The control OSPy sends a list containing the on/off states of all stations. The secondary system receives the list and checks whether it is necessary to switch on one of its stations or switch it off and make the necessary changes. All irrigation plans are set on the main system and it records all running stations as if they were on the OSPy control system itself. There is no feedback from the secondary  OSPy, so the control system assumes that all stations are working as they should. If enabled logging in secondary OSPy, stations running on this secondary OSPy are also stored in the log. This provides a way to check if the station on the secondary is working properly. Requirements: This plugin requires the main OSPy control system, which has the basic mqtt plugin and the mqtt_zones plugin installed. Each secondary OSPy system must have the basic mqtt plugin installed. You must this OSPy switch to manual mode! If you change settings you must restarting OSPy!')</p>     
     <form id="pluginForm" action="$plugins.plugin_url('mqtt.settings_page')" method="post">
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Use MQTT'):</td>
-                <td>
+                <td style='text-transform: none;'><b>$_('MQTT client'):</b></td>
+                <td>$_('Required to receive and send MQTT messages.')<br />
                     <input name='use_mqtt' type='checkbox'${" checked" if plugin_options['use_mqtt'] else ""}>
                 </td>
             </tr>
@@ -49,16 +52,51 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('MQTT Publish up/down topic'):</td>
-                <td><input type="text" name="publish_up_down" value="${plugin_options['publish_up_down']}"> $_('Leave blank to not publish OSPy status').</td>
+                <td>$_('Leave blank to not publish OSPy status').<br />
+                    <input type="text" name="publish_up_down" value="${plugin_options['publish_up_down']}"> </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('MQTT Client ID'):</td>  <!--Edit-->
                 <td>${client_id}</td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Status'):</td>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'><b>$_('Use MQTT secondary'):<b></td>
+                <td>$_('Required to receive secondary MQTT messages.')<br />
+                    <input name='use_mqtt_secondary' type='checkbox'${" checked" if plugin_options['use_mqtt_secondary'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Zone topic'):</td>
+                <td>$_('The topic to subscribe to for control commands.')<br />
+                  <input type="text" name="control_topic" value="${plugin_options['control_topic']}">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('First station number'):</td>
+                <td>$_('The number from the master of this secondary first station.')<br />
+                  <input type="text" name="first_station" value="${plugin_options['first_station']}">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Station count'):</td>
+                <td>$_('The number of station this secondary uses.')<br />
+                  <input type="text" name="station_count" value="${plugin_options['station_count']}">
+                </td>
+            </tr>          
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                           
+            <tr>
+                <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="7" cols="65" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
