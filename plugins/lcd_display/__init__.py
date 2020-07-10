@@ -330,9 +330,14 @@ def get_report(index):
                    percent = tank_monitor.get_all_values()[1]
                    ping = tank_monitor.get_all_values()[2]
                    volume = tank_monitor.get_all_values()[3]
+                   units = tank_monitor.get_all_values()[4]
 
                    if cm > 0: 
-                      result = 'Hladina ' + str(cm) + ' cm (' + str(percent) + ' %), objem ' + str(volume) + ' m3, ping ' + str(ping) + ' cm' 
+                      result = 'Hladina ' + str(cm) + ' cm (' + str(percent) + ' %), objem ' + str(volume) 
+                      if units:
+                          result += ' litru, ping ' + str(ping) + ' cm' 
+                      else:
+                          result += ' m3, ping ' + str(ping) + ' cm'     
                    else:
                       result = "chyba - I2C zarizeni nenalezeno!"
 
@@ -540,8 +545,14 @@ def get_report(index):
                    percent = tank_monitor.get_all_values()[1]
                    ping = tank_monitor.get_all_values()[2]
                    volume = tank_monitor.get_all_values()[3]
+                   units = tank_monitor.get_all_values()[4]
+
                    if cm > 0: 
-                      result = 'Hladina ' + str(cm) + ' cm ' + str(percent) + ' %, objem ' + str(volume) + ' m3, ping ' + str(ping) + ' cm'
+                      result = 'Hladina ' + str(cm) + ' cm (' + str(percent) + ' %), objem ' + str(volume) 
+                      if units:
+                          result += ' litru, ping ' + str(ping) + ' cm' 
+                      else:
+                          result += ' m3, ping ' + str(ping) + ' cm' 
                    else:
                       result = "chyba - I2C zarizeni nenajdene!"
 
@@ -748,8 +759,14 @@ def get_report(index):
                    percent = tank_monitor.get_all_values()[1]
                    ping = tank_monitor.get_all_values()[2]
                    volume = tank_monitor.get_all_values()[3]
+                   units = tank_monitor.get_all_values()[4]
+
                    if cm > 0: 
-                      result = 'Level ' + str(cm) + ' cm ' + str(percent) + ' %, volume ' + str(volume) + ' m3, ping ' + str(ping) + ' cm'
+                      result = 'Level ' + str(cm) + ' cm (' + str(percent) + ' %), volume ' + str(volume) 
+                      if units:
+                          result += ' litru, ping ' + str(ping) + ' cm' 
+                      else:
+                          result += ' m3, ping ' + str(ping) + ' cm' 
                    else:
                       result = "Error - I2C Device Not Found!"
 
@@ -871,7 +888,7 @@ def update_lcd(line1, line2=None):
                 line2 = line2[1:]
 
         time.sleep(sleep_time)
-        sleep_time = 0.5
+        sleep_time = 0.8
 
 
 ################################################################################

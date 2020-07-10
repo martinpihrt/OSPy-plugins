@@ -152,16 +152,16 @@ def on_message(client, userdata, message):
             return
  
         first = int(plugin_options["first_station"])-1       # first secondary station
-        count = int(plugin_options["station_count"])+1       # count secondary station
+        count = int(plugin_options["station_count"])         # count secondary station
 
         try:
-            for i in range(first, count):                    # count of station (example on main OSPy: 5 to 10) 
+            for i in range(first, first+count):              # count of station (example on main OSPy: 5 to 10) 
                 zone    = cmd[i]["status"]                   # "off" or "on" state 
                 #station = cmd[i]["station"] 
                 #name    = cmd[i]["name"] 
                 #print station, name, zone
 
-                sid = i # TODO
+                sid = i-first
                 if sid <= stations.count():                  # local station size check
                     if zone == "on":
                         start = datetime.datetime.now()
@@ -280,12 +280,12 @@ def subscribe(topic, callback, qos=0):
 def on_connect(client, userdata, flags, rc):
    global flag_connected
    flag_connected = 1
-   log.info(NAME, datetime_string() + ' ' + _('Connected to broker.'))
+   log.debug(NAME, datetime_string() + ' ' + _('Connected to broker.'))
 
 def on_disconnect(client, userdata, rc):
    global flag_connected
    flag_connected = 0
-   log.error(NAME, datetime_string() + ' ' + _('Disconnected from broker!'))
+   log.debug(NAME, datetime_string() + ' ' + _('Disconnected from broker!'))
 
 def on_restart():
     client = get_client()

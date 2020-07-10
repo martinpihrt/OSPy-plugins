@@ -152,12 +152,17 @@ class EmailSender(Thread):
                                 percent = tank_monitor.get_all_values()[1]
                                 ping = tank_monitor.get_all_values()[2]
                                 volume = tank_monitor.get_all_values()[3]
+                                units = tank_monitor.get_all_values()[4]
+
                                 msg = ' '
                                 if cm > 0:
                                     msg =  _('Level') + ': ' + str(cm) + ' ' + _('cm')
                                     msg += ' (' + str(percent) + ' %), '
                                     msg += _('Ping') + ': ' + str(ping) + ' ' + _('cm')
-                                    msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('m3')
+                                    if units:
+                                        msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('liters')
+                                    else:
+                                        msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('m3')    
                                 else: 
                                     msg = _('Error - I2C device not found!')
 
