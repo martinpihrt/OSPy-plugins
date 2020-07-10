@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-01-29 11:26+CET\n"
+"POT-Creation-Date: 2020-07-10 10:14+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,7 @@ msgstr ""
 msgid "Report from OSPy TANK plugin"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:102 plugins/tank_monitor/__init__.py:505
+#: plugins/tank_monitor/__init__.py:103 plugins/tank_monitor/__init__.py:508
 msgid "Water tank monitor is enabled."
 msgstr ""
 
@@ -40,15 +40,20 @@ msgid "cm"
 msgstr ""
 
 #: plugins/tank_monitor/__init__.py:118
+msgid "Measured Level in cm, liters or m³"
+msgstr ""
+
+#: plugins/tank_monitor/__init__.py:118
 msgid "Ping"
 msgstr ""
 
 #: plugins/tank_monitor/__init__.py:118
-msgid "Volume"
+msgid "m3."
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:118
-msgid "m3."
+#: plugins/tank_monitor/__init__.py:118 plugins/tank_monitor/__init__.py:442
+#: plugins/tank_monitor/__init__.py:567
+msgid "Volume"
 msgstr ""
 
 #: plugins/tank_monitor/__init__.py:119 plugins/tank_monitor/__init__.py:177
@@ -64,7 +69,7 @@ msgid "ERROR: Water in Tank"
 msgstr ""
 
 #: plugins/tank_monitor/__init__.py:176
-msgid "Water level: Error I2C device not found."
+msgid "Water level: Error."
 msgstr ""
 
 #: plugins/tank_monitor/__init__.py:192 plugins/tank_monitor/__init__.py:193
@@ -76,56 +81,52 @@ msgstr ""
 msgid "Water Tank Monitor plug-in"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:198 plugins/tank_monitor/__init__.py:334
-#: plugins/tank_monitor/__init__.py:336
+#: plugins/tank_monitor/__init__.py:198 plugins/tank_monitor/__init__.py:337
+#: plugins/tank_monitor/__init__.py:339
 msgid "Email was not sent"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:324 plugins/tank_monitor/__init__.py:332
+#: plugins/tank_monitor/__init__.py:327 plugins/tank_monitor/__init__.py:335
 msgid "Email logging is disabled in options..."
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:326
+#: plugins/tank_monitor/__init__.py:329
 msgid "Sent"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:328
+#: plugins/tank_monitor/__init__.py:331
 msgid "Email was sent"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:428
+#: plugins/tank_monitor/__init__.py:431
 msgid "Saving to log  files OK"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:436
+#: plugins/tank_monitor/__init__.py:439 plugins/tank_monitor/__init__.py:564
 msgid "Minimum"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:437
+#: plugins/tank_monitor/__init__.py:440 plugins/tank_monitor/__init__.py:565
 msgid "Maximum"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:438
+#: plugins/tank_monitor/__init__.py:441 plugins/tank_monitor/__init__.py:566
 msgid "Actual"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:439
-msgid "m3"
-msgstr ""
-
-#: plugins/tank_monitor/__init__.py:448
+#: plugins/tank_monitor/__init__.py:451
 msgid "Deleted all log files OK"
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:484
+#: plugins/tank_monitor/__init__.py:487
 msgid "Minimum and maximum has reseted."
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:508
+#: plugins/tank_monitor/__init__.py:511
 msgid "Water tank monitor is disabled."
 msgstr ""
 
-#: plugins/tank_monitor/__init__.py:510
+#: plugins/tank_monitor/__init__.py:513
 msgid "Options has updated."
 msgstr ""
 
@@ -175,82 +176,66 @@ msgid "Cylinder diameter for volume calculation"
 msgstr ""
 
 #: plugins/tank_monitor/templates/tank_monitor.html:209
-msgid "Send an e-mail with an error that there is minimum water in the tank"
-msgstr ""
-
-#: plugins/tank_monitor/templates/tank_monitor.html:211
-msgid "For this function required email plugin"
+msgid "Display as liters or m"
 msgstr ""
 
 #: plugins/tank_monitor/templates/tank_monitor.html:215
-msgid "E-mail subject"
+msgid "Send an e-mail with an error that there is minimum water in the tank"
+msgstr ""
+
+#: plugins/tank_monitor/templates/tank_monitor.html:217
+msgid "For this function required email plugin"
 msgstr ""
 
 #: plugins/tank_monitor/templates/tank_monitor.html:221
-msgid "Stop scheduller if is minimum water in the tank"
+msgid "E-mail subject"
 msgstr ""
 
 #: plugins/tank_monitor/templates/tank_monitor.html:227
+msgid "Stop scheduller if is minimum water in the tank"
+msgstr ""
+
+#: plugins/tank_monitor/templates/tank_monitor.html:238
 msgid "Enable logging"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:233
+#: plugins/tank_monitor/templates/tank_monitor.html:244
 msgid "Maximum number of log records"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:235
+#: plugins/tank_monitor/templates/tank_monitor.html:246
 msgid "0 = unlimited"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:239
+#: plugins/tank_monitor/templates/tank_monitor.html:250
 msgid "Interval for logging"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:241
+#: plugins/tank_monitor/templates/tank_monitor.html:252
 msgid "minutes (Minimum is 1)"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:245
+#: plugins/tank_monitor/templates/tank_monitor.html:256
 msgid "Status"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:254
+#: plugins/tank_monitor/templates/tank_monitor.html:265
 msgid "Submit"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:255
+#: plugins/tank_monitor/templates/tank_monitor.html:266
 msgid "Cancel"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:256
+#: plugins/tank_monitor/templates/tank_monitor.html:267
 msgid "Reset min/max level"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:257
+#: plugins/tank_monitor/templates/tank_monitor.html:268
 msgid "Delete all logs"
 msgstr ""
 
-#: plugins/tank_monitor/templates/tank_monitor.html:266
+#: plugins/tank_monitor/templates/tank_monitor.html:277
 msgid "Clear selection"
-msgstr ""
-
-#: plugins/tank_monitor/templates/tank_monitor.html:266
-msgid "Reason"
-msgstr ""
-
-#: plugins/tank_monitor/templates/tank_monitor.html:266
-msgid "Measured Level in cm or m3"
-msgstr ""
-
-#: plugins/tank_monitor/templates/tank_monitor.html:266
-msgid "Previous Value"
-msgstr ""
-
-#: plugins/tank_monitor/templates/tank_monitor.html:266
-msgid "Actual Value"
-msgstr ""
-
-#: plugins/tank_monitor/templates/tank_monitor.html:266
-msgid "cm or m3"
 msgstr ""
 

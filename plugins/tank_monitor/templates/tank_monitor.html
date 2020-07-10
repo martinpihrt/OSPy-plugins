@@ -19,7 +19,7 @@ function draw_graph(result) {
 
     for (var i = 0; i < result.length; i++) {
         var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>$_('Reason')</th><th> $_('cm or m3')</th></tr>";
+        var txt_header = "<table class=\"balanceList\"><tr><th>$_('Reason')</th><th> $_('cm, liters or m')<sup>3</sup></th></tr>";
         var texts = [];
         var txt_body = "";
         var txt_footer = "</table>";
@@ -72,7 +72,7 @@ function draw_graph(result) {
         },
         yaxes: [{
             position: 'left',
-            axisLabel: '$_('Measured Level in cm or m3')',
+            axisLabel: "$_('cm, liters or m')<sup>3</sup>",
         }],
         selection: {
             mode: 'x'
@@ -176,7 +176,7 @@ function create_graph(result) {
     <form id="pluginForm" action="$plugins.plugin_url('tank_monitor.settings_page')" method="post">
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Use ultrasonic measuring the water level in the tank'):</td>
+                <td style='text-transform: none;'><b>$_('Use ultrasonic measuring the water level in the tank'):</b></td>
                 <td>
                     <input name='use_sonic' type='checkbox'${" checked" if plugin_options['use_sonic'] else ""}> 
                 </td>
@@ -206,6 +206,12 @@ function create_graph(result) {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Display as liters or m')<sup>3</sup>:</td>
+                <td>
+                    <input name='check_liters' type='checkbox'${" checked" if plugin_options['check_liters'] else ""}> 
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Send an e-mail with an error that there is minimum water in the tank'):</td>
                 <td>
                     <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}> ($_('For this function required email plugin'))
@@ -224,7 +230,12 @@ function create_graph(result) {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Enable logging'):</td>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
                 <td>
                     <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
                 </td>

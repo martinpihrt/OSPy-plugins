@@ -45,9 +45,10 @@ tank_options = PluginOptions(
        'log_minlevel': 0,      # minimal level (log)
        'log_date_maxlevel': datetime_string(), # maximal level (date log)
        'log_date_minlevel': datetime_string(), # minimal level (date log)
-       'enable_log': False,
-       'log_interval': 1,
-       'log_records': 0,
+       'enable_log': False,    # use logging
+       'log_interval': 1,      # interval for log in minutes
+       'log_records': 0,       # the number of records 
+       'check_liters': False   # display as liters or m3 (true = liters)
     }
 )
 
@@ -114,7 +115,10 @@ class Sender(Thread):
 
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
-                        log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3.'))
+                        if tank_options['check_liters']: # display in liters
+                            log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('liters') + '.')
+                        else:
+                            log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3') + '.')
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.') 
 
@@ -290,7 +294,10 @@ def get_volume(level): # return volume calculation from cylinder diameter and wa
           r = tank_options['diameter']/2.0
           area = math.pi*r*r               # calculate area of circle
           volume = area*tank_lvl           # volume in cm3
-          volume = volume/1000000.0        # convert from cm3 to m3
+          if tank_options['check_liters']: # display in liters
+            volume = volume*0.001          # convert from cm3 to liter (1 cm3 = 0.001 liter)
+          else:  
+            volume = volume/1000000.0      # convert from cm3 to m3
           volume = round(volume,2)         # round only two decimals
           return volume
        except:
@@ -306,7 +313,7 @@ def maping(x, in_min, in_max, out_min, out_max):
 def get_all_values():
     global status
 
-    return status['level'] , status['percent'], status['ping'], status['volume'], tank_options['log_minlevel'], tank_options['log_maxlevel'], tank_options['log_date_minlevel'], tank_options['log_date_maxlevel']
+    return status['level'] , status['percent'], status['ping'], status['volume'], tank_options['log_minlevel'], tank_options['log_maxlevel'], tank_options['log_date_minlevel'], tank_options['log_date_maxlevel'], tank_options['check_liters']
    
  
 def send_email(msg, msglog):
@@ -568,7 +575,10 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         data += ";\t %s cm" % minimum
         data += ";\t %s cm" % maximum
         data += ";\t %s cm" % actual
-        data += ";\t %s m3" % volume
+        if tank_options['check_liters']:
+            data += ";\t %s liters" % volume
+        else:    
+            data += ";\t %s m3" % volume
         data += '\n'        
 
         try:
