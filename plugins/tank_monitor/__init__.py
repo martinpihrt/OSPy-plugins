@@ -537,7 +537,8 @@ class data_json(ProtectedPage):
           'percent':get_all_values()[1], 
           'ping': get_all_values()[2],    
           'volume': get_all_values()[3],
-          'label': tank_options['emlsubject']
+          'label': tank_options['emlsubject'],
+          'unit': get_all_values()[4]
         }
 
         return json.dumps(data)
