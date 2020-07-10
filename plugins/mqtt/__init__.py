@@ -244,6 +244,7 @@ def get_client():
             _client.username_pw_set(plugin_options['user_name'], plugin_options['user_password'])
             _client.connect(plugin_options['broker_host'], plugin_options['broker_port'], 60)
             _client.loop_start()
+            log.info(NAME, datetime_string() + ' ' + _('OK'))
             return _client
             
         except Exception:
@@ -280,12 +281,12 @@ def subscribe(topic, callback, qos=0):
 def on_connect(client, userdata, flags, rc):
    global flag_connected
    flag_connected = 1
-   log.debug(NAME, datetime_string() + ' ' + _('Connected to broker.'))
+   #log.debug(NAME, datetime_string() + ' ' + _('Connected to broker.'))
 
 def on_disconnect(client, userdata, rc):
    global flag_connected
    flag_connected = 0
-   log.debug(NAME, datetime_string() + ' ' + _('Disconnected from broker!'))
+   #log.debug(NAME, datetime_string() + ' ' + _('Disconnected from broker!'))
 
 def on_restart():
     client = get_client()
