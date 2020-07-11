@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
-# this plugins send email at google email
+# this plugins send e-mail
 
 import json
 import time
@@ -9,6 +9,7 @@ import os.path
 import traceback
 import smtplib
 from threading import Thread, Event
+from random import randint
 
 from email.encoders import encode_base64
 from email.mime.multipart import MIMEMultipart
@@ -37,8 +38,11 @@ email_options = PluginOptions(
         'emllog': False,
         'emlrain': False,
         'emlrun': False,
+        'emlserver': 'smtp.gmail.com',
+        'emlport': '587',
         'emlusr': '',
         'emlpwd': '',
+        'emlsender': False,
         'emladr0': '',
         'emladr1': '',
         'emladr2': '',
@@ -60,6 +64,14 @@ class EmailSender(Thread):
 
         self._sleep_time = 0
         self.start()
+        self.status = ""
+
+    def add_status(self, msg):
+        if self.status:
+            self.status += "\n" + msg
+        else:
+            self.status = msg
+        #print(msg)        
 
     def stop(self):
         self._stop.set()
@@ -75,24 +87,33 @@ class EmailSender(Thread):
                    
     def try_mail(self, text, logtext, attachment=None, subject=None):
         log.clear(NAME)
+        self.status = ""
         try:
             email(text, attach=attachment)  # send email with attachment from
-            log.info(NAME, _('Email was sent') + ':\n' + text)
+            log.info(NAME, _('E-mail was sent') + ':\n' + text)
+            self.add_status('E-mail was sent: ' + text)
             if not options.run_logEM:
-                log.info(NAME, _('Email logging is disabled in options...'))
+                log.info(NAME, _('E-mail logging is disabled in options...'))
             logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Sent'))
 
         except Exception:
-            log.error(NAME, _('Email was not sent!') + '\n' + traceback.format_exc())
-            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Email was not sent!'))
+            log.error(NAME, _('E-mail was not sent!') + '\n' + traceback.format_exc())
+            self.add_status('E-mail was not sent! ' + traceback.format_exc())
+            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('E-mail was not sent!'))
             if not options.run_logEM:
-                log.info(NAME, _('Email logging is disabled in options...'))
+                log.info(NAME, _('E-mail logging is disabled in options...'))
 
     def run(self):
+        time.sleep(
+            randint(3, 10)
+        )  # Sleep some time to prevent printing before startup information
         last_rain = False
         body    = ""
         logtext = ""
         finished_count = len([run for run in log.finished_runs() if not run['blocked']])
+        self.status = ""
+        self.add_status('E-mail plug-in is started')
+
 
         if email_options["emlpwron"]:  # if eml_power_on send email is enable (on)
             body += '<b>' + _('System') + '</b> ' + datetime_string()
@@ -231,6 +252,7 @@ class EmailSender(Thread):
 
             except Exception:
                 log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
+                self.add_status('E-mail plug-in encountered an error: ' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -261,19 +283,22 @@ def safeStr(obj):
 
 def email(text, subject=None, attach=None):
     """Send email with with attachments. If subject is None, the default will be used."""
-    if email_options['emlusr'] != '' and email_options['emlpwd'] != '' and email_options['emladr0'] != '':
+    if email_options['emlusr'] != '' and email_options['emlpwd'] != '' and email_options['emladr0'] != '' and email_options['emlserver'] != '' and email_options['emlport'] != '':
         recipients_list = [email_options['emladr'+str(i)] for i in range(5) if email_options['emladr'+str(i)]!='']
-        gmail_user = email_options['emlusr']  # User name
-        gmail_pwd = email_options['emlpwd']  # User password
-        mail_server = smtplib.SMTP("smtp.gmail.com", 587)
+        SMTP_user = email_options['emlusr']       # SMTP username
+        SMTP_pwd = email_options['emlpwd']        # SMTP password
+        SMTP_server = email_options['emlserver']  # SMTP server address
+        SMTP_port = email_options['emlport']      # SMTP port
+        mail_server = smtplib.SMTP(SMTP_server, int(SMTP_port)) # mail_server = smtplib.SMTP("smtp.gmail.com", 587)
         mail_server.ehlo()
         mail_server.starttls()
         mail_server.ehlo()
-        mail_server.login(gmail_user, gmail_pwd)
+        mail_server.login(SMTP_user, SMTP_pwd)
         # --------------
         msg = MIMEMultipart()
 
-        msg['From'] = options.name
+        mail_from = SMTP_user if email_options['emlsender'] else options.name  # From Name
+        msg['From'] = mail_from
         msg['Subject'] = subject or email_options['emlsubject']
 
         html = """\
@@ -300,7 +325,7 @@ def email(text, subject=None, attach=None):
                 encode_base64(part)
                 part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(attach))
                 msg.attach(part)
-            mail_server.sendmail('OSPy email sender', recipients_list, msg.as_string())   # name + e-mail address in the From: field
+            mail_server.sendmail(mail_from, recipients_list, msg.as_string())   # name + e-mail address in the From: field
 
         mail_server.quit()    
 
@@ -326,8 +351,8 @@ class settings_page(ProtectedPage):
             email_sender.update()
 
             if test:
-                body = datetime_string() + ': ' + _('This is test e-mail from e-mail notification plugin.')
-                logtext = _('This is test e-mail from e-mail notification plugin.')
+                body = datetime_string() + ': ' + _('This is test e-mail from OSPy. You can ignore it.')
+                logtext = _('This is test e-mail from OSPy. You can ignore it.')
                 email_sender.try_mail(body, logtext)
 
 

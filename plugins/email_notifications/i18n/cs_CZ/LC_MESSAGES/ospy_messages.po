@@ -5,86 +5,166 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2016-06-08 06:35+0200\n"
-"PO-Revision-Date: 2019-08-23 08:51+0200\n"
+"POT-Creation-Date: 2020-07-11 13:17+CEST\n"
+"PO-Revision-Date: 2020-07-11 13:28+0200\n"
+"Last-Translator: pihrt.com <martinpihrt@gmail.com>\n"
 "Language-Team: pihrt.com\n"
+"Language: cs_CZ\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 2.2.3\n"
-"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"Language: cs_CZ\n"
 
-#: plugins/email_notifications/__init__.py:44
+#: plugins/email_notifications/__init__.py:51
 msgid "Report from OSPy SYSTEM"
 msgstr "Hlášení z OSPy SYSTÉMU"
 
-#: plugins/email_notifications/__init__.py:77
-msgid "Email was sent"
-msgstr "Email byl odeslán"
+#: plugins/email_notifications/__init__.py:93
+msgid "E-mail was sent"
+msgstr "E-mail byl odeslán"
 
-#: plugins/email_notifications/__init__.py:79
-msgid "Email was not sent!"
-msgstr "Email nebyl odeslán!"
+#: plugins/email_notifications/__init__.py:96
+#: plugins/email_notifications/__init__.py:104
+msgid "E-mail logging is disabled in options..."
+msgstr "Protokolování E-mailů je zakázáno v nastavení..."
 
-#: plugins/email_notifications/__init__.py:86
+#: plugins/email_notifications/__init__.py:97
+msgid "Sent"
+msgstr "Odesláno"
+
+#: plugins/email_notifications/__init__.py:100
+#: plugins/email_notifications/__init__.py:102
+msgid "E-mail was not sent!"
+msgstr "E-mail nebyl odeslán!"
+
+#: plugins/email_notifications/__init__.py:119
+#: plugins/email_notifications/__init__.py:141
+#: plugins/email_notifications/__init__.py:157
+msgid "System"
+msgstr "Systém"
+
+#: plugins/email_notifications/__init__.py:120
+#: plugins/email_notifications/__init__.py:121
 msgid "System was powered on."
 msgstr "System byl spuštěn."
 
-#: plugins/email_notifications/__init__.py:95
+#: plugins/email_notifications/__init__.py:128
 msgid "Error -  events.log file not exists!"
 msgstr "Chyba - soubor events.log nenalezen!"
 
-#: plugins/email_notifications/__init__.py:106
+#: plugins/email_notifications/__init__.py:142
+#: plugins/email_notifications/__init__.py:143
 msgid "System detected rain."
 msgstr "System detekoval déšť."
 
-#: plugins/email_notifications/__init__.py:125
-msgid "Error - I2C device not found!"
-msgstr "Chyba - I2C zařízení nenalezeno!"
-
-#: plugins/email_notifications/__init__.py:127
-msgid "Not available"
-msgstr "Není k dispozici"
-
-#: plugins/email_notifications/__init__.py:128
+#: plugins/email_notifications/__init__.py:158
+#: plugins/email_notifications/__init__.py:163
 msgid "Finished run"
 msgstr "Ukončené zalévání"
 
-#: plugins/email_notifications/__init__.py:129
+#: plugins/email_notifications/__init__.py:159
+#: plugins/email_notifications/__init__.py:163
 msgid "Program"
 msgstr "Program"
 
-#: plugins/email_notifications/__init__.py:130
+#: plugins/email_notifications/__init__.py:160
+#: plugins/email_notifications/__init__.py:164
 msgid "Station"
 msgstr "Stanice"
 
-#: plugins/email_notifications/__init__.py:131
+#: plugins/email_notifications/__init__.py:161
+#: plugins/email_notifications/__init__.py:165
 msgid "Start time"
 msgstr "Začátek"
 
-#: plugins/email_notifications/__init__.py:132
+#: plugins/email_notifications/__init__.py:162
+#: plugins/email_notifications/__init__.py:166
 msgid "Duration"
 msgstr "Trvání"
 
-#: plugins/email_notifications/__init__.py:133
+#: plugins/email_notifications/__init__.py:180
+msgid "Level"
+msgstr "Úroveň"
+
+#: plugins/email_notifications/__init__.py:180
+#: plugins/email_notifications/__init__.py:182
+msgid "cm"
+msgstr "cm"
+
+#: plugins/email_notifications/__init__.py:182
+msgid "Ping"
+msgstr "Ping"
+
+#: plugins/email_notifications/__init__.py:184
+msgid "liters"
+msgstr "litrů"
+
+#: plugins/email_notifications/__init__.py:184
+#: plugins/email_notifications/__init__.py:186
+msgid "Volume"
+msgstr "Objem"
+
+#: plugins/email_notifications/__init__.py:186
+#: plugins/email_notifications/__init__.py:216
+#: plugins/email_notifications/__init__.py:224
+msgid "m3"
+msgstr "m3"
+
+#: plugins/email_notifications/__init__.py:188
+msgid "Error - I2C device not found!"
+msgstr "Chyba - I2C zařízení nenalezeno!"
+
+#: plugins/email_notifications/__init__.py:190
+#: plugins/email_notifications/__init__.py:192
+msgid "Water"
+msgstr "Voda"
+
+#: plugins/email_notifications/__init__.py:191
+#: plugins/email_notifications/__init__.py:192
 msgid "Water level in tank"
 msgstr "Množství vody v zásobníku"
 
-#: plugins/email_notifications/__init__.py:142
+#: plugins/email_notifications/__init__.py:209
+msgid "Measured from day"
+msgstr "Měřeno od dne"
+
+#: plugins/email_notifications/__init__.py:210
+msgid "Master Station"
+msgstr "Hlavní stanice"
+
+#: plugins/email_notifications/__init__.py:213
+#: plugins/email_notifications/__init__.py:221
+msgid "Liter"
+msgstr "Litr"
+
+#: plugins/email_notifications/__init__.py:218
+msgid "Second Master Station"
+msgstr "Druhá hlavní stanice"
+
+#: plugins/email_notifications/__init__.py:226
+#: plugins/email_notifications/__init__.py:228
+msgid "Water Consumption Counter"
+msgstr "Čítač spotřeby vody"
+
+#: plugins/email_notifications/__init__.py:237
+#: plugins/email_notifications/__init__.py:238
+msgid "Temperature DS1-DS6"
+msgstr "Teplota DS1-DS6"
+
+#: plugins/email_notifications/__init__.py:254
 msgid "E-mail plug-in"
 msgstr "E-mail rozšíření"
 
-#: plugins/email_notifications/__init__.py:215
-msgid "This is test e-mail from e-mail notification plugin."
-msgstr ""
-"Toto je testovací email od rozšíření email notifications systému OSPy."
-
-#: plugins/email_notifications/__init__.py:193
+#: plugins/email_notifications/__init__.py:333
 msgid "E-mail plug-in is not properly configured!"
 msgstr "E-mail rozšíření není správně nastaveno!"
+
+#: plugins/email_notifications/__init__.py:354
+#: plugins/email_notifications/__init__.py:355
+msgid "This is test e-mail from OSPy. You can ignore it."
+msgstr "Toto je testovací E-mail ze systému OSPy. Můžete ho ignorovat."
 
 #: plugins/email_notifications/templates/email_notifications.html:3
 #: plugins/email_notifications/templates/email_notifications.html:25
@@ -93,15 +173,15 @@ msgstr "E-mail hlášení"
 
 #: plugins/email_notifications/templates/email_notifications.html:26
 msgid ""
-"This plugin can send E-mails. For this plugin you need a GMail account as "
-"provider"
+"This plugin can send E-mails. For this plugin you need an e-mail smtp "
+"account as provider."
 msgstr ""
-"Toto rozšíření odesílá E-maily. Pro toto rozšíření je vyžadován účet u "
-"poskytovatele Google GMail"
+"Toto rozšíření odesílá E-maily. Pro toto rozšíření je vyžadován E-mail SMTP "
+"účet jako poskytovatel pošty."
 
 #: plugins/email_notifications/templates/email_notifications.html:30
 msgid "Send E-mail after power on"
-msgstr "Odeslat email po zapnutí"
+msgstr "Odeslat E-mail po zapnutí"
 
 #: plugins/email_notifications/templates/email_notifications.html:32
 msgid "with events.log file"
@@ -109,78 +189,85 @@ msgstr "se souborem events.log"
 
 #: plugins/email_notifications/templates/email_notifications.html:36
 msgid "Send E-mail if rain is detected"
-msgstr "Odeslat email pokud začne pršet"
+msgstr "Odeslat E-mail pokud začne pršet"
 
 #: plugins/email_notifications/templates/email_notifications.html:43
 msgid "Send E-mail if a program has finished"
-msgstr "Odeslat email pokud běžel výstup"
+msgstr "Odeslat E-mail pokud běžel výstup"
 
 #: plugins/email_notifications/templates/email_notifications.html:49
-msgid "Your GMail username"
-msgstr "Jméno do GMailu"
+msgid "SMTP server address"
+msgstr "Adresa SMTP serveru"
 
-#: plugins/email_notifications/templates/email_notifications.html:51
-msgid "(name or name@gmail.com)"
-msgstr "(jméno nebo jméno@gmail.com)"
+#: plugins/email_notifications/templates/email_notifications.html:50
+#: plugins/email_notifications/templates/email_notifications.html:58
+msgid "example"
+msgstr "příklad"
 
-#: plugins/email_notifications/templates/email_notifications.html:55
-msgid "Your GMail password"
-msgstr "Heslo do GMailu"
+#: plugins/email_notifications/templates/email_notifications.html:57
+msgid "SMTP port"
+msgstr "SMTP port"
 
-#: plugins/email_notifications/templates/email_notifications.html:61
+#: plugins/email_notifications/templates/email_notifications.html:64
+msgid "Use SMTP username as sender"
+msgstr "Použít uživatelské jméno SMTP jako odesílatel"
+
+#: plugins/email_notifications/templates/email_notifications.html:65
+msgid ""
+"Some SMTP providers prohibit to use another sender than the same mail user"
+msgstr ""
+"Někteří poskytovatelé SMTP zakazují používat jiného odesílatele než jaký je "
+"uživatel pošty"
+
+#: plugins/email_notifications/templates/email_notifications.html:71
+msgid "SMTP username"
+msgstr "SMTP uživatelské jméno"
+
+#: plugins/email_notifications/templates/email_notifications.html:72
+msgid "Your E-mail username"
+msgstr "Vaše jméno do E-mailu"
+
+#: plugins/email_notifications/templates/email_notifications.html:79
+msgid "SMTP password"
+msgstr "SMTP heslo"
+
+#: plugins/email_notifications/templates/email_notifications.html:80
+msgid "Your E-mail password"
+msgstr "Vaše heslo do E-mailu"
+
+#: plugins/email_notifications/templates/email_notifications.html:87
+#: plugins/email_notifications/templates/email_notifications.html:93
+#: plugins/email_notifications/templates/email_notifications.html:99
+#: plugins/email_notifications/templates/email_notifications.html:105
+#: plugins/email_notifications/templates/email_notifications.html:111
 msgid "Send E-mail to"
-msgstr "Odeslat email komu"
+msgstr "Komu chceme odeslat E-mail"
 
-#: plugins/email_notifications/templates/email_notifications.html:67
+#: plugins/email_notifications/templates/email_notifications.html:117
 msgid "E-mail subject"
 msgstr "Předmět zprávy"
 
-#: plugins/email_notifications/templates/email_notifications.html:73
+#: plugins/email_notifications/templates/email_notifications.html:123
 msgid "Status"
 msgstr "Stav"
 
-#: plugins/email_notifications/templates/email_notifications.html:82
+#: plugins/email_notifications/templates/email_notifications.html:132
 msgid "Submit"
 msgstr "Potvrdit"
 
-#: plugins/email_notifications/templates/email_notifications.html:83
+#: plugins/email_notifications/templates/email_notifications.html:133
 msgid "Send a test e-mail"
-msgstr "Odeslat test email"
+msgstr "Odeslat testovací E-mail"
 
-#: plugins/email_notifications/templates/email_notifications.html:84
+#: plugins/email_notifications/templates/email_notifications.html:134
 msgid "Cancel"
 msgstr "Zpět"
 
-msgid "Sent"
-msgstr "Odesláno"
+#~ msgid "Not available"
+#~ msgstr "Není k dispozici"
 
-msgid "Unsent"
-msgstr "Neodesláno"
+#~ msgid "(name or name@gmail.com)"
+#~ msgstr "(jméno nebo jméno@gmail.com)"
 
-#: plugins/email_notifications/__init__.py:157
-msgid "Measured from day"
-msgstr "Měřeno od dne"
-
-#: plugins/email_notifications/__init__.py:158
-msgid "Master Station"
-msgstr "Hlavní stanice"
-
-#: plugins/email_notifications/__init__.py:161
-#: plugins/email_notifications/__init__.py:169
-msgid "Liter"
-msgstr "Litr"
-
-#: plugins/email_notifications/__init__.py:164
-#: plugins/email_notifications/__init__.py:172
-#: plugins/email_notifications/__init__.py:194
-msgid "m3"
-msgstr "m3"
-
-#: plugins/email_notifications/__init__.py:166
-msgid "Second Master Station"
-msgstr "Druhá hlavní stanice"
-
-#: plugins/email_notifications/__init__.py:174
-#: plugins/email_notifications/__init__.py:176
-msgid "Water Consumption Counter"
-msgstr "Čítač spotřeby vody"
+#~ msgid "Unsent"
+#~ msgstr "Neodesláno"

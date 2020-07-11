@@ -23,7 +23,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Email Notifications')</div>
-    <p>$_('This plugin can send E-mails. For this plugin you need a GMail account as provider').</p>
+    <p>$_('This plugin can send E-mails. For this plugin you need an e-mail smtp account as provider.')</p>
     <form id="pluginForm" action="$plugins.plugin_url('email_notifications.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -46,13 +46,39 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Your GMail username'):</td> 
+                <td style='text-transform: none;'>$_('SMTP server address'):
+                    <div><small>$_('example'): smtp.gmail.com</small></div>
+                </td>
                 <td>
-                    <input name='emlusr' type='text' value='$plugin_options["emlusr"]'> $_('(name or name@gmail.com)')
+                    <input name='emlserver' type='text' value='$plugin_options["emlserver"]'>
+                </td>
+            </tr>      
+            <tr>
+                <td style='text-transform: none;'>$_('SMTP port'):
+                    <div><small>$_('example'): 587</small></div>
+                </td>
+                <td>
+                    <input name='emlport' type='text' value='$plugin_options["emlport"]'>
+                </td>
+            </tr>
+            <td style='text-transform: none;'>$_('Use SMTP username as sender'):
+              <div><small>$_('Some SMTP providers prohibit to use another sender than the same mail user')</small></div>
+            </td>
+            <td>
+                <input name='emlsender' type='checkbox' ${" checked" if plugin_options['emlsender'] else ""}>
+            </td>
+            <tr>
+                <td style='text-transform: none;'>$_('SMTP username'):
+                    <div><small>$_('Your E-mail username')</small></div>
+                </td>
+                <td>
+                    <input name='emlusr' type='text' value='$plugin_options["emlusr"]'> 
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Your GMail password'):</td>
+                <td style='text-transform: none;'>$_('SMTP password'):
+                    <div><small>$_('Your E-mail password')</small></div>
+                </td>
                 <td>
                     <input name='emlpwd' type='password' value='$plugin_options["emlpwd"]'>
                 </td>
