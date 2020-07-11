@@ -126,6 +126,8 @@ class Sender(Thread):
                         if status['level'] > tank_options['log_maxlevel']:                # maximum level check 
                             if tank_options['use_sonic']:
                                 qdict['use_sonic'] = u'on' 
+                            if tank_options['check_liters']:
+                                qdict['check_liters'] = u'on'                                
                             if tank_options['use_stop']:
                                 qdict['use_stop']  = u'on'
                             if tank_options['use_send_email']:     
@@ -141,6 +143,8 @@ class Sender(Thread):
                         if status['level'] < tank_options['log_minlevel'] and status['level'] > 2:  # minimum level check 
                             if tank_options['use_sonic']:
                                 qdict['use_sonic'] = u'on' 
+                            if tank_options['check_liters']:
+                                qdict['check_liters'] = u'on' 
                             if tank_options['use_stop']:
                                 qdict['use_stop']  = u'on'
                             if tank_options['use_send_email']:     
@@ -479,6 +483,8 @@ class settings_page(ProtectedPage):
             tank_options['log_date_minlevel'] = qm
             if tank_options['use_sonic']:
                 qdict['use_sonic'] = u'on' 
+            if tank_options['check_liters']:
+                qdict['check_liters'] = u'on'                
             if tank_options['enable_log']:
                 qdict['enable_log'] = u'on'
             if tank_options['use_stop']:
