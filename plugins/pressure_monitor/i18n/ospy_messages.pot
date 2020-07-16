@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2016-06-15 10:24+CEST\n"
+"POT-Creation-Date: 2020-07-16 14:50+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,122 +14,178 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
-msgid "Sent"
+
+#: plugins/pressure_monitor/__init__.py:35
+msgid "Report from OSPy PRESSURE MONITOR plugin"
 msgstr ""
 
-msgid "Unsent"
-msgstr ""
-
-#: plugins/pressure_monitor/__init__.py:95
+#: plugins/pressure_monitor/__init__.py:103
 msgid "Master station is ON."
 msgstr ""
 
-#: plugins/pressure_monitor/__init__.py:101
+#: plugins/pressure_monitor/__init__.py:113
 msgid "Time to test pressure sensor"
 msgstr ""
 
-#: plugins/pressure_monitor/__init__.py:102
+#: plugins/pressure_monitor/__init__.py:114
 msgid "sec"
 msgstr ""
 
-#: plugins/pressure_monitor/__init__.py:111
+#: plugins/pressure_monitor/__init__.py:122
 msgid "Pressure sensor is not activated in time -> stops all stations and send email."
 msgstr ""
 
-#: plugins/pressure_monitor/__init__.py:125
+#: plugins/pressure_monitor/__init__.py:137
 msgid "Master station is OFF."
 msgstr ""
 
-#: plugins/pressure_monitor/__init__.py:135
+#: plugins/pressure_monitor/__init__.py:147
 msgid "Pressure monitor plug-in is disabled."
 msgstr ""
 
-#: plugins/pressure_monitor/__init__.py:141
+#: plugins/pressure_monitor/__init__.py:153
 msgid "Not used master station."
 msgstr ""
 
-#: plugins/pressure_monitor/__init__.py:145
+#: plugins/pressure_monitor/__init__.py:157
+#: plugins/pressure_monitor/__init__.py:158
 msgid "System detected error: pressure sensor."
 msgstr ""
 
-#: plugins/pressure_monitor/__init__.py:149
-msgid "Email was sent"
-msgstr ""
-
-#: plugins/pressure_monitor/__init__.py:152
-msgid "Email was not sent"
-msgstr ""
-
 #: plugins/pressure_monitor/__init__.py:157
+#: plugins/pressure_monitor/__init__.py:158
+#: plugins/pressure_monitor/__init__.py:173
 msgid "Pressure monitor plug-in"
 msgstr ""
 
-#: plugins/pressure_monitor/templates/pressure_monitor.html:3
-#: plugins/pressure_monitor/templates/pressure_monitor.html:21
-msgid "Pressure monitor settings"
+#: plugins/pressure_monitor/__init__.py:163
+#: plugins/pressure_monitor/__init__.py:217
+#: plugins/pressure_monitor/__init__.py:219
+msgid "Email was not sent"
 msgstr ""
 
-#: plugins/pressure_monitor/templates/pressure_monitor.html:22
-msgid "This plugin checked pressure in pipe, if master station is switched on must be activated pressure sensor."
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:23
-msgid "If is not sensor activated in a certain time, switches off all station  and sends email with error. Prevent safety for master station pump."
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:27
-msgid "Use pressure sensor for master station"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:29
-msgid "Pressure sensor is connected between GPIO 18 - pin 12 and ground"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:33
-msgid "Normally open"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:40
-msgid "Send email with error"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:42
-msgid "For this function required email plugin"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:46
-msgid "Max time to activate pressure sensor"
-msgstr ""
-
-msgid "E-mail subject"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:48
-msgid "max 999 seconds"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:52
-msgid "Status"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:61
-msgid "Submit"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:62
-msgid "Cancel"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:62
-msgid "ACTIVE"
-msgstr ""
-
-#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+#: plugins/pressure_monitor/__init__.py:166
+#: plugins/pressure_monitor/__init__.py:378
 msgid "INACTIVE"
 msgstr ""
 
-#: plugins/pressure_monitor/templates/pressure_monitor.html:62
+#: plugins/pressure_monitor/__init__.py:168
+#: plugins/pressure_monitor/__init__.py:380
+msgid "ACTIVE"
+msgstr ""
+
+#: plugins/pressure_monitor/__init__.py:207
+#: plugins/pressure_monitor/__init__.py:215
+msgid "Email logging is disabled in options..."
+msgstr ""
+
+#: plugins/pressure_monitor/__init__.py:209
+msgid "Sent"
+msgstr ""
+
+#: plugins/pressure_monitor/__init__.py:211
+msgid "Email was sent"
+msgstr ""
+
+#: plugins/pressure_monitor/__init__.py:317
+msgid "Saving to log  files OK"
+msgstr ""
+
+#: plugins/pressure_monitor/__init__.py:323
+#: plugins/pressure_monitor/__init__.py:411
+msgid "State"
+msgstr ""
+
+#: plugins/pressure_monitor/__init__.py:329
+msgid "Creating default graph log files OK"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:3
+#: plugins/pressure_monitor/templates/pressure_monitor.html:168
+msgid "Pressure monitor settings"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:169
+msgid "This plugin checked pressure in pipe, if master station is switched on must be activated pressure sensor."
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:170
+msgid "If is not sensor activated in a certain time, switches off all station  and sends email with error. Prevent safety for master station pump."
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:171
+msgid "If logging is enabled, a graph with measured data will be displayed at the bottom of the screen"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:173
+msgid "Download log as"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:177
+msgid "Use pressure sensor for master station"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:179
+msgid "Pressure sensor is connected between GPIO 18 - pin 12 and ground"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:183
+msgid "Normally open"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:190
+msgid "Send E-mail with error"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:192
+msgid "For this function required E-mail plugin"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:196
+msgid "Max time to activate pressure sensor"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:198
+msgid "max 999 seconds"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:202
 msgid "Pressure state"
 msgstr ""
 
+#: plugins/pressure_monitor/templates/pressure_monitor.html:208
+msgid "E-mail subject"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:219
+msgid "Enable logging"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:225
+msgid "Maximum number of log records"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:227
+msgid "0 = unlimited"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:231
+msgid "Status"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:240
+msgid "Submit"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:241
+msgid "Cancel"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:243
+msgid "Delete all logs"
+msgstr ""
+
+#: plugins/pressure_monitor/templates/pressure_monitor.html:252
+msgid "Clear selection"
+msgstr ""
 

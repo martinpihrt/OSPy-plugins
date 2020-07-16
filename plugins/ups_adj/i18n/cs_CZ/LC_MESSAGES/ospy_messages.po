@@ -5,160 +5,187 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2016-06-15 10:36+0200\n"
-"PO-Revision-Date: 2020-01-29 13:08+0100\n"
+"POT-Creation-Date: 2020-07-16 14:55+CEST\n"
+"PO-Revision-Date: 2020-07-16 15:01+0200\n"
+"Last-Translator: pihrt.com <martinpihrt@gmail.com>\n"
 "Language-Team: \n"
+"Language: cs_CZ\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.2.4\n"
-"Last-Translator: Martin Pihrt <martinpihrt@gmail.com>\n"
+"X-Generator: Poedit 2.2.3\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"Language: cs_CZ\n"
 
-msgid "Sent"
-msgstr "Odeslané"
+#: plugins/ups_adj/__init__.py:34
+msgid "Report from OSPy UPS plugin"
+msgstr "Zpráva z rozšíření UPS"
 
-msgid "Unsent"
-msgstr "Neodeslané"
-
-msgid "E-mail subject"
-msgstr "Předmět e-mailu"
-
-#: plugins/ups_adj/__init__.py:98
+#: plugins/ups_adj/__init__.py:103 plugins/ups_adj/__init__.py:364
 msgid "OK"
 msgstr "V pořádku"
 
-#: plugins/ups_adj/__init__.py:100
+#: plugins/ups_adj/__init__.py:105 plugins/ups_adj/__init__.py:366
 msgid "FAULT"
 msgstr "Chyba"
 
-#: plugins/ups_adj/__init__.py:109
-msgid "UPS plugin detected fault on power line."
-msgstr "Rozšíření UPS zjistilo problém s napájením ze sítě."
+#: plugins/ups_adj/__init__.py:115 plugins/ups_adj/__init__.py:116
+msgid "Detected fault on power line."
+msgstr "Zjištěna závada na elektrickém vedení."
 
-#: plugins/ups_adj/__init__.py:120
-msgid "Time to shutdown"
-msgstr "Čas do vypnutí systému"
-
-#: plugins/ups_adj/__init__.py:120
-msgid "sec"
-msgstr "vteřin(a/y)"
-
-#: plugins/ups_adj/__init__.py:126
-msgid "Power line is not restore in time -> sends email and shutdown system."
-msgstr ""
-"Napájecí napětí sítě nebylo obnoveno do stanovené doby -> zasílám E-mail s chybovou zprávou a "
-"vypínám operační systém (Linux)."
-
-#: plugins/ups_adj/__init__.py:130
-msgid "UPS plugin - power line is not restore in time -> shutdown system!"
-msgstr ""
-"Rozšíření UPS - napájecí napětí ze sítě nebylo obnoveno do stanovené doby -> vypínám operační systém "
-"(Linux)!"
-
-#: plugins/ups_adj/__init__.py:143
-msgid "UPS plugin - power line has restored - OK."
-msgstr "Rozšíření UPS - napájecí napětí ze sítě bylo obnoveno (vše v pořádku)."
-
-#: plugins/ups_adj/__init__.py:154
+#: plugins/ups_adj/__init__.py:115 plugins/ups_adj/__init__.py:116
+#: plugins/ups_adj/__init__.py:140 plugins/ups_adj/__init__.py:141
+#: plugins/ups_adj/__init__.py:154 plugins/ups_adj/__init__.py:155
+#: plugins/ups_adj/__init__.py:168
 msgid "UPS plug-in"
 msgstr "Rozšíření UPS"
 
-#: plugins/ups_adj/__init__.py:168
+#: plugins/ups_adj/__init__.py:129
+msgid "Time to shutdown"
+msgstr "Čas do vypnutí systému"
+
+#: plugins/ups_adj/__init__.py:129
+msgid "sec"
+msgstr "vteřin(a/y)"
+
+#: plugins/ups_adj/__init__.py:135
+msgid "Power line is not restore in time -> sends email and shutdown system."
+msgstr ""
+"Napájecí napětí sítě nebylo obnoveno do stanovené doby -> zasílám E-mail s "
+"chybovou zprávou a vypínám operační systém (Linux)."
+
+#: plugins/ups_adj/__init__.py:140 plugins/ups_adj/__init__.py:141
+msgid "Power line is not restore in time -> shutdown system!"
+msgstr "Elektrické vedení není obnovit v čase -> vypnutí systému!"
+
+#: plugins/ups_adj/__init__.py:154 plugins/ups_adj/__init__.py:155
+msgid "Power line has restored - OK."
+msgstr "Elektrické vedení bylo obnoveno - OK."
+
+#: plugins/ups_adj/__init__.py:182
 msgid "UPS plugin is started."
 msgstr "Rozšíření UPS bylo spuštěno."
 
-#: plugins/ups_adj/__init__.py:185
+#: plugins/ups_adj/__init__.py:204 plugins/ups_adj/__init__.py:212
+msgid "Email logging is disabled in options..."
+msgstr "V možnostech je zakázáno protokolování e-mailů..."
+
+#: plugins/ups_adj/__init__.py:206
+msgid "Sent"
+msgstr "Odeslané"
+
+#: plugins/ups_adj/__init__.py:208
 msgid "Email was sent"
 msgstr "E-mail byl odeslán"
 
-#: plugins/ups_adj/__init__.py:187
+#: plugins/ups_adj/__init__.py:214 plugins/ups_adj/__init__.py:216
 msgid "Email was not sent"
 msgstr "E-mail nebyl odeslán"
 
-#: plugins/ups_adj/templates/ups_adj.html:3 plugins/ups_adj/templates/ups_adj.html:21
+#: plugins/ups_adj/__init__.py:304
+msgid "Saving to log  files OK"
+msgstr "Ukládání do souborů protokolu OK"
+
+#: plugins/ups_adj/__init__.py:310 plugins/ups_adj/__init__.py:397
+msgid "State"
+msgstr "Stav sítě"
+
+#: plugins/ups_adj/__init__.py:316
+msgid "Creating default graph log files OK"
+msgstr "Vytváření výchozích souborů protokolu grafu OK"
+
+#: plugins/ups_adj/templates/ups_adj.html:3
+#: plugins/ups_adj/templates/ups_adj.html:171
 msgid "UPS monitor settings"
 msgstr "Rozšíření UPS nastavení"
 
-#: plugins/ups_adj/templates/ups_adj.html:22
-msgid "This plugin checked power line for system. UPS (uninterrupted power supply)."
-msgstr ""
-"Toto rozšíření kontroluje napětí sítě (napájení záložního zdroje UPS - Uninterrupted Power Supply)."
-
-#: plugins/ups_adj/templates/ups_adj.html:23
+#: plugins/ups_adj/templates/ups_adj.html:172
 msgid ""
-"If is error with power line in a certain time, sends plugin email with error and shutdown system "
-"(and generate pulse to GPIO)."
+"This plugin checked power line for system. UPS (uninterrupted power supply)."
 msgstr ""
-"Pokud vypadne napájecí napětí sítě UPS zdroje a nebude obnoveno do stanovené doby, zašle toto "
-"rozšíření E-mail s chybou a následně vypne operační systém (zároveň se vygeneruje krátký puls na "
-"GPIO konektoru)."
+"Toto rozšíření kontroluje napětí sítě (napájení záložního zdroje UPS - "
+"Uninterrupted Power Supply)."
 
-#: plugins/ups_adj/templates/ups_adj.html:27
-msgid "Use UPS"
-msgstr "Použít UPS rozšíření"
-
-#: plugins/ups_adj/templates/ups_adj.html:29
-msgid "Power line is connected via optocoupler between GPIO 23 - pin 16 and ground"
-msgstr "Napájecí napětí 230V je přivedeno na optočlen, který spíná konektor GPIO-23 pin 16 na zem"
-
-#: plugins/ups_adj/templates/ups_adj.html:33
-msgid "Send email with error"
-msgstr "Zaslat E-mail v případě chyby"
-
-#: plugins/ups_adj/templates/ups_adj.html:35
-msgid "For this function required email plugin"
-msgstr "Pro tuto funkci je vyžadováno rozšíření Email notifications"
-
-#: plugins/ups_adj/templates/ups_adj.html:39
-msgid "Max time for shutdown countdown"
-msgstr "Maximální doba pro obnovení napájení"
-
-#: plugins/ups_adj/templates/ups_adj.html:41
-msgid "max 999 minutes"
-msgstr "maximum 999 minut"
-
-#: plugins/ups_adj/templates/ups_adj.html:45
-msgid "Power line state"
-msgstr "Stav napájení (síť 230V)"
-
-#: plugins/ups_adj/templates/ups_adj.html:51
-msgid "Status"
-msgstr "Stav"
-
-#: plugins/ups_adj/templates/ups_adj.html:57
+#: plugins/ups_adj/templates/ups_adj.html:173
 msgid ""
-"Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in "
-"UPS."
+"If is error with power line in a certain time, sends plugin email with error "
+"and shutdown system (and generate pulse to GPIO)."
 msgstr ""
-"Výstup z konektoru GPIO-24 pin 18 je přes optočlen (otevřený kolektor) možné použít pro vypnutí a "
-"odstavení záložního zdroje UPS - tedy baterií zdroje UPS (pokud tuto funkci Vaše UPS podporuje)."
-
-#: plugins/ups_adj/templates/ups_adj.html:61
-msgid "Submit"
-msgstr "Potvrdit"
-
-#: plugins/ups_adj/templates/ups_adj.html:62
-msgid "Cancel"
-msgstr "Zpět"
-
-#: plugins/ups_adj/__init__.py:318
-msgid "Creating default graph log files OK"
-msgstr "Vytváření výchozích souborů protokolu grafu OK"
+"Pokud vypadne napájecí napětí sítě UPS zdroje a nebude obnoveno do stanovené "
+"doby, zašle toto rozšíření E-mail s chybou a následně vypne operační systém "
+"(zároveň se vygeneruje krátký puls na GPIO konektoru)."
 
 #: plugins/ups_adj/templates/ups_adj.html:174
 msgid "Download log as"
 msgstr "Stáhnout soubor se záznamem jako"
 
 #: plugins/ups_adj/templates/ups_adj.html:175
-msgid "If logging is enabled, a graph with measured data will be displayed at the bottom of the screen"
-msgstr "Je-li povolen záznam, zobrazí se v dolní části obrazovky graf s naměřenými daty"
+msgid ""
+"If logging is enabled, a graph with measured data will be displayed at the "
+"bottom of the screen"
+msgstr ""
+"Je-li povolen záznam, zobrazí se v dolní části obrazovky graf s naměřenými "
+"daty"
+
+#: plugins/ups_adj/templates/ups_adj.html:179
+msgid "Use UPS"
+msgstr "Použít UPS rozšíření"
+
+#: plugins/ups_adj/templates/ups_adj.html:181
+msgid ""
+"Power line is connected via optocoupler between GPIO 23 - pin 16 and ground"
+msgstr ""
+"Napájecí napětí 230V je přivedeno na optočlen, který spíná konektor GPIO-23 "
+"pin 16 na zem"
+
+#: plugins/ups_adj/templates/ups_adj.html:185
+msgid "Send email with error"
+msgstr "Zaslat E-mail v případě chyby"
+
+#: plugins/ups_adj/templates/ups_adj.html:187
+msgid "For this function required email plugin"
+msgstr "Pro tuto funkci je vyžadováno rozšíření Email notifications"
+
+#: plugins/ups_adj/templates/ups_adj.html:191
+msgid "Max time for shutdown countdown"
+msgstr "Maximální doba pro obnovení napájení"
+
+#: plugins/ups_adj/templates/ups_adj.html:193
+msgid "max 999 minutes"
+msgstr "maximum 999 minut"
+
+#: plugins/ups_adj/templates/ups_adj.html:197
+msgid "Power line state"
+msgstr "Stav napájení (síť 230V)"
+
+#: plugins/ups_adj/templates/ups_adj.html:203
+msgid "E-mail subject"
+msgstr "Předmět E-mailu"
 
 #: plugins/ups_adj/templates/ups_adj.html:209
 msgid "Enable logging"
 msgstr "Povolit záznam a graf"
+
+#: plugins/ups_adj/templates/ups_adj.html:215
+msgid "Status"
+msgstr "Stav"
+
+#: plugins/ups_adj/templates/ups_adj.html:221
+msgid ""
+"Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS "
+"for shutdown battery in UPS."
+msgstr ""
+"Výstup z konektoru GPIO-24 pin 18 je přes optočlen (otevřený kolektor) možné "
+"použít pro vypnutí a odstavení záložního zdroje UPS - tedy baterií zdroje "
+"UPS (pokud tuto funkci Vaše UPS podporuje)."
+
+#: plugins/ups_adj/templates/ups_adj.html:225
+msgid "Submit"
+msgstr "Potvrdit"
+
+#: plugins/ups_adj/templates/ups_adj.html:226
+msgid "Cancel"
+msgstr "Zpět"
 
 #: plugins/ups_adj/templates/ups_adj.html:227
 msgid "Delete all logs"
@@ -168,26 +195,20 @@ msgstr "Smazat všechny logy"
 msgid "Clear selection"
 msgstr "Zrušit výběr"
 
-#: plugins/ups_adj/templates/ups_adj.html:236
-msgid "Measured status on/off"
-msgstr "Měřené jako zap/vyp"
+#~ msgid "Unsent"
+#~ msgstr "Neodeslané"
 
-#: plugins/ups_adj/templates/ups_adj.html:236
-msgid "Reason"
-msgstr "Statistika"
+#~ msgid "Measured status on/off"
+#~ msgstr "Měřené jako zap/vyp"
 
-#: plugins/ups_adj/templates/ups_adj.html:236
-msgid "on/off"
-msgstr "zap/vyp"
+#~ msgid "Reason"
+#~ msgstr "Statistika"
 
-#: plugins/ups_adj/templates/ups_adj.html:236
-msgid "Actual Value"
-msgstr "Aktuální"
+#~ msgid "on/off"
+#~ msgstr "zap/vyp"
 
-#: plugins/ups_adj/templates/ups_adj.html:236
-msgid "Previous Value"
-msgstr "Předešlé"
+#~ msgid "Actual Value"
+#~ msgstr "Aktuální"
 
-#: plugins/ups_adj/templates/ups_adj.html:236
-msgid "State"
-msgstr "Stav sítě"
+#~ msgid "Previous Value"
+#~ msgstr "Předešlé"

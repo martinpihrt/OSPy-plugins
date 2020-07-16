@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-01-29 12:54+CET\n"
+"POT-Creation-Date: 2020-07-16 14:55+CEST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,74 +19,74 @@ msgstr ""
 msgid "Report from OSPy UPS plugin"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:105
+#: plugins/ups_adj/__init__.py:103 plugins/ups_adj/__init__.py:364
 msgid "OK"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:107
+#: plugins/ups_adj/__init__.py:105 plugins/ups_adj/__init__.py:366
 msgid "FAULT"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:117 plugins/ups_adj/__init__.py:118
+#: plugins/ups_adj/__init__.py:115 plugins/ups_adj/__init__.py:116
 msgid "Detected fault on power line."
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:117 plugins/ups_adj/__init__.py:118
-#: plugins/ups_adj/__init__.py:142 plugins/ups_adj/__init__.py:143
-#: plugins/ups_adj/__init__.py:156 plugins/ups_adj/__init__.py:157
-#: plugins/ups_adj/__init__.py:170
+#: plugins/ups_adj/__init__.py:115 plugins/ups_adj/__init__.py:116
+#: plugins/ups_adj/__init__.py:140 plugins/ups_adj/__init__.py:141
+#: plugins/ups_adj/__init__.py:154 plugins/ups_adj/__init__.py:155
+#: plugins/ups_adj/__init__.py:168
 msgid "UPS plug-in"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:131
+#: plugins/ups_adj/__init__.py:129
 msgid "Time to shutdown"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:131
+#: plugins/ups_adj/__init__.py:129
 msgid "sec"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:137
+#: plugins/ups_adj/__init__.py:135
 msgid "Power line is not restore in time -> sends email and shutdown system."
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:142 plugins/ups_adj/__init__.py:143
+#: plugins/ups_adj/__init__.py:140 plugins/ups_adj/__init__.py:141
 msgid "Power line is not restore in time -> shutdown system!"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:156 plugins/ups_adj/__init__.py:157
+#: plugins/ups_adj/__init__.py:154 plugins/ups_adj/__init__.py:155
 msgid "Power line has restored - OK."
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:184
+#: plugins/ups_adj/__init__.py:182
 msgid "UPS plugin is started."
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:206 plugins/ups_adj/__init__.py:214
+#: plugins/ups_adj/__init__.py:204 plugins/ups_adj/__init__.py:212
 msgid "Email logging is disabled in options..."
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:208
+#: plugins/ups_adj/__init__.py:206
 msgid "Sent"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:210
+#: plugins/ups_adj/__init__.py:208
 msgid "Email was sent"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:216 plugins/ups_adj/__init__.py:218
+#: plugins/ups_adj/__init__.py:214 plugins/ups_adj/__init__.py:216
 msgid "Email was not sent"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:306
+#: plugins/ups_adj/__init__.py:304
 msgid "Saving to log  files OK"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:312 plugins/ups_adj/__init__.py:380
+#: plugins/ups_adj/__init__.py:310 plugins/ups_adj/__init__.py:397
 msgid "State"
 msgstr ""
 
-#: plugins/ups_adj/__init__.py:318
+#: plugins/ups_adj/__init__.py:316
 msgid "Creating default graph log files OK"
 msgstr ""
 

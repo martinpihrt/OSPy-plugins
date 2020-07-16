@@ -32,7 +32,8 @@ ups_options = PluginOptions(
         'ups': False,
         'sendeml': False,
         'emlsubject': _('Report from OSPy UPS plugin'),
-        'enable_log': False
+        'enable_log': False,
+        'log_records': 0                                             # 0 = unlimited
     }
 )
 
@@ -284,6 +285,9 @@ def update_log(status):
     data['time'] = str(datetime.now().strftime('%H:%M:%S'))
     data['state'] = str(status)
       
+    log_data.insert(0, data)
+    if ups_options['log_records'] > 0:
+        log_data = log_data[:ups_options['log_records']]
     write_log(log_data)
 
     ### Data for graph log ###
