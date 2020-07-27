@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2020-07-11 13:17+CEST\n"
-"PO-Revision-Date: 2020-07-11 13:33+0200\n"
+"POT-Creation-Date: 2020-07-27 15:45+CEST\n"
+"PO-Revision-Date: 2020-07-27 15:47+0200\n"
 "Last-Translator: pihrt.com <martinpihrt@gmail.com>\n"
 "Language-Team: LANGUAGE <pihrt.com>\n"
 "Language: sk_SK\n"
@@ -14,166 +14,179 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.2.3\n"
+"X-Generator: Poedit 2.4\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: plugins/email_notifications/__init__.py:51
+#: plugins/email_notifications/__init__.py:52
 msgid "Report from OSPy SYSTEM"
 msgstr "Hlásenie z OSPy SYSTÉMU"
 
-#: plugins/email_notifications/__init__.py:93
+#: plugins/email_notifications/__init__.py:120
 msgid "E-mail was sent"
 msgstr "E-mail bol odoslaný"
 
-#: plugins/email_notifications/__init__.py:96
-#: plugins/email_notifications/__init__.py:104
+#: plugins/email_notifications/__init__.py:123
+#: plugins/email_notifications/__init__.py:132
 msgid "E-mail logging is disabled in options..."
 msgstr "E-mail zapisovania do denníka je zakázaný v možnostiach..."
 
-#: plugins/email_notifications/__init__.py:97
+#: plugins/email_notifications/__init__.py:124
 msgid "Sent"
 msgstr "Odoslané"
 
-#: plugins/email_notifications/__init__.py:100
-#: plugins/email_notifications/__init__.py:102
-msgid "E-mail was not sent!"
-msgstr "E-mail nebol odoslaný!"
+#: plugins/email_notifications/__init__.py:127
+#: plugins/email_notifications/__init__.py:130
+msgid "E-mail was not sent! Connection to Internet not ready."
+msgstr "E-mail nebol odoslaný! Pripojenie na Internet nie je pripravené."
 
-#: plugins/email_notifications/__init__.py:119
-#: plugins/email_notifications/__init__.py:141
-#: plugins/email_notifications/__init__.py:157
+#: plugins/email_notifications/__init__.py:161
+#: plugins/email_notifications/__init__.py:183
+#: plugins/email_notifications/__init__.py:199
 msgid "System"
 msgstr "Systém"
 
-#: plugins/email_notifications/__init__.py:120
-#: plugins/email_notifications/__init__.py:121
+#: plugins/email_notifications/__init__.py:162
+#: plugins/email_notifications/__init__.py:163
 msgid "System was powered on."
 msgstr "Systém bol zapnutý."
 
-#: plugins/email_notifications/__init__.py:128
+#: plugins/email_notifications/__init__.py:170
 msgid "Error -  events.log file not exists!"
 msgstr "Chyba - events.log súbor neexistuje!"
 
-#: plugins/email_notifications/__init__.py:142
-#: plugins/email_notifications/__init__.py:143
+#: plugins/email_notifications/__init__.py:184
+#: plugins/email_notifications/__init__.py:185
 msgid "System detected rain."
 msgstr "Systém zistil dážď."
 
-#: plugins/email_notifications/__init__.py:158
-#: plugins/email_notifications/__init__.py:163
+#: plugins/email_notifications/__init__.py:200
+#: plugins/email_notifications/__init__.py:205
 msgid "Finished run"
 msgstr "Dokončené spustenie"
 
-#: plugins/email_notifications/__init__.py:159
-#: plugins/email_notifications/__init__.py:163
+#: plugins/email_notifications/__init__.py:201
+#: plugins/email_notifications/__init__.py:205
 msgid "Program"
 msgstr "Program"
 
-#: plugins/email_notifications/__init__.py:160
-#: plugins/email_notifications/__init__.py:164
+#: plugins/email_notifications/__init__.py:202
+#: plugins/email_notifications/__init__.py:206
 msgid "Station"
 msgstr "Stanice"
 
-#: plugins/email_notifications/__init__.py:161
-#: plugins/email_notifications/__init__.py:165
+#: plugins/email_notifications/__init__.py:203
+#: plugins/email_notifications/__init__.py:207
 msgid "Start time"
 msgstr "Čas začiatku"
 
-#: plugins/email_notifications/__init__.py:162
-#: plugins/email_notifications/__init__.py:166
+#: plugins/email_notifications/__init__.py:204
+#: plugins/email_notifications/__init__.py:208
 msgid "Duration"
 msgstr "Trvanie"
 
-#: plugins/email_notifications/__init__.py:180
+#: plugins/email_notifications/__init__.py:222
 msgid "Level"
 msgstr "Úroveň"
 
-#: plugins/email_notifications/__init__.py:180
-#: plugins/email_notifications/__init__.py:182
+#: plugins/email_notifications/__init__.py:222
+#: plugins/email_notifications/__init__.py:224
 msgid "cm"
 msgstr "cm"
 
-#: plugins/email_notifications/__init__.py:182
+#: plugins/email_notifications/__init__.py:224
 msgid "Ping"
 msgstr "Odraz"
 
-#: plugins/email_notifications/__init__.py:184
+#: plugins/email_notifications/__init__.py:226
 msgid "liters"
 msgstr "litre"
 
-#: plugins/email_notifications/__init__.py:184
-#: plugins/email_notifications/__init__.py:186
+#: plugins/email_notifications/__init__.py:226
+#: plugins/email_notifications/__init__.py:228
 msgid "Volume"
 msgstr "Obem"
 
-#: plugins/email_notifications/__init__.py:186
-#: plugins/email_notifications/__init__.py:216
-#: plugins/email_notifications/__init__.py:224
+#: plugins/email_notifications/__init__.py:228
+#: plugins/email_notifications/__init__.py:258
+#: plugins/email_notifications/__init__.py:266
 msgid "m3"
 msgstr "m3"
 
-#: plugins/email_notifications/__init__.py:188
+#: plugins/email_notifications/__init__.py:230
 msgid "Error - I2C device not found!"
 msgstr "Chyba - I2C zariadenie sa nenašlo!"
 
-#: plugins/email_notifications/__init__.py:190
-#: plugins/email_notifications/__init__.py:192
+#: plugins/email_notifications/__init__.py:232
+#: plugins/email_notifications/__init__.py:234
 msgid "Water"
 msgstr "Voda"
 
-#: plugins/email_notifications/__init__.py:191
-#: plugins/email_notifications/__init__.py:192
+#: plugins/email_notifications/__init__.py:233
+#: plugins/email_notifications/__init__.py:234
 msgid "Water level in tank"
 msgstr "Hladina vody v nádrži"
 
-#: plugins/email_notifications/__init__.py:209
+#: plugins/email_notifications/__init__.py:251
 msgid "Measured from day"
 msgstr "Merané od dňa"
 
-#: plugins/email_notifications/__init__.py:210
+#: plugins/email_notifications/__init__.py:252
 msgid "Master Station"
 msgstr "Hlavná stanica"
 
-#: plugins/email_notifications/__init__.py:213
-#: plugins/email_notifications/__init__.py:221
+#: plugins/email_notifications/__init__.py:255
+#: plugins/email_notifications/__init__.py:263
 msgid "Liter"
 msgstr "Liter"
 
-#: plugins/email_notifications/__init__.py:218
+#: plugins/email_notifications/__init__.py:260
 msgid "Second Master Station"
 msgstr "Druhá Hlavná stanica"
 
-#: plugins/email_notifications/__init__.py:226
-#: plugins/email_notifications/__init__.py:228
+#: plugins/email_notifications/__init__.py:268
+#: plugins/email_notifications/__init__.py:270
 msgid "Water Consumption Counter"
 msgstr "Počítadlo spotreby vody"
 
-#: plugins/email_notifications/__init__.py:237
-#: plugins/email_notifications/__init__.py:238
+#: plugins/email_notifications/__init__.py:279
+#: plugins/email_notifications/__init__.py:280
 msgid "Temperature DS1-DS6"
 msgstr "Teplota DS1-DS6"
 
-#: plugins/email_notifications/__init__.py:254
+#: plugins/email_notifications/__init__.py:308
+msgid "Unsent E-mails in queue (in file)"
+msgstr "Nieodoslané E-maily vo fronte (v súbore)"
+
+#: plugins/email_notifications/__init__.py:311
+msgid "sending from queue."
+msgstr "odosielanie zo súboru."
+
+#: plugins/email_notifications/__init__.py:319
+msgid "All unsent E-mails in the queue have been sent."
+msgstr "Všetky neodoslané e-maily vo fronte boli odoslané."
+
+#: plugins/email_notifications/__init__.py:325
+#: plugins/email_notifications/__init__.py:331
 msgid "E-mail plug-in"
 msgstr "Doplnok E-mail"
 
-#: plugins/email_notifications/__init__.py:333
+#: plugins/email_notifications/__init__.py:410
 msgid "E-mail plug-in is not properly configured!"
 msgstr "E-mail nie je správne nakonfigurovaný!"
 
-#: plugins/email_notifications/__init__.py:354
-#: plugins/email_notifications/__init__.py:355
+#: plugins/email_notifications/__init__.py:431
+#: plugins/email_notifications/__init__.py:432
 msgid "This is test e-mail from OSPy. You can ignore it."
 msgstr "Toto je testovací e-mail od OSPy. Môžeš to ignorovať."
 
 #: plugins/email_notifications/templates/email_notifications.html:3
 #: plugins/email_notifications/templates/email_notifications.html:25
-msgid "Email Notifications"
+msgid "E-mail Notifications"
 msgstr "E-mailové upozornenia"
 
 #: plugins/email_notifications/templates/email_notifications.html:26
 msgid ""
-"This plugin can send E-mails. For this plugin you need an e-mail smtp "
+"This plugin can send E-mails. For this plugin you need an E-mail smtp "
 "account as provider."
 msgstr ""
 "Tento plugin môže posielať e-maily. Pre tento plugin budete potrebovať e-"
@@ -248,20 +261,27 @@ msgid "E-mail subject"
 msgstr "Predmet E-mailu"
 
 #: plugins/email_notifications/templates/email_notifications.html:123
+msgid "Save and send it later"
+msgstr "Uloženie a odoslanie neskôr"
+
+#: plugins/email_notifications/templates/email_notifications.html:129
 msgid "Status"
 msgstr "Stav"
 
-#: plugins/email_notifications/templates/email_notifications.html:132
+#: plugins/email_notifications/templates/email_notifications.html:138
 msgid "Submit"
 msgstr "Odoslať"
 
-#: plugins/email_notifications/templates/email_notifications.html:133
-msgid "Send a test e-mail"
-msgstr "Odoslanie testovacieho e-mailu"
+#: plugins/email_notifications/templates/email_notifications.html:139
+msgid "Send a test E-mail"
+msgstr "Odoslanie testovacieho E-mailu"
 
-#: plugins/email_notifications/templates/email_notifications.html:134
+#: plugins/email_notifications/templates/email_notifications.html:140
 msgid "Cancel"
 msgstr "Zrušiť"
+
+#~ msgid "E-mail was not sent!"
+#~ msgstr "E-mail nebol odoslaný!"
 
 #~ msgid "Not available"
 #~ msgstr "Nedostupné"

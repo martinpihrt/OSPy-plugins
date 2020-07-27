@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
-# this plugins send e-mail
+# this plugins send E-mail
 
 import json
 import time
+from datetime import datetime
 import os
 import os.path
 import traceback
@@ -18,7 +19,7 @@ from email.mime.multipart import MIMEBase
 
 import web
 from ospy.webpages import ProtectedPage
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.options import options
 from ospy.stations import stations
 from ospy.inputs import inputs
@@ -28,7 +29,7 @@ from ospy.helpers import datetime_string, get_input
 import i18n
 
 
-NAME = 'Email Notifications'
+NAME = 'E-mail Notifications'
 LINK = 'settings_page'
 
 email_options = PluginOptions(
@@ -48,7 +49,8 @@ email_options = PluginOptions(
         'emladr2': '',
         'emladr3': '',
         'emladr4': '',
-        'emlsubject': _('Report from OSPy SYSTEM')
+        'emlsubject': _('Report from OSPy SYSTEM'),
+        'emlrepeater': True
     }
 )
 
@@ -70,8 +72,7 @@ class EmailSender(Thread):
         if self.status:
             self.status += "\n" + msg
         else:
-            self.status = msg
-        #print(msg)        
+            self.status = msg        
 
     def stop(self):
         self._stop.set()
@@ -84,29 +85,70 @@ class EmailSender(Thread):
         while self._sleep_time > 0 and not self._stop.is_set():
             time.sleep(1)
             self._sleep_time -= 1
+
+    def read_saved_emails(self):
+    ###Read saved emails from json file.###
+        try:
+            with open(os.path.join(plugin_data_dir(), 'saved_emails.json')) as saved_emails:
+                return json.load(saved_emails)
+        except IOError:
+            return []     
+
+    def write_email(self, json_data):
+    ###Write e-mail data to json file.###
+        with open(os.path.join(plugin_data_dir(), 'saved_emails.json'), 'w') as saved_emails:
+            json.dump(json_data, saved_emails)  
+
+    def update_saved_emails(self, data):
+    ###Update data in json files.### 
+        try:                                                              # exists file: saved_emails.json?
+            saved_emails = self.read_saved_emails()                       
+        except:                                                           # no! create empty file
+            self.write_email([])
+            saved_emails = self.read_saved_emails()
+        
+        saved_emails.insert(0, data)
+        self.write_email(saved_emails)
+
                    
     def try_mail(self, text, logtext, attachment=None, subject=None):
+    ###Try send e-mail###   
         log.clear(NAME)
         self.status = ""
         try:
             email(text, attach=attachment)  # send email with attachment from
-            log.info(NAME, _('E-mail was sent') + ':\n' + text)
-            self.add_status('E-mail was sent: ' + text)
+            log.info(NAME, _('E-mail was sent') + ':\n' + logtext)
+            self.add_status('E-mail was sent: ' + logtext)
             if not options.run_logEM:
                 log.info(NAME, _('E-mail logging is disabled in options...'))
             logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Sent'))
 
         except Exception:
-            log.error(NAME, _('E-mail was not sent!') + '\n' + traceback.format_exc())
+            log.error(NAME, _('E-mail was not sent! Connection to Internet not ready.'))
+            #log.error(NAME, _('E-mail was not sent!') + '\n' + traceback.format_exc())
             self.add_status('E-mail was not sent! ' + traceback.format_exc())
-            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('E-mail was not sent!'))
+            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('E-mail was not sent! Connection to Internet not ready.'))
             if not options.run_logEM:
                 log.info(NAME, _('E-mail logging is disabled in options...'))
+            
+            if email_options["emlrepeater"]: # saving e-mails is enabled  
+                data = {}
+                data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+                data['time'] = str(datetime.now().strftime('%H:%M:%S'))   
+                data['text'] = u'%s' % text
+                data['logtext'] = u'%s' % logtext
+                data['subject'] = u'%s' % email_options['emlsubject']
+                data['attachment'] = u'%s' % attachment
+
+                self.update_saved_emails(data)    # saving e-mail data to file: saved_emails.json
+
 
     def run(self):
         time.sleep(
             randint(3, 10)
         )  # Sleep some time to prevent printing before startup information
+        send_interval = 5000  # default time for sending between e-mails (ms)
+        last_millis   = 0     # timer for repeating sending e-mails (ms)
         last_rain = False
         body    = ""
         logtext = ""
@@ -160,9 +202,9 @@ class EmailSender(Thread):
                             body += '<br>' + _('Station') + u': %s \n' % sname
                             body += '<br>' + _('Start time') + ': %s \n' % datetime_string(run['start'])
                             body += '<br>' + _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
-                            logtext  =  _('Finished run') + '-> ' + _('Program') + u': %s\n' % pname + ', ' 
-                            logtext +=  _('Station') + u': %s\n' % sname + ', '
-                            logtext +=  _('Start time') + ': %s \n' % datetime_string(run['start'])  + ', '
+                            logtext  =  _('Finished run') + '-> ' + _('Program') + u': %s\n' % pname 
+                            logtext +=  _('Station') + u': %s\n' % sname
+                            logtext +=  _('Start time') + ': %s \n' % datetime_string(run['start'])
                             logtext +=  _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
 
                             # Water Tank Monitor
@@ -189,7 +231,7 @@ class EmailSender(Thread):
 
                                 body += '<br><b>'  + _('Water') + '</b>'                                    
                                 body += '<br>' + _('Water level in tank') + ': %s \n' % (msg)
-                                logtext += ', ' + _('Water') + '-> ' + _('Water level in tank') + ': %s \n' % (msg)   
+                                logtext += ' ' + _('Water') + '-> ' + _('Water level in tank') + ': %s \n' % (msg)   
                             
                             except:
                                 pass
@@ -225,7 +267,7 @@ class EmailSender(Thread):
 
                                 body += '<br><b>'  + _('Water Consumption Counter') + '</b>'                                    
                                 body += '<br>%s \n' % (msg)
-                                logtext += ', ' + _('Water Consumption Counter') + ': %s \n' % (msg)   
+                                logtext += ' ' + _('Water Consumption Counter') + ': %s \n' % (msg)   
                             
                             except:
                                 pass
@@ -235,10 +277,10 @@ class EmailSender(Thread):
                                 from plugins import air_temp_humi    
 
                                 body += '<br><b>' + _('Temperature DS1-DS6') + '</b>'
-                                logtext += ', ' + _('Temperature DS1-DS6') + '-> '
+                                logtext += ' ' + _('Temperature DS1-DS6') + '-> '
                                 for i in range(0, air_temp_humi.plugin_options['ds_used']):  
                                     body += '<br>' + u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n'  
-                                    logtext +=  u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + ' ' 
+                                    logtext +=  u'%s \n' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + ' ' 
 
                             except:
                                 pass
@@ -247,6 +289,41 @@ class EmailSender(Thread):
                         
                     self._sleep(1)
                     finished_count = len(finished)
+
+                ###Repeating sending e-mails###
+                if email_options["emlrepeater"]:                        # saving e-mails is enabled 
+                    try:
+                        millis = int(round(time.time() * 1000))         # actual time in ms
+                        if(millis - last_millis) > send_interval:       # sending timer
+                            last_millis = millis                        # save actual time ms
+                            try:                                        # exists file: saved_emails.json?
+                                saved_emails = self.read_saved_emails() # read from file                  
+                            except:                                     # no! create empty file
+                                write_email([])                         # create file
+                                saved_emails = self.read_saved_emails() # read from file 
+
+                            len_saved_emails = len(saved_emails)
+                            if len_saved_emails > 0:                    # if there is something in json
+                                log.clear(NAME)
+                                log.info(NAME, _('Unsent E-mails in queue (in file)') + ': ' + str(len_saved_emails))
+                                try:                                    # try send e-mail
+                                    sendtext = u'%s' % saved_emails[0]["text"]
+                                    sendsubject = u'%s' % (saved_emails[0]["subject"] + '-' + _('sending from queue.'))
+                                    sendattachment = u'%s' % saved_emails[0]["attachment"]
+                                    email(sendtext, sendsubject, sendattachment) # send e-mail  
+                                    send_interval = 2000                # repetition of 2 seconds
+                                    del saved_emails[0]                 # delete sent email in file
+                                    self.write_email(saved_emails)      # save to file after deleting an item
+                                    if len(saved_emails) == 0:
+                                        log.clear(NAME)
+                                        log.info(NAME, _('All unsent E-mails in the queue have been sent.'))
+
+                                except Exception:
+                                    #print traceback.format_exc()
+                                    send_interval = 60000               # repetition of 60 seconds   
+                    except:
+                        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
+                        self.add_status('E-mail plug-in encountered an error: ' + traceback.format_exc())      
 
                 self._sleep(1)
 

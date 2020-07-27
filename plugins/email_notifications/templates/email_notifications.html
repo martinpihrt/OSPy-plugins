@@ -1,6 +1,6 @@
 $def with(plugin_options, events)
 
-$var title: $_('Email Notifications')
+$var title: $_('E-mail Notifications')
 $var page: plugins
 
 <script>
@@ -22,8 +22,8 @@ $var page: plugins
 </script>
 
 <div id="plugin">
-    <div class="title">$_('Email Notifications')</div>
-    <p>$_('This plugin can send E-mails. For this plugin you need an e-mail smtp account as provider.')</p>
+    <div class="title">$_('E-mail Notifications')</div>
+    <p>$_('This plugin can send E-mails. For this plugin you need an E-mail smtp account as provider.')</p>
     <form id="pluginForm" action="$plugins.plugin_url('email_notifications.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -120,6 +120,12 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Save and send it later'):</td>
+                <td>
+                    <input name='emlrepeater' type='checkbox'${" checked" if plugin_options['emlrepeater'] else ""}>
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
                     <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
@@ -130,7 +136,7 @@ $var page: plugins
 </div>
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
-    <button id="cTest" class="submit"><b>$_('Send a test e-mail')</b></button>
+    <button id="cTest" class="submit"><b>$_('Send a test E-mail')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
                                   

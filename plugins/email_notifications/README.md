@@ -6,7 +6,7 @@ This plugin can send E-mails. For this plugin you need an E-mail smtp account as
 Plugin setup
 -----------
 * Check Send E-mail after power on for send email.    
-  If checked sends e-mail into your E-mail address.
+  If checked sends E-mail into your E-mail address.
 
 * Check with log file.  
   If checked with events.log file if exists (your must enabled in options "check Enable debug log").
@@ -37,6 +37,9 @@ Plugin setup
   
 * E-mail subject:
   Type E-mail subject for send E-mail.  
+
+* Save and send it later:
+  If there is no Internet connection, save and send it later.
 
 * Status:
   Status window from the plugin.
