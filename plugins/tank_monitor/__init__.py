@@ -198,12 +198,14 @@ class Sender(Thread):
                 if send:
                     msg = '<b>' + _('Water Tank Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + '</p>'
                     msglog = _('Water Tank Monitor plug-in') + ': ' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '. '  
+                    send = False                    
                     try:
-                        send_email(msg, msglog)
-                        send = False
-                    except Exception as err:
-                        log.error(NAME, _('Email was not sent') + '! ' + str(err))
-                        self._sleep(60)
+                        from plugins.email_notifications import try_mail                                    
+                        try_mail(msg, msglog, attachment=None, subject=tank_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                    except Exception:     
+                        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())                        
+
 
             except Exception:
                 log.clear(NAME)
@@ -320,32 +322,6 @@ def get_all_values():
     return status['level'] , status['percent'], status['ping'], status['volume'], tank_options['log_minlevel'], tank_options['log_maxlevel'], tank_options['log_date_minlevel'], tank_options['log_date_maxlevel'], tank_options['check_liters']
    
  
-def send_email(msg, msglog):
-    """Send email"""
-    message = datetime_string() + ': ' + msg
-    try:
-        from plugins.email_notifications import email
-
-        Subject = tank_options['emlsubject']
-
-        email(message, subject=Subject)
-
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:        
-           logEM.save_email_log(Subject, msglog, _('Sent'))
-
-        log.info(NAME, _('Email was sent') + ': ' + msglog)
-
-    except Exception:
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:
-           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
-
-        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
-
-
 def read_log():
     """Read log data from json file."""
 

@@ -117,7 +117,12 @@ class UPSSender(Thread):
                             msglog = _('UPS plug-in') + ': ' + _('Detected fault on power line.')
                             log.info(NAME, msglog)
                             if ups_options['sendeml']:                       # if enabled send email
-                                send_email(msg, msglog)
+                                try:
+                                    from plugins.email_notifications import try_mail                                    
+                                    try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                                except Exception:     
+                                    log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc())
                                 once_three = True
                             if ups_options['enable_log']:    
                                 update_log(0)
@@ -140,11 +145,15 @@ class UPSSender(Thread):
                                         # send email with info shutdown system
                                         msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _('Power line is not restore in time -> shutdown system!') + '</p>'
                                         msglog =  _('UPS plug-in') + ': ' + _('Power line is not restore in time -> shutdown system!')
-                                        send_email(msg, msglog)
+                                        try:
+                                            from plugins.email_notifications import try_mail                                    
+                                            try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                                        except Exception:     
+                                            log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc()) 
                                         once_two = False
 
-                                GPIO.output(pin_ups_down,
-                                            GPIO.HIGH)          # switch on GPIO fo countdown UPS battery power off
+                                GPIO.output(pin_ups_down, GPIO.HIGH)          # switch on GPIO fo countdown UPS battery power off
                                 self._sleep(4)
                                 GPIO.output(pin_ups_down, GPIO.LOW)
                                 poweroff(1, True)                             # shutdown system
@@ -156,7 +165,13 @@ class UPSSender(Thread):
                                 msglog = _('UPS plug-in') + ': ' +  _('Power line has restored - OK.')
                                 log.clear(NAME)
                                 log.info(NAME, msglog)
-                                send_email(msg, msglog)
+                                try:
+                                    from plugins.email_notifications import try_mail                                    
+                                    try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                                except Exception:     
+                                    log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc()) 
+
                                 once = True
                                 once_two = True
                                 once_three = False
@@ -189,32 +204,6 @@ def stop():
         ups_sender.stop()
         ups_sender.join()
         ups_sender = None
-
-
-def send_email(msg, msglog):
-    """Send email"""
-    message = datetime_string() + ': ' + msg
-    Subject = ups_options['emlsubject']
-
-    try:
-        from plugins.email_notifications import email        
-
-        email(message, subject=Subject)
-
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:        
-           logEM.save_email_log(Subject, msglog, _('Sent'))
-
-        log.info(NAME, _('Email was sent') + ': ' + msglog)
-
-    except Exception:
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:
-           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
-
-        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
 
 def get_check_power_str():

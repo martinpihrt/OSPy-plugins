@@ -114,7 +114,15 @@ class StatusChecker(Thread):
             msglog +=  _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.'
 
             if plugin_options['use_eml']:
-                send_email(msg, msglog)
+                try:
+                    from plugins.email_notifications import try_mail                                    
+                    try_mail(msg, msglog, attachment=None, subject=plugin_options['eml_subject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                except Exception:     
+                    log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc()) 
+
+
+
         else:
             log.info(NAME, _('Running unknown version!'))
             log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
@@ -187,33 +195,6 @@ def stop():
         checker.stop()
         checker.join()
         checker = None
-
-
-def send_email(msg, msglog):
-    """Send email"""
-    message = datetime_string() + ': ' + msg
-    try:
-        from plugins.email_notifications import email
-
-        Subject = plugin_options['eml_subject']
-
-        email(message, subject=Subject)
-
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:        
-           logEM.save_email_log(Subject, msglog, _('Sent'))
-
-        log.info(NAME, _('Email was sent') + ': ' + msglog)
-
-    except Exception:
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:
-           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
-
-        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
-
 
 
 ################################################################################

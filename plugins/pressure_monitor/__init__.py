@@ -157,10 +157,12 @@ class PressureSender(Thread):
                     msg = '<b>' + _('Pressure monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: pressure sensor.') + '</p>'
                     msglog = _('Pressure monitor plug-in') + ': ' + _('System detected error: pressure sensor.')
                     try:
-                        send_email(msg, msglog)
-                        send = False
-                    except Exception:
-                        log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
+                        from plugins.email_notifications import try_mail                             
+                        try_mail(msg, msglog, subject=pressure_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                    except Exception:     
+                        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())  
+                    send = False    
                 
                 if get_check_pressure():
                     self.status['Pstate%d'] = _('INACTIVE')
@@ -191,32 +193,6 @@ def stop():
         pressure_sender.stop()
         pressure_sender.join()
         pressure_sender = None
-
-
-def send_email(msg, msglog):
-    """Send email"""
-    message = datetime_string() + ': ' + msg
-    try:
-        from plugins.email_notifications import email
-
-        Subject = pressure_options['emlsubject']
-
-        email(message, subject=Subject)
-
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:        
-           logEM.save_email_log(Subject, msglog, _('Sent'))
-
-        log.info(NAME, _('Email was sent') + ': ' + msglog)
-
-    except Exception:
-        if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
-        else:
-           logEM.save_email_log(Subject, msglog, _('Email was not sent'))
-
-        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
 
 def get_check_pressure():

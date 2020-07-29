@@ -170,8 +170,14 @@ class WindSender(Thread):
                 if send:
                     msg = '<b>' + _('Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h. </p>'
                     msglog= _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h.'
-                    send_email(msg, msglog)
                     send = False
+                    try:
+                        from plugins.email_notifications import try_mail                                    
+                        try_mail(msg, msglog, attachment=None, subject=wind_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                    except Exception:     
+                        log.error(NAME, _('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc()) 
+
                 
 
             except Exception:
@@ -218,32 +224,6 @@ def try_io(call, tries=10):
         raise error
 
     return result
-
-
-def send_email(msg, msglog):
-    """Send email"""
-    message = datetime_string() + ': ' + msg
-    try:
-        from plugins.email_notifications import email
-
-        Subject = wind_options['emlsubject']
-
-        email(message, subject=Subject)
-
-        if not options.run_logEM:
-            log.info(NAME, _('Email logging is disabled in options...'))
-        else:        
-            logEM.save_email_log(Subject, msglog, _('Sent'))
-
-        log.info(NAME, _('Email was sent') + ': ' + msglog)
-
-    except Exception:
-        if not options.run_logEM:
-            log.info(NAME, _('Email logging is disabled in options...'))
-        else:
-            logEM.save_email_log(Subject, msglog, _('Email was not sent'))
-
-        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
 
 
 def set_counter(i2cbus):
