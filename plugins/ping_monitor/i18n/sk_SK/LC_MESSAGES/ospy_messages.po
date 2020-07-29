@@ -5,161 +5,183 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2020-07-10 10:14+CEST\n"
-"PO-Revision-Date: 2020-07-10 10:18+0200\n"
-"Last-Translator: pihrt.com <martinpihrt@gmail.com>\n"
+"POT-Creation-Date: 2020-07-29 09:00+CEST\n"
+"PO-Revision-Date: 2020-07-29 13:46+0200\n"
 "Language-Team: \n"
-"Language: sk_SK\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.2.3\n"
-"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"X-Generator: Poedit 2.4\n"
+"Last-Translator: pihrt.com <martinpihrt@gmail.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
+"Language: sk_SK\n"
 
-#: plugins/tank_monitor/__init__.py:42
-msgid "Report from OSPy TANK plugin"
-msgstr "Hlásenie z OSPy nádrže"
+#: plugins/ping_monitor/__init__.py:156
+msgid "Ping has fault. Restarting system!"
+msgstr "Ping má chybu. Reštartovanie systému!"
 
-#: plugins/tank_monitor/__init__.py:103 plugins/tank_monitor/__init__.py:508
-msgid "Water tank monitor is enabled."
-msgstr "Monitor vodnej nádrže je zapnutý."
+#: plugins/ping_monitor/__init__.py:169
+msgid "Ping Monitor send statistics at the day and time"
+msgstr "Ping Monitor send statistics at the day and time"
 
-#: plugins/tank_monitor/__init__.py:117
-msgid "Water level"
-msgstr "Úroveň vody"
-
-#: plugins/tank_monitor/__init__.py:117 plugins/tank_monitor/__init__.py:118
-#: plugins/tank_monitor/__init__.py:119 plugins/tank_monitor/__init__.py:120
-#: plugins/tank_monitor/__init__.py:163 plugins/tank_monitor/__init__.py:177
-#: plugins/tank_monitor/__init__.py:178 plugins/tank_monitor/__init__.py:192
-#: plugins/tank_monitor/__init__.py:193
-#: plugins/tank_monitor/templates/tank_monitor.html:187
-#: plugins/tank_monitor/templates/tank_monitor.html:193
-#: plugins/tank_monitor/templates/tank_monitor.html:199
-#: plugins/tank_monitor/templates/tank_monitor.html:205
-msgid "cm"
-msgstr "cm"
-
-#: plugins/tank_monitor/__init__.py:118
-msgid "Measured Level in cm, liters or mÂ³"
-msgstr "Namerané v cm, litroch lebo m3"
-
-#: plugins/tank_monitor/__init__.py:118
+#: plugins/ping_monitor/__init__.py:49
 msgid "Ping"
-msgstr "Odraz"
+msgstr "Ping"
 
-#: plugins/tank_monitor/__init__.py:118
-msgid "m3."
-msgstr "m3."
+#: plugins/ping_monitor/__init__.py:49
+msgid "Actual"
+msgstr "aktuálny"
 
-#: plugins/tank_monitor/__init__.py:118 plugins/tank_monitor/__init__.py:442
-#: plugins/tank_monitor/__init__.py:567
-msgid "Volume"
-msgstr "Úroveň"
+#: plugins/ping_monitor/__init__.py:49
+msgid "Previous"
+msgstr "predchádzajúca"
 
-#: plugins/tank_monitor/__init__.py:119 plugins/tank_monitor/__init__.py:177
-msgid "Maximum Water level"
-msgstr "Maximálna úroveň vody"
+#: plugins/ping_monitor/__init__.py:49
+msgid "State"
+msgstr "Stav"
 
-#: plugins/tank_monitor/__init__.py:120 plugins/tank_monitor/__init__.py:178
-msgid "Minimum Water level"
-msgstr "Minimálna úroveň vody"
+#: plugins/ping_monitor/__init__.py:49
+msgid "Activate this extension use for ping testing."
+msgstr "Aktivujte toto rozšírenie na testovanie pingom."
 
-#: plugins/tank_monitor/__init__.py:163
-msgid "ERROR: Water in Tank"
-msgstr "Chyba: zásoby vody v nádrži"
+#: plugins/ping_monitor/__init__.py:49
+msgid "First address for testing."
+msgstr "Prvá adresa na testovanie."
 
-#: plugins/tank_monitor/__init__.py:176
-msgid "Water level: Error."
-msgstr "Hladina vody: Chyba."
+#: plugins/ping_monitor/__init__.py:49
+msgid "Second address for testing."
+msgstr "Druhá adresa na testovanie."
 
-#: plugins/tank_monitor/__init__.py:192 plugins/tank_monitor/__init__.py:193
-msgid "System detected error: Water Tank has minimum Water Level"
-msgstr "Systém zistil chybu: vodná nádrž má minimálnu hladinu vody"
+#: plugins/ping_monitor/__init__.py:49
+msgid "Third address for testing."
+msgstr "Tretia adresa na testovanie."
 
-#: plugins/tank_monitor/__init__.py:192 plugins/tank_monitor/__init__.py:193
-#: plugins/tank_monitor/__init__.py:203
-msgid "Water Tank Monitor plug-in"
-msgstr "Doplnok nádrž pre vodu"
+#: plugins/ping_monitor/__init__.py:49
+msgid "After what time do we want to repeat the ping. From 2 to 600 seconds."
+msgstr "Po uplynutí akej doby chceme opakovať ping. Od 2 do 600 sekúnd."
 
-#: plugins/tank_monitor/__init__.py:198 plugins/tank_monitor/__init__.py:337
-#: plugins/tank_monitor/__init__.py:339
-msgid "Email was not sent"
-msgstr "E-mail nebol odoslaný"
+#: plugins/ping_monitor/__init__.py:49
+msgid ""
+"If enabled restart this device, then this item affects how many unsuccessful "
+"pings will be performed before a restart. From 2 to 60."
+msgstr ""
+"Ak je povolené reštartovať toto zariadenie, potom táto položka ovplyvňuje, "
+"koľko neúspešných ping sa vykoná pred reštartom. Od 2 do 60."
 
-#: plugins/tank_monitor/__init__.py:327 plugins/tank_monitor/__init__.py:335
-msgid "Email logging is disabled in options..."
+#: plugins/ping_monitor/__init__.py:49
+msgid ""
+"When enabled, the device will be restarted after a certain number of "
+"unsuccessful pings (HW restart)."
+msgstr ""
+"Ak je povolené, zariadenie sa reštartuje po určitom počte neúspešných ping "
+"(HW reštart)."
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Send a csv file with statistics via E-mail."
+msgstr "Pošlite súbor CSV so štatistikami prostredníctvom e-mailu."
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Interval for sending statistics by email. From 1 to 48 hours."
+msgstr "Interval na zasielanie štatistík e-mailom. Od 1 do 48 hodín."
+
+#: plugins/ping_monitor/__init__.py:49
+msgid ""
+"Delete the csv file with statistics after sending the E-mail and create a "
+"new clean file."
+msgstr ""
+"Odstráňte súbor csv so štatistikami po odoslaní e-mailu a vytvorte nový "
+"čistý súbor."
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "The subject of the message being sent."
+msgstr "Predmet odosielanej správy."
+
+#: plugins/ping_monitor/__init__.py:49
+msgid ""
+"When logging is enabled, a log file is created (required for the graph and "
+"for sending an e-mail at the same time)."
+msgstr ""
+"Keď je zapnuté zapisovanie do denníka, vytvorí sa súbor denníka (vyžaduje sa "
+"pre graf a na odosielanie e-mailov súčasne)."
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Report from OSPy PING plugin"
+msgstr "Správa z doplnku OSPy PING"
+
+#: plugins/ping_monitor/__init__.py:111 plugins/ping_monitor/__init__.py:118
+#: plugins/ping_monitor/__init__.py:125
+msgid "is available."
+msgstr "je k dispozícii."
+
+#: plugins/ping_monitor/__init__.py:114 plugins/ping_monitor/__init__.py:121
+#: plugins/ping_monitor/__init__.py:128
+msgid "is not available."
+msgstr "nie je k dispozícii."
+
+#: plugins/ping_monitor/__init__.py:163
+msgid "Ping Monitor plug-in"
+msgstr "Doplnok Ping Monitor"
+
+#: plugins/ping_monitor/__init__.py:209 plugins/ping_monitor/__init__.py:217
+msgid "E-mail logging is disabled in options..."
 msgstr "E-mail zapisovania do denníka je zakázaný v možnostiach..."
 
-#: plugins/tank_monitor/__init__.py:329
+#: plugins/ping_monitor/__init__.py:211
 msgid "Sent"
 msgstr "Odoslané"
 
-#: plugins/tank_monitor/__init__.py:331
-msgid "Email was sent"
+#: plugins/ping_monitor/__init__.py:213
+msgid "E-mail was sent"
 msgstr "E-mail bol odoslaný"
 
-#: plugins/tank_monitor/__init__.py:431
-msgid "Saving to log  files OK"
-msgstr "Ukladanie do log súborov OK"
+#: plugins/ping_monitor/__init__.py:219 plugins/ping_monitor/__init__.py:221
+msgid "E-mail was not sent"
+msgstr "E-mail nebol odoslaný!"
 
-#: plugins/tank_monitor/__init__.py:439 plugins/tank_monitor/__init__.py:564
-msgid "Minimum"
-msgstr "Min"
+#: plugins/ping_monitor/__init__.py:302
+msgid "Saving to log files OK."
+msgstr "Ukladanie do log súborov OK."
 
-#: plugins/tank_monitor/__init__.py:440 plugins/tank_monitor/__init__.py:565
-msgid "Maximum"
-msgstr "Max"
-
-#: plugins/tank_monitor/__init__.py:441 plugins/tank_monitor/__init__.py:566
-msgid "Actual"
-msgstr "Act"
-
-#: plugins/tank_monitor/__init__.py:451
+#: plugins/ping_monitor/__init__.py:320
 msgid "Deleted all log files OK"
 msgstr "Odstránené všetky súbory denníka OK"
 
-#: plugins/tank_monitor/__init__.py:487
-msgid "Minimum and maximum has reseted."
-msgstr "Min a max sa smazalo."
-
-#: plugins/tank_monitor/__init__.py:511
-msgid "Water tank monitor is disabled."
+#: plugins/ping_monitor/__init__.py:354
+msgid "Ping monitor is disabled."
 msgstr "Doplnok je zakázaný."
 
-#: plugins/tank_monitor/__init__.py:513
+#: plugins/ping_monitor/__init__.py:356
 msgid "Options has updated."
 msgstr "Možnosti sa aktualizovali."
 
-#: plugins/tank_monitor/templates/tank_monitor.html:3
-#: plugins/tank_monitor/templates/tank_monitor.html:171
-msgid "Water tank monitor settings"
-msgstr "Doplnok nádrž pre vodu - nastavenie"
+#: plugins/ping_monitor/templates/ping_monitor.html:3
+#: plugins/ping_monitor/templates/ping_monitor.html:171
+msgid "Ping monitor settings"
+msgstr "Doplnok Ping - nastavenie"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:172
-msgid "This plugin check water level in water tank via ultrasonic sensor on"
-msgstr ""
-"Tento doplnok skontroluje hladinu vody vo vodnej nádrži pomocou "
-"ultrazvukového snímača na"
-
-#: plugins/tank_monitor/templates/tank_monitor.html:172
-msgid "address 0x04"
-msgstr "adrese 0x04"
-
-#: plugins/tank_monitor/templates/tank_monitor.html:173
+#: plugins/ping_monitor/templates/ping_monitor.html:172
 msgid ""
-"If water level is small plugins stop irigation system and sends email with "
-"error. Prevent safety for master station pump."
+"This extension allows you to ping addresses. All pings are recorded in a "
+"file (always the first successful and the first unsuccessful)"
 msgstr ""
-"Ak hladina vody je malá doplnok zastaví zavlažovací systém a pošle e-mail s "
-"chybou. Slúži pre ochranu čerpadla majster stanice."
+"Toto rozšírenie umožňuje ping adresy. Všetky pingy sú zaznamenané v súbore "
+"(vždy prvý úspešný a prvý neúspešný)"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:174
+#: plugins/ping_monitor/templates/ping_monitor.html:173
+msgid ""
+"The log file (pings) can be sent by E-mail after a certain time. At the same "
+"time, we can restart the device after a certain number of unsuccessful "
+"attempts"
+msgstr ""
+"Súbor denníka (ping) je možné odoslať e-mailom po určitom čase. Zároveň "
+"môžeme reštartovať zariadenie po určitom počte neúspešných pokusov"
+
+#: plugins/ping_monitor/templates/ping_monitor.html:174
 msgid "Download log as"
 msgstr "Stiahnite si denník ako"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:175
+#: plugins/ping_monitor/templates/ping_monitor.html:175
 msgid ""
 "If logging is enabled, a graph with measured data will be displayed at the "
 "bottom of the screen"
@@ -167,126 +189,74 @@ msgstr ""
 "Ak je zapnuté zapisovanie do denníka, v dolnej časti obrazovky sa zobrazí "
 "graf s nameranými údajmi"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:179
-msgid "Use ultrasonic measuring the water level in the tank"
-msgstr "Používať ultrazvukové meranie hladiny vody v nádrži"
+#: plugins/ping_monitor/templates/ping_monitor.html:179
+msgid "Use ping monitoring"
+msgstr "Použite sledovanie pingom"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:185
-msgid "The distance from the sensor to the minimum water level in the tank"
-msgstr "Vzdialenosť od snímača k minimálnej hladine vody v nádrži"
+#: plugins/ping_monitor/templates/ping_monitor.html:184
+msgid "Ping address 1"
+msgstr "Adresa ping 1"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:191
-msgid "The distance from the sensor to the maximum water level in the tank"
-msgstr "Vzdialenosť od snímača k maximálnej hladine vody v nádrži"
+#: plugins/ping_monitor/templates/ping_monitor.html:189
+msgid "Ping address 2"
+msgstr "Adresa ping 2"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:197
-msgid "The water level from the bottom to the minimum water level in the tank"
-msgstr "Hladina vody zospodu na minimálnu hladinu vody v nádrži"
+#: plugins/ping_monitor/templates/ping_monitor.html:194
+msgid "Ping address 3"
+msgstr "Adresa ping 3"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:203
-msgid "Cylinder diameter for volume calculation"
-msgstr "Priemer valca pre výpočet objemu"
+#: plugins/ping_monitor/templates/ping_monitor.html:199
+msgid "Ping interval"
+msgstr "Interval pingu"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:209
-msgid "Display as liters or m"
-msgstr "Zobraziť ako litre alebo m"
+#: plugins/ping_monitor/templates/ping_monitor.html:204
+msgid "Number of invalid pings to restart the device"
+msgstr "Počet neplatných príkazov na reštartovanie zariadenia"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:215
-msgid "Send an e-mail with an error that there is minimum water in the tank"
-msgstr "Odoslať E-mail s chybou pokiaľ je v nádrži minimálna hladina vody"
+#: plugins/ping_monitor/templates/ping_monitor.html:209
+msgid "Restart this device"
+msgstr "Reštartujte toto zariadenie"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:217
-msgid "For this function required email plugin"
-msgstr "Pre túto funkciu je potrebný doplnok E-mail notification"
+#: plugins/ping_monitor/templates/ping_monitor.html:214
+msgid "Send an E-mail with statistics (csv file)"
+msgstr "Poslať e-mail so štatistikami (súbor CSV)"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:221
+#: plugins/ping_monitor/templates/ping_monitor.html:216
+msgid "For this function required E-mail plugin"
+msgstr "Pre túto funkciu je potrebný doplnok pre E-mail"
+
+#: plugins/ping_monitor/templates/ping_monitor.html:219
+msgid "Interval for sending statistics"
+msgstr "Interval na zasielanie štatistík"
+
+#: plugins/ping_monitor/templates/ping_monitor.html:224
+msgid "Delete statistics after send"
+msgstr "Po odoslaní odstrániť štatistiku"
+
+#: plugins/ping_monitor/templates/ping_monitor.html:229
 msgid "E-mail subject"
-msgstr "Predmet e-mailu"
+msgstr "Predmet E-mailu"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:227
-msgid "Stop scheduller if is minimum water in the tank"
-msgstr "Stop plánovača ak je minimálna voda v nádrži"
-
-#: plugins/tank_monitor/templates/tank_monitor.html:238
+#: plugins/ping_monitor/templates/ping_monitor.html:239
 msgid "Enable logging"
 msgstr "Povoliť protokolovanie"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:244
-msgid "Maximum number of log records"
-msgstr "Maximálny počet záznamov denníka"
-
-#: plugins/tank_monitor/templates/tank_monitor.html:246
-msgid "0 = unlimited"
-msgstr "0 = neobmedzené"
-
-#: plugins/tank_monitor/templates/tank_monitor.html:250
-msgid "Interval for logging"
-msgstr "Interval pro záznam"
-
-#: plugins/tank_monitor/templates/tank_monitor.html:252
-msgid "minutes (Minimum is 1)"
-msgstr "minút (minimálne 1)"
-
-#: plugins/tank_monitor/templates/tank_monitor.html:256
+#: plugins/ping_monitor/templates/ping_monitor.html:244
 msgid "Status"
 msgstr "Stav"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:265
+#: plugins/ping_monitor/templates/ping_monitor.html:253
 msgid "Submit"
 msgstr "Odoslať"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:266
+#: plugins/ping_monitor/templates/ping_monitor.html:254
 msgid "Cancel"
 msgstr "Zrušiť"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:267
-msgid "Reset min/max level"
-msgstr "Smazat min/max úroveň"
-
-#: plugins/tank_monitor/templates/tank_monitor.html:268
+#: plugins/ping_monitor/templates/ping_monitor.html:255
 msgid "Delete all logs"
 msgstr "Odstrániť všetky protokoly"
 
-#: plugins/tank_monitor/templates/tank_monitor.html:277
+#: plugins/ping_monitor/templates/ping_monitor.html:264
 msgid "Clear selection"
 msgstr "Vyčistiť výber"
-
-#~ msgid "Water level: Error I2C device not found."
-#~ msgstr "Hladina vody: chyba I2C zariadenie sa nenašlo."
-
-#~ msgid "Creating default graph log files OK"
-#~ msgstr "Vytváranie predvolených súborov denníka grafov OK"
-
-#~ msgid "Reason"
-#~ msgstr "Štatistika"
-
-#~ msgid "Previous Value"
-#~ msgstr "Predchádzajúci"
-
-#~ msgid "Actual Value"
-#~ msgstr "Aktuálna"
-
-#~ msgid "cm or m3"
-#~ msgstr "cm lebo m3"
-
-#~ msgid "Unsent"
-#~ msgstr "Neodoslané"
-
-#~ msgid "Error I2C device not found."
-#~ msgstr "Chyba I2C zariadenie sa nenašlo."
-
-#~ msgid "Scheduler is now disabled and all Stations turn Off."
-#~ msgstr "Plánovač je teraz vypnutý a všetky stanice vypnúté."
-
-#~ msgid "Water tank and humidity Monitor plug-in"
-#~ msgstr "Doplnok nádrž pre vodu a vlhkosť"
-
-#~ msgid "Water tank and humidity monitor settings"
-#~ msgstr "Doplnok nádrž pre vodu a vlhkosť - nastavenie"
-
-#~ msgid ""
-#~ "This plugin check water level in water tank via ultrasonic sensor (I2C "
-#~ "address 0x04)"
-#~ msgstr ""
-#~ "Tento doplnok skontroluje hladinu vody vo vodnej nádrži pomocou "
-#~ "ultrazvukového snímača (adresa I2C 0x04)"
