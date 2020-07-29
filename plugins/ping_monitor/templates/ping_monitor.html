@@ -1,0 +1,265 @@
+$def with(plugin_options, events)
+
+$var title: $_('Ping monitor settings')
+$var page: plugins
+
+<script src="/static/scripts/jquery.flot.js"></script>
+<script src="/static/scripts/jquery.flot.time.js"></script>
+<script src="/static/scripts/jquery.flot.resize.js"></script>
+<script src="/static/scripts/jquery.flot.axislabels.js"></script>
+<script src="/static/scripts/jquery.flot.selection.js"></script>
+
+<script>
+var graph_text;
+
+function draw_graph(result) {
+    var data = [];
+    graph_text = [];
+    var legend_items = jQuery('#legend-visible').find('.legendColorBox');
+
+    for (var i = 0; i < result.length; i++) {
+        var balances = [];
+        var txt_header = "<table class=\"balanceList\"><tr><th>$_('Ping')</th></tr>";
+        var texts = [];
+        var txt_body = "";
+        var txt_footer = "</table>";
+        for (timestamp in result[i]['balances']) {
+            var balance = result[i]['balances'][timestamp];
+            balances.push([1000*parseInt(timestamp), balance['total']]);
+            var date = new Date(1000*parseInt(timestamp));
+            var hours = date.getHours();
+            var minutes = "0" + date.getMinutes();
+            var seconds = "0" + date.getSeconds();
+            var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+            txt_body += "<tr><td>$_('Actual')</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+            texts.push("<b>" + result[i]['station'] + "</b> " + toXSDate(date) + "<br>" + formattedTime + "<br>" + txt_header + txt_body + txt_footer);
+            txt_body = "<tr><td>$_('Previous')</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+        }
+
+        if (i >= legend_items.length || legend_items.eq(i).children().children().attr("data") == 1)
+        {
+            data.push({
+                data: balances,
+                label: result[i]['station'],
+                color: i
+            })
+            graph_text.push(texts);
+        }
+    }
+
+    return jQuery.plot("#graph-placeholder", data, {
+        series: {
+            lines: {
+                show: true
+            },
+            points: {
+                show: true
+            }
+        },
+        grid: {
+            hoverable: true
+        },
+        xaxis: {
+            mode: "time",
+            timeformat: "%m-%d"
+        },
+        legend: {
+            show: true,
+            container: jQuery("#legend-placeholder")
+        },
+        axisLabels: {
+            show: true
+        },
+        yaxes: [{
+            position: 'left',
+            axisLabel: "$_('State')",
+        }],
+        selection: {
+            mode: 'x'
+        }
+    });
+}
+
+function create_graph(result) {
+    plot = draw_graph(result);
+
+    jQuery('#legend-visible').html(jQuery('#legend-placeholder').html());
+    plot.resize();
+    plot.setupGrid();
+    plot.draw();
+    plot.clearSelection();
+
+    jQuery('#legend-visible').find('.legendColorBox').children().children().css({
+        color: "#ddd"
+    }).attr("data", 1);
+
+    jQuery('#legend-visible').on('click', 'tr', function(){
+        var colorbox = jQuery(this).find('.legendColorBox').children().children();
+        colorbox.css({
+            "border-color": colorbox.css("color"),
+            "color": colorbox.css("border-left-color")
+        });
+        colorbox.attr("data", 1 - colorbox.attr("data"));
+        draw_graph(result);
+    });
+
+    jQuery("<div id='tooltip'></div>").css({
+        position: "absolute",
+        display: "none",
+        "min-width": "120px",
+        "background-color": "#eee",
+        padding: "5px",
+        "border-radius": "5px"
+    }).appendTo("body");
+
+
+    jQuery("#graph-placeholder").bind("plothover", function (event, pos, item) {
+        if (item) {
+            jQuery("#tooltip").html(graph_text[item.seriesIndex][item.dataIndex]);
+            var x = item.pageX+5;
+            if (item.pageX + jQuery("#tooltip").width() > jQuery(document).width() - 100)
+            {
+                x = item.pageX-jQuery("#tooltip").width()-10;
+            }
+            var y = item.pageY+5;
+            if (item.pageY + jQuery("#tooltip").height() > jQuery(document).height() - 20)
+            {
+                y = item.pageY-jQuery("#tooltip").height()-10;
+            }
+            jQuery("#tooltip").css({top: y, left: x}).fadeIn(200);
+        } else {
+            jQuery("#tooltip").hide();
+        }
+    });
+
+    jQuery("#graph-placeholder").bind("plotselected", function (event, ranges) {
+        jQuery("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
+        jQuery.each(plot.getXAxes(), function(_, axis) {
+                var opts = axis.options;
+                opts.min = ranges.xaxis.from;
+                opts.max = ranges.xaxis.to;
+        });
+        plot.setupGrid();
+        plot.draw();
+        plot.clearSelection(); 
+    });
+
+    jQuery('#clearSelection').on('click', function(){
+        jQuery.getJSON("/plugins/ping_monitor/graph_json", create_graph)
+    });
+
+}
+
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    if (jQuery("#graph-placeholder").length > 0) {
+        setTimeout(function() {jQuery.getJSON("/plugins/ping_monitor/graph_json", create_graph)}, 500); 
+    }
+
+});
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Ping monitor settings')</div>
+    <p>$_('This extension allows you to ping addresses. All pings are recorded in a file (always the first successful and the first unsuccessful)').</p>
+    <p>$_('The log file (pings) can be sent by E-mail after a certain time. At the same time, we can restart the device after a certain number of unsuccessful attempts').</p>
+    <p>$_('Download log as') <a href="$plugins.plugin_url('ping_monitor.log_csv')">csv</a>.</p>
+    <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p> 
+    <form id="pluginForm" action="$plugins.plugin_url('ping_monitor.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'><b>$_('Use ping monitoring'):</b></td>
+                <td title="$_('Activate this extension use for ping testing.')">
+                <input name='use_ping' type='checkbox'${" checked" if plugin_options['use_ping'] else ""}></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Ping address 1'):</td>
+                <td title="$_('First address for testing.')">
+                <input name='address_1' type='text' value='$plugin_options["address_1"]'></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Ping address 2'):</td>
+                <td title="$_('Second address for testing.')">
+                <input name='address_2' type='text' value='$plugin_options["address_2"]'></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Ping address 3'):</td>
+                <td title="$_('Third address for testing.')">
+                <input name='address_3' type='text' value='$plugin_options["address_3"]'></td>
+            </tr>                        
+            <tr>
+                <td style='text-transform: none;'>$_('Ping interval'):</td>
+                <td title="$_('After what time do we want to repeat the ping. From 2 to 600 seconds.')">
+                <input name='ping_interval' type='number' min="2" max="600" value='$plugin_options["ping_interval"]'></td>
+            </tr>  
+            <tr>
+                <td style='text-transform: none;'>$_('Number of invalid pings to restart the device'):</td>
+                <td title="$_('If enabled restart this device, then this item affects how many unsuccessful pings will be performed before a restart. From 2 to 60.')">
+                <input name='ping_count' type='number' min="2" max="60" value='$plugin_options["ping_count"]'></td>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Restart this device'):</td>
+                <td title="$_('When enabled, the device will be restarted after a certain number of unsuccessful pings (HW restart).')">
+                <input name='use_restart' type='checkbox'${" checked" if plugin_options['use_restart'] else ""}></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send an E-mail with statistics (csv file)'):</td>
+                <td title="$_('Send a csv file with statistics via E-mail.')">
+                <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}> ($_('For this function required E-mail plugin'))</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Interval for sending statistics'):</td>
+                <td title="$_('Interval for sending statistics by email. From 1 to 48 hours.')">
+                <input name='send_interval' type='number' min="1" max="48" value='$plugin_options["send_interval"]'></td>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'>$_('Delete statistics after send'):</td>
+                <td title="$_('Delete the csv file with statistics after sending the E-mail and create a new clean file.')">
+                <input name='use_send_delete' type='checkbox'${" checked" if plugin_options['use_send_delete'] else ""}></td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td title="$_('The subject of the message being sent.')">
+                <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'></td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
+                <td title="$_('When logging is enabled, a log file is created (required for the graph and for sending an e-mail at the same time).')">
+                <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="50" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <a href="?delete" class="button upload">$_('Delete all logs')</a>
+</div>
+
+$if plugin_options['enable_log']:
+   <div id="graph-container" class="graph-container">
+   <div id="legend-placeholder" style="display:none;"></div>
+   <div id="legend-visible" style="float: right; width: auto;"></div>
+   <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
+   <div style="clear: both;"></div>
+   <button id="clearSelection">$_('Clear selection')</button>
+   </div>

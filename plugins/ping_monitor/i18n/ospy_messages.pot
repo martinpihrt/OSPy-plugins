@@ -1,0 +1,239 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2020-07-29 09:00+CEST\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: plugins/ping_monitor/__init__.py:156
+msgid "Ping has fault. Restarting system!"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:169
+msgid "Ping Monitor send statistics at the day and time"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Ping"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Actual"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Previous"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "State"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Activate this extension use for ping testing."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "First address for testing."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Second address for testing."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Third address for testing."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "After what time do we want to repeat the ping. From 2 to 600 seconds."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "If enabled restart this device, then this item affects how many unsuccessful pings will be performed before a restart. From 2 to 60."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "When enabled, the device will be restarted after a certain number of unsuccessful pings (HW restart)."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Send a csv file with statistics via E-mail."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Interval for sending statistics by email. From 1 to 48 hours."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Delete the csv file with statistics after sending the E-mail and create a new clean file."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "The subject of the message being sent."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "When logging is enabled, a log file is created (required for the graph and for sending an e-mail at the same time)."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid ""
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid ""
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:49
+msgid "Report from OSPy PING plugin"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:111 plugins/ping_monitor/__init__.py:118
+#: plugins/ping_monitor/__init__.py:125
+msgid "is available."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:114 plugins/ping_monitor/__init__.py:121
+#: plugins/ping_monitor/__init__.py:128
+msgid "is not available."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:163
+msgid "Ping Monitor plug-in"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:209 plugins/ping_monitor/__init__.py:217
+msgid "E-mail logging is disabled in options..."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:211
+msgid "Sent"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:213
+msgid "E-mail was sent"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:219 plugins/ping_monitor/__init__.py:221
+msgid "E-mail was not sent"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:302
+msgid "Saving to log files OK."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:320
+msgid "Deleted all log files OK"
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:354
+msgid "Ping monitor is disabled."
+msgstr ""
+
+#: plugins/ping_monitor/__init__.py:356
+msgid "Options has updated."
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:3
+#: plugins/ping_monitor/templates/ping_monitor.html:171
+msgid "Ping monitor settings"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:172
+msgid "This extension allows you to ping addresses. All pings are recorded in a file (always the first successful and the first unsuccessful)"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:173
+msgid "The log file (pings) can be sent by E-mail after a certain time. At the same time, we can restart the device after a certain number of unsuccessful attempts"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:174
+msgid "Download log as"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:175
+msgid "If logging is enabled, a graph with measured data will be displayed at the bottom of the screen"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:179
+msgid "Use ping monitoring"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:184
+msgid "Ping address 1"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:189
+msgid "Ping address 2"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:194
+msgid "Ping address 3"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:199
+msgid "Ping interval"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:204
+msgid "Number of invalid pings to restart the device"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:209
+msgid "Restart this device"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:214
+msgid "Send an E-mail with statistics (csv file)"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:216
+msgid "For this function required E-mail plugin"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:219
+msgid "Interval for sending statistics"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:224
+msgid "Delete statistics after send"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:229
+msgid "E-mail subject"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:239
+msgid "Enable logging"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:244
+msgid "Status"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:253
+msgid "Submit"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:254
+msgid "Cancel"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:255
+msgid "Delete all logs"
+msgstr ""
+
+#: plugins/ping_monitor/templates/ping_monitor.html:264
+msgid "Clear selection"
+msgstr ""
+

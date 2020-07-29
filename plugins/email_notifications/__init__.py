@@ -368,7 +368,7 @@ def try_mail(text, logtext, attachment=None, subject=None):
 ###Try send e-mail###   
     log.clear(NAME)
     try:
-        email(text, attach=attachment)  # send email with attachment from
+        email(text, subject, attachment)  # send email with attachment from
         log.info(NAME, _('E-mail was sent') + ':\n' + logtext)
         if not options.run_logEM:
             log.info(NAME, _('E-mail logging is disabled in options...'))
