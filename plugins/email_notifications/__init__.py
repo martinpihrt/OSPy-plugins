@@ -65,14 +65,7 @@ class EmailSender(Thread):
         self._stop = Event()
 
         self._sleep_time = 0
-        self.start()
-        self.status = ""
-
-    def add_status(self, msg):
-        if self.status:
-            self.status += "\n" + msg
-        else:
-            self.status = msg        
+        self.start()     
 
     def stop(self):
         self._stop.set()
@@ -86,76 +79,17 @@ class EmailSender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
-    def read_saved_emails(self):
-    ###Read saved emails from json file.###
-        try:
-            with open(os.path.join(plugin_data_dir(), 'saved_emails.json')) as saved_emails:
-                return json.load(saved_emails)
-        except IOError:
-            return []     
-
-    def write_email(self, json_data):
-    ###Write e-mail data to json file.###
-        with open(os.path.join(plugin_data_dir(), 'saved_emails.json'), 'w') as saved_emails:
-            json.dump(json_data, saved_emails)  
-
-    def update_saved_emails(self, data):
-    ###Update data in json files.### 
-        try:                                                              # exists file: saved_emails.json?
-            saved_emails = self.read_saved_emails()                       
-        except:                                                           # no! create empty file
-            self.write_email([])
-            saved_emails = self.read_saved_emails()
-        
-        saved_emails.insert(0, data)
-        self.write_email(saved_emails)
-
-                   
-    def try_mail(self, text, logtext, attachment=None, subject=None):
-    ###Try send e-mail###   
-        log.clear(NAME)
-        self.status = ""
-        try:
-            email(text, attach=attachment)  # send email with attachment from
-            log.info(NAME, _('E-mail was sent') + ':\n' + logtext)
-            self.add_status('E-mail was sent: ' + logtext)
-            if not options.run_logEM:
-                log.info(NAME, _('E-mail logging is disabled in options...'))
-            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Sent'))
-
-        except Exception:
-            log.error(NAME, _('E-mail was not sent! Connection to Internet not ready.'))
-            #log.error(NAME, _('E-mail was not sent!') + '\n' + traceback.format_exc())
-            self.add_status('E-mail was not sent! ' + traceback.format_exc())
-            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('E-mail was not sent! Connection to Internet not ready.'))
-            if not options.run_logEM:
-                log.info(NAME, _('E-mail logging is disabled in options...'))
-            
-            if email_options["emlrepeater"]: # saving e-mails is enabled  
-                data = {}
-                data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
-                data['time'] = str(datetime.now().strftime('%H:%M:%S'))   
-                data['text'] = u'%s' % text
-                data['logtext'] = u'%s' % logtext
-                data['subject'] = u'%s' % email_options['emlsubject']
-                data['attachment'] = u'%s' % attachment
-
-                self.update_saved_emails(data)    # saving e-mail data to file: saved_emails.json
-
-
     def run(self):
         time.sleep(
             randint(3, 10)
         )  # Sleep some time to prevent printing before startup information
+
         send_interval = 5000  # default time for sending between e-mails (ms)
         last_millis   = 0     # timer for repeating sending e-mails (ms)
         last_rain = False
         body    = ""
         logtext = ""
         finished_count = len([run for run in log.finished_runs() if not run['blocked']])
-        self.status = ""
-        self.add_status('E-mail plug-in is started')
-
 
         if email_options["emlpwron"]:  # if eml_power_on send email is enable (on)
             body += '<b>' + _('System') + '</b> ' + datetime_string()
@@ -165,13 +99,12 @@ class EmailSender(Thread):
             if email_options["emllog"]:
                 file_exists = os.path.exists(EVENT_FILE)
                 if file_exists:
-                   self.try_mail(body, logtext, EVENT_FILE)
+                   try_mail(body, logtext, EVENT_FILE)
                 else:
                    body += '<br>' + _('Error -  events.log file not exists!') 
-                   #print body
-                   self.try_mail(body, logtext)
+                   try_mail(body, logtext)
             else:
-                self.try_mail(body, logtext)
+                try_mail(body, logtext)
 
         while not self._stop.is_set():
             body    = ""
@@ -183,7 +116,7 @@ class EmailSender(Thread):
                         body += '<b>' + _('System') + '</b> ' + datetime_string() 
                         body += '<br><p style="color:red;">' + _('System detected rain.') + '</p>'
                         logtext = _('System detected rain.')
-                        self.try_mail(body, logtext)
+                        try_mail(body, logtext)
                         self._sleep(1)
                     last_rain = inputs.rain_sensed()
 
@@ -285,7 +218,7 @@ class EmailSender(Thread):
                             except:
                                 pass
 
-                        self.try_mail(body, logtext)
+                        try_mail(body, logtext)
                         
                     self._sleep(1)
                     finished_count = len(finished)
@@ -297,10 +230,10 @@ class EmailSender(Thread):
                         if(millis - last_millis) > send_interval:       # sending timer
                             last_millis = millis                        # save actual time ms
                             try:                                        # exists file: saved_emails.json?
-                                saved_emails = self.read_saved_emails() # read from file                  
+                                saved_emails = read_saved_emails()      # read from file                  
                             except:                                     # no! create empty file
                                 write_email([])                         # create file
-                                saved_emails = self.read_saved_emails() # read from file 
+                                saved_emails = read_saved_emails()      # read from file 
 
                             len_saved_emails = len(saved_emails)
                             if len_saved_emails > 0:                    # if there is something in json
@@ -313,7 +246,7 @@ class EmailSender(Thread):
                                     email(sendtext, sendsubject, sendattachment) # send e-mail  
                                     send_interval = 2000                # repetition of 2 seconds
                                     del saved_emails[0]                 # delete sent email in file
-                                    self.write_email(saved_emails)      # save to file after deleting an item
+                                    write_email(saved_emails)           # save to file after deleting an item
                                     if len(saved_emails) == 0:
                                         log.clear(NAME)
                                         log.info(NAME, _('All unsent E-mails in the queue have been sent.'))
@@ -322,19 +255,15 @@ class EmailSender(Thread):
                                     #print traceback.format_exc()
                                     send_interval = 60000               # repetition of 60 seconds   
                     except:
-                        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
-                        self.add_status('E-mail plug-in encountered an error: ' + traceback.format_exc())      
+                        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())  
 
                 self._sleep(1)
 
             except Exception:
                 log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
-                self.add_status('E-mail plug-in encountered an error: ' + traceback.format_exc())
                 self._sleep(60)
 
-
 email_sender = None
-
 
 ################################################################################
 # Helper functions:                                                            #
@@ -410,6 +339,60 @@ def email(text, subject=None, attach=None):
         raise Exception(_('E-mail plug-in is not properly configured!'))
 
 
+def read_saved_emails():
+###Read saved emails from json file.###
+    try:
+        with open(os.path.join(plugin_data_dir(), 'saved_emails.json')) as saved_emails:
+            return json.load(saved_emails)
+    except IOError:
+        return []     
+
+def write_email(json_data):
+###Write e-mail data to json file.###
+    with open(os.path.join(plugin_data_dir(), 'saved_emails.json'), 'w') as saved_emails:
+        json.dump(json_data, saved_emails)  
+
+def update_saved_emails(data):
+###Update data in json files.### 
+    try:                                                              # exists file: saved_emails.json?
+        saved_emails = read_saved_emails()                       
+    except:                                                           # no! create empty file
+        write_email([])
+        saved_emails = read_saved_emails()
+        
+    saved_emails.insert(0, data)
+    write_email(saved_emails)
+
+                   
+def try_mail(text, logtext, attachment=None, subject=None):
+###Try send e-mail###   
+    log.clear(NAME)
+    try:
+        email(text, attach=attachment)  # send email with attachment from
+        log.info(NAME, _('E-mail was sent') + ':\n' + logtext)
+        if not options.run_logEM:
+            log.info(NAME, _('E-mail logging is disabled in options...'))
+        else:    
+            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Sent'))
+
+    except Exception:
+        log.error(NAME, _('E-mail was not sent! Connection to Internet not ready.'))
+        logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('E-mail was not sent! Connection to Internet not ready.'))
+        if not options.run_logEM:
+            log.info(NAME, _('E-mail logging is disabled in options...'))
+            
+        if email_options["emlrepeater"]: # saving e-mails is enabled  
+            data = {}
+            data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+            data['time'] = str(datetime.now().strftime('%H:%M:%S'))   
+            data['text'] = u'%s' % text
+            data['logtext'] = u'%s' % logtext
+            data['subject'] = u'%s' % email_options['emlsubject']
+            data['attachment'] = u'%s' % attachment
+
+            update_saved_emails(data)    # saving e-mail data to file: saved_emails.json        
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -430,7 +413,7 @@ class settings_page(ProtectedPage):
             if test:
                 body = datetime_string() + ': ' + _('This is test e-mail from OSPy. You can ignore it.')
                 logtext = _('This is test e-mail from OSPy. You can ignore it.')
-                email_sender.try_mail(body, logtext)
+                try_mail(body, logtext)
 
 
         raise web.seeother(plugin_url(settings_page), True)
