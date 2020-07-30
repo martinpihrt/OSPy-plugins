@@ -70,6 +70,7 @@ class Sender(Thread):
         status['last_ping1'] = 0
         status['last_ping2'] = 0
         status['last_ping3'] = 0
+        status['state'] = "-"
 
         self._sleep_time = 0
         self.start()
@@ -96,6 +97,7 @@ class Sender(Thread):
         last_ping_millis  = 0    # timer for sending ping (ms)
         fault_counter     = 0    # counter for restart device
         en_log = False           # enable for update log
+        en_fault = False         # enable count in ping counter
 
         while not self._stop.is_set():
             email_interval = plugin_options['send_interval']*3600000  # time for sending between e-mails (ms) -> 1 hour = 1000ms*60*60
@@ -115,6 +117,7 @@ class Sender(Thread):
                             else:
                                 log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is not available.'))
                                 status['ping1'] = 0
+                                en_fault = True
 
                         if plugin_options['address_2'] != '':        
                             if ping_ip(plugin_options['address_2']):
@@ -123,6 +126,7 @@ class Sender(Thread):
                             else:
                                 log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is not available.'))
                                 status['ping2'] = 0
+                                en_fault = True
 
                         if plugin_options['address_3'] != '':        
                             if ping_ip(plugin_options['address_3']) and plugin_options['address_3']!='':
@@ -131,6 +135,12 @@ class Sender(Thread):
                             else:
                                 log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is not available.'))  
                                 status['ping3'] = 0
+                                en_fault = True
+
+                        if status['ping1'] == 0 and status['ping2'] == 0 and status['ping3'] == 0:  
+                            status['state'] = "ERROR" 
+                        else:
+                            status['state'] = "-"
 
                         if status['ping1'] != status['last_ping1']:
                             status['last_ping1'] = status['ping1']
@@ -149,7 +159,10 @@ class Sender(Thread):
                             if plugin_options['enable_log']:    # is logging?
                                 update_log()                    # saving to log
 
-                            fault_counter += 1
+                            if en_fault:
+                            	en_fault = False
+                                fault_counter += 1
+
                             if plugin_options['use_restart']:   # is enabled restarting?
                                 if fault_counter >= plugin_options['ping_count']:  # is fault counter ready to restart?
                                     fault_counter = 0
@@ -262,10 +275,11 @@ def update_log():
         log_data = read_log()
 
     data = {'date': datetime.now().strftime('%d.%m.%Y')}
-    data['time'] = str(datetime.now().strftime('%H:%M:%S'))
+    data['time'] = datetime.now().strftime('%H:%M:%S')
     data['ping1'] = str(status['last_ping1'])
-    data['ping2'] = str(status['last_ping2']) 
-    data['ping3'] = str(status['last_ping3']) 
+    data['ping2'] = str(status['last_ping2'])
+    data['ping3'] = str(status['last_ping3'])
+    data['state'] = str(status['state'])
       
     log_data.insert(0, data)
 
@@ -283,17 +297,20 @@ def update_log():
     timestamp = int(time.time())
 
     try:
-        ping1 = graph_data[0]['balances']
-        ping1val = {'total': status['last_ping1']}
-        ping1.update({timestamp: ping1val})
+    	if plugin_options['address_1'] != '': 
+            ping1 = graph_data[0]['balances']
+            ping1val = {'total': status['last_ping1']}
+            ping1.update({timestamp: ping1val})
 
-        ping2 = graph_data[1]['balances']
-        ping2val = {'total': status['last_ping2']}
-        ping2.update({timestamp: ping2val})
+        if plugin_options['address_2'] != '': 
+            ping2 = graph_data[1]['balances']
+            ping2val = {'total': status['last_ping2']}
+            ping2.update({timestamp: ping2val})
 
-        ping3 = graph_data[2]['balances']
-        ping3val = {'total': status['last_ping3']}
-        ping3.update({timestamp: ping3val})
+        if plugin_options['address_3'] != '': 
+            ping3 = graph_data[2]['balances']
+            ping3val = {'total': status['last_ping3']}
+            ping3.update({timestamp: ping3val})
  
         write_graph_log(graph_data)
 
@@ -304,10 +321,18 @@ def update_log():
 
 def create_default_graph():
     """Create default graph json file."""
-
-    ping1 = "IP1: " + plugin_options['address_1']
-    ping2 = "IP2: " + plugin_options['address_2']
-    ping3 = "IP3: " + plugin_options['address_3']
+    if plugin_options['address_1'] != '': 
+        ping1 = "IP1: " + plugin_options['address_1']
+    else:
+        ping1 = ""
+    if plugin_options['address_2'] != '':         
+        ping2 = "IP2: " + plugin_options['address_2']
+    else:
+        ping2 = ""        
+    if plugin_options['address_3'] != '':     
+        ping3 = "IP3: " + plugin_options['address_3']
+    else:
+        ping3 = ""        
      
     graph_data = [
        {"station": ping1, "balances": {}},
@@ -325,17 +350,18 @@ def create_csv_file():
         log_csv_file = os.path.join(plugin_data_dir(), 'log.csv')
 
         with open(log_csv_file, 'w') as csv_write:
-            fieldnames = ['Date', 'Time', 'IP1', 'IP2', 'IP3']
+            fieldnames = ['Date', 'Time', 'IP1', 'IP2', 'IP3', 'STATE']
             writer = csv.DictWriter(csv_write, fieldnames=fieldnames)
             writer.writeheader()
  
             log_records = read_log()
             for record in log_records:
-                data = {'Date': record['date']}
-                data['Time'] = record['time']
-                data['IP1']  = record["ping1"]
-                data['IP2']  = record["ping2"]
-                data['IP3']  = record["ping3"]
+                data = {'Date':  record['date']}
+                data['Time']   = record['time']
+                data['IP1']    = record['ping1']
+                data['IP2']    = record['ping2']
+                data['IP3']    = record['ping3']
+                data['STATE']  = record['state']
                 writer.writerow(data)
 
     except Exception:
@@ -446,6 +472,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         data += ";\t %s" % "IP1: " + plugin_options['address_1']
         data += ";\t %s" % "IP2: " + plugin_options['address_2']
         data += ";\t %s" % "IP3: " + plugin_options['address_3']
+        data += ";\t State"
         data += '\n'        
 
         try:
@@ -456,6 +483,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 data += ";\t" + record["ping1"]
                 data += ";\t" + record["ping2"]
                 data += ";\t" + record["ping3"]
+                data += ";\t" + record["state"]
                 data += '\n'
         except:
             pass        
