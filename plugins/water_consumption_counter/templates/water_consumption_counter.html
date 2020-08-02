@@ -4,86 +4,86 @@ $var title: $_('Water Consumption Counter settings')
 $var page: plugins
 
 <script>
-    // Initialize behaviors
-    jQuery(document).ready(function(){
+	// Initialize behaviors
+	jQuery(document).ready(function(){
 
-        jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
-        });
-        jQuery("button#cCancel").click(function(){
-            window.location="/";
-        });
-    });
+		jQuery("#cSubmit").click(function() {
+			jQuery("#pluginForm").submit();
+		});
+		jQuery("button#cCancel").click(function(){
+			window.location="/";
+		});
+	});
 </script>
 
 <div id="plugin">
-    <div class="title">$_('Water Consumption Counter settings')</div>
-    <p>$_('This plugin read Water consumption on master station or second master station.')</p>
-    <p>$_('Total sum is the calculated as run of the main (or second) station.')</p>
-    <p>$_('This is not an actual flow meter (physical flow sensor).')</p>
-    <p>$_('Used for an overview of water consumption.')</p>
-    <form id="pluginForm" action="$plugins.plugin_url('water_consumption_counter.settings_page')" method="post">
-        <table class="optionList">
-            <tr>
-                <td style='text-transform: none;'>$_('Master Station'):</td>
-                <td>
-                    <input name='liter_per_sec_master_one' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_one"]'> $_('Liters per second')
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Second Master Station'):</td>
-                <td>
-                    <input name='liter_per_sec_master_two' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_two"]'> $_('Liters per second')
-                </td>            
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Send email with water consumption'):</td>
-                <td>
-                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> ($_('For this function required email plugin'))
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('E-mail subject'):</td>
-                <td>
-                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
-                </td>
-            </tr>                        
-            <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('Master Station'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;"> 
-                    $if plugin_options["sum_one"] < 1000:
-                        <b>$plugin_options["sum_one"]</b> $_('liter.')
-                    $else:
-                        <b>$(round((plugin_options["sum_one"]/1000.0),2))</b> $_('m3.')
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('Second Master Station'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                     $if plugin_options["sum_two"] < 1000:
-                        <b>$plugin_options["sum_two"]</b> $_('liter.')
-                    $else:
-                        <b>$(round((plugin_options["sum_two"]/1000.0),2))</b> $_('m3.')                    
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('Last counter reset'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                    <b>$plugin_options["last_reset"]  </b>
-                </td>
-            </tr>    
-            <tr>                         
-                <td style='text-transform: none;'>$_('Status'):</td>
-                <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
-                </td>
-            </tr>
-        </table>
-    </form>
+	<div class="title">$_('Water Consumption Counter settings')</div>
+	<p>$_('This plugin read Water consumption on master station or second master station.')</p>
+	<p>$_('Total sum is the calculated as run of the main (or second) station.')</p>
+	<p>$_('This is not an actual flow meter (physical flow sensor).')</p>
+	<p>$_('Used for an overview of water consumption.')</p>
+	<form id="pluginForm" action="$plugins.plugin_url('water_consumption_counter.settings_page')" method="post">
+		<table class="optionList">
+			<tr>
+				<td style='text-transform: none;'>$_('Master Station'):</td>
+				<td>
+					<input name='liter_per_sec_master_one' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_one"]'> $_('Liters per second')
+				</td>
+			</tr>
+			<tr>
+				<td style='text-transform: none;'>$_('Second Master Station'):</td>
+				<td>
+					<input name='liter_per_sec_master_two' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_two"]'> $_('Liters per second')
+				</td>
+			</tr>
+			<tr>
+				<td style='text-transform: none;'>$_('Send email with water consumption'):</td>
+				<td>
+					<input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> ($_('For this function required email plugin'))
+				</td>
+			</tr>
+			<tr>
+				<td style='text-transform: none;'>$_('E-mail subject'):</td>
+				<td>
+					<input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
+				</td>
+			</tr>
+			<tr>
+				<td style='text-transform: none; vertical-align: top;'>$_('Master Station'):</td>
+				<td style="background-color: rgb(220, 220, 220);text-align: left;"> 
+					$if plugin_options["sum_one"] < 1000:
+						<b>$plugin_options["sum_one"]</b> $_('liter.')
+					$else:
+						<b>$(round((plugin_options["sum_one"]/1000.0),2))</b> $_('m3.')
+				</td>
+			</tr>
+			<tr>
+				<td style='text-transform: none; vertical-align: top;'>$_('Second Master Station'):</td>
+				<td style="background-color: rgb(220, 220, 220);text-align: left;">
+					$if plugin_options["sum_two"] < 1000:
+						<b>$plugin_options["sum_two"]</b> $_('liter.')
+					$else:
+						<b>$(round((plugin_options["sum_two"]/1000.0),2))</b> $_('m3.')
+				</td>
+			</tr>
+			<tr>
+				<td style='text-transform: none; vertical-align: top;'>$_('Last counter reset'):</td>
+				<td style="background-color: rgb(220, 220, 220);text-align: left;">
+					<b>$plugin_options["last_reset"]  </b>
+				</td>
+			</tr>
+			<tr>
+				<td style='text-transform: none;'>$_('Status'):</td>
+				<td>
+					<textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+				</td>
+			</tr>
+		</table>
+	</form>
 </div>
 
 <div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
-    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?reset"     class="button cancel danger">$_('Reset Counter')</a>
+	<button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+	<button id="cCancel" class="cancel danger">$_('Cancel')</button>
+	<a href="?reset" class="button cancel danger">$_('Reset Counter')</a>
 </div>
