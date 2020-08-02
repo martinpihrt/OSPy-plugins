@@ -20,7 +20,6 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy import helpers
 
-import i18n
 
 NAME = 'Pressure Monitor'
 LINK = 'settings_page'

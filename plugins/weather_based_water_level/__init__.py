@@ -18,7 +18,6 @@ from ospy.stations import stations
 from ospy.weather import weather
 from plugins import PluginOptions, plugin_url
 
-import i18n
 
 NAME = 'Weather-based Water Level'
 LINK = 'settings_page'

@@ -17,8 +17,6 @@ from ospy import version
 from ospy.options import options
 from ospy.helpers import datetime_string
 
-import i18n
-
 
 NAME = 'System Update'
 LINK = 'status_page'

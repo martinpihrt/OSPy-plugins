@@ -26,8 +26,6 @@ from ospy.inputs import inputs
 from ospy.log import log, EVENT_FILE, logEM
 from ospy.helpers import datetime_string, get_input
 
-import i18n
-
 
 NAME = 'E-mail Notifications'
 LINK = 'settings_page'

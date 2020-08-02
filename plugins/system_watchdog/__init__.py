@@ -18,8 +18,6 @@ from ospy.webpages import ProtectedPage
 from ospy.log import log
 from plugins import plugin_url
 
-import i18n
-
 
 NAME = 'System Watchdog'
 LINK = 'status_page'

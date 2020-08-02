@@ -21,7 +21,6 @@ from ospy.inputs import inputs
 from ospy.helpers import datetime_string
 
 
-import i18n
 
 NAME = 'MQTT Zone Broadcaster'
 LINK = 'settings_page'

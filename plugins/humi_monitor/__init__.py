@@ -21,8 +21,6 @@ from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 
-import i18n
-
 
 NAME = 'Humidity Monitor'
 LINK = 'settings_page'

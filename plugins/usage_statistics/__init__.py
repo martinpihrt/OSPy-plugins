@@ -16,8 +16,6 @@ from ospy.options import options
 from ospy.helpers import datetime_string
 
 
-import i18n
-
 NAME = 'Usage Statistics'
 LINK = 'status_page'
 

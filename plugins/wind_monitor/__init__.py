@@ -22,8 +22,6 @@ from ospy.helpers import datetime_string
 from ospy import helpers
 
 
-import i18n
-
 NAME = 'Wind Speed Monitor'
 LINK = 'settings_page'
 

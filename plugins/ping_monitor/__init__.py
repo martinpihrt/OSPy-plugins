@@ -29,7 +29,6 @@ from ospy.helpers import reboot
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 
-import i18n
 
 NAME = 'Ping Monitor'
 LINK = 'settings_page'

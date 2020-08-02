@@ -10,7 +10,6 @@ from ospy.options import level_adjustments
 from ospy.webpages import ProtectedPage
 from plugins import PluginOptions, plugin_url
 
-import i18n
 
 NAME = 'Monthly Water Level'
 LINK = 'settings_page'

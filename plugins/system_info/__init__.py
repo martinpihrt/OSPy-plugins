@@ -16,7 +16,6 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-import i18n
 
 NAME = 'System Information'
 LINK = 'status_page'

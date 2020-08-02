@@ -24,7 +24,6 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import ASCI_convert
 from ospy.stations import stations
 
-import i18n
 
 NAME = 'LCD Display'
 LINK = 'settings_page'

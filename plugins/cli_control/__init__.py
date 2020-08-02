@@ -7,7 +7,6 @@ import traceback
 import web
 import subprocess
 
-import i18n
 
 from blinker import signal
 

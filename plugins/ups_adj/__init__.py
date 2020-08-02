@@ -20,7 +20,6 @@ from ospy.helpers import datetime_string
 from ospy.options import options
 from ospy import helpers
 
-import i18n
 
 NAME = 'UPS Monitor'
 LINK = 'settings_page'

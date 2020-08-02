@@ -7,8 +7,6 @@ import datetime
 import traceback
 import web
 
-import i18n
-
 from blinker import signal
 
 from ospy import helpers

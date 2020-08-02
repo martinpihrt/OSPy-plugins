@@ -23,7 +23,6 @@ from ospy.inputs import inputs
 
 import atexit # For publishing down message
 
-import i18n
 
 NAME = 'MQTT'
 LINK = 'settings_page'

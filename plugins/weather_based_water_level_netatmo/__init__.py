@@ -25,8 +25,6 @@ from ospy.webpages import ProtectedPage
 from ospy.weather import weather
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 
-import i18n
-
 from sys import version_info
 import imghdr
 import warnings

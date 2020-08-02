@@ -24,7 +24,6 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from plugins import PluginOptions, plugin_url
 
-import i18n
 
 NAME = 'Real Time and NTP time'
 LINK = 'settings_page'

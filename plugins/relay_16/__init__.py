@@ -16,7 +16,6 @@ from ospy.helpers import determine_platform, get_rpi_revision, datetime_string
 from ospy.stations import stations
 from plugins import PluginOptions, plugin_url
 
-import i18n
 
 NAME = 'Direct 16 Relay Outputs'
 LINK = 'settings_page'

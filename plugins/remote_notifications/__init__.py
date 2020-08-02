@@ -19,7 +19,6 @@ from ospy.stations import stations
 from ospy.inputs import inputs
 from ospy.log import log, EVENT_FILE
 from ospy.helpers import datetime_string, get_input
-import i18n
 
 
 NAME = 'Remote Notifications'

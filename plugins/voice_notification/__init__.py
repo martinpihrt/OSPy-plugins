@@ -23,8 +23,6 @@ from ospy.helpers import get_input
 from plugins import PluginOptions, plugin_url
 
 
-import i18n
-
 NAME = 'Voice Notification'
 LINK = 'settings_page'
 
@@ -226,14 +224,13 @@ class VoiceChecker(Thread):
                             once_test = False
                             log.info(NAME, _('Pygame is now installed.')) 
 
-                    if plugin_options['voice_start_station']: # start notifications
-                        current_time  = datetime.datetime.now()
-                        user_pre_time = current_time + datetime.timedelta(seconds=int(plugin_options['pre_time']))
-                        check_start   = current_time - datetime.timedelta(days=1)
-                        check_end     = current_time + datetime.timedelta(days=1)
+                    current_time  = datetime.datetime.now()
+                    user_pre_time = current_time + datetime.timedelta(seconds=int(plugin_options['pre_time']))
+                    check_start   = current_time - datetime.timedelta(days=1)
+                    check_end     = current_time + datetime.timedelta(days=1)
 
      
-                    if current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']: # play notifications only from xx hour to yy hour
+                    if plugin_options['voice_start_station'] and current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']: # play notifications only from xx hour to yy hour
                         play = False 
                         post_song  = ' '     
                         stat_run_num = -1   
@@ -340,8 +337,12 @@ def play_voice(self, song):
         mixer.music.set_volume(1.0)  # 0.0 min to 1.0 max 
 
         log.info(NAME, _('Set master volume to') + ' ' + str(plugin_options['volume']) + '%')
-        cmd = "sudo amixer  sset PCM,0 " + str(plugin_options['volume']) + "%"
-        run_command(cmd)
+        try:
+            cmd = ["amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])]
+            run_command(cmd)
+        except:            
+            cmd = ["amixer", "sset", "Master", "{}%".format(plugin_options['volume'])]
+            run_command(cmd)        
 
         log.info(NAME, _('Playing...'))  
         mixer.music.play()

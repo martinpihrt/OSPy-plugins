@@ -14,7 +14,6 @@ from ospy.webpages import ProtectedPage
 from plugins import PluginOptions, plugin_url
 from ospy.log import log
 
-import i18n
 
 NAME = 'Pulse Output Test'
 LINK = 'start_page'

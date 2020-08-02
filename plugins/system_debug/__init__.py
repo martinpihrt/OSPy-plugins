@@ -12,7 +12,6 @@ import web
 import os
 import json
 
-import i18n
 
 NAME = 'System Debug Information'
 LINK = 'status_page'

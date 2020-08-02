@@ -6,7 +6,6 @@ import time
 import traceback
 import web
 
-import i18n
 
 from blinker import signal ### for this example ###
 

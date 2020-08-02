@@ -23,7 +23,6 @@ from ospy.programs import programs
 from ospy.stations import stations
 from ospy.helpers import datetime_string
 
-import i18n
 
 NAME = 'SMS Modem'
 LINK = 'settings_page'

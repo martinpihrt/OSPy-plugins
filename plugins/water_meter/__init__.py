@@ -16,7 +16,6 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy import helpers
 
-import i18n
 
 NAME = 'Water Meter'
 LINK = 'settings_page'

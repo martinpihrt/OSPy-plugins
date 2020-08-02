@@ -15,8 +15,6 @@ from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 
-import i18n
-
 NAME = 'Webcam Monitor'
 LINK = 'settings_page'
 

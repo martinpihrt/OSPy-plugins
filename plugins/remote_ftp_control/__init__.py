@@ -23,7 +23,6 @@ from ospy.options import rain_blocks
 from ospy.runonce import run_once
 from ospy.inputs import inputs
 
-import i18n
 
 NAME = 'Remote FTP Control'
 LINK = 'settings_page'

@@ -27,8 +27,6 @@ import dht11
 
 instance = dht11.DHT11(pin=19) # DHT on GPIO 10 pin
 
-import i18n
-
 NAME = 'Air Temperature and Humidity Monitor'
 LINK = 'settings_page'
 

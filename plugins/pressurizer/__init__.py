@@ -26,7 +26,6 @@ from blinker import signal
 pressurizer_master_relay_on = signal('pressurizer_master_relay_on')   # send signal relay on for others in OSPy system
 pressurizer_master_relay_off = signal('pressurizer_master_relay_off') # send signal relay off for others in OSPy system
 
-import i18n
 
 NAME = 'Pressurizer'
 LINK = 'settings_page'
