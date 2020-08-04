@@ -18,6 +18,7 @@ sys.setdefaultencoding('utf8')
 
 
 NAME = 'System Information'
+MENU =  _('Package: System Information')
 LINK = 'status_page'
 
 

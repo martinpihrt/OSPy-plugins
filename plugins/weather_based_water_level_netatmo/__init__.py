@@ -37,6 +37,7 @@ else:
     import urllib2
 
 NAME = 'Weather-based Water Level Netatmo'
+MENU =  _('Package: Weather-based Water Level Netatmo')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

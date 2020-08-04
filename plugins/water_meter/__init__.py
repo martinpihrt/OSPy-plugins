@@ -18,6 +18,7 @@ from ospy import helpers
 
 
 NAME = 'Water Meter'
+MENU =  _('Package: Water Meter')
 LINK = 'settings_page'
 
 options = PluginOptions(

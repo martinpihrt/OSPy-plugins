@@ -16,6 +16,7 @@ from ospy.log import log
 
 
 NAME = 'Pulse Output Test'
+MENU =  _('Package: Pulse Output Test')
 LINK = 'start_page'
 
 pulse_options = PluginOptions(

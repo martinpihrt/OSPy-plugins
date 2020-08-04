@@ -72,7 +72,7 @@ function draw_graph(result) {
         },
         yaxes: [{
             position: 'left',
-            axisLabel: "$_('State')",
+            axisLabel: "$_(u'State')",
         }],
         selection: {
             mode: 'x'
@@ -177,57 +177,57 @@ function create_graph(result) {
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use ping monitoring'):</b></td>
-                <td title="$_('Activate this extension use for ping testing.')">
+                <td title=$:{json.dumps(_(u'Activate this extension use for ping testing.'), ensure_ascii=False)}>
                 <input name='use_ping' type='checkbox'${" checked" if plugin_options['use_ping'] else ""}></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Ping address 1'):</td>
-                <td title="$_('First address for testing.')">
+                <td title=$:{json.dumps(_(u'First address for testing.'), ensure_ascii=False)}>
                 <input name='address_1' type='text' value='$plugin_options["address_1"]'></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Ping address 2'):</td>
-                <td title="$_('Second address for testing.')">
+                <td title=$:{json.dumps(_(u'Second address for testing.'), ensure_ascii=False)}>
                 <input name='address_2' type='text' value='$plugin_options["address_2"]'></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Ping address 3'):</td>
-                <td title="$_('Third address for testing.')">
+                <td title=$:{json.dumps(_(u'Third address for testing.'), ensure_ascii=False)}>
                 <input name='address_3' type='text' value='$plugin_options["address_3"]'></td>
             </tr>                        
             <tr>
                 <td style='text-transform: none;'>$_('Ping interval'):</td>
-                <td title="$_('After what time do we want to repeat the ping. From 2 to 600 seconds.')">
+                <td title=$:{json.dumps(_(u'After what time do we want to repeat the ping. From 2 to 600 seconds.'), ensure_ascii=False)}>
                 <input name='ping_interval' type='number' min="2" max="600" value='$plugin_options["ping_interval"]'></td>
             </tr>  
             <tr>
                 <td style='text-transform: none;'>$_('Number of invalid pings to restart the device'):</td>
-                <td title="$_('If enabled restart this device, then this item affects how many unsuccessful pings will be performed before a restart. From 2 to 60.')">
+                <td title=$:{json.dumps(_(u'If enabled restart this device, then this item affects how many unsuccessful pings will be performed before a restart. From 2 to 60.'), ensure_ascii=False)}>
                 <input name='ping_count' type='number' min="2" max="60" value='$plugin_options["ping_count"]'></td>
             </tr> 
             <tr>
                 <td style='text-transform: none;'>$_('Restart this device'):</td>
-                <td title="$_('When enabled, the device will be restarted after a certain number of unsuccessful pings (HW restart).')">
+                <td title=$:{json.dumps(_(u'When enabled, the device will be restarted after a certain number of unsuccessful pings (HW restart).'), ensure_ascii=False)}>
                 <input name='use_restart' type='checkbox'${" checked" if plugin_options['use_restart'] else ""}></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send an E-mail with statistics (csv file)'):</td>
-                <td title="$_('Send a csv file with statistics via E-mail.')">
+                <td title=$:{json.dumps(_(u'Send a csv file with statistics via E-mail.'), ensure_ascii=False)}>
                 <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}> ($_('For this function required E-mail plugin'))</td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Interval for sending statistics'):</td>
-                <td title="$_('Interval for sending statistics by email. From 1 to 48 hours.')">
+                <td title=$:{json.dumps(_(u'Interval for sending statistics by email. From 1 to 48 hours.'), ensure_ascii=False)}>
                 <input name='send_interval' type='number' min="1" max="48" value='$plugin_options["send_interval"]'></td>
             </tr>             
             <tr>
                 <td style='text-transform: none;'>$_('Delete statistics after send'):</td>
-                <td title="$_('Delete the csv file with statistics after sending the E-mail and create a new clean file.')">
+                <td title=$:{json.dumps(_(u'Delete the csv file with statistics after sending the E-mail and create a new clean file.'), ensure_ascii=False)}>
                 <input name='use_send_delete' type='checkbox'${" checked" if plugin_options['use_send_delete'] else ""}></td>
             </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
-                <td title="$_('The subject of the message being sent.')">
+                <td title=$:{json.dumps(_(u'The subject of the message being sent.'), ensure_ascii=False)}>
                 <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'></td>
             </tr>
             <tr>
@@ -237,7 +237,7 @@ function create_graph(result) {
             </tr>             
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
-                <td title="$_('When logging is enabled, a log file is created (required for the graph and for sending an e-mail at the same time).')">
+                <td title=$:{json.dumps(_(u'When logging is enabled, a log file is created (required for the graph and for sending an e-mail at the same time).'), ensure_ascii=False)}>
                 <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}></td>
             </tr>
             <tr>

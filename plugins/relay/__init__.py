@@ -10,6 +10,7 @@ from ospy.outputs import outputs
 #from ospy.stations import stations # for test station 8
 
 NAME = 'Relay Test'
+MENU =  _('Package: Relay Test')
 LINK = 'test_page'
 
 class test_page(ProtectedPage):

@@ -22,6 +22,7 @@ from ospy import helpers
 
 
 NAME = 'UPS Monitor'
+MENU =  _('Package: UPS Monitor')
 LINK = 'settings_page'
 
 ups_options = PluginOptions(

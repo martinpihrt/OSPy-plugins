@@ -26,6 +26,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Real Time and NTP time'
+MENU =  _('Package: Real Time and NTP time')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

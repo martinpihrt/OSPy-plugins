@@ -28,6 +28,7 @@ pressurizer_master_relay_off = signal('pressurizer_master_relay_off') # send sig
 
 
 NAME = 'Pressurizer'
+MENU =  _('Package: Pressurizer')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

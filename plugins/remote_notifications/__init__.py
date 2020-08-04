@@ -22,6 +22,7 @@ from ospy.helpers import datetime_string, get_input
 
 
 NAME = 'Remote Notifications'
+MENU =  _('Package: Remote Notifications')
 LINK = 'settings_page'
 
 remote_options = PluginOptions(

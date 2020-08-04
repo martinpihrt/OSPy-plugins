@@ -17,6 +17,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Usage Statistics'
+MENU =  _('Package: Usage Statistics')
 LINK = 'status_page'
 
 class StatusChecker(Thread):

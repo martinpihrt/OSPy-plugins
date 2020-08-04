@@ -19,10 +19,11 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'System Update'
+MENU =  _('Package: System Update')
 LINK = 'status_page'
 
 plugin_options = PluginOptions(
-    NAME,
+    NAME, 
     {
         'auto_update': False,
         'use_update': False,

@@ -31,6 +31,7 @@ else:
     import urllib2
 
 NAME = 'Weather-based Rain Delay'
+MENU =  _('Package: Weather-based Rain Delay')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

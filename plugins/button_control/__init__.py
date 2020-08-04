@@ -22,6 +22,7 @@ from ospy.helpers import get_rpi_revision, datetime_string, reboot, restart, pow
 
 
 NAME = 'Button Control'
+MENU =  _('Package: Button Control')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

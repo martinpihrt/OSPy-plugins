@@ -25,6 +25,7 @@ import atexit # For publishing down message
 
 
 NAME = 'MQTT'
+MENU =  _('Package: MQTT')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

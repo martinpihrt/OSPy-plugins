@@ -26,6 +26,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Water Tank Monitor'
+MENU =  _('Package: Water Tank Monitor')
 LINK = 'settings_page'
 
 tank_options = PluginOptions(

@@ -20,6 +20,7 @@ from plugins import plugin_url
 
 
 NAME = 'System Watchdog'
+MENU =  _('Package: System Watchdog')
 LINK = 'status_page'
 
 

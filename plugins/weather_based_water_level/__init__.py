@@ -20,6 +20,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Weather-based Water Level'
+MENU =  _('Package: Weather-based Water Level')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

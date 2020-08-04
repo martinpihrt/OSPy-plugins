@@ -16,6 +16,7 @@ from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 
 NAME = 'Signaling Examples'  ### name for plugin in plugin manager ###
+MENU =  _('Package: Signaling Examples')
 LINK = 'settings_page'       ### link for page in plugin manager ###
  
 plugin_options = PluginOptions(

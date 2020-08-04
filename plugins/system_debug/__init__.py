@@ -14,6 +14,7 @@ import json
 
 
 NAME = 'System Debug Information'
+MENU =  _('Package: System Debug Information')
 LINK = 'status_page'
 
 debug_options = PluginOptions(

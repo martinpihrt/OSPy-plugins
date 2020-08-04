@@ -23,6 +23,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'MQTT Zone Broadcaster'
+MENU =  _('Package: MQTT Zone Broadcaster')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -130,8 +131,15 @@ class Sender(Thread):
                 if once: 
                     log.info(NAME, _('MQTT Zones Plugin is disabled.'))
                     once = False
-                    client.disconnect()
-                    client = None
+                    try:
+                        from plugins import mqtt
+                        client = mqtt.get_client()
+                        if client: 
+                            client.disconnect()
+                            client = None
+                    except ImportError:
+                        log.error(NAME, _('MQTT Zones Plugin requires MQTT plugin.'))
+
                 self._sleep(5)
                              
 sender = None

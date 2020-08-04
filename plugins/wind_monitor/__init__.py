@@ -23,6 +23,7 @@ from ospy import helpers
 
 
 NAME = 'Wind Speed Monitor'
+MENU =  _('Package: Wind Speed Monitor')
 LINK = 'settings_page'
 
 wind_options = PluginOptions(

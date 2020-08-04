@@ -26,6 +26,7 @@ from ospy.stations import stations
 
 
 NAME = 'LCD Display'
+MENU =  _('Package: LCD Display')
 LINK = 'settings_page'
 
 lcd_options = PluginOptions(

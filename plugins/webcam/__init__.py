@@ -16,6 +16,7 @@ from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 
 NAME = 'Webcam Monitor'
+MENU =  _('Package: Webcam Monitor')
 LINK = 'settings_page'
 
 cam_options = PluginOptions(

@@ -23,6 +23,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Humidity Monitor'
+MENU =  _('Package: Humidity Monitor')
 LINK = 'settings_page'
 
 tank_options = PluginOptions(

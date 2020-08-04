@@ -45,29 +45,29 @@ jQuery(document).ready(function(){
 				<table class="optionList">
 				<tr>
 					<td style='text-transform: none;'>$_('Enable'):</td>
-					<td title="$_('If the check box is marked, the master pump is activated before turning on the stations.')">
+					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations.'), ensure_ascii=False)}>	
 					<input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
 				</tr>
 				<tr>
 					<td style='text-transform: none;'>$_('Pre run time'):</td>
-					<td title="$_('How many seconds before turning on station has turning on master station.')">
+					<td title=$:{json.dumps(_(u'How many seconds before turning on station has turning on master station.'), ensure_ascii=False)}>
 					<input name='pre_time' type='number' min="1" max="999" value="$plugin_options['pre_time']"> (1 - 999s)</td> 
 				</tr>
 				<tr>
-					<td style='text-transform: none;'>$_('Run time'):</td>
-					<td title="$_('For what time will turn on the master station.')">   
+					<td style='text-transform: none;'>$_('Run time'):</td> 
+					<td title=$:{json.dumps(_(u'For what time will turn on the master station.'), ensure_ascii=False)}>
 					<input name='run_time' type='number' min="1" max="999" value="$plugin_options['run_time']"> (1 - 999s)</td> 
 				</tr>  
 				<tr>
 					<td style='text-transform: none;'>$_('Wait after activation'):</td>
-					<td title="$_('How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on).')"> 
+					<td title=$:{json.dumps(_(u'How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on).'), ensure_ascii=False)}>
 					<input id="mm" name="mm" type="number" size="3" maxlength="3" value="$plugin_options['mm']" min="0" max="999">:
 					<input id="ss" name="ss" type="number" size="2" maxlength="2" value="$plugin_options['ss']" min="0" max="59"> (mm:ss)
 					</td>
 				</tr>
 				<tr>
 					<td style='text-transform: none;'>$_('Activated relay'):</td>
-					<td title="$_('If the check box is marked, the relay is activated before turning on the stations.')">
+					<td title=$:{json.dumps(_(u'If the check box is marked, the relay is activated before turning on the stations.'), ensure_ascii=False)}>
 					<input type="checkbox" name="relay" ${"checked" if plugin_options['relay'] else ""}></td>
 				</tr>
 				<tr>

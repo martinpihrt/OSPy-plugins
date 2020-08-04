@@ -12,6 +12,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Monthly Water Level'
+MENU =  _('Package: Monthly Water Level')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

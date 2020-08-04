@@ -25,6 +25,7 @@ from ospy.inputs import inputs
 
 
 NAME = 'Remote FTP Control'
+MENU =  _('Package: Remote FTP Control')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

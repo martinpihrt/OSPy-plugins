@@ -18,6 +18,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Direct 16 Relay Outputs'
+MENU =  _('Package: Direct 16 Relay Outputs')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

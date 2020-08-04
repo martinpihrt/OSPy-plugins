@@ -18,6 +18,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Voltage and Temperature Monitor'
+MENU =  _('Package: Voltage and Temperature Monitor')
 LINK = 'settings_page'
 
 pcf_options = PluginOptions(

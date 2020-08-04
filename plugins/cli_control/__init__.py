@@ -19,6 +19,7 @@ from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 
 NAME = 'CLI Control'         ### name for plugin in plugin manager ###
+MENU =  _('Package: CLI Control')
 LINK = 'settings_page'       ### link for page in plugin manager ###
  
 plugin_options = PluginOptions(

@@ -22,6 +22,7 @@ from ospy import helpers
 
 
 NAME = 'Pressure Monitor'
+MENU =  _('Package: Pressure Monitor')
 LINK = 'settings_page'
 
 pressure_options = PluginOptions(

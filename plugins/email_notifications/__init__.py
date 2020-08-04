@@ -28,6 +28,7 @@ from ospy.helpers import datetime_string, get_input
 
 
 NAME = 'E-mail Notifications'
+MENU =  _('Package: E-mail Notifications')
 LINK = 'settings_page'
 
 email_options = PluginOptions(

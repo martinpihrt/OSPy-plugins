@@ -30,12 +30,12 @@ $var page: plugins
         <table class="optionList">
         <tr>
           <td style='text-transform: none;'>$_('Enable voice'):</td>
-          <td title="$_('If the check box is marked, the extension will be active.')">
+          <td title=$:{json.dumps(_(u'If the check box is marked, the extension will be active.'), ensure_ascii=False)}>
           <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Enable pre start voice'):</td>
-          <td title="$_('The sound is played before turning on the station.')">
+          <td title=$:{json.dumps(_(u'The sound is played before turning on the station.'), ensure_ascii=False)}>
           <input type="checkbox" name="voice_start_station" ${"checked" if plugin_options['voice_start_station'] else ""}> (voice.mp3)</td> 
           <td>
               <a href="?test=voice.mp3" class="button upload">$_('Test playing')</a> 
@@ -43,27 +43,27 @@ $var page: plugins
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Pre run time'):</td>
-          <td title="$_('How many seconds before turning on stations play sound.')">   
+          <td title=$:{json.dumps(_(u'How many seconds before turning on stations play sound.'), ensure_ascii=False)}>  
           <input name='pre_time' type='number' min="1" max="59" value="$plugin_options['pre_time']"> (1 - 59s)</td> 
         </tr>
         <tr>
-          <td style='text-transform: none;'>$_('Repeat playback'):</td>
-          <td title="$_('How many times to repeat the same message.')">   
+          <td style='text-transform: none;'>$_('Repeat playback'):</td>  
+          <td title=$:{json.dumps(_(u'How many times to repeat the same message.'), ensure_ascii=False)}>   
           <input name='repeating' type='number' min="1" max="3" value="$plugin_options['repeating']"> (1 - 3x)</td> 
         </tr>
         <tr>
-          <td style='text-transform: none;'>$_('Master volume'):</td>
-          <td title="$_('Setting the Raspberry Pi output volume (0-100%).')">   
+          <td style='text-transform: none;'>$_('Master volume'):</td> 
+          <td title=$:{json.dumps(_(u'Setting the Raspberry Pi output volume (0-100%).'), ensure_ascii=False)}> 
           <input name='volume' type='number' min="0" max="100" value="$plugin_options['volume']"> (0 - 100%)</td> 
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Play only from'):</td>
-          <td title="$_('Play notifications only from this time (hours).')">   
+          <td title=$:{json.dumps(_(u'Play notifications only from this time (hours).'), ensure_ascii=False)}>  
           <input name='start_hour' type='number' min="0" max="23" value="$plugin_options['start_hour']"> (0 - 23h)</td> 
         </tr>
         <tr>
-          <td style='text-transform: none;'>$_('Play only to'):</td>
-          <td title="$_('Play notifications only to this time (hours).')">   
+          <td style='text-transform: none;'>$_('Play only to'):</td>  
+          <td title=$:{json.dumps(_(u'Play notifications only to this time (hours).'), ensure_ascii=False)}> 
           <input name='stop_hour' type='number' min="0" max="23" value="$plugin_options['stop_hour']"> (0 - 23h)</td>
         </tr>
         <tr>
@@ -71,7 +71,7 @@ $var page: plugins
         <tr>
         <tr>
           <td></td>
-          <td title="$_('Skip voice notification for these stations.')"> 
+          <td title=$:{json.dumps(_(u'Skip voice notification for these stations.'), ensure_ascii=False)}>  
           <select multiple name="skip_stations" width="250" style="width: 250px">
               $for station in [station for station in stations if station.enabled]:
                  <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['skip_stations'] else ""}>${station.name} (Output ${str(station.index+1)})</option>
@@ -83,8 +83,8 @@ $var page: plugins
         </tr>
         $for station in stations.get():
             <tr>
-              <td style='text-transform: none;'>${station.name}</td>
-              <td title="$_('Select voice for this station.')"> 
+              <td style='text-transform: none;'>${station.name}</td> 
+              <td title=$:{json.dumps(_(u'Select voice for this station.'), ensure_ascii=False)}>  
               <select name="vs${station.index}" width="250" style="width: 250px">
               $for t in [' ', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']:
                  <option value="${t}" ${" selected" if plugin_options['vs%d' % station.index]==t else ""}><b>${t}</b></option>
@@ -110,7 +110,7 @@ $var page: plugins
      <table class="optionList">
         <tr>
           <td style='text-transform: none;'>$_('Upload mp3 file'):</td>
-          <td title="$_('MP3 file must have a name') voice.mp3">
+          <td title=$:{json.dumps(_(u'MP3 file must have a name'), ensure_ascii=False)}>  
               <input type="file" name="myfile" class="upload"/>
           </td>
           <td>

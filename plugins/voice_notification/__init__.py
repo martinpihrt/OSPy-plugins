@@ -24,6 +24,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Voice Notification'
+MENU =  _('Package: Voice Notification')
 LINK = 'settings_page'
 
 MP3_FILE_FOLDER = './plugins/voice_notification/static/mp3'

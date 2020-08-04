@@ -31,6 +31,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Ping Monitor'
+MENU =  _('Package: Ping Monitor')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(

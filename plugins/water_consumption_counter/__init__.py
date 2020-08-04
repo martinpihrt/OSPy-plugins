@@ -20,6 +20,7 @@ from ospy.options import options
 
 
 NAME = 'Water Consumption Counter'  ### name for plugin in plugin manager ###
+MENU =  _('Package: Water Consumption Counter')
 LINK = 'settings_page'              ### link for page in plugin manager ###
  
 plugin_options = PluginOptions(

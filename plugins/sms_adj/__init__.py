@@ -25,6 +25,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'SMS Modem'
+MENU =  _('Package: SMS Modem')
 LINK = 'settings_page'
 
 sms_options = PluginOptions(
