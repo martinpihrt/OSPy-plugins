@@ -104,14 +104,14 @@ class weather_to_delay(Thread):
                     delaytime = int(plugin_options['netatmo_interval']) * 60                    
 
                     if zrain > 0:
-                        log.info(NAME, 'Rain detected: ' + ': %.1fmm' % zrain + '. Adding delay of ' + str(delay))
-                        rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delay))
+                        log.info(NAME, _('Netatmo detected Rain') + ': %.1fmm' % zrain + _('Adding delay of') + ' ' + str(delaytime) + '.')
+                        rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                         stop_onrain()
 
                     else:
                         if 'precipProbability' in current_data:
                             if current_data['precipProbability'] > 0.75:
-                               log.info(NAME, _('Rain detected') + ': ' + current_data['summary'] + '. Adding delay of ' + str(plugin_options['delay_duration']))
+                               log.info(NAME, _('Weather detected Rain') + ': ' + current_data['summary'] + _('Adding delay of') + ' ' + str(plugin_options['delay_duration']) + '.')
                                rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(plugin_options['delay_duration']))
                                stop_onrain()
 
