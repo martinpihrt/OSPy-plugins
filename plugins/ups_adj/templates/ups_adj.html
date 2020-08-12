@@ -19,7 +19,7 @@ function draw_graph(result) {
 
     for (var i = 0; i < result.length; i++) {
         var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>$_('Reason')</th><th></th></tr>";
+        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8')} + "</th><th></th></tr>";
         var texts = [];
         var txt_body = "";
         var txt_footer = "</table>";
@@ -31,9 +31,9 @@ function draw_graph(result) {
             var minutes = "0" + date.getMinutes();
             var seconds = "0" + date.getSeconds();
             var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-            txt_body += "<tr><td>$_('Actual Value')</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+            txt_body += "<tr><td>" + $:{json.dumps(_('Actual Value'), ensure_ascii=False).encode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
             texts.push("<b>" + result[i]['station'] + "</b> " + toXSDate(date) + "<br>" + formattedTime + "<br>" + txt_header + txt_body + txt_footer);
-            txt_body = "<tr><td>$_('Previous Value')</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+            txt_body = "<tr><td>" + $:{json.dumps(_('Previous Value'), ensure_ascii=False).encode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
         }
 
         if (i >= legend_items.length || legend_items.eq(i).children().children().attr("data") == 1)
@@ -46,7 +46,7 @@ function draw_graph(result) {
             graph_text.push(texts);
         }
     }
-
+    var yLabels = $:{json.dumps(_('Measured status on/off'), ensure_ascii=False).encode('utf8')};
     return jQuery.plot("#graph-placeholder", data, {
         series: {
             lines: {
@@ -72,7 +72,7 @@ function draw_graph(result) {
         },
         yaxes: [{
             position: 'left',
-            axisLabel: '$_('Measured status on/off')',
+            axisLabel: yLabels
         }],
         selection: {
             mode: 'x'
