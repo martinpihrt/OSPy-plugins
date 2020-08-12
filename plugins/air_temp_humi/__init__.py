@@ -20,6 +20,8 @@ from ospy.helpers import datetime_string
 from ospy import helpers
 from ospy.stations import stations
 
+from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+
 import RPi.GPIO as GPIO
 
 # Thank's: https://github.com/szazo/DHT11_Python
@@ -105,7 +107,9 @@ class Sender(Thread):
         last_millis = 0 # timer for save log
         var1 = True     # Auxiliary variable for once on
         var2 = True     # Auxiliary variable for once off
-   
+
+        TempInFooter = showInFooter() #  instantiate class to enable data in footer
+
         while not self._stop.is_set():
             try:
                 if plugin_options['enabled']:        # if plugin is enabled   
@@ -163,10 +167,19 @@ class Sender(Thread):
  
                     if plugin_options['ds_enabled']:  # if in plugin is enabled DS18B20
                        DS18B20_read_data()            # get read DS18B20 temperature data to global tempDS[xx]
-                        
+                       
+                       TempInFooter.button = "air_temp_humi/settings"   # button redirect on footer
+                       TempInFooter.label =  _('Temperature')           # label on footer
+                       TempInFooter.unit  = " "                         # unit on footer
+
+                       tempText = ""
                        for i in range(0, plugin_options['ds_used']):
                           self.status['DS%d' % i] = tempDS[i]
                           log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
+                          tempText += u' %s' % plugin_options['label_ds%d' % i] + u' %.1f \u2103' % self.status['DS%d' % i] 
+                          
+                       TempInFooter.val = tempText.encode('utf8')    # value on footer
+                                                 
 
                     if plugin_options['enable_log']:  # enabled logging
                           millis = int(round(time.time() * 1000))

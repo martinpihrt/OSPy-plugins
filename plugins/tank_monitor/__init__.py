@@ -24,6 +24,8 @@ from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 
+from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+
 
 NAME = 'Water Tank Monitor'
 MENU =  _('Package: Water Tank Monitor')
@@ -95,6 +97,8 @@ class Sender(Thread):
         level_in_tank = get_sonic_tank_cm(sonic_cm)
         self._sleep(5)
 
+        InFooter = showInFooter() #  instantiate class to enable data in footer
+
         while not self._stop.is_set():
             try:
                 if tank_options['use_sonic']: 
@@ -106,6 +110,12 @@ class Sender(Thread):
  
                     sonic_cm = get_sonic_cm()
                     level_in_tank = get_sonic_tank_cm(sonic_cm)
+
+                    InFooter.button = "tank_monitor/settings"       # button redirect on footer
+                    InFooter.label =  _('Tank')                     # label on footer
+                    tempText = ""
+                    InFooter.unit  = ""                             # unit on footer
+
                     if level_in_tank > 0:                                                 # if level is ok
 
                         status['level']   = level_in_tank
@@ -116,8 +126,10 @@ class Sender(Thread):
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
                         if tank_options['check_liters']: # display in liters
+                            tempText =  str(status['volume']) + ' ' + _('liters') + ', ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%)')
                             log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('liters') + '.')
                         else:
+                            tempText =  str(status['volume']) + ' ' + _('m<sup>3</sup>') + ', ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%)')
                             log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3') + '.')
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.') 
@@ -179,11 +191,13 @@ class Sender(Thread):
                                last_millis = millis
                                update_log()
                     else:
+                        tempText =  _('FAULT')
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('Water level: Error.'))
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')    
 
+                    InFooter.val = tempText.encode('utf8')          # value on footer 
                     self._sleep(3)                      
                                         
                 else:

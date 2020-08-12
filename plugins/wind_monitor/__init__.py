@@ -21,6 +21,8 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy import helpers
 
+from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+
 
 NAME = 'Wind Speed Monitor'
 MENU =  _('Package: Wind Speed Monitor')
@@ -82,6 +84,12 @@ class WindSender(Thread):
         disable_text = True
         val = 0
         maxval = 0
+        
+        InFooter = showInFooter() #  instantiate class to enable data in footer
+        InFooter.label = _('Wind Speed')            # label on footer
+        InFooter.val = '-'                          # value on footer
+        InFooter.unit = ''                          # unit on footer
+        InFooter.button = "wind_monitor/settings"   # button redirect on footer
 
         while not self._stop.is_set():
             try:
@@ -155,6 +163,15 @@ class WindSender(Thread):
                             if (millis - last_millis) > interval:
                                last_millis = millis
                                update_log()
+
+                        tempText = ""
+                        tempText +=  u' ' + _(u'm/sec') + ' (' +  _('Maximal speed') + ' ' 
+                        tempText +=  str(wind_options['log_maxspeed'])
+                        tempText +=  ' ' + _(u'm/sec') + ')' 
+                        InFooter.val = round(val,2)                # value on footer
+                        InFooter.unit = tempText.encode('utf8')    # unit on footer
+                        InFooter.button = "wind_monitor/settings"  # button redirect on footer    
+
                     else:
                         self._sleep(1)                                
                                       
@@ -384,6 +401,25 @@ def create_default_graph():
     ]
     write_graph_log(graph_data)  
     log.debug(NAME, _('Creating default graph log files OK'))                
+
+
+#from threading import Thread
+
+def footer_test():
+    """ Example of plugin data display in UI footer. Run in background thread. """
+    example = showInFooter() #  instantiate class to enable data in footer
+    example.label = _('Wind Speed')
+    example.val = 0
+    example.unit = ' ' + _('m/sec')
+    
+    #while True: #  Simulate plugin data
+    #    example.val += 2 #  update plugin data
+    #    time.sleep(2)
+  
+# Run footer_test() in background thread
+#ft = Thread(target = footer_test)
+#ft.daemon = True
+#ft.start()    
 
 
 ################################################################################

@@ -19,6 +19,8 @@ from ospy.weather import weather
 from plugins import PluginOptions, plugin_url
 from time import strftime
 
+from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+
 from sys import version_info
 import imghdr
 import warnings
@@ -77,6 +79,11 @@ class weather_to_delay(Thread):
             self._sleep_time -= 1
 
     def run(self):
+        InFooter = showInFooter() #  instantiate class to enable data in footer
+        InFooter.label = _('Weather')               # label on footer
+        InFooter.val = ''                           # value on footer
+        InFooter.unit = ''                          # unit on footer
+        InFooter.button = "weather_based_rain_delay/settings"   # button redirect on footer
         while not self._stop.is_set():
             try:
                 if plugin_options['enabled']:  # if Weather-based Rain Delay plug-in is enabled
@@ -101,28 +108,41 @@ class weather_to_delay(Thread):
                     log.info(NAME, _('Checking rain status') + '...')
                     current_data = weather.get_current_data()
 
-                    delaytime = int(plugin_options['netatmo_interval']) * 60                    
+                    delaytime = int(plugin_options['delay_duration'])   
+                    delaytimeAtmo = int(plugin_options['netatmo_interval'])*60                
 
                     if zrain > 0:
-                        log.info(NAME, _('Netatmo detected Rain') + ': %.1fmm' % zrain + _('Adding delay of') + ' ' + str(delaytime) + '.')
+                        log.info(NAME, _('Netatmo detected Rain') + ': %.1f ' % zrain + _('mm') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours') + '.')
+                        tempText = ""
+                        tempText += _('Netatmo detected Rain') + u' %.1f ' % zrain + _('mm') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours') 
+                        InFooter.val = tempText.encode('utf8')    # value on footer
                         rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                         stop_onrain()
+                        self._sleep(delaytimeAtmo)
+                        
 
                     else:
                         if 'precipProbability' in current_data:
                             if current_data['precipProbability'] > 0.75:
-                               log.info(NAME, _('Weather detected Rain') + ': ' + current_data['summary'] + _('Adding delay of') + ' ' + str(plugin_options['delay_duration']) + '.')
-                               rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(plugin_options['delay_duration']))
-                               stop_onrain()
+                                log.info(NAME, _('Weather detected Rain') + ': ' + current_data['summary'] + _('Adding delay of') + ' ' + str(plugin_options['delay_duration']) + '.')
+                                rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(plugin_options['delay_duration']))
+                                stop_onrain()
+                                tempText = ""
+                                tempText += _('Weather detected Rain') 
 
                             elif current_data['precipProbability'] > 0.1:
                                 log.info(NAME, _('No rain detected') + ': ' + current_data['summary'] + '. ' + _('No action.'))
+                                tempText = ""
+                                tempText +=  _('No rain detected') 
 
                             else:
                                 log.info(NAME, _('Good weather detected') + ': ' + current_data['summary'] + '. ' + _('Removing rain delay.'))
+                                tempText = ""
+                                tempText += _('Good weather detected') 
                                 if NAME in rain_blocks:
                                     del rain_blocks[NAME]
 
+                        InFooter.val = tempText.encode('utf8')    # value on footer
                         self._sleep(3600)
                                          
                 else:

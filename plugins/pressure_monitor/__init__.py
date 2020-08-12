@@ -20,6 +20,8 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy import helpers
 
+from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+
 
 NAME = 'Pressure Monitor'
 MENU =  _('Package: Pressure Monitor')
@@ -91,6 +93,8 @@ class PressureSender(Thread):
 
         last_time = int(time.time())
         actual_time = int(time.time())
+
+        InFooter = showInFooter() #  instantiate class to enable data in footer
 
         while not self._stop.is_set():
             try:
@@ -164,10 +168,17 @@ class PressureSender(Thread):
                         log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())  
                     send = False    
                 
+                InFooter.button = "pressure_monitor/settings"   # button redirect on footer
+                InFooter.label =  _('Pressure')                 # label on footer
+                InFooter.unit  = " "                            # unit on footer
+                tempText = ""
                 if get_check_pressure():
                     self.status['Pstate%d'] = _('INACTIVE')
+                    tempText = _('INACTIVE')
                 else:                
                     self.status['Pstate%d'] = _('ACTIVE')
+                    tempText = _('ACTIVE')
+                InFooter.val = tempText.encode('utf8')          # value on footer    
                 
                 self._sleep(2)
 

@@ -20,6 +20,8 @@ from ospy.helpers import datetime_string
 from ospy.options import options
 from ospy import helpers
 
+from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+
 
 NAME = 'UPS Monitor'
 MENU =  _('Package: UPS Monitor')
@@ -95,16 +97,23 @@ class UPSSender(Thread):
 
         last_time = int(time.time())
 
+        InFooter = showInFooter() #  instantiate class to enable data in footer
+
         while not self._stop.is_set():
             try:
                 if ups_options['ups']:                                     # if ups plugin is enabled
                     test = get_check_power()
-
+                
                     if not test:
                         text = _('OK')
                     else:
                         text = _('FAULT')
                     self.status['power%d'] = text
+
+                    InFooter.button = "ups_adj/settings"            # button redirect on footer
+                    InFooter.label =  _('UPS')                      # label on footer
+                    InFooter.unit  = ""                             # unit on footer
+                    InFooter.val = text.encode('utf8')              # value on footer
 
                     if not test:
                         last_time = int(time.time())
