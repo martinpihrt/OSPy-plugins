@@ -94,7 +94,9 @@ class PressureSender(Thread):
         last_time = int(time.time())
         actual_time = int(time.time())
 
-        InFooter = showInFooter() #  instantiate class to enable data in footer
+        press_mon = showInFooter() #  instantiate class to enable data in footer
+        press_mon.button = "pressure_monitor/settings"   # button redirect on footer
+        press_mon.label =  _('Pressure')                 # label on footer
 
         while not self._stop.is_set():
             try:
@@ -168,9 +170,6 @@ class PressureSender(Thread):
                         log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())  
                     send = False    
                 
-                InFooter.button = "pressure_monitor/settings"   # button redirect on footer
-                InFooter.label =  _('Pressure')                 # label on footer
-                InFooter.unit  = " "                            # unit on footer
                 tempText = ""
                 if get_check_pressure():
                     self.status['Pstate%d'] = _('INACTIVE')
@@ -178,7 +177,7 @@ class PressureSender(Thread):
                 else:                
                     self.status['Pstate%d'] = _('ACTIVE')
                     tempText = _('ACTIVE')
-                InFooter.val = tempText.encode('utf8')          # value on footer    
+                press_mon.val = tempText.encode('utf8')          # value on footer    
                 
                 self._sleep(2)
 

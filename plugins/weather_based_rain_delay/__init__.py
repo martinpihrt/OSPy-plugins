@@ -79,11 +79,11 @@ class weather_to_delay(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        InFooter = showInFooter() #  instantiate class to enable data in footer
-        InFooter.label = _('Weather')               # label on footer
-        InFooter.val = ''                           # value on footer
-        InFooter.unit = ''                          # unit on footer
-        InFooter.button = "weather_based_rain_delay/settings"   # button redirect on footer
+        weather_mon = showInFooter()                               #  instantiate class to enable data in footer
+        weather_mon.label = _('Weather')                           # label on footer
+        weather_mon.button = "weather_based_rain_delay/settings"   # button redirect on footer
+        weather_mon.val = '---'                                    # value on footer
+
         while not self._stop.is_set():
             try:
                 if plugin_options['enabled']:  # if Weather-based Rain Delay plug-in is enabled
@@ -115,7 +115,7 @@ class weather_to_delay(Thread):
                         log.info(NAME, _('Netatmo detected Rain') + ': %.1f ' % zrain + _('mm') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours') + '.')
                         tempText = ""
                         tempText += _('Netatmo detected Rain') + u' %.1f ' % zrain + _('mm') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours') 
-                        InFooter.val = tempText.encode('utf8')    # value on footer
+                        weather_mon.val = tempText.encode('utf8')    # value on footer
                         rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                         stop_onrain()
                         self._sleep(delaytimeAtmo)
@@ -142,7 +142,7 @@ class weather_to_delay(Thread):
                                 if NAME in rain_blocks:
                                     del rain_blocks[NAME]
 
-                        InFooter.val = tempText.encode('utf8')    # value on footer
+                        weather_mon.val = tempText.encode('utf8')    # value on footer
                         self._sleep(3600)
                                          
                 else:

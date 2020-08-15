@@ -85,11 +85,10 @@ class WindSender(Thread):
         val = 0
         maxval = 0
         
-        InFooter = showInFooter() #  instantiate class to enable data in footer
-        InFooter.label = _('Wind Speed')            # label on footer
-        InFooter.val = '-'                          # value on footer
-        InFooter.unit = ''                          # unit on footer
-        InFooter.button = "wind_monitor/settings"   # button redirect on footer
+        wind_mon = showInFooter() #  instantiate class to enable data in footer
+        wind_mon.label = _('Wind Speed')            # label on footer
+        wind_mon.val = '---'                        # value on footer
+        wind_mon.button = "wind_monitor/settings"   # button redirect on footer
 
         while not self._stop.is_set():
             try:
@@ -165,13 +164,11 @@ class WindSender(Thread):
                                update_log()
 
                         tempText = ""
-                        tempText +=  u' ' + _(u'm/sec') + ' (' +  _('Maximal speed') + ' ' 
+                        tempText +=  str(round(val,2)) + ' ' + _(u'm/sec') + ' (' +  _(u'Maximal speed') + ' ' 
                         tempText +=  str(wind_options['log_maxspeed'])
                         tempText +=  ' ' + _(u'm/sec') + ')' 
-                        InFooter.val = round(val,2)                # value on footer
-                        InFooter.unit = tempText.encode('utf8')    # unit on footer
-                        InFooter.button = "wind_monitor/settings"  # button redirect on footer    
-
+                        wind_mon.val = tempText.encode('utf8')                # value on footer
+                        
                     else:
                         self._sleep(1)                                
                                       

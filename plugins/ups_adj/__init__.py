@@ -97,7 +97,9 @@ class UPSSender(Thread):
 
         last_time = int(time.time())
 
-        InFooter = showInFooter() #  instantiate class to enable data in footer
+        ups_mon = showInFooter() #  instantiate class to enable data in footer
+        ups_mon.button = "ups_adj/settings"            # button redirect on footer
+        ups_mon.label =  _('UPS')                      # label on footer
 
         while not self._stop.is_set():
             try:
@@ -110,10 +112,7 @@ class UPSSender(Thread):
                         text = _('FAULT')
                     self.status['power%d'] = text
 
-                    InFooter.button = "ups_adj/settings"            # button redirect on footer
-                    InFooter.label =  _('UPS')                      # label on footer
-                    InFooter.unit  = ""                             # unit on footer
-                    InFooter.val = text.encode('utf8')              # value on footer
+                    ups_mon.val = text.encode('utf8')              # value on footer
 
                     if not test:
                         last_time = int(time.time())

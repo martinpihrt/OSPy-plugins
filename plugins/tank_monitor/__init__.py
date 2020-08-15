@@ -97,7 +97,9 @@ class Sender(Thread):
         level_in_tank = get_sonic_tank_cm(sonic_cm)
         self._sleep(5)
 
-        InFooter = showInFooter() #  instantiate class to enable data in footer
+        tank_mon = showInFooter() #  instantiate class to enable data in footer
+        tank_mon.button = "tank_monitor/settings"       # button redirect on footer
+        tank_mon.label =  _('Tank')                     # label on footer
 
         while not self._stop.is_set():
             try:
@@ -111,10 +113,7 @@ class Sender(Thread):
                     sonic_cm = get_sonic_cm()
                     level_in_tank = get_sonic_tank_cm(sonic_cm)
 
-                    InFooter.button = "tank_monitor/settings"       # button redirect on footer
-                    InFooter.label =  _('Tank')                     # label on footer
-                    tempText = ""
-                    InFooter.unit  = ""                             # unit on footer
+                    tempText = ""                    
 
                     if level_in_tank > 0:                                                 # if level is ok
 
@@ -197,7 +196,7 @@ class Sender(Thread):
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')    
 
-                    InFooter.val = tempText.encode('utf8')          # value on footer 
+                    tank_mon.val = tempText.encode('utf8')          # value on footer 
                     self._sleep(3)                      
                                         
                 else:
@@ -224,8 +223,7 @@ class Sender(Thread):
             except Exception:
                 log.clear(NAME)
                 log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(60)
-
+                self._sleep(60)            
 
 sender = None
 

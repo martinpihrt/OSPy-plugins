@@ -21,6 +21,7 @@ from ospy import helpers
 from ospy.stations import stations
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+#from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
 import RPi.GPIO as GPIO
 
@@ -69,6 +70,7 @@ plugin_options = PluginOptions(
 
 
 class Sender(Thread):
+    
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
@@ -108,8 +110,15 @@ class Sender(Thread):
         var1 = True     # Auxiliary variable for once on
         var2 = True     # Auxiliary variable for once off
 
-        TempInFooter = showInFooter() #  instantiate class to enable data in footer
+        air_temp = showInFooter() #  instantiate class to enable data in footer
+        air_temp.button = "air_temp_humi/settings"   # button redirect on footer
+        air_temp.label =  _(u'Temperature')           # label on footer
 
+        #flow = showOnTimeline()  #  instantiate class to enable data display
+        #flow.unit = _(u'Liters')
+        #flow.val = 10
+        #flow.clear
+        
         while not self._stop.is_set():
             try:
                 if plugin_options['enabled']:        # if plugin is enabled   
@@ -131,7 +140,7 @@ class Sender(Thread):
                       except:
                         log.clear(NAME)
                         log.info(NAME, datetime_string())
-                        log.info(NAME, _('DHT11 data is not valid'))                                     
+                        log.info(NAME, _(u'DHT11 data is not valid'))                                     
                       
                       if Humidity and Temperature != 0:
                         self.status['temp'] = Temperature
@@ -140,7 +149,7 @@ class Sender(Thread):
                         log.info(NAME, _('Humidity') + ' DHT: ' + u'%.1f' % Humidity + ' %RH')
                         if plugin_options['enabled_reg']:
                           OT = _('ON') if self.status['outp'] is 1 else _('OFF') 
-                          log.info(NAME, _('Output') + ': ' + u'%s' % OT)
+                          log.info(NAME, _(u'Output') + ': ' + u'%s' % OT)
 
                         station = stations.get(plugin_options['control_output'])
 
@@ -150,7 +159,7 @@ class Sender(Thread):
                             var1 = False
                             var2 = True
                             self.status['outp'] = 1
-                            log.debug(NAME, _('Station output was turned on.'))
+                            log.debug(NAME, _(u'Station output was turned on.'))
                             update_log(self.status)
                              
                           if Humidity < (plugin_options['humidity_off'] - plugin_options['hysteresis']/2) and var2 is True:  
@@ -158,7 +167,7 @@ class Sender(Thread):
                              var1 = True
                              var2 = False 
                              self.status['outp'] = 0
-                             log.debug(NAME, _('Station output was turned off.'))
+                             log.debug(NAME, _(u'Station output was turned off.'))
                              update_log(self.status)    
 
                         # Activate again if needed:
@@ -167,19 +176,14 @@ class Sender(Thread):
  
                     if plugin_options['ds_enabled']:  # if in plugin is enabled DS18B20
                        DS18B20_read_data()            # get read DS18B20 temperature data to global tempDS[xx]
-                       
-                       TempInFooter.button = "air_temp_humi/settings"   # button redirect on footer
-                       TempInFooter.label =  _('Temperature')           # label on footer
-                       TempInFooter.unit  = " "                         # unit on footer
 
                        tempText = ""
                        for i in range(0, plugin_options['ds_used']):
                           self.status['DS%d' % i] = tempDS[i]
-                          log.info(NAME, _('Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
+                          log.info(NAME, _(u'Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
                           tempText += u' %s' % plugin_options['label_ds%d' % i] + u' %.1f \u2103' % self.status['DS%d' % i] 
                           
-                       TempInFooter.val = tempText.encode('utf8')    # value on footer
-                                                 
+                       air_temp.val = tempText.encode('utf8')    # value on footer                                                 
 
                     if plugin_options['enable_log']:  # enabled logging
                           millis = int(round(time.time() * 1000))
@@ -191,9 +195,9 @@ class Sender(Thread):
                 self._sleep(5)    
  
             except Exception:
-                log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
-
+          
 sender = None
 
 ################################################################################
@@ -241,7 +245,7 @@ def DS18B20_read_data():
 
        # Test recieved data byte 1 and 2
        if i2c_data[1] == 255 or i2c_data[2] == 255:         
-          log.error(NAME, _('Data is not correct. Please try again later.'))
+          log.error(NAME, _(u'Data is not correct. Please try again later.'))
           return [255,255,255,255,255,255] # data has error 
 
        # Each float temperature from the hw board is 5 bytes long (5byte * 6 probe = 30 bytes).
@@ -267,7 +271,7 @@ def DS18B20_read_data():
           tempDS[i] = teplota[i]      # global temperature for all probe DS18B20
 
     except Exception:
-      log.debug(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())       
+      log.debug(NAME, _(u'Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())       
       time.sleep(0.5)
       pass
       return [255,255,255,255,255,255] # try data has error     
@@ -387,7 +391,7 @@ def update_log(status):
     except: 
         create_default_graph()
         graph_data = read_graph_log()
-        log.debug(NAME, _('Creating default graph log files OK'))
+        log.debug(NAME, _(u'Creating default graph log files OK'))
 
     timestamp = int(time.time())
 
@@ -429,7 +433,7 @@ def update_log(status):
      
     write_graph_log(graph_data)
 
-    log.info(NAME, _('Saving to log files OK'))
+    log.info(NAME, _(u'Saving to log files OK'))
 
 
 def create_default_graph():
@@ -486,7 +490,7 @@ class settings_page(ProtectedPage):
         if sender is not None and delete:
            write_log([])
            create_default_graph()
-           log.info(NAME, _('Deleted all log files OK'))
+           log.info(NAME, _(u'Deleted all log files OK'))
 
            raise web.seeother(plugin_url(settings_page), True)
 
