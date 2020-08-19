@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt' 
+# https://www.eclipse.org/paho/clients/python/docs/
 
 import json
 import time
