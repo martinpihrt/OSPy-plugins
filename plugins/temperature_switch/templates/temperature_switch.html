@@ -1,0 +1,184 @@
+$def with(plugin_options, events)
+
+$var title: $_('Temperature Switch')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Temperature Switch')</div>
+    <H1>UNDER CONSTRUCTION!</H1>
+    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows regulation from DS18B20 sensors connected to the external hardware board').</p>        
+    <form id="pluginForm" action="$plugins.plugin_url('temperature_switch.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable Control A'):</b></td>
+                <td>
+                    <input name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+            <td style='text-transform: none;'>$_('Probe input for ON'):</td>
+                <td>
+                    <select name="probe_A_on">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_A_on"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>                      
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
+                <td>
+                    <input name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
+                </td>
+            </tr>
+            <tr>
+            <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
+                <td>
+                    <select name="probe_A_off">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_A_off"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
+                <td>
+                    <input name='temp_a_off' type='number' min='0' max='100' value='$plugin_options["temp_a_off"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output for A'):</td>
+                <td>
+                    <select name="control_output_A">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>             
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable Control B'):</b></td>
+                <td>
+                    <input name='enabled_b' type='checkbox'${" checked" if plugin_options['enabled_b'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+            <td style='text-transform: none;'>$_('Probe input for ON'):</td>
+                <td>
+                    <select name="probe_B_on">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_B_on"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>                      
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
+                <td>
+                    <input name='temp_b_on' type='number' min='0' max='100' value='$plugin_options["temp_b_on"]'>
+                </td>
+            </tr>
+            <tr>
+            <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
+                <td>
+                    <select name="probe_B_off">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_B_off"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
+                <td>
+                    <input name='temp_c_off' type='number' min='0' max='100' value='$plugin_options["temp_c_off"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output for C'):</td>
+                <td>
+                    <select name="control_output_C">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_C"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>             
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>  
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable Control C'):</b></td>
+                <td>
+                    <input name='enabled_c' type='checkbox'${" checked" if plugin_options['enabled_c'] else ""}>   
+                </td>
+            </tr>   
+            <tr>
+            <td style='text-transform: none;'>$_('Probe input for ON'):</td>
+                <td>
+                    <select name="probe_C_on">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_C_on"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>                      
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
+                <td>
+                    <input name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
+                </td>
+            </tr>
+            <tr>
+            <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
+                <td>
+                    <select name="probe_C_off">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_C_off"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
+                <td>
+                    <input name='temp_a_off' type='number' min='0' max='100' value='$plugin_options["temp_a_off"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output for C'):</td>
+                <td>
+                    <select name="control_output_C">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_C"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>  
+            <tr>
+                <td style='text-transform: none;'><b>$_('Status'):</b></td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="11" cols="45" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+
+
+
