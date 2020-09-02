@@ -1,8 +1,6 @@
 Temperature Switch Readme
 ====
 
-!UNDER CONSTRUCTION!
-
 This plugin needs enabled and corect setup  the "Air Temperature and Humidity Monitor".
 This plugin allows regulation from DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03). 
 Visit [Martin Pihrt's blog](https://pihrt.com/elektronika/380-moje-raspberry-pi-plugin-ospy-mereni-teploty-pomoci-ds18b20). for more information for HW.

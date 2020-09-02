@@ -21,8 +21,6 @@ from ospy.stations import stations
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
-import RPi.GPIO as GPIO
-
 
 NAME = 'Temperature Switch'
 MENU =  _('Package: Temperature Switch')
@@ -31,24 +29,31 @@ LINK = 'settings_page'
 
 plugin_options = PluginOptions(
     NAME,
-    {'enabled_a': False,
-     'enabled_b': False,
-     'enabled_c': False,
-     'probe_A_on': _('None'),
-     'probe_B_on': _('None'),
-     'probe_C_on': _('None'),
-     'probe_A_off': _('None'),
-     'probe_B_off': _('None'),
-     'probe_C_off': _('None'),
-     'temp_a_on': 30,
-     'temp_b_on': 40,
-     'temp_c_on': 50,
-     'temp_a_off': 25,
-     'temp_b_off': 35,
-     'temp_c_off': 45,
-     'control_output_A': _('None'),
-     'control_output_B': _('None'),
-     'control_output_C': _('None')
+    {'enabled_a': False,   # enable or disable regulation A
+     'enabled_b': False,   # enable or disable regulation B
+     'enabled_c': False,   # enable or disable regulation C
+     'probe_A_on': 0,      # for selector temperature probe A ON (0-5)
+     'probe_B_on': 0,      # for selector temperature probe B ON (0-5)
+     'probe_C_on': 0,      # for selector temperature probe C ON (0-5)
+     'probe_A_off': 0,     # for selector temperature probe A OFF (0-5)
+     'probe_B_off': 0,     # for selector temperature probe B OFF (0-5)
+     'probe_C_off': 0,     # for selector temperature probe C OFF (0-5)
+     'temp_a_on': 30,      # temperature for output A ON
+     'temp_b_on': 40,      # temperature for output B ON
+     'temp_c_on': 50,      # temperature for output C ON
+     'temp_a_off': 25,     # temperature for output A OFF
+     'temp_b_off': 35,     # temperature for output B OFF
+     'temp_c_off': 45,     # temperature for output C OFF
+     'control_output_A': 0,# selector for output A (0 to station count)
+     'control_output_B': 1,# selector for output B (0 to station count)
+     'control_output_C': 2,# selector for output C (0 to station count)
+     'ds_name_0': '',      # name for DS probe 1 from air temp humi plugin
+     'ds_name_1': '',      # name for DS probe 2 from air temp humi plugin
+     'ds_name_2': '',      # name for DS probe 3 from air temp humi plugin
+     'ds_name_3': '',      # name for DS probe 4 from air temp humi plugin
+     'ds_name_4': '',      # name for DS probe 5 from air temp humi plugin
+     'ds_name_5': '',      # name for DS probe 6 from air temp humi plugin
+     'ds_count': 0         # DS probe count from air temp humi plugin
      }
 )
 
@@ -81,11 +86,154 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        
+        temperature_ds = [-127,-127,-127,-127,-127,-127]
+        msg_a_on = True
+        msg_a_off = True
+        msg_b_on = True
+        msg_b_off = True
+        msg_c_on = True
+        msg_c_off = True                
+
+        temp_sw = showInFooter() #  instantiate class to enable data in footer
+        temp_sw.button = "temperature_switch/settings"   # button redirect on footer
+        temp_sw.label =  _(u'Temperature Switch')        # label on footer
+
+        millis = int(round(time.time() * 1000))          # timer for clearing status on the web pages after 60 sec
+        last_millis = millis
+
+        a_state = -1                                     # for state in footer (-1 disable regulation A, 0 = Aoff, 1 = Aon)
+        b_state = -1
+        c_state = -1
+
         while not self._stop.is_set():
             try:
-                
-                self._sleep(1)    
+                try:
+                    from plugins.air_temp_humi import plugin_options as air_temp_data
+                    plugin_options['ds_name_0'] = air_temp_data['label_ds0']
+                    plugin_options['ds_name_1'] = air_temp_data['label_ds1']
+                    plugin_options['ds_name_2'] = air_temp_data['label_ds2']
+                    plugin_options['ds_name_3'] = air_temp_data['label_ds3']
+                    plugin_options['ds_name_4'] = air_temp_data['label_ds4']
+                    plugin_options['ds_name_5'] = air_temp_data['label_ds5']
+                    plugin_options['ds_count'] = air_temp_data['ds_used']
+
+                    from plugins.air_temp_humi import DS18B20_read_probe
+                    temperature_ds = [DS18B20_read_probe(0), DS18B20_read_probe(1), DS18B20_read_probe(2), DS18B20_read_probe(3), DS18B20_read_probe(4), DS18B20_read_probe(5)]
+                    
+                except:
+                    log.error(NAME, _(u'Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
+                    self._sleep(60)
+
+                # regulation A
+                if plugin_options['enabled_a']:  
+                    ds_a_on = temperature_ds[plugin_options['probe_A_on']]
+                    ds_a_off = temperature_ds[plugin_options['probe_A_off']]
+                    station_a = stations.get(plugin_options['control_output_A'])
+
+                    if ds_a_on > plugin_options['temp_a_on']:    # if DSxx > temperature AON
+                        station_a.active = True
+                        a_state = 1
+                        if msg_a_on:
+                            msg_a_on = False
+                            msg_a_off = True
+                            log.info(NAME, datetime_string() + ' ' + str(station_a.name) + ' ' + _(u'was turned on.'))
+
+                    if ds_a_off < plugin_options['temp_a_off']:  # if DSxx < temperature AOFF
+                        station_a.active = False
+                        a_state = 0
+                        if msg_a_off:
+                            msg_a_off = False
+                            msg_a_on = True
+                            log.info(NAME, datetime_string() + ' ' + str(station_a.name) + ' ' + _(u'was turned off.'))   
+
+                    # Activate again if needed:
+                    if station_a.remaining_seconds != 0:
+                        station_a.active = True   
+                else:
+                    a_state = -1    
+
+                # regulation B
+                if plugin_options['enabled_b']:  
+                    ds_b_on = temperature_ds[plugin_options['probe_B_on']]
+                    ds_b_off = temperature_ds[plugin_options['probe_B_off']]
+                    station_b = stations.get(plugin_options['control_output_B'])
+
+                    if ds_b_on > plugin_options['temp_b_on']:    # if DSxx > temperature BON
+                        station_b.active = True
+                        b_state = 1
+                        if msg_b_on:
+                            msg_b_on = False
+                            msg_b_off = True
+                            log.info(NAME, datetime_string() + ' ' + str(station_b.name) + ' ' + _(u'was turned on.'))
+
+                    if ds_b_off < plugin_options['temp_b_off']:  # if DSxx < temperature BOFF
+                        station_b.active = False
+                        b_state = 0
+                        if msg_b_off:
+                            msg_b_off = False
+                            msg_b_on = True
+                            log.info(NAME, datetime_string() + ' ' + str(station_b.name) + ' ' + _(u'was turned off.'))   
+
+                    # Activate again if needed:
+                    if station_b.remaining_seconds != 0:
+                        station_b.active = True   
+                else:
+                    b_state = -1                        
+
+                # regulation C    
+                if plugin_options['enabled_c']:  
+                    ds_c_on = temperature_ds[plugin_options['probe_C_on']]
+                    ds_c_off = temperature_ds[plugin_options['probe_C_off']]
+                    station_c = stations.get(plugin_options['control_output_C'])
+
+                    if ds_c_on > plugin_options['temp_c_on']:    # if DSxx > temperature CON
+                        station_c.active = True
+                        c_state = 1
+                        if msg_c_on:
+                            msg_c_on = False
+                            msg_c_off = True
+                            log.info(NAME, datetime_string() + ' ' + str(station_c.name) + ' ' + _(u'was turned on.'))
+
+                    if ds_c_off < plugin_options['temp_c_off']:  # if DSxx < temperature COFF
+                        station_c.active = False
+                        c_state = 0
+                        if msg_c_off:
+                            msg_c_off = False
+                            msg_c_on = True
+                            log.info(NAME, datetime_string() + ' ' + str(station_c.name) + ' ' + _(u'was turned off.'))   
+
+                    # Activate again if needed:
+                    if station_c.remaining_seconds != 0:
+                        station_c.active = True   
+                else:
+                    c_state = -1                          
+
+                # footer text
+                tempText = ' '
+
+                if a_state == 0:
+                    tempText += _(u'Regulation A set OFF')  
+                if a_state == 1:
+                    tempText += _(u'Regulation A set ON')      
+                if b_state == 0:
+                    tempText += ' ' + _(u'Regulation B set OFF')  
+                if b_state == 1:
+                    tempText += ' ' + _(u'Regulation B set ON')    
+                if c_state == 0:
+                    tempText += ' ' + _(u'Regulation C set OFF')  
+                if c_state == 1:
+                    tempText += ' ' + _(u'Regulation C set ON')     
+                if (a_state == -1) and (b_state == -1) and (c_state == -1):
+                    tempText = _(u'No change')
+
+                temp_sw.val = tempText.encode('utf8')    # value on footer                                                          
+
+                self._sleep(2)
+
+                millis = int(round(time.time() * 1000))
+                if (millis - last_millis) > 60000:    # 60 second to clearing status on the webpage
+                    last_millis = millis
+                    log.clear(NAME)
  
             except Exception:
                 log.error(NAME, _(u'Temperature Switch plug-in') + ':\n' + traceback.format_exc())

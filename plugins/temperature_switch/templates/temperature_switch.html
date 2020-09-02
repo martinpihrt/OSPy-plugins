@@ -17,49 +17,49 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Temperature Switch')</div>
-    <H1>UNDER CONSTRUCTION!</H1>
-    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows regulation from DS18B20 sensors connected to the external hardware board').</p>        
+    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows regulation from DS18B20 sensors connected to the external hardware board').</p>    
+    <p>$_('All temperatures is in degree Celsia.')</p>      
     <form id="pluginForm" action="$plugins.plugin_url('temperature_switch.settings_page')" method="post">
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control A'):</b></td>
-                <td>
-                    <input name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
+                <td title=$:{json.dumps(_(u'If the box is checked, regulation A will be enabled.'), ensure_ascii=False)}>
+                     <input name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
                 </td>
             </tr>
             <tr>
-            <td style='text-transform: none;'>$_('Probe input for ON'):</td>
-                <td>
+                <td style='text-transform: none;'>$_('Probe input for ON'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     <select name="probe_A_on">
-                        $for station in stations.get():
-                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_A_on"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                        $for i in range(plugin_options["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
             </tr>                      
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
-                <td>
-                    <input name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
+                <td title=$:{json.dumps(_(u'When this temperature is exceeded, the output will be activated.'), ensure_ascii=False)}>
+                    <input name='temp_a_on' type='number' min='-100' max='100' value='$plugin_options["temp_a_on"]'>
                 </td>
             </tr>
             <tr>
-            <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
-                <td>
+                <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     <select name="probe_A_off">
-                        $for station in stations.get():
-                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_A_off"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                        $for i in range(plugin_options["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
             </tr>             
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
-                <td>
-                    <input name='temp_a_off' type='number' min='0' max='100' value='$plugin_options["temp_a_off"]'>
+                <td title=$:{json.dumps(_(u'When falling below this temperature, the output will be deactivated.'), ensure_ascii=False)}>
+                    <input name='temp_a_off' type='number' min='-100' max='100' value='$plugin_options["temp_a_off"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Select Output for A'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'Select the output you want to control with regulation A.'), ensure_ascii=False)}>
                     <select name="control_output_A">
                         $for station in stations.get():
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
@@ -73,46 +73,46 @@ $var page: plugins
             </tr>             
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control B'):</b></td>
-                <td>
+                <td title=$:{json.dumps(_(u'If the box is checked, regulation B will be enabled.'), ensure_ascii=False)}>
                     <input name='enabled_b' type='checkbox'${" checked" if plugin_options['enabled_b'] else ""}>   
                 </td>
             </tr>
             <tr>
-            <td style='text-transform: none;'>$_('Probe input for ON'):</td>
-                <td>
+                <td style='text-transform: none;'>$_('Probe input for ON'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     <select name="probe_B_on">
-                        $for station in stations.get():
-                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_B_on"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                        $for i in range(plugin_options["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_B_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
             </tr>                      
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
-                <td>
-                    <input name='temp_b_on' type='number' min='0' max='100' value='$plugin_options["temp_b_on"]'>
+                <td title=$:{json.dumps(_(u'When this temperature is exceeded, the output will be activated.'), ensure_ascii=False)}>
+                    <input name='temp_b_on' type='number' min='-100' max='100' value='$plugin_options["temp_b_on"]'>
                 </td>
             </tr>
             <tr>
-            <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
-                <td>
+                <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     <select name="probe_B_off">
-                        $for station in stations.get():
-                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_B_off"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                        $for i in range(plugin_options["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_B_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
             </tr>             
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
-                <td>
-                    <input name='temp_c_off' type='number' min='0' max='100' value='$plugin_options["temp_c_off"]'>
+                <td title=$:{json.dumps(_(u'When falling below this temperature, the output will be deactivated.'), ensure_ascii=False)}>
+                    <input name='temp_c_off' type='number' min='-100' max='100' value='$plugin_options["temp_c_off"]'>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Select Output for C'):</td>
-                <td>
-                    <select name="control_output_C">
+                <td style='text-transform: none;'>$_('Select Output for B'):</td>
+                <td title=$:{json.dumps(_(u'Select the output you want to control with regulation B.'), ensure_ascii=False)}>
+                    <select name="control_output_B">
                         $for station in stations.get():
-                            <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_C"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_B"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
                 </td>
             </tr>             
@@ -123,43 +123,43 @@ $var page: plugins
             </tr>  
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control C'):</b></td>
-                <td>
+                <td title=$:{json.dumps(_(u'If the box is checked, regulation C will be enabled.'), ensure_ascii=False)}>
                     <input name='enabled_c' type='checkbox'${" checked" if plugin_options['enabled_c'] else ""}>   
                 </td>
             </tr>   
             <tr>
-            <td style='text-transform: none;'>$_('Probe input for ON'):</td>
-                <td>
+                <td style='text-transform: none;'>$_('Probe input for ON'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     <select name="probe_C_on">
-                        $for station in stations.get():
-                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_C_on"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                        $for i in range(plugin_options["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_C_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
             </tr>                      
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
-                <td>
-                    <input name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
+                <td title=$:{json.dumps(_(u'When this temperature is exceeded, the output will be activated.'), ensure_ascii=False)}>
+                    <input name='temp_a_on' type='number' min='-100' max='100' value='$plugin_options["temp_a_on"]'>
                 </td>
             </tr>
             <tr>
-            <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
-                <td>
+                <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     <select name="probe_C_off">
-                        $for station in stations.get():
-                            <option value="${str(station.index)}" ${"selected" if plugin_options["probe_C_off"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                        $for i in range(plugin_options["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_C_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
             </tr>             
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
-                <td>
-                    <input name='temp_a_off' type='number' min='0' max='100' value='$plugin_options["temp_a_off"]'>
+                <td title=$:{json.dumps(_(u'When falling below this temperature, the output will be deactivated.'), ensure_ascii=False)}>
+                    <input name='temp_a_off' type='number' min='-100' max='100' value='$plugin_options["temp_a_off"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Select Output for C'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'Select the output you want to control with regulation C.'), ensure_ascii=False)}>
                     <select name="control_output_C">
                         $for station in stations.get():
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_C"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
