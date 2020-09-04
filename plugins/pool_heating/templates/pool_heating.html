@@ -1,0 +1,85 @@
+$def with(plugin_options, events)
+
+$var title: $_('Pool Heating')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Pool Heating')</div>
+    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows pool heating regulation. Reading temperature using from DS18B20 sensors connected to the external hardware board').</p>    
+    <p>$_('Example: for heating a swimming pool with a solar panel. If the temperature difference (solar panel and pool water) is higher, the output (filter pump) is switched on. If the temperature difference from the solar panel is lower than the set temperature, the output (filter pump) is switched off.').</p>   
+    <p>$_('All temperatures is in') &#x2103;.</p>      
+    <form id="pluginForm" action="$plugins.plugin_url('pool_heating.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable Control'):</b></td>
+                <td title=$:{json.dumps(_(u'If the box is checked, regulation will be enabled.'), ensure_ascii=False)}>
+                     <input name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Probe input from swimming pool'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
+                    <select name="probe_A_on">
+                        $for i in range(plugin_options["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
+                    </select>
+                </td>
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('Probe input from Solar'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
+                    <select name="probe_A_off">
+                        $for i in range(plugin_options["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
+                    </select>
+                </td>
+            </tr>                               
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature difference for ON'):</td>
+                <td title=$:{json.dumps(_(u'Temperature difference for switch ON (filtration pump).'), ensure_ascii=False)}>
+                    <input name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature difference for OFF'):</td>
+                <td title=$:{json.dumps(_(u'Temperature difference for switch OFF (filtration pump).'), ensure_ascii=False)}>
+                    <input name='temp_a_off' type='number' min='0' max='100' value='$plugin_options["temp_a_off"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output'):</td>
+                <td title=$:{json.dumps(_(u'Select the output you want to control with regulation.'), ensure_ascii=False)}>
+                    <select name="control_output_A">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'><b>$_('Status'):</b></td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="11" cols="45" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+
+
+
