@@ -19,7 +19,7 @@ function draw_graph(result) {
 
     for (var i = 0; i < result.length; i++) {
         var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8')} + "</th><th>" + $:{json.dumps(_('(m/sec)'), ensure_ascii=False).encode('utf8')} +"</th></tr>";
+        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8')} + "</th><th>" + $:{json.dumps(_('(m/s or km/h)'), ensure_ascii=False).encode('utf8')} +"</th></tr>";
         var texts = [];
         var txt_body = "";
         var txt_footer = "</table>";
@@ -47,7 +47,7 @@ function draw_graph(result) {
         }
     }
     
-    var yLabels = $:{json.dumps(_('Wind m/sec'), ensure_ascii=False).encode('utf8')};
+    var yLabels = $:{json.dumps(_('Wind m/s or km/h'), ensure_ascii=False).encode('utf8')};
 
     return jQuery.plot("#graph-placeholder", data, {
         series: {
@@ -181,37 +181,37 @@ function create_graph(result) {
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use wind monitor'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'If the box is checked, wind monitor be enabled.'), ensure_ascii=False)}>
                     <input name='use_wind_monitor' type='checkbox'${" checked" if plugin_options['use_wind_monitor'] else ""}>   
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>I&sup2;C $_('address 0x50'):</td>
-                <td>
-                    <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}> ($_('if checked 0x51'))  
+                <td title=$:{json.dumps(_(u'If the box is checked, wind monitor is on address 0x50.'), ensure_ascii=False)}>
+                    <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}>  
                 </td>
             </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Send email with error'):</td>
-                <td>
-                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> ($_('For this function required email plugin'))
+                <td title=$:{json.dumps(_(u'For this function required email plugin'), ensure_ascii=False)}>
+                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of pulses'):</td>  
-                <td>
-                    <input name='pulses' type='text' value='$plugin_options["pulses"]' style="width:40px;"> ($_('pulses/rotation'))
+                <td title=$:{json.dumps(_(u'pulses/rotation'), ensure_ascii=False)}>
+                    <input name='pulses' type='text' value='$plugin_options["pulses"]' style="width:40px;"> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of wind speed per rotation'):</td> 
-                <td>
+                <td title=$:{json.dumps(_(u'Wind speed set in meter/second'), ensure_ascii=False)}>
                     <input name='metperrot' type='text' value='$plugin_options["metperrot"]' style="width:40px;"> ($_('m/s')) 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Max wind speed for stop stations'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'If the wind speed exceeds this value, the station will stop'), ensure_ascii=False)}>
                     <input name='maxspeed' type='text' value='$plugin_options["maxspeed"]' style="width:40px;"> ($_('m/s')) 
                 </td>
             </tr>
@@ -238,7 +238,7 @@ function create_graph(result) {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Enable logging'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'Caution: Frequent log storage may reduce storage capacity'), ensure_ascii=False)}>
                     <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
                 </td>
             </tr>

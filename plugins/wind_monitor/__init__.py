@@ -321,9 +321,9 @@ def get_station_is_on(): # return true if stations is ON
 
 def get_all_values():
 
-	if wind_options['use_kmh']:
+    if wind_options['use_kmh']:
         return wind_options['log_speed']*3.6, wind_options['log_maxspeed']*3.6, wind_options['log_date_maxspeed']  # km/hod
-    else: 
+    else:
         return wind_options['log_speed'], wind_options['log_maxspeed'], wind_options['log_date_maxspeed']          # m/sec
 
 
