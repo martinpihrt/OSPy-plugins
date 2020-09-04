@@ -124,7 +124,9 @@ class WindSender(Thread):
                             if wind_options['sendeml']:     
                                qdict['sendeml'] = u'on' 
                             if wind_options['enable_log']:     
-                               qdict['enable_log'] = u'on'                                
+                               qdict['enable_log'] = u'on'      
+                            if wind_options['use_kmh']: 
+                               qdict['use_kmh'] = u'on'                            
 
                             qdict['log_maxspeed'] = val
                             qmax = datetime_string()
@@ -164,7 +166,7 @@ class WindSender(Thread):
                         if wind_options['enable_log']:
                             millis = int(round(time.time() * 1000))
                             interval = (wind_options['log_interval'] * 60000)
-                            if (millis - last_millis) > interval:
+                            if (millis - last_millis) >= interval:
                                last_millis = millis
                                update_log()
 
@@ -172,14 +174,14 @@ class WindSender(Thread):
                         if wind_options['use_kmh']:
                             tempText += str(round(val*3.6,2)) + ' ' + _(u'km/h') + ' '
                         else:
-                            tempText +=  str(round(val,2)) + ' ' + _(u'm/sec') + ' '    
+                            tempText +=  str(round(val,2)) + ' ' + _(u'm/s') + ' '    
                         tempText += ' (' +  _(u'Maximal speed') + ' ' 
                         if wind_options['use_kmh']:    
                             tempText +=  str(wind_options['log_maxspeed']*3.6)
-                            tempText +=  ' ' + _(u'm/sec') + ')' 
+                            tempText +=  ' ' + _(u'km/h') + ')' 
                         else:
                             tempText +=  str(wind_options['log_maxspeed'])
-                            tempText +=  ' ' + _(u'km/h') + ')' 
+                            tempText +=  ' ' + _(u'm/s') + ')' 
                         wind_mon.val = tempText.encode('utf8')                # value on footer
                         
                     else:
@@ -318,7 +320,11 @@ def get_station_is_on(): # return true if stations is ON
 
 
 def get_all_values():
-    return wind_options['log_speed'], wind_options['log_maxspeed'], wind_options['log_date_maxspeed']   
+
+	if wind_options['use_kmh']:
+        return wind_options['log_speed']*3.6, wind_options['log_maxspeed']*3.6, wind_options['log_date_maxspeed']  # km/hod
+    else: 
+        return wind_options['log_speed'], wind_options['log_maxspeed'], wind_options['log_date_maxspeed']          # m/sec
 
 
 def read_log():
@@ -437,6 +443,8 @@ class settings_page(ProtectedPage):
                 qdict['sendeml'] = u'on' 
             if wind_options['enable_log']:
                 qdict['enable_log'] = u'on' 
+            if wind_options['use_kmh']: 
+                qdict['use_kmh'] = u'on'                
             qdict['log_maxspeed'] = 0
             qmax = datetime_string()
             qdict['log_date_maxspeed'] = qmax
@@ -529,8 +537,12 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         data  = "Date/Time"
         data += ";\t Date"
         data += ";\t Time"
-        data += ";\t %s m/sec" % maximum
-        data += ";\t %s m/sec" % actual
+        if wind_options['use_kmh']: 
+            data += ";\t %s km/h" % maximum
+            data += ";\t %s km/h" % actual
+        else:                       
+            data += ";\t %s m/sec" % maximum
+            data += ";\t %s m/sec" % actual
         data += '\n'
 
         try:
