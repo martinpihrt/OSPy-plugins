@@ -254,7 +254,12 @@ function create_graph(result) {
                     <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> $_('minutes (Minimum is 1)')
                 </td>
             </tr>
-
+            <tr>
+                <td style='text-transform: none;'>$_('Display in km/h'):</td>
+                <td>
+                    <input name='use_kmh' type='checkbox'${" checked" if plugin_options['use_kmh'] else ""}>   
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

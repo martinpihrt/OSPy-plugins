@@ -44,6 +44,7 @@ wind_options = PluginOptions(
         'enable_log': False,
         'log_interval': 1,
         'log_records': 0,
+        'use_kmh': False
     }
 )
 
@@ -138,10 +139,14 @@ class WindSender(Thread):
 
                         log.clear(NAME)
                         log.info(NAME, _('Please wait 10 sec...'))
-                        log.info(NAME, _('Speed') + ' ' + str(round(val,2)) + ' ' + _('m/sec'))
+                        if wind_options['use_kmh']:
+                            log.info(NAME, _('Speed') + ' ' + str(round(val*3.6,2)) + ' ' + _('km/h'))                  
+                        else:
+                            log.info(NAME, _('Speed') + ' ' + str(round(val,2)) + ' ' + _('m/sec'))  
+
                         log.info(NAME, _('Pulses') + ' ' + str(puls) + ' ' + _('pulses/sec'))
                         if wind_options['log_maxspeed'] > 0:
-                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']) + ' ' + _('m/sec') + '.')  
+                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']) + ' ' + _('m/sec') + ' (' + str(round(val*3.6,2)) + ' ' + _('km/h') + ').')  
             
                         if val >= 42: 
                             log.error(NAME, _('Wind speed > 150 km/h (42 m/sec)'))
@@ -164,9 +169,17 @@ class WindSender(Thread):
                                update_log()
 
                         tempText = ""
-                        tempText +=  str(round(val,2)) + ' ' + _(u'm/sec') + ' (' +  _(u'Maximal speed') + ' ' 
-                        tempText +=  str(wind_options['log_maxspeed'])
-                        tempText +=  ' ' + _(u'm/sec') + ')' 
+                        if wind_options['use_kmh']:
+                            tempText += str(round(val*3.6,2)) + ' ' + _(u'km/h') + ' '
+                        else:
+                            tempText +=  str(round(val,2)) + ' ' + _(u'm/sec') + ' '    
+                        tempText += ' (' +  _(u'Maximal speed') + ' ' 
+                        if wind_options['use_kmh']:    
+                            tempText +=  str(wind_options['log_maxspeed']*3.6)
+                            tempText +=  ' ' + _(u'm/sec') + ')' 
+                        else:
+                            tempText +=  str(wind_options['log_maxspeed'])
+                            tempText +=  ' ' + _(u'km/h') + ')' 
                         wind_mon.val = tempText.encode('utf8')                # value on footer
                         
                     else:
@@ -398,25 +411,6 @@ def create_default_graph():
     ]
     write_graph_log(graph_data)  
     log.debug(NAME, _('Creating default graph log files OK'))                
-
-
-#from threading import Thread
-
-def footer_test():
-    """ Example of plugin data display in UI footer. Run in background thread. """
-    example = showInFooter() #  instantiate class to enable data in footer
-    example.label = _('Wind Speed')
-    example.val = 0
-    example.unit = ' ' + _('m/sec')
-    
-    #while True: #  Simulate plugin data
-    #    example.val += 2 #  update plugin data
-    #    time.sleep(2)
-  
-# Run footer_test() in background thread
-#ft = Thread(target = footer_test)
-#ft.daemon = True
-#ft.start()    
 
 
 ################################################################################

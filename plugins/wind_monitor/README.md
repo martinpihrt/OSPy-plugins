@@ -39,6 +39,9 @@ Plugin setup
 * Interval for logging:
   Logging interval (minimum 1 minute).
 
+* Display in km/h:
+  the measured data will be displayed in km/h.  
+
 * Status:  
   Status window from the plugin.  
 
