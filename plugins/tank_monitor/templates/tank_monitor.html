@@ -177,28 +177,35 @@ function create_graph(result) {
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use ultrasonic measuring the water level in the tank'):</b></td>
-                <td>
+                <td title=$:{json.dumps(_(u'if checked, the extension will measure the level using ultrasound'), ensure_ascii=False)}>
                     <input name='use_sonic' type='checkbox'${" checked" if plugin_options['use_sonic'] else ""}> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The distance from the sensor to the minimum water level in the tank'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'Thus the distance from the ultrasound to the minimum water level. The sensor is located above the water'), ensure_ascii=False)}>
                     <input name='distance_bottom' type='number' min="2" max="400" value='$plugin_options["distance_bottom"]'> (2-400 $_('cm'))
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The distance from the sensor to the maximum water level in the tank'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'That is, the distance from the ultrasound to the maximum water level. The sensor is located above the water'), ensure_ascii=False)}>
                     <input name='distance_top' type='number' min="2" max="400" value='$plugin_options["distance_top"]'> (2-400 $_('cm'))
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The water level from the bottom to the minimum water level in the tank'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'Distance from the bottom (ie the minimum water) to the set this minimum level, when it is this activated (send an e-mail)'), ensure_ascii=False)}>
                     <input name='water_minimum' type='number' min="2" max="400" value='$plugin_options["water_minimum"]'> (2-400 $_('cm'))
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stop scheduller if is minimum water in the tank'):</td>
+                <td title=$:{json.dumps(_(u'Disabling the scheduler if is minimum water level in tank'), ensure_ascii=False)}>
+                    <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
+                </td>
+            </tr>
+            <tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Cylinder diameter for volume calculation'):</td>
                 <td>
@@ -213,23 +220,22 @@ function create_graph(result) {
             </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Send an e-mail with an error that there is minimum water in the tank'):</td>
-                <td>
-                    <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}> ($_('For this function required email plugin'))
+                <td title=$:{json.dumps(_(u'For this function required email plugin'), ensure_ascii=False)}>
+                    <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send an e-mail with an error if sonic probe has fault and stop scheduler!'):</td>
+                <td title=$:{json.dumps(_(u'For this function required email plugin'), ensure_ascii=False)}>
+                    <input name='use_water_err' type='checkbox'${" checked" if plugin_options['use_water_err'] else ""}>
+                </td>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
                 <td>
                     <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
                 </td>
             </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Stop scheduller if is minimum water in the tank'):</td>
-                <td>
-                    <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
-                </td>
-            </tr>
-            <tr>
                <th colspan="2">
                  <hr>
                </th>

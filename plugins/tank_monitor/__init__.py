@@ -40,7 +40,7 @@ tank_options = PluginOptions(
        'water_minimum': 60,    # water level <-> bottom tank
        'diameter': 98,         # cylinder diameter for volume calculation
        'use_stop':      False, # not stop water system
-       'use_send_email': True, # send email
+       'use_send_email': True, # send email water level is minimum
        'emlsubject': _('Report from OSPy TANK plugin'),
        'address_ping': 0x04,   # device address for sonic ping HW board
        'log_maxlevel': 400,    # maximal level (log)
@@ -50,8 +50,9 @@ tank_options = PluginOptions(
        'enable_log': False,    # use logging
        'log_interval': 1,      # interval for log in minutes
        'log_records': 0,       # the number of records 
-       'check_liters': False   # display as liters or m3 (true = liters)
-    }
+       'check_liters': False,  # display as liters or m3 (true = liters)
+       'use_water_err': False  # send email probe has error
+    } 
 )
 
 status = { }
@@ -91,6 +92,7 @@ class Sender(Thread):
         last_millis = 0 # timer for save log
         once_text = True
         two_text = True
+        three_text = True
         send = False
         mini = True
         sonic_cm = get_sonic_cm()
@@ -116,6 +118,7 @@ class Sender(Thread):
                     tempText = ""                    
 
                     if level_in_tank > 0:                                                 # if level is ok
+                        three_text = True
 
                         status['level']   = level_in_tank
                         status['ping']    = sonic_cm
@@ -195,6 +198,25 @@ class Sender(Thread):
                         log.info(NAME, datetime_string() + ' ' + _('Water level: Error.'))
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')    
+
+                        if tank_options['use_water_err'] and three_text:               # if probe has error
+                            three_text = False
+
+                            options.scheduler_enabled = False                          # disable scheduler
+                            log.finish_run(None)                                       # save log
+                            stations.clear()                                           # set all station to off                                          
+                            log.info(NAME, datetime_string() + ' ' + _('ERROR: Water probe has fault?'))
+                               
+                            msg = '<b>' + _('Water Tank Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water probe has fault?') + '</p>'
+                            msglog = _('Water Tank Monitor plug-in') + ': ' + _('System detected error: Water probe has fault?')  
+                            try:
+                                from plugins.email_notifications import try_mail                                    
+                                try_mail(msg, msglog, attachment=None, subject=tank_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                            except Exception:     
+                                log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())                             
+
+                        self._sleep(10)        
 
                     tank_mon.val = tempText.encode('utf8')          # value on footer 
                     self._sleep(3)                      
