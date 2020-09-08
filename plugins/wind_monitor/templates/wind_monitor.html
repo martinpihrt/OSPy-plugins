@@ -250,6 +250,12 @@ function create_graph(result) {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Save to log if maximal speed change'):</td>
+                <td title=$:{json.dumps(_(u'If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately'), ensure_ascii=False)}>
+                    <input name='enable_log_change' type='checkbox'${" checked" if plugin_options['enable_log_change'] else ""}>   
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
                 <td>
                     <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))

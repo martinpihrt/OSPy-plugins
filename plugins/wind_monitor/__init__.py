@@ -39,12 +39,13 @@ wind_options = PluginOptions(
         'maxspeed': 20,              # 20 max speed to deactivate stations  
         'emlsubject': _('Report from OSPy WIND SPEED MONITOR plugin'),
         'log_speed': 0,              # actual speed
-        'log_maxspeed': 0,           # maximal speed (log) in km/h
+        'log_maxspeed': 0,           # maximal speed (log) in m/sec
         'log_date_maxspeed': _('Measuring...'), # maximal speed (date log)
         'enable_log': False,
         'log_interval': 1,
         'log_records': 0,
-        'use_kmh': False
+        'use_kmh': False,
+        'enable_log_change': False
     }
 )
 
@@ -62,6 +63,7 @@ class WindSender(Thread):
         self.status = {}
         self.status['meter'] = 0.0
         self.status['kmeter'] = 0.0
+        self.status['max_meter'] = wind_options['log_maxspeed']
 
         self._sleep_time = 0
         self.start()
@@ -79,9 +81,9 @@ class WindSender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        last_millis = 0 # timer for save log
-        log.clear(NAME)
-        send = False      # send email
+        last_millis = 0             # timer for save log
+        last_clear_millis = 60000   # for clearing status in screen after 60 sec
+        send = False                # send email
         disable_text = True
         val = 0
         maxval = 0
@@ -112,10 +114,14 @@ class WindSender(Thread):
                         val = puls/(wind_options['pulses']*1.0)
                         val = val*wind_options['metperrot']   
 
-                        wind_options['log_speed'] = round(val,2) # m/sec
+                        wind_options['log_speed'] = round(val,2)*1.0 # m/sec
+                        
+                        self.status['meter']  = round(val,2)*1.0
+                        self.status['kmeter'] = round(val,2)*3.6                        
 
-                        if val > wind_options['log_maxspeed']:
-                            if wind_options['enable_log']:
+                        if self.status['meter'] > self.status['max_meter']:
+                            self.status['max_meter'] = self.status['meter']
+                            if wind_options['enable_log_change']:
                                 update_log()
 
                             qdict = {} # save to options max speed and datetime
@@ -129,40 +135,38 @@ class WindSender(Thread):
                             if wind_options['enable_log']:     
                                qdict['enable_log'] = u'on'      
                             if wind_options['use_kmh']: 
-                               qdict['use_kmh'] = u'on'                            
+                               qdict['use_kmh'] = u'on'  
+                            if wind_options['enable_log_change']:
+                               qdict['enable_log_change'] = u'on'        
 
-                            qdict['log_maxspeed'] = val
+                            qdict['log_maxspeed'] = self.status['max_meter']         # m/sec
                             qmax = datetime_string()
                             qdict['log_date_maxspeed'] = qmax
-                            wind_options['log_maxspeed'] = val 
+                            wind_options['log_maxspeed'] = self.status['max_meter']  # m/sec 
                             wind_options['log_date_maxspeed'] = qmax  
 
                             wind_options.web_update(qdict)
-                     
-                        self.status['meter']  = round(val*1.0,2)
-                        self.status['kmeter'] = round(val*3.6,2)
-
-                        log.clear(NAME)
-                        log.info(NAME, _('Please wait 10 sec...'))
+ 
+                        log.info(NAME, datetime_string())
                         if wind_options['use_kmh']:
-                            log.info(NAME, _('Speed') + ' ' + str(round(val*3.6,2)) + ' ' + _('km/h'))                  
+                            log.info(NAME, _('Speed') + ': ' + str(self.status['meter']*3.6) + ' ' + _('km/h') + ', ' + _('Pulses') + ': ' + str(puls) + ' ' + _('pulses/sec'))                  
                         else:
-                            log.info(NAME, _('Speed') + ' ' + str(round(val*1.0,2)) + ' ' + _('m/sec'))  
+                            log.info(NAME, _('Speed') + ': ' + str(self.status['meter']*1.0) + ' ' + _('m/sec') + ', ' + _('Pulses') + ': ' + str(puls) + ' ' + _('pulses/sec'))  
 
-                        log.info(NAME, _('Pulses') + ' ' + str(puls) + ' ' + _('pulses/sec'))
-                        if wind_options['log_maxspeed'] > 0:
-                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']) + ' ' + _('m/sec') + ' (' + str(round(val*3.6,2)) + ' ' + _('km/h') + ').')  
+                        if wind_options['use_kmh']:
+                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']*3.6) + ' ' + _('km/h'))  
+                        else:    
+                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']*1.0) + ' ' + _('m/sec'))  
             
-                        if val >= 42: 
-                            log.error(NAME, _('Wind speed > 150 km/h (42 m/sec)'))
+                        if self.status['meter'] >= 42: 
+                            log.error(NAME, datetime_string() + ' ' + _('Wind speed > 150 km/h (42 m/sec)'))
                                      
                         if get_station_is_on():                               # if station is on
-                            if val >= int(wind_options['maxspeed']):          # if wind speed is > options max speed
-                                log.clear(NAME)
+                            if self.status['meter'] >= int(wind_options['maxspeed']):          # if wind speed is > options max speed
                                 log.finish_run(None)                          # save log
                                 stations.clear()                              # set all station to off
                                 log.clear(NAME)
-                                log.info(NAME, _('Stops all stations and sends e-mail if enabled sends e-mail.'))
+                                log.info(NAME, datetime_string() + ' ' + _('Stops all stations and sends e-mail if enabled sends e-mail.'))
                                 if wind_options['sendeml']:                   # if enabled send email
                                     send = True  
 
@@ -173,17 +177,22 @@ class WindSender(Thread):
                                last_millis = millis
                                update_log()
 
+
+                        if (millis - last_clear_millis) >= 120000:  # after 120 second delete status screen
+                               last_clear_millis = millis 
+                               log.clear(NAME)      
+
                         tempText = ""
                         if wind_options['use_kmh']:
-                            tempText += str(round(val*3.6,2)) + ' ' + _(u'km/h') + ' '
+                            tempText += str(round(val,2)*3.6) + ' ' + _(u'km/h') + ' '
                         else:
-                            tempText +=  str(round(val*1.0,2)) + ' ' + _(u'm/s') + ' '    
+                            tempText +=  str(round(val,2)*1.0) + ' ' + _(u'm/s') + ' '    
                         tempText += ' (' +  _(u'Maximal speed') + ' ' 
                         if wind_options['use_kmh']:    
-                            tempText +=  str(wind_options['log_maxspeed']*3.6)
+                            tempText +=  str(round(maxval,2)*3.6)
                             tempText +=  ' ' + _(u'km/h') + ')' 
                         else:
-                            tempText +=  str(wind_options['log_maxspeed']*1.0)
+                            tempText +=  str(round(maxval,2)*1.0)
                             tempText +=  ' ' + _(u'm/s') + ')' 
                         wind_mon.val = tempText.encode('utf8')                # value on footer
                         
@@ -200,7 +209,7 @@ class WindSender(Thread):
 
                 if send:
                     msg = '<b>' + _('Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h. </p>'
-                    msglog= _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h.'
+                    msglog= _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val,2)*3.6) + ' km/h.'
                     send = False
                     try:
                         from plugins.email_notifications import try_mail                                    
@@ -323,11 +332,12 @@ def get_station_is_on(): # return true if stations is ON
 
 
 def get_all_values():
+    st = wind_sender.status
 
     if wind_options['use_kmh']:
-        return wind_options['log_speed']*3.6, wind_options['log_maxspeed']*3.6, wind_options['log_date_maxspeed']  # km/hod
+        return st['meter']*3.6, st['max_meter']*3.6, wind_options['log_date_maxspeed']  # km/hod
     else:
-        return wind_options['log_speed'], wind_options['log_maxspeed'], wind_options['log_date_maxspeed']          # m/sec
+        return st['meter'], st['max_meter'], wind_options['log_date_maxspeed']          # m/sec
 
 
 def read_log():
@@ -405,7 +415,7 @@ def update_log():
  
     write_graph_log(graph_data)
 
-    log.info(NAME, _('Saving to log  files OK'))
+    log.info(NAME, datetime_string() + ' ' + _('Saving to log  files OK'))
 
 
 def create_default_graph():
@@ -419,7 +429,7 @@ def create_default_graph():
        {"station": actual, "balances": {}}
     ]
     write_graph_log(graph_data)  
-    log.debug(NAME, _('Creating default graph log files OK'))                
+    log.debug(NAME,datetime_string() + ' ' + _('Creating default graph log files OK'))                
 
 
 ################################################################################
@@ -447,7 +457,9 @@ class settings_page(ProtectedPage):
             if wind_options['enable_log']:
                 qdict['enable_log'] = u'on' 
             if wind_options['use_kmh']: 
-                qdict['use_kmh'] = u'on'                
+                qdict['use_kmh'] = u'on'        
+            if wind_options['enable_log_change']:
+                qdict['enable_log_change'] = u'on'             
             qdict['log_maxspeed'] = 0
             qmax = datetime_string()
             qdict['log_date_maxspeed'] = qmax
@@ -457,14 +469,14 @@ class settings_page(ProtectedPage):
             wind_options.web_update(qdict)   
 
             log.clear(NAME)
-            log.info(NAME, wind_options['log_date_maxspeed'] + ': ' + _('Maximal speed has reseted.'))
+            log.info(NAME, datetime_string() + ' ' + _('Maximal speed has reseted.'))
             
             raise web.seeother(plugin_url(settings_page), True)
 
         if wind_sender is not None and delete:
            write_log([])
            create_default_graph()
-           log.info(NAME, _('Deleted all log files OK'))
+           log.info(NAME, datetime_string() + ' ' + _('Deleted all log files OK'))
 
            raise web.seeother(plugin_url(settings_page), True)
 
@@ -483,7 +495,7 @@ class settings_page(ProtectedPage):
             log.clear(NAME)
             log.info(NAME, _('Wind monitor is disabled.'))
 
-        log.info(NAME, _('Options has updated.'))
+        log.info(NAME, datetime_string() + ' ' + _('Options has updated.'))
 
         raise web.seeother(plugin_url(settings_page), True)
 
