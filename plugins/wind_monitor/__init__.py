@@ -115,6 +115,9 @@ class WindSender(Thread):
                         wind_options['log_speed'] = round(val,2) # m/sec
 
                         if val > wind_options['log_maxspeed']:
+                            if wind_options['enable_log']:
+                                update_log()
+
                             qdict = {} # save to options max speed and datetime
 
                             if wind_options['use_wind_monitor']:
@@ -136,7 +139,7 @@ class WindSender(Thread):
 
                             wind_options.web_update(qdict)
                      
-                        self.status['meter']  = round(val,2)
+                        self.status['meter']  = round(val*1.0,2)
                         self.status['kmeter'] = round(val*3.6,2)
 
                         log.clear(NAME)
@@ -144,7 +147,7 @@ class WindSender(Thread):
                         if wind_options['use_kmh']:
                             log.info(NAME, _('Speed') + ' ' + str(round(val*3.6,2)) + ' ' + _('km/h'))                  
                         else:
-                            log.info(NAME, _('Speed') + ' ' + str(round(val,2)) + ' ' + _('m/sec'))  
+                            log.info(NAME, _('Speed') + ' ' + str(round(val*1.0,2)) + ' ' + _('m/sec'))  
 
                         log.info(NAME, _('Pulses') + ' ' + str(puls) + ' ' + _('pulses/sec'))
                         if wind_options['log_maxspeed'] > 0:
@@ -159,7 +162,7 @@ class WindSender(Thread):
                                 log.finish_run(None)                          # save log
                                 stations.clear()                              # set all station to off
                                 log.clear(NAME)
-                                log.info(NAME, _('Stops all stations and sends email if enabled sends email.'))
+                                log.info(NAME, _('Stops all stations and sends e-mail if enabled sends e-mail.'))
                                 if wind_options['sendeml']:                   # if enabled send email
                                     send = True  
 
@@ -174,13 +177,13 @@ class WindSender(Thread):
                         if wind_options['use_kmh']:
                             tempText += str(round(val*3.6,2)) + ' ' + _(u'km/h') + ' '
                         else:
-                            tempText +=  str(round(val,2)) + ' ' + _(u'm/s') + ' '    
+                            tempText +=  str(round(val*1.0,2)) + ' ' + _(u'm/s') + ' '    
                         tempText += ' (' +  _(u'Maximal speed') + ' ' 
                         if wind_options['use_kmh']:    
                             tempText +=  str(wind_options['log_maxspeed']*3.6)
                             tempText +=  ' ' + _(u'km/h') + ')' 
                         else:
-                            tempText +=  str(wind_options['log_maxspeed'])
+                            tempText +=  str(wind_options['log_maxspeed']*1.0)
                             tempText +=  ' ' + _(u'm/s') + ')' 
                         wind_mon.val = tempText.encode('utf8')                # value on footer
                         
