@@ -171,8 +171,9 @@ function create_graph(result) {
     <div class="title">$_('Water tank monitor settings')</div>
     <p>$_('This plugin check water level in water tank via ultrasonic sensor on') I&sup2;C $_('address 0x04').</p>
     <p>$_('If water level is small plugins stop irigation system and sends email with error. Prevent safety for master station pump.')</p>
-    <p>$_('Download log as') <a href="$plugins.plugin_url('tank_monitor.log_csv')">csv</a>.</p>
     <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p> 
+    $if plugin_options['enable_log']:
+        <p>$_('Download log as') <a href=$plugins.plugin_url('tank_monitor.log_csv') class="button upload">csv</a></p></br>     
     <form id="pluginForm" action="$plugins.plugin_url('tank_monitor.settings_page')" method="post">
         <table class="optionList">
             <tr>

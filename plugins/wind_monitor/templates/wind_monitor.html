@@ -182,6 +182,7 @@ function create_graph(result) {
     <p>$_('Switching off the station in case of exceeding the maximum set speed: wind in m/s maximal setup speed -> stop station').</p>       
     <p>$_('Error message at maximal wind speed: if the wind has a speed higher than 150 km/h (42 m/sec), measurement is not guaranteed an error is displayed').</p> 
     <p>$_('Measurement accuracy very much depends on the setting of the following parameters (Number of pulses/sec, wind speed per rotation m/sec)').</p> 
+    <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p>    
     $if plugin_options['enable_log']:
         <p>$_('Download log as') <a href=$plugins.plugin_url('wind_monitor.log_csv') class="button upload">csv</a></p></br>     
     <form id="pluginForm" action="$plugins.plugin_url('wind_monitor.settings_page')" method="post">
@@ -239,7 +240,7 @@ function create_graph(result) {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'Subject for E-mail from this wind monitor'), ensure_ascii=False)}>
                     <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
                 </td>
             </tr>
@@ -254,29 +255,35 @@ function create_graph(result) {
                 <td title=$:{json.dumps(_(u'If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately'), ensure_ascii=False)}>
                     <input name='enable_log_change' type='checkbox'${" checked" if plugin_options['enable_log_change'] else ""}>   
                 </td>
-            </tr>            
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('Delete max speed after 24 hours'):</td>
+                <td title=$:{json.dumps(_(u'If the box is checked, the maximum measured speed is reset after 24 hours (log is not deleted)'), ensure_ascii=False)}>
+                    <input name='delete_max_24h' type='checkbox'${" checked" if plugin_options['delete_max_24h'] else ""}>   
+                </td>
+            </tr>         
             <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td>
-                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
+                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
+                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Interval for logging'):</td>
-                <td>
-                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> $_('minutes (Minimum is 1)')
+                <td title=$:{json.dumps(_(u'In minutes (Minimum is 1)'), ensure_ascii=False)}>
+                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Display in km/h'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'If the box is checked, the speed is in km/h'), ensure_ascii=False)}>
                     <input name='use_kmh' type='checkbox'${" checked" if plugin_options['use_kmh'] else ""}>   
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="8" cols="60" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="15" cols="70" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>

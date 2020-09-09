@@ -41,11 +41,12 @@ wind_options = PluginOptions(
         'log_speed': 0,              # actual speed
         'log_maxspeed': 0,           # maximal speed (log) in m/sec
         'log_date_maxspeed': _('Measuring...'), # maximal speed (date log)
-        'enable_log': False,
-        'log_interval': 1,
-        'log_records': 0,
-        'use_kmh': False,
-        'enable_log_change': False
+        'enable_log': False,         # log to file and graph
+        'log_interval': 1,           # log interval in minutes
+        'log_records': 0,            # log records 0= unlimited 
+        'use_kmh': False,            # measure in km/h or m/s
+        'enable_log_change': False,  # enable save log max speed if max wind > last max wind
+        'delete_max_24h': False      # deleting max speed after 24 hours
     }
 )
 
@@ -81,13 +82,15 @@ class WindSender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        last_millis = 0             # timer for save log
-        last_clear_millis = 60000   # for clearing status in screen after 60 sec
+        millis = int(round(time.time() * 1000))
+
+        last_millis = millis        # timer for save log
+        last_clear_millis = millis  # for clearing status in screen after 60 sec
+        last_clear_max =    millis  # for clearing max speed after 24 hours
         send = False                # send email
         disable_text = True
         val = 0
-        maxval = 0
-        
+           
         wind_mon = showInFooter() #  instantiate class to enable data in footer
         wind_mon.label = _('Wind Speed')            # label on footer
         wind_mon.val = '---'                        # value on footer
@@ -137,7 +140,9 @@ class WindSender(Thread):
                             if wind_options['use_kmh']: 
                                qdict['use_kmh'] = u'on'  
                             if wind_options['enable_log_change']:
-                               qdict['enable_log_change'] = u'on'        
+                               qdict['enable_log_change'] = u'on' 
+                            if wind_options['delete_max_24h']:
+                               qdict['delete_max_24h'] = u'on'             
 
                             qdict['log_maxspeed'] = self.status['max_meter']         # m/sec
                             qmax = datetime_string()
@@ -151,12 +156,12 @@ class WindSender(Thread):
                         if wind_options['use_kmh']:
                             log.info(NAME, _('Speed') + ': ' + str(self.status['meter']*3.6) + ' ' + _('km/h') + ', ' + _('Pulses') + ': ' + str(puls) + ' ' + _('pulses/sec'))                  
                         else:
-                            log.info(NAME, _('Speed') + ': ' + str(self.status['meter']*1.0) + ' ' + _('m/sec') + ', ' + _('Pulses') + ': ' + str(puls) + ' ' + _('pulses/sec'))  
+                            log.info(NAME, _('Speed') + ': ' + str(self.status['meter']) + ' ' + _('m/sec') + ', ' + _('Pulses') + ': ' + str(puls) + ' ' + _('pulses/sec'))  
 
                         if wind_options['use_kmh']:
                             log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']*3.6) + ' ' + _('km/h'))  
                         else:    
-                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']*1.0) + ' ' + _('m/sec'))  
+                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']) + ' ' + _('m/sec'))  
             
                         if self.status['meter'] >= 42: 
                             log.error(NAME, datetime_string() + ' ' + _('Wind speed > 150 km/h (42 m/sec)'))
@@ -170,30 +175,49 @@ class WindSender(Thread):
                                 if wind_options['sendeml']:                   # if enabled send email
                                     send = True  
 
-                        if wind_options['enable_log']:
-                            millis = int(round(time.time() * 1000))
+                        millis = int(round(time.time() * 1000))
+ 
+                        if wind_options['enable_log']:                        # if logging
                             interval = (wind_options['log_interval'] * 60000)
                             if (millis - last_millis) >= interval:
                                last_millis = millis
                                update_log()
 
 
-                        if (millis - last_clear_millis) >= 120000:  # after 120 second delete status screen
+                        if (millis - last_clear_millis) >= 120000:            # after 120 second deleting in status screen
                                last_clear_millis = millis 
-                               log.clear(NAME)      
+                               log.clear(NAME)  
+
+
+                        if wind_options['delete_max_24h']:                    # if enable deleting max after 24 hours (86400000 ms)
+                            if (millis - last_clear_max) >= 86400000:   
+                                last_clear_max = millis     
+                                if wind_options['use_wind_monitor']:
+                                    qdict['use_wind_monitor'] = u'on' 
+                                if wind_options['address']:
+                                    qdict['address']  = u'on'
+                                if wind_options['sendeml']:     
+                                    qdict['sendeml'] = u'on' 
+                                if wind_options['enable_log']:
+                                    qdict['enable_log'] = u'on' 
+                                if wind_options['use_kmh']: 
+                                    qdict['use_kmh'] = u'on'        
+                                if wind_options['enable_log_change']:
+                                    qdict['enable_log_change'] = u'on'    
+                                if wind_options['delete_max_24h']:
+                                    qdict['delete_max_24h'] = u'on'  
+                                qdict['log_maxspeed'] = 0
+                                qdict['log_date_maxspeed'] = datetime_string()
+                                wind_options['log_maxspeed'] = 0
+                                wind_options['log_date_maxspeed'] = datetime_string()  
+                                wind_options.web_update(qdict) 
+                                log.info(NAME, datetime_string() + ' ' + _('Deleting maximal speed after 24 hours.'))
 
                         tempText = ""
                         if wind_options['use_kmh']:
-                            tempText += str(round(val,2)*3.6) + ' ' + _(u'km/h') + ' '
+                            tempText += str(self.status['kmeter']) + ' ' + _(u'km/h')
                         else:
-                            tempText +=  str(round(val,2)*1.0) + ' ' + _(u'm/s') + ' '    
-                        tempText += ' (' +  _(u'Maximal speed') + ' ' 
-                        if wind_options['use_kmh']:    
-                            tempText +=  str(round(maxval,2)*3.6)
-                            tempText +=  ' ' + _(u'km/h') + ')' 
-                        else:
-                            tempText +=  str(round(maxval,2)*1.0)
-                            tempText +=  ' ' + _(u'm/s') + ')' 
+                            tempText +=  str(self.status['meter']) + ' ' + _(u'm/s')    
                         wind_mon.val = tempText.encode('utf8')                # value on footer
                         
                     else:
@@ -459,12 +483,13 @@ class settings_page(ProtectedPage):
             if wind_options['use_kmh']: 
                 qdict['use_kmh'] = u'on'        
             if wind_options['enable_log_change']:
-                qdict['enable_log_change'] = u'on'             
+                qdict['enable_log_change'] = u'on'    
+            if wind_options['delete_max_24h']:
+                qdict['delete_max_24h'] = u'on'             
             qdict['log_maxspeed'] = 0
-            qmax = datetime_string()
-            qdict['log_date_maxspeed'] = qmax
+            qdict['log_date_maxspeed'] = datetime_string()
             wind_options['log_maxspeed'] = 0
-            wind_options['log_date_maxspeed'] = qmax  
+            wind_options['log_date_maxspeed'] = datetime_string()  
 
             wind_options.web_update(qdict)   
 
