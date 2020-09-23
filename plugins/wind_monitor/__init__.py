@@ -4,8 +4,8 @@ __author__ = 'Martin Pihrt'
 # This plugin read data from I2C counter PCF8583 on I2C address 0x50. Max count PCF8583 is 1 milion pulses per seconds
 
 import json
-import time
-from datetime import datetime
+import time as time_
+from datetime import datetime, time
 import sys
 import traceback
 import os
@@ -78,18 +78,19 @@ class WindSender(Thread):
     def _sleep(self, secs):
         self._sleep_time = secs
         while self._sleep_time > 0 and not self._stop.is_set():
-            time.sleep(1)
+            time_.sleep(1)
             self._sleep_time -= 1
 
     def run(self):
-        millis = int(round(time.time() * 1000))
+        millis = int(round(time_.time() * 1000))
 
         last_millis = millis        # timer for save log
-        last_clear_millis = millis  # for clearing status in screen after 60 sec
-        last_clear_max =    millis  # for clearing max speed after 24 hours
+        last_clear_millis = millis  # last clear millis for timer
         send = False                # send email
         disable_text = True
         val = 0
+
+        en_del_24h = True
            
         wind_mon = showInFooter() #  instantiate class to enable data in footer
         wind_mon.label = _('Wind Speed')            # label on footer
@@ -175,7 +176,7 @@ class WindSender(Thread):
                                 if wind_options['sendeml']:                   # if enabled send email
                                     send = True  
 
-                        millis = int(round(time.time() * 1000))
+                        millis = int(round(time_.time() * 1000))
  
                         if wind_options['enable_log']:                        # if logging
                             interval = (wind_options['log_interval'] * 60000)
@@ -190,8 +191,12 @@ class WindSender(Thread):
 
 
                         if wind_options['delete_max_24h']:                    # if enable deleting max after 24 hours (86400000 ms)
-                            if (millis - last_clear_max) >= 86400000:   
-                                last_clear_max = millis     
+                            now = datetime.now()
+                            now_time = now.time()
+                            if now_time >= time(0,0) and now_time <= time(0,2) and en_del_24h: # is time for deleting only in time 00:00:00 - 00:02:00    
+                                en_del_24h = False
+
+                                qdict = {}
                                 if wind_options['use_wind_monitor']:
                                     qdict['use_wind_monitor'] = u'on' 
                                 if wind_options['address']:
@@ -205,13 +210,15 @@ class WindSender(Thread):
                                 if wind_options['enable_log_change']:
                                     qdict['enable_log_change'] = u'on'    
                                 if wind_options['delete_max_24h']:
-                                    qdict['delete_max_24h'] = u'on'  
+                                    qdict['delete_max_24h'] = u'on'             
                                 qdict['log_maxspeed'] = 0
                                 qdict['log_date_maxspeed'] = datetime_string()
                                 wind_options['log_maxspeed'] = 0
-                                wind_options['log_date_maxspeed'] = datetime_string()  
-                                wind_options.web_update(qdict) 
+                                wind_options['log_date_maxspeed'] = datetime_string()
                                 log.info(NAME, datetime_string() + ' ' + _('Deleting maximal speed after 24 hours.'))
+                                update_log()
+                        else:
+                            en_del_24h = True        
 
                         tempText = ""
                         if wind_options['use_kmh']:
@@ -328,7 +335,7 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
         try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
         try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
-        time.sleep(10)
+        time_.sleep(10)
         # read number (pulses in counter) and translate to DEC
         counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
         num1 = (counter[1] & 0x0F)             # units
@@ -342,7 +349,7 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
 
     except:
         log.error(NAME, _('Wind speed monitor plug-in') + traceback.format_exc())
-        time.sleep(10)
+        time_.sleep(10)
         return None
 
 
@@ -427,15 +434,23 @@ def update_log():
         create_default_graph()
         graph_data = read_graph_log()
 
-    timestamp = int(time.time())
+    timestamp = int(time_.time())
 
-    maximum = graph_data[0]['balances']
-    maxval = {'total': get_all_values()[1]}
-    maximum.update({timestamp: maxval})
+    try:
+        maximum = graph_data[0]['balances']
+        maxval = {'total': get_all_values()[1]}
+        maximum.update({timestamp: maxval})
 
-    actual = graph_data[1]['balances']
-    actval = {'total': get_all_values()[0]}
-    actual.update({timestamp: actval})
+        actual = graph_data[1]['balances']
+        actval = {'total': get_all_values()[0]}
+        actual.update({timestamp: actval})
+    except:
+        maximum = 0
+        maxval = {'total': get_all_values()[1]}
+        maximum.update({timestamp: maxval})
+        actual = graph_data[1]['balances']
+        actval = {'total': get_all_values()[0]}
+        actual.update({timestamp: actval})
  
     write_graph_log(graph_data)
 
