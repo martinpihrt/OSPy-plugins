@@ -1,13 +1,13 @@
 Tank Monitor Readme
 ====
 
-This plugin measures the water level in the tank. If the water level falls below the specified limit above ground will stop watering, stop the scheduler and sent an email with an error message.  
+This plugin measures the water level in the tank. If the water level falls below the specified limit above ground will stop watering, stop the scheduler and sent an E-mail with an error message.  
 
 
 Plugin setup
 -----------
 * Check Use ultrasonic measuring the water level in the tank:    
-  if checked measures the water level in the tank is active.  
+  If checked measures the water level in the tank is active.  
 
 * The distance from the sensor to the minimum water level in the tank:  
   Enter the distance from the sensor to the minimum water level in the tank (the tank bottom).  
@@ -16,13 +16,31 @@ Plugin setup
   Enter the distance from the sensor to the maximu water level in the tank (maximum to sensor - 2cm).  
 
 * The water level from the bottom to the minimum water level in the tank:  
-  Enter the level for the minimum water level in the tank. If it falls below this level will stop watering, stop the scheduler and send an email (For this function required e-mail plugin).  
+  Enter the level for the minimum water level in the tank. If it falls below this level will stop watering, stop the scheduler and send an E-mail (For this function required E-mail plugin).  
 
-* Send an e-mail with an error if sonic probe has fault: (and stop scheduler!)
-  For this function required e-mail plugin
+* Stop scheduller if is minimum water in the tank:
+  Disabling the scheduler if is minimum water level in tank
 
 * Cylinder diameter for volume calculation:
   Enter the diameter for volume calculation.
+
+* Display as liters or m3:
+  Show measured water as liters or m3.
+  
+* Send an E-mail with an error that there is minimum water in the tank:
+  For this function required E-mail plugin.
+
+* Send an E-mail with an error if sonic probe has fault: (and stop scheduler!)
+  For this function required E-mail plugin.
+
+* Regulate the maximum water level:
+  If checked, regulation have the maximal water level active.
+
+* Maximum maintained water level:
+  If the measured water level exceeds this set value, the output is activated.    
+
+* Select Output for regulation:
+  Select Output for regulation zones.
 
 * Enable logging:
   Enable logging and graphing.

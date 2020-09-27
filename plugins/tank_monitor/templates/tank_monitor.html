@@ -196,7 +196,7 @@ function create_graph(result) {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The water level from the bottom to the minimum water level in the tank'):</td>
-                <td title=$:{json.dumps(_(u'Distance from the bottom (ie the minimum water) to the set this minimum level, when it is this activated (send an e-mail)'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'Distance from the bottom (ie the minimum water) to the set this minimum level, when it is this activated (send an E-mail)'), ensure_ascii=False)}>
                     <input name='water_minimum' type='number' min="2" max="400" value='$plugin_options["water_minimum"]'> (2-400 $_('cm'))
                 </td>
             </tr>
@@ -220,14 +220,14 @@ function create_graph(result) {
                 </td>
             </tr>            
             <tr>
-                <td style='text-transform: none;'>$_('Send an e-mail with an error that there is minimum water in the tank'):</td>
-                <td title=$:{json.dumps(_(u'For this function required email plugin'), ensure_ascii=False)}>
+                <td style='text-transform: none;'>$_('Send an E-mail with an error that there is minimum water in the tank'):</td>
+                <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
                     <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Send an e-mail with an error if sonic probe has fault and stop scheduler!'):</td>
-                <td title=$:{json.dumps(_(u'For this function required email plugin'), ensure_ascii=False)}>
+                <td style='text-transform: none;'>$_('Send an E-mail with an error if sonic probe has fault and stop scheduler!'):</td>
+                <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
                     <input name='use_water_err' type='checkbox'${" checked" if plugin_options['use_water_err'] else ""}>
                 </td>
             </tr>            
@@ -237,10 +237,37 @@ function create_graph(result) {
                     <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
                 </td>
             </tr>
+            <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>             
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'><b>$_('Regulate the maximum water level'):</b></td>
+                <td title=$:{json.dumps(_(u'If checked, regulation is enabled'), ensure_ascii=False)}>
+                    <input name='enable_reg' type='checkbox'${" checked" if plugin_options['enable_reg'] else ""}>   
+                </td>
+            </tr>   
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum maintained water level'):</td>
+                <td title=$:{json.dumps(_(u'If the measured water level exceeds this set value, the output is activated'), ensure_ascii=False)}>
+                    <input name='reg_max' type='number' min="10" max="400" value='$plugin_options["reg_max"]'> (10-400 $_('cm'))
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output for regulation'):</td>
+                <td title=$:{json.dumps(_(u'Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="reg_output">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["reg_output"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                        
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
                 <td>

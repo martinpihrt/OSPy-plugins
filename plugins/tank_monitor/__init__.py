@@ -52,7 +52,11 @@ tank_options = PluginOptions(
        'log_interval': 1,      # interval for log in minutes
        'log_records': 0,       # the number of records 
        'check_liters': False,  # display as liters or m3 (true = liters)
-       'use_water_err': False  # send email probe has error
+       'use_water_err': False, # send email probe has error
+       'enable_reg': False,    # use maximal water regulation
+       'reg_max': 300,         # maximal water level in cm
+       'reg_output': 0         # selector for output
+
     } 
 )
 
@@ -94,11 +98,14 @@ class Sender(Thread):
         once_text = True
         two_text = True
         three_text = True
+        five_text = True
+        six_text = True
         send = False
         mini = True
         sonic_cm = get_sonic_cm()
         level_in_tank = get_sonic_tank_cm(sonic_cm)
-        self._sleep(5)
+        regulation_text = _(u'Regulation NONE.')
+        self._sleep(2)
 
         tank_mon = showInFooter() #  instantiate class to enable data in footer
         tank_mon.button = "tank_monitor/settings"       # button redirect on footer
@@ -136,13 +143,34 @@ class Sender(Thread):
                             log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3') + '.')
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.') 
+                        log.info(NAME, regulation_text)
+
+                        if tank_options['enable_reg']:                                    # if enable regulation "maximum water level"
+                            reg_station = stations.get(tank_options['reg_output'])
+                            if level_in_tank > tank_options['reg_max']:                   # if actual level in tank > set maximum water level
+                                if five_text:
+                                    reg_station.active = True                             # activate output
+                                    five_text = False
+                                    six_text = True
+                                    regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + str(reg_station.name) + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                            else:
+                                if six_text:
+                                    reg_station.active = False                            # deactivate output
+                                    five_text = True
+                                    six_text = False
+                                    regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + str(reg_station.name) + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                                
+                            if reg_station.remaining_seconds != 0:                        # activate again if needed
+                                reg_station.active = True     
 
                         qdict = {}
                         if status['level'] > tank_options['log_maxlevel']:                # maximum level check 
                             if tank_options['use_sonic']:
                                 qdict['use_sonic'] = u'on' 
                             if tank_options['check_liters']:
-                                qdict['check_liters'] = u'on'                                
+                                qdict['check_liters'] = u'on'  
+                            if tank_options['enable_reg']:
+                                qdict['enable_reg'] = u'on'                                                               
                             if tank_options['use_stop']:
                                 qdict['use_stop']  = u'on'
                             if tank_options['use_send_email']:     
@@ -159,7 +187,9 @@ class Sender(Thread):
                             if tank_options['use_sonic']:
                                 qdict['use_sonic'] = u'on' 
                             if tank_options['check_liters']:
-                                qdict['check_liters'] = u'on' 
+                                qdict['check_liters'] = u'on'
+                            if tank_options['enable_reg']:
+                                qdict['enable_reg'] = u'on'                                 
                             if tank_options['use_stop']:
                                 qdict['use_stop']  = u'on'
                             if tank_options['use_send_email']:     
@@ -495,7 +525,9 @@ class settings_page(ProtectedPage):
             if tank_options['use_sonic']:
                 qdict['use_sonic'] = u'on' 
             if tank_options['check_liters']:
-                qdict['check_liters'] = u'on'                
+                qdict['check_liters'] = u'on'    
+            if tank_options['enable_reg']:
+                qdict['enable_reg'] = u'on'                            
             if tank_options['enable_log']:
                 qdict['enable_log'] = u'on'
             if tank_options['use_stop']:
