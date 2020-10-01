@@ -434,6 +434,8 @@ def update_log():
         write_log([])
         log_data = read_log()
 
+    from datetime import datetime    
+
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
     data['time'] = str(datetime.now().strftime('%H:%M:%S'))
