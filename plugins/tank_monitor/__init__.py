@@ -634,7 +634,7 @@ class graph_json(ProtectedPage):
                 
         json_data = read_graph_log()
 
-        for i in range(0, 3):                                                  # 0 = minimum, 1 = maximum, 2 = actual
+        for i in range(0, 4):                                                  # 0 = minimum, 1 = maximum, 2 = actual, 3 = volume
             temp_balances = {}
             for key in json_data[i]['balances']:
             	find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
