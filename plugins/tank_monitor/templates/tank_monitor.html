@@ -255,6 +255,12 @@ function create_graph(result) {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Minimum maintained water level'):</td>
+                <td title=$:{json.dumps(_(u'If the measured water level falls below this set value, the output is deactivated'), ensure_ascii=False)}>
+                    <input name='reg_min' type='number' min="10" max="400" value='$plugin_options["reg_min"]'> (10-400 $_('cm'))
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Select Output for regulation'):</td>
                 <td title=$:{json.dumps(_(u'Select Output for controled zones'), ensure_ascii=False)}>
                     <select name="reg_output">
@@ -286,6 +292,23 @@ function create_graph(result) {
                     <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> $_('minutes (Minimum is 1)')
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Select filter for graph history'):</td>
+                <td title=$:{json.dumps(_(u'Select filter for graph history'), ensure_ascii=False)}>  
+                <select name="history">
+                    <option value="0" ${"selected" if plugin_options["history"]==0 else ""}>$_(u'Without limits')</option>
+                    <option value="1" ${"selected" if plugin_options["history"]==1 else ""}>$_(u'Day filter')</option>
+                    <option value="2" ${"selected" if plugin_options["history"]==2 else ""}>$_(u'Week filter')</option>
+                    <option value="3" ${"selected" if plugin_options["history"]==3 else ""}>$_(u'Month filter')</option>
+                    <option value="4" ${"selected" if plugin_options["history"]==4 else ""}>$_(u'Year filter')</option>
+                </select>
+                </td>
+            </tr>   
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>               
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

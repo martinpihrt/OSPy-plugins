@@ -7,7 +7,8 @@ __author__ = 'Martin Pihrt' # www.pihrt.com
 
 import json
 import time
-from datetime import datetime
+import datetime
+
 import sys
 import traceback
 import os
@@ -54,8 +55,10 @@ tank_options = PluginOptions(
        'check_liters': False,  # display as liters or m3 (true = liters)
        'use_water_err': False, # send email probe has error
        'enable_reg': False,    # use maximal water regulation
-       'reg_max': 300,         # maximal water level in cm
-       'reg_output': 0         # selector for output
+       'reg_max': 300,         # maximal water level in cm for activate
+       'reg_min': 280,         # minimal water level in cm for deactivate
+       'reg_output': 0,        # selector for output
+       'history': 0            # selector for graph history
 
     } 
 )
@@ -153,7 +156,7 @@ class Sender(Thread):
                                     five_text = False
                                     six_text = True
                                     regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + str(reg_station.name) + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
-                            else:
+                            if level_in_tank < tank_options['reg_min']:                   # if actual level in tank < set minimum water level
                                 if six_text:
                                     reg_station.active = False                            # deactivate output
                                     five_text = True
@@ -604,11 +607,43 @@ class log_json(ProtectedPage):
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
-    def GET(self):
+    def GET(self):    
+        #import datetime
+        data = []
+        
+        epoch = datetime.date(1970, 1, 1)                                      # first date
+        current_time  = datetime.date.today()                                  # actual date
+
+        if tank_options['history'] == 0:                                       # without filtering
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-Type', 'application/json')
+            return json.dumps(read_graph_log())
+
+        if tank_options['history'] == 1:
+            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
+        if tank_options['history'] == 2:
+            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
+        if tank_options['history'] == 3:
+            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
+        if tank_options['history'] == 4:
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+
+        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
+                
+        json_data = read_graph_log()
+
+        for i in range(0, 3):                                                  # 0 = minimum, 1 = maximum, 2 = actual
+            temp_balances = {}
+            for key in json_data[i]['balances']:
+            	find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
+                if find_key >= log_start:                                      # timestamp interval 
+                    print (find_key, log_start)
+                    temp_balances[key] = json_data[i]['balances'][key]
+            data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_graph_log())
-
+        return json.dumps(data)
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
@@ -648,4 +683,3 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         web.header('Content-Type', 'text/csv')
         return data
    
-

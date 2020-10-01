@@ -39,6 +39,9 @@ Plugin setup
 * Maximum maintained water level:
   If the measured water level exceeds this set value, the output is activated.    
 
+* Minimum maintained water level:
+  If the measured water level falls below this set value, the output is deactivated.   
+
 * Select Output for regulation:
   Select Output for regulation zones.
 
@@ -50,6 +53,12 @@ Plugin setup
 
 * Interval for logging:
   Logging interval (minimum 1 minute).
+
+* Select filter for graph history
+  Without limits
+  Day filter
+  Month filter
+  Year filter
 
 * Status:  
   Status window from the plugin.  
