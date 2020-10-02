@@ -4,7 +4,7 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
-from datetime import datetime
+import datetime
 import sys
 import os
 import traceback
@@ -36,7 +36,8 @@ pressure_options = PluginOptions(
         'sendeml': True,
         'emlsubject': _('Report from OSPy PRESSURE MONITOR plugin'),
         'enable_log': False,
-        'log_records': 0                                             # 0 = unlimited
+        'log_records': 0,       # 0 = unlimited
+        'history': 0            # selector for graph history
     }
 )
 
@@ -271,9 +272,11 @@ def update_log(status):
     ### Data for log ###
     try:
         log_data = read_log()
-    except:
+    except:   
         write_log([])
         log_data = read_log()
+
+    from datetime import datetime 
 
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
@@ -384,10 +387,45 @@ class log_json(ProtectedPage):
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
-    def GET(self):
+    def GET(self):    
+        data = []
+        
+        epoch = datetime.date(1970, 1, 1)                                      # first date
+        current_time  = datetime.date.today()                                  # actual date
+
+        if pressure_options['history'] == 0:                                   # without filtering
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-Type', 'application/json')
+            return json.dumps(read_graph_log())
+
+        if pressure_options['history'] == 1:
+            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
+        if pressure_options['history'] == 2:
+            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
+        if pressure_options['history'] == 3:
+            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
+        if pressure_options['history'] == 4:
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+
+        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
+                
+        
+        try:  
+            json_data = read_graph_log()   
+        except: 
+            create_default_graph()
+            json_data = read_graph_log()
+
+        temp_balances = {}
+        for key in json_data[0]['balances']:
+            find_key =  int(key.encode('utf8'))                                # key is in unicode ex: u'1601347000' -> find_key is int number
+            if find_key >= log_start:                                          # timestamp interval 
+                temp_balances[key] = json_data[0]['balances'][key]
+        data.append({ 'station': json_data[0]['station'], 'balances': temp_balances })
+
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_graph_log())
+        return json.dumps(data)
 
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type

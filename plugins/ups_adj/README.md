@@ -24,14 +24,20 @@ Plugin setup
 * Status:  
   Status window from the plugin.  
 
-* Enable logging:
+* Enable logging:  
   Enable logging and graphing.  
+
+* Select filter for graph history  
+  Without limits  
+  Day filter  
+  Month filter  
+  Year filter      
 
 Power line is connected via optocoupler between GPIO 23 - pin 16 and ground.
 Output pulse on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS.  
 
 
-The hardware should be connected as follows:
+The hardware should be connected as follows:  
 <a href="/plugins/ups_adj/static/images/schematics.png"><img src="/plugins/ups_adj/static/images/schematics.png" width="100%"></a>
 
 Recommend using optocoupler between GPIO and UPS. Visit [Martin Pihrt's blog](http://www.pihrt.com/elektronika/248-moje-rapsberry-pi-zavlazovani-zahrady). for more information.

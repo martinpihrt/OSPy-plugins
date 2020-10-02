@@ -5,7 +5,7 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
-from datetime import datetime
+import datetime
 import traceback
 import os
 from threading import Thread, Event
@@ -59,7 +59,8 @@ plugin_options = PluginOptions(
      'label_ds3': 'label',  # label for DS4
      'label_ds4': 'label',  # label for DS5
      'label_ds5': 'label',  # label for DS6
-     'ds_used': 1           # count DS18b20, default 1x max 6x
+     'ds_used': 1,          # count DS18b20, default 1x max 6x
+     'history': 0           # selector for graph history
      }
 )
 
@@ -342,7 +343,14 @@ def update_log(status):
     """Update data in json files.""" 
 
     ### Data for log ###
-    log_data = read_log()
+    try:
+        log_data = read_log()
+    except:   
+        write_log([])
+        log_data = read_log()
+
+    from datetime import datetime 
+
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
     data['time'] = str(datetime.now().strftime('%H:%M:%S'))
@@ -552,10 +560,41 @@ class log_json(ProtectedPage):
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
-    def GET(self):
+    def GET(self):    
+        data = []
+        
+        epoch = datetime.date(1970, 1, 1)                                      # first date
+        current_time  = datetime.date.today()                                  # actual date
+
+        if plugin_options['history'] == 0:                                     # without filtering
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-Type', 'application/json')
+            return json.dumps(read_graph_log())
+
+        if plugin_options['history'] == 1:
+            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
+        if plugin_options['history'] == 2:
+            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
+        if plugin_options['history'] == 3:
+            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
+        if plugin_options['history'] == 4:
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+
+        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
+                
+        json_data = read_graph_log()
+
+        for i in range(0, 7):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT
+            temp_balances = {}
+            for key in json_data[i]['balances']:
+              find_key =  int(key.encode('utf8'))                              # key is in unicode ex: u'1601347000' -> find_key is int number
+              if find_key >= log_start:                                        # timestamp interval 
+                    temp_balances[key] = json_data[i]['balances'][key]
+            data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_graph_log())
+        return json.dumps(data)
 
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type

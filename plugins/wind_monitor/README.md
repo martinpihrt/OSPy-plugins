@@ -45,25 +45,31 @@ Plugin setup
 * Wind speed state:  
   Show actual wind speed in meter per second.
 
-* Enable logging:
+* Enable logging:  
   Enable logging and graphing.
 
-* Save to log if maximal speed change:
+* Save to log if maximal speed change:  
   If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately.
 
-* Maximum number of log records:
+* Maximum number of log records:  
   Maximum number of log records (only for csv file).
 
-* Interval for logging:
+* Interval for logging:  
   Logging interval (minimum 1 minute).
 
-* Display in km/h:
+* Display in km/h:  
   the measured data will be displayed in km/h.  
+
+* Select filter for graph history  
+  Without limits  
+  Day filter  
+  Month filter  
+  Year filter      
 
 * Status:  
   Status window from the plugin.  
 
-The hardware should be connected as follows:
+The hardware should be connected as follows:  
 <a href="/plugins/wind_monitor/static/images/schematics.png"><img src="/plugins/wind_monitor/static/images/schematics.png" width="100%"></a>
 
 Visit [Martin Pihrt's blog](http://pihrt.com/elektronika/298-moje-raspberry-pi-plugin-prutokomer). for more information.

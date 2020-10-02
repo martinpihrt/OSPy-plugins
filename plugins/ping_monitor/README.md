@@ -23,23 +23,29 @@ Plugin setup
 * Number of invalid pings to restart the device:  
   If enabled restart this device, then this item affects how many unsuccessful pings will be performed before a restart. From 2 to 60.  
 
-* Restart this device:
+* Restart this device:  
   When enabled, the device will be restarted after a certain number of unsuccessful pings (HW restart).
 
-* Send an E-mail with statistics (csv file):
+* Send an E-mail with statistics (csv file):  
   Send a csv file with statistics via E-mail.
 
-* Interval for sending statistics:
+* Interval for sending statistics:  
   Interval for sending statistics by email. From 1 to 48 hours.
 
-* Delete statistics after send:
+* Delete statistics after send:  
   Delete the csv file with statistics after sending the E-mail and create a new clean file.
 
-* E-mail subject:
+* E-mail subject:  
   The subject of the message being sent.
 
-* Enable logging:
+* Enable logging:  
   When logging is enabled, a log file is created (required for the graph and for sending an e-mail at the same time).  
+
+* Select filter for graph history  
+  Without limits  
+  Day filter  
+  Month filter  
+  Year filter      
 
 * Status:  
   Status window from the plugin.  

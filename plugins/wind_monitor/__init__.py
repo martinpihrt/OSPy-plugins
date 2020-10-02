@@ -5,7 +5,7 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time as time_
-from datetime import datetime, time
+import datetime, time
 import sys
 import traceback
 import os
@@ -46,7 +46,8 @@ wind_options = PluginOptions(
         'log_records': 0,            # log records 0= unlimited 
         'use_kmh': False,            # measure in km/h or m/s
         'enable_log_change': False,  # enable save log max speed if max wind > last max wind
-        'delete_max_24h': False      # deleting max speed after 24 hours
+        'delete_max_24h': False,     # deleting max speed after 24 hours
+        'history': 0                 # selector for graph history
     }
 )
 
@@ -184,13 +185,12 @@ class WindSender(Thread):
                                last_millis = millis
                                update_log()
 
-
                         if (millis - last_clear_millis) >= 120000:            # after 120 second deleting in status screen
                                last_clear_millis = millis 
                                log.clear(NAME)  
 
-
                         if wind_options['delete_max_24h']:                    # if enable deleting max after 24 hours (86400000 ms)
+                            from datetime import datetime, time
                             now = datetime.now()
                             now_time = now.time()
                             if now_time >= time(0,0) and now_time <= time(0,2) and en_del_24h: # is time for deleting only in time 00:00:00 - 00:02:00    
@@ -411,9 +411,11 @@ def update_log():
     ### Data for log ###
     try:
         log_data = read_log()
-    except:
+    except:   
         write_log([])
         log_data = read_log()
+
+    from datetime import datetime 
 
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
@@ -576,10 +578,45 @@ class log_json(ProtectedPage):
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
-    def GET(self):
+    def GET(self):    
+        data = []
+        
+        epoch = datetime.date(1970, 1, 1)                                      # first date
+        current_time  = datetime.date.today()                                  # actual date
+
+        if wind_options['history'] == 0:                                       # without filtering
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-Type', 'application/json')
+            return json.dumps(read_graph_log())
+
+        if wind_options['history'] == 1:
+            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
+        if wind_options['history'] == 2:
+            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
+        if wind_options['history'] == 3:
+            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
+        if wind_options['history'] == 4:
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+
+        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
+                
+        try:  
+            json_data = read_graph_log()    
+        except: 
+            create_default_graph()
+            json_data = read_graph_log()
+
+        for i in range(0, 2):                                                  # 0 = maximum, 2 = actual
+            temp_balances = {}
+            for key in json_data[i]['balances']:
+                find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
+                if find_key >= log_start:                                      # timestamp interval 
+                    temp_balances[key] = json_data[i]['balances'][key]
+            data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_graph_log())
+        return json.dumps(data)
 
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type

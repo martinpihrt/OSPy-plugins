@@ -55,8 +55,14 @@ Plugin setup
 * Graph
   To use the graph it is necessary to enable saving of measured data (from temperature sensors). When using for the first time, name the sensors first and then delete all records (using the button). 
 
+* Select filter for graph history  
+  Without limits  
+  Day filter  
+  Month filter  
+  Year filter    
 
-The hardware should be connected as follows (without separate I2C Bus):
+
+The hardware should be connected as follows (without separate I2C Bus):  
 <a href="/plugins/air_temp_humi/static/images/schematics.png"><img src="/plugins/air_temp_humi/static/images/schematics.png" width="100%"></a>
 
 Visit [Martin Pihrt's blog](https://pihrt.com/elektronika/380-moje-raspberry-pi-plugin-ospy-mereni-teploty-pomoci-ds18b20). for more information HW board with DS18B20 probe.
