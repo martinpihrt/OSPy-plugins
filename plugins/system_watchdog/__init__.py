@@ -194,7 +194,8 @@ class install_page(ProtectedPage):
         run_process(cmd)
 
         reboot(True) # reboot HW software after instal watchdog
-        return self.core_render.restarting(plugin_url(status_page))
+        msg = _('The system (Linux) will now restart (restart started by the user in the Watch-dog plugins), please wait for the page to reload.')
+        return self.core_render.notice(plugin_url(status_page), msg)        
 
 class stop_page(ProtectedPage):
     """Stop watchdog service page"""
@@ -211,7 +212,8 @@ class stop_page(ProtectedPage):
         log.debug(NAME, cmd)
         run_process(cmd)
         restart(3) 
-        return self.core_render.restarting(plugin_url(status_page))      
+        msg = _('The Watchdog service will now stoped, OSPy is now restarted (restart started by the Watch-dog plugins), please wait for the page to reload.')
+        return self.core_render.notice(plugin_url(status_page), msg)              
         
 class start_page(ProtectedPage):
     """Start watchdog service page"""
@@ -228,5 +230,6 @@ class start_page(ProtectedPage):
         log.debug(NAME, cmd)
         run_process(cmd)
         restart(3)
-        return self.core_render.restarting(plugin_url(status_page))
+        msg = _('The Watchdog service will now started, OSPy is now restarted (restart started by the Watch-dog plugins), please wait for the page to reload.')
+        return self.core_render.notice(plugin_url(status_page), msg) 
         
