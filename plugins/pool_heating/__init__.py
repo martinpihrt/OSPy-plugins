@@ -111,8 +111,8 @@ class Sender(Thread):
 
                 # regulation
                 if plugin_options['enabled_a']:  
-                    ds_a_on = 10#temperature_ds[plugin_options['probe_A_on']]    #  pool  
-                    ds_a_off = 20#temperature_ds[plugin_options['probe_A_off']]  #  solar
+                    ds_a_on = temperature_ds[plugin_options['probe_A_on']]    #  pool  
+                    ds_a_off = temperature_ds[plugin_options['probe_A_off']]  #  solar
                     station_a = stations.get(plugin_options['control_output_A'])
 
                     if ds_a_off >= (ds_a_on + plugin_options['temp_a_on']):    # ON
