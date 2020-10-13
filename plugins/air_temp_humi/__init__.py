@@ -59,7 +59,7 @@ plugin_options = PluginOptions(
      'label_ds3': 'label',  # label for DS4
      'label_ds4': 'label',  # label for DS5
      'label_ds5': 'label',  # label for DS6
-     'ds_used': 1,          # count DS18b20, default 1x max 6x
+     'ds_used': 0,          # count DS18b20, default 0 max 6x
      'history': 0           # selector for graph history
      }
 )
@@ -115,6 +115,8 @@ class Sender(Thread):
         air_temp.button = "air_temp_humi/settings"   # button redirect on footer
         air_temp.label =  _(u'Temperature')           # label on footer
 
+        regulation_text = ''
+
         #flow = showOnTimeline()  #  instantiate class to enable data display
         #flow.unit = _(u'Liters')
         #flow.val = 10
@@ -125,10 +127,10 @@ class Sender(Thread):
                 if plugin_options['enabled']:        # if plugin is enabled   
                     log.clear(NAME)
                     log.info(NAME, datetime_string())
+                    tempText = ""
 
                     if plugin_options['enable_dht']: # if DHT11 probe is enabled
                       try:
-                
                         result = instance.read()
                         if result.is_valid():
                           Temperature = result.temperature
@@ -138,53 +140,77 @@ class Sender(Thread):
                            
                           tempDHT = Temperature
                           humiDHT = Humidity 
+
                       except:
                         log.clear(NAME)
                         log.info(NAME, datetime_string())
-                        log.info(NAME, _(u'DHT11 data is not valid'))                                     
+                        log.info(NAME, _(u'DHT11 data is not valid'))  
+                        tempText += ', ' + _(u'DHT11 data is not valid')                                   
                       
                       if Humidity and Temperature != 0:
                         self.status['temp'] = Temperature
                         self.status['humi'] = Humidity
                         log.info(NAME, _('Temperature') + ' DHT: ' + u'%.1f \u2103' % Temperature)
                         log.info(NAME, _('Humidity') + ' DHT: ' + u'%.1f' % Humidity + ' %RH')
+                        tempText += ', DHT: ' + u'%.1f \u2103' % Temperature + u'%.1f' % Humidity + ' %RH'
+
                         if plugin_options['enabled_reg']:
-                          OT = _('ON') if self.status['outp'] is 1 else _('OFF') 
-                          log.info(NAME, _(u'Output') + ': ' + u'%s' % OT)
+                            log.info(NAME, regulation_text)
 
                         station = stations.get(plugin_options['control_output'])
 
                         if plugin_options['enabled_reg']:  # if regulation is enabled
                           if Humidity > (plugin_options['humidity_on'] + plugin_options['hysteresis']/2) and var1 is True:  
-                            station.active = True
+                            start = datetime.datetime.now()
+                            sid = station.index
+                            new_schedule = {
+                              'active': True,
+                              'program': -1,
+                              'station': sid,
+                              'program_name': _('Air Temperature'),
+                              'fixed': True,
+                              'cut_off': 0,
+                              'manual': True,
+                              'blocked': False,
+                              'start': start,
+                              'original_start': start,
+                              'end': start + datetime.timedelta(days=10),
+                              'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                              'usage': stations.get(sid).usage
+                            }
+
+                            log.start_run(new_schedule)
+                            stations.activate(new_schedule['station'])    
                             var1 = False
                             var2 = True
                             self.status['outp'] = 1
-                            log.debug(NAME, _(u'Station output was turned on.'))
+                            regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(station.index+1) + ').'
                             update_log(self.status)
                              
                           if Humidity < (plugin_options['humidity_off'] - plugin_options['hysteresis']/2) and var2 is True:  
-                             station.active = False
-                             var1 = True
-                             var2 = False 
-                             self.status['outp'] = 0
-                             log.debug(NAME, _(u'Station output was turned off.'))
-                             update_log(self.status)    
+                            sid = station.index
+                            stations.deactivate(sid)
+                            active = log.active_runs()
+                            for interval in active:
+                              if interval['station'] == sid:
+                                log.finish_run(interval) 
+                            var1 = True
+                            var2 = False 
+                            self.status['outp'] = 0
+                            regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station.index+1) + ').'
+                            update_log(self.status)    
 
-                        # Activate again if needed:
-                        if station.remaining_seconds != 0:
-                          station.active = True
- 
                     if plugin_options['ds_enabled']:  # if in plugin is enabled DS18B20
-                       DS18B20_read_data()            # get read DS18B20 temperature data to global tempDS[xx]
-
-                       tempText = ""
+                       DS18B20_read_data()            # get read DS18B20 temperature data to global tempDS[xx] 
+                       tempText +=  _(u'DS') + ': '                     
                        for i in range(0, plugin_options['ds_used']):
                           self.status['DS%d' % i] = tempDS[i]
-                          log.info(NAME, _(u'Temperature') + ' DS' + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
+                          log.info(NAME, _(u'Temperature') + ' ' + _(u'DS') + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
                           tempText += u' %s' % plugin_options['label_ds%d' % i] + u' %.1f \u2103' % self.status['DS%d' % i] 
-                          
-                       air_temp.val = tempText.encode('utf8')    # value on footer                                                 
+                       
+                    if plugin_options['enabled_reg']: 
+                       tempText += ', ' + regulation_text
+                    air_temp.val = tempText.encode('utf8')    # value on footer                                                 
 
                     if plugin_options['enable_log']:  # enabled logging
                           millis = int(round(time.time() * 1000))
