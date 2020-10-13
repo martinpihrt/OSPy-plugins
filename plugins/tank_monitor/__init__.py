@@ -124,7 +124,7 @@ class Sender(Thread):
                         two_text = False
  
                     sonic_cm = get_sonic_cm()
-                    level_in_tank = get_sonic_tank_cm(sonic_cm)
+                    level_in_tank = 40#get_sonic_tank_cm(sonic_cm)
 
                     tempText = ""                    
 
@@ -152,19 +152,43 @@ class Sender(Thread):
                             reg_station = stations.get(tank_options['reg_output'])
                             if level_in_tank > tank_options['reg_max']:                   # if actual level in tank > set maximum water level
                                 if five_text:
-                                    reg_station.active = True                             # activate output
                                     five_text = False
                                     six_text = True
-                                    regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + str(reg_station.name) + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                    regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                    
+                                    start = datetime.datetime.now()
+                                    sid = reg_station.index
+                                    new_schedule = {
+                                        'active': True,
+                                        'program': -1,
+                                        'station': sid,
+                                        'program_name': _('Tank Monitor'),
+                                        'fixed': True,
+                                        'cut_off': 0,
+                                        'manual': True,
+                                        'blocked': False,
+                                        'start': start,
+                                        'original_start': start,
+                                        'end': start + datetime.timedelta(days=10),
+                                        'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                                        'usage': stations.get(sid).usage
+                                    }
+
+                                    log.start_run(new_schedule)
+                                    stations.activate(new_schedule['station'])    
+                
                             if level_in_tank < tank_options['reg_min']:                   # if actual level in tank < set minimum water level
                                 if six_text:
-                                    reg_station.active = False                            # deactivate output
                                     five_text = True
                                     six_text = False
-                                    regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + str(reg_station.name) + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
-                                                
-                            if reg_station.remaining_seconds != 0:                        # activate again if needed
-                                reg_station.active = True     
+                                    regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                    
+                                    sid = reg_station.index
+                                    stations.deactivate(sid)
+                                    active = log.active_runs()
+                                    for interval in active:
+                                        if interval['station'] == sid:
+                                            log.finish_run(interval)                             
 
                         qdict = {}
                         if status['level'] > tank_options['log_maxlevel']:                # maximum level check 
@@ -252,7 +276,10 @@ class Sender(Thread):
 
                         self._sleep(10)        
 
+                    if tank_options['enable_reg']:
+                    	tempText += ', ' + regulation_text
                     tank_mon.val = tempText.encode('utf8')          # value on footer 
+
                     self._sleep(3)                      
                                         
                 else:
