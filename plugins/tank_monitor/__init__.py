@@ -124,7 +124,7 @@ class Sender(Thread):
                         two_text = False
  
                     sonic_cm = get_sonic_cm()
-                    level_in_tank = 40#get_sonic_tank_cm(sonic_cm)
+                    level_in_tank = get_sonic_tank_cm(sonic_cm)
 
                     tempText = ""                    
 
