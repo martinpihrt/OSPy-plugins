@@ -3,7 +3,7 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
-from datetime import datetime
+import datetime
 import traceback
 import os
 from threading import Thread, Event
@@ -131,24 +131,45 @@ class Sender(Thread):
                     station_a = stations.get(plugin_options['control_output_A'])
 
                     if ds_a_on > plugin_options['temp_a_on']:    # if DSxx > temperature AON
-                        station_a.active = True
                         a_state = 1
                         if msg_a_on:
                             msg_a_on = False
                             msg_a_off = True
-                            log.info(NAME, datetime_string() + ' ' + str(station_a.name) + ' ' + _(u'was turned on.'))
+                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_a.name + ' ' + _(u'was turned on.'))
+                            start = datetime.datetime.now()
+                            sid = station_a.index
+                            new_schedule = {
+                                'active': True,
+                                'program': -1,
+                                'station': sid,
+                                'program_name': _('Temperature Switch A'),
+                                'fixed': True,
+                                'cut_off': 0,
+                                'manual': True,
+                                'blocked': False,
+                                'start': start,
+                                'original_start': start,
+                                'end': start + datetime.timedelta(days=10),
+                                'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                                'usage': stations.get(sid).usage
+                            }
+
+                            log.start_run(new_schedule)
+                            stations.activate(new_schedule['station'])  
 
                     if ds_a_off < plugin_options['temp_a_off']:  # if DSxx < temperature AOFF
-                        station_a.active = False
                         a_state = 0
                         if msg_a_off:
                             msg_a_off = False
                             msg_a_on = True
-                            log.info(NAME, datetime_string() + ' ' + str(station_a.name) + ' ' + _(u'was turned off.'))   
-
-                    # Activate again if needed:
-                    if station_a.remaining_seconds != 0:
-                        station_a.active = True   
+                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_a.name + ' ' + _(u'was turned off.'))  
+                            sid = station_a.index
+                            stations.deactivate(sid)
+                            active = log.active_runs()
+                            for interval in active:
+                                if interval['station'] == sid:
+                                    log.finish_run(interval)                             
+ 
                 else:
                     a_state = -1    
 
@@ -157,26 +178,46 @@ class Sender(Thread):
                     ds_b_on = temperature_ds[plugin_options['probe_B_on']]
                     ds_b_off = temperature_ds[plugin_options['probe_B_off']]
                     station_b = stations.get(plugin_options['control_output_B'])
-
                     if ds_b_on > plugin_options['temp_b_on']:    # if DSxx > temperature BON
-                        station_b.active = True
                         b_state = 1
                         if msg_b_on:
                             msg_b_on = False
                             msg_b_off = True
-                            log.info(NAME, datetime_string() + ' ' + str(station_b.name) + ' ' + _(u'was turned on.'))
+                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_b.name + ' ' + _(u'was turned on.'))
+                            start = datetime.datetime.now()
+                            sid = station_b.index
+                            new_schedule = {
+                                'active': True,
+                                'program': -1,
+                                'station': sid,
+                                'program_name': _('Temperature Switch B'),
+                                'fixed': True,
+                                'cut_off': 0,
+                                'manual': True,
+                                'blocked': False,
+                                'start': start,
+                                'original_start': start,
+                                'end': start + datetime.timedelta(days=10),
+                                'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                                'usage': stations.get(sid).usage
+                            }
+
+                            log.start_run(new_schedule)
+                            stations.activate(new_schedule['station'])                             
 
                     if ds_b_off < plugin_options['temp_b_off']:  # if DSxx < temperature BOFF
-                        station_b.active = False
                         b_state = 0
                         if msg_b_off:
                             msg_b_off = False
                             msg_b_on = True
-                            log.info(NAME, datetime_string() + ' ' + str(station_b.name) + ' ' + _(u'was turned off.'))   
-
-                    # Activate again if needed:
-                    if station_b.remaining_seconds != 0:
-                        station_b.active = True   
+                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_b.name + ' ' + _(u'was turned off.'))   
+                            sid = station_b.index
+                            stations.deactivate(sid)
+                            active = log.active_runs()
+                            for interval in active:
+                                if interval['station'] == sid:
+                                    log.finish_run(interval)                            
+  
                 else:
                     b_state = -1                        
 
@@ -187,24 +228,45 @@ class Sender(Thread):
                     station_c = stations.get(plugin_options['control_output_C'])
 
                     if ds_c_on > plugin_options['temp_c_on']:    # if DSxx > temperature CON
-                        station_c.active = True
                         c_state = 1
                         if msg_c_on:
                             msg_c_on = False
                             msg_c_off = True
-                            log.info(NAME, datetime_string() + ' ' + str(station_c.name) + ' ' + _(u'was turned on.'))
+                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_c.name + ' ' + _(u'was turned on.'))
+                            start = datetime.datetime.now()
+                            sid = station_c.index
+                            new_schedule = {
+                                'active': True,
+                                'program': -1,
+                                'station': sid,
+                                'program_name': _('Temperature Switch C'),
+                                'fixed': True,
+                                'cut_off': 0,
+                                'manual': True,
+                                'blocked': False,
+                                'start': start,
+                                'original_start': start,
+                                'end': start + datetime.timedelta(days=10),
+                                'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                                'usage': stations.get(sid).usage
+                            }
+
+                            log.start_run(new_schedule)
+                            stations.activate(new_schedule['station'])                             
 
                     if ds_c_off < plugin_options['temp_c_off']:  # if DSxx < temperature COFF
-                        station_c.active = False
                         c_state = 0
                         if msg_c_off:
                             msg_c_off = False
                             msg_c_on = True
-                            log.info(NAME, datetime_string() + ' ' + str(station_c.name) + ' ' + _(u'was turned off.'))   
-
-                    # Activate again if needed:
-                    if station_c.remaining_seconds != 0:
-                        station_c.active = True   
+                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_c.name + ' ' + _(u'was turned off.')) 
+                            sid = station_c.index
+                            stations.deactivate(sid)
+                            active = log.active_runs()
+                            for interval in active:
+                                if interval['station'] == sid:
+                                    log.finish_run(interval)                              
+ 
                 else:
                     c_state = -1                          
 
@@ -212,19 +274,19 @@ class Sender(Thread):
                 tempText = ' '
 
                 if a_state == 0:
-                    tempText += _(u'Regulation A set OFF')  
+                    tempText += _(u'Regulation A set OFF') + '. '  
                 if a_state == 1:
-                    tempText += _(u'Regulation A set ON')      
+                    tempText += _(u'Regulation A set ON') + '. '     
                 if b_state == 0:
-                    tempText += ' ' + _(u'Regulation B set OFF')  
+                    tempText += ' ' + _(u'Regulation B set OFF') + '. '
                 if b_state == 1:
-                    tempText += ' ' + _(u'Regulation B set ON')    
+                    tempText += ' ' + _(u'Regulation B set ON') + '. '   
                 if c_state == 0:
-                    tempText += ' ' + _(u'Regulation C set OFF')  
+                    tempText += ' ' + _(u'Regulation C set OFF') + '. ' 
                 if c_state == 1:
-                    tempText += ' ' + _(u'Regulation C set ON')     
+                    tempText += ' ' + _(u'Regulation C set ON') + '. '    
                 if (a_state == -1) and (b_state == -1) and (c_state == -1):
-                    tempText = _(u'No change')
+                    tempText = _(u'No change') + '. '
 
                 temp_sw.val = tempText.encode('utf8')    # value on footer                                                          
 
