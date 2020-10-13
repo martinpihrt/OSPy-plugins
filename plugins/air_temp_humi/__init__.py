@@ -145,14 +145,14 @@ class Sender(Thread):
                         log.clear(NAME)
                         log.info(NAME, datetime_string())
                         log.info(NAME, _(u'DHT11 data is not valid'))  
-                        tempText += ', ' + _(u'DHT11 data is not valid')                                   
+                        tempText += ' ' + _(u'DHT11 data is not valid')                                   
                       
                       if Humidity and Temperature != 0:
                         self.status['temp'] = Temperature
                         self.status['humi'] = Humidity
-                        log.info(NAME, _('Temperature') + ' DHT: ' + u'%.1f \u2103' % Temperature)
-                        log.info(NAME, _('Humidity') + ' DHT: ' + u'%.1f' % Humidity + ' %RH')
-                        tempText += ', DHT: ' + u'%.1f \u2103' % Temperature + u'%.1f' % Humidity + ' %RH'
+                        log.info(NAME, _(u'Temperature') + ' ' + _(u'DHT') + ': ' + u'%.1f \u2103' % Temperature)
+                        log.info(NAME, _(u'Humidity') + ' ' + _(u'DHT') + ': ' + u'%.1f' % Humidity + ' %RH')
+                        tempText += ' ' +  _(u'DHT') + ': ' + u'%.1f \u2103' % Temperature + ' ' + u'%.1f' % Humidity + ' %RH' + ' '
 
                         if plugin_options['enabled_reg']:
                             log.info(NAME, regulation_text)
@@ -209,7 +209,7 @@ class Sender(Thread):
                           tempText += u' %s' % plugin_options['label_ds%d' % i] + u' %.1f \u2103' % self.status['DS%d' % i] 
                        
                     if plugin_options['enabled_reg']: 
-                       tempText += ', ' + regulation_text
+                       tempText += ' ' + regulation_text
                     air_temp.val = tempText.encode('utf8')    # value on footer                                                 
 
                     if plugin_options['enable_log']:  # enabled logging
