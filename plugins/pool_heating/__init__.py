@@ -76,11 +76,7 @@ class Sender(Thread):
     def run(self):
         temperature_ds = [-127,-127,-127,-127,-127,-127]
         msg_a_on = True
-        msg_a_off = True
-        msg_b_on = True
-        msg_b_off = True
-        msg_c_on = True
-        msg_c_off = True                
+        msg_a_off = True              
 
         temp_sw = showInFooter() #  instantiate class to enable data in footer
         temp_sw.button = "pool_heating/settings"   # button redirect on footer
@@ -90,6 +86,7 @@ class Sender(Thread):
         last_millis = millis
 
         a_state = -1                                     # for state in footer (-1 disable regulation A, 0 = Aoff, 1 = Aon)
+        regulation_text ='Waiting to turned on or off.'
 
         log.info(NAME, datetime_string() + ' ' + _(u'Waiting to turned on or off.'))
 
@@ -114,29 +111,55 @@ class Sender(Thread):
 
                 # regulation
                 if plugin_options['enabled_a']:  
-                    ds_a_on = temperature_ds[plugin_options['probe_A_on']]    #  pool  
-                    ds_a_off = temperature_ds[plugin_options['probe_A_off']]  #  solar
+                    ds_a_on = 10#temperature_ds[plugin_options['probe_A_on']]    #  pool  
+                    ds_a_off = 20#temperature_ds[plugin_options['probe_A_off']]  #  solar
                     station_a = stations.get(plugin_options['control_output_A'])
 
                     if ds_a_off >= (ds_a_on + plugin_options['temp_a_on']):    # ON
-                        station_a.active = True
                         a_state = 1
                         if msg_a_on:
                             msg_a_on = False
                             msg_a_off = True
-                            log.info(NAME, datetime_string() + ' ' + str(station_a.name) + ' ' + _(u'was turned on.'))
+                            regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'  
+                            log.clear(NAME) 
+                            log.info(NAME, regulation_text)  
+                            import datetime
+                            start = datetime.datetime.now()
+                            sid = station_a.index
+                            new_schedule = {
+                                'active': True,
+                                'program': -1,
+                                'station': sid,
+                                'program_name': _('Pool Heating'),
+                                'fixed': True,
+                                'cut_off': 0,
+                                'manual': True,
+                                'blocked': False,
+                                'start': start,
+                                'original_start': start,
+                                'end': start + datetime.timedelta(days=10),
+                                'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                                'usage': stations.get(sid).usage
+                            }
 
-                    if ds_a_off >= (ds_a_on + plugin_options['temp_a_off']):   # OFF
-                        station_a.active = False
+                            log.start_run(new_schedule)
+                            stations.activate(new_schedule['station'])                            
+
+                    if ds_a_off > (ds_a_on + plugin_options['temp_a_off']) and ds_a_off < (ds_a_on + plugin_options['temp_a_on']):   # OFF
                         a_state = 0
                         if msg_a_off:
                             msg_a_off = False
                             msg_a_on = True
-                            log.info(NAME, datetime_string() + ' ' + str(station_a.name) + ' ' + _(u'was turned off.'))   
-
-                    # Activate again if needed:
-                    if station_a.remaining_seconds != 0:
-                        station_a.active = True   
+                            regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
+                            log.clear(NAME)
+                            log.info(NAME, regulation_text)   
+                            sid = station_a.index
+                            stations.deactivate(sid)
+                            active = log.active_runs()
+                            for interval in active:
+                                if interval['station'] == sid:
+                                    log.finish_run(interval)  
+  
                 else:
                     a_state = -1    
 
@@ -145,11 +168,11 @@ class Sender(Thread):
                 tempText = ' '
 
                 if a_state == 0:
-                    tempText += _(u'Regulation set OFF')  
+                    tempText += regulation_text  
                 if a_state == 1:
-                    tempText += _(u'Regulation set ON')      
+                    tempText += regulation_text      
                 if a_state == -1:
-                    tempText = _(u'No change')
+                    tempText = _(u'Waiting to turned on or off.')
 
                 temp_sw.val = tempText.encode('utf8')    # value on footer                                                          
 
