@@ -37,7 +37,10 @@ Plugin setup
   If checked, regulation have the maximal water level active.
 
 * Maximum maintained water level:  
-  If the measured water level exceeds this set value, the output is activated.    
+  If the measured water level exceeds this set value, the output is activated.  
+
+* Maximum run time in activate:  
+  Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions).    
 
 * Minimum maintained water level:  
   If the measured water level falls below this set value, the output is deactivated.   

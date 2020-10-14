@@ -58,8 +58,9 @@ tank_options = PluginOptions(
        'reg_max': 300,         # maximal water level in cm for activate
        'reg_min': 280,         # minimal water level in cm for deactivate
        'reg_output': 0,        # selector for output
-       'history': 0            # selector for graph history
-
+       'history': 0,           # selector for graph history
+       'reg_mm': 60,           # min for maximal runtime
+       'reg_ss': 0             # sec for maximal runtime
     } 
 )
 
@@ -158,6 +159,7 @@ class Sender(Thread):
                                     
                                     start = datetime.datetime.now()
                                     sid = reg_station.index
+                                    end = datetime.datetime.now() + datetime.timedelta(seconds=tank_options['reg_ss'], minutes=tank_options['reg_mm'])
                                     new_schedule = {
                                         'active': True,
                                         'program': -1,
@@ -169,7 +171,7 @@ class Sender(Thread):
                                         'blocked': False,
                                         'start': start,
                                         'original_start': start,
-                                        'end': start + datetime.timedelta(days=10),
+                                        'end': end,
                                         'uid': '%s-%s-%d' % (str(start), "Manual", sid),
                                         'usage': stations.get(sid).usage
                                     }
