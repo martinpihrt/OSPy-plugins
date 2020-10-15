@@ -17,9 +17,12 @@ from ospy import version
 from ospy.options import options
 from ospy.helpers import datetime_string
 
+from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+#from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
+
 
 NAME = 'System Update'
-MENU =  _('Package: System Update')
+MENU =  _(u'Package: System Update')
 LINK = 'status_page'
 
 plugin_options = PluginOptions(
@@ -28,7 +31,7 @@ plugin_options = PluginOptions(
         'auto_update': False,
         'use_update': False,
         'use_eml': False,
-        'eml_subject': _('Report from OSPy SYSTEM UPDATE plugin')
+        'eml_subject': _(u'Report from OSPy SYSTEM UPDATE plugin')
     }
 )
 
@@ -44,7 +47,7 @@ class StatusChecker(Thread):
         self.status = {
             'ver_str': version.ver_str,
             'ver_date': version.ver_date,
-            'remote': _('None!'),
+            'remote': _(u'None!'),
             'remote_branch': 'origin/master',
             'can_update': False}
 
@@ -96,21 +99,21 @@ class StatusChecker(Thread):
         changes = changes.decode('utf-8')
 
         if new_revision == version.revision and new_date == version.ver_date:
-            log.info(NAME, _('Up-to-date.'))
+            log.info(NAME, _(u'Up-to-date.'))
             self.status['can_update'] = False
         elif new_revision > version.revision:
-            log.info(NAME, _('New version is available!'))
-            log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
-            log.info(NAME, _('Available revision') + ': %d (%s)' % (new_revision, new_date))
-            log.info(NAME, _('Changes') +':\n' + changes)
+            log.info(NAME, _(u'New version is available!'))
+            log.info(NAME, _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
+            log.info(NAME, _(u'Available revision') + ': %d (%s)' % (new_revision, new_date))
+            log.info(NAME, _(u'Changes') +':\n' + changes)
             self.status['can_update'] = True
-            msg = '<b>' + _('System update plug-in') + '</b> ' + '<br><p style="color:red;">' 
-            msg += _('New OSPy version is available!') + '<br>' 
-            msg += _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + '<br>'
-            msg += _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.' + '</p>'
-            msglog =   _('System update plug-in') + ': '
-            msglog +=  _('New OSPy version is available!') + '-> ' + _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + ', '
-            msglog +=  _('Available revision') + ': %d (%s)' % (new_revision, new_date) + '.'
+            msg = '<b>' + _(u'System update plug-in') + '</b> ' + '<br><p style="color:red;">' 
+            msg += _(u'New OSPy version is available!') + '<br>' 
+            msg += _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + '<br>'
+            msg += _(u'Available revision') + ': %d (%s)' % (new_revision, new_date) + '.' + '</p>'
+            msglog =   _(u'System update plug-in') + ': '
+            msglog +=  _(u'New OSPy version is available!') + '-> ' + _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + ', '
+            msglog +=  _(u'Available revision') + ': %d (%s)' % (new_revision, new_date) + '.'
 
             if plugin_options['use_eml']:
                 try:
@@ -118,14 +121,14 @@ class StatusChecker(Thread):
                     try_mail(msg, msglog, attachment=None, subject=plugin_options['eml_subject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                 except Exception:     
-                    log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc()) 
+                    log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc()) 
 
 
 
         else:
-            log.info(NAME, _('Running unknown version!'))
-            log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
-            log.info(NAME, _('Available revision') + ': %d (%s)' % (new_revision, new_date))
+            log.info(NAME, _(u'Running unknown version!'))
+            log.info(NAME, _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
+            log.info(NAME, _(u'Available revision') + ': %d (%s)' % (new_revision, new_date))
             self.status['can_update'] = False
 
         self._done.acquire()
@@ -133,21 +136,37 @@ class StatusChecker(Thread):
         self._done.release()
 
     def run(self):
+        temp_upd = showInFooter() #  instantiate class to enable data in footer
+        temp_upd.button = "system_update/status"    # button redirect on footer
+        temp_upd.label =  _(u'System Update')       # label on footer
+        msg ='Waiting to state'
+        temp_upd.val = msg.encode('utf8')           # value on footer 
+
         while not self._stop.is_set():
             try:
                 if plugin_options['use_update']:
                     log.clear(NAME)
                     self._update_rev_data()
+                        
+                    if self.status['can_update']:
+                        msg =_(u'New OSPy version is available!') 
+                    else:
+                        msg =_(u'Up-to-date')    
 
                     if self.status['can_update'] and plugin_options['auto_update']:
                         perform_update()
-
+                      
                     self.started.set()
+                else:
+                    msg =_(u'Plugin is not enabled')
+
+                temp_upd.val = msg.encode('utf8')  # value on footer  
+
                 self._sleep(3600)
 
             except Exception:
                 self.started.set()
-                log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -175,11 +194,11 @@ def perform_update():
              command = 'git checkout master'
              subprocess.check_output(command.split())
 
-       log.debug(NAME, _('Update result') + ': ' + output)
+       log.debug(NAME, _(u'Update result') + ': ' + output)
        restart(3)
 
     except Exception:
-       log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
+       log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc())
 
 
 def start():
@@ -227,7 +246,7 @@ class update_page(ProtectedPage):
 
     def GET(self):
         perform_update()
-        msg = _('OSPy is now updated from Github and restarted. Please wait...')
+        msg = _(u'OSPy is now updated from Github and restarted. Please wait...')
         return self.core_render.notice(home_page, msg)
 
 
@@ -236,5 +255,5 @@ class restart_page(ProtectedPage):
 
     def GET(self):
         restart(3)
-        msg = _('OSPy is now restarted (invoked by the user). Please wait...')
+        msg = _(u'OSPy is now restarted (invoked by the user). Please wait...')
         return self.core_render.notice(plugin_url(status_page), msg)
