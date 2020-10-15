@@ -53,7 +53,13 @@ plugin_options = PluginOptions(
      'ds_name_3': '',      # name for DS probe 4 from air temp humi plugin
      'ds_name_4': '',      # name for DS probe 5 from air temp humi plugin
      'ds_name_5': '',      # name for DS probe 6 from air temp humi plugin
-     'ds_count': 0         # DS probe count from air temp humi plugin
+     'ds_count': 0,        # DS probe count from air temp humi plugin
+     'reg_mm_a': 60,       # min for maximal runtime A
+     'reg_ss_a': 0,        # sec for maximal runtime A
+     'reg_mm_b': 60,       # min for maximal runtime B
+     'reg_ss_b': 0,        # sec for maximal runtime B
+     'reg_mm_c': 60,       # min for maximal runtime C
+     'reg_ss_c': 0         # sec for maximal runtime C          
      }
 )
 
@@ -138,6 +144,7 @@ class Sender(Thread):
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_a.name + ' ' + _(u'was turned on.'))
                             start = datetime.datetime.now()
                             sid = station_a.index
+                            end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss_a'], minutes=plugin_options['reg_mm_a'])                            
                             new_schedule = {
                                 'active': True,
                                 'program': -1,
@@ -149,7 +156,7 @@ class Sender(Thread):
                                 'blocked': False,
                                 'start': start,
                                 'original_start': start,
-                                'end': start + datetime.timedelta(days=10),
+                                'end': end,
                                 'uid': '%s-%s-%d' % (str(start), "Manual", sid),
                                 'usage': stations.get(sid).usage
                             }
@@ -186,6 +193,7 @@ class Sender(Thread):
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_b.name + ' ' + _(u'was turned on.'))
                             start = datetime.datetime.now()
                             sid = station_b.index
+                            end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss_b'], minutes=plugin_options['reg_mm_b'])
                             new_schedule = {
                                 'active': True,
                                 'program': -1,
@@ -197,7 +205,7 @@ class Sender(Thread):
                                 'blocked': False,
                                 'start': start,
                                 'original_start': start,
-                                'end': start + datetime.timedelta(days=10),
+                                'end': end,
                                 'uid': '%s-%s-%d' % (str(start), "Manual", sid),
                                 'usage': stations.get(sid).usage
                             }
@@ -235,6 +243,7 @@ class Sender(Thread):
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_c.name + ' ' + _(u'was turned on.'))
                             start = datetime.datetime.now()
                             sid = station_c.index
+                            end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss_c'], minutes=plugin_options['reg_mm_c'])
                             new_schedule = {
                                 'active': True,
                                 'program': -1,
@@ -246,7 +255,7 @@ class Sender(Thread):
                                 'blocked': False,
                                 'start': start,
                                 'original_start': start,
-                                'end': start + datetime.timedelta(days=10),
+                                'end': end,
                                 'uid': '%s-%s-%d' % (str(start), "Manual", sid),
                                 'usage': stations.get(sid).usage
                             }

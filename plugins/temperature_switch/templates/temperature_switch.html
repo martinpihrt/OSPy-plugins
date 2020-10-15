@@ -43,6 +43,13 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Maximum run time in activate'):</td>
+                <td title=$:{json.dumps(_(u'Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}>
+                    <input id="reg_mm_a" name="reg_mm_a" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_a"]' min="0" max="999">:
+                    <input id="reg_ss_a" name="reg_ss_a" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_a"]' min="0" max="59"> (mm:ss)
+                </td>
+            </tr>             
+            <tr>
                 <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     <select name="probe_A_off">
@@ -93,6 +100,13 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Maximum run time in activate'):</td>
+                <td title=$:{json.dumps(_(u'Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}>
+                    <input id="reg_mm_b" name="reg_mm_b" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_b"]' min="0" max="999">:
+                    <input id="reg_ss_b" name="reg_ss_b" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_b"]' min="0" max="59"> (mm:ss)
+                </td>
+            </tr>             
+            <tr>
                 <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     <select name="probe_B_off">
@@ -142,6 +156,13 @@ $var page: plugins
                     <input name='temp_a_on' type='number' min='-100' max='100' value='$plugin_options["temp_a_on"]'>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum run time in activate'):</td>
+                <td title=$:{json.dumps(_(u'Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}>
+                    <input id="reg_mm_c" name="reg_mm_c" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_c"]' min="0" max="999">:
+                    <input id="reg_ss_c" name="reg_ss_c" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_c"]' min="0" max="59"> (mm:ss)
+                </td>
+            </tr>             
             <tr>
                 <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>

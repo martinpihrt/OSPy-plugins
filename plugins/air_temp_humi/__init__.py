@@ -60,7 +60,9 @@ plugin_options = PluginOptions(
      'label_ds4': 'label',  # label for DS5
      'label_ds5': 'label',  # label for DS6
      'ds_used': 0,          # count DS18b20, default 0 max 6x
-     'history': 0           # selector for graph history
+     'history': 0,          # selector for graph history
+     'reg_mm': 60,          # min for maximal runtime
+     'reg_ss': 0            # sec for maximal runtime     
      }
 )
 
@@ -163,6 +165,7 @@ class Sender(Thread):
                           if Humidity > (plugin_options['humidity_on'] + plugin_options['hysteresis']/2) and var1 is True:  
                             start = datetime.datetime.now()
                             sid = station.index
+                            end = datetime.datetime.now() + datetime.timedelta(seconds=tank_options['reg_ss'], minutes=tank_options['reg_mm'])
                             new_schedule = {
                               'active': True,
                               'program': -1,
@@ -174,7 +177,7 @@ class Sender(Thread):
                               'blocked': False,
                               'start': start,
                               'original_start': start,
-                              'end': start + datetime.timedelta(days=10),
+                              'end': end,
                               'uid': '%s-%s-%d' % (str(start), "Manual", sid),
                               'usage': stations.get(sid).usage
                             }

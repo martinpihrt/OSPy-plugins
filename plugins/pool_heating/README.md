@@ -23,6 +23,9 @@ Plugin setup
 * Temperature difference for ON:  
   Temperature difference for switch ON (filtration pump).
 
+* Maximum run time in activate:  
+  Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions).  
+
 * Temperature difference for OFF:
   Temperature difference for switch OFF (filtration pump).  
 

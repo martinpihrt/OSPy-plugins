@@ -41,7 +41,9 @@ plugin_options = PluginOptions(
      'ds_name_3': '',      # name for DS probe 4 from air temp humi plugin
      'ds_name_4': '',      # name for DS probe 5 from air temp humi plugin
      'ds_name_5': '',      # name for DS probe 6 from air temp humi plugin
-     'ds_count': 0         # DS probe count from air temp humi plugin
+     'ds_count': 0,        # DS probe count from air temp humi plugin
+     'reg_mm': 60,         # min for maximal runtime
+     'reg_ss': 0           # sec for maximal runtime     
      }
 )
 
@@ -126,6 +128,7 @@ class Sender(Thread):
                             import datetime
                             start = datetime.datetime.now()
                             sid = station_a.index
+                            end = datetime.datetime.now() + datetime.timedelta(seconds=tank_options['reg_ss'], minutes=tank_options['reg_mm'])
                             new_schedule = {
                                 'active': True,
                                 'program': -1,
@@ -137,7 +140,7 @@ class Sender(Thread):
                                 'blocked': False,
                                 'start': start,
                                 'original_start': start,
-                                'end': start + datetime.timedelta(days=10),
+                                'end': end,
                                 'uid': '%s-%s-%d' % (str(start), "Manual", sid),
                                 'usage': stations.get(sid).usage
                             }

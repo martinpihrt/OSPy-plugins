@@ -53,6 +53,13 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Maximum run time in activate'):</td>
+                <td title=$:{json.dumps(_(u'Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}>
+                    <input id="reg_mm" name="reg_mm" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm"]' min="0" max="999">:
+                    <input id="reg_ss" name="reg_ss" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss"]' min="0" max="59"> (mm:ss)
+                </td>
+            </tr>             
+            <tr>
                 <td style='text-transform: none;'>$_('Temperature difference for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Temperature difference for switch OFF (filtration pump).'), ensure_ascii=False)}>
                     <input name='temp_a_off' type='number' min='0' max='100' value='$plugin_options["temp_a_off"]'>

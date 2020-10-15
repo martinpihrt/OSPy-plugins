@@ -17,6 +17,9 @@ Plugin setup
 * Temperature for output ON:  
   Temperature value for output xx switched to on.
 
+* Maximum run time in activate:  
+  Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions).  
+
 * Probe input for OFF:  
   Select input temperature probe for measuring.
 

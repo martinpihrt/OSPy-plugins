@@ -34,6 +34,9 @@ Plugin setup
 * Humidity for output ON:  
   Humidity value for output switched to on.
 
+* Maximum run time in activate:  
+  Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions).  
+
 * Humidity for output OFF:  
   Humidity value for output switched to off.
 
