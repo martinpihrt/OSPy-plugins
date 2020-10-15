@@ -94,7 +94,7 @@ class WindSender(Thread):
         en_del_24h = True
            
         wind_mon = showInFooter() #  instantiate class to enable data in footer
-        wind_mon.label = _('Wind Speed')            # label on footer
+        wind_mon.label = _(u'Wind Speed')            # label on footer
         wind_mon.val = '---'                        # value on footer
         wind_mon.button = "wind_monitor/settings"   # button redirect on footer
 
@@ -108,7 +108,7 @@ class WindSender(Thread):
                         self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
 
                     except ImportError:
-                        log.warning(NAME, _('Could not import smbus.'))
+                        log.warning(NAME, _(u'Could not import smbus.'))
 
                     if self.bus is not None:
                         set_counter(self.bus)     # set pcf8583 as counter
@@ -156,24 +156,24 @@ class WindSender(Thread):
  
                         log.info(NAME, datetime_string())
                         if wind_options['use_kmh']:
-                            log.info(NAME, _('Speed') + ': ' + str(self.status['meter']*3.6) + ' ' + _('km/h') + ', ' + _('Pulses') + ': ' + str(puls) + ' ' + _('pulses/sec'))                  
+                            log.info(NAME, _(u'Speed') + ': ' + u'%s' % self.status['meter']*3.6 + ' ' + _(u'km/h') + ', ' + _(u'Pulses') + ': ' + u'%s' % puls + ' ' + _(u'pulses/sec'))                  
                         else:
-                            log.info(NAME, _('Speed') + ': ' + str(self.status['meter']) + ' ' + _('m/sec') + ', ' + _('Pulses') + ': ' + str(puls) + ' ' + _('pulses/sec'))  
+                            log.info(NAME, _(u'Speed') + ': ' + u'%s' % self.status['meter'] + ' ' + _(u'm/sec') + ', ' + _(u'Pulses') + ': ' + u'%s' % puls + ' ' + _(u'pulses/sec'))  
 
                         if wind_options['use_kmh']:
-                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']*3.6) + ' ' + _('km/h'))  
+                            log.info(NAME, u'%s' % wind_options['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % wind_options['log_maxspeed']*3.6 + ' ' + _(u'km/h'))  
                         else:    
-                            log.info(NAME, str(wind_options['log_date_maxspeed']) + ' ' + _('Maximal speed') + ': ' + str(wind_options['log_maxspeed']) + ' ' + _('m/sec'))  
+                            log.info(NAME, u'%s' % wind_options['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % wind_options['log_maxspeed'] + ' ' + _(u'm/sec'))  
             
                         if self.status['meter'] >= 42: 
-                            log.error(NAME, datetime_string() + ' ' + _('Wind speed > 150 km/h (42 m/sec)'))
+                            log.error(NAME, datetime_string() + ' ' + _(u'Wind speed > 150 km/h (42 m/sec)'))
                                      
                         if get_station_is_on():                               # if station is on
                             if self.status['meter'] >= int(wind_options['maxspeed']):          # if wind speed is > options max speed
                                 log.finish_run(None)                          # save log
                                 stations.clear()                              # set all station to off
                                 log.clear(NAME)
-                                log.info(NAME, datetime_string() + ' ' + _('Stops all stations and sends e-mail if enabled sends e-mail.'))
+                                log.info(NAME, datetime_string() + ' ' + _(u'Stops all stations and sends e-mail if enabled sends e-mail.'))
                                 if wind_options['sendeml']:                   # if enabled send email
                                     send = True  
 
@@ -215,16 +215,16 @@ class WindSender(Thread):
                                 qdict['log_date_maxspeed'] = datetime_string()
                                 wind_options['log_maxspeed'] = 0
                                 wind_options['log_date_maxspeed'] = datetime_string()
-                                log.info(NAME, datetime_string() + ' ' + _('Deleting maximal speed after 24 hours.'))
+                                log.info(NAME, datetime_string() + ' ' + _(u'Deleting maximal speed after 24 hours.'))
                                 update_log()
                         else:
                             en_del_24h = True        
 
                         tempText = ""
                         if wind_options['use_kmh']:
-                            tempText += str(self.status['kmeter']) + ' ' + _(u'km/h')
+                            tempText += u'%s' % self.status['kmeter'] + ' ' + _(u'km/h')
                         else:
-                            tempText +=  str(self.status['meter']) + ' ' + _(u'm/s')    
+                            tempText += u'%s' % self.status['meter'] + ' ' + _(u'm/s')    
                         wind_mon.val = tempText.encode('utf8')                # value on footer
                         
                     else:
@@ -234,26 +234,26 @@ class WindSender(Thread):
                     # text on the web if plugin is disabled
                     if disable_text:  
                         log.clear(NAME)
-                        log.info(NAME, _('Wind speed monitor plug-in is disabled.'))
+                        log.info(NAME, _(u'Wind speed monitor plug-in is disabled.'))
                         disable_text = False   
                     self._sleep(1)                        
 
                 if send:
-                    msg = '<b>' + _('Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val*3.6,2)) + ' km/h. </p>'
-                    msglog= _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + str(round(val,2)*3.6) + ' km/h.'
+                    msg = '<b>' + _(u'Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + u'%s' % round(val*3.6,2) + ' ' + _(u'km/h') + '. </p>'
+                    msglog= _(u'System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + u'%s' % round(val,2)*3.6 + ' ' + _(u'km/h') + '.'
                     send = False
                     try:
                         from plugins.email_notifications import try_mail                                    
                         try_mail(msg, msglog, attachment=None, subject=wind_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                     except Exception:     
-                        log.error(NAME, _('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc()) 
+                        log.error(NAME, _(u'Wind Speed monitor plug-in') + ':\n' + traceback.format_exc()) 
 
                 
 
             except Exception:
                 log.clear(NAME)
-                log.error(NAME, _('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -314,11 +314,11 @@ def set_counter(i2cbus):
         try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
         try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
         try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
-        log.debug(NAME, _('Wind speed monitor plug-in') + ': ' + _('Setup PCF8583 as event counter - OK')) 
+        log.debug(NAME, _(u'Wind speed monitor plug-in') + ': ' + _(u'Setup PCF8583 as event counter - OK')) 
 
     except:
-        log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + _('Setup PCF8583 as event counter - FAULT'))
-        log.error(NAME, _('Wind speed monitor plug-in') + traceback.format_exc())
+        log.error(NAME, _(u'Wind speed monitor plug-in') + ':\n' + _(u'Setup PCF8583 as event counter - FAULT'))
+        log.error(NAME, _(u'Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
 
 
 def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses per second
@@ -348,7 +348,7 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         return pulses
 
     except:
-        log.error(NAME, _('Wind speed monitor plug-in') + traceback.format_exc())
+        log.error(NAME, _(u'Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
         time_.sleep(10)
         return None
 
@@ -456,7 +456,7 @@ def update_log():
  
     write_graph_log(graph_data)
 
-    log.info(NAME, datetime_string() + ' ' + _('Saving to log  files OK'))
+    log.info(NAME, datetime_string() + ' ' + _(u'Saving to log  files OK'))
 
 
 def create_default_graph():
@@ -470,7 +470,7 @@ def create_default_graph():
        {"station": actual, "balances": {}}
     ]
     write_graph_log(graph_data)  
-    log.debug(NAME,datetime_string() + ' ' + _('Creating default graph log files OK'))                
+    log.debug(NAME,datetime_string() + ' ' + _(u'Creating default graph log files OK'))                
 
 
 ################################################################################
@@ -511,14 +511,14 @@ class settings_page(ProtectedPage):
             wind_options.web_update(qdict)   
 
             log.clear(NAME)
-            log.info(NAME, datetime_string() + ' ' + _('Maximal speed has reseted.'))
+            log.info(NAME, datetime_string() + ' ' + _(u'Maximal speed has reseted.'))
             
             raise web.seeother(plugin_url(settings_page), True)
 
         if wind_sender is not None and delete:
            write_log([])
            create_default_graph()
-           log.info(NAME, datetime_string() + ' ' + _('Deleted all log files OK'))
+           log.info(NAME, datetime_string() + ' ' + _(u'Deleted all log files OK'))
 
            raise web.seeother(plugin_url(settings_page), True)
 
@@ -532,12 +532,12 @@ class settings_page(ProtectedPage):
 
         if wind_options['use_wind_monitor']:
             log.clear(NAME) 
-            log.info(NAME, _('Wind monitor is enabled.'))
+            log.info(NAME, _(u'Wind monitor is enabled.'))
         else:
             log.clear(NAME)
-            log.info(NAME, _('Wind monitor is disabled.'))
+            log.info(NAME, _(u'Wind monitor is disabled.'))
 
-        log.info(NAME, datetime_string() + ' ' + _('Options has updated.'))
+        log.info(NAME, datetime_string() + ' ' + _(u'Options has updated.'))
 
         raise web.seeother(plugin_url(settings_page), True)
 
@@ -623,8 +623,8 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
 
     def GET(self):
-        maximum = _('Maximum')
-        actual  = _('Actual')
+        maximum = _(u'Maximum')
+        actual  = _(u'Actual')
 
         data  = "Date/Time"
         data += ";\t Date"
