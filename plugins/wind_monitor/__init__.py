@@ -156,12 +156,12 @@ class WindSender(Thread):
  
                         log.info(NAME, datetime_string())
                         if wind_options['use_kmh']:
-                            log.info(NAME, _(u'Speed') + ': ' + u'%s' % self.status['meter']*3.6 + ' ' + _(u'km/h') + ', ' + _(u'Pulses') + ': ' + u'%s' % puls + ' ' + _(u'pulses/sec'))                  
+                            log.info(NAME, _(u'Speed') + ': ' + u'%.1f' % (self.status['meter']*3.6) + ' ' + _(u'km/h') + ', ' + _(u'Pulses') + ': ' + u'%s' % puls + ' ' + _(u'pulses/sec'))                  
                         else:
-                            log.info(NAME, _(u'Speed') + ': ' + u'%s' % self.status['meter'] + ' ' + _(u'm/sec') + ', ' + _(u'Pulses') + ': ' + u'%s' % puls + ' ' + _(u'pulses/sec'))  
+                            log.info(NAME, _(u'Speed') + ': ' + u'%.1f' % self.status['meter'] + ' ' + _(u'm/sec') + ', ' + _(u'Pulses') + ': ' +  u'%s' % puls + ' ' + _(u'pulses/sec'))  
 
                         if wind_options['use_kmh']:
-                            log.info(NAME, u'%s' % wind_options['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % wind_options['log_maxspeed']*3.6 + ' ' + _(u'km/h'))  
+                            log.info(NAME, u'%s' % wind_options['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % (wind_options['log_maxspeed']*3.6) + ' ' + _(u'km/h'))  
                         else:    
                             log.info(NAME, u'%s' % wind_options['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % wind_options['log_maxspeed'] + ' ' + _(u'm/sec'))  
             
@@ -239,8 +239,8 @@ class WindSender(Thread):
                     self._sleep(1)                        
 
                 if send:
-                    msg = '<b>' + _(u'Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + u'%s' % round(val*3.6,2) + ' ' + _(u'km/h') + '. </p>'
-                    msglog= _(u'System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + u'%s' % round(val,2)*3.6 + ' ' + _(u'km/h') + '.'
+                    msg = '<b>' + _(u'Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + u'%.1f' % (round(val*3.6,2)) + ' ' + _(u'km/h') + '. </p>'
+                    msglog= _(u'System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + u'%.1f' % (round(val,2)*3.6) + ' ' + _(u'km/h') + '.'
                     send = False
                     try:
                         from plugins.email_notifications import try_mail                                    
