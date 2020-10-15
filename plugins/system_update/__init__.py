@@ -247,7 +247,7 @@ class update_page(ProtectedPage):
     def GET(self):
         perform_update()
         msg = _(u'OSPy is now updated from Github and restarted. Please wait...')
-        return self.core_render.notice(home_page, msg)
+        return self.core_render.notice(plugin_url(status_page), msg)
 
 
 class restart_page(ProtectedPage):
