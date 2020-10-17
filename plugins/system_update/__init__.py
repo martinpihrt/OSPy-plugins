@@ -31,7 +31,8 @@ plugin_options = PluginOptions(
         'auto_update': False,
         'use_update': False,
         'use_eml': False,
-        'eml_subject': _(u'Report from OSPy SYSTEM UPDATE plugin')
+        'eml_subject': _(u'Report from OSPy SYSTEM UPDATE plugin'),
+        'use_footer': False
     }
 )
 
@@ -136,11 +137,12 @@ class StatusChecker(Thread):
         self._done.release()
 
     def run(self):
-        temp_upd = showInFooter() #  instantiate class to enable data in footer
-        temp_upd.button = "system_update/status"    # button redirect on footer
-        temp_upd.label =  _(u'System Update')       # label on footer
-        msg ='Waiting to state'
-        temp_upd.val = msg.encode('utf8')           # value on footer 
+        if plugin_options['use_footer']:
+            temp_upd = showInFooter() #  instantiate class to enable data in footer            
+            temp_upd.button = "system_update/status"    # button redirect on footer
+            temp_upd.label =  _(u'System Update')       # label on footer
+            msg ='Waiting to state'
+            temp_upd.val = msg.encode('utf8')           # value on footer 
 
         while not self._stop.is_set():
             try:
@@ -160,7 +162,11 @@ class StatusChecker(Thread):
                 else:
                     msg =_(u'Plugin is not enabled')
 
-                temp_upd.val = msg.encode('utf8')  # value on footer  
+                if plugin_options['use_footer']:
+                    try:
+                        temp_upd.val = msg.encode('utf8')  # value on footer  
+                    except:
+                        log.error(NAME, _(u'Error: restart this plugin! Show in homepage footer have enabled.'))    
 
                 self._sleep(3600)
 
@@ -213,6 +219,19 @@ def stop():
         checker.stop()
         checker.join()
         checker = None
+
+
+def get_all_values():
+
+    plg_state = 0 # 0= Plugin is not enabled, 1= Up-to-date, 2= New OSPy version is available,
+
+    if self.status['can_update'] and plugin_options['use_update']: 
+        plg_state = 2
+    else:
+        plg_state = 1 
+
+
+    return plg_state , self.status['ver_str'] # state, new version         
 
 
 ################################################################################

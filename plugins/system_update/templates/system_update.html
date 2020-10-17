@@ -19,6 +19,9 @@ $var page: plugins
 <div id="plugin">
     <div class="title">$_('System update from GitHub')</div>
     <p>$_('This plugin compares the local copy with the remote repository and can automatically update the local copy').</p>
+    <p>$_('For check new version OSPy click on update status button').</p>
+    <p>$_('If new version is posible click on update OSPy button. Plugin downloading and installing new version OSPy. Next restarting OSPy service').</p>  
+    <p>$_('This plugin allows update itself automatically the system, while allowing send an E-mail to the system administrator').</p>
     <form id="pluginForm" method="post">
         <table class="optionList">
             <tr>
@@ -69,6 +72,12 @@ $var page: plugins
                     <input name='eml_subject' type='text' value='$plugin_options["eml_subject"]'>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                    <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
