@@ -596,7 +596,11 @@ class graph_json(ProtectedPage):
         if wind_options['history'] == 3:
             check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
         if wind_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)  
+        if wind_options['history'] == 5:
+            check_start  = current_time - datetime.timedelta(minutes=10)       # actual date - 10 Minutes
+        if wind_options['history'] == 6:
+            check_start  = current_time - datetime.timedelta(hours=1)          # actual date - 1 Hours Filter                                              
 
         log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
                 

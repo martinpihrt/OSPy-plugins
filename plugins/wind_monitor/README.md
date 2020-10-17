@@ -64,7 +64,9 @@ Plugin setup
   Without limits  
   Day filter  
   Month filter  
-  Year filter      
+  Year filter  
+  10 Minutes Filter  
+  1 Hours Filter  
 
 * Status:  
   Status window from the plugin.  
