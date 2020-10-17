@@ -36,6 +36,12 @@ plugin_options = PluginOptions(
     }
 )
 
+stats = {
+    'ver_act': '0.0.0',
+    'ver_new': '0.0.0',
+    'can_update': False
+    }
+
 
 class StatusChecker(Thread):
     def __init__(self):
@@ -50,7 +56,8 @@ class StatusChecker(Thread):
             'ver_date': version.ver_date,
             'remote': _(u'None!'),
             'remote_branch': 'origin/master',
-            'can_update': False}
+            'can_update': False
+            }
 
         self._sleep_time = 0
         self.start()
@@ -75,6 +82,8 @@ class StatusChecker(Thread):
 
     def _update_rev_data(self):
         """Returns the update revision data."""
+
+        global stats
 
         command = 'git remote update'
         subprocess.check_output(command.split())
@@ -124,7 +133,8 @@ class StatusChecker(Thread):
                 except Exception:     
                     log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc()) 
 
-
+            stats['ver_new'] =  '%d' % new_revision    
+            stats['ver_act'] =  '%d' % version.revision       
 
         else:
             log.info(NAME, _(u'Running unknown version!'))
@@ -137,6 +147,8 @@ class StatusChecker(Thread):
         self._done.release()
 
     def run(self):
+        global stats
+
         if plugin_options['use_footer']:
             temp_upd = showInFooter() #  instantiate class to enable data in footer            
             temp_upd.button = "system_update/status"    # button redirect on footer
@@ -152,8 +164,10 @@ class StatusChecker(Thread):
                         
                     if self.status['can_update']:
                         msg =_(u'New OSPy version is available!') 
+                        stats['can_update'] = True
                     else:
-                        msg =_(u'Up-to-date')    
+                        msg =_(u'Up-to-date')
+                        stats['can_update'] = False    
 
                     if self.status['can_update'] and plugin_options['auto_update']:
                         perform_update()
@@ -223,15 +237,16 @@ def stop():
 
 def get_all_values():
 
+    global stats
+
     plg_state = 0 # 0= Plugin is not enabled, 1= Up-to-date, 2= New OSPy version is available,
 
-    if self.status['can_update'] and plugin_options['use_update']: 
+    if stats['can_update'] and plugin_options['use_update']: 
         plg_state = 2
     else:
         plg_state = 1 
 
-
-    return plg_state , self.status['ver_str'] # state, new version         
+    return plg_state , stats['ver_new'], stats['ver_act'] # state, new version, actual version         
 
 
 ################################################################################
