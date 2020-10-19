@@ -171,7 +171,7 @@ function create_graph(result) {
 
 <div id="plugin">
     <div class="title">$_('Wind Speed Monitor settings')</div>
-    <p>$_('This plugin checked wind speed, if station is switched on and actual wind speed is > wind speed value in options, switches off all station  and sends email with error. Prevent safety for fault watering.')</p>
+    <p>$_('This plugin checked wind speed, if station is switched on and actual wind speed is > wind speed value in options, switches off all selected stations in scheduler and sends E-mail with error. Preventing for fault watering while wind.')</p>
     <p>$_('This plugin needs an enabled') I&sup2;C $_('bus and connected counter PCF8583 on') I&sup2;C $_('address 0x50 or 0x51.')</p>
     <p>$_('(1m/s = 3,6 km/h or 1m/s = 2,237 mile/h).')</p>
     <p>$_('Measurement cycle: the counter is cleared, 10 seconds are waited, from the counter read the number of pulses in 10 seconds').</p> 
@@ -198,13 +198,7 @@ function create_graph(result) {
                 <td title=$:{json.dumps(_(u'If the box is checked, wind monitor is on address 0x50.'), ensure_ascii=False)}>
                     <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}>  
                 </td>
-            </tr>            
-            <tr>
-                <td style='text-transform: none;'>$_('Send e-mail with error'):</td>
-                <td title=$:{json.dumps(_(u'For this function required email plugin'), ensure_ascii=False)}>
-                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
-                </td>
-            </tr>
+            </tr>  
             <tr>
                 <td style='text-transform: none;'>$_('Number of pulses per rotation'):</td>  
                 <td title=$:{json.dumps(_(u'pulses/rotation'), ensure_ascii=False)}>
@@ -216,32 +210,28 @@ function create_graph(result) {
                 <td title=$:{json.dumps(_(u'Wind speed set in meter/second'), ensure_ascii=False)}>
                     <input name='metperrot' type='text' value='$plugin_options["metperrot"]' style="width:40px;">
                 </td>
-            </tr>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('Display in km/h'):</td>
+                <td title=$:{json.dumps(_(u'If the box is checked, the speed is in km/h'), ensure_ascii=False)}>
+                    <input name='use_kmh' type='checkbox'${" checked" if plugin_options['use_kmh'] else ""}>   
+                </td>
+            </tr>    
             <tr>
                 <td style='text-transform: none;'>$_('Max wind speed for stop stations in m/s'):</td>
                 <td title=$:{json.dumps(_(u'If the wind speed exceeds this value, the station will stop'), ensure_ascii=False)}>
                     <input name='maxspeed' type='text' value='$plugin_options["maxspeed"]' style="width:40px;"> 
                 </td>
-            </tr>
+            </tr>                       
             <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (measuring every 10 sec)'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                    $if plugin_options['use_wind_monitor']:
-                        $if status['meter'] >= plugin_options["maxspeed"]: 
-                            <p style="color:red;">
-                        $elif status['meter'] < (plugin_options["maxspeed"] - 3):
-                            <p style="color:green;">
-                        $else: 
-                            <p style="color:orange;">
-                        <b> $status['kmeter'] (km/h)</b> -> $status['meter'] ($_('m/s'))        
-                    $else:
-                        --    
-                </td>
-            </tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                   
             <tr>
-                <td style='text-transform: none;'>$_('Display in km/h'):</td>
-                <td title=$:{json.dumps(_(u'If the box is checked, the speed is in km/h'), ensure_ascii=False)}>
-                    <input name='use_kmh' type='checkbox'${" checked" if plugin_options['use_kmh'] else ""}>   
+                <td style='text-transform: none;'>$_('Send E-mail if stop'):</td>
+                <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
+                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
                 </td>
             </tr>
             <tr>
@@ -249,7 +239,31 @@ function create_graph(result) {
                 <td title=$:{json.dumps(_(u'Subject for E-mail from this wind monitor'), ensure_ascii=False)}>
                     <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
                 </td>
+            </tr> 
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                        
+            <tr>
+                <td style='text-transform: none;'>$_('Stoping stations'):</td>
+                <td title=$:{json.dumps(_(u'Stoping selected stations in scheduler if stations has run'), ensure_ascii=False)}>
+                    <input name='stoperr' type='checkbox'${" checked" if plugin_options['stoperr'] else ""}> 
+                </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stoping this stations'):</td>
+                <td style='text-transform: none;'>$_('Stop this run stations in scheduler')</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td title=$:{json.dumps(_(u'If wind speed is bigger stop this selected stations'), ensure_ascii=False)}>  
+                <select multiple name="used_stations" width="250" style="width: 250px" size="8">
+                    $for station in [station for station in stations if station.enabled]:
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} (Output ${str(station.index+1)})</option>
+                </select>
+                </td>
+            </tr>            
             <tr>
                <th colspan="2">
                  <hr>
@@ -295,8 +309,6 @@ function create_graph(result) {
                     <option value="2" ${"selected" if plugin_options["history"]==2 else ""}>$_(u'Week filter')</option>
                     <option value="3" ${"selected" if plugin_options["history"]==3 else ""}>$_(u'Month filter')</option>
                     <option value="4" ${"selected" if plugin_options["history"]==4 else ""}>$_(u'Year filter')</option>
-                    <option value="5" ${"selected" if plugin_options["history"]==5 else ""}>$_(u'10 Minutes Filter')</option>
-                    <option value="6" ${"selected" if plugin_options["history"]==6 else ""}>$_(u'1 Hours Filter')</option>
                 </select>
                 </td>
             </tr>             
@@ -304,7 +316,22 @@ function create_graph(result) {
                <th colspan="2">
                  <hr>
                </th>
-            </tr>             
+            </tr>    
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (measuring every 10 sec)'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                    $if plugin_options['use_wind_monitor']:
+                        $if status['meter'] >= plugin_options["maxspeed"]: 
+                            <p style="color:red;">
+                        $elif status['meter'] < (plugin_options["maxspeed"] - 3):
+                            <p style="color:green;">
+                        $else: 
+                            <p style="color:orange;">
+                        <b> $status['kmeter'] [$_('km/h')]</b> -> $status['meter'] [$_('m/s')]       
+                    $else:
+                        --    
+                </td>
+            </tr>                     
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
