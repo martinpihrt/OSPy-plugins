@@ -170,7 +170,7 @@ function create_graph(result) {
 <div id="plugin">
     <div class="title">$_('Water tank monitor settings')</div>
     <p>$_('This plugin check water level in water tank via ultrasonic sensor on') I&sup2;C $_('address 0x04').</p>
-    <p>$_('If water level is small plugins stop irigation system and sends email with error. Prevent safety for master station pump.')</p>
+    <p>$_('If water level is small, this plugin stop irigation system (stop runing stations in scheduler) and sends E-mail with error. Safety for master station pump if no water.')</p>
     <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p> 
     $if plugin_options['enable_log']:
         <p>$_('Download log as') <a href=$plugins.plugin_url('tank_monitor.log_csv') class="button upload">csv</a></p></br>     
@@ -185,40 +185,64 @@ function create_graph(result) {
             <tr>
                 <td style='text-transform: none;'>$_('The distance from the sensor to the minimum water level in the tank'):</td>
                 <td title=$:{json.dumps(_(u'Thus the distance from the ultrasound to the minimum water level. The sensor is located above the water'), ensure_ascii=False)}>
-                    <input name='distance_bottom' type='number' min="2" max="400" value='$plugin_options["distance_bottom"]'> (2-400 $_('cm'))
+                    <input name='distance_bottom' type='number' min="2" max="400" value='$plugin_options["distance_bottom"]'> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The distance from the sensor to the maximum water level in the tank'):</td>
                 <td title=$:{json.dumps(_(u'That is, the distance from the ultrasound to the maximum water level. The sensor is located above the water'), ensure_ascii=False)}>
-                    <input name='distance_top' type='number' min="2" max="400" value='$plugin_options["distance_top"]'> (2-400 $_('cm'))
+                    <input name='distance_top' type='number' min="2" max="400" value='$plugin_options["distance_top"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The water level from the bottom to the minimum water level in the tank'):</td>
                 <td title=$:{json.dumps(_(u'Distance from the bottom (ie the minimum water) to the set this minimum level, when it is this activated (send an E-mail)'), ensure_ascii=False)}>
-                    <input name='water_minimum' type='number' min="2" max="400" value='$plugin_options["water_minimum"]'> (2-400 $_('cm'))
+                    <input name='water_minimum' type='number' min="2" max="400" value='$plugin_options["water_minimum"]'> 
                 </td>
             </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Stop scheduller if is minimum water in the tank'):</td>
-                <td title=$:{json.dumps(_(u'Disabling the scheduler if is minimum water level in tank'), ensure_ascii=False)}>
-                    <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
-                </td>
-            </tr>
-            <tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Cylinder diameter for volume calculation'):</td>
-                <td>
-                    <input name='diameter' type='number' min="2" max="4000" value='$plugin_options["diameter"]'> (2-4000 $_('cm'))
+                <td title=$:{json.dumps(_(u'Enter the diameter for volume calculation'), ensure_ascii=False)}>
+                    <input name='diameter' type='number' min="2" max="4000" value='$plugin_options["diameter"]'> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Display as liters or m')<sup>3</sup>:</td>
-                <td>
+                <td title=$:{json.dumps(_(u'Show measured water as liters or m3'), ensure_ascii=False)}>
                     <input name='check_liters' type='checkbox'${" checked" if plugin_options['check_liters'] else ""}> 
                 </td>
-            </tr>            
+            </tr> 
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                         
+            <tr>
+                <td style='text-transform: none;'>$_('Stop stations if minimum water level'):</td>
+                <td title=$:{json.dumps(_(u'Stoping these stations if is minimum water level in the tank'), ensure_ascii=False)}>
+                    <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stop stations if sonic probe has fault'):</td>
+                <td title=$:{json.dumps(_(u'If the level sensor fails, the above selected stations in the scheduler will stop'), ensure_ascii=False)}>
+                    <input name='use_water_stop' type='checkbox'${" checked" if plugin_options['use_water_stop'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stop this run stations in scheduler')</td>
+                <td>
+                <select multiple name="used_stations" width="250" style="width: 250px" size="8">
+                    $for station in [station for station in stations if station.enabled]:
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                </select>
+                </td>
+            </tr>                                                
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                
             <tr>
                 <td style='text-transform: none;'>$_('Send an E-mail with an error that there is minimum water in the tank'):</td>
                 <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
@@ -226,15 +250,15 @@ function create_graph(result) {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Send an E-mail with an error if sonic probe has fault and stop scheduler!'):</td>
+                <td style='text-transform: none;'>$_('Send an E-mail with an error if sonic probe has fault'):</td>
                 <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
                     <input name='use_water_err' type='checkbox'${" checked" if plugin_options['use_water_err'] else ""}>
                 </td>
-            </tr>            
+            </tr>                       
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
-                <td>
-                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
+                <td title=$:{json.dumps(_(u'Subject for E-mail from this tank monitor'), ensure_ascii=False)}>
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]' width="250" style="width: 250px">
                 </td>
             </tr>
             <tr>
@@ -251,26 +275,26 @@ function create_graph(result) {
             <tr>
                 <td style='text-transform: none;'>$_('Maximum maintained water level'):</td>
                 <td title=$:{json.dumps(_(u'If the measured water level exceeds this set value, the output is activated'), ensure_ascii=False)}>
-                    <input name='reg_max' type='number' min="10" max="400" value='$plugin_options["reg_max"]'> (10-400 $_('cm'))
+                    <input name='reg_max' type='number' min="10" max="400" value='$plugin_options["reg_max"]'> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum run time in activate'):</td>
                 <td title=$:{json.dumps(_(u'Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}>
                     <input id="reg_mm" name="reg_mm" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm"]' min="0" max="999">:
-                    <input id="reg_ss" name="reg_ss" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss"]' min="0" max="59"> (mm:ss)
+                    <input id="reg_ss" name="reg_ss" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss"]' min="0" max="59"> [mm:ss]
                 </td>
             </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Minimum maintained water level'):</td>
                 <td title=$:{json.dumps(_(u'If the measured water level falls below this set value, the output is deactivated'), ensure_ascii=False)}>
-                    <input name='reg_min' type='number' min="10" max="400" value='$plugin_options["reg_min"]'> (10-400 $_('cm'))
+                    <input name='reg_min' type='number' min="10" max="400" value='$plugin_options["reg_min"]'> 
                 </td>
             </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Select Output for regulation'):</td>
                 <td title=$:{json.dumps(_(u'Select Output for controled zones'), ensure_ascii=False)}>
-                    <select name="reg_output">
+                    <select name="reg_output" width="250" style="width: 250px">
                         $for station in stations.get():
                             <option value="${str(station.index)}" ${"selected" if plugin_options["reg_output"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
@@ -289,14 +313,14 @@ function create_graph(result) {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td>
-                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
+                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
+                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Interval for logging'):</td>
-                <td>
-                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> $_('minutes (Minimum is 1)')
+                <td title=$:{json.dumps(_(u'minutes (Minimum is 1)'), ensure_ascii=False)}>
+                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> 
                 </td>
             </tr>
             <tr>

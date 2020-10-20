@@ -25,6 +25,7 @@ from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy.stations import stations
+from ospy.scheduler import predicted_schedule, combined_schedule
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
@@ -60,7 +61,9 @@ tank_options = PluginOptions(
        'reg_output': 0,        # selector for output
        'history': 0,           # selector for graph history
        'reg_mm': 60,           # min for maximal runtime
-       'reg_ss': 0             # sec for maximal runtime
+       'reg_ss': 0,            # sec for maximal runtime
+       'use_water_stop': False,# if the level sensor fails, the above selected stations in the scheduler will stop
+       'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
     } 
 )
 
@@ -98,14 +101,16 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        last_millis = 0 # timer for save log
-        once_text = True
+        last_millis = 0    # timer for save log
+        once_text = True   # once_text to seven_text is auxiliary for blocking
         two_text = True
         three_text = True
         five_text = True
         six_text = True
+        seven_text = True
         send = False
         mini = True
+
         sonic_cm = get_sonic_cm()
         level_in_tank = get_sonic_tank_cm(sonic_cm)
         regulation_text = _(u'Regulation NONE.')
@@ -113,14 +118,14 @@ class Sender(Thread):
 
         tank_mon = showInFooter() #  instantiate class to enable data in footer
         tank_mon.button = "tank_monitor/settings"       # button redirect on footer
-        tank_mon.label =  _('Tank')                     # label on footer
+        tank_mon.label =  _(u'Tank')                     # label on footer
 
         while not self._stop.is_set():
             try:
                 if tank_options['use_sonic']: 
                     if two_text:
                         log.clear(NAME)
-                        log.info(NAME, _('Water tank monitor is enabled.'))
+                        log.info(NAME, _(u'Water tank monitor is enabled.'))
                         once_text = True
                         two_text = False
  
@@ -138,15 +143,15 @@ class Sender(Thread):
                         status['percent'] = get_tank(level_in_tank)    
 
                         log.clear(NAME)
-                        log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
+                        log.info(NAME, datetime_string() + ' ' + _(u'Water level') + ': ' + str(status['level']) + ' ' + _(u'cm') + ' (' + str(status['percent']) + ' ' + (u'%).'))
                         if tank_options['check_liters']: # display in liters
-                            tempText =  str(status['volume']) + ' ' + _('liters') + ', ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%)')
-                            log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('liters') + '.')
+                            tempText =  str(status['volume']) + ' ' + _(u'liters') + ', ' + str(status['level']) + ' ' + _(u'cm') + ' (' + str(status['percent']) + ' ' + (u'%)')
+                            log.info(NAME, _(u'Ping') + ': ' + str(status['ping']) + ' ' + _(u'cm') + ', ' + _(u'Volume') + ': ' + str(status['volume']) + ' ' + _(u'liters') + '.')
                         else:
-                            tempText =  str(status['volume']) + ' ' + _('m3') + ', ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%)')
-                            log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3') + '.')
-                        log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
-                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.') 
+                            tempText =  str(status['volume']) + ' ' + _(u'm3') + ', ' + str(status['level']) + ' ' + _(u'cm') + ' (' + str(status['percent']) + ' ' + (u'%)')
+                            log.info(NAME, _(u'Ping') + ': ' + str(status['ping']) + ' ' + _(u'cm') + ', ' + _(u'Volume') + ': ' + str(status['volume']) + ' ' + _(u'm3') + '.')
+                        log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _(u'Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _(u'cm') + '.')   
+                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _(u'Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _(u'cm') + '.') 
                         log.info(NAME, regulation_text)
 
                         if tank_options['enable_reg']:                                    # if enable regulation "maximum water level"
@@ -155,7 +160,7 @@ class Sender(Thread):
                                 if five_text:
                                     five_text = False
                                     six_text = True
-                                    regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                    regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _(u'Output') + ' ' +  str(reg_station.index+1) + ').'
                                     
                                     start = datetime.datetime.now()
                                     sid = reg_station.index
@@ -164,7 +169,7 @@ class Sender(Thread):
                                         'active': True,
                                         'program': -1,
                                         'station': sid,
-                                        'program_name': _('Tank Monitor'),
+                                        'program_name': _(u'Tank Monitor'),
                                         'fixed': True,
                                         'cut_off': 0,
                                         'manual': True,
@@ -180,8 +185,9 @@ class Sender(Thread):
                                     stations.activate(new_schedule['station'])    
                 
                             if level_in_tank < tank_options['reg_min']:                   # if actual level in tank < set minimum water level
-                                if six_text:
+                                if six_text: # blocking for once
                                     five_text = True
+                                    seven_text = True
                                     six_text = False
                                     regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
                                     
@@ -206,6 +212,8 @@ class Sender(Thread):
                                 qdict['use_send_email'] = u'on' 
                             if tank_options['enable_log']:
                                 qdict['enable_log'] = u'on'
+                            if tank_options['use_water_stop']:     
+                                qdict['use_water_stop'] = u'on'                                
                             qdict['log_maxlevel'] = status['level']
                             qmax = datetime_string()
                             tank_options['log_date_maxlevel'] = qmax
@@ -225,6 +233,8 @@ class Sender(Thread):
                                 qdict['use_send_email'] = u'on'
                             if tank_options['enable_log']:
                                 qdict['enable_log'] = u'on'
+                            if tank_options['use_water_stop']:     
+                                qdict['use_water_stop'] = u'on'                                
                             qdict['log_minlevel'] = status['level']
                             qmin = datetime_string()
                             tank_options['log_date_minlevel'] = qmin
@@ -238,9 +248,7 @@ class Sender(Thread):
                                 mini = False 
     
                             if tank_options['use_stop']:                                   # if stop scheduler                    
-                                options.scheduler_enabled = False                          # disable scheduler
-                                log.finish_run(None)                                       # save log
-                                stations.clear()                                           # set all station to off                                          
+                                set_stations_in_scheduler_off()         
                                 log.info(NAME, datetime_string() + ' ' + _('ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _('cm') + '!')
                                    
                         if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: # refresh send email if actual level > options minimum +5
@@ -259,22 +267,22 @@ class Sender(Thread):
                         log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _('Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _('cm') + '.')   
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _('Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _('cm') + '.')    
 
-                        if tank_options['use_water_err'] and three_text:               # if probe has error
-                            three_text = False
-
-                            options.scheduler_enabled = False                          # disable scheduler
-                            log.finish_run(None)                                       # save log
-                            stations.clear()                                           # set all station to off                                          
+                        if tank_options['use_water_err'] and three_text:   # if probe has error send email
+                            three_text = False                                          
                             log.info(NAME, datetime_string() + ' ' + _('ERROR: Water probe has fault?'))
                                
                             msg = '<b>' + _('Water Tank Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water probe has fault?') + '</p>'
-                            msglog = _('Water Tank Monitor plug-in') + ': ' + _('System detected error: Water probe has fault?')  
+                            msglog = _('Water Tank Monitor plug-in') + ': ' + _(u'System detected error: Water probe has fault?')  
                             try:
                                 from plugins.email_notifications import try_mail                                    
                                 try_mail(msg, msglog, attachment=None, subject=tank_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                             except Exception:     
-                                log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())                             
+                                log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())  
+
+                        if tank_options['use_water_stop'] and seven_text:   # if probe has error stop run stations in scheduler
+                            seven_text = False
+                            set_stations_in_scheduler_off()                                   
 
                         self._sleep(10)        
 
@@ -287,27 +295,28 @@ class Sender(Thread):
                 else:
                     if once_text:
                        log.clear(NAME)
-                       log.info(NAME, 'Water tank monitor is disabled.')
+                       log.info(NAME, _(u'Water tank monitor is disabled.'))
                        once_text = False
                        two_text = True
                        last_level = 0
                     self._sleep(1)  
                 
                 if send:
-                    msg = '<b>' + _('Water Tank Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '.\n' + '</p>'
-                    msglog = _('Water Tank Monitor plug-in') + ': ' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _('cm') + '. '  
+                    msg = '<b>' + _(u'Water Tank Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _(u'cm') + '.\n' + '</p>'
+                    msglog = _(u'Water Tank Monitor plug-in') + ': ' + _(u'System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _(u'cm') + '. '  
                     send = False                    
                     try:
                         from plugins.email_notifications import try_mail                                    
                         try_mail(msg, msglog, attachment=None, subject=tank_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
-                    except Exception:     
-                        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())                        
+                    except Exception:  
+                        log.info(NAME, _(u'E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))    
+                        log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())                        
 
 
             except Exception:
                 log.clear(NAME)
-                log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)            
 
 sender = None
@@ -533,6 +542,32 @@ def create_default_graph():
     log.info(NAME, _('Deleted all log files OK'))
 
 
+def set_stations_in_scheduler_off():
+    """Stoping selected station in scheduler."""
+    
+    current_time  = datetime.datetime.now()
+    check_start = current_time - datetime.timedelta(days=1)
+    check_end = current_time + datetime.timedelta(days=1)
+
+    # In manual mode we cannot predict, we only know what is currently running and the history
+    if options.manual_mode:
+        active = log.finished_runs() + log.active_runs()
+    else:
+        active = combined_schedule(check_start, check_end)    
+
+    ending = False
+
+    # active stations
+    for entry in active:
+        for used_stations in tank_options['used_stations']: # selected stations for stoping
+            if entry['station'] == used_stations:           # is this station in selected stations? 
+                log.finish_run(entry)                       # save end in log 
+                stations.deactivate(entry['station'])       # stations to OFF
+                ending = True   
+
+    if ending:
+        log.info(NAME, _('Stoping stations in scheduler'))
+
 
 ################################################################################
 # Web pages:                                                                   #
@@ -568,6 +603,8 @@ class settings_page(ProtectedPage):
                 qdict['use_stop']  = u'on'
             if tank_options['use_send_email']:     
                 qdict['use_send_email'] = u'on'  
+            if tank_options['use_water_stop']:     
+                qdict['use_water_stop'] = u'on' 
 
             tank_options.web_update(qdict)    # save to plugin options
             log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
@@ -584,7 +621,7 @@ class settings_page(ProtectedPage):
 
 
     def POST(self):
-        tank_options.web_update(web.input())
+        tank_options.web_update(web.input(**tank_options)) #for save multiple select
 
         if sender is not None:
             sender.update()

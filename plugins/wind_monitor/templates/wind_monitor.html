@@ -260,7 +260,7 @@ function create_graph(result) {
                 <td title=$:{json.dumps(_(u'If wind speed is bigger stop this selected stations'), ensure_ascii=False)}>  
                 <select multiple name="used_stations" width="250" style="width: 250px" size="8">
                     $for station in [station for station in stations if station.enabled]:
-                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} (Output ${str(station.index+1)})</option>
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                 </select>
                 </td>
             </tr>            

@@ -1,7 +1,7 @@
 Tank Monitor Readme
 ====
 
-This plugin measures the water level in the tank. If the water level falls below the specified limit above ground will stop watering, stop the scheduler and sent an E-mail with an error message.  
+This plugin measures the water level in the tank. If water level is small, this plugin stop irigation system (stop runing stations in scheduler) and sends E-mail with error Safety for master station pump if no water.
 
 
 Plugin setup
@@ -16,10 +16,13 @@ Plugin setup
   Enter the distance from the sensor to the maximu water level in the tank (maximum to sensor - 2cm).  
 
 * The water level from the bottom to the minimum water level in the tank:  
-  Enter the level for the minimum water level in the tank. If it falls below this level will stop watering, stop the scheduler and send an E-mail (For this function required E-mail plugin).  
+  Enter the level for the minimum water level in the tank.   
 
-* Stop scheduller if is minimum water in the tank:  
-  Disabling the scheduler if is minimum water level in tank
+* Stop stations if minimum water level:  
+  Stoping these stations if is minimum water level in the tank. Selector for stop stations in scheduler.
+
+* Stop stations if sonic probe has fault:  
+  If the level sensor fails, the above selected stations in the scheduler will stop.
 
 * Cylinder diameter for volume calculation:  
   Enter the diameter for volume calculation.
@@ -30,7 +33,7 @@ Plugin setup
 * Send an E-mail with an error that there is minimum water in the tank:  
   For this function required E-mail plugin.
 
-* Send an E-mail with an error if sonic probe has fault: (and stop scheduler!):  
+* Send an E-mail with an error if sonic probe has fault:   
   For this function required E-mail plugin.
 
 * Regulate the maximum water level:  
