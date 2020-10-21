@@ -377,7 +377,7 @@ class settings_page(ProtectedPage):
         return self.plugin_render.pressure_monitor(pressure_options, pressure_sender.status, log.events(NAME))
 
     def POST(self):
-        pressure_options.web_update(web.input())
+        pressure_options.web_update(web.input(**pressure_options)) #for save multiple select
 
         if pressure_sender is not None:
             pressure_sender.update()
