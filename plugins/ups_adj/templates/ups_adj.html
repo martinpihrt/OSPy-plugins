@@ -171,6 +171,7 @@ function create_graph(result) {
     <div class="title">$_('UPS monitor settings')</div>
     <p>$_('This plugin checked power line for system. UPS (uninterrupted power supply).')</p>
     <p>$_('If is error with power line in a certain time, sends plugin E-mail with error and shutdown system (and generate pulse to GPIO).')</p>
+    <p>$_('Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS.')</p>    
     <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p> 
     $if plugin_options['enable_log']:
         <p>$_('Download log as') <a href=$plugins.plugin_url('ups_adj.log_csv') class="button upload">csv</a></p></br>         
@@ -178,32 +179,32 @@ function create_graph(result) {
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use UPS'):</b></td>
-                <td>
-                    <input name='ups' type='checkbox'${" checked" if plugin_options['ups'] else ""}> ($_('Power line is connected via optocoupler between GPIO 23 - pin 16 and ground'))  
+                <td title=$:{json.dumps(_(u'Power line is connected via optocoupler between GPIO 23 - pin 16 and ground'), ensure_ascii=False)}>
+                    <input name='ups' type='checkbox'${" checked" if plugin_options['ups'] else ""}>
                 </td>
             </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Send E-mail with error'):</td>
-                <td>
-                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> ($_('For this function required E-mail plugin'))
-                </td>
-            </tr>
+
             <tr>
                 <td style='text-transform: none;'>$_('Max time for shutdown countdown'):</td>
-                <td>
-                    <input name='time' type='number' min="0" max="999" value='$plugin_options["time"]'> ($_('max 999 minutes'))
+                <td title=$:{json.dumps(_(u'max 999 minutes'), ensure_ascii=False)}>
+                    <input name='time' type='number' min="0" max="999" value='$plugin_options["time"]'> 
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('Power line state'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                   $status['power%d']
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail with error'):</td>
+                <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
+                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
                 </td>
-            </tr>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
                 <td>
-                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]' width="250" style="width: 250px">
                 </td>
             </tr>
             <tr>
@@ -219,8 +220,8 @@ function create_graph(result) {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td>
-                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
+                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
+                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
                 </td>
             </tr>
             <tr>
@@ -239,15 +240,20 @@ function create_graph(result) {
                <th colspan="2">
                  <hr>
                </th>
-            </tr>                        
+            </tr>     
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('Power line state'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                   $status['power%d']
+                </td>
+            </tr>                               
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
-    <p>$_('Output on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS.')</p>
     </form>
 </div>
 <div id="controls">
