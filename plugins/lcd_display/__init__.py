@@ -26,7 +26,7 @@ from ospy.stations import stations
 
 
 NAME = 'LCD Display'
-MENU =  _('Package: LCD Display')
+MENU =  _(u'Package: LCD Display')
 LINK = 'settings_page'
 
 lcd_options = PluginOptions(
@@ -108,7 +108,7 @@ class LCDSender(Thread):
                 self._sleep(2)
 
             except Exception:
-                log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+                log.error(NAME, _(u'LCD display plug-in:') + '\n' + traceback.format_exc())
                 self._sleep(5)
 
 
@@ -175,7 +175,7 @@ def get_active_state():
     for station in stations.get(): # check if station runing
       if station.active:
         station_state = True       # yes runing
-        station_result += str(station.index+1) + ', ' # station number runing ex: 2, 6, 20,
+        station_result += str(station.index+1) + _(u',') + ' ' # station number runing ex: 2, 6, 20,
     if station_state:
       return station_result
     else:
@@ -184,648 +184,208 @@ def get_active_state():
 
 def get_report(index):
     result = None
-    if (options.lang == 'cs_CZ'):
-           if index == 0:  # start text to 16x1
-             if lcd_options['d_system_name']:
-                result = "ID systemu:"
-             else: 
-                result = None
-           elif index == 1:
-             if lcd_options['d_system_name']:
-                result = ASCI_convert(options.name)
-             else:
-                result = None 
 
-           elif index == 2:
-             if lcd_options['d_sw_version_date']:
-                result = "FW Verze:"
-             else: 
-                result = None
-           elif index == 3:
-             if lcd_options['d_sw_version_date']:
-                result = version.ver_str + ' (' + version.ver_date + ')' 
-             else: 
-                result = None
-
-           elif index == 4:
-             if lcd_options['d_ip']:
-                result = "Mistni IP adresa:" 
-             else: 
-                result = None
-           elif index == 5:
-             if lcd_options['d_ip']:
-                ip = "http"
-                if options.use_ssl:
-                   ip += "s"
-                ip += "://" + helpers.get_ip() + ':' + str(options.web_port)
-                result = str(ip)
-             else: 
-                result = None
-
-           elif index == 6:
-             if lcd_options['d_port']:
-                result = "Port:"
-             else: 
-                result = None
-           elif index == 7:
-             if lcd_options['d_port']:
-                result = str(options.web_port)
-             else: 
-                result = None
-
-           elif index == 8:
-             if lcd_options['d_cpu_temp']:
-                result = "Teplota CPU:"
-             else: 
-                result = None
-           elif index == 9:
-             if lcd_options['d_cpu_temp']:
-                result = helpers.get_cpu_temp(options.temp_unit) + ' ' + options.temp_unit
-             else: 
-                result = None
-
-           elif index == 10:
-             if lcd_options['d_time_date']:
-                result = datetime.now().strftime('Dat %d.%m.%Y')
-             else: 
-                result = None
-           elif index == 11:
-             if lcd_options['d_time_date']:
-                result = datetime.now().strftime('Cas %H:%M:%S')
-             else: 
-                result = None
-
-           elif index == 12:
-             if lcd_options['d_uptime']:
-                result = "V provozu:"
-             else: 
-                result = None
-           elif index == 13:
-             if lcd_options['d_uptime']:
-                result = helpers.uptime() 
-             else: 
-                result = None
-
-           elif index == 14:
-             if lcd_options['d_rain_sensor']:
-                result = "Cidlo deste:"
-             else: 
-                result = None
-           elif index == 15:
-             if lcd_options['d_rain_sensor']:
-                if inputs.rain_sensed():
-                    result = "aktivni"
-                else:
-                    result = "neaktivni"
-             else: 
-                result = None
-
-           elif index == 16:
-             if lcd_options['d_last_run']:
-                result = 'Naposledy bezel'
-             else: 
-                result = None
-           elif index == 17:
-             if lcd_options['d_last_run']:
-                finished = [run for run in log.finished_runs() if not run['blocked']]
-                if finished:
-                   result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + ASCI_convert(finished[-1]['program_name'])
-                   result = result.replace('Run-Once', 'Jednorazovy')
-                   result = result.replace('Manual', 'Rucne')
-                else:
-                   result = 'zadny program'
-             else: 
-                result = None
-
-           elif index == 18:
-             if lcd_options['d_pressure_sensor']:
-                result = "Cidlo tlaku:"
-             else: 
-                result = None
-           elif index == 19:
-             if lcd_options['d_pressure_sensor']:
-                try:
-                   from plugins import pressure_monitor
-                   state_press = pressure_monitor.get_check_pressure()
-                   if state_press:
-                      result = "neaktivni"
-                   else:
-                      result = "aktivni"
-
-                except Exception:
-                   result = "neni k dispozici"
-             else: 
-                result = None
-
-           elif index == 20:    
-             if lcd_options['d_water_tank_level']:    
-                result = "Nadrz s vodou:"
-             else: 
-                result = None
-           elif index == 21:
-             if lcd_options['d_water_tank_level']:
-                try:
-                   from plugins import tank_monitor
-                   cm = tank_monitor.get_all_values()[0]
-                   percent = tank_monitor.get_all_values()[1]
-                   ping = tank_monitor.get_all_values()[2]
-                   volume = tank_monitor.get_all_values()[3]
-                   units = tank_monitor.get_all_values()[4]
-
-                   if cm > 0: 
-                      result = 'Hladina ' + str(cm) + ' cm (' + str(percent) + ' %), objem ' + str(volume) 
-                      if units:
-                          result += ' litru, ping ' + str(ping) + ' cm' 
-                      else:
-                          result += ' m3, ping ' + str(ping) + ' cm'     
-                   else:
-                      result = "chyba - I2C zarizeni nenalezeno!"
-
-                except Exception:
-                   result = "neni k dispozici"
-             else: 
-                result = None
-
-           elif index == 22:    
-             if lcd_options['d_temperature']:    
-                result = "Teplota DS1-6:"
-             else: 
-                result = None
-           elif index == 23:
-             if lcd_options['d_temperature']:
-                try:
-                   from plugins import air_temp_humi
-                 
-                   result = ASCI_convert(air_temp_humi.DS18B20_read_string_data())
-                  
-                except Exception:
-                   result = "neni k dispozici"
-             else: 
-                result = None
-
-           elif index == 24:    
-             if lcd_options['d_running_stations']:    
-                result = "Stanice v chodu:"
-             else: 
-                result = None
-           elif index == 25:
-             if get_active_state()==False:   
-                result = "nic nebezi" 
-             else:
-                result = get_active_state()
-
-           elif index == 26:    
-             if lcd_options['d_sched_manu']:    
-                result = "Rezim ovladani:"
-             else: 
-                result = None
-           elif index == 27:
-             if options.manual_mode:   
-                result = "rucni rezim" 
-             else:
-                result = "planovac"
-
-           elif index == 28:    
-             if lcd_options['d_syst_enabl']:    
-                result = "Planovac je:"
-             else: 
-                result = None
-           elif index == 29:
-             if options.scheduler_enabled:   
-                result = "povoleny" 
-             else:
-                result = "zakazany"                              
-
-           return result 
-
-
-    if (options.lang == 'sk_SK'):
-           if index == 0:  # start text to 16x1
-             if lcd_options['d_system_name']:
-                result = "ID systemu:"
-             else: 
-                result = None
-           elif index == 1:
-             if lcd_options['d_system_name']:
-                result = ASCI_convert(options.name)
-             else:
-                result = None 
-
-           elif index == 2:
-             if lcd_options['d_sw_version_date']:
-                result = "FW Verzia:"
-             else: 
-                result = None
-           elif index == 3:
-             if lcd_options['d_sw_version_date']:
-                result = version.ver_str + ' (' + version.ver_date + ')' 
-             else: 
-                result = None
-
-           elif index == 4:
-             if lcd_options['d_ip']:
-                result = "IP adresa:" 
-             else: 
-                result = None
-           elif index == 5:
-             if lcd_options['d_ip']:
-                ip = "http"
-                if options.use_ssl:
-                   ip += "s"
-                ip += "://" + helpers.get_ip() + ':' + str(options.web_port)
-                result = str(ip)
-             else: 
-                result = None
-
-           elif index == 6:
-             if lcd_options['d_port']:
-                result = "Port:"
-             else: 
-                result = None
-           elif index == 7:
-             if lcd_options['d_port']:
-                result = str(options.web_port)
-             else: 
-                result = None
-
-           elif index == 8:
-             if lcd_options['d_cpu_temp']:
-                result = "Teplota CPU:"
-             else: 
-                result = None
-           elif index == 9:
-             if lcd_options['d_cpu_temp']:
-                result = helpers.get_cpu_temp(options.temp_unit) + ' ' + options.temp_unit
-             else: 
-                result = None
-
-           elif index == 10:
-             if lcd_options['d_time_date']:
-                result = datetime.now().strftime('Dat %d.%m.%Y')
-             else: 
-                result = None
-           elif index == 11:
-             if lcd_options['d_time_date']:
-                result = datetime.now().strftime('Cas %H:%M:%S')
-             else: 
-                result = None
-
-           elif index == 12:
-             if lcd_options['d_uptime']:
-                result = "V prevadzke:"
-             else: 
-                result = None
-           elif index == 13:
-             if lcd_options['d_uptime']:
-                result = helpers.uptime() 
-             else: 
-                result = None
-
-           elif index == 14:
-             if lcd_options['d_rain_sensor']:
-                result = "Cidlo dazda:"
-             else: 
-                result = None
-           elif index == 15:
-             if lcd_options['d_rain_sensor']:
-                if inputs.rain_sensed():
-                    result = "aktivny"
-                else:
-                    result = "neaktivny"
-             else: 
-                result = None
-
-           elif index == 16:
-             if lcd_options['d_last_run']:
-                result = 'Naposledy bezal'
-             else: 
-                result = None
-           elif index == 17:
-             if lcd_options['d_last_run']:
-                finished = [run for run in log.finished_runs() if not run['blocked']]
-                if finished:
-                   result = finished[-1]['start'].strftime('%d-%m-%Y v %H:%M:%S program: ') + ASCI_convert(finished[-1]['program_name'])
-                   result = result.replace('Run-Once', 'Jednorazovy')
-                   result = result.replace('Manual', 'Rucne')
-                else:
-                   result = 'ziadny program'
-             else: 
-                result = None
-
-           elif index == 18:
-             if lcd_options['d_pressure_sensor']:
-                result = "Cidlo tlaku:"
-             else: 
-                result = None
-           elif index == 19:
-             if lcd_options['d_pressure_sensor']:
-                try:
-                   from plugins import pressure_monitor
-                   state_press = pressure_monitor.get_check_pressure()
-                   if state_press:
-                      result = "neaktivny"
-                   else:
-                      result = "aktivny"
-
-                except Exception:
-                   result = "neni k dispozicii"
-             else: 
-                result = None
-
-           elif index == 20:    
-             if lcd_options['d_water_tank_level']:    
-                result = "Nadrz s vodou:"
-             else: 
-                result = None
-           elif index == 21:
-             if lcd_options['d_water_tank_level']:
-                try:
-                   from plugins import tank_monitor
-                   cm = tank_monitor.get_all_values()[0]
-                   percent = tank_monitor.get_all_values()[1]
-                   ping = tank_monitor.get_all_values()[2]
-                   volume = tank_monitor.get_all_values()[3]
-                   units = tank_monitor.get_all_values()[4]
-
-                   if cm > 0: 
-                      result = 'Hladina ' + str(cm) + ' cm (' + str(percent) + ' %), objem ' + str(volume) 
-                      if units:
-                          result += ' litru, ping ' + str(ping) + ' cm' 
-                      else:
-                          result += ' m3, ping ' + str(ping) + ' cm' 
-                   else:
-                      result = "chyba - I2C zarizeni nenajdene!"
-
-                except Exception:
-                   result = "neni k dispozicii"
-             else: 
-                result = None
-
-           elif index == 22:    
-             if lcd_options['d_temperature']:    
-                result = "Teplota DS1-6:"
-             else: 
-                result = None
-           elif index == 23:
-             if lcd_options['d_temperature']:
-                try:
-                   from plugins import air_temp_humi
-                 
-                   result = ASCI_convert(air_temp_humi.DS18B20_read_string_data())
-                  
-                except Exception:
-                   result = "neni k dispozicii"
-             else: 
-                result = None
-
-           elif index == 24:    
-             if lcd_options['d_running_stations']:    
-                result = "Stanice v chode:"
-             else: 
-                result = None
-           elif index == 25:
-             if get_active_state()==False:   
-                result = "nic nebezi" 
-             else:
-                result = get_active_state()
-
-           elif index == 26:    
-             if lcd_options['d_sched_manu']:    
-                result = "Rezim ovladania:"
-             else: 
-                result = None
-           elif index == 27:
-             if options.manual_mode:   
-                result = "rucny rezim" 
-             else:
-                result = "planovac"
-
-           elif index == 28:    
-             if lcd_options['d_syst_enabl']:    
-                result = "Planovac je:"
-             else: 
-                result = None
-           elif index == 29:
-             if options.scheduler_enabled:   
-                result = "povoleny" 
-             else:
-                result = "zakazany"                
-
-           return result
-
-    if (options.lang == 'en_US') or (options.lang == 'default'):
-          if index == 0:  
-             if lcd_options['d_system_name']:
-                result = ASCI_convert(options.name)
-             else: 
-                result = None
-          elif index == 1:
-             if lcd_options['d_system_name']:
-                result = "Irrigation system"
-             else: 
-                result = None
-
-          elif index == 2:
-             if lcd_options['d_sw_version_date']:
-                result = "SW Version:"
-             else: 
-                result = None
-          elif index == 3:
-             if lcd_options['d_sw_version_date']:
-                result = version.ver_str + ' (' + version.ver_date + ')'
-             else: 
-                result = None
-
-          elif index == 4:
-             if lcd_options['d_ip']:
-                result = "My IP is:"
-             else: 
-                result = None
-          elif index == 5:
-             if lcd_options['d_ip']:
-                ip = "http"
-                if options.use_ssl:
-                   ip += "s"
-                ip += "://" + helpers.get_ip() + ':' + str(options.web_port)
-                result = str(ip)
-             else: 
-                result = None
-
-          elif index == 6:
-             if lcd_options['d_port']:
-                result = "My Port is:"
-             else: 
-                result = None
-          elif index == 7:
-             if lcd_options['d_port']:
-                result = str(options.web_port)
-             else: 
-                result = None
-
-          elif index == 8:
-             if lcd_options['d_cpu_temp']:
-                result = "CPU Temperature:"
-             else: 
-                result = None
-          elif index == 9:
-             if lcd_options['d_cpu_temp']:
-                result = helpers.get_cpu_temp(options.temp_unit) + ' ' + options.temp_unit
-             else: 
-                result = None
-
-          elif index == 10:
-             if lcd_options['d_time_date']:
-                result = datetime.now().strftime('Date: %d.%m.%Y')
-             else: 
-                result = None
-          elif index == 11:
-             if lcd_options['d_time_date']:
-                result = datetime.now().strftime('Time: %H:%M:%S')
-             else: 
-                result = None
-
-          elif index == 12:
-             if lcd_options['d_uptime']:
-                result = "System Uptime:"
-             else: 
-                result = None
-          elif index == 13:
-             if lcd_options['d_uptime']:
-                result = helpers.uptime()
-             else: 
-                result = None
-
-          elif index == 14:
-             if lcd_options['d_rain_sensor']:
-                result = "Rain Sensor:"
-             else: 
-                result = None
-          elif index == 15:
-             if lcd_options['d_rain_sensor']:
-                if inputs.rain_sensed():
-                   result = "Active"
-                else:
-                   result = "Inactive"
-             else: 
-                result = None
-
-          elif index == 16:
-             if lcd_options['d_last_run']:
-                result = 'Last Program:'
-             else: 
-                result = None
-          elif index == 17:
-             if lcd_options['d_last_run']:
-                finished = [run for run in log.finished_runs() if not run['blocked']]
-                if finished:
-                   result = finished[-1]['start'].strftime('%H:%M: ') + ASCI_convert(finished[-1]['program_name'])
-                   result = result.replace('Run-Once', 'Jednorazovy') 
-                else:
-                   result = 'None'
-             else: 
-                result = None
-
-          elif index == 18:
-             if lcd_options['d_pressure_sensor']:
-                result = "Pressure Sensor:"
-             else: 
-                result = None
-          elif index == 19:
-             if lcd_options['d_pressure_sensor']:
-                try:
-                   from plugins import pressure_monitor
-                   state_press = pressure_monitor.get_check_pressure()
-                   if state_press:
-                       result = "GPIO is HIGH"
-                   else:
-                       result = "GPIO is LOW"
-
-                except Exception:
-                   result = "Not Available"
-             else: 
-                result = None
-
-
-          elif index == 20:    
-             if lcd_options['d_water_tank_level']:        
-                result = "Water Tank Level:"
-             else: 
-                result = None
-          elif index == 21:
-             if lcd_options['d_water_tank_level']:    
-                try:
-                   from plugins import tank_monitor
-                   cm = tank_monitor.get_all_values()[0]
-                   percent = tank_monitor.get_all_values()[1]
-                   ping = tank_monitor.get_all_values()[2]
-                   volume = tank_monitor.get_all_values()[3]
-                   units = tank_monitor.get_all_values()[4]
-
-                   if cm > 0: 
-                      result = 'Level ' + str(cm) + ' cm (' + str(percent) + ' %), volume ' + str(volume) 
-                      if units:
-                          result += ' litru, ping ' + str(ping) + ' cm' 
-                      else:
-                          result += ' m3, ping ' + str(ping) + ' cm' 
-                   else:
-                      result = "Error - I2C Device Not Found!"
-
-                except Exception:
-                   result = "Not Available"
-             else: 
-                result = None
-
-          elif index == 22:    
-            if lcd_options['d_temperature']:    
-               result = "DS Temperature:"
-            else: 
-               result = None
-          elif index == 23:
-            if lcd_options['d_temperature']:
-               try:
-                  from plugins import air_temp_humi
-                 
-                  result = ASCI_convert(air_temp_humi.DS18B20_read_string_data())
-                                     
-               except Exception:
-                  result = "Not Available"
-            else: 
-               result = None
-
-          elif index == 24:    
-            if lcd_options['d_running_stations']:    
-               result = "Station running:"
-            else: 
-                result = None
-          elif index == 25:
-            if get_active_state()==False:   
-               result = "nothing running" 
+    if index == 0:  
+        if lcd_options['d_system_name']:
+            result = ASCI_convert(_(u'System:'))
+        else: 
+            result = None
+    elif index == 1:
+        if lcd_options['d_system_name']:
+            result = ASCI_convert(options.name)
+        else: 
+            result = None
+    elif index == 2:
+        if lcd_options['d_sw_version_date']:
+            result = ASCI_convert(_(u'SW Version:'))
+        else: 
+            result = None
+    elif index == 3:
+        if lcd_options['d_sw_version_date']:
+            result = version.ver_str + ' ' + version.ver_date
+        else: 
+            result = None
+    elif index == 4:
+        if lcd_options['d_ip']:
+            result = ASCI_convert(_(u'My IP is:'))
+        else: 
+            result = None
+    elif index == 5:
+        if lcd_options['d_ip']:
+            ip = ASCI_convert(_(u'http'))
+            if options.use_ssl:
+                ip = ASCI_convert(_(u'https'))
+            ip += ASCI_convert(_(u'://')) + helpers.get_ip() + _(u':') + str(options.web_port)
+            result = str(ip)
+        else: 
+            result = None
+    elif index == 6:
+        if lcd_options['d_port']:
+            result = ASCI_convert(_(u'My Port is:'))
+        else: 
+            result = None
+    elif index == 7:
+        if lcd_options['d_port']:
+            result = str(options.web_port)
+        else: 
+            result = None
+    elif index == 8:
+        if lcd_options['d_cpu_temp']:
+            result = ASCI_convert(_(u'CPU Temperature:'))
+        else: 
+            result = None
+    elif index == 9:
+        if lcd_options['d_cpu_temp']:
+            result = helpers.get_cpu_temp(options.temp_unit) + ' ' + options.temp_unit
+        else: 
+            result = None
+    elif index == 10:
+        if lcd_options['d_time_date']:
+            str_date = ASCI_convert(_(u'Date:')) + ' '
+            result = str_date + datetime.now().strftime('%d.%m.%Y')
+        else: 
+            result = None
+    elif index == 11:
+        if lcd_options['d_time_date']:
+            str_time = ASCI_convert(_(u'Time:')) + ' '
+            result = str_time + datetime.now().strftime('%H:%M:%S')
+        else: 
+            result = None
+    elif index == 12:
+        if lcd_options['d_uptime']:
+            result = ASCI_convert(_(u'System Uptime:'))
+        else: 
+                result = None
+    elif index == 13:
+        if lcd_options['d_uptime']:
+            result = ASCI_convert(helpers.uptime())
+        else: 
+            result = None
+    elif index == 14:
+        if lcd_options['d_rain_sensor']:
+            result = ASCI_convert(_(u'Rain Sensor:'))
+        else: 
+            result = None
+    elif index == 15:
+        if lcd_options['d_rain_sensor']:
+            if inputs.rain_sensed():
+                result = ASCI_convert(_(u'Active'))
             else:
-               result = get_active_state()
-
-          elif index == 26:    
-            if lcd_options['d_sched_manu']:    
-               result = "Control:"
-            else: 
-               result = None
-          elif index == 27:
-            if options.manual_mode:   
-               result = "manual mode" 
+                result = ASCI_convert(_(u'Inactive'))
+        else: 
+            result = None
+    elif index == 16:
+        if lcd_options['d_last_run']:
+            result = ASCI_convert(_(u'Last Program:'))
+        else: 
+            result = None
+    elif index == 17:
+        if lcd_options['d_last_run']:
+            finished = [run for run in log.finished_runs() if not run['blocked']]
+            if finished:
+                str_fin= ASCI_convert(finished[-1]['program_name']) + finished[-1]['start'].strftime(' %H:%M')
+                result = ASCI_convert(str_fin) 
             else:
-               result = "scheduler"
+                result = ASCI_convert(_(u'None'))
+        else: 
+            result = None
+    elif index == 18:
+        if lcd_options['d_pressure_sensor']:
+            result = ASCI_convert(_(u'Pressure Sensor:'))
+        else: 
+            result = None
+    elif index == 19:
+        if lcd_options['d_pressure_sensor']:
+            try:
+                from plugins import pressure_monitor
+                state_press = pressure_monitor.get_check_pressure()
+                if state_press:
+                    result = ASCI_convert(_(u'Inactive'))
+                else:
+                    result = ASCI_convert(_(u'Active'))
+            except Exception:
+                result = ASCI_convert(_(u'Not Available'))
+        else: 
+            result = None
+    elif index == 20:    
+        if lcd_options['d_water_tank_level']:        
+            result = ASCI_convert(_(u'Water Tank Level:'))
+        else: 
+            result = None
+    elif index == 21:
+        if lcd_options['d_water_tank_level']:    
+            try:
+                from plugins import tank_monitor
+                cm = tank_monitor.get_all_values()[0]
+                percent = tank_monitor.get_all_values()[1]
+                ping = tank_monitor.get_all_values()[2]
+                volume = tank_monitor.get_all_values()[3]
+                units = tank_monitor.get_all_values()[4]
+                if cm > 0: 
+                    result = ASCI_convert(_(u'Level')) + ' ' + str(cm) + ASCI_convert(_(u'cm')) + ' ' + str(percent) + ASCI_convert(_(u'%')) + ' ' + str(int(volume))
+                    if units:
+                        result += ASCI_convert(_(u'liter'))# + ' ' + ASCI_convert(_(u'ping')) + ' ' + str(ping) + ASCI_convert(_(u'cm')) 
+                    else:
+                        result += ASCI_convert(_(u'm3'))# + ' ' + ASCI_convert(_(u'ping')) + ' ' + str(ping) + ASCI_convert(_(u'cm')) 
+                else:
+                    result = ASCI_convert(_(u'Error - I2C Device Not Found!'))
+            except Exception:
+                result = ASCI_convert(_(u'Not Available'))
+        else: 
+            result = None
+    elif index == 22:    
+        if lcd_options['d_temperature']:    
+            result = ASCI_convert(_(u'DS Temperature:'))
+        else: 
+            result = None
+    elif index == 23:
+        if lcd_options['d_temperature']:
+            try:
+                from plugins import air_temp_humi
+                air_options = air_temp_humi.plugin_options
+                if air_options['ds_enabled']:
+                    air_result = ''
+                    for i in range(0, air_options['ds_used']):
+                        air_result += u'%s' % air_options['label_ds%d' % i] + u': %s' % air_temp_humi.DS18B20_read_probe(i) + ' '
+                    result = ASCI_convert(air_result)    
+                else:     
+                    result = ASCI_convert(_(u'DS temperature not use'))                    
+            except Exception:
+                result = ASCI_convert(_(u'Not Available'))
+        else: 
+            result = None
+    elif index == 24:    
+        if lcd_options['d_running_stations']:    
+            result = ASCI_convert(_(u'Station running:'))
+        else: 
+            result = None
+    elif index == 25:
+        if get_active_state()==False:   
+            result = ASCI_convert(_(u'Nothing running')) 
+        else:
+            result = get_active_state()
+    elif index == 26:    
+        if lcd_options['d_sched_manu']:    
+            result = ASCI_convert(_(u'Control:'))
+        else: 
+            result = None
+    elif index == 27:
+        if options.manual_mode:   
+            result = ASCI_convert(_(u'Manual mode'))
+        else:
+            result = ASCI_convert(_(u'Scheduler'))
+    elif index == 28:    
+        if lcd_options['d_syst_enabl']:    
+            result = ASCI_convert(_(u'Scheduler:'))
+        else: 
+            result = None
+    elif index == 29:
+        if options.scheduler_enabled:   
+            result = ASCI_convert(_(u'Enabled')) 
+        else:
+            result = ASCI_convert(_(u'Disabled'))         
 
-          elif index == 28:    
-            if lcd_options['d_syst_enabl']:    
-               result = "Scheduler:"
-            else: 
-               result = None
-          elif index == 29:
-            if options.scheduler_enabled:   
-               result = "enabled" 
-            else:
-               result = "disabled"               
-
-          return result
+    return result
 
 
 def find_lcd_address():
@@ -837,9 +397,6 @@ def find_lcd_address():
 
         bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
         # DF - alter RPi version test fallback to value that works on BBB
-    except ImportError:
-        log.warning(NAME, _('Could not import smbus.'))
-    else:
 
         for addr, pcf_type in search_range.iteritems():
             try:
@@ -851,7 +408,10 @@ def find_lcd_address():
             except Exception:
                 pass
         else:
-            log.warning(NAME, _('Could not find any PCF8574 controller.'))
+            log.warning(NAME, _(u'Could not find any PCF8574 controller.'))
+
+    except:
+        log.warning(NAME, _(u'Could not import smbus.'))            
 
 
 def update_lcd(line1, line2=None):
@@ -888,7 +448,7 @@ def update_lcd(line1, line2=None):
                 line2 = line2[1:]
 
         time.sleep(sleep_time)
-        sleep_time = 0.8
+        sleep_time = 0.9
 
 
 ################################################################################
@@ -905,7 +465,7 @@ class settings_page(ProtectedPage):
         if lcd_sender is not None and refind:
             lcd_options['address'] = 0
             log.clear(NAME)
-            log.info(NAME, _('I2C address has re-finded.'))
+            log.info(NAME, _(u'I2C address has re-finded.'))
             find_lcd_address()
             raise web.seeother(plugin_url(settings_page), True)
 
