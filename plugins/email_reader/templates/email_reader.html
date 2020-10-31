@@ -1,0 +1,174 @@
+$def with(plugin_options, events)
+
+$var title: $_('E-mail reader')
+$var page: plugins
+
+
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+});
+</script>
+
+<div id="plugin">
+    <div class="title">$_('E-mail Reader')</div>
+    <p>$_('This extension allows you to retrieve data from a configured E-mail box and respond to incoming messages that arrive in the mailbox.')</p>
+    <p>$_('This extension requires the E-mail_notification extension to be installed and set up correctly. For send messages using the set account.')</p>
+    <p>$_('After receiving and processing the message in the E-mail, a confirmation of the message processing will be sent.')</p>
+  
+    <form id="pluginForm" action="$plugins.plugin_url('email_reader.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'><b>$_('Use E-mail reader'):</b></td>
+                <td title=$:{json.dumps(_(u'Activate this extension for reading E-mails and control OSPy.'), ensure_ascii=False)}>
+                <input name='use_reader' type='checkbox'${" checked" if plugin_options['use_reader'] else ""}></td>
+            </tr>
+            <tr> 
+                <td><small>$_('Connecting to a mail account')</small></td>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail recipient name'):</td>
+                <td title=$:{json.dumps(_(u'E-mail account login details (typically something@something.com).'), ensure_ascii=False)}>
+                <input name='recipient' type='text' value='$plugin_options["recipient"]' width="250" style="width: 250px"></td>
+            </tr>  
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail  recipient password'):</td>
+                <td title=$:{json.dumps(_(u'E-mail account login password.'), ensure_ascii=False)}>
+                <input name='user_password' type='password' value='$plugin_options["user_password"]' width="250" style="width: 250px"></td>
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('IMAP Server'):</td>
+                <td title=$:{json.dumps(_(u'E-mail IMAP provider (typically imap.gmail.com).'), ensure_ascii=False)}>
+                <input name='server' type='text' value='$plugin_options["server"]' width="250" style="width: 250px"></td>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Use SSL'):</td>
+                <td title=$:{json.dumps(_(u'Enable SSL connection.'), ensure_ascii=False)}>
+                <input name='use_ssl' type='checkbox'${" checked" if plugin_options['use_ssl'] else ""}></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Move to trash'):</td>
+                <td title=$:{json.dumps(_(u'Move the message to the Trash after reading.'), ensure_ascii=False)}>
+                <input name='move_to_trash' type='checkbox'${" checked" if plugin_options['move_to_trash'] else ""}></td>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Recipient folder'):</td>
+                <td title=$:{json.dumps(_(u'E-mail recipient folder (typically INBOX).'), ensure_ascii=False)}>
+                <input name='recipient_folder' type='text' value='$plugin_options["recipient_folder"]' width="250" style="width: 250px"></td>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Sender for control access'):</td>
+                <td title=$:{json.dumps(_(u'E-mail user address from whom incoming messages will be processed.'), ensure_ascii=False)}>
+                <input name='sender' type='text' value='$plugin_options["sender"]' width="250" style="width: 250px"></td>
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('Checking interval'):</td>
+                <td title=$:{json.dumps(_(u'After how long to check incoming mail in the inbox. The check time is set in seconds. Minimum is 30.'), ensure_ascii=False)}>
+                    <input name='check_int' type='number' min='30' value='$plugin_options["check_int"]'></td>
+            </tr>   
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>  
+            <tr> 
+                <td><small>$_('Command messages')</small></td>          
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('Switch scheduler to ON'):</td>
+                <td title=$:{json.dumps(_(u'Sending message in body E-mail for switch scheduler to ON.'), ensure_ascii=False)}>
+                <input name='scheduler_on' type='text' value='$plugin_options["scheduler_on"]' width="250" style="width: 250px"></td>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Switch scheduler to OFF'):</td>
+                <td title=$:{json.dumps(_(u'Sending message in body E-mail for switch scheduler to OFF.'), ensure_ascii=False)}>
+                <input name='scheduler_off' type='text' value='$plugin_options["scheduler_off"]' width="250" style="width: 250px"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Switch to manual mode'):</td>
+                <td title=$:{json.dumps(_(u'Sending message in body E-mail for switch to manual mode.'), ensure_ascii=False)}>
+                <input name='manual_on' type='text' value='$plugin_options["manual_on"]' width="250" style="width: 250px"></td>
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Switch to scheduler mode'):</td>
+                <td title=$:{json.dumps(_(u'Sending message in body E-mail for switch to scheduler mode.'), ensure_ascii=False)}>
+                <input name='manual_off' type='text' value='$plugin_options["manual_off"]' width="250" style="width: 250px"></td>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'>$_('Stop all running stations'):</td>
+                <td title=$:{json.dumps(_(u'Sending message in body E-mail for stop all running stations.'), ensure_ascii=False)}>
+                <input name='stop_run' type='text' value='$plugin_options["stop_run"]' width="250" style="width: 250px"></td>
+            </tr>  
+            <tr>
+                <td style='text-transform: none;'>$_('Send back help'):</td>
+                <td title=$:{json.dumps(_(u'Sending back all setuped commands via E-mail.'), ensure_ascii=False)}>
+                <input name='send_help' type='text' value='$plugin_options["send_help"]' width="250" style="width: 250px"></td>
+            </tr>                                                                                                                           
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr> 
+            <tr> 
+                <td><small>$_('Confirm delivery')</small></td>
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('Send reply'):</td>
+                <td title=$:{json.dumps(_(u'After processing the received message, send an email with the subject below. The email_notification extension is required for this function.'), ensure_ascii=False)}>
+                <input name='use_reply' type='checkbox'${" checked" if plugin_options['use_reply'] else ""}></td>
+            </tr>                                                     
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td title=$:{json.dumps(_(u'The subject of the message being sent.'), ensure_ascii=False)}>
+                <input name='eml_subject' type='text' value='$plugin_options["eml_subject"]' width="250" style="width: 250px"></td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                         
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="15" cols="80" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+
+<p><b>$_('Example for control')</b></p>
+<p>* $_('Sending message in body E-mail as list (use in manual mode)'):</p>
+<p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
+<p>$_('[0,0,100,30,...]')</p><br/>   
+<p>* $_('Sending message in body E-mail as dict (use in manual mode)'):</p>
+<p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
+<p>$_('{station name 1: 0, station name 2: 0, station name 3: 100, station name 4: 30}')</p><br/>
+<p>* $_('Sending message in body E-mail for switch scheduler to ON'):</p>
+<p>$_('scheduler_on')</p><br/>
+<p>* $_('Sending message in body E-mail for switch scheduler to OFF'):</p>
+<p>$_('scheduler_off')</p><br/>
+<p>* $_('Sending message in body E-mail for switch to manual mode'):</p>
+<p>$_('manual_on')</p><br/>
+<p>* $_('Sending message in body E-mail for switch to scheduler mode'):</p>
+<p>$_('manual_off')</p><br/>
+<p>* $_('Sending message in body E-mail for stop all running stations'):</p>
+<p>$_('stop_run')</p><br/>
+<p>* $_('Sending back all setuped commands via E-mail'):</p>
+<p>$_('send_help')</p><br/>
+
+
