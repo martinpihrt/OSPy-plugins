@@ -47,12 +47,12 @@ plugin_options = PluginOptions(
        'recipient_folder': u'INBOX',
        'sender': u'xx@yy.zz',
        'check_int': 30,
-       'scheduler_on': u'scheduler_on',
-       'scheduler_off': u'scheduler_off',
-       'manual_on': u'manual_on',
-       'manual_off': u'manual_off',
-       'stop_run': u'stop_run',
-       'send_help': u'send_help',
+       'scheduler_on': _(u'scheduler_on'),
+       'scheduler_off': _(u'scheduler_off'),
+       'manual_on': _(u'manual_on'),
+       'manual_off': _(u'manual_off'),
+       'stop_run': _(u'stop_run'),
+       'send_help': _(u'send_help'),
        'use_reply': True, 
        'eml_subject':  _(u'Report from OSPy E-mail Reader plugin')
     }
