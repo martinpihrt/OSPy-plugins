@@ -53,8 +53,10 @@ plugin_options = PluginOptions(
        'manual_off': _(u'manual_off'),
        'stop_run': _(u'stop_run'),
        'send_help': _(u'send_help'),
+       'send_state': _(u'send_state'), 
        'use_reply': True, 
-       'eml_subject':  _(u'Report from OSPy E-mail Reader plugin')
+       'eml_subject':  _(u'Report from OSPy E-mail Reader plugin'),
+       'eml_subject_in': u'ospy_1'
     }
 )
 
@@ -101,13 +103,15 @@ class Sender(Thread):
                             messages = imap.get_messages(sender=plugin_options['sender']) # retrieve messages from a given sender
                             log.info(NAME, datetime_string() + ' ' + _(u'Reading messages in inbox.'))   
                             # Do something with the messages                 
-                            for msg in messages:                             # msg is a dict of {'num': num, 'body': body} 
+                            for msg in messages:                             # msg is a dict of {'num': num, 'body': body, 'subj': subj} 
                                 cm = u'%s' % msg['body']
                                 cmd = cm.replace('\r\n', '')   # remove \r\n from {'body': u'scheduler_on\r\n'}
+                                subj = msg['subj']
 
                                 log.info(NAME, _(u'Message: %s') % cmd)      
+                                log.info(NAME, _(u'Subject: %s') % subj)      
 
-                                if   cmd == plugin_options['scheduler_on']:  # msg for switch scheduler to on
+                                if  cmd == plugin_options['scheduler_on'] and subj == plugin_options['eml_subject_in']:  # msg for switch scheduler to on
                                     options.scheduler_enabled = True
                                     log.info(NAME, datetime_string() + ' ' + _(u'Scheduler has switched to enabled.'))
                                     msgem  = '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
@@ -115,7 +119,7 @@ class Sender(Thread):
                                     msgem += '<p>' + datetime_string() + ' ' + _(u'Scheduler has switched to enabled.') + '</p>'
                                     msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd
 
-                                elif cmd == plugin_options['scheduler_off']: # msg for switch scheduler to off 
+                                elif cmd == plugin_options['scheduler_off'] and subj == plugin_options['eml_subject_in']: # msg for switch scheduler to off 
                                     options.scheduler_enabled = False
                                     log.info(NAME, datetime_string() + ' ' + _(u'Scheduler has switched to disabled.'))
                                     msgem  = '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
@@ -123,7 +127,7 @@ class Sender(Thread):
                                     msgem += '<p>' + datetime_string() + ' ' + _(u'Scheduler has switched to disabled.') + '</p>'
                                     msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd                                    
 
-                                elif cmd == plugin_options['manual_on']:     # msg for switch to manual   
+                                elif cmd == plugin_options['manual_on'] and subj == plugin_options['eml_subject_in']:     # msg for switch to manual   
                                     options.manual_mode = True
                                     log.info(NAME, datetime_string() + ' ' + _(u'OSPy has switched to manual control.')) 
                                     msgem  = '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
@@ -131,7 +135,7 @@ class Sender(Thread):
                                     msgem += '<p>' + datetime_string() + ' ' + _(u'OSPy has switched to manual control.') + '</p>'
                                     msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd                                      
 
-                                elif cmd == plugin_options['manual_off']:    # msg for switch to scheduler   
+                                elif cmd == plugin_options['manual_off'] and subj == plugin_options['eml_subject_in']:    # msg for switch to scheduler   
                                     options.manual_mode = False
                                     log.info(NAME, datetime_string() + ' ' + _(u'OSPy has switched to scheduler controler.')) 
                                     msgem  = '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
@@ -139,7 +143,7 @@ class Sender(Thread):
                                     msgem += '<p>' + datetime_string() + ' ' + _(u'OSPy has switched to scheduler controler.') + '</p>'
                                     msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd                                     
 
-                                elif cmd == plugin_options['stop_run']:      # msg for stop all run stations   
+                                elif cmd == plugin_options['stop_run'] and subj == plugin_options['eml_subject_in']:      # msg for stop all run stations   
                                     programs.run_now_program = None
                                     run_once.clear()
                                     log.finish_run(None)
@@ -150,12 +154,14 @@ class Sender(Thread):
                                     msgem += '<p>' + datetime_string() + ' ' + _(u'OSPy has stop all running stations.') + '</p>'
                                     msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd                                     
 
-                                elif cmd == plugin_options['send_help']:     # msg for sending back help via email   
-                                    log.info(NAME, datetime_string() + ' ' + _(u'OSPy sends the set commands to the administrator by E-mail.'))    
-                                    msgem  = '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
+                                elif cmd == plugin_options['send_help'] and subj == plugin_options['eml_subject_in']:     # msg for sending back help via email   
+                                    log.info(NAME, datetime_string() + ' ' + _(u'OSPy sends the set commands to the administrator by E-mail.'))  
+                                    msgem =  '<style>tr:nth-child(even) {background-color: #f2f2f2;} </style>'
+                                    msgem += '<div style="overflow-x:auto;">' 
+                                    msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
                                     msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
                                     msgem += '<p>' + datetime_string() + '</p><p><b>' + _(u'All available commands in plugin') + ':</p>'
-                                    msgem += '<p>' + '<table style="text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">'
+                                    msgem += '<p>' + '<table style="text-align: left; cellspacing="0"; cellpadding="6"; border="1";>'
                                     msgem += '<tr><td>' + _('Switch scheduler to ON') + ':</td>'
                                     msgem += '<td>' + plugin_options["scheduler_on"] + '</td></tr>'
                                     msgem += '<tr><td>' + _('Switch scheduler to OFF') + ':</td>'
@@ -174,22 +180,58 @@ class Sender(Thread):
                                     msgem += '<tr><td>' + _('Sending message in body E-mail as dict (use in manual mode)') + ':</td>'
                                     msgem += '<td>' + _('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...') + '</td>'
                                     msgem += '<td>' + _('{"aa":0,"bb":0,"cc":100,"dd":30...}') + '</td></tr>'
-                                    msgem += '</table></p>' 
-                                    msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd                                    
+                                    msgem += '</table></p></div>' 
+                                    msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd    
 
+                                elif cmd == plugin_options['send_state'] and subj == plugin_options['eml_subject_in']:     # msg for sending stations state via email  
+                                    log.info(NAME, datetime_string() + ' ' + _(u'OSPy sends the stations state to the administrator E-mail.'))  
+                                    msgem =  '<style>tr:nth-child(even) {background-color: #f2f2f2;} </style>'
+                                    msgem += '<div style="overflow-x:auto;">' 
+                                    msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
+                                    msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
+                                    msgem += '<p>' + datetime_string() + '</p><p>' + _(u'Actual stations state') + ':</p>'
+                                    msgem += '<p>' + '<table style="text-align: left; cellspacing="0"; cellpadding="6"; border="1";>'
+                                    msgem += '<tr><td><b>' + _(u'Station name') + '</b></td><td><b>' + _(u'State') + '</b></td><td><b>' + _(u'Main 1') + '</b></td><td><b>' + _(u'Main 2')
+                                    msgem += '</b></td><td><b>' + _(u'Remaining time in sec') + '</b></td></tr>'
+                                    for station in stations.get():
+                                        msgem += '<tr><td>' + u'%s' % station.name + '</td>'
+                                        if station.active:
+                                            msgem += '<td>' + _(u'ON') + '</td>'
+                                        else:
+                                            msgem += '<td>' + _(u'OFF') + '</td>'
+                                        if station.is_master:
+                                            msgem += '<td>' + _(u'YES') + '</td>'
+                                        else:
+                                            msgem += '<td>' + _(u'-') + '</td>'    
+                                        if station.is_master_two:    
+                                            msgem += '<td>' + _(u'YES') + '</td>' 
+                                        else:
+                                            msgem += '<td>' + _(u'-') + '</td>'
+                                        if(station.remaining_seconds == -1):
+                                            msgem += '<td>' + _(u'Forever') + '</td>' 
+                                        else:    
+                                            msgem += '<td>' + _(u'%s') % str(int(station.remaining_seconds)) + '</td>'
+    
+                                    msgem += '</tr></table></p></div>' 
+                                    msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd                                    
+                                  
                                 else:
                                     if not options.manual_mode:                      # not manual mode -> no operations with stations
-                                        log.error(NAME, datetime_string() + ' ' + _(u'OSPy must be first switched to manual mode!'))
+                                        log.error(NAME, datetime_string() + ' ' + _(u'OSPy must be first switched to manual mode or subject is not correct!'))
+                                        log.error(NAME, _(u'Subject in message is') + (u': %s') % subj)
+                                        log.error(NAME, _(u'Subject in options is') + (u': %s') % plugin_options['eml_subject_in'])
                                         msgem  = '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
                                         msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
-                                        msgem += '<p>' + datetime_string() + ' ' + _(u'OSPy must be first switched to manual mode!') + '</p>'
+                                        msgem += '<p style="color:red;">' + _(u'Subject in message is') + (u': %s') % subj + '<br/>'
+                                        msgem +=  _(u'Subject in options is') + (u': %s') % plugin_options['eml_subject_in'] + '</p>'                                        
+                                        msgem += '<p>' + datetime_string() + ' ' + _(u'OSPy must be first switched to manual mode or subject is not correct!') + '</p>'
                                         msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd
                                     else:                                    # yes is manual mode
                                         try:
                                             log.debug(NAME, datetime_string() + ' ' + _(u'Try-ing to processing command.'))
                                             cmd = json.loads(msg['body'])
                                             num_sta = options.output_count
-                                            if type(cmd) is list:            # cmd is list
+                                            if type(cmd) is list and subj == plugin_options['eml_subject_in']:            # cmd is list
                                                 if len(cmd) < num_sta:
                                                     log.error(NAME, datetime_string() + ' ' + _(u'Not enough stations specified, assuming first {} of {}').format(len(cmd), num_sta))
                                                     rovals = cmd + ([0] * (num_sta - len(cmd)))
@@ -206,7 +248,7 @@ class Sender(Thread):
                                                     msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd                                                     
                                                 else:
                                                     rovals = cmd
-                                            elif type(cmd) is dict:          # cmd is dictionary
+                                            elif type(cmd) is dict and subj == plugin_options['eml_subject_in']:          # cmd is dictionary
                                                 rovals = [0] * num_sta
                                                 snames = station_names()     # Load station names from file
                                                 for k, v in list(cmd.items()):
@@ -227,6 +269,8 @@ class Sender(Thread):
                                                 log.error(NAME, datetime_string() + ' ' + _(u'Unexpected command') + (u': %s') % cmd)
                                                 msgem  = '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
                                                 msgem += '<p>' + datetime_string() + ' ' + _(u'Unexpected command') + (u': %s') % cmd + '</p>'
+                                                msgem += '<p style="color:red;">' + _(u'Subject in message is') + (u': %s') % subj + '<br/>'
+                                                msgem +=  _(u'Subject in options is') + (u': %s') % plugin_options['eml_subject_in'] + '</p>'
                                                 msglog = _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd                                                 
                                                 rovals = []   
 
@@ -413,6 +457,22 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
         """
         self.recipient_folder = folder
 
+    def encoded_words_to_text(self, encoded_words):
+        try:
+            import re
+            import base64, quopri
+
+            encoded_word_regex = r'=\?{1}(.+)\?{1}([B|Q])\?{1}(.+)\?{1}='
+            charset, encoding, encoded_text = re.match(encoded_word_regex, encoded_words).groups()
+            if encoding is 'B':
+                byte_string = base64.b64decode(encoded_text)
+            elif encoding is 'Q':
+                byte_string = quopri.decodestring(encoded_text)
+            return byte_string.decode(charset)   
+
+        except Exception:
+            return traceback.format_exc()    
+
     def get_messages(self, sender, subject=''):
         """
         Scans for E-mail messages from the given sender and optionally
@@ -420,7 +480,7 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
 
         :param sender Email address of sender of messages you're searching for
         :param subject (Partial) subject line to scan for
-        :return List of dicts of {'num': num, 'body': body}
+        :return List of dicts of {'num': num, 'body': body, 'subj': subj}
         """
         if not sender:
             log.error(NAME, datetime_string() + ' ' + _(u'You must provide a sender E-mail address!'))
@@ -451,6 +511,7 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
                 msg_subject = msg["Subject"]
                 if subject in msg_subject:
                     body = ""
+                    subj = ""
                     if msg.is_multipart():
                         for part in msg.walk():
                             type = part.get_content_type()
@@ -466,9 +527,11 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
                         # not multipart - i.e. plain text, no attachments
                         charset = msg.get_content_charset()
                         body = msg.get_payload(decode=True).decode(encoding=charset, errors="ignore")
-                    messages.append({'num': num, 'body': body})
-        return messages
+                                          
+                    subj = self.encoded_words_to_text(msg_subject) # RAW to string
 
+                    messages.append({'num': num, 'body': body, 'subj': subj})
+        return messages
 
     def delete_message(self, msg_id):
         if not msg_id:

@@ -33,6 +33,9 @@ Plugin setup
 * Checking interval:  
   After how long to check incoming mail in the inbox. The check time is set in seconds. Minimum is 30.
 
+* E-mail incoming subject:  
+  The subject of the incoming message. In this way, we can ensure minimum security (such as a password), or differentiate the different OSPy systems.    
+
 * Send reply:  
   After processing the received message, send an email with the subject below. The email_notification extension is required for this function.  
 
@@ -87,3 +90,8 @@ stop_run
 ```bash
 send_help  
 ```  
+
+* Sending back all stations state via E-mail:  
+```bash
+send_state  
+```

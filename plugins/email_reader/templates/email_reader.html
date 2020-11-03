@@ -76,6 +76,11 @@ $var page: plugins
                     <input name='check_int' type='number' min='30' value='$plugin_options["check_int"]'></td>
             </tr>   
             <tr>
+                <td style='text-transform: none;'>$_('E-mail incoming subject'):</td>
+                <td title=$:{json.dumps(_(u'The subject of the incoming message. In this way, we can ensure minimum security (such as a password), or differentiate the different OSPy systems.'), ensure_ascii=False)}>
+                <input name='eml_subject_in' type='text' value='$plugin_options["eml_subject_in"]' width="250" style="width: 250px"></td>
+            </tr>            
+            <tr>
                <th colspan="2">
                  <hr>
                </th>
@@ -112,7 +117,12 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Send back help'):</td>
                 <td title=$:{json.dumps(_(u'Sending back all setuped commands via E-mail.'), ensure_ascii=False)}>
                 <input name='send_help' type='text' value='$plugin_options["send_help"]' width="250" style="width: 250px"></td>
-            </tr>                                                                                                                           
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Send back stations state'):</td>
+                <td title=$:{json.dumps(_(u'Sending back all stations state via E-mail.'), ensure_ascii=False)}>
+                <input name='send_state' type='text' value='$plugin_options["send_state"]' width="250" style="width: 250px"></td>
+            </tr>                                                                                                                               
             <tr>
                <th colspan="2">
                  <hr>
@@ -170,5 +180,7 @@ $var page: plugins
 <p>$_('stop_run')</p><br/>
 <p>* $_('Sending back all setuped commands via E-mail'):</p>
 <p>$_('send_help')</p><br/>
+<p>* $_('Sending back all stations state via E-mail'):</p>
+<p>$_('send_state')</p><br/>
 
 
