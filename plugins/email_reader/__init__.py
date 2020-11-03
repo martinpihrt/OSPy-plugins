@@ -471,7 +471,7 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
             return byte_string.decode(charset)   
 
         except Exception:
-            return traceback.format_exc()    
+            return encoded_words    
 
     def get_messages(self, sender, subject=''):
         """
