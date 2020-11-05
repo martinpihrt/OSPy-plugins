@@ -23,7 +23,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Pool Heating'
-MENU =  _('Package: Pool Heating')
+MENU =  _(u'Package: Pool Heating')
 LINK = 'settings_page'
 
 
@@ -88,7 +88,7 @@ class Sender(Thread):
         last_millis = millis
 
         a_state = -1                                     # for state in footer (-1 disable regulation A, 0 = Aoff, 1 = Aon)
-        regulation_text ='Waiting to turned on or off.'
+        regulation_text = _(u'Waiting to turned on or off.')
 
         log.info(NAME, datetime_string() + ' ' + _(u'Waiting to turned on or off.'))
 
@@ -117,23 +117,23 @@ class Sender(Thread):
                     ds_a_off = temperature_ds[plugin_options['probe_A_off']]  #  solar
                     station_a = stations.get(plugin_options['control_output_A'])
 
-                    if ds_a_off >= (ds_a_on + plugin_options['temp_a_on']):    # ON
+                    if (ds_a_off - ds_a_on) > plugin_options['temp_a_on']):    # ON
                         a_state = 1
                         if msg_a_on:
                             msg_a_on = False
                             msg_a_off = True
-                            regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'  
+                            regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'  
                             log.clear(NAME) 
                             log.info(NAME, regulation_text)  
                             import datetime
                             start = datetime.datetime.now()
                             sid = station_a.index
-                            end = datetime.datetime.now() + datetime.timedelta(seconds=tank_options['reg_ss'], minutes=tank_options['reg_mm'])
+                            end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss'], minutes=plugin_options['reg_mm'])
                             new_schedule = {
                                 'active': True,
                                 'program': -1,
                                 'station': sid,
-                                'program_name': _('Pool Heating'),
+                                'program_name': _(u'Pool Heating'),
                                 'fixed': True,
                                 'cut_off': 0,
                                 'manual': True,
@@ -148,12 +148,12 @@ class Sender(Thread):
                             log.start_run(new_schedule)
                             stations.activate(new_schedule['station'])                            
 
-                    if ds_a_off > (ds_a_on + plugin_options['temp_a_off']) and ds_a_off < (ds_a_on + plugin_options['temp_a_on']):   # OFF
+                    if (ds_a_off - ds_a_on) < plugin_options['temp_a_off']:   # OFF
                         a_state = 0
                         if msg_a_off:
                             msg_a_off = False
                             msg_a_on = True
-                            regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
+                            regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'
                             log.clear(NAME)
                             log.info(NAME, regulation_text)   
                             sid = station_a.index
