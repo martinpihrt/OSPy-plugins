@@ -81,7 +81,7 @@ $var page: plugins
                 <input name='eml_subject_in' type='text' value='$plugin_options["eml_subject_in"]' width="250" style="width: 250px"></td>
             </tr>            
             <tr>
-               <th colspan="2">
+               <th colspan="3">
                  <hr>
                </th>
             </tr>  
@@ -122,9 +122,27 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Send back stations state'):</td>
                 <td title=$:{json.dumps(_(u'Sending back all stations state via E-mail.'), ensure_ascii=False)}>
                 <input name='send_state' type='text' value='$plugin_options["send_state"]' width="250" style="width: 250px"></td>
-            </tr>                                                                                                                               
+            </tr> 
+            $for i in range(10):
+                <tr>
+                <td style='text-transform: none;'>$_('Selecting command') ${i}:</td>
+                <td title=$:{json.dumps(_(u'Sending command in  message body E-mail for run  via selecting.'), ensure_ascii=False)}>
+                <input name=${'pc%d' % i} type='text' value='$plugin_options["pc%d" % i]' width="250" style="width: 250px"></td>                               
+                <td><select id="pid${i}" name="p${i}">    
+                <option value='reboot'   ${"selected" if plugin_options['p%d' % i]== 'reboot' else ""}> $_('Reboot OS system')</option>
+                <option value='pwrOff'   ${"selected" if plugin_options['p%d' % i]== 'pwrOff' else ""}> $_('Shutdown OS system')</option>
+                <option value='runP1'    ${"selected" if plugin_options['p%d' % i]== 'runP1' else ""}> $_('Run program 1')</option>
+                <option value='runP2'    ${"selected" if plugin_options['p%d' % i]== 'runP2' else ""}> $_('Run program 2')</option>
+                <option value='runP3'    ${"selected" if plugin_options['p%d' % i]== 'runP3' else ""}> $_('Run program 3')</option>
+                <option value='runP4'    ${"selected" if plugin_options['p%d' % i]== 'runP4' else ""}> $_('Run program 4')</option>
+                <option value='runP5'    ${"selected" if plugin_options['p%d' % i]== 'runP5' else ""}> $_('Run program 5')</option>
+                <option value='runP6'    ${"selected" if plugin_options['p%d' % i]== 'runP6' else ""}> $_('Run program 6')</option>
+                <option value='runP7'    ${"selected" if plugin_options['p%d' % i]== 'runP7' else ""}> $_('Run program 7')</option>
+                <option value='runP8'    ${"selected" if plugin_options['p%d' % i]== 'runP8' else ""}> $_('Run program 8')</option>
+                </select></td>
+                </tr>                                                                                                                                          
             <tr>
-               <th colspan="2">
+               <th colspan="3">
                  <hr>
                </th>
             </tr> 
@@ -142,14 +160,14 @@ $var page: plugins
                 <input name='eml_subject' type='text' value='$plugin_options["eml_subject"]' width="250" style="width: 250px"></td>
             </tr>
             <tr>
-               <th colspan="2">
+               <th colspan="3">
                  <hr>
                </th>
             </tr>                         
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
-                <td>
-                    <textarea style="font-family: monospace;" rows="15" cols="80" readonly>$'\n'.join(events)</textarea>
+                <td colspan="2">
+                    <textarea style="font-family: monospace;" rows="15" cols="60" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
@@ -164,10 +182,10 @@ $var page: plugins
 <p><b>$_('Example for control')</b></p>
 <p>* $_('Sending message in body E-mail as list (use in manual mode)'):</p>
 <p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
-<p>$_('[0,0,100,30,...]')</p><br/>   
-<p>* $_('Sending message in body E-mail as dict (use in manual mode)'):<b>DICT IS NOT READY TO USE!</b></p>
+<p>$_('[0,0,100,30]')</p><br/>   
+<p>* $_('Sending message in body E-mail as dict (use in manual mode)'):</p>
 <p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
-<p>$_('{station name 1: 0, station name 2: 0, station name 3: 100, station name 4: 30}')</p><br/>
+<p>$_('{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}')</p><br/>
 <p>* $_('Sending message in body E-mail for switch scheduler to ON'):</p>
 <p>$_('scheduler_on')</p><br/>
 <p>* $_('Sending message in body E-mail for switch scheduler to OFF'):</p>
@@ -182,5 +200,9 @@ $var page: plugins
 <p>$_('send_help')</p><br/>
 <p>* $_('Sending back all stations state via E-mail'):</p>
 <p>$_('send_state')</p><br/>
+<p>* $_('Selecting command xx'):</p>
+<p>$_('Sending command in  message body E-mail for run  via selecting.')
+<p>$_('Reboot OS system')<br/>$_('Shutdown OS system')<br/>$_('Run program 1-8 if exists')</p>
+
 
 

@@ -31,7 +31,7 @@ Plugin setup
   E-mail user address from whom incoming messages will be processed.  
 
 * Checking interval:  
-  After how long to check incoming mail in the inbox. The check time is set in seconds. Minimum is 30.
+  After how long to check incoming mail in the inbox. The check time is set in seconds. Minimum is 30.  
 
 * E-mail incoming subject:  
   The subject of the incoming message. In this way, we can ensure minimum security (such as a password), or differentiate the different OSPy systems.    
@@ -52,13 +52,13 @@ Example for control
 * Sending message in body E-mail as list (use in manual mode):  
   Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...  
 ```bash
-[0,0,100,30,...]    
+[0,0,100,30]    
 ``` 
 
 * Sending message in body E-mail as dict (use in manual mode):  
   Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...  
 ```bash
-{station name 1: 0, station name 2: 0, station name 3: 100, station name 4: 30}  
+{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}  
 ```  
 
 * Sending message in body E-mail for switch scheduler to ON:  
@@ -94,4 +94,8 @@ send_help
 * Sending back all stations state via E-mail:  
 ```bash
 send_state  
-```
+```  
+
+* Selecting command xx:  
+  Sending command in  message body E-mail for run  via selecting.  
+  Reboot OS system, Shutdown OS system, Run program 1-8 if exists.
