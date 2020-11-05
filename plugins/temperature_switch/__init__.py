@@ -19,11 +19,10 @@ from ospy import helpers
 from ospy.stations import stations
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
-#from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
 
 NAME = 'Temperature Switch'
-MENU =  _('Package: Temperature Switch')
+MENU =  _(u'Package: Temperature Switch')
 LINK = 'settings_page'
 
 
@@ -149,7 +148,7 @@ class Sender(Thread):
                                 'active': True,
                                 'program': -1,
                                 'station': sid,
-                                'program_name': _('Temperature Switch A'),
+                                'program_name': _(u'Temperature Switch A'),
                                 'fixed': True,
                                 'cut_off': 0,
                                 'manual': True,
@@ -198,7 +197,7 @@ class Sender(Thread):
                                 'active': True,
                                 'program': -1,
                                 'station': sid,
-                                'program_name': _('Temperature Switch B'),
+                                'program_name': _(u'Temperature Switch B'),
                                 'fixed': True,
                                 'cut_off': 0,
                                 'manual': True,
@@ -248,7 +247,7 @@ class Sender(Thread):
                                 'active': True,
                                 'program': -1,
                                 'station': sid,
-                                'program_name': _('Temperature Switch C'),
+                                'program_name': _(u'Temperature Switch C'),
                                 'fixed': True,
                                 'cut_off': 0,
                                 'manual': True,

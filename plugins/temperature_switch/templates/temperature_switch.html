@@ -118,7 +118,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
                 <td title=$:{json.dumps(_(u'When falling below this temperature, the output will be deactivated.'), ensure_ascii=False)}>
-                    <input name='temp_c_off' type='number' min='-100' max='100' value='$plugin_options["temp_c_off"]'>
+                    <input name='temp_b_off' type='number' min='-100' max='100' value='$plugin_options["temp_b_off"]'>
                 </td>
             </tr>
             <tr>
@@ -153,7 +153,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
                 <td title=$:{json.dumps(_(u'When this temperature is exceeded, the output will be activated.'), ensure_ascii=False)}>
-                    <input name='temp_a_on' type='number' min='-100' max='100' value='$plugin_options["temp_a_on"]'>
+                    <input name='temp_c_on' type='number' min='-100' max='100' value='$plugin_options["temp_c_on"]'>
                 </td>
             </tr>
             <tr>
@@ -175,7 +175,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
                 <td title=$:{json.dumps(_(u'When falling below this temperature, the output will be deactivated.'), ensure_ascii=False)}>
-                    <input name='temp_a_off' type='number' min='-100' max='100' value='$plugin_options["temp_a_off"]'>
+                    <input name='temp_c_off' type='number' min='-100' max='100' value='$plugin_options["temp_c_off"]'>
                 </td>
             </tr>
             <tr>
