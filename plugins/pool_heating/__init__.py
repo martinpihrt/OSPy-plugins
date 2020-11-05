@@ -117,7 +117,7 @@ class Sender(Thread):
                     ds_a_off = temperature_ds[plugin_options['probe_A_off']]  #  solar
                     station_a = stations.get(plugin_options['control_output_A'])
 
-                    if (ds_a_off - ds_a_on) > plugin_options['temp_a_on']):    # ON
+                    if (ds_a_off - ds_a_on) > plugin_options['temp_a_on']:    # ON
                         a_state = 1
                         if msg_a_on:
                             msg_a_on = False
