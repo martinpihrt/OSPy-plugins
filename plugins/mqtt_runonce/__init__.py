@@ -18,7 +18,9 @@ from ospy.helpers import datetime_string
 from ospy.stations import stations
 from ospy.runonce import run_once
 from ospy.programs import programs
-from ospy.programs import ProgramType
+from ospy.scheduler import predicted_schedule, combined_schedule
+
+from plugins import mqtt 
 
 
 NAME = 'MQTT Run-once'
@@ -29,7 +31,7 @@ plugin_options = PluginOptions(
     NAME,
     {  
         'use_mqtt': False,
-        'schedule_topic': u'runonce'
+        'schedule_topic': u'run-once'
      }
 )
 
@@ -61,30 +63,13 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        log.clear(NAME) 
-        log.info(NAME, _('MQTT Run-once Plugin started.'))
-        once = True
-        two = True
-
-        while not self._stop.is_set(): 
+        if not self._stop.is_set(): 
             if plugin_options['use_mqtt']:  
-                once = True
-                if two:
-                    try:    
-                        subscribe()
-                        two = False
-
-                    except Exception:
-                        log.error(NAME, _('MQTT Run-once plug-in') + ':\n' + traceback.format_exc())    
+                subscribe()
 
             else:
-                if once: 
-                    log.clear(NAME)
-                    log.info(NAME, _('MQTT Run-once Plugin is disabled.'))
-                    once = False
-                    two = True
-
-            self._sleep(1)
+                log.clear(NAME)
+                log.info(NAME, _('MQTT Run-once Plugin is disabled.'))
 
 sender = None
 
@@ -103,58 +88,92 @@ def stop():
         sender.join()
         sender = None 
 
-def on_message(client, userdata, message):
-    """Callback when MQTT message is received."""
-    if not options.enable:  # check operation status
-        log.error(NAME, _(u'System OSPy is not switched to enabled. Skipping decoding command.'))
-        return
-    
-    log.info(NAME, _(u'Received message') + ' :' + str(message.payload) + ' ' +_('on topic') + str(message.topic) + ' ' + _('with QoS') + ' ' + str(message.qos))
+def on_message(client, msg):
+    """Callback when MQTT message is received."""   
+    log.info(NAME, _(u'Received message') + ' :' + str(msg.payload) + ' ' +_(u'on topic') + str(msg.topic) + ' ' + _(u'with QoS') + ' ' + str(msg.qos))
 
     try:
-        cmd = json.loads(message.payload)
+        cmd = json.loads(msg.payload)
         # Ex. command for run-now station 1 and 3 for 5 minutes and 20 seconds (6 minutes and 10 seconds): [{0,5,20},{2,6,10}]
     except ValueError as e:
-        log.error(NAME, _(u'MQTT Run-once could not decode command:'), message.payload, e)
+        log.error(NAME, _(u'MQTT Run-once could not decode command:'), msg.payload, e)
         return
 
-    num_sta = options.output_count    
+    try:
+        log.info(NAME, datetime_string() + ' ' + _(u'Try-ing to processing command.'))
+        cmd = json.loads(msg.payload)
+        num_sta = options.output_count
+        if type(cmd) is list:            # cmd is list
+            if len(cmd) < num_sta:
+                log.info(NAME, datetime_string() + ' ' + _(u'Not enough stations specified, assuming first {} of {}').format(len(cmd), num_sta))
+                rovals = cmd + ([0] * (num_sta - len(cmd)))              
+            elif len(cmd) > num_sta:
+                log.info(NAME, datetime_string() + ' ' + _(u'Too many stations specified, truncating to {}').format(num_sta))
+                rovals = cmd[0:num_sta]
+            else:
+                rovals = cmd
 
-    if type(cmd) is list:
-        if len(cmd) < num_sta:
-            log.error(NAME, _(u'MQTT Run-once, not enough stations specified, assuming first {} of {}').format(len(cmd), num_sta))
-            rovals = cmd + ([0] * (num_sta - len(cmd)))
-        elif len(cmd) > num_sta:
-            log.error(NAME, _(u'MQTT Run-once, too many stations specified, truncating to {}').format(num_sta))
-            rovals = cmd[0:num_sta]
+        elif type(cmd) is dict:          # cmd is dictionary
+            rovals = [0] * num_sta
+            snames = station_names()     # Load station names from file
+            jnames = json.loads(snames)  # Load as json
+                                                
+            for k, v in list(cmd.items()):
+                if k not in snames:      # station name in dict is not in OSPy stations name (ERROR)
+                    log.warning(NAME, _(u'No station named') + (u': %s') % k)
+                                                    
+                else:                    # station name in dict is in OSPy stations name (OK)
+                    # v is value for time, k is station name in dict
+                    rovals[jnames.index(k)] = v         
+
         else:
-            rovals = cmd
-    else:
-        log.error(NAME, _(u'MQTT Run-once unexpected command: '), message.payload)
-        return
+            log.error(NAME, datetime_string() + ' ' + _(u'Unexpected command') + (u': %s') %  msg.payload)
+            rovals = []   
 
-    if any(rovals):
-       log.info(NAME, _(u'MQTT Run-once: '), rovals)
+        if any(rovals):  
+            for i in range(0, len(rovals)):     
+                sid = i                                                                                
+                start = datetime.datetime.now()
+                end = datetime.datetime.now() + datetime.timedelta(seconds=int(rovals[i]))
+                new_schedule = {
+                    'active': True,
+                    'program': -1,
+                    'station': sid,
+                    'program_name': _(u'MQTT Run-once'),
+                    'fixed': True,
+                    'cut_off': 0,
+                    'manual': True,
+                    'blocked': False,
+                    'start': start,
+                    'original_start': start,
+                    'end': end,
+                    'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                    'usage': stations.get(sid).usage
+                }
+                log.start_run(new_schedule)
+                stations.activate(new_schedule['station'])
 
-    #moje      qdict = web.input()
-    #    station_seconds = {}
-    #    for station in stations.enabled_stations():
-    #        mm_str = "mm" + str(station.index)
-    #        ss_str = "ss" + str(station.index)
-    #        if mm_str in qdict and ss_str in qdict:
-    #            seconds = int(qdict[mm_str] or 0) * 60 + int(qdict[ss_str] or 0)
-    #            station_seconds[station.index] = seconds
+                if int(rovals[i]) < 1:                 # station has no time for run (stoping)
+                    stations.deactivate(sid)
+                    active = log.active_runs()
+                    for interval in active:
+                        if interval['station'] == sid:
+                            log.finish_run(interval)                                                    
 
-        
-    #    run_once.set(station_seconds)
+    except Exception:
+        log.clear(NAME)
+        log.error(NAME, _(u'MQTT Run-once plug-in') + ':\n' + traceback.format_exc())
+        self._sleep(1)
 
-    #  stop ...if stop_all:
-    #         if not options.manual_mode:
-    #             options.scheduler_enabled = False
-    #             programs.run_now_program = None
-    #             run_once.clear()
-    #         log.finish_run(None)
-    #         stations.clear()
+
+def station_names():
+    """ Return station names as a list. """
+    station_list = []
+
+    for station in stations.get():
+        station_list.append(station.name)
+
+    return json.dumps(station_list)                            
 
 
 def subscribe():
@@ -162,18 +181,13 @@ def subscribe():
     topic = plugin_options['schedule_topic']
     if topic:
         try:
-            from plugins import mqtt
-            client = mqtt.get_client()
-
-            if client:           
-                log.clear(NAME) 
-                log.info(NAME, datetime_string() + ' ' + _('MQTT Run-once Plugin subscribe') + ': ' + topic)
-                #client.subscribe(topic, on_message, 2) 
-                client.subscribe(topic, 2) 
-                client.on_message = on_message       
+            log.clear(NAME) 
+            log.info(NAME, datetime_string() + ' ' + _('MQTT Run-once Plugin subscribe') + ': ' + topic)    
+            mqtt.subscribe(topic, on_message, 2)
 
         except ImportError:
-            log.error(NAME, _('MQTT Run-once Plugin requires MQTT plugin.'))        
+            log.error(NAME, _('MQTT Run-once Plugin requires MQTT plugin.'))    
+
        
 ################################################################################
 # Web pages:                                                                   #
@@ -187,7 +201,7 @@ class settings_page(ProtectedPage):
 
     def POST(self): 
         plugin_options.web_update(web.input())
-        subscribe()
+        #subscribe()
         
         raise web.seeother(plugin_url(settings_page), True)
 

@@ -1,9 +1,7 @@
 MQTT Run-once Readme
 ====
 
-!!! NOT READY FOR USE!!!
-
-This MQTT Run-once plugin Relies on the base MQTT plugin, allows runonce programs to be set over MQTT. The received message is a sheet that contains: station number, time in minutes and time in seconds. 
+This MQTT Run-once plugin Relies on the base MQTT plugin, allows runonce programs to be set over MQTT. The received message is a sheet that contains: station number, time in seconds. 
 
 Plugin setup
 -----------
@@ -17,17 +15,18 @@ Type the topic subscribe to for run once commands.
 * Status:  
 Status window from the plugin.
 
-Visit [Martin Pihrt's blog](http://www.pihrt.com). for more information.
 
 MQTT data example
 -----------
 
-Command for run-now station 1 for 5 minutes and 20 seconds:
+* Sending message in MQTT as list:  
+  Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...  
 ```bash
-[{0,5,20}]
-```
+[0,0,100,30]    
+``` 
 
-Command for run-now station 1 and 3 for 5 minutes and 20 seconds (6 minutes and 10 seconds):
+* Sending message in MQTT as dict:  
+  Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...  
 ```bash
-[{0,5,20},{2,6,10}]
-```
+{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}  
+```  

@@ -1,6 +1,6 @@
 $def with(plugin_options, events)
 
-$var title: $_('MQTT Runonce settings')
+$var title: $_(u'MQTT Runonce')
 $var page: plugins
 
 <script>
@@ -16,24 +16,25 @@ $var page: plugins
 </script>
 
 <div id="plugin">
-    <div class="title">$_('MQTT Runonce settings')</div>
-    <p>$_('Relies on the base MQTT plugin, allows runonce programs to be set over MQTT').</p>
+    <div class="title">$_(u'MQTT Runonce settings')</div>
+    <p>!!!Not ready for use!!!</p>
+    <p>$_(u'This MQTT Run-once plugin Relies on the base MQTT plugin, allows runonce stations to be set over MQTT. The received message is a sheet that contains list or dict (station number, time in seconds.)')</p><p>$_('This extension requires the MQTT extension!')</p><p>$_('If you change settings in MQTT plugins or this plugin you must restarting OSPy!')</p> 
     <form id="pluginForm" action="$plugins.plugin_url('mqtt_runonce.settings_page')" method="post">
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Use MQTT'):</td>
-                <td>
+                <td style='text-transform: none;'>$_(u'Use MQTT'):</td>
+                <td title=$:{json.dumps(_(u'If you use this MQTT Run-once extension check to turn on.'), ensure_ascii=False)}>
                     <input name='use_mqtt' type='checkbox'${" checked" if plugin_options['use_mqtt'] else ""}>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('MQTT Scheduling topic'):</td>
-                <td>$_('The topic subscribe to for run once commands.')<br />
-                  <input type="text" name="schedule_topic" value='$plugin_options["schedule_topic"]'>
+                <td style='text-transform: none;'>$_(u'MQTT Scheduling topic'):</td>
+                <td title=$:{json.dumps(_(u'The topic subscribe to for Run-once commands.'), ensure_ascii=False)}>
+                    <input type="text" name="schedule_topic" value='$plugin_options["schedule_topic"]'>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Status'):</td>
+                <td style='text-transform: none;'>$_(u'Status'):</td>
                 <td>
                     <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
                 </td>
@@ -42,6 +43,14 @@ $var page: plugins
     </form>
 </div>
 <div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
-    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <button id="cSubmit" class="submit"><b>$_(u'Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_(u'Cancel')</button>
 </div>
+
+<br/><p><b>$_(u'MQTT data example')</b></p>
+<p>* $_(u'Sending message in MQTT as list'):</p>
+<p>$_(u'Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
+<p>$_(u'[0,0,100,30]')</p><br/>   
+<p>* $_(u'Sending message in MQTT as dict'):</p>
+<p>$_(u'Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
+<p>$_(u'{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}')</p>
