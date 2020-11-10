@@ -123,6 +123,21 @@ $var page: plugins
                 <td title=$:{json.dumps(_(u'Sending back all stations state via E-mail.'), ensure_ascii=False)}>
                 <input name='send_state' type='text' value='$plugin_options["send_state"]' width="250" style="width: 250px"></td>
             </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_('Sending back temperature states'):</td>
+                <td title=$:{json.dumps(_(u'Sending back all temperatures from air_temp_humi plugin with log file via E-mail (from plugin).'), ensure_ascii=False)}>
+                <input name='send_state_airtemp' type='text' value='$plugin_options["send_state_airtemp"]' width="250" style="width: 250px"></td>
+            </tr>   
+            <tr>
+                <td style='text-transform: none;'>$_('Sending back tank states'):</td>
+                <td title=$:{json.dumps(_(u'Sending back tank states from tank_monitor plugin with log file via E-mail (from plugin).'), ensure_ascii=False)}>
+                <input name='send_state_tank' type='text' value='$plugin_options["send_state_tank"]' width="250" style="width: 250px"></td>
+            </tr>   
+            <tr>
+                <td style='text-transform: none;'>$_('Sending back wind states'):</td>
+                <td title=$:{json.dumps(_(u'Sending back wind states from wind_monitor plugin with log file via E-mail (from plugin).'), ensure_ascii=False)}>
+                <input name='send_state_wind' type='text' value='$plugin_options["send_state_wind"]' width="250" style="width: 250px"></td>
+            </tr>             
             $for i in range(10):
                 <tr>
                 <td style='text-transform: none;'>$_('Selecting command') ${i}:</td>
@@ -140,7 +155,7 @@ $var page: plugins
                 <option value='runP7'    ${"selected" if plugin_options['p%d' % i]== 'runP7' else ""}> $_('Run program 7')</option>
                 <option value='runP8'    ${"selected" if plugin_options['p%d' % i]== 'runP8' else ""}> $_('Run program 8')</option>
                 </select></td>
-                </tr>                                                                                                                                          
+                </tr>                                                                                                                                                              
             <tr>
                <th colspan="3">
                  <hr>
@@ -200,9 +215,17 @@ $var page: plugins
 <p>$_('send_help')</p><br/>
 <p>* $_('Sending back all stations state via E-mail'):</p>
 <p>$_('send_state')</p><br/>
+<p>* $_('Sending back temperature states via E-mail'):</p>
+<p>$_('send_temperatures')</p><br/>
+<p>* $_('Sending back tank states via E-mail'):</p>
+<p>$_('send_tank')</p><br/>
+<p>* $_('Sending back wind states via E-mail'):</p>
+<p>$_('send_wind')</p><br/>
 <p>* $_('Selecting command xx'):</p>
 <p>$_('Sending command in  message body E-mail for run  via selecting.')
 <p>$_('Reboot OS system')<br/>$_('Shutdown OS system')<br/>$_('Run program 1-8 if exists')</p>
+
+
 
 
 

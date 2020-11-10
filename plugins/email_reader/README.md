@@ -96,6 +96,21 @@ send_help
 send_state  
 ```  
 
+* Sending back temperature states via E-mail:  
+```bash
+send_temperatures  
+```  
+
+* Sending back tank states via E-mail:  
+```bash
+send_tank  
+```  
+
+* Sending back wind states via E-mail:  
+```bash
+send_wind  
+```  
+
 * Selecting command xx:  
   Sending command in  message body E-mail for run  via selecting.  
   Reboot OS system, Shutdown OS system, Run program 1-8 if exists.

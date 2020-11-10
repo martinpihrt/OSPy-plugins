@@ -76,7 +76,10 @@ plugin_options = PluginOptions(
        'pc6': _(u'Run program 6'),
        'pc7': _(u'Run program 7'),
        'pc8': _(u'Run program 8'),                                                      
-       'pc9': _(u'Shutdown OS system')
+       'pc9': _(u'Shutdown OS system'),
+       'send_state_airtemp': _(u'send_temperatures'), 
+       'send_state_tank': _(u'send_tank'), 
+       'send_state_wind': _(u'send_wind')
     }
 )
 
@@ -111,6 +114,7 @@ class Sender(Thread):
             try:
                 msgem = ''
                 msglog = ''
+                attachment = None
                 if plugin_options['use_reader']: 
                     email_interval = plugin_options['check_int']*1000   # time for reading E-mails (ms) -> 1 minute = 1000ms*60s -> 60000ms
                     millis = int(round(time.time() * 1000))             # actual time in ms
@@ -174,7 +178,167 @@ class Sender(Thread):
                                     msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
                                     msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
                                     msgem += '<p>' + datetime_string() + ' ' + _(u'OSPy has stop all running stations.') + '</p>'
-                                    msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd                                     
+                                    msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd  
+
+                                elif cmd == plugin_options['send_state_airtemp'] and subj == plugin_options['eml_subject_in']:      # msg for get temperatures from plugin   
+                                    # Air Temperature and Humidity Monitor   
+                                    try:
+                                      msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
+                                      msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
+                                      from plugins import air_temp_humi  
+
+                                      msgem += '<br><b>' + _('Temperature DS1-DS6') + '</b>'
+                                      for i in range(0, air_temp_humi.plugin_options['ds_used']):  
+                                        msgem += '<br>' + u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n'  
+                                      log.info(NAME, datetime_string() + ' ' + _(u'OSPy has send all temperatures and log file if exists.'))  
+
+                                      if air_temp_humi.plugin_options['enable_log']:
+                                        file_name = temperature_json_to_csv()
+
+                                        if file_name:
+                                          attachment = file_name
+                                          msgem += '<br/><p>' + _(u'OSPy has send all temperatures and log file.') + '</p>'
+                                        else:
+                                          log.error(NAME,  _(u'Log file not exists!'))  
+                                          attachment = None
+                                          msgem += '<br/><p style="color:red;">' + _(u'Log file not exists!') + '</p>'
+
+                                      else:    
+                                        attachment = None
+                                      msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd   
+
+                                    except:
+                                      log.info(NAME, _(u'Command') + _(u': %s') % cmd) 
+                                      log.info(NAME, _(u'The command has been not processed!'))
+                                      msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
+                                      msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
+                                      msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd                                      
+                                      pass  
+
+                                elif cmd == plugin_options['send_state_tank'] and subj == plugin_options['eml_subject_in']:      # msg for get water tank from plugin   
+                                      # Water tank Monitor   
+                                      from plugins import tank_monitor 
+
+                                      try:
+                                        cm = tank_monitor.get_all_values()[0]
+                                        percent = tank_monitor.get_all_values()[1]
+                                        ping = tank_monitor.get_all_values()[2]
+                                        volume = tank_monitor.get_all_values()[3]
+                                        units = tank_monitor.get_all_values()[4]                          
+                                        ook = True
+                                      except:
+                                        ook = False  
+                                        pass
+
+                                      try:   
+                                        if cm > 0 and ook:
+                                          ms = ''
+                                          ms += '<p>' + _(u'Level') + ': ' + str(cm) + u' ' + _(u'cm')
+                                          ms += u' (' + str(percent) + u' %)</p>' 
+                                          ms += '<p>' + _(u'Ping') + ': ' + str(ping) + u' ' + _(u'cm') + '</p>'
+                                          if units:
+                                            ms += '<p>' + _(u'Volume') + u': ' + str(volume) + u' ' + _(u'liters') + '</p>'
+                                          else:
+                                            ms += '<p>' + _(u'Volume') + u': ' + str(volume) + u' ' + _(u'm3') + '</p>'    
+                                          msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
+                                          msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'                                      
+                                          msgem += '<br/><b>'  + _(u'Water') + '</b>'
+                                          msgem += '<br/><p>' + '%s' % (ms) + '</p>'
+                                          log.info(NAME, datetime_string() + ' ' + _(u'OSPy has send tank states and log file if exists.'))
+
+                                        if cm < 1 and ook:   
+                                          msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
+                                          msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
+                                          msgem += '<br/><p style="color:red;">' + _(u'Error - Water tank plugin has water level < 1cm!') + '</p>'
+                                          msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd
+                                          log.info(NAME, datetime_string() + ' ' + _(u'Error - Water tank plugin has water level < 1cm!'))  
+
+                                        if not ook:  
+                                          msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
+                                          msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
+                                          msgem += '<br/><p style="color:red;">' + _(u'Error - Plugin is not correctly setuped or not run!') + '</p>'
+                                          msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd
+                                          log.info(NAME, datetime_string() + ' ' + _(u'Error - Plugin water tank is not correctly setuped or not run!'))  
+
+                                        if tank_monitor.tank_options['enable_log'] and ook:
+                                          file_name = tank_json_to_csv()
+                                          if file_name:
+                                            attachment = file_name
+                                            msgem += '<br/><p>' + _(u'OSPy has send tank states and log file.') + '</p>'
+                                          else:
+                                            log.error(NAME,  _(u'Log file not exists!'))  
+                                            attachment = None
+                                            msgem += '<br/><p style="color:red;">' + _(u'Log file not exists!') + '</p>'
+                                        else:    
+                                          attachment = None
+                                        msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd  
+
+                                      except:
+                                        log.info(NAME, _(u'Command') + _(u': %s') % cmd) 
+                                        log.info(NAME, _(u'The command has been not processed!'))
+                                        msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
+                                        msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
+                                        msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd                                      
+                                        pass    
+
+                                elif cmd == plugin_options['send_state_wind'] and subj == plugin_options['eml_subject_in']:      # msg for get wind from plugin   
+                                    # Wind Monitor   
+                                    try:
+                                      from plugins import wind_monitor  
+
+                                      try:
+                                        speed = wind_monitor.get_all_values()[0]
+                                        max_speed = wind_monitor.get_all_values()[1]                          
+                                        ook = True
+                                      except:
+                                        ook = False  
+                                        pass                                      
+
+                                      if ook:  
+                                        log.info(NAME, datetime_string() + ' ' + _(u'OSPy has send wind state and log file if exists.'))  
+                                        msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'The command has been processed.') + '</p>'
+                                        msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'                                      
+                                        msgem += '<br/><b>'  + _(u'Wind speed') + '</b>'
+                                        ms = ''
+                                        if wind_monitor.wind_options['use_kmh']:
+                                          ms += '<p>' + _(u'Speed') + ': ' + u'%.1f' % (speed) + ' ' + _(u'km/h') + '</p>'
+                                          ms += '<p>' + _(u'Maximal speed') + ': ' + u'%.1f' % (max_speed) + ' ' + _(u'km/h') + '</p>'
+                                        else:
+                                          ms += '<p>' + _(u'Speed') + ': ' + u'%.1f' % (speed) + ' ' + _(u'm/sec') + '</p>'
+                                          ms += '<p>' + _(u'Maximal speed') + ': ' + u'%.1f' % (max_speed) + ' ' + _(u'm/sec') + '</p>'  
+
+                                        msgem += '<br/><p>' + '%s' % (ms) + '</p>'
+
+                                      if not ook:  
+                                        msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
+                                        msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
+                                        msgem += '<br/><p style="color:red;">' + _(u'Error - Plugin is not correctly setuped or not run!') + '</p>'
+                                        msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd
+                                        log.info(NAME, datetime_string() + ' ' + _(u'Error - Plugin wind monitor is not correctly setuped or not run!'))                                         
+
+                                      if wind_monitor.wind_options['enable_log'] and ook:
+                                        file_name = wind_json_to_csv()
+
+                                        if file_name:
+                                          attachment = file_name
+                                          msgem += '<br/><p>' + _(u'OSPy has send wind state and log file.') + '</p>'
+                                        else:
+                                          log.error(NAME,  _(u'Log file not exists!'))  
+                                          attachment = None
+                                          msgem += '<br/><p style="color:red;">' + _(u'Log file not exists!') + '</p>'
+
+                                      else:    
+                                        attachment = None
+                                      msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd   
+
+                                    except:
+                                      print traceback.format_exc()
+                                      log.info(NAME, _(u'Command') + _(u': %s') % cmd) 
+                                      log.info(NAME, _(u'The command has been not processed!'))
+                                      msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
+                                      msgem += '<p>' + _(u'Command') + _(u': %s') % cmd + '</p>'
+                                      msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been not processed!') + ' ' + _(u'MSG: %s') % cmd                                      
+                                      pass                                                                                            
 
                                 elif cmd == plugin_options['send_help'] and subj == plugin_options['eml_subject_in']:     # msg for sending back help via email   
                                     log.info(NAME, datetime_string() + ' ' + _(u'OSPy sends the set commands to the administrator by E-mail.'))  
@@ -501,7 +665,7 @@ class Sender(Thread):
                                     log.info(NAME, datetime_string() + ' ' + _(u'Sending reply to administrator E-mail.'))
                                     try:
                                         from plugins.email_notifications import try_mail                                    
-                                        try_mail(msgem, msglog, attachment=None, subject=plugin_options['eml_subject']) # try_mail(text, logtext, attachment=None, subject=None)
+                                        try_mail(msgem, msglog, attachment=attachment, subject=plugin_options['eml_subject']) # try_mail(text, logtext, attachment=None, subject=None)
                                     except Exception:     
                                         log.error(NAME, _(u'E-mail Reader plug-in') + ':\n' + traceback.format_exc())      
                         
@@ -537,6 +701,7 @@ def stop():
         sender.join()
         sender = None
 
+
 def station_names():
     """ Return station names as a list. """
     station_list = []
@@ -545,6 +710,227 @@ def station_names():
         station_list.append(station.name)
 
     return json.dumps(station_list)
+ 
+
+################################################################################
+# read/write:                                                                  #
+################################################################################
+
+def read_log(path_name=None):
+    """Read log data from json file."""
+    try:
+        if path_name is not None:
+            with open(path_name) as logf:
+                return json.load(logf)
+        else:
+            return []    
+    except IOError:
+        return [] 
+
+
+def write_log(data, filename):
+  """Write data to csv file."""
+  try:
+    import io
+    with io.open(filename,'w', encoding='utf8') as file:
+      file.write(data)
+      
+  except Exception:
+    print traceback.format_exc()
+
+
+################################################################################
+# json to csv:                                                                 #
+################################################################################
+
+def temperature_json_to_csv():
+  """save log data from json file to csv file."""
+  try:
+    from plugins import air_temp_humi
+
+    name1 = air_temp_humi.plugin_options['label_ds0']
+    name2 = air_temp_humi.plugin_options['label_ds1']
+    name3 = air_temp_humi.plugin_options['label_ds2']
+    name4 = air_temp_humi.plugin_options['label_ds3']
+    name5 = air_temp_humi.plugin_options['label_ds4']
+    name6 = air_temp_humi.plugin_options['label_ds5']
+        
+    # open json data from plugin air_tem_humi    
+    json_plugin_file = './plugins/air_temp_humi/data/log.json'
+    file_exists = os.path.exists(json_plugin_file)
+
+    if not file_exists:
+      return None
+    
+    # read log
+    log_records = read_log(path_name=json_plugin_file) 
+
+    data  = u'%s' % _(u'Date/Time')
+    data += u';\t %s' % _(u'Date')
+    data += u';\t %s' % _(u'Time')
+    data += u';\t %s' % _(u'Temperature')
+    data += u';\t %s' % _(u'Humidity')
+    data += u';\t %s' % _(u'Output')
+    data += u';\t %s' % name1
+    data += u';\t %s' % name2
+    data += u';\t %s' % name3
+    data += u';\t %s' % name4
+    data += u';\t %s' % name5
+    data += u';\t %s' % name6
+    data += u'\n'
+
+    for record in log_records:
+      data += u'%s' %     record['datetime']
+      data += u';\t %s' % record['date']
+      data += u';\t %s' % record['time']
+      data += u';\t %s' % record['temp']
+      data += u';\t %s' % record['humi']
+      data += u';\t %s' % record['outp']
+      data += u';\t %s' % record['ds0']
+      data += u';\t %s' % record['ds1']
+      data += u';\t %s' % record['ds2']
+      data += u';\t %s' % record['ds3']
+      data += u';\t %s' % record['ds4']
+      data += u';\t %s' % record['ds5']
+      data += u'\n'
+
+    # save csv file to email_reader plugin data folder
+    filename = 'temperature_log.csv'
+    csv_plugin_file = './plugins/email_reader/data/' + filename
+
+    write_log(data=data, filename=csv_plugin_file)
+
+    # verify that the file is saved
+    file_exists = os.path.exists(csv_plugin_file)
+
+    if not file_exists:
+      return None
+
+    return csv_plugin_file # return file name for attach in sending email
+
+  except Exception:
+    log.clear(NAME)
+    log.error(NAME, _(u'Conversion error! Temperature data from json file to csv file') + ':\n' + traceback.format_exc())
+    return None
+       
+
+def tank_json_to_csv():
+  """save log data from json file to csv file."""
+  try:
+    from plugins import tank_monitor
+
+    minimum = _(u'Minimum')
+    maximum = _(u'Maximum')
+    actual  = _(u'Actual')
+    volume  = _(u'Volume')
+        
+    # open json data from plugin tank_monitor    
+    json_plugin_file = './plugins/tank_monitor/data/log.json'
+    file_exists = os.path.exists(json_plugin_file)
+
+    if not file_exists:
+      return None
+    
+    # read log
+    log_records = read_log(path_name=json_plugin_file) 
+
+    data  = u'%s' % _(u'Date/Time')
+    data += u';\t %s' % _(u'Date')
+    data += u';\t %s' % _(u'Time')
+    data += u';\t %s' % minimum
+    data += u';\t %s' % maximum
+    data += u';\t %s' % actual
+    if tank_monitor.tank_options['check_liters']:
+      data += u';\t %s %s' % (volume, _(u'liters'))
+    else:    
+      data += u';\t %s %s' % (volume, _(u'm3'))
+    data += u'\n'
+
+    for record in log_records:
+      data += u'%s' %     record['datetime']
+      data += u';\t %s' % record['date']
+      data += u';\t %s' % record['time']
+      data += u';\t %s' % record['minimum']
+      data += u';\t %s' % record['maximum']
+      data += u';\t %s' % record['actual']
+      data += u';\t %s' % record['volume']
+      data += u'\n'
+
+    # save csv file to email_reader plugin data folder
+    filename = 'water_tank_log.csv'
+    csv_plugin_file = './plugins/email_reader/data/' + filename
+
+    write_log(data=data, filename=csv_plugin_file)
+
+    # verify that the file is saved
+    file_exists = os.path.exists(csv_plugin_file)
+
+    if not file_exists:
+      return None
+
+    return csv_plugin_file # return file name for attach in sending email
+
+  except Exception:
+    log.clear(NAME)
+    log.error(NAME, _(u'Conversion error! Water tank data from json file to csv file') + ':\n' + traceback.format_exc())
+    return None
+
+
+def wind_json_to_csv():
+  """save log data from json file to csv file."""
+  try:
+    from plugins import wind_monitor
+
+    maximum = _(u'Maximum')
+    actual  = _(u'Actual')
+        
+    # open json data from plugin tank_monitor    
+    json_plugin_file = './plugins/wind_monitor/data/log.json'
+    file_exists = os.path.exists(json_plugin_file)
+
+    if not file_exists:
+      return None
+    
+    # read log
+    log_records = read_log(path_name=json_plugin_file) 
+
+    data  = u'%s' % _(u'Date/Time')
+    data += u';\t %s' % _(u'Date')
+    data += u';\t %s' % _(u'Time')
+    if wind_monitor.wind_options['use_kmh']: 
+      data += u';\t %s %s'  % (maximum, _(u'km/h'))
+      data += u';\t %s %s'  % (actual, _(u'km/h'))
+    else:                       
+      data += u';\t %s %s'  % (maximum, _(u'm/sec'))
+      data += u';\t %s %s'  % (actual, _(u'm/sec'))
+    data += u'\n'
+
+    for record in log_records:
+      data += u'%s' %     record['datetime']
+      data += u';\t %s' % record['date']
+      data += u';\t %s' % record['time']
+      data += u';\t %s' % record['maximum']
+      data += u';\t %s' % record['actual']
+      data += u'\n'
+
+    # save csv file to email_reader plugin data folder
+    filename = 'wind_log.csv'
+    csv_plugin_file = './plugins/email_reader/data/' + filename
+
+    write_log(data=data, filename=csv_plugin_file)
+
+    # verify that the file is saved
+    file_exists = os.path.exists(csv_plugin_file)
+
+    if not file_exists:
+      return None
+
+    return csv_plugin_file # return file name for attach in sending email
+
+  except Exception:
+    log.clear(NAME)
+    log.error(NAME, _(u'Conversion error! Wind monitor data from json file to csv file') + ':\n' + traceback.format_exc())
+    return None
 
 ################################################################################
 # Web pages:                                                                   #
@@ -576,6 +962,10 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
 
+
+################################################################################
+# IMAP client:                                                                 #
+################################################################################
 
 class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.html
     imap = None
