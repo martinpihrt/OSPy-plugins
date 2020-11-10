@@ -360,6 +360,12 @@ class Sender(Thread):
                                     msgem += '<td>' + plugin_options["stop_run"] + '</td></tr>'                                                                                                                                          
                                     msgem += '<tr><td>' + _('Send back help') + ':</td>'
                                     msgem += '<td>' + plugin_options["send_help"] + '</td></tr>' 
+                                    msgem += '<tr><td>' + _('Sending back temperature states') + ':</td>'
+                                    msgem += '<td>' + plugin_options["send_state_airtemp"] + '</td></tr>'
+                                    msgem += '<tr><td>' + _('Sending back tank states') + ':</td>'
+                                    msgem += '<td>' + plugin_options["send_state_tank"] + '</td></tr>'
+                                    msgem += '<tr><td>' + _('Sending back wind states') + ':</td>'
+                                    msgem += '<td>' + plugin_options["send_state_wind"] + '</td></tr>'                                                                                                            
                                     for i in range(10):
                                         msgem += '<tr><td>' + _('Selecting command %d') % i + ':</td>'
                                         msgem += '<td>' + u'%s' % plugin_options["pc%d" % i] + '</td></tr>'
