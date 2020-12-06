@@ -217,6 +217,7 @@ def perform_update():
        log.debug(NAME, _(u'Update result') + ': ' + output)
        restart(3)
 
+
     except Exception:
        log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc())
 
@@ -264,7 +265,8 @@ class status_page(ProtectedPage):
         if checker is not None:
             checker.update()
 
-        raise web.seeother(plugin_url(status_page), True)
+        msg = _(u'OSPy is now updated from Github and restarted. Please wait...')
+        raise web.seeother(plugin_url(update_page), msg) # ((status_page), True)
 
 
 class refresh_page(ProtectedPage):
@@ -281,7 +283,7 @@ class update_page(ProtectedPage):
     def GET(self):
         perform_update()
         msg = _(u'OSPy is now updated from Github and restarted. Please wait...')
-        return self.core_render.notice(plugin_url(status_page), msg)
+        return self.core_render.notice('/', msg)
 
 
 class restart_page(ProtectedPage):
@@ -290,4 +292,4 @@ class restart_page(ProtectedPage):
     def GET(self):
         restart(3)
         msg = _(u'OSPy is now restarted (invoked by the user). Please wait...')
-        return self.core_render.notice(plugin_url(status_page), msg)
+        return self.core_render.notice('/', msg)
