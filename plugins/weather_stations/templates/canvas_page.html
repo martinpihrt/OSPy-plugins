@@ -1,0 +1,141 @@
+$def with(plugin_options)
+
+$var title: $_('Weather Stations')
+$var page: plugins
+
+<script src="/static/scripts/gauge.min.js"></script>
+
+<script>
+
+var timers = [];
+var can_data = [];
+var can_1_name = $:{json.dumps(plugin_options['can_1_name'], ensure_ascii=False).encode('utf8')};
+var can_2_name = $:{json.dumps(plugin_options['can_2_name'], ensure_ascii=False).encode('utf8')};
+var can_3_name = $:{json.dumps(plugin_options['can_3_name'], ensure_ascii=False).encode('utf8')};
+var can_4_name = $:{json.dumps(plugin_options['can_4_name'], ensure_ascii=False).encode('utf8')};
+var can_5_name = $:{json.dumps(plugin_options['can_5_name'], ensure_ascii=False).encode('utf8')};
+var can_6_name = $:{json.dumps(plugin_options['can_6_name'], ensure_ascii=False).encode('utf8')};
+var can_7_name = $:{json.dumps(plugin_options['can_7_name'], ensure_ascii=False).encode('utf8')};
+var can_8_name = $:{json.dumps(plugin_options['can_8_name'], ensure_ascii=False).encode('utf8')};
+
+function animateGauges() {   // send values to canvas by name
+    document.gauges.forEach(function(gauge) {
+        timers.push(setInterval(function() {
+            switch (gauge.canvas.element.attributes[1].textContent) { // 1 is name in data-title in canvas
+              case can_1_name: 
+                gauge.value = can_data[0];
+              break;
+              case can_2_name: 
+                gauge.value = can_data[1];
+              break;
+              case can_3_name: 
+                gauge.value = can_data[2];
+              break;
+              case can_4_name: 
+                gauge.value = can_data[3];
+              break;
+              case can_5_name: 
+                gauge.value = can_data[4];
+              break;
+              case can_6_name: 
+                gauge.value = can_data[5];
+              break;  
+              case can_7_name: 
+                gauge.value = can_data[6];
+              break; 
+              case can_8_name: 
+                gauge.value = can_data[7];
+              break;                                                                                   
+            }
+        }, gauge.animation.duration + 50));
+    });
+}
+
+if (!Array.prototype.forEach) { // canvas array
+    Array.prototype.forEach = function(cb) {
+        var i = 0, s = this.length;
+        for (; i < s; i++) {
+            cb && cb(this[i], i, this);
+        }
+    }
+}
+
+function updateFooter(){
+    jQuery.getJSON("/update_footer", function(osVals) {
+        let cpu_temp = osVals.cpu_temp;
+        let cpu_usage = osVals.cpu_usage;
+        let sys_uptime = osVals.sys_uptime;
+        let sys_ip = osVals.ip;
+
+        jQuery("#cpu_temp span.cpu_temp").text(cpu_temp);
+        jQuery("#cpu_usage span.cpu_usage").text(cpu_usage);
+        jQuery("#ip span.ip").text(sys_ip);
+        jQuery("#uptime span.uptime").text(sys_uptime);
+    })
+        
+    setTimeout(updateFooter, 15000); 
+}
+
+function updateData(){
+    jQuery.getJSON("/plugins/weather_stations/data_json", function(dataVals) {
+        can_data[0] = dataVals.temp_ds0;
+        can_data[1] = dataVals.temp_ds1;
+        can_data[2] = dataVals.temp_ds2;
+        can_data[3] = dataVals.temp_ds3;
+        can_data[4] = dataVals.temp_ds4;
+        can_data[5] = dataVals.temp_ds5;
+        can_data[6] = dataVals.water_1;
+        can_data[7] = dataVals.water_2;
+    })
+        
+    setTimeout(updateData, 5000); 
+}
+
+jQuery(document).ready(function(){
+    jQuery("button#cCancel").click(function(){
+        window.location="/";
+    });
+
+    updateData();
+    updateFooter();
+    setTimeout("animateGauges()", 500);      
+});
+</script>
+    
+<div class="canvas temperature">  
+    $for i in range(1, plugin_options['can_temperature_count']+1):
+        <canvas data-type="radial-gauge"
+        data-title= $:{json.dumps(plugin_options['can_%s_name' %(int(i))], ensure_ascii=False).encode('utf8')};
+        data-value="0"
+        data-min-value= $plugin_options['can_%s_min' %(int(i))]
+        data-max-value= $plugin_options['can_%s_max' %(int(i))]
+        data-width= $plugin_options['can_size_xy']
+        data-height= $plugin_options['can_size_xy']
+        data-major-ticks= $plugin_options['can_%s_tick' %(int(i))]
+        data-units= $:{json.dumps(plugin_options['can_%s_units' %(int(i))], ensure_ascii=False).encode('utf8')};
+        data-highlights= '[{"from": $plugin_options['can_%s_high_fr' %(int(i))], "to": $plugin_options['can_%s_high_to' %(int(i))], "color": "red"}]'>
+        $_(u'Your web browser does not support canvas elements.') 
+        </canvas>
+</div>
+<div class="canvas tank">  
+    $for i in range(7, 9):
+        <canvas data-type="radial-gauge"
+        data-title= $:{json.dumps(plugin_options['can_%s_name' %(int(i))], ensure_ascii=False).encode('utf8')};
+        data-value="0"
+        data-min-value= $plugin_options['can_%s_min' %(int(i))]
+        data-max-value= $plugin_options['can_%s_max' %(int(i))]
+        data-width= $plugin_options['can_size_xy']
+        data-height= $plugin_options['can_size_xy']
+        data-major-ticks= $plugin_options['can_%s_tick' %(int(i))]
+        data-units= $:{json.dumps(plugin_options['can_%s_units' %(int(i))], ensure_ascii=False).encode('utf8')};
+        data-highlights= '[{"from": $plugin_options['can_%s_high_fr' %(int(i))], "to": $plugin_options['can_%s_high_to' %(int(i))], "color": "red"}]'>
+        $_(u'Your web browser does not support canvas elements.') 
+        </canvas>
+</div>
+
+<div id="controls">
+    <button id="cCancel" class="submit">$_('Cancel')</button>
+    <a href=$plugins.plugin_url('weather_stations.settings_page') class="button upload">$_('Settings')</a>
+</div>
+                                  
+                     
