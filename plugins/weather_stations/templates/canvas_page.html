@@ -17,6 +17,7 @@ var can_5_name = $:{json.dumps(plugin_options['can_5_name'], ensure_ascii=False)
 var can_6_name = $:{json.dumps(plugin_options['can_6_name'], ensure_ascii=False).encode('utf8')};
 var can_7_name = $:{json.dumps(plugin_options['can_7_name'], ensure_ascii=False).encode('utf8')};
 var can_8_name = $:{json.dumps(plugin_options['can_8_name'], ensure_ascii=False).encode('utf8')};
+var can_9_name = $:{json.dumps(plugin_options['can_9_name'], ensure_ascii=False).encode('utf8')};
 
 function animateGauges() {   // send values to canvas by name
     document.gauges.forEach(function(gauge) {
@@ -45,7 +46,10 @@ function animateGauges() {   // send values to canvas by name
               break; 
               case can_8_name: 
                 gauge.value = can_data[7];
-              break;                                                                                   
+              break; 
+              case can_9_name: 
+                gauge.value = can_data[8];
+              break;                                                                                                
             }
         }, gauge.animation.duration + 50));
     });
@@ -86,9 +90,20 @@ function updateData(){
         can_data[5] = dataVals.temp_ds5;
         can_data[6] = dataVals.water_1;
         can_data[7] = dataVals.water_2;
+        can_data[8] = dataVals.wind_1;
+
+        jQuery("#can0 span.can0").text(can_data[0]);
+        jQuery("#can1 span.can1").text(can_data[1]);
+        jQuery("#can2 span.can2").text(can_data[2]);
+        jQuery("#can3 span.can3").text(can_data[3]);
+        jQuery("#can4 span.can4").text(can_data[4]);
+        jQuery("#can5 span.can5").text(can_data[5]);
+        jQuery("#can6 span.can6").text(can_data[6]);
+        jQuery("#can7 span.can7").text(can_data[7]);
+        jQuery("#can8 span.can8").text(can_data[8]);                       
     })
         
-    setTimeout(updateData, 5000); 
+    setTimeout(updateData, 4000); 
 }
 
 jQuery(document).ready(function(){
@@ -98,40 +113,50 @@ jQuery(document).ready(function(){
 
     updateData();
     updateFooter();
-    setTimeout("animateGauges()", 500);      
+    setTimeout("animateGauges()", 1000);    
 });
 </script>
-    
-<div class="canvas temperature">  
-    $for i in range(1, plugin_options['can_temperature_count']+1):
-        <canvas data-type="radial-gauge"
-        data-title= $:{json.dumps(plugin_options['can_%s_name' %(int(i))], ensure_ascii=False).encode('utf8')};
-        data-value="0"
-        data-min-value= $plugin_options['can_%s_min' %(int(i))]
-        data-max-value= $plugin_options['can_%s_max' %(int(i))]
-        data-width= $plugin_options['can_size_xy']
-        data-height= $plugin_options['can_size_xy']
-        data-major-ticks= $plugin_options['can_%s_tick' %(int(i))]
-        data-units= $:{json.dumps(plugin_options['can_%s_units' %(int(i))], ensure_ascii=False).encode('utf8')};
-        data-highlights= '[{"from": $plugin_options['can_%s_high_fr' %(int(i))], "to": $plugin_options['can_%s_high_to' %(int(i))], "color": "red"}]'>
-        $_(u'Your web browser does not support canvas elements.') 
-        </canvas>
-</div>
-<div class="canvas tank">  
-    $for i in range(7, 9):
-        <canvas data-type="radial-gauge"
-        data-title= $:{json.dumps(plugin_options['can_%s_name' %(int(i))], ensure_ascii=False).encode('utf8')};
-        data-value="0"
-        data-min-value= $plugin_options['can_%s_min' %(int(i))]
-        data-max-value= $plugin_options['can_%s_max' %(int(i))]
-        data-width= $plugin_options['can_size_xy']
-        data-height= $plugin_options['can_size_xy']
-        data-major-ticks= $plugin_options['can_%s_tick' %(int(i))]
-        data-units= $:{json.dumps(plugin_options['can_%s_units' %(int(i))], ensure_ascii=False).encode('utf8')};
-        data-highlights= '[{"from": $plugin_options['can_%s_high_fr' %(int(i))], "to": $plugin_options['can_%s_high_to' %(int(i))], "color": "red"}]'>
-        $_(u'Your web browser does not support canvas elements.') 
-        </canvas>
-</div>
+
+$if not plugin_options['can_or_txt']:    
+    <div id="canvas-container" class="canvas-container">  
+    $for i in range(1, 10):
+        $if plugin_options['use_can%s' %(int(i))]:
+            <canvas data-type="radial-gauge"
+            data-title= $:{json.dumps(plugin_options['can_%s_name' %(int(i))], ensure_ascii=False).encode('utf8')};
+            data-value="0"
+            data-min-value= $plugin_options['can_%s_min' %(int(i))]
+            data-max-value= $plugin_options['can_%s_max' %(int(i))]
+            data-width= $plugin_options['can_size_xy']
+            data-height= $plugin_options['can_size_xy']
+            data-major-ticks= $plugin_options['can_%s_tick' %(int(i))]
+            data-units= $:{json.dumps(plugin_options['can_%s_units' %(int(i))], ensure_ascii=False).encode('utf8')};
+            data-highlights= '[{"from": $plugin_options['can_%s_high_fr' %(int(i))], "to": $plugin_options['can_%s_high_to' %(int(i))], "color": "red"}, {"from": $plugin_options['can_%s_2_high_fr' %(int(i))], "to": $plugin_options['can_%s_2_high_to' %(int(i))], "color": "blue"},{"from": $plugin_options['can_%s_3_high_fr' %(int(i))], "to": $plugin_options['can_%s_3_high_to' %(int(i))], "color": "green"}]'>
+            $_(u'Your web browser does not support canvas elements.') 
+            </canvas>
+    </div>
+
+$else:
+    <div id="text-container" class="text-container">
+    $if plugin_options['use_can1']:
+        <p id='can0' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_1_name']: <span class='can0'></span>$plugin_options['can_1_units']</p>
+    $if plugin_options['use_can2']:        
+        <p id='can1' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_2_name']: <span class='can1'></span>$plugin_options['can_2_units']</p>
+    $if plugin_options['use_can3']:        
+        <p id='can2' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_3_name']: <span class='can2'></span>$plugin_options['can_3_units']</p>
+    $if plugin_options['use_can4']:        
+        <p id='can3' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_4_name']: <span class='can3'></span>$plugin_options['can_4_units']</p>
+    $if plugin_options['use_can5']:        
+        <p id='can4' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_5_name']: <span class='can4'></span>$plugin_options['can_5_units']</p>
+    $if plugin_options['use_can6']:        
+        <p id='can5' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_6_name']: <span class='can5'></span>$plugin_options['can_6_units']</p>
+    $if plugin_options['use_can7']:        
+        <p id='can6' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_7_name']: <span class='can6'></span>$plugin_options['can_7_units']</p>
+    $if plugin_options['use_can8']:        
+        <p id='can7' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_8_name']: <span class='can7'></span>$plugin_options['can_8_units']</p>
+    $if plugin_options['use_can9']:        
+        <p id='can8' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_9_name']: <span class='can8'></span>$plugin_options['can_9_units']</p>
+    </div>    
+
 
 <div id="controls">
     <button id="cCancel" class="submit">$_('Cancel')</button>
