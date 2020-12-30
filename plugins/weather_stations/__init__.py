@@ -215,7 +215,7 @@ class data_json(ProtectedPage):
 
         try:    
             from plugins import wind_monitor
-            data['wind_1'] = wind_monitor.get_all_values()[0]
+            data['wind_1'] = round(wind_monitor.get_all_values()[0], 2)
         except: 
             #log.error(NAME, traceback.format_exc())
             data['wind_1'] = -127
