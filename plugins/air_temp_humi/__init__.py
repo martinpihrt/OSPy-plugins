@@ -319,7 +319,7 @@ def DS18B20_read_probe(probe):
     try:
        return tempDS[probe]
     except:
-       return "--"        
+       return -127        
 
 
 def DHT_read_temp_value():
