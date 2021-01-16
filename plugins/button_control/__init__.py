@@ -94,10 +94,13 @@ class PluginSender(Thread):
                           self._sleep(2)
                          
                        if actual_buttons == i and plugin_options[tb]== "stopAll":
-                          log.info(NAME, datetime_string() + ': ' + _('All stations now stopped')) 
-                          log.finish_run(None)       # save log
-                          stations.clear()           # set all station to off 
-                          self._sleep(2)
+                          log.info(NAME, datetime_string() + ': ' + _('All stations now stopped'))                                                                
+                          log.finish_run(None)       # save log                                                                      
+                          options.scheduler_enabled = False                                                                      
+                          programs.run_now_program = None                                                                  
+                          run_once.clear()                                                           
+                          stations.clear()           # set all station to off                                                                      
+                          self._sleep(2) 
 
                        if actual_buttons == i and plugin_options[tb]== "schedEn":
                           log.info(NAME, datetime_string() + ': ' + _('Scheduler is now enabled')) 
