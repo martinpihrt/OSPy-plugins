@@ -5,7 +5,6 @@ $var page: plugins
 
 <script>
     function check_type() {
-       //let check_type = jQuery("#sensor_probe").val();
        jQuery("#pluginForm").submit();
     }
 
@@ -27,7 +26,8 @@ $var page: plugins
     <div class="title">$_('Pool Heating')</div>
     <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows pool heating regulation. Reading temperature using from DS18B20 sensors connected to the external hardware board'). $_('Or it is possible to use temperature measurement from OSPy sensors (LAN / Wi-Fi, radio ...)')</p>    
     <p>$_('Example: for heating a swimming pool with a solar panel. If the temperature difference (solar panel and pool water) is higher, the output (filter pump) is switched on. If the temperature difference from the solar panel is lower than the set temperature, the output (filter pump) is switched off.')</p>   
-    <p>$_('All temperatures is in') &#x2103;, $_('or in OSPy sensors as well also in') &#x2109;.</p>      
+    <p>$_('All temperatures is in') &#x2103;.</p>
+    <p>$_('Or in OSPy sensors as well also in') &#x2109;.</p>
     <form id="pluginForm" action="$plugins.plugin_url('pool_heating.settings_page')" method="get">
         <table class="optionList">
             <tr>
