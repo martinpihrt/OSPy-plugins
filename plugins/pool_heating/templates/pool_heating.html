@@ -4,6 +4,11 @@ $var title: $_('Pool Heating')
 $var page: plugins
 
 <script>
+    function check_type() {
+       //let check_type = jQuery("#sensor_probe").val();
+       jQuery("#pluginForm").submit();
+    }
+
     // Initialize behaviors
     jQuery(document).ready(function(){
         jQuery("#cSubmit").click(function() {
@@ -12,15 +17,18 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+        jQuery("#sensor_probe").change(check_type);
+        jQuery("#probe_A_on").change(check_type);
+        jQuery("#probe_A_off").change(check_type);
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_('Pool Heating')</div>
-    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows pool heating regulation. Reading temperature using from DS18B20 sensors connected to the external hardware board').</p>    
+    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows pool heating regulation. Reading temperature using from DS18B20 sensors connected to the external hardware board'). $_('Or it is possible to use temperature measurement from OSPy sensors (LAN / Wi-Fi, radio ...)')</p>    
     <p>$_('Example: for heating a swimming pool with a solar panel. If the temperature difference (solar panel and pool water) is higher, the output (filter pump) is switched on. If the temperature difference from the solar panel is lower than the set temperature, the output (filter pump) is switched off.')</p>   
-    <p>$_('All temperatures is in') &#x2103;.</p>      
-    <form id="pluginForm" action="$plugins.plugin_url('pool_heating.settings_page')" method="post">
+    <p>$_('All temperatures is in') &#x2103;, $_('or in OSPy sensors as well also in') &#x2109;.</p>      
+    <form id="pluginForm" action="$plugins.plugin_url('pool_heating.settings_page')" method="get">
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control'):</b></td>
@@ -29,23 +37,51 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Sensors or plugin'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature probes from sensors or from plugin air temperature.'), ensure_ascii=False)}>
+                    <select id="sensor_probe" name="sensor_probe">
+                    <option value="0" ${"selected" if plugin_options["sensor_probe"]==0 else ""}>$_('Select type')</option>
+                    <option value="1" ${"selected" if plugin_options["sensor_probe"]==1 else ""}>$_('OSPy Sensors')</option>
+                    <option value="2" ${"selected" if plugin_options["sensor_probe"]==2 else ""}>$_('Air temp plugin')</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Probe input from swimming pool'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
-                    <select name="probe_A_on">
+                    $if plugin_options["sensor_probe"]==2:
+                        <select id="probe_A_on" name="probe_A_on">
                         $for i in range(plugin_options["ds_count"]):
                             <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
-                    </select>
+                        </select>    
+                    $elif plugin_options["sensor_probe"]==1:
+                        <select id="probe_A_on" name="probe_A_on_sens">
+                        $for sensor in sensors.get():
+                            $if sensor.sens_type == 5 or (sensor.sens_type == 6 and sensor.multi_type == 0) or (sensor.sens_type == 6 and sensor.multi_type == 1) or (sensor.sens_type == 6 and sensor.multi_type == 2) or (sensor.sens_type == 6 and sensor.multi_type == 3):
+                                <option value="${sensor.index}" ${"selected" if plugin_options["probe_A_on_sens"]==sensor.index else ""}>${sensor.name}</option>
+                        </select>
+                    $else:
+                        $_('Not selected type')                         
                 </td>
             </tr>    
             <tr>
                 <td style='text-transform: none;'>$_('Probe input from Solar'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
-                    <select name="probe_A_off">
+                    $if plugin_options["sensor_probe"]==2:
+                        <select id="probe_A_off" name="probe_A_off">
                         $for i in range(plugin_options["ds_count"]):
                             <option value="${i}" ${"selected" if plugin_options["probe_A_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
-                    </select>
+                        </select>
+                    $elif plugin_options["sensor_probe"]==1:
+                        <select id="probe_A_off" name="probe_A_off_sens">
+                        $for sensor in sensors.get():
+                            $if sensor.sens_type == 5 or (sensor.sens_type == 6 and sensor.multi_type == 0) or (sensor.sens_type == 6 and sensor.multi_type == 1) or (sensor.sens_type == 6 and sensor.multi_type == 2) or (sensor.sens_type == 6 and sensor.multi_type == 3):
+                                <option value="${sensor.index}" ${"selected" if plugin_options["probe_A_off_sens"]==sensor.index else ""}>${sensor.name}</option>
+                        </select>
+                    $else:
+                        $_('Not selected type') 
                 </td>
-            </tr>                               
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature difference for ON'):</td>
                 <td title=$:{json.dumps(_(u'Temperature difference for switch ON (filtration pump).'), ensure_ascii=False)}>
@@ -58,7 +94,7 @@ $var page: plugins
                     <input id="reg_mm" name="reg_mm" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm"]' min="0" max="999">:
                     <input id="reg_ss" name="reg_ss" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss"]' min="0" max="59"> (mm:ss)
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature difference for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Temperature difference for switch OFF (filtration pump).'), ensure_ascii=False)}>
@@ -73,7 +109,7 @@ $var page: plugins
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>
