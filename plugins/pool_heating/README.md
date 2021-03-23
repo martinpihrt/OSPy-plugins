@@ -35,6 +35,9 @@ Plugin setup
 * Select Output:  
   Select the output you want to control with regulation.
 
+* Show in footer:  
+  Show data from plugin in footer on home page.  
+
 * Status:  
   Status window from the plugin.
 

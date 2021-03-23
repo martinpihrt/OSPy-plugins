@@ -16,24 +16,31 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+        jQuery("button#docButton").click(function(){
+            window.open("/plugins/pool_heating/help')", "_blank");
+        });        
         jQuery("#sensor_probe").change(check_type);
         jQuery("#probe_A_on").change(check_type);
         jQuery("#probe_A_off").change(check_type);
+        jQuery("#control_output_A").change(check_type);
+        jQuery("#enabled_a").change(check_type);
+        jQuery("#reg_mm").change(check_type);
+        jQuery("#reg_ss").change(check_type);
+        jQuery("#temp_a_on").change(check_type);
+        jQuery("#temp_a_off").change(check_type);
+        jQuery("#use_footer").change(check_type);
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_('Pool Heating')</div>
-    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows pool heating regulation. Reading temperature using from DS18B20 sensors connected to the external hardware board'). $_('Or it is possible to use temperature measurement from OSPy sensors (LAN / Wi-Fi, radio ...)')</p>    
-    <p>$_('Example: for heating a swimming pool with a solar panel. If the temperature difference (solar panel and pool water) is higher, the output (filter pump) is switched on. If the temperature difference from the solar panel is lower than the set temperature, the output (filter pump) is switched off.')</p>   
-    <p>$_('All temperatures is in') &#x2103;.</p>
-    <p>$_('Or in OSPy sensors as well also in') &#x2109;.</p>
-    <form id="pluginForm" action="$plugins.plugin_url('pool_heating.settings_page')" method="get">
+    <a href=$plugins.plugin_url('pool_heating.help_page') class="button upload">$_('Help')</a><br/>    
+    <form id="pluginForm" action="$plugins.plugin_url('pool_heating.settings_page')" method="post">
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, regulation will be enabled.'), ensure_ascii=False)}>
-                     <input name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
+                     <input id="enabled_a" name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
                 </td>
             </tr>
             <tr>
@@ -85,7 +92,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Temperature difference for ON'):</td>
                 <td title=$:{json.dumps(_(u'Temperature difference for switch ON (filtration pump).'), ensure_ascii=False)}>
-                    <input name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
+                    <input id="temp_a_on" name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
                 </td>
             </tr>
             <tr>
@@ -98,18 +105,24 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Temperature difference for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Temperature difference for switch OFF (filtration pump).'), ensure_ascii=False)}>
-                    <input name='temp_a_off' type='number' min='0' max='100' value='$plugin_options["temp_a_off"]'>
+                    <input id="temp_a_off" name='temp_a_off' type='number' min='0' max='100' value='$plugin_options["temp_a_off"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Select Output'):</td>
                 <td title=$:{json.dumps(_(u'Select the output you want to control with regulation.'), ensure_ascii=False)}>
-                    <select name="control_output_A">
+                    <select id="control_output_A" name="control_output_A">
                         $for station in stations.get():
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>
@@ -120,8 +133,8 @@ $var page: plugins
     </form>
 </div>
 <div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <a href="/plugins/pool_heating/settings" class="button add">$_('Refresh')</a>
 </div>
 
 

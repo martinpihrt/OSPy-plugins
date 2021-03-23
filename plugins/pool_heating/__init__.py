@@ -48,7 +48,8 @@ plugin_options = PluginOptions(
      'reg_ss': 0,          # sec for maximal runtime
      'probe_A_on_sens': 0, # for selector from sensors xx - temperature ON
      'probe_A_off_sens': 0,# for selector from sensors xx - temperature OFF
-     'sensor_probe': 0     # selector for type probes: 0=none, 1=sensors, 2=air temp plugin
+     'sensor_probe': 0,    # selector for type probes: 0=none, 1=sensors, 2=air temp plugin
+     'use_footer': True    # show data from plugin in footer on home page
      }
 )
 
@@ -80,14 +81,22 @@ class Sender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
+    def _try_read(self, val):
+        try:
+            return val
+        except:
+            pass
+            return -127.0            
+
     def run(self):
         temperature_ds = [-127,-127,-127,-127,-127,-127]
         msg_a_on = True
         msg_a_off = True              
-
-        temp_sw = showInFooter() #  instantiate class to enable data in footer
-        temp_sw.button = "pool_heating/settings"   # button redirect on footer
-        temp_sw.label =  _(u'Pool Heating')        # label on footer
+ 
+        if plugin_options['use_footer']:
+            temp_sw = showInFooter() #  instantiate class to enable data in footer
+            temp_sw.button = "pool_heating/settings"   # button redirect on footer
+            temp_sw.label =  _(u'Pool Heating')        # label on footer
 
         ds_a_on  = -127.0
         ds_a_off = -127.0
@@ -125,32 +134,32 @@ class Sender(Thread):
 
                 # regulation
                 if plugin_options['enabled_a'] and plugin_options["sensor_probe"] != 0:# enabled regulation and selected input for probes sensor/airtemp plugin
-                    if plugin_options["sensor_probe"] == 1:
+                    if plugin_options["sensor_probe"] == 1 and sensors.count()>0:
                         sensor_on = sensors.get(int(plugin_options['probe_A_on_sens']))#  pool
                         if sensor_on.sens_type == 5:                                   # temperature sensor
-                            ds_a_on = sensor_on.last_read_value
+                            ds_a_on = self._try_read(sensor_on.last_read_value)
                         elif sensor_on.sens_type == 6 and sensor_on.multi_type == 0:   # multitemperature sensor DS1
-                            ds_a_on = sensor_on.last_read_value[0]
+                            ds_a_on = self._try_read(sensor_on.last_read_value[0])
                         elif sensor_on.sens_type == 6 and sensor_on.multi_type == 1:   # multitemperature sensor DS2
-                            ds_a_on = sensor_on.last_read_value[1]
+                            ds_a_on = self._try_read(sensor_on.last_read_value[1])
                         elif sensor_on.sens_type == 6 and sensor_on.multi_type == 2:   # multitemperature sensor DS3
-                            ds_a_on = sensor_on.last_read_value[2]
+                            ds_a_on = self._try_read(sensor_on.last_read_value[2])
                         elif sensor_on.sens_type == 6 and sensor_on.multi_type == 3:   # multitemperature sensor DS4
-                            ds_a_on = sensor_on.last_read_value[3]
+                            ds_a_on = self._try_read(sensor_on.last_read_value[3])
                         else:
                             ds_a_on = -127.0
 
                         sensor_off = sensors.get(int(plugin_options['probe_A_off_sens']))#  solar
                         if sensor_off.sens_type == 5:                                    # temperature sensor
-                            ds_a_off = sensor_off.last_read_value
+                            ds_a_off = self._try_read(sensor_off.last_read_value)
                         elif sensor_off.sens_type == 6 and sensor_off.multi_type == 0:   # multitemperature sensor DS1
-                            ds_a_off = sensor_off.last_read_value[0]
+                            ds_a_off = self._try_read(sensor_off.last_read_value[0])
                         elif sensor_off.sens_type == 6 and sensor_off.multi_type == 1:   # multitemperature sensor DS2
-                            ds_a_off = sensor_off.last_read_value[1]
+                            ds_a_off = self._try_read(sensor_off.last_read_value[1])
                         elif sensor_off.sens_type == 6 and sensor_off.multi_type == 2:   # multitemperature sensor DS3
-                            ds_a_off = sensor_off.last_read_value[2]
+                            ds_a_off = self._try_read(sensor_off.last_read_value[2])
                         elif sensor_off.sens_type == 6 and sensor_off.multi_type == 3:   # multitemperature sensor DS4
-                            ds_a_off = sensor_off.last_read_value[3]
+                            ds_a_off = self._try_read(sensor_off.last_read_value[3])
                         else:
                             ds_a_off = -127.0
 
@@ -228,7 +237,8 @@ class Sender(Thread):
                 if a_state == -3:
                     tempText = _(u'Waiting.')
 
-                temp_sw.val = tempText.encode('utf8')    # value on footer
+                if plugin_options['use_footer']:
+                    temp_sw.val = tempText.encode('utf8')    # value on footer
 
                 self._sleep(2)
 
@@ -280,21 +290,30 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments and deleting logs"""
 
     def GET(self):
-    	plugin_options.web_update(web.input())
+    	global sender
+    	
         if sender is not None:
             sender.update()           
 
         return self.plugin_render.pool_heating(plugin_options, log.events(NAME))
 
     def POST(self):
+    	global sender
         plugin_options.web_update(web.input())
 
         if sender is not None:
             sender.update()
             log.clear(NAME)
 
-        #raise web.seeother(plugin_url(settings_page), True)
-        return self.plugin_render.pool_heating(plugin_options, log.events(NAME))        
+        raise web.seeother(plugin_url(settings_page), True)
+        #return self.plugin_render.pool_heating(plugin_options, log.events(NAME))  
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):                
+        return self.plugin_render.pool_heating_help()
 
 
 class settings_json(ProtectedPage):

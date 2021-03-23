@@ -1,0 +1,115 @@
+$def with(plugin_options, events)
+
+$var title: $_('Telegram Bot')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("button#docButton").click(function(){
+            window.open("/plugins/telegram_bot/help')", "_blank");
+        });        
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Telegram Bot')</div>
+    <p>!!!Not ready for use!!!</p>
+    <p>$_('This plugin enables OSPy to communicate the change of status via a telegram') (<a href="http://www.telegram.org/">www.telegram.org</a>).</p>
+    <a href=$plugins.plugin_url('telegram_bot.help_page') class="button upload">$_('Help')</a><br/>
+    <form id="pluginForm" action="$plugins.plugin_url('telegram_bot.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small>$_(u'General Options')</small></div>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Enable Telegram Bot'):</td>
+                <td title=$:{json.dumps(_(u'If the box is checked, Telegram Bot A will be enabled.'), ensure_ascii=False)}>
+                     <input name='use_plugin' type='checkbox'${" checked" if plugin_options['use_plugin'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Bot Token'):</td>
+                <td title=$:{json.dumps(_(u'Type your token for enabling the bot to talk with telegram.'), ensure_ascii=False)}>
+                     <input name='botToken' type='text' size="55" value="${plugin_options['botToken']}">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Bot Access Key - to Subscribe'):</td>
+                <td title=$:{json.dumps(_(u'Type your Bot Access key to Subscribe.'), ensure_ascii=False)}>
+                     <input name='botAccessKey' type='text' size="55" value="${plugin_options['botAccessKey']}">
+                </td>
+            </tr>
+             <tr>
+                <td style='text-transform: none;'>$_(u'Please restart OSPy if these options are changed!')</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small>$_(u'Signals to connect')</small></div>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('Zone Change'):</td>
+                <td title=$:{json.dumps(_(u'Send message if there has been a stations changed state.'), ensure_ascii=False)}>
+                     <input name='zoneChange' type='checkbox'${" checked" if plugin_options['zoneChange'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stations Scheduled'):</td>
+                <td title=$:{json.dumps(_(u'Send message if there has been a stations changed state from scheduler.'), ensure_ascii=False)}>
+                     <input name='stationScheduled' type='checkbox'${" checked" if plugin_options['stationScheduled'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small>$_(u'Commands')</small></div>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_(u'Info Command'):</td>
+                <td title=$:{json.dumps(_(u'Type Info Command for your info. Bot send you available commands for Control.'), ensure_ascii=False)}>
+                     <input name='info_cmd' type='text' value="${plugin_options['info_cmd']}">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Start Command'):</td>
+                <td title=$:{json.dumps(_(u'Type Start Command for enabling OSPy scheduler.'), ensure_ascii=False)}>
+                     <input name='enable_cmd' type='text' value="${plugin_options['enable_cmd']}">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Stop Command'):</td>
+                <td title=$:{json.dumps(_(u'Type Stop Command for disabling OSPy scheduler.'), ensure_ascii=False)}>
+                     <input name='disable_cmd' type='text' value="${plugin_options['disable_cmd']}">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'RunOnce Command'):</td>
+                <td title=$:{json.dumps(_(u'Run Once Command, use program number as argument.'), ensure_ascii=False)}>
+                     <input name='runOnce_cmd' type='text' value="${plugin_options['runOnce_cmd']}">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="11" cols="65" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+
+
+
