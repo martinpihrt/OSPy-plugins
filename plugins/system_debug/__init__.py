@@ -11,6 +11,7 @@ from plugins import PluginOptions
 import web
 import os
 import json
+import mimetypes
 
 
 NAME = 'System Debug Information'
@@ -66,8 +67,8 @@ def get_overview():
     result = []    
     max_res = int(debug_options['log_records'])
     try:
-       with open(log.EVENT_FILE) as fh:
-         result = tail(fh, max_res) 
+        with open(log.EVENT_FILE) as fh:
+            result = tail(fh, max_res) 
            
     except Exception:
         pass
@@ -104,16 +105,26 @@ class status_page(ProtectedPage):
 
 
 class settings_page(ProtectedPage):
-    """Save an html page for entering debug filtering or submit change."""
+    """Save an html page for entering."""
 
     def POST(self):
         debug_options.web_update(web.input())
         raise web.seeother(plugin_url(status_page), True)
 
+
 class log_page(ProtectedPage):
-    """Returns log in JSON format."""
+    """Return log."""
 
     def GET(self):
+        result = ''
+        try:
+            result = json.dumps(read_log())
+        except Exception:
+            pass
+            result = _('Error: Log file missing. Enable it in system options.')
+
+        content = mimetypes.guess_type(log.EVENT_FILE)[0]
         web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-Type', 'application/txt')
-        return json.dumps(read_log())
+        web.header('Content-type', content)  
+        web.header('Content-Disposition', 'attachment; filename=debuglog.txt')
+        return result
