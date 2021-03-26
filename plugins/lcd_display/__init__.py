@@ -95,6 +95,9 @@ class LCDSender(Thread):
         
         poweroff = signal('poweroff')
         poweroff.connect(notify_poweroff)
+
+        ospyupdate = signal('ospyupdate')
+        ospyupdate.connect(notify_ospyupdate)
         
         while not self._stop.is_set():
             try:
@@ -522,7 +525,7 @@ def notify_poweroff(name, **kw):
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'Power off')), 2))
 
 ### OSPy new version availbale ###
-def notify_poweroff(name, **kw):
+def notify_ospyupdate(name, **kw):
     global blocker
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _(u'System OSPy Has Update'))
