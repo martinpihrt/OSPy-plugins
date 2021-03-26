@@ -20,6 +20,8 @@ from ospy.helpers import datetime_string
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
+from blinker import signal
+
 
 NAME = 'System Update'
 MENU =  _(u'Package: System Update')
@@ -153,7 +155,7 @@ class StatusChecker(Thread):
             temp_upd = showInFooter() #  instantiate class to enable data in footer            
             temp_upd.button = "system_update/status"    # button redirect on footer
             temp_upd.label =  _(u'System Update')       # label on footer
-            msg ='Waiting to state'
+            msg = _(u'Waiting to state')
             temp_upd.val = msg.encode('utf8')           # value on footer 
 
         while not self._stop.is_set():
@@ -165,6 +167,7 @@ class StatusChecker(Thread):
                     if self.status['can_update']:
                         msg =_(u'New OSPy version is available!') 
                         stats['can_update'] = True
+                        report_ospyupdate()
                     else:
                         msg =_(u'Up-to-date')
                         stats['can_update'] = False    
@@ -215,7 +218,8 @@ def perform_update():
              subprocess.check_output(command.split())
 
        log.debug(NAME, _(u'Update result') + ': ' + output)
-       restart(3)
+       report_restarted()
+       restart(wait=4)
 
 
     except Exception:
@@ -247,7 +251,16 @@ def get_all_values():
     else:
         plg_state = 1 
 
-    return plg_state , stats['ver_new'], stats['ver_act'] # state, new version, actual version         
+    return plg_state , stats['ver_new'], stats['ver_act'] # state, new version, actual version  
+
+
+restarted = signal('restarted')
+def report_restarted():
+    restarted.send()
+
+ospyupdate = signal('ospyupdate')
+def report_ospyupdate():
+    ospyupdate.send()    
 
 
 ################################################################################
@@ -286,10 +299,18 @@ class update_page(ProtectedPage):
         return self.core_render.notice('/', msg)
 
 
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.system_update_help()
+
+
 class restart_page(ProtectedPage):
     """Restart system."""
 
     def GET(self):
-        restart(3)
+        report_restarted()
+        restart(wait=4)
         msg = _(u'OSPy is now restarted (invoked by the user). Please wait...')
         return self.core_render.notice('/', msg)

@@ -19,7 +19,7 @@ Plugin setup
   For this function required E-mail plugin.
 
 * E-mail subject:  
-  tTe subject of the E-mail being sent.
+  The subject of the E-mail being sent.
 
 * Show in footer:  
   Show data from plugin in footer on home page.

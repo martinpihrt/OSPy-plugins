@@ -1,0 +1,66 @@
+$def with()
+
+$var title: $_('LCD settings - Help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('LCD settings - Help')</div>
+    <p>$_('This plugin shows information on a 16x2 character LCD with') PCF8574.</p>
+    <p>$_('Automatically detects the display at the following') I&sup2;C $_('addresses'): 0x20-0x27, 0x38-0x3F.</p>
+    <p>$_('Compatible with the HD44780 controller').</p>
+    <p>$_('Warning: The LCD display must not have the same') I&sup2;C $_('address as other extensions.')</p>
+    <p>$_('For example, if you use the Button Control extension, it has a 0x27 address, like some LCD displays. If you have the same address, change it on the LCD board!')</p>
+    <br/><b><p>$_('Plugin setup')</p></b>
+    <p><ul>
+    <li>$_('Check Use') I&sup2;C $_('LCD')</li>  
+    $_('If checked use') I&sup2;C $_('lcd plugin is enabled and print messages on the LCD display.')
+    <li>$_('HW version') I&sup2;C $_('PCF8574<->LCD')</li>
+    $_('Select type Hardware board with PCF8574. Conection with LCD driver.')
+    <ul>
+    <li>$_('Lower 4 bits of expander are commands bits')</li>  
+    <li>$_('Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD1602 board)')</li>  
+    <li>$_('Top 4 bits of expander are commands bits AND P0-6 P1-5 P2-4')</li>  
+    <li>$_('LCD1602 board where lower 4 are commands, but backlight is pin 3')</li>  
+    <li>$_('LCD board (https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2)')</li>
+    </ul>
+    <li>$_('Check Use print lines to debug files')</li>
+    $_('If checked use print lines to debug files line 1 or line 2 print to debug files. Warning: If you enable this debug file will have a huge size.')
+    <li>$_('Display')</li>
+    $_('If checked print state message to LCD display.')
+    <ul>
+    <li>$_('System Name')</li>
+    <li>$_('SW Version Date')</li>
+    <li>$_('IP')</li>
+    <li>$_('Port')</li>
+    <li>$_('CPU Temp')</li>
+    <li>$_('Time and Date')</li>
+    <li>$_('Uptime')</li>
+    <li>$_('Rain Sensor')</li>
+    <li>$_('Last Run Program')</li>
+    <li>$_('Pressure Sensor')</li>
+    <li>$_('Water Tank Level')</li>
+    <li>$_('Running Stations')</li> 
+    <li>$_('DS18B20 Temperature')</li>
+    </ul>
+    <li>$_('Status')</li>
+    $_('Status window from the plugin.')
+    <li>$_('Important status information OSPy')</li>
+    $_('If events occur in the system: restart, poweroff, update available, they will be displayed preferentially regardless of the above settings.')
+    </ul></p>
+    <p>$_('Visit') <a href="https://pihrt.com">Martin Pihrt blog</a> $_('for more information').</p></br>
+    <p><b>$_('The hardware should be connected as follows (LCD board by pihrt.com).')</b></p>
+    <a href="/plugins/lcd_display/static/images/schematics.png"><img src="/plugins/lcd_display/static/images/schematics.png" width="60%"></a>  </br>
+
+    <p><b>$_('The LCD 1602 IIC with PCF8574')</b></p>
+    <a href="/plugins/lcd_display/static/images/lcd1602_iic.png"><img src="/plugins/lcd_display/static/images/lcd1602_iic.png" width="60%"></a>  </br>
+
+    <p><b>$_('PCF8574 address map')</b></p>
+    <a href="/plugins/lcd_display/static/images/pcf8574_map.png"><img src="/plugins/lcd_display/static/images/pcf8574_map.png" width="60%"></a>  </br>        
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('lcd_display.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+
+
+

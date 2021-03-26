@@ -46,5 +46,3 @@ Plugin setup
 
 * Status:  
   Status window from the plugin.
-
-Visit [Martin Pihrt's blog](https://pihrt.com/elektronika/380-moje-raspberry-pi-plugin-ospy-mereni-teploty-pomoci-ds18b20). for more information HW board with DS18B20 probe.

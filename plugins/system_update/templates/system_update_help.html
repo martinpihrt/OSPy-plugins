@@ -1,0 +1,34 @@
+$def with()
+
+$var title: $_('System update from GitHub')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('System update from GitHub - Help')</div>
+    <p>$_('This plugin compares the local copy with the remote repository and can automatically update the local copy').</p>
+    <p>$_('For check new version OSPy click on update status button').</p>
+    <p>$_('If new version is posible click on update OSPy button. Plugin downloading and installing new version OSPy. Next restarting OSPy service').</p>  
+    <p>$_('This plugin allows update itself automatically the system, while allowing send an E-mail to the system administrator').</p>
+    <br/><b><p>$_('Plugin setup')</p></b>
+    <p><ul>
+    <li>$_('Use update plugin')</li>
+    $_('If the box is checked, the plugin checks for available system updates every hour.')
+    <li>$_('Automatic update')</li>
+    $_('If the box is checked, the plugin will update the system itself.')
+    <li>$_('Send E-mail if update is available')</li>
+    $_('For this function required E-mail plugin.')
+    <li>$_('E-mail subject')</li>
+    $_('The subject of the E-mail being sent.')
+    <li>$_('Show in footer')</li>
+    $_('Show data from plugin in footer on home page.')
+    <li>$_('Status')</li>
+    $_('Status window from the plugin.')
+    </ul></p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('system_update.status_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+
+
+

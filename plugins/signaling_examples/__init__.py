@@ -96,6 +96,10 @@ class Sender(Thread):
            pressurizer_master_relay_on.connect(notify_pressurizer_master_relay_on)
            pressurizer_master_relay_off = signal('pressurizer_master_relay_off')
            pressurizer_master_relay_off.connect(notify_pressurizer_master_relay_off)
+           poweroff = signal('poweroff')
+           poweroff.connect(notify_poweroff)
+           ospyupdate = signal('ospyupdate')
+           ospyupdate.connect(notify_ospyupdate)
 
 sender = None
 
@@ -193,6 +197,14 @@ def notify_pressurizer_master_relay_on(name, **kw):
 def notify_pressurizer_master_relay_off(name, **kw):
     log.info(NAME, datetime_string() + ': ' + _('Pressurizer plugin master relay off')) 
 
+### Linux system power off ###
+def notify_poweroff(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Linux system now powering off')) 
+
+### OSPy system update available ###
+def notify_ospyupdate(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('OSPy system update available'))       
+
 
 ################################################################################
 # Web pages:                                                                   #
@@ -210,6 +222,14 @@ class settings_page(ProtectedPage):
         if sender is not None:
             sender.update()                
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.signaling_examples_help()
+
 
 class settings_json(ProtectedPage):            ### return plugin_options as JSON data ###
     """Returns plugin settings in JSON format."""

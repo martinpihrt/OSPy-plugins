@@ -19,11 +19,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('LCD settings')</div>
-    <p>$_('This plugin shows information on a 16x2 character LCD with') PCF8574.</p>
-    <p>$_('Automatically detects the display at the following') I&sup2;C $_('addresses'): 0x20-0x27, 0x38-0x3F.</p>
-    <p>$_('Compatible with the HD44780 controller').</p>
-    <p>$_('Warning: The LCD display must not have the same') I&sup2;C $_('address as other extensions. For example, if you use the Button Control extension, it has a 0x27 address, like some LCD displays. If you have the same address, change it on the LCD board!')</p>
-    <p>$_('Visit') <a href="https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2">Martin Pihrt blog</a> $_('for more information').</p><br>
+    <a href=$plugins.plugin_url('lcd_display.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('lcd_display.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -33,13 +29,13 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('HW version I2C PCF8574<->LCD'):</td>
+                <td style='text-transform: none;'>$_('HW version') I&sup2;C $_('PCF8574<->LCD'):</td>
                 <td>
                     <select name="hw_PCF8574">
                         <option value="0" ${"selected" if plugin_options['hw_PCF8574']==0 else ""}>$_('Lower 4 bits of expander are commands bits')</option>
-                        <option value="1" ${"selected" if plugin_options['hw_PCF8574']==1 else ""}>$_('Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD2004 board)')</option>
+                        <option value="1" ${"selected" if plugin_options['hw_PCF8574']==1 else ""}>$_('Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD1602 board)')</option>
                         <option value="2" ${"selected" if plugin_options['hw_PCF8574']==2 else ""}>$_('Top 4 bits of expander are commands bits AND P0-6 P1-5 P2-4')</option>
-                        <option value="3" ${"selected" if plugin_options['hw_PCF8574']==3 else ""}>$_('LCD2004 board where lower 4 are commands, but backlight is pin 3')</option>
+                        <option value="3" ${"selected" if plugin_options['hw_PCF8574']==3 else ""}>$_('LCD1602 board where lower 4 are commands, but backlight is pin 3')</option>
                         <option value="4" ${"selected" if plugin_options['hw_PCF8574']==4 else ""}>$_('LCD board www.pihrt.com')</option>
                     </select>
                 </td>
@@ -155,5 +151,5 @@ $var page: plugins
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?refind"    class="button cancel danger">$_('Re-find I2C address')</a>
+    <a href="?refind"    class="button cancel danger">$_('Re-find') I&sup2;C $_('address')</a>
 </div>

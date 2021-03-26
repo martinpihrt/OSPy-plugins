@@ -21,9 +21,13 @@ from ospy.options import options
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import ASCI_convert
+from ospy.helpers import ASCI_convert, datetime_string
 from ospy.stations import stations
 
+from blinker import signal
+
+global blocker
+blocker = False
 
 NAME = 'LCD Display'
 MENU =  _(u'Package: LCD Display')
@@ -50,7 +54,7 @@ lcd_options = PluginOptions(
         "d_temperature": True,
         "d_sched_manu": True,
         "d_syst_enabl": True,
-        "hw_PCF8574": 4               # 0-4, default is 4 www.pihrt.com 16x2 LCD board: "https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2"
+        "hw_PCF8574": 1               # 0-4, default is 1 LCD1602 china I2C display
     }
 )
 
@@ -80,10 +84,21 @@ class LCDSender(Thread):
             self._sleep_time -= 1
 
     def run(self):
+        global blocker
         report_index = 0
+        
+        rebooted = signal('rebooted')
+        rebooted.connect(notify_rebooted)
+
+        restarted = signal('restarted')
+        restarted.connect(notify_restarted)
+        
+        poweroff = signal('poweroff')
+        poweroff.connect(notify_poweroff)
+        
         while not self._stop.is_set():
             try:
-                if lcd_options['use_lcd']:  # if LCD plugin is enabled
+                if lcd_options['use_lcd']  and not blocker:  # if LCD plugin is enabled
                     if lcd_options['debug_line']:
                         log.clear(NAME)
 
@@ -402,7 +417,7 @@ def find_lcd_address():
             try:
                 # bus.write_quick(addr)
                 try_io(lambda: bus.read_byte(addr)) #bus.read_byte(addr) # DF - write_quick doesn't work on BBB
-                log.info(NAME, 'Found %s on address 0x%02x' % (pcf_type, addr))
+                log.info(NAME, _(u'Found {} on address {}').format(pcf_type, hex(addr)))
                 lcd_options['address'] = addr
                 break
             except Exception:
@@ -416,6 +431,7 @@ def find_lcd_address():
 
 def update_lcd(line1, line2=None):
     """Print messages to LCD 16x2"""
+    global blocker
 
     if lcd_options['address'] == 0:
         find_lcd_address()
@@ -430,7 +446,7 @@ def update_lcd(line1, line2=None):
 
     try_io(lambda: lcd.lcd_clear())
     sleep_time = 1
-    while line1 is not None:
+    while line1 is not None and not blocker:
         try_io(lambda: lcd.lcd_puts(line1[:16], 1))
 
         if line2 is not None:
@@ -450,6 +466,78 @@ def update_lcd(line1, line2=None):
         time.sleep(sleep_time)
         sleep_time = 0.9
 
+### Reboot Linux HW software ###
+def notify_rebooted(name, **kw):
+    global blocker
+    blocker = True
+    log.info(NAME, datetime_string() + ': ' + _(u'System rebooting'))
+    if lcd_options['address'] == 0:
+        find_lcd_address()
+    if lcd_options['address'] != 0:
+        import pylcd  # Library for LCD 16x2 PCF8574
+        lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+        # DF - alter RPi version test fallback to value that works on BBB
+    else:
+        lcd = dummy_lcd
+
+    try_io(lambda: lcd.lcd_clear())    
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'System Linux')), 1))
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'Rebooting')), 2))
+
+### Restarted OSPy ###
+def notify_restarted(name, **kw):
+    global blocker
+    blocker = True
+    log.info(NAME, datetime_string() + ': ' + _(u'System restarting'))
+    if lcd_options['address'] == 0:
+        find_lcd_address()
+    if lcd_options['address'] != 0:
+        import pylcd  # Library for LCD 16x2 PCF8574
+        lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+        # DF - alter RPi version test fallback to value that works on BBB
+    else:
+        lcd = dummy_lcd
+
+    try_io(lambda: lcd.lcd_clear())    
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'System OSPy')), 1))
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'Rebooting')), 2))
+
+
+### Power off Linux HW ###
+def notify_poweroff(name, **kw):
+    global blocker
+    blocker = True
+    log.info(NAME, datetime_string() + ': ' + _(u'System poweroff'))
+    if lcd_options['address'] == 0:
+        find_lcd_address()
+    if lcd_options['address'] != 0:
+        import pylcd  # Library for LCD 16x2 PCF8574
+        lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+        # DF - alter RPi version test fallback to value that works on BBB
+    else:
+        lcd = dummy_lcd
+
+    try_io(lambda: lcd.lcd_clear())    
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'System Linux')), 1))
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'Power off')), 2))
+
+### OSPy new version availbale ###
+def notify_poweroff(name, **kw):
+    global blocker
+    blocker = True
+    log.info(NAME, datetime_string() + ': ' + _(u'System OSPy Has Update'))
+    if lcd_options['address'] == 0:
+        find_lcd_address()
+    if lcd_options['address'] != 0:
+        import pylcd  # Library for LCD 16x2 PCF8574
+        lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+        # DF - alter RPi version test fallback to value that works on BBB
+    else:
+        lcd = dummy_lcd
+
+    try_io(lambda: lcd.lcd_clear())    
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'System OSPy')), 1))
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_(u'Has Update')), 2))    
 
 ################################################################################
 # Web pages:                                                                   #
@@ -477,6 +565,13 @@ class settings_page(ProtectedPage):
 
         lcd_sender.update()
         raise web.seeother(plugin_url(settings_page), True)
+        
+
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.lcd_display_help()
 
 
 class settings_json(ProtectedPage):

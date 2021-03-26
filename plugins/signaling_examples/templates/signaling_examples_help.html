@@ -1,0 +1,39 @@
+$def with()
+
+$var title: $_('Signaling Examples - Help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Signaling Examples - Help')</div>
+        <p>$_('This is Example signal plugin provides functions triggered by signals from core program.')</p>
+    <p><b>$_('Example signals')</b></p>
+    <p><ul>
+    <li>$_('signal loggedin')</li>
+    <li>$_('signal value_change')</li>
+    <li>$_('signal option_change')</li>
+    <li>$_('signal rebooted')</li>
+    <li>$_('signal restarted')</li>
+    <li>$_('signal station_names')</li>
+    <li>$_('signal program_change')</li>
+    <li>$_('signal program_deleted')</li>
+    <li>$_('signal program_toggled')</li>
+    <li>$_('signal program_runnow')</li>
+    <li>$_('signal rain_active')</li>
+    <li>$_('signal rain_not_active')</li>
+    <li>$_('signal master_one_on')</li>
+    <li>$_('signal master_one_off')</li>
+    <li>$_('signal master_two_on')</li>
+    <li>$_('signal master_two_off')</li>
+    <li>$_('signal pressurizer_master_relay_on')</li>
+    <li>$_('signal pressurizer_master_relay_off')</li>
+    <li>$_('signal poweroff')</li>
+    <li>$_('signal ospyupdate')</li>
+    </ul></p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('signaling_examples.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+
+
+

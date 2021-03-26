@@ -18,10 +18,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('System update from GitHub')</div>
-    <p>$_('This plugin compares the local copy with the remote repository and can automatically update the local copy').</p>
-    <p>$_('For check new version OSPy click on update status button').</p>
-    <p>$_('If new version is posible click on update OSPy button. Plugin downloading and installing new version OSPy. Next restarting OSPy service').</p>  
-    <p>$_('This plugin allows update itself automatically the system, while allowing send an E-mail to the system administrator').</p>
+    <a href=$plugins.plugin_url('system_update.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" method="post">
         <table class="optionList">
             <tr>
