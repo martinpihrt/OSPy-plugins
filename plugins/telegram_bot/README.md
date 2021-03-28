@@ -1,8 +1,6 @@
 Telegram Bot Readme
 ====
 
-!!!Not ready for use!!!
-
 In the telegram application, we send a message to user @botfather and confirm it */start*.  
 Create a new bot with the */newbot* command and specify what the bot will be named ex: ospyk_bot (name must end with *_bot*).  
 Use the * /token* command to request the new token (for example: we get something like this 1655412493:AAEPKTaO6KWDS-SCkDniRLRt2sdfewT4nc0Q).  
