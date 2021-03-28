@@ -20,7 +20,6 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Telegram Bot')</div>
-    <p>!!!Not ready for use!!!</p>
     <p>$_('This plugin enables OSPy to communicate the change of status via a telegram') (<a href="http://www.telegram.org/">www.telegram.org</a>).</p>
     <a href=$plugins.plugin_url('telegram_bot.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('telegram_bot.settings_page')" method="post">
@@ -43,11 +42,21 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>
+                    <div><small>$_(u'Example: 5498756874:AAEPKTa987456SQ')</small></div>
+                </td>
+            </tr>             
+            <tr>
                 <td style='text-transform: none;'>$_(u'Bot Access Key - to Subscribe'):</td>
                 <td title=$:{json.dumps(_(u'Type your Bot Access key to Subscribe.'), ensure_ascii=False)}>
                      <input name='botAccessKey' type='text' size="55" value="${plugin_options['botAccessKey']}">
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small>$_(u'Example: 1811878118')</small></div>
+                </td>
+            </tr>            
              <tr>
                 <td style='text-transform: none;'>$_(u'Please restart OSPy if these options are changed!')</td>
             </tr>
@@ -63,31 +72,31 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Stations Scheduled'):</td>
-                <td title=$:{json.dumps(_(u'Send message if there has been a stations changed state from scheduler.'), ensure_ascii=False)}>
-                     <input name='stationScheduled' type='checkbox'${" checked" if plugin_options['stationScheduled'] else ""}>
-                </td>
-            </tr>
-            <tr>
                 <td style='text-transform: none;'>
                     <div><small>$_(u'Commands')</small></div>
                 </td>
-            </tr>            
+            </tr> 
+            <tr>
+                <td style='text-transform: none;'>$_(u'Help Command'):</td>
+                <td title=$:{json.dumps(_(u'Type Help Command for your info. Bot send you available commands for OSPy Control.'), ensure_ascii=False)}>
+                     <input name='help_cmd' type='text' value="${plugin_options['help_cmd']}">
+                </td>
+            </tr>                       
             <tr>
                 <td style='text-transform: none;'>$_(u'Info Command'):</td>
-                <td title=$:{json.dumps(_(u'Type Info Command for your info. Bot send you available commands for Control.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'Type Info Command for OSPy info. Bot send OSPy actual states.'), ensure_ascii=False)}>
                      <input name='info_cmd' type='text' value="${plugin_options['info_cmd']}">
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_(u'Start Command'):</td>
-                <td title=$:{json.dumps(_(u'Type Start Command for enabling OSPy scheduler.'), ensure_ascii=False)}>
+                <td style='text-transform: none;'>$_(u'Enable Command'):</td>
+                <td title=$:{json.dumps(_(u'Type Enable Command for enabling OSPy scheduler.'), ensure_ascii=False)}>
                      <input name='enable_cmd' type='text' value="${plugin_options['enable_cmd']}">
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_(u'Stop Command'):</td>
-                <td title=$:{json.dumps(_(u'Type Stop Command for disabling OSPy scheduler.'), ensure_ascii=False)}>
+                <td style='text-transform: none;'>$_(u'Disable Command'):</td>
+                <td title=$:{json.dumps(_(u'Type Disable Command for disabling OSPy scheduler.'), ensure_ascii=False)}>
                      <input name='disable_cmd' type='text' value="${plugin_options['disable_cmd']}">
                 </td>
             </tr>
@@ -97,6 +106,18 @@ $var page: plugins
                      <input name='runOnce_cmd' type='text' value="${plugin_options['runOnce_cmd']}">
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Stop Command'):</td>
+                <td title=$:{json.dumps(_(u'Stop Command, for stop all running stations and disabling OSPy scheduler.'), ensure_ascii=False)}>
+                     <input name='stop_cmd' type='text' value="${plugin_options['stop_cmd']}">
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>             
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

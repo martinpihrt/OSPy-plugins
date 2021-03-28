@@ -21,19 +21,19 @@ Plugin setup
   If the box is checked, Telegram Bot A will be enabled.  
 
 * Bot Token:  
-  Type your token for enabling the bot to talk with telegram.
+  Type your token for enabling the bot to talk with telegram.  Example: 5498756874:AAEPKTa987456SQ.  
 
 * Bot Access Key - to Subscribe:
-  Type your Bot Access key to Subscribe.  
+  Type your Bot Access key to Subscribe. Example: 1811878118.  
 
 * Signals to connect - Zone Change:  
-  Send message if there has been a stations changed state.
+  Send message if there has been a stations changed state.   
 
-* Signals to connect - Stations Scheduled:
-  Send message if there has been a stations changed state from scheduler.  
+* Help Command:  
+  Type Help Command for your info. Bot send you available commands for OSPy Control.    
 
 * Info Command:  
-  Type Info Command for your info. Bot send you available commands for Control.  
+  Type Info Command for OSPy info. Bot send OSPy actual states.  
 
 * Start Command:  
   Type Start Command for enabling OSPy scheduler.  
@@ -42,7 +42,17 @@ Plugin setup
   Type Stop Command for disabling OSPy scheduler.  
 
 * RunOnce Command:  
-  Run Once Command, use program number as argument.  
+  Run Once Command, use program number as argument. 
+
+* Stop Command:  
+  Stop Command, for stop all running stations and disabling OSPy scheduler.    
+
+* Show in footer:  
+  Show data from plugin in footer on home page.   
 
 * Status:  
-  Status window from the plugin.
+  Status window from the plugin.  
+
+## Example
+[![](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone1.png?raw=true)](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone1.png) 
+[![](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone2.png?raw=true)](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone2.png) 
