@@ -1,4 +1,4 @@
-$def with(plugin_options, events)
+$def with(plugin_options, events, client_id)
 
 $var title: $_(u'MQTT Runonce')
 $var page: plugins
@@ -17,8 +17,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_(u'MQTT Runonce settings')</div>
-    <p>!!!Not ready for use!!!</p>
-    <p>$_(u'This MQTT Run-once plugin Relies on the base MQTT plugin, allows runonce stations to be set over MQTT. The received message is a sheet that contains list or dict (station number, time in seconds.)')</p><p>$_('This extension requires the MQTT extension!')</p><p>$_('If you change settings in MQTT plugins or this plugin you must restarting OSPy!')</p> 
+    <a href=$plugins.plugin_url('mqtt_runonce.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('mqtt_runonce.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -28,15 +27,43 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('MQTT Broker Host'):</td>
+                <td><input type="text" name="broker_host" value="${plugin_options['broker_host']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Broker Username'):</td>
+                <td><input type="text" name="user_name" value="${plugin_options['user_name']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Broker Password'):</td>
+                <td><input type="password" name="user_password" value="${plugin_options['user_password']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Broker Port'):</td>
+                <td><input type="number" name="broker_port" max="65635" min="80" value="${plugin_options['broker_port']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Publish Ready/Exit topic'):</td>
+                <td>$_('Leave blank to not publish MQTT Run-once plugin status').<br />
+                    <input type="text" name="publish_up_down" value="${plugin_options['publish_up_down']}"> </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('MQTT Client ID'):</td>  <!--Edit-->
+                <td>${client_id}</td>
+            </tr>           
+            <tr>
                 <td style='text-transform: none;'>$_(u'MQTT Scheduling topic'):</td>
                 <td title=$:{json.dumps(_(u'The topic subscribe to for Run-once commands.'), ensure_ascii=False)}>
                     <input type="text" name="schedule_topic" value='$plugin_options["schedule_topic"]'>
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_(u'Please restart OSPy if these options are changed!')</td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_(u'Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="8" cols="65" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
@@ -46,11 +73,3 @@ $var page: plugins
     <button id="cSubmit" class="submit"><b>$_(u'Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_(u'Cancel')</button>
 </div>
-
-<br/><p><b>$_(u'MQTT data example')</b></p>
-<p>* $_(u'Sending message in MQTT as list'):</p>
-<p>$_(u'Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
-<p>$_(u'[0,0,100,30]')</p><br/>   
-<p>* $_(u'Sending message in MQTT as dict'):</p>
-<p>$_(u'Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
-<p>$_(u'{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}')</p>

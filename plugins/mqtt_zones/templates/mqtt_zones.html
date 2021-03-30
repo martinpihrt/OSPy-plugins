@@ -17,7 +17,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('MQTT Zones settings')</div>
-    <p>$_('This MQTT Zones plug-in relies on to MQTT, broadcasts the current status of all zones.').</p>
+    <a href=$plugins.plugin_url('mqtt_zones.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('mqtt_zones.settings_page')" method="post">
         <table class="optionList">
             <tr>

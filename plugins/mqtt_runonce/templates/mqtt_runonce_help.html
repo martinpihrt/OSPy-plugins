@@ -1,0 +1,28 @@
+$def with()
+
+$var title: $_(u'MQTT Runonce - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'MQTT Runonce settings - help')</div>
+    <p>$_(u'This MQTT Run-once plugin Relies on the base MQTT plugin, allows runonce stations to be set over MQTT. The received message is a sheet that contains list or dict (station number, time in seconds.)')</p><p>$_('This extension requires the MQTT extension!')</p><p>$_('If you change settings in MQTT plugins or this plugin you must restarting OSPy!')</p> 
+    <br/><p><b>$_(u'MQTT data example')</b></p>
+    <p>* $_(u'Sending message in MQTT as list'):</p>
+    <p>$_(u'Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
+    <p>$_(u'[0,0,100,30]')</p><br/>   
+    <p>* $_(u'Sending message in MQTT as dict'):</p>
+    <p>$_(u'Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
+    <p>$_(u'{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}')</p>
+    <br/><p><b>$_(u'MQTT plugin publish this states')</b></p>
+    <p>$_(u'RunOnce Restart - restart MQTT connection')</p>
+    <p>$_(u'RunOnce Exit - OSPy exit')</p>
+    <p>$_(u'RunOnce Ready - Ready for processing')</p>
+    <p>$_(u'RunOnce Processing - Processing command')</p>
+    <p>$_(u'RunOnce Error - Any Error')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('mqtt_runonce.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+
+

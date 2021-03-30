@@ -198,11 +198,6 @@ def on_message(client, userdata, message):
                     log.error(NAME, _('MQTT plug-in') + ':\n' + _('Setup stations count is smaler! Set correct first station and station count.'))   
         except Exception:
             log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
-                    
-
-#if station.enabled  in stations.get():
-#for station in stations.get():
-        #station.active
 
         time.sleep(1)
             
@@ -321,6 +316,12 @@ class settings_page(ProtectedPage):
         if sender is not None:
             sender.update()
         raise web.seeother(plugin_url(settings_page), True)
+
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.mqtt_help()        
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""

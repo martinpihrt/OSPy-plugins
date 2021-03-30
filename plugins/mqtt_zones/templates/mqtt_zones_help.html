@@ -1,0 +1,16 @@
+$def with()
+
+$var title: $_('MQTT Zones settings - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('MQTT Zones settings - help')</div>
+    <p>$_('This MQTT Zones plug-in relies on to MQTT, broadcasts the current status of all zones.')</p>
+    <p>$_('Example')</p>
+    <p>[{'status': 'off', 'reason': 'master', 'station': 0, 'name': u'\u010derpadlo'}, {'status': 'off', 'reason': '', 'station': 1, 'name': u'z\xe1honek'}, {'status': 'off', 'reason': '', 'station': 2, 'name': u'tr\xe1vn\xedk dole'}, {'status': 'off', 'reason': '', 'station': 3, 'name': u'tr\xe1vn\xedk naho\u0159e'}, {'status': 'off', 'reason': '', 'station': 4, 'name': u'filtrace baz\xe9nu'}, {'status': 'off', 'reason': '', 'station': 5, 'name': u'osv\u011btlen\xed vjezdu'}]
+    </p>   
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('mqtt_zones.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
