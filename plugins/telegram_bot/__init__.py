@@ -93,7 +93,7 @@ class Sender(Thread):
             chats.append(update.message.chat.id)
             self._currentChats = chats
             plugin_options['currentChats'] = chats
-            txt= _(u'Hi! you are now added to the {} announcement.').format(options.name),
+            txt= _(u'Hi! you are now added to the {} announcement.').format(options.name)
             txt= unicode(txt).encode('utf-8')
             bot.sendMessage(update.message.chat.id, text=txt)
             log.info(NAME, txt)
@@ -375,12 +375,12 @@ def notify_zone_change(name, **kw):
             if station.active:
                 txt += _(u'ON') + u' ('
                 if(station.remaining_seconds == -1):
-                    txt += _(u'Forever') + u')'
+                    txt += _(u'Forever') + _(u')')
                 else:    
-                    txt += _(u'{}').format(str(int(station.remaining_seconds))) + u')'
+                    txt += u'{}'.format(str(int(station.remaining_seconds))) + _(u')')
             else:
                 txt += _(u'OFF')
-            txt += '\n'    
+            txt += u'\n'    
         sender._announce(txt)                   
 
 ################################################################################

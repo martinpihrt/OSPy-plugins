@@ -16,13 +16,10 @@ $var page: plugins
  });
 </script>
     
-
 <div id="plugin">
     <div class="title">$_('Webcam Monitor')</div>
-    <p>$_('This plugin needs fswebcam').</p>
-    <p>$_('If not installed fswebcam, plugin installs fswebcam in to the system himself').</p>
-    <p>$_('On first use please wait for status').</p>
-    <p>$_('Download image as') <a href="$plugins.plugin_url('webcam.download_page')">jpg</a>.
+    <a href=$plugins.plugin_url('webcam.download_page') class="button download">$_('Download image')</a>
+    <a href=$plugins.plugin_url('webcam.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('webcam.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -67,6 +64,7 @@ $var page: plugins
 
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <a href=$plugins.plugin_url('webcam.settings_page') class="button download">$_('Refresh')</a>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
                                   

@@ -138,6 +138,13 @@ class status_page(ProtectedPage):
         return self.plugin_render.system_watchdog(checker.status, log.events(NAME))
 
 
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.system_watchdog_help()        
+
+
 class install_page(ProtectedPage):
     """Instalation watchdog page"""
 

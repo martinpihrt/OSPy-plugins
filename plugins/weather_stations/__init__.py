@@ -156,6 +156,13 @@ class canvas_page(ProtectedPage):
         return self.plugin_render.canvas_page(plugin_options)
 
 
+class help_page(ProtectedPage):
+    """Load an html page for help page."""
+
+    def GET(self):
+        return self.plugin_render.help_page()        
+
+
 class settings_page(ProtectedPage):
     """Load an html settings page for canvas options."""
 

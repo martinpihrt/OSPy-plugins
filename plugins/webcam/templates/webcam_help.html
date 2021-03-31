@@ -1,0 +1,17 @@
+$def with()
+
+$var title: $_('Webcam Monitor - help')
+$var page: plugins    
+
+<div id="plugin">
+    <div class="title">$_('Webcam Monitor - help')</div>
+    <p>$_('This plugin needs fswebcam').</p>
+    <p>$_('If not installed fswebcam, plugin installs fswebcam in to the system himself').</p>
+    <p>$_('On first use please wait for status').</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('webcam.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+                                  
+                     

@@ -1,0 +1,53 @@
+$def with()
+
+$var title: $_('Weather Stations Settings - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Weather Stations Settings - help')</div>
+    <p>$_('This plugin Displays data probes DS18B20 (DS1-6) from Air Temperature and Humidity Monitor plugin and volume, percent from Water Tank Monitor plugin and more sensors.')</p>
+    <p><b>$_('Plugin setup')</b></p>
+    <ul>
+    <li>$_('Canvas or Text mode for showing data')</li>
+    $_('When checked, it is text mode.')
+    <li>$_('Canvas Size XY')</li>
+    $_('The number determines the size of the meter wheel. The minimum is 150px, the maximum is 850px.')
+    <li>$_('Text Font Size')</li>
+    $_('The number determines the font size in text mode. The minimum is 15px, the maximum is 800px.')
+    </ul>
+    <p><b>$_('This part needs correct setuped plugin Air Temperature and Humidity Monitor')</b>
+    <ul>
+    <li>$_('Show this DS1')</li>
+    $_('When checked, showing this canvas (text) is enabled.')
+    <li>$_('Name for Canvas DS1')</li>
+    $_('Any unique name for this meter.')
+    <li>$_('Units')</li>
+    $_('In which units we want to display the data.')
+    <li>$_('Scale')</li>
+    $_('Division scale according to our requirements.')
+    <li>$_('Min')</li>
+    $_('This value must be the minimum of the range from Scale.')
+    <li>$_('Max')</li>
+    $_('This value must be the maximum of the range from Scale.')
+    <li>$_('Red color from to')</li>
+    $_('Red color on the scale according to the value from to.')
+    <li>$_('Blue color from to')</li>
+    $_('Blue color on the scale according to the value from to.')
+    <li>$_('Green color from to')</li>
+    $_('Green color on the scale according to the value from to.')
+    </ul>
+    <p>$_('If the set range is the same (for example from 0 to 0) then the color will not be displayed.')</p></br>
+    <p><b>$_('This part needs correct setuped plugin Water Tank Monitor')</b></p>
+    <p>$_('Same setting as in temperature.')</p></br>
+    <p><b>$_('This part needs correct setuped plugin Wind Speed Monitor')</b></p>
+    <p>$_('Same setting as in temperature.')</p></br>
+
+    <p><b>$_('Example canvas mode')</b></p>
+    <a href="/plugins/weather_stations/static/images/canvas.png"><img src="/plugins/weather_stations/static/images/canvas.png" width="30%"></a></br>
+    <p><b>$_('Example text mode')</b></p>
+    <a href="/plugins/weather_stations/static/images/text.png"><img src="/plugins/weather_stations/static/images/text.png" width="15%"></a></br>    
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('weather_stations.canvas_page') class="button upload">$_('Cancel')</a>
+</div>
