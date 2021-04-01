@@ -1,0 +1,48 @@
+$def with()
+
+$var title: $_('Direct 16 Relay Outputs - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Direct 16 Relay Outputs - help')</div>
+    <p>$_('This plugin allows OSPy to control relay boards with up to 16 relay outputs.')</p>
+    <p>$_('This is plugin is designed for use with Raspberry Pi models with a 40 pin GPIO header.')</p>
+    <p>$_('Visit example board') <a href="https://www.tiaowiki.com/w/TIAO_Smart_Sprinkler_Pi_Hardware_Layout">$_('TIAO Smart Sprinkler')</a> $_('for more information').</p>
+    <p>$_('The diagram below shows the GPIO pin header and indicates the pins to use with this plugin.')</p>
+    <p>$_('You can use a relay board with 1, 2, 4, 8 or 16 relays or a combination of those up to 16 relays.')</p></br>
+    <p><b>$_('Caution')</b></p>
+    <p>$_('When using more than 1 relay board, the boards must all be either low-level trigger or all high-level trigger. You can not mix the trigger types.')</p></br>
+    <p><b>$_('Warning')</b></p>
+    <p>$_('If you use all 16 outputs, you will not use the UPS Monitor and Air Temperature and Humidity Monitor.')</p></br>
+    <p>$_('Connect the board(s) to the Raspberry Pi following the channel numbering indicated on the wiring diagram.')</p> 
+    <a href="/plugins/relay_16/static/images/schematics.png"><img src="/plugins/relay_16/static/images/schematics.png" width="50%"></a>
+    <p>$_('The hardware should be connected as follows')</p>
+    <p>$_('Possible GPIO [22,24,26,32,36,38,40,21,23,29,31,33,35,37,18,19] Station 1 as HW pin 22, Station 2 as HW pin 24 etc.')</p>
+    <p>$_('The 5V and ground pins on the Pi can be used to power 1 or 2 relay boards.')</p>
+    <p>$_('If more boards are being used or if more than a couple of relays will be turned on at the same time It is a good idea to use a separate power supply to power the boards.')</p>
+    <p>$_('If you are using more than 8 channels and need to increase the number of stations OSPy displays, open the Options menu - Station Handling and incrase the number of Extension boards.')</p>
+    <p>$_('Increasing the number by 1 will add 8 stations to OSPy.')</p>
+    <p>$_('If the number of relays you are using is not a multiple of 8 you can hide the unused stations.')</p>
+    <p>$_('Open the Stations menu and uncheck the boxes under Enabled? next to the stations you are not using.')</p></br> 
+    <p><b>$_('Plugin setup')</b></p>
+    <ul>
+    <li>$_('Check Enable relays')</li>  
+    $_('If checked plugin is enabled.')  
+    <li>$_('Relay channels')</li>  
+    $_('Select outputs (1-16).')  
+    <li>$_('Trigger Level')</li>  
+    $_('LOW = Station is ON (Output set to 0V), Station OFF (Output set to 3.3V).')  
+    $_('HIGH = Station is ON (Output set to 3.3V), Station OFF (Output set to 0V).')     
+    <li>$_('Status')</li>  
+    $_('Status window from the plugin.')
+    </ul></br>  
+    <p><b>$_('Example of an print from plugin')</b></p>
+    <p>$_('Relay 16 plug-in: 2018-06-06 10:35:08 3 Outputs set.')</p>
+    <p>$_('Relay 16 plug-in: Possible GPIO [22,24,26,32,36,38,40,21,23,29,31,33,35,37,18,19].')</p>
+    <p>$_('Relay 16 plug-in: 2018-06-06 10:35:08 Setings Relay Output 22 to HIGH (Station 1 ON).')</p>
+    <p>$_('Relay 16 plug-in: 2018-06-06 10:35:28 Setings Relay Output 22 to LOW  (Station 1 OFF).')</p>    
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('relay_16.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

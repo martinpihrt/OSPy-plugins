@@ -19,9 +19,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Direct 16 Relay Outputs - Settings')</div>
-    <button id="docButton" class="execute" title="$_('Open help page for more informations.')">$_('Help')</button>
-    <p><b>$_('Warning'):</b> $_('please readme in HELP.')
-    <p>$_('This plugin allows OSPy to control relay boards with up to 16 relays.')</p><br> 
+    <a href=$plugins.plugin_url('relay_16.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('relay_16.settings_page')" method="post">
         <table class="optionList">
         <tr>

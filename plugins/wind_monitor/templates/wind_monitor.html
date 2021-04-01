@@ -173,7 +173,7 @@ function create_graph(result) {
     <div class="title">$_('Wind Speed Monitor settings')</div>
     <a href=$plugins.plugin_url('wind_monitor.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log']:
-        <a href=$plugins.plugin_url('wind_monitor.log_csv') class="button upload">$_('Download log')</a></br>     
+        <a href=$plugins.plugin_url('wind_monitor.log_csv') class="button download">$_('Download log')</a></br>     
     <form id="pluginForm" action="$plugins.plugin_url('wind_monitor.settings_page')" method="post">
         <table class="optionList">
             <tr>
