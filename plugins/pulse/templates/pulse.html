@@ -19,8 +19,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Pulse output')</div>
-    <p>$_('This plugin pulses a selected circuit with a 1 Hz signal with adjusted time. (For discover the location of a valve)').</p>
-    <br>
+    <a href=$plugins.plugin_url('pulse.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('pulse.start_page')" method="post">
         <table class="optionList">
             <tr>

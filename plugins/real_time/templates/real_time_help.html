@@ -1,0 +1,18 @@
+$def with()
+
+$var title: $_('Real Time and NTP Time sync system time - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Real Time and NTP Time sync system time - help')</div>
+    <p>$_('When is enabled synchronization RTC Time and NTP time, system time adjusted every hour from NTP server (is posible) or RTC time (if exists). Time from NTP server is saved to real time DS 1307 as HW time.')</p>
+    <p>$_('NTP servers in Czech Republic') <a href="https://www.ntppool.org/hi/zone/cz"> $_('NTP')</a> $_('NTP servers in World') <a href="http://tf.nist.gov/tf-cgi/servers.cgi"> $_('NTP')</a>.</p><br>
+    <p><b>$_('DS1307 Real time')</b></p>
+    <p>$_('Connected via') I&sup2;C $_('interface').</p>
+    <p>$_('On the main OSPy board by pihrt.com is already installed this RTC circuit.')</p>
+    <a href="/plugins/real_time/static/images/schematics.png"><img src="/plugins/real_time/static/images/schematics.png" width="40%"></a></br> 
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('real_time.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

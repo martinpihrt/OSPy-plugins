@@ -17,9 +17,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Button control settings')</div>
-    <p>$_('This plugin uses a circuit board with MCP23017 controller connected to the OSPy Sprinkler board via the I2C interface').</p>
-    <p>$_('This plug-in includes eight buttons with optional functions and signalisating via eicht LEDs').</p>
-    <p>$_('Visit') <a href="https://pihrt.com/elektronika/323-moje-raspberry-pi-plugin-ospy-8-tlacitek-8-led">Martin Pihrt blog</a> $_('for more information').</p><br>
+    <a href=$plugins.plugin_url('button_control.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('button_control.settings_page')" method="post">
         <table class="optionList">
             <tr>

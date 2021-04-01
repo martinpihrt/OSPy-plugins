@@ -1,0 +1,15 @@
+$def with()
+
+$var title: $_('Monthly Water Level - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Monthly Water Level - help')</div>
+    <p>$_('Enter an adjustment for each month (% irrigation time).')</p>
+    <p>$_('In this way the total time of all programs in a given month is adjusted.')</p>
+    <p>$_('A value above 100% increases the time, a value below 100% shortens the time. 100% means without any modification.')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('monthly_water_level.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

@@ -109,6 +109,13 @@ class start_page(ProtectedPage):
         raise web.seeother(plugin_url(start_page), True)
 
 
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.pulse_help()        
+
+
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
 

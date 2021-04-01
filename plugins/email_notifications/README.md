@@ -1,11 +1,11 @@
 Email Notifications Readme
 ====
 
-This plugin can send E-mails. For this plugin you need an E-mail smtp account as provider.
+This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider.
 
 Plugin setup
 -----------
-* Check Send E-mail after power on for send email.    
+* Check Send E-mail after power on for send E-mail.    
   If checked sends E-mail into your E-mail address.
 
 * Check with log file.  
@@ -42,8 +42,9 @@ Plugin setup
   If there is no Internet connection, save and send it later.
 
 * Status:
-  Status window from the plugin.
+  Status window from the plugin.  
 
+This extension also sends some statuses from other extensions (if they are installed on the system). For example temperature, flow...
 
 Example recieve E-mail
 -----------

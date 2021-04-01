@@ -36,16 +36,12 @@ jQuery(document).ready(function(){
 
 <div id="plugin">
 		<div class="title">$_('Pressurizer - Settings')</div>
-		<p>$_('This plugin allows the main station (master pump relay on OSPy board) to be activated for a certain time before the station starts.')</p>
-		<p>$_('This is to ensure that there is pressure in the pipeline before the valves are opened. Some valves require some switching pressure.')</p>
-		<p>$_('This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options!')</p>
-		<p>$_('The set "Run time" of the main station must not be longer than the set time before switching on the stations.')</p>
-		<p>$_('Example: "Pre station run time" = 10 sec, "Run time" = max 10 seconds!')</p> 
+		<a href=$plugins.plugin_url('pressurizer.help_page') class="button upload">$_('Help')</a><br/>
 		<form id="pluginForm" action="$plugins.plugin_url('pressurizer.settings_page')" method="post">
 				<table class="optionList">
 				<tr>
 					<td style='text-transform: none;'>$_('Enable'):</td>
-					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations.'), ensure_ascii=False)}>	
+					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations.'), ensure_ascii=False)}>
 					<input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
 				</tr>
 				<tr>

@@ -1,0 +1,103 @@
+$def with()
+
+$var title: $_('E-mail reader - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('E-mail Reader - help')</div>
+    <p>$_('This extension allows you to retrieve data from a configured E-mail box and respond to incoming messages that arrive in the mailbox.')</p>
+    <p>$_('This extension requires the E-mail_notification extension to be installed and set up correctly. For send messages using the set account.')</p>
+    <p>$_('After receiving and processing the message in the E-mail, a confirmation of the message processing will be sent.')</p>
+    <p><b>$_('Plugin setup')</b></p>
+    <ul>
+    <li>$_('Use E-mail reader')</li>
+    $_('Activate this extension for reading E-mails and control OSPy.')
+    <li>$_('E-mail recipient name')</li>
+    $_('E-mail account login details (typically something@something.com).')
+    <li>$_('E-mail  recipient password')</li>
+    $_('E-mail account login password.')
+    <li>$_('IMAP Server')</li>
+    $_('E-mail IMAP provider (typically imap.gmail.com).')
+    <li>$_('Use SSL')</li>
+    $_('Enable SSL connection.')
+    <li>$_('Move to trash')</li>
+    $_('Move the message to the Trash after reading.')
+    <li>$_('Recipient folder')</li>
+    $_('E-mail recipient folder (typically INBOX).')
+    <li>$_('Sender for control access')</li>
+    $_('E-mail user address from whom incoming messages will be processed.')
+    <li>$_('Checking interval')</li>
+    $_('After how long to check incoming mail in the inbox. The check time is set in seconds. Minimum is 30.')
+    <li>$_('E-mail incoming subject')</li>
+    $_('The subject of the incoming message. In this way, we can ensure minimum security (such as a password), or differentiate the different OSPy systems.')
+    <li>$_('Switch scheduler to ON')</li>
+    $_('Sending message in body E-mail for switch scheduler to ON.')
+    <li>$_('Switch scheduler to OFF')</li>
+    $_('Sending message in body E-mail for switch scheduler to OFF.')
+    <li>$_('Switch to manual mode')</li>
+    $_('Sending message in body E-mail for switch to manual mode.')
+    <li>$_('Switch to scheduler mode')</li>
+    $_('Sending message in body E-mail for switch to scheduler mode.')
+    <li>$_('Stop all running stations')</li>
+    $_('Sending message in body E-mail for stop all running stations.')
+    <li>$_('Send back help')</li>
+    $_('Sending back all setuped commands via E-mail.')
+    <li>$_('Send back stations state')</li>
+    $_('Sending back all stations state via E-mail.')
+    <li>$_('Sending back temperature states')</li>
+    $_('Sending back all temperatures from air_temp_humi plugin with log file via E-mail (from plugin).')
+    <li>$_('Sending back tank states')</li>
+    $_('Sending back tank states from tank_monitor plugin with log file via E-mail (from plugin).')
+    <li>$_('Sending back wind states')</li>
+    $_('Sending back wind states from wind_monitor plugin with log file via E-mail (from plugin).')
+    <li>$_('Selecting command')</li>
+    $_('Sending command in  message body E-mail for run  via selecting.')
+    <li>$_('Send reply')</li>
+    $_('After processing the received message, send an email with the subject below. The email_notification extension is required for this function.')
+    <li>$_('E-mail subject')</li>
+    $_('The subject of the message being sent.')
+    <li>$_('Status')</li>
+    $_('Status window from the plugin.')
+    </ul></br>
+    <p><b>$_('Example for control')</b></p>
+    <p>* $_('Sending message in body E-mail as list (use in manual mode)'):</p>
+    <p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
+    <p>$_('[0,0,100,30]')</p><br/>   
+    <p>* $_('Sending message in body E-mail as dict (use in manual mode)'):</p>
+    <p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
+    <p>$_('{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}')</p><br/>
+    <p>* $_('Sending message in body E-mail for switch scheduler to ON'):</p>
+    <p>$_('scheduler_on')</p><br/>
+    <p>* $_('Sending message in body E-mail for switch scheduler to OFF'):</p>
+    <p>$_('scheduler_off')</p><br/>
+    <p>* $_('Sending message in body E-mail for switch to manual mode'):</p>
+    <p>$_('manual_on')</p><br/>
+    <p>* $_('Sending message in body E-mail for switch to scheduler mode'):</p>
+    <p>$_('manual_off')</p><br/>
+    <p>* $_('Sending message in body E-mail for stop all running stations'):</p>
+    <p>$_('stop_run')</p><br/>
+    <p>* $_('Sending back all setuped commands via E-mail'):</p>
+    <p>$_('send_help')</p><br/>
+    <p>* $_('Sending back all stations state via E-mail'):</p>
+    <p>$_('send_state')</p><br/>
+    <p>* $_('Sending back temperature states via E-mail'):</p>
+    <p>$_('send_temperatures')</p><br/>
+    <p>* $_('Sending back tank states via E-mail'):</p>
+    <p>$_('send_tank')</p><br/>
+    <p>* $_('Sending back wind states via E-mail'):</p>
+    <p>$_('send_wind')</p><br/>
+    <p>* $_('Selecting command xx'):</p>
+    <p>$_('Sending command in  message body E-mail for run  via selecting.')
+    <p>$_('Reboot OS system')<br/>$_('Shutdown OS system')<br/>$_('Run program 1-8 if exists')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('email_reader.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+
+
+
+
+
+
+

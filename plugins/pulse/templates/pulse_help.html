@@ -1,0 +1,17 @@
+$def with ()
+
+$var title: $_('Pulse output - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Pulse output - help')</div>
+    <p>$_('This plugin pulses a selected circuit with a 1 Hz signal with adjusted time. (For discover the location of a valve)').</p>
+    <p>$_('On the main OSPy board by pihrt.com is outputs connected via shift registers.')</p>
+    <p>$_('Shift registers switch transistor arrays.')</p>
+    <p>$_('Transistor arrays switch relay for outputs.')</p>
+    <a href="/plugins/pulse/static/images/schematics.png"><img src="/plugins/pulse/static/images/schematics.png" width="60%"></a></br>    
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('pulse.start_page') class="button danger">$_('Cancel')</a><br/>
+</div>

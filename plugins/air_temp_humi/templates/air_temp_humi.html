@@ -170,12 +170,9 @@ function create_graph(result) {
 
 <div id="plugin">
     <div class="title">$_('Air Temperature and Humidity Monitor')</div>
-    <p>$_('This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for Humidity: 20 - 90 %RH. Range for Temperature 0 - 50 Celsius')</p>    
-    <p>$_('This plugin allows the control of some stations (eg Fan) depending on the humidity of the sensor').</p> 
-    <p>$_('This plug-in allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03)').</p> 
-    <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p> 
+    <a href=$plugins.plugin_url('air_temp_humi.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log']:
-        <p>$_('Download log as') <a href=$plugins.plugin_url('air_temp_humi.log_csv') class="button upload">csv</a></p></br>     
+        <p><a href=$plugins.plugin_url('air_temp_humi.log_csv') class="button download">$_('Download log')</a></p></br>     
     <form id="pluginForm" action="$plugins.plugin_url('air_temp_humi.settings_page')" method="post">
         <table class="optionList">
             <tr>

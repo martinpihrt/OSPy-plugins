@@ -93,3 +93,10 @@ class settings_page(ProtectedPage):
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.monthly_water_level_help()        

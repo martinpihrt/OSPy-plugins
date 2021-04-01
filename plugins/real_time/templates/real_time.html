@@ -18,8 +18,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Real Time and NTP Time sync system time')</div>
-    <p>$_('When is enabled synchronization RTC Time and NTP time, system time adjusted every hour from NTP server (is posible) or RTC time (if exists). Time from NTP server is saved to real time DS 1307 (on I2C bus) as HW time.')</p>
-    <p>$_('NTP servers in Czech Republic') <a href="http://bass.wz.cz/ntp.html"> NTP</a> $_('NTP servers in World') <a href="http://tf.nist.gov/tf-cgi/servers.cgi"> NTP</a>.</p><br>
+    <a href=$plugins.plugin_url('real_time.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('real_time.settings_page')" method="post">
         <table class="optionList">
             <tr>

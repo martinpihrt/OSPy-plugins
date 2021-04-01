@@ -23,7 +23,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('E-mail Notifications')</div>
-    <p>$_('This plugin can send E-mails. For this plugin you need an E-mail smtp account as provider.')</p>
+    <a href=$plugins.plugin_url('email_notifications.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('email_notifications.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -47,7 +47,7 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('SMTP server address'):
-                    <div><small>$_('example'): smtp.gmail.com</small></div>
+                    <div><small>$_('example: smtp.gmail.com')</small></div>
                 </td>
                 <td>
                     <input name='emlserver' type='text' value='$plugin_options["emlserver"]'>
@@ -55,14 +55,14 @@ $var page: plugins
             </tr>      
             <tr>
                 <td style='text-transform: none;'>$_('SMTP port'):
-                    <div><small>$_('example'): 587</small></div>
+                    <div><small>$_('example: 587')</small></div>
                 </td>
                 <td>
                     <input name='emlport' type='text' value='$plugin_options["emlport"]'>
                 </td>
             </tr>
             <td style='text-transform: none;'>$_('Use SMTP username as sender'):
-              <div><small>$_('Some SMTP providers prohibit to use another sender than the same mail user')</small></div>
+              <div><small>$_('Some SMTP providers prohibit to use another sender than the same mail user.')</small></div>
             </td>
             <td>
                 <input name='emlsender' type='checkbox' ${" checked" if plugin_options['emlsender'] else ""}>

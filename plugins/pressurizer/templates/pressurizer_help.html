@@ -1,0 +1,17 @@
+$def with()
+
+$var title: $_('Pressurizer - help')
+$var page: plugins
+
+<div id="plugin">
+		<div class="title">$_('Pressurizer - Help')</div>
+		<p>$_('This plugin allows the main station (master pump relay on OSPy board) to be activated for a certain time before the station starts.')</p>
+		<p>$_('This is to ensure that there is pressure in the pipeline before the valves are opened. Some valves require some switching pressure.')</p>
+		<p>$_('This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options!')</p>
+		<p>$_('The set "Run time" of the main station must not be longer than the set time before switching on the stations.')</p>
+		<p>$_('Example: "Pre station run time" = 10 sec, "Run time" = max 10 seconds!')</p> 
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('pressurizer.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

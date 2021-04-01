@@ -1,0 +1,21 @@
+$def with()
+
+$var title: $_('Button control settings - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Button control settings - help')</div>
+    <p>$_('This plugin uses a circuit board with MCP23017 controller connected to the OSPy Sprinkler board via the') I&sup2;C $_('interface').</p>
+    <p>$_('This plug-in includes eight buttons with optional functions and signalisating via eicht LEDs').</p>
+    <p>$_('Visit') <a href="https://pihrt.com/elektronika/323-moje-raspberry-pi-plugin-ospy-8-tlacitek-8-led">Martin Pihrt blog</a> $_('for more information').</p><br>
+    <p><b>$_('The PCB board for 8 buttons (board by pihrt.com)')</b></p>
+    <a href="/plugins/button_control/static/images/schematics.png"><img src="/plugins/button_control/static/images/schematics.png" width="60%"></a></br>
+    <a href="/plugins/button_control/static/images/top.png"><img src="/plugins/button_control/static/images/top.png" width="30%"></a></br>
+    <a href="/plugins/button_control/static/images/bot.png"><img src="/plugins/button_control/static/images/bot.png" width="30%"></a></br>
+    <a href="/plugins/button_control/static/images/top2.png"><img src="/plugins/button_control/static/images/top2.png" width="30%"></a></br>
+    <a href="/plugins/button_control/static/images/left.png"><img src="/plugins/button_control/static/images/left.png" width="30%"></a></br>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('button_control.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

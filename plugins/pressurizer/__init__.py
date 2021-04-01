@@ -217,7 +217,14 @@ class settings_page(ProtectedPage):
             log.info(NAME, _('Pressurizer is disabled.'))
 
         log.info(NAME, _('Options has updated.'))
-        raise web.seeother(plugin_url(settings_page), True) 
+        raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.pressurizer_help()         
 
 
 class settings_json(ProtectedPage):

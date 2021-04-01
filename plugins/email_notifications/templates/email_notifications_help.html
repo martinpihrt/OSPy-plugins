@@ -1,0 +1,45 @@
+$def with()
+
+$var title: $_('E-mail Notifications - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('E-mail Notifications - help')</div>
+    <p>$_('This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider.')</p></br>
+    <p><b>$_('Plugin setup')</b></p>
+    <ul>
+    <li>$_('Check Send E-mail after power on for send E-mail')</li>
+    $_('If checked sends E-mail into your E-mail address.')
+    <li>$_('Check with log file')</li>
+    $_('If checked with events.log file if exists (your must enabled in options "check Enable debug log").')
+    <li>$_('Check Send E-mail if rain is detected')</li>
+    $_('If checked send e-mail into your E-mail address.')
+    <li>$_('Check Send E-mail if a program has finished')</li>
+    $_('If checked send E-mail if a program has finished into your E-mail address.')
+    <li>$_('SMTP server address')</li>
+    $_('Example: smtp.gmail.com')
+    <li>$_('SMTP port')</li>
+    $_('Example: 587')
+    <li>$_('Use SMTP username as sender')</li>
+    $_('Some SMTP providers prohibit to use another sender than the same mail user.')
+    <li>$_('SMTP username')</li>
+    $_('Type your E-mail password')
+    <li>$_('SMTP password')</li>
+    $_('Type your E-mail password')
+    <li>$_('Send E-mail to')</li>
+    $_('Type more E-mail address for recipient E-mail post office.')
+    <li>$_('E-mail subject')</li>
+    $_('Type E-mail subject for send E-mail.')
+    <li>$_('Save and send it later')</li>
+    $_('If there is no Internet connection, save and send it later.')
+    <li>$_('Status')</li>
+    $_('Status window from the plugin.')
+    </ul>
+    <p>$_('This extension also sends some statuses from other extensions (if they are installed on the system). For example temperature, flow...')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('email_notifications.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+                                  
+                     

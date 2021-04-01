@@ -21,10 +21,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('E-mail Reader')</div>
-    <p>$_('This extension allows you to retrieve data from a configured E-mail box and respond to incoming messages that arrive in the mailbox.')</p>
-    <p>$_('This extension requires the E-mail_notification extension to be installed and set up correctly. For send messages using the set account.')</p>
-    <p>$_('After receiving and processing the message in the E-mail, a confirmation of the message processing will be sent.')</p>
-  
+    <a href=$plugins.plugin_url('email_reader.help_page') class="button upload">$_('Help')</a><br/>  
     <form id="pluginForm" action="$plugins.plugin_url('email_reader.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -193,39 +190,3 @@ $var page: plugins
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
-
-<p><b>$_('Example for control')</b></p>
-<p>* $_('Sending message in body E-mail as list (use in manual mode)'):</p>
-<p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
-<p>$_('[0,0,100,30]')</p><br/>   
-<p>* $_('Sending message in body E-mail as dict (use in manual mode)'):</p>
-<p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
-<p>$_('{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}')</p><br/>
-<p>* $_('Sending message in body E-mail for switch scheduler to ON'):</p>
-<p>$_('scheduler_on')</p><br/>
-<p>* $_('Sending message in body E-mail for switch scheduler to OFF'):</p>
-<p>$_('scheduler_off')</p><br/>
-<p>* $_('Sending message in body E-mail for switch to manual mode'):</p>
-<p>$_('manual_on')</p><br/>
-<p>* $_('Sending message in body E-mail for switch to scheduler mode'):</p>
-<p>$_('manual_off')</p><br/>
-<p>* $_('Sending message in body E-mail for stop all running stations'):</p>
-<p>$_('stop_run')</p><br/>
-<p>* $_('Sending back all setuped commands via E-mail'):</p>
-<p>$_('send_help')</p><br/>
-<p>* $_('Sending back all stations state via E-mail'):</p>
-<p>$_('send_state')</p><br/>
-<p>* $_('Sending back temperature states via E-mail'):</p>
-<p>$_('send_temperatures')</p><br/>
-<p>* $_('Sending back tank states via E-mail'):</p>
-<p>$_('send_tank')</p><br/>
-<p>* $_('Sending back wind states via E-mail'):</p>
-<p>$_('send_wind')</p><br/>
-<p>* $_('Selecting command xx'):</p>
-<p>$_('Sending command in  message body E-mail for run  via selecting.')
-<p>$_('Reboot OS system')<br/>$_('Shutdown OS system')<br/>$_('Run program 1-8 if exists')</p>
-
-
-
-
-

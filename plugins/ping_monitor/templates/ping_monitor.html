@@ -169,11 +169,9 @@ function create_graph(result) {
 
 <div id="plugin">
     <div class="title">$_('Ping monitor settings')</div>
-    <p>$_('This extension allows you to ping addresses. All pings are recorded in a file (always the first successful and the first unsuccessful)').</p>
-    <p>$_('The log file (pings) can be sent by E-mail after a certain time. At the same time, we can restart the device after a certain number of unsuccessful attempts').</p>
-    <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p> 
+    <a href=$plugins.plugin_url('ping_monitor.help_page') class="button upload">$_('Help')</a><br/> 
     $if plugin_options['enable_log']:
-        <p>$_('Download log as') <a href=$plugins.plugin_url('ping_monitor.log_csv') class="button upload">csv</a></p></br>     
+        <p><a href=$plugins.plugin_url('ping_monitor.log_csv') class="button download">$_('Download log')</a></p></br>     
     <form id="pluginForm" action="$plugins.plugin_url('ping_monitor.settings_page')" method="post">
         <table class="optionList">
             <tr>
