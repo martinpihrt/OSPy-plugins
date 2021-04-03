@@ -205,7 +205,8 @@ jQuery(document).ready(function(){
                  <a href='/sensors' class="button upload">$_('Open Sensors')</a>
                </th>
             </tr>
-            $for c in range(9, sensors.count()+9):
+            $if sensors.count() > 0:
+              $for c in range(9, sensors.count()+9):
                 $ sensor = sensors.get(c-9)
                 <tr>
                     <td style='text-transform: none;'>$_('Show this Sensor') ${c-8} $_('(')$sensor.name$_(')'):</td>
@@ -250,7 +251,7 @@ jQuery(document).ready(function(){
                     </td>
                 </tr>
                 $if sensors.count()>1:
-                    <tr><th><hr></th></tr>                                                               
+                    <tr><th><hr></th></tr>                                                                            
         </table>
     </form>
 </div>

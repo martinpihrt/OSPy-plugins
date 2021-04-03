@@ -24,21 +24,20 @@ plugin_options = PluginOptions(
     u'txt_size_font': 40,                                             # size for font in text mode    
 
     # for airtemp, watertank, wind plugins and OSPy sensors Wi-Fi/LAN...
-    u's_use':    [False,False,False,False,False,False,False,False],   # show or disbale sensor in canvas/text mode
-    u's_unit':   [u'',u'',u'',u'',u'',u'',u'',u''],                   # sensor units
-    u's_name':   [u'',u'',u'',u'',u'',u'',u'',u''],                   # sensor name
-    u's_tick':   [u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30'], # sensor canvas tick scale division
-    u's_min':    [u'0',u'0',u'0',u'0',u'0',u'0',u'0',u'0'],           # sensor canvas minimum value for highlights
-    u's_max':    [u'30',u'30',u'30',u'30',u'30',u'30',u'30',u'30'],   # sensor canvas maximum value for highlights
-    u's_a_high_fr': [5,5,5,5,5,5,5,5],                        # sensor red color on highlights from
-    u's_a_high_to': [10,10,10,10,10,10,10,10],                # sensor red color on highlights to
-    u's_b_high_fr': [10,10,10,10,10,10,10,10],                # sensor blue color on highlights from
-    u's_b_high_to': [20,20,20,20,20,20,20,20],                # sensor blue color on highlights to
-    u's_c_high_fr': [20,20,20,20,20,20,20,20],                # sensor green color on highlights from
-    u's_c_high_to': [30,30,30,30,30,30,30,30],                # sensor green color on highlights to
+    u's_use':    [False]*30,                 # show or disbale sensor in canvas/text mode
+    u's_unit':   [u'']*30,                   # sensor units
+    u's_name':   [u'']*30,                   # sensor name
+    u's_tick':   [u'0,10,20,30']*30,         # sensor canvas tick scale division
+    u's_min':    [u'0']*30,                  # sensor canvas minimum value for highlights
+    u's_max':    [u'30']*30,                 # sensor canvas maximum value for highlights
+    u's_a_high_fr': [5]*30,                  # sensor red color on highlights from
+    u's_a_high_to': [10]*30,                 # sensor red color on highlights to
+    u's_b_high_fr': [10]*30,                 # sensor blue color on highlights from
+    u's_b_high_to': [20]*30,                 # sensor blue color on highlights to
+    u's_c_high_fr': [20]*30,                 # sensor green color on highlights from
+    u's_c_high_to': [30]*30,                 # sensor green color on highlights to
     }
 )
-
 
 ################################################################################
 # Main function loop:                                                          #
