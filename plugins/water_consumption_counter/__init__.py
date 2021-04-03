@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 
 import json
 import time
@@ -20,7 +20,7 @@ from ospy.options import options
 
 
 NAME = 'Water Consumption Counter'  ### name for plugin in plugin manager ###
-MENU =  _('Package: Water Consumption Counter')
+MENU =  _(u'Package: Water Consumption Counter')
 LINK = 'settings_page'              ### link for page in plugin manager ###
  
 plugin_options = PluginOptions(
@@ -32,7 +32,7 @@ plugin_options = PluginOptions(
     'sum_one': 0.00,                  # sum for master 1
     'sum_two': 0.00,                  # sum for master 2
     'sendeml': False,
-    'emlsubject': _('Report from OSPy Water Consumption Counter plugin')
+    'emlsubject': _(u'Report from OSPy Water Consumption Counter plugin')
     }
 )
 
@@ -76,7 +76,7 @@ class Sender(Thread):
 
         except Exception:
             log.clear(NAME)
-            log.error(NAME, _('Water Consumption Counter plug-in') + traceback.format_exc())       
+            log.error(NAME, _(u'Water Consumption Counter plug-in') + traceback.format_exc())       
             self._sleep(60)
 
 sender = None
@@ -108,7 +108,7 @@ def to_decimal(number):
     
     except decimal.InvalidOperation:
         log.clear(NAME)
-        log.error(NAME, _('Water Consumption Counter plug-in') + traceback.format_exc()) 
+        log.error(NAME, _(u'Water Consumption Counter plug-in') + traceback.format_exc()) 
         return 0.00    
 
 ### send email ###
@@ -122,31 +122,31 @@ def send_email(msg, msglog):
         email(message, subject=Subject)
 
         if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
+           log.info(NAME, _(u'Email logging is disabled in options...'))
         else:        
            logEM.save_email_log(Subject, msglog, _('Sent'))
 
-        log.info(NAME, _('Email was sent') + ': ' + msglog)
+        log.info(NAME, _(u'Email was sent') + ': ' + msglog)
 
     except Exception:
         if not options.run_logEM:
-           log.info(NAME, _('Email logging is disabled in options...'))
+           log.info(NAME, _(u'Email logging is disabled in options...'))
         else:
            logEM.save_email_log(Subject, msglog, _('Email was not sent'))
 
-        log.info(NAME, _('Email was not sent') + '! ' + traceback.format_exc())
+        log.info(NAME, _(u'Email was not sent') + '! ' + traceback.format_exc())
 
 
 ### master one on ###
 def notify_master_one_on(name, **kw):
     global master_one_start
     log.clear(NAME)
-    log.info(NAME, datetime_string() + ': ' + _('Master station 1 running, please wait...'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Master station 1 running, please wait...'))
     master_one_start = datetime.datetime.now()
 
 ### master one off ###
 def notify_master_one_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Master station 1 stopped, counter finished...')) 
+    log.info(NAME, datetime_string() + ': ' + _(u'Master station 1 stopped, counter finished...')) 
     master_one_stop  = datetime.datetime.now()
     master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() # run time in seconds
     difference = to_decimal(master_one_time_delta) * to_decimal(plugin_options['liter_per_sec_master_one'])
@@ -158,25 +158,25 @@ def notify_master_one_off(name, **kw):
 
     plugin_options.web_update(qdict)  
 
-    msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _('liter') + '</p>'
-    msglog = _('Water Consumption Counter plug-in') + ': ' + _('Water Consumption for master 1') + ': ' + str(round(difference,2)) + ' ' + _('liter')
+    msg = '<b>' + _(u'Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _(u'liter') + '</p>'
+    msglog = _(u'Water Consumption Counter plug-in') + ': ' + _(u'Water Consumption for master 1') + ': ' + str(round(difference,2)) + ' ' + _(u'liter')
     try:
         if plugin_options['sendeml']:
         	send_email(msg, msglog)
     except Exception:
-        log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
+        log.error(NAME, _(u'Email was not sent') + '! '  + traceback.format_exc())
     
 
 ### master two on ###
 def notify_master_two_on(name, **kw):
     global master_two_start
     log.clear(NAME)
-    log.info(NAME, datetime_string() + ': ' + _('Master station 2 running, please wait...'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Master station 2 running, please wait...'))
     master_two_start = datetime.datetime.now()  
 
 ### master two off ###
 def notify_master_two_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Master station 2 stopped, counter finished...')) 
+    log.info(NAME, datetime_string() + ': ' + _(u'Master station 2 stopped, counter finished...')) 
     master_two_stop  = datetime.datetime.now()
     master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
     difference = to_decimal(master_two_time_delta) * to_decimal(plugin_options['liter_per_sec_master_two'])
@@ -188,8 +188,8 @@ def notify_master_two_off(name, **kw):
 
     plugin_options.web_update(qdict)
   
-    msg = '<b>' + _('Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _('liter') + '</p>'
-    msglog = _('Water Consumption Counter plug-in') + ': ' + _('Water Consumption for master 2') + ': ' + str(round(difference,2)) + ' ' + _('liter')
+    msg = '<b>' + _(u'Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _(u'liter') + '</p>'
+    msglog = _(u'Water Consumption Counter plug-in') + ': ' + _(u'Water Consumption for master 2') + ': ' + str(round(difference,2)) + ' ' + _(u'liter')
     try:
         if plugin_options['sendeml']:
         	send_email(msg, msglog)
@@ -224,7 +224,7 @@ class settings_page(ProtectedPage):
             plugin_options.web_update(qdict)
 
             log.clear(NAME)
-            log.info(NAME, datetime_string() + ': ' + _('Counter has reseted'))
+            log.info(NAME, datetime_string() + ': ' + _(u'Counter has reseted'))
             raise web.seeother(plugin_url(settings_page), True)
 
         return self.plugin_render.water_consumption_counter(plugin_options, log.events(NAME))       
@@ -235,6 +235,14 @@ class settings_page(ProtectedPage):
         if sender is not None:
             sender.update()                
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help page."""
+
+    def GET(self):
+        return self.plugin_render.water_consumption_counter_help()
+        
 
 class settings_json(ProtectedPage):            ### return plugin_options as JSON data ###
     """Returns plugin settings in JSON format."""

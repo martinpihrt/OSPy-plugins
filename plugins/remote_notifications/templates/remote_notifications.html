@@ -23,9 +23,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Remote Notifications')</div>
-    <p>$_('This plugin can send Notifications on the Remote Webserver. This plugin requre SQL server and Webserver with PHP.')</p>
-    <p>$_('This plugin send data as get command to remote PHP web pages.')</p>
-    <p>$_('This plugin requred correct settings this plugins: UPS Monitor, Tank Humi Monitor, Air Temperature and Humidity Monitor.')</p>
+    <a href=$plugins.plugin_url('remote_notifications.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('remote_notifications.settings_page')" method="post">
         <table class="optionList">
             <tr>

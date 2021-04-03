@@ -19,7 +19,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Weather-based Water Level') Netatmo</div>
-    <p>$_('When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly').</p>
+    <a href=$plugins.plugin_url('weather_based_water_level_netatmo.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('weather_based_water_level_netatmo.settings_page')" method="post">
         <table class="optionList">
             <tr>

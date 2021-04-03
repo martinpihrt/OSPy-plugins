@@ -19,7 +19,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Weather-based Rain Delay')</div>
-    <p>$_('When weather-based rain delay is enabled, the weather will be checked for rain every hour. If the weather reports any condition suggesting rain, a rain delay is automatically issued using the below set delay duration').</p>
+    <a href=$plugins.plugin_url('weather_based_rain_delay.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('weather_based_rain_delay.settings_page')" method="post">
         <table class="optionList">
             <tr>

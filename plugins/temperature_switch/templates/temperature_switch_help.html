@@ -1,0 +1,17 @@
+$def with()
+
+$var title: $_(u'Temperature Switch - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'Temperature Switch - help')</div>
+    <p>$_(u'This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows regulation from DS18B20 sensors connected to the external hardware board').</p>    
+    <p>$_(u'All temperatures is in degree Celsia.')</p>      
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('temperature_switch.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>
+
+
+

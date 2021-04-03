@@ -2,148 +2,93 @@
 __author__ = 'Martin Pihrt'
 
 import json
+import time
 import traceback
-
 import web
+
+from ospy.log import log
+from threading import Thread, Event
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.log import log
+from ospy.sensors import sensors
 
 NAME = 'Weather Stations'
-MENU =  _('Package: Weather Stations')
+MENU =  _(u'Package: Weather Stations')
 LINK = 'canvas_page'
 
 plugin_options = PluginOptions(
     NAME,
     {
-    'can_or_txt': False,                                            # canvas or text mode showing data
-    'can_size_xy': 250,                                             # all canvas x and y size in pixels
-    'txt_size_font': 40,                                            # size for font in text mode    
+    u'can_or_txt': False,                                             # canvas or text mode showing data
+    u'can_size_xy': 250,                                              # all canvas x and y size in pixels
+    u'txt_size_font': 40,                                             # size for font in text mode    
 
-    'use_can1': True,                                               # use canvas 1 or text 1
-    'use_can2': True,
-    'use_can3': True,
-    'use_can4': True,
-    'use_can5': True,
-    'use_can6': True,
-    'use_can7': True,
-    'use_can8': True,
-    'use_can9': True,
-
-    'can_1_units': _(u'°C'),                                        # canvas 1 units °C or ...
-    'can_2_units': _(u'°C'),
-    'can_3_units': _(u'°C'),
-    'can_4_units': _(u'°C'),
-    'can_5_units': _(u'°C'),
-    'can_6_units': _(u'°C'),  
-    'can_7_units': _(u'%'),
-    'can_8_units': _(u'liters'),
-    'can_9_units': _(u'm/s'),
-                
-    'can_1_name': _(u'Canvas DS1'),                                 # canvas 1 name
-    'can_2_name': _(u'Canvas DS2'),
-    'can_3_name': _(u'Canvas DS3'),
-    'can_4_name': _(u'Canvas DS4'),
-    'can_5_name': _(u'Canvas DS5'),
-    'can_6_name': _(u'Canvas DS6'), 
-    'can_7_name': _(u'Percent'),
-    'can_8_name': _(u'Volume'), 
-    'can_9_name': _(u'Wind'),                
-
-    'can_1_tick': '-10,0,10,20,30,40,50,60',                        # canvas 1 tick scale division
-    'can_2_tick': '0,10,20,30,40,50,60,70,80,90,100,110,130',
-    'can_3_tick': '0,10,20,30,40,50,60,70,80,90,100,110,130',
-    'can_4_tick': '0,10,20,30,40,50,60,70,80,90,100,110,130',
-    'can_5_tick': '0,10,20,30,40,50,60,70,80,90,100,110,130',
-    'can_6_tick': '0,10,20,30,40,50,60,70,80,90,100,110,130',
-    'can_7_tick': '0,10,20,30,40,50,60,70,80,90,100,110,130',
-    'can_8_tick': '0,10,20,30,40,50,60,70,80,90,100,110,130',
-    'can_9_tick': '0,10,20,30,40,50',
-
-    'can_1_min' : '-10',                                            # canvas 1 minimum value for highlights
-    'can_1_max' : '60',                                             # canvas 1 maximum value for highlights
-    'can_2_min' : '0',
-    'can_2_max' : '130', 
-    'can_3_min' : '0',
-    'can_3_max' : '130',
-    'can_4_min' : '0',
-    'can_4_max' : '130',
-    'can_5_min' : '0',
-    'can_5_max' : '130',
-    'can_6_min' : '0',
-    'can_6_max' : '130',
-    'can_7_min' : '0',
-    'can_7_max' : '130',
-    'can_8_min' : '0',
-    'can_8_max' : '130',
-    'can_9_min' : '0',
-    'can_9_max' : '50',    
-
-    'can_1_high_fr': 0,                                             # red color on highlights from 
-    'can_1_high_to': 15,                                            # red color on highlights to
-    'can_1_2_high_fr': 15,                                          # blue color on highlights from 
-    'can_1_2_high_to': 30,                                          # blue color on highlights to
-    'can_1_3_high_fr': 30,                                          # green color on highlights from 
-    'can_1_3_high_to': 45,                                          # green color on highlights to        
-    'can_2_high_fr': 5,  
-    'can_2_high_to': 25,
-    'can_2_2_high_fr': 15,                                          
-    'can_2_2_high_to': 30,                                          
-    'can_2_3_high_fr': 30,                                          
-    'can_2_3_high_to': 45,                                              
-    'can_3_high_fr': 30,  
-    'can_3_high_to': 40,
-    'can_3_2_high_fr': 15,                                          
-    'can_3_2_high_to': 30,                                          
-    'can_3_3_high_fr': 30,
-    'can_3_3_high_to': 45,                                              
-    'can_4_high_fr': 50,  
-    'can_4_high_to': 60,
-    'can_4_2_high_fr': 15,                                           
-    'can_4_2_high_to': 30,                                          
-    'can_4_3_high_fr': 30,                                          
-    'can_4_3_high_to': 45,                                             
-    'can_5_high_fr': 70,  
-    'can_5_high_to': 80,
-    'can_5_2_high_fr': 15,                                           
-    'can_5_2_high_to': 30,                                          
-    'can_5_3_high_fr': 30,                                          
-    'can_5_3_high_to': 45,                                             
-    'can_6_high_fr': 90,  
-    'can_6_high_to': 100, 
-    'can_6_2_high_fr': 15,                                           
-    'can_6_2_high_to': 30,                                          
-    'can_6_3_high_fr': 30,                                          
-    'can_6_3_high_to': 45,                                              
-    'can_7_high_fr': 70,  
-    'can_7_high_to': 80,
-    'can_7_2_high_fr': 15,                                          
-    'can_7_2_high_to': 30,                                          
-    'can_7_3_high_fr': 30,                                           
-    'can_7_3_high_to': 45,                                              
-    'can_8_high_fr': 90,  
-    'can_8_high_to': 100,           
-    'can_8_2_high_fr': 15,                                           
-    'can_8_2_high_to': 30,                                          
-    'can_8_3_high_fr': 30,                                           
-    'can_8_3_high_to': 45,  
-    'can_9_high_fr': 10,  
-    'can_9_high_to': 50,           
-    'can_9_2_high_fr': 0,                                           
-    'can_9_2_high_to': 0,                                          
-    'can_9_3_high_fr': 0,                                           
-    'can_9_3_high_to': 0,                                            
+    # for airtemp, watertank, wind plugins and OSPy sensors Wi-Fi/LAN...
+    u's_use':    [False,False,False,False,False,False,False,False],   # show or disbale sensor in canvas/text mode
+    u's_unit':   [u'',u'',u'',u'',u'',u'',u'',u''],                   # sensor units
+    u's_name':   [u'',u'',u'',u'',u'',u'',u'',u''],                   # sensor name
+    u's_tick':   [u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30',u'0,10,20,30'], # sensor canvas tick scale division
+    u's_min':    [u'0',u'0',u'0',u'0',u'0',u'0',u'0',u'0'],           # sensor canvas minimum value for highlights
+    u's_max':    [u'30',u'30',u'30',u'30',u'30',u'30',u'30',u'30'],   # sensor canvas maximum value for highlights
+    u's_a_high_fr': [5,5,5,5,5,5,5,5],                        # sensor red color on highlights from
+    u's_a_high_to': [10,10,10,10,10,10,10,10],                # sensor red color on highlights to
+    u's_b_high_fr': [10,10,10,10,10,10,10,10],                # sensor blue color on highlights from
+    u's_b_high_to': [20,20,20,20,20,20,20,20],                # sensor blue color on highlights to
+    u's_c_high_fr': [20,20,20,20,20,20,20,20],                # sensor green color on highlights from
+    u's_c_high_to': [30,30,30,30,30,30,30,30],                # sensor green color on highlights to
     }
 )
 
 
 ################################################################################
+# Main function loop:                                                          #
+################################################################################
+
+class Sender(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.daemon = True
+        self._stop = Event()
+
+        self.status = {}
+
+        self._sleep_time = 0
+        self.start()
+
+    def stop(self):
+        self._stop.set()
+
+    def update(self):
+        self._sleep_time = 0
+
+    def _sleep(self, secs):
+        self._sleep_time = secs
+        while self._sleep_time > 0 and not self._stop.is_set():
+            time.sleep(1)
+            self._sleep_time -= 1
+
+    def run(self):
+        log.clear(NAME)
+        log.info(NAME, _(u'Weather stations plug-in is enabled.'))
+         
+sender = None
+
+################################################################################
 # Helper functions:                                                            #
 ################################################################################
+### start ###
 def start():
-    pass     
-
-stop = start
+    global sender
+    if sender is None:
+        sender = Sender()
+ 
+### stop ###
+def stop():
+    global sender
+    if sender is not None:
+       sender.stop()
+       sender.join()
+       sender = None 
 
 ################################################################################
 # Web pages:                                                                   #
@@ -160,7 +105,7 @@ class help_page(ProtectedPage):
     """Load an html page for help page."""
 
     def GET(self):
-        return self.plugin_render.help_page()        
+        return self.plugin_render.help_page()
 
 
 class settings_page(ProtectedPage):
@@ -169,10 +114,99 @@ class settings_page(ProtectedPage):
     def GET(self):
         return self.plugin_render.settings_page(plugin_options)
 
-
     def POST(self):
-        plugin_options.web_update(web.input())
-        return self.plugin_render.canvas_page(plugin_options)       
+        qdict = web.input()
+        #print('qdict: ', qdict)
+
+        try:
+            commands = {
+                u's_use' : [],
+                u's_name': [],
+                u's_unit': [],
+                u's_tick': [],
+                u's_min' : [],
+                u's_max' : [],
+                u's_a_high_fr': [],
+                u's_a_high_to': [],
+                u's_b_high_fr': [],
+                u's_b_high_to': [],
+                u's_c_high_fr': [],
+                u's_c_high_to': [],
+                }
+
+            if 'can_or_txt' in qdict:
+                if qdict['can_or_txt']=='on':
+                    plugin_options.__setitem__('can_or_txt', True)
+            else:  
+                plugin_options.__setitem__('can_or_txt', False)
+
+            if 'can_size_xy' in qdict:
+                plugin_options.__setitem__('can_size_xy', qdict['can_size_xy'])
+
+            if 'txt_size_font' in qdict:
+                plugin_options.__setitem__('txt_size_font', qdict['txt_size_font'])
+            #print('plugin_options:', plugin_options)
+
+            plug_air_temp  = 6
+            plug_tank_moni = 2
+            plug_wind_moni = 1
+            sensor_count   = sensors.count()
+            sum_canvas = plug_air_temp + plug_tank_moni + plug_wind_moni + sensor_count # numbers for all canvas from plugins and sensors
+            #print("Canvas count: ", sum_canvas)
+
+            for i in range(0, sum_canvas+1):
+                if 's_use'+str(i) in qdict:
+                    if qdict['s_use'+str(i)]=='on':
+                        commands['s_use'].append(True)
+                else:
+                        commands['s_use'].append(False)
+                if 's_name'+str(i) in qdict:
+                    commands['s_name'].append(qdict['s_name'+str(i)])
+                if 's_unit'+str(i) in qdict:
+                    commands['s_unit'].append(qdict['s_unit'+str(i)])
+                if 's_tick'+str(i) in qdict:
+                    commands['s_tick'].append(qdict['s_tick'+str(i)])
+                if 's_min'+str(i) in qdict:
+                    commands['s_min'].append(qdict['s_min'+str(i)])
+                if 's_max'+str(i) in qdict:
+                    commands['s_max'].append(qdict['s_max'+str(i)])
+                if 's_a_high_fr'+str(i) in qdict:
+                    commands['s_a_high_fr'].append(qdict['s_a_high_fr'+str(i)])
+                if 's_a_high_to'+str(i) in qdict:
+                    commands['s_a_high_to'].append(qdict['s_a_high_to'+str(i)])
+                if 's_b_high_fr'+str(i) in qdict:
+                	commands['s_b_high_fr'].append(qdict['s_b_high_fr'+str(i)])
+                if 's_b_high_to'+str(i) in qdict:
+                    commands['s_b_high_to'].append(qdict['s_b_high_to'+str(i)])
+                if 's_c_high_fr'+str(i) in qdict:
+                    commands['s_c_high_fr'].append(qdict['s_c_high_fr'+str(i)])
+                if 's_c_high_to'+str(i) in qdict:
+                    commands['s_c_high_to'].append(qdict['s_c_high_to'+str(i)])
+
+            #print('Saving commands: ', commands)
+
+            plugin_options.__setitem__('s_use', commands['s_use'])
+            plugin_options.__setitem__('s_name', commands['s_name'])
+            plugin_options.__setitem__('s_unit', commands['s_unit'])
+            plugin_options.__setitem__('s_tick', commands['s_tick'])
+            plugin_options.__setitem__('s_min', commands['s_min'])
+            plugin_options.__setitem__('s_max', commands['s_max'])
+            plugin_options.__setitem__('s_a_high_fr', commands['s_a_high_fr'])
+            plugin_options.__setitem__('s_a_high_to', commands['s_a_high_to'])
+            plugin_options.__setitem__('s_b_high_fr', commands['s_b_high_fr'])
+            plugin_options.__setitem__('s_b_high_to', commands['s_b_high_to'])
+            plugin_options.__setitem__('s_c_high_fr', commands['s_c_high_fr'])
+            plugin_options.__setitem__('s_c_high_to', commands['s_c_high_to'])
+            
+            if sender is not None:
+                sender.update()
+
+        except Exception:
+           log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
+           pass
+
+        raise web.seeother(plugin_url(canvas_page), True)
+
 
 
 class settings_json(ProtectedPage):
@@ -190,42 +224,67 @@ class data_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        data =  {}
+        data = []
 
         try:
             from plugins import air_temp_humi
-            data['temp_ds0'] = air_temp_humi.DS18B20_read_probe(0)
-            data['temp_ds1'] = air_temp_humi.DS18B20_read_probe(1)
-            data['temp_ds2'] = air_temp_humi.DS18B20_read_probe(2)
-            data['temp_ds3'] = air_temp_humi.DS18B20_read_probe(3)
-            data['temp_ds4'] = air_temp_humi.DS18B20_read_probe(4)
-            data['temp_ds5'] = air_temp_humi.DS18B20_read_probe(5)
+            data.append(air_temp_humi.DS18B20_read_probe(0))
+            data.append(air_temp_humi.DS18B20_read_probe(1))
+            data.append(air_temp_humi.DS18B20_read_probe(2))
+            data.append(air_temp_humi.DS18B20_read_probe(3))
+            data.append(air_temp_humi.DS18B20_read_probe(4))
+            data.append(air_temp_humi.DS18B20_read_probe(5))
         except: 
-            #log.error(NAME, traceback.format_exc())
-            data['temp_ds0'] = -127
-            data['temp_ds1'] = -127
-            data['temp_ds2'] = -127
-            data['temp_ds3'] = -127
-            data['temp_ds4'] = -127
-            data['temp_ds5'] = -127
+            #log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
+            data.append(-127)
+            data.append(-127)
+            data.append(-127)
+            data.append(-127)
+            data.append(-127)
+            data.append(-127)
             pass
 
         try:    
             from plugins import tank_monitor
-            data['water_1'] = tank_monitor.get_all_values()[1]
-            data['water_2'] = tank_monitor.get_all_values()[3]
+            data.append(tank_monitor.get_all_values()[1])
+            data.append(tank_monitor.get_all_values()[3])
         except: 
-            #log.error(NAME, traceback.format_exc())
-            data['water_1'] = -127
-            data['water_2'] = -127
+            #log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
+            data.append(-127)
+            data.append(-127)
             pass  
 
         try:    
             from plugins import wind_monitor
-            data['wind_1'] = round(wind_monitor.get_all_values()[0], 2)
+            data.append(round(wind_monitor.get_all_values()[0], 2))
         except: 
-            #log.error(NAME, traceback.format_exc())
-            data['wind_1'] = -127
-            pass                      
+            #log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
+            data.append(-127)
+            pass
 
-        return json.dumps(data) 
+        if sensors.count()>0:
+            for sensor in sensors.get():
+                try:
+                    if sensor.sens_type > 0 and sensor.sens_type < 6:        # 1-5 is sensor (Dry Contact, Leak Detector, Moisture, Motion, Temperature)
+                        data.append(sensor.last_read_value)
+                    elif sensor.sens_type == 6:                              # 6 is multisensor
+                        if sensor.multi_type >= 0 and sensor.multi_type <4:  # multisensor temperature DS1-DS4
+                            data.append(sensor.last_read_value[sensor.multi_type])
+                        elif sensor.multi_type == 4:                         # multisensor Dry Contact
+                            data.append(sensor.last_read_value[4])
+                        elif sensor.multi_type == 5:                         # multisensor Leak Detector
+                            data.append(sensor.last_read_value[5])
+                        elif sensor.multi_type == 6:                         # multisensor Moisture
+                            data.append(sensor.last_read_value[6])
+                        elif sensor.multi_type == 7:                         # multisensor Motion
+                            data.append(sensor.last_read_value[7])
+                        else:
+                            data.append(-127)                                # any errors
+                    else:                                                    # any errors
+                        data.append(-127)
+                except:
+                    #log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
+                    data.append(-127)                                        # any errors
+                    pass
+
+        return json.dumps(data) # example data list [-127, -127, -127, -127, -127, -127, -127, -127, -127, 25]

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # first author: Martin Pihrt
 # Martin Pihrt add i18n language support
-__author__ = 'Vaclav Hrabe' # Add netatmo function 
+__author__ = u'Vaclav Hrabe' # Add netatmo function 
 
 import datetime
 from threading import Thread, Event
@@ -37,7 +37,7 @@ else:
     import urllib2
 
 NAME = 'Weather-based Water Level Netatmo'
-MENU =  _('Package: Weather-based Water Level Netatmo')
+MENU =  _(u'Package: Weather-based Water Level Netatmo')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -91,7 +91,7 @@ class WeatherLevelChecker(Thread):
             try:
                 log.clear(NAME)
                 if plugin_options['enabled']:
-                    log.debug(NAME, _('Checking weather status') + '...')
+                    log.debug(NAME, _(u'Checking weather status') + '...')
                     
                     if plugin_options['use_netatmo']:
                         authorization = ClientAuth()
@@ -122,7 +122,7 @@ class WeatherLevelChecker(Thread):
 
                         total_info['rain_mm'] += weather.get_rain(check_date)
 
-                    log.info(NAME, _('Using') + ' %d ' % days + _('days of information.'))
+                    log.info(NAME, _(u'Using') + ' %d ' % days + _(u'days of information.'))
 
                     total_info.update({
                         'temp_c': sum([val['temperature'] for val in info]) / len(info),
@@ -159,25 +159,25 @@ class WeatherLevelChecker(Thread):
                     water_adjustment = float(
                         max(plugin_options['wl_min'], min(plugin_options['wl_max'], water_adjustment)))
 
-                    log.info(NAME, _('Water needed') + '(%d ' %days +  _('days') + '): %.1fmm' % water_needed)
-                    log.info(NAME, _('Total rainfall') + ': %.1fmm' % total_info['rain_mm'])
-                    log.info(NAME, _('_______________________________'))
-                    log.info(NAME, _('Irrigation needed') + ': %.1fmm' % water_left)
-                    log.info(NAME, _('Weather Adjustment') + ': %.1f%%' % water_adjustment)
-                    log.info(NAME, _('_______________________________'))
-                    log.info(NAME, _('History rain by Netatmo') + ': %.1fmm' % zrain)
+                    log.info(NAME, _(u'Water needed') + '(%d ' %days +  _(u'days') + '): %.1fmm' % water_needed)
+                    log.info(NAME, _(u'Total rainfall') + ': %.1fmm' % total_info['rain_mm'])
+                    log.info(NAME, _(u'_______________________________'))
+                    log.info(NAME, _(u'Irrigation needed') + ': %.1fmm' % water_left)
+                    log.info(NAME, _(u'Weather Adjustment') + ': %.1f%%' % water_adjustment)
+                    log.info(NAME, _(u'_______________________________'))
+                    log.info(NAME, _(u'History rain by Netatmo') + ': %.1fmm' % zrain)
 
                     self._sleep(3600)
 
                 else:
                     log.clear(NAME)
-                    log.info(NAME, _('Plug-in is disabled.'))
+                    log.info(NAME, _(u'Plug-in is disabled.'))
                     if NAME in level_adjustments:
                         del level_adjustments[NAME]
                     self._sleep(24*3600)
 
             except Exception:
-                log.error(NAME, _('Weather-based water level plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Weather-based water level plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(3600)
         weather.remove_callback(self.update)
 
@@ -215,6 +215,13 @@ class settings_page(ProtectedPage):
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help page."""
+
+    def GET(self):
+        return self.plugin_render.weather_based_water_level_netatmo_help()        
 
 
 class settings_json(ProtectedPage):

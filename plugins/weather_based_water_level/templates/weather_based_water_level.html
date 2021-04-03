@@ -15,8 +15,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Weather-based Water Level')</div>
-    <p>$_('When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly').</p>
-    <p>$_('In addition, it is now able to protect plants from frost during the selected months').</p>
+    <a href=$plugins.plugin_url('weather_based_water_level.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('weather_based_water_level.settings_page')" method="post">
         <table class="optionList">
             <tr>

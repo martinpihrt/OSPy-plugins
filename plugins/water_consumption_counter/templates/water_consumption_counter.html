@@ -1,6 +1,6 @@
 $def with(plugin_options, events)
 
-$var title: $_('Water Consumption Counter settings')
+$var title: $_(u'Water Consumption Counter settings')
 $var page: plugins
 
 <script>
@@ -18,10 +18,7 @@ $var page: plugins
 
 <div id="plugin">
 	<div class="title">$_('Water Consumption Counter settings')</div>
-	<p>$_('This plugin read Water consumption on master station or second master station.')</p>
-	<p>$_('Total sum is the calculated as run of the main (or second) station.')</p>
-	<p>$_('This is not an actual flow meter (physical flow sensor).')</p>
-	<p>$_('Used for an overview of water consumption.')</p>
+	<a href=$plugins.plugin_url('water_consumption_counter.help_page') class="button upload">$_(u'Help')</a><br/>
 	<form id="pluginForm" action="$plugins.plugin_url('water_consumption_counter.settings_page')" method="post">
 		<table class="optionList">
 			<tr>

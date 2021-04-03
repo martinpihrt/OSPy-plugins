@@ -1,0 +1,15 @@
+$def with()
+
+$var title: $_(u'Weather-based Rain Delay - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'Weather-based Rain Delay - help')</div>
+    <p>$_(u'When weather-based rain delay is enabled, the weather will be checked for rain every hour. If the weather reports any condition suggesting rain, a rain delay is automatically issued using the below set delay duration').</p>
+    <p>$_(u'This plug-in is based on Philippe Larduinat (philippelt@users.sourceforge.net) - for NetAtmo.')</p>
+    <p>$_(u'For OSPy ported Václav Hrabě (Thank you).')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('weather_based_rain_delay.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div> 

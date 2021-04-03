@@ -1,6 +1,6 @@
 $def with(plugin_options, events)
 
-$var title: $_('Voice Notification')
+$var title: $_(u'Voice Notification')
 $var page: plugins
 <script>
     // Initialize behaviors
@@ -22,10 +22,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Voice Notification - Settings')</div>
-    <p>$_('This plugin allows you to use voice notifications for different events in the OSPy system.')</p>
-    <p>$_('Into the Connector from Output on Raspberry Pi connect Amplifier and Speakers for voice notification.')</p>
-    <p>$_('This plugin requires pygame installed. If pygame is not installed on the system, plugin it will install it himself. Pygame is comes already installed on the default raspberian installation.')</p>
-    <p>$_('Visit') <a href="https://www.pygame.org/wiki/GettingStarted">www.pygame.org</a> $_('and') <a href="https://pihrt.com/elektronika/248-moje-rapsberry-pi-zavlazovani-zahrady">www.pihrt.com</a> $_('for more information').</p><br>
+    <a href=$plugins.plugin_url('voice_notification.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('voice_notification.settings_page')" method="post">
         <table class="optionList">
         <tr>

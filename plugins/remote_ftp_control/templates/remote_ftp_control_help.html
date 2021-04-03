@@ -1,0 +1,40 @@
+$def with()
+
+$var title: $_(u'Remote FTP control - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'Remote FTP control - help')</div>
+    <p>$_(u'This plug-in makes downloading and uploading text file on the remotely via FTP for remotely control OSPy system every 30 seconds').</p>
+    <p>$_(u'When you first start the plug-in detects whether ramdisk is present, otherwise it creates and writes fstab').</p>
+    <p>$_(u'If plug-in says: "restart your linux os system" You must manual reboot os via options/reboot os').</p><br>
+    <p><b>$_(u'Plugin setup')</b></p>
+    <ul>
+    <li>$_(u'Check Use plug-in')</li>
+    $_(u'If checked use plug-in Remote FTP Control plug-in is enabled and control your OSPy.')
+    <li>$_(u'The FTP server address')</li>
+    $_(u'Type the address of your FTP server. Ex: 1234.w0.wedos.net')
+    <li>$_(u'The FTP user name')</li>
+    $_(u'Type the of your user name for FTP server.')
+    <li>$_(u'The FTP user password')</li>
+    $_(u'Type the of your user password for FTP server.')
+    <li>$_(u'The FTP server location for files')</li>
+    $_(u'Type where is located data.txt and stavy.php on the FTP server. If file is in root folder use "/" else use "/xxx/yyy/zzz".')
+    <li>$_(u'Status')</li>
+    $_(u'Status window from the plug-in.')
+    <li>$_(u'Example')</li>
+    $_(u'FTP connection established. FTP received data from file data.txt: OK. Data file stavy.php has send on to FTP server: 09.08.2016 (21:02:53).')
+    </ul>
+    <p><b>$_(u'Server setup')</b></p>
+    <ul>
+    <li>$_(u'On the Web server will place these files (after unpacking the zip file)')</li>
+    <a href="https://github.com/martinpihrt/OSPy-PHPfileFTP/archive/master.zip">$_(u'Download PHP for Remote FTP Control.zip files from github')</a>
+    <li>$_(u'On the WEB server we places files as in imagge')</li>
+    <a href="/plugins/remote_ftp_control/static/images/web.png"><img src="/plugins/remote_ftp_control/static/images/web.png" width="30%"></a></br>
+    <li>$_(u'On the WEB server use .htaccess and .htpasswd files for secured login for your OSPy control')</li>  
+    </ul>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('remote_ftp_control.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>

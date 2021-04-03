@@ -19,10 +19,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('SMS Settings')</div>
-    <p>$_('For this plugin is needed to SMS modem with the telephone service provider').</p>
-    <p>$_('This plugin needs Gammu. If not installed Gammu and Python-Gammu, plugin installs Gammu and Python-Gammu in to the system himself').</p>
-    <p>$_('On first use please wait for status').</p>
-    <p>$_('Visit') <a href="http://www.pihrt.com/elektronika/259-moje-rapsberry-pi-sms-ovladani-rpi">Martin Pihrt blog</a> $_('for more information').</p>
+    <a href=$plugins.plugin_url('sms_adj.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('sms_adj.settings_page')" method="post">
         <table class="optionList">
             <tr>

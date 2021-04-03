@@ -1,6 +1,6 @@
 $def with(plugin_options, events)
 
-$var title: $_('Temperature Switch')
+$var title: $_(u'Temperature Switch')
 $var page: plugins
 
 <script>
@@ -16,9 +16,8 @@ $var page: plugins
 </script>
 
 <div id="plugin">
-    <div class="title">$_('Temperature Switch')</div>
-    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Allows regulation from DS18B20 sensors connected to the external hardware board').</p>    
-    <p>$_('All temperatures is in degree Celsia.')</p>      
+    <div class="title">$_(u'Temperature Switch')</div>
+    <a href=$plugins.plugin_url('temperature_switch.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('temperature_switch.settings_page')" method="post">
         <table class="optionList">
             <tr>

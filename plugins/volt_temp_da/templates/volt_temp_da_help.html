@@ -1,0 +1,22 @@
+$def with()
+
+$var title: $_(u'Voltage and Temperature Monitor - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'Voltage and Temperature Monitor')</div>
+    <p>$_(u'This plugin needs an enabled') I&sup2;C $_(u'bus and connected') I&sup2;C $_(u'A/D converter PCF8591 on') I&sup2;C $_(u'address 0x48').</p>
+    <p>$_(u'For measuring temperature use temp probe LM35D (0-100') &deg;$_('C) on AD0-3 converter').</p>
+    <p>$_(u'If the label is not blank, the value is displayed in the value display').</p>
+    <p>$_('Visit') <a href="https://pihrt.com/elektronika/289-pcf-8591-4xad-1xda-na-i2c-arduino-raspberry-pi">Martin Pihrt blog</a> $_('for more information').</p><br>
+    <p><b>$_('The PCB board for A/D converter PCF8591 (board by pihrt.com)')</b></p>
+    <a href="/plugins/volt_temp_da/static/images/schematics.png"><img src="/plugins/volt_temp_da/static/images/schematics.png" width="60%"></a></br>
+    <a href="/plugins/volt_temp_da/static/images/schematics2.png"><img src="/plugins/volt_temp_da/static/images/schematics2.png" width="40%"></a></br>
+    <a href="/plugins/volt_temp_da/static/images/pcb.png"><img src="/plugins/volt_temp_da/static/images/pcb.png" width="30%"></a></br>
+    <a href="/plugins/volt_temp_da/static/images/brd.png"><img src="/plugins/volt_temp_da/static/images/brd.png" width="30%"></a></br>       
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('volt_temp_da.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>                                  
+                     

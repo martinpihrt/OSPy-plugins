@@ -1,6 +1,6 @@
 $def with(plugin_options, status, events)
 
-$var title: $_('Voltage and Temperature Monitor')
+$var title: $_(u'Voltage and Temperature Monitor')
 $var page: plugins
 
 <script>
@@ -18,11 +18,9 @@ $var page: plugins
     
 
 <div id="plugin">
-    <div class="title">$_('Voltage and Temperature Monitor')</div>
-    <p>$_('This plugin needs an enabled I2C bus and connected I2C A/D converter PCF8591 on I2C address 0x48').</p>
-    <p>$_('For measuring temperature use temp probe LM35D (0-100') &deg;$_('C) on AD0-3 converter').</p>
-    <p>$_('If the label is not blank, the value is displayed in the value display').</p>
-    <p>$_('Download log as') <a href="$plugins.plugin_url('volt_temp_da.log_csv')">csv</a>. <a href="$plugins.plugin_url('volt_temp_da.delete_log_page')">$_('Delete')</a> $_('log file').</p>
+    <div class="title">$_(u'Voltage and Temperature Monitor')</div>
+    <a href=$plugins.plugin_url('volt_temp_da.help_page') class="button upload">$_(u'Help')</a><br/>
+    <p><a href="$plugins.plugin_url('volt_temp_da.log_csv')" class="button download">$_('Download log')</a> <a href="$plugins.plugin_url('volt_temp_da.delete_log_page')" class="button cancel danger">$_('Delete log')</a></p>
     <form id="pluginForm" action="$plugins.plugin_url('volt_temp_da.settings_page')" method="post">
         <table class="optionList">
             <tr>

@@ -1,0 +1,16 @@
+$def with()
+
+$var title: $_(u'Water Consumption Counter - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'Water Consumption Counter - help')</div>
+    <p>$_(u'This plugin read Water consumption on master station or second master station.')</p>
+    <p>$_(u'Total sum is the calculated as run of the main (or second) station.')</p>
+    <p>$_(u'This is not an actual flow meter (physical flow sensor).')</p>
+    <p>$_(u'Used for an overview of water consumption.')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('water_consumption_counter.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div> 

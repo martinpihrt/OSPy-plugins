@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # first author: Martin Pihrt
-__author__ = 'Vaclav Hrabe' # Add netatmo function 
+__author__ = u'Vaclav Hrabe' # Add netatmo function 
 
 from threading import Thread, Event
 import traceback
@@ -33,7 +33,7 @@ else:
     import urllib2
 
 NAME = 'Weather-based Rain Delay'
-MENU =  _('Package: Weather-based Rain Delay')
+MENU =  _(u'Package: Weather-based Rain Delay')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -80,7 +80,7 @@ class weather_to_delay(Thread):
 
     def run(self):
         weather_mon = showInFooter()                               #  instantiate class to enable data in footer
-        weather_mon.label = _('Weather')                           # label on footer
+        weather_mon.label = _(u'Weather')                          # label on footer
         weather_mon.button = "weather_based_rain_delay/settings"   # button redirect on footer
         weather_mon.val = '---'                                    # value on footer
 
@@ -105,16 +105,16 @@ class weather_to_delay(Thread):
                         zrain = 0
 
                     log.clear(NAME)
-                    log.info(NAME, _('Checking rain status') + '...')
+                    log.info(NAME, _(u'Checking rain status') + '...')
                     current_data = weather.get_current_data()
 
                     delaytime = int(plugin_options['delay_duration'])   
                     delaytimeAtmo = int(plugin_options['netatmo_interval'])*60                
 
                     if zrain > 0:
-                        log.info(NAME, _('Netatmo detected Rain') + ': %.1f ' % zrain + _('mm') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours') + '.')
+                        log.info(NAME, _(u'Netatmo detected Rain') + ': %.1f ' % zrain + _(u'mm') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') + '.')
                         tempText = ""
-                        tempText += _('Netatmo detected Rain') + u' %.1f ' % zrain + _('mm') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours') 
+                        tempText += _(u'Netatmo detected Rain') + u' %.1f ' % zrain + _(u'mm') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') 
                         weather_mon.val = tempText.encode('utf8')    # value on footer
                         rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                         stop_onrain()
@@ -124,21 +124,21 @@ class weather_to_delay(Thread):
                     else:
                         if 'precipProbability' in current_data:
                             if current_data['precipProbability'] > 0.75:
-                                log.info(NAME, _('Weather detected Rain') + ': ' + current_data['summary'] + _('Adding delay of') + ' ' + str(plugin_options['delay_duration']) + '.')
+                                log.info(NAME, _(u'Weather detected Rain') + ': ' + current_data['summary'] + _(u'Adding delay of') + ' ' + str(plugin_options['delay_duration']) + '.')
                                 rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(plugin_options['delay_duration']))
                                 stop_onrain()
                                 tempText = ""
-                                tempText += _('Weather detected Rain') 
+                                tempText += _(u'Weather detected Rain') 
 
                             elif current_data['precipProbability'] > 0.1:
-                                log.info(NAME, _('No rain detected') + ': ' + current_data['summary'] + '. ' + _('No action.'))
+                                log.info(NAME, _(u'No rain detected') + ': ' + current_data['summary'] + '. ' + _(u'No action.'))
                                 tempText = ""
-                                tempText +=  _('No rain detected') 
+                                tempText +=  _(u'No rain detected') 
 
                             else:
-                                log.info(NAME, _('Good weather detected') + ': ' + current_data['summary'] + '. ' + _('Removing rain delay.'))
+                                log.info(NAME, _(u'Good weather detected') + ': ' + current_data['summary'] + '. ' + _(u'Removing rain delay.'))
                                 tempText = ""
-                                tempText += _('Good weather detected') 
+                                tempText += _(u'Good weather detected') 
                                 if NAME in rain_blocks:
                                     del rain_blocks[NAME]
 
@@ -147,13 +147,13 @@ class weather_to_delay(Thread):
                                          
                 else:
                     log.clear(NAME)
-                    log.info(NAME, _('Plug-in is disabled.'))
+                    log.info(NAME, _(u'Plug-in is disabled.'))
                     if NAME in rain_blocks:
                         del rain_blocks[NAME]
                     self._sleep(24 * 3600)
 
             except Exception:
-                log.error(NAME, _('Weather-based Rain Delay plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Weather-based Rain Delay plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(3600)
 
 
@@ -193,6 +193,13 @@ class settings_page(ProtectedPage):
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help page."""
+
+    def GET(self):
+        return self.plugin_render.weather_based_rain_delay_help()        
 
 
 class settings_json(ProtectedPage):

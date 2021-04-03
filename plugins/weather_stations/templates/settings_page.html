@@ -21,15 +21,15 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'>$_('Canvas or Text mode for showing data'):</td> 
                 <td title=$:{json.dumps(_(u'When checked, it is text mode.'), ensure_ascii=False)}>
-                    <input name='can_or_txt' type='checkbox'${" checked" if plugin_options['can_or_txt'] else ""}>  
+                    <input name='can_or_txt' type='checkbox'${" checked" if plugin_options['can_or_txt'] else ""}>
                 </td>
-            </tr>        	
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Canvas Size XY'):</td>
                 <td title=$:{json.dumps(_(u'The number determines the size of the meter wheel. The minimum is 150px, the maximum is 850px.'), ensure_ascii=False)}>
                     <input name='can_size_xy' type='number' min='150' max='850' value='$plugin_options["can_size_xy"]'>
                 </td>
-            </tr>         	
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Text Font Size'):</td>
                 <td title=$:{json.dumps(_(u'The number determines the font size in text mode. The minimum is 15px, the maximum is 800px.'), ensure_ascii=False)}>
@@ -40,429 +40,218 @@ jQuery(document).ready(function(){
                <th colspan="2">
                  <hr>
                  <p>$_('This part needs correct setuped plugin Air Temperature and Humidity Monitor')</p>
+                 <a href='/plugins/air_temp_humi/settings' class="button upload">$_('Open package')</a>
                </th>
-            </tr> 
-            <tr>
-                <td style='text-transform: none;'>$_('Show this DS1'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can1' type='checkbox'${" checked" if plugin_options['use_can1'] else ""}>  
-                </td>
-            </tr>                                   
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas DS1'):</td>
-                <td>
-                <input name='can_1_name' type='text' value=$plugin_options['can_1_name']> $_(u'Units:')
-                <input name='can_1_units' type='text' size='2' value='$plugin_options["can_1_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_1_tick' type='text' size='40' value='$plugin_options["can_1_tick"]'> $_(u'Min:')
-                <input name='can_1_min' type='text' size='3' value='$plugin_options["can_1_min"]'> $_(u'Max:')
-                <input name='can_1_max' type='text' size='3' value='$plugin_options["can_1_max"]'>
-                </td>
             </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_1_high_fr' type='number' size='4' value=$plugin_options['can_1_high_fr']> $_(u'To:')
-                <input name='can_1_high_to' type='number' size='4' value=$plugin_options['can_1_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_1_2_high_fr' type='number' size='4' value=$plugin_options['can_1_2_high_fr']> $_(u'To:')
-                <input name='can_1_2_high_to' type='number' size='4' value=$plugin_options['can_1_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_1_3_high_fr' type='number' size='4' value=$plugin_options['can_1_3_high_fr']> $_(u'To:')
-                <input name='can_1_3_high_to' type='number' size='4' value=$plugin_options['can_1_3_high_to']> 
-                </td>
-            </tr>                        
-            <tr>
-               <th>
-               <hr>
-               </th>
-            </tr>           
-            <tr>
-                <td style='text-transform: none;'>$_('Show this DS2'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can2' type='checkbox'${" checked" if plugin_options['use_can2'] else ""}>  
-                </td>
-            </tr>                              
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas DS2'):</td>
-                <td>
-                <input name='can_2_name' type='text' value=$plugin_options['can_2_name']> $_(u'Units:')
-                <input name='can_2_units' type='text' size='2' value='$plugin_options["can_2_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_2_tick' type='text' size='40' value='$plugin_options["can_2_tick"]'> $_(u'Min:')
-                <input name='can_2_min' type='text' size='3' value='$plugin_options["can_2_min"]'> $_(u'Max:')
-                <input name='can_2_max' type='text' size='3' value='$plugin_options["can_2_max"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_2_high_fr' type='number' size='4' value=$plugin_options['can_2_high_fr']> $_(u'To:')
-                <input name='can_2_high_to' type='number' size='4' value=$plugin_options['can_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_2_2_high_fr' type='number' size='4' value=$plugin_options['can_2_2_high_fr']> $_(u'To:')
-                <input name='can_2_2_high_to' type='number' size='4' value=$plugin_options['can_2_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_2_3_high_fr' type='number' size='4' value=$plugin_options['can_2_3_high_fr']> $_(u'To:')
-                <input name='can_2_3_high_to' type='number' size='4' value=$plugin_options['can_2_3_high_to']> 
-                </td>
-            </tr>                        
-            <tr>
-               <th>
-               <hr>
-               </th>
-            </tr> 
-            <tr>
-                <td style='text-transform: none;'>$_('Show this DS3'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can3' type='checkbox'${" checked" if plugin_options['use_can3'] else ""}>  
-                </td>
-            </tr>               
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas DS3'):</td>
-                <td>
-                <input name='can_3_name' type='text' value=$plugin_options['can_3_name']> $_(u'Units:')
-                <input name='can_3_units' type='text' size='2' value='$plugin_options["can_3_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_3_tick' type='text' size='40' value='$plugin_options["can_3_tick"]'> $_(u'Min:')
-                <input name='can_3_min' type='text' size='3' value='$plugin_options["can_3_min"]'> $_(u'Max:')
-                <input name='can_3_max' type='text' size='3' value='$plugin_options["can_3_max"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_3_high_fr' type='number' size='4' value=$plugin_options['can_3_high_fr']> $_(u'To:')
-                <input name='can_3_high_to' type='number' size='4' value=$plugin_options['can_3_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_3_2_high_fr' type='number' size='4' value=$plugin_options['can_3_2_high_fr']> $_(u'To:')
-                <input name='can_3_2_high_to' type='number' size='4' value=$plugin_options['can_3_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_3_3_high_fr' type='number' size='4' value=$plugin_options['can_3_3_high_fr']> $_(u'To:')
-                <input name='can_3_3_high_to' type='number' size='4' value=$plugin_options['can_3_3_high_to']> 
-                </td>
-            </tr>                        
-            <tr>
-               <th>
-               <hr>
-               </th>
-            </tr> 
-            <tr>
-                <td style='text-transform: none;'>$_('Show this DS4'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can4' type='checkbox'${" checked" if plugin_options['use_can4'] else ""}>  
-                </td>
-            </tr>               
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas DS4'):</td>
-                <td>
-                <input name='can_4_name' type='text' value=$plugin_options['can_4_name']> $_(u'Units:')
-                <input name='can_4_units' type='text' size='2' value='$plugin_options["can_4_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_4_tick' type='text' size='40' value='$plugin_options["can_4_tick"]'> $_(u'Min:')
-                <input name='can_4_min' type='text' size='3' value='$plugin_options["can_4_min"]'> $_(u'Max:')
-                <input name='can_4_max' type='text' size='3' value='$plugin_options["can_4_max"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_4_high_fr' type='number' size='4' value=$plugin_options['can_4_high_fr']> $_(u'To:')
-                <input name='can_4_high_to' type='number' size='4' value=$plugin_options['can_4_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_4_2_high_fr' type='number' size='4' value=$plugin_options['can_4_2_high_fr']> $_(u'To:')
-                <input name='can_4_2_high_to' type='number' size='4' value=$plugin_options['can_4_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_4_3_high_fr' type='number' size='4' value=$plugin_options['can_4_3_high_fr']> $_(u'To:')
-                <input name='can_4_3_high_to' type='number' size='4' value=$plugin_options['can_4_3_high_to']> 
-                </td>
-            </tr>                        
-            <tr>
-               <th>
-               <hr>
-               </th>
-            </tr> 
-            <tr>
-                <td style='text-transform: none;'>$_('Show this DS5'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can5' type='checkbox'${" checked" if plugin_options['use_can5'] else ""}>  
-                </td>
-            </tr>               
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas DS5'):</td>
-                <td>
-                <input name='can_5_name' type='text' value=$plugin_options['can_5_name']> $_(u'Units:')
-                <input name='can_5_units' type='text' size='2' value='$plugin_options["can_5_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_5_tick' type='text' size='40' value='$plugin_options["can_5_tick"]'> $_(u'Min:')
-                <input name='can_5_min' type='text' size='3' value='$plugin_options["can_5_min"]'> $_(u'Max:')
-                <input name='can_5_max' type='text' size='3' value='$plugin_options["can_5_max"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_5_high_fr' type='number' size='4' value=$plugin_options['can_5_high_fr']> $_(u'To:')
-                <input name='can_5_high_to' type='number' size='4' value=$plugin_options['can_5_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_5_2_high_fr' type='number' size='4' value=$plugin_options['can_5_2_high_fr']> $_(u'To:')
-                <input name='can_5_2_high_to' type='number' size='4' value=$plugin_options['can_5_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_5_3_high_fr' type='number' size='4' value=$plugin_options['can_5_3_high_fr']> $_(u'To:')
-                <input name='can_5_3_high_to' type='number' size='4' value=$plugin_options['can_5_3_high_to']> 
-                </td>
-            </tr>                        
-            <tr>
-               <th>
-               <hr>
-               </th>
-            </tr> 
-            <tr>
-                <td style='text-transform: none;'>$_('Show this DS6'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can6' type='checkbox'${" checked" if plugin_options['use_can6'] else ""}>  
-                </td>
-            </tr>               
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas DS6'):</td>
-                <td>
-                <input name='can_6_name' type='text' value=$plugin_options['can_6_name']> $_(u'Units:')
-                <input name='can_6_units' type='text' size='2' value='$plugin_options["can_6_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_6_tick' type='text' size='40' value='$plugin_options["can_6_tick"]'> $_(u'Min:')
-                <input name='can_6_min' type='text' size='3' value='$plugin_options["can_6_min"]'> $_(u'Max:')
-                <input name='can_6_max' type='text' size='3' value='$plugin_options["can_6_max"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_6_high_fr' type='number' size='4' value=$plugin_options['can_6_high_fr']> $_(u'To:')
-                <input name='can_6_high_to' type='number' size='4' value=$plugin_options['can_6_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_6_2_high_fr' type='number' size='4' value=$plugin_options['can_6_2_high_fr']> $_(u'To:')
-                <input name='can_6_2_high_to' type='number' size='4' value=$plugin_options['can_6_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_6_3_high_fr' type='number' size='4' value=$plugin_options['can_6_3_high_fr']> $_(u'To:')
-                <input name='can_6_3_high_to' type='number' size='4' value=$plugin_options['can_6_3_high_to']> 
-                </td>
-            </tr>                                                                               
+            $for c in range(0, 6):
+                <tr>
+                    <td style='text-transform: none;'>$_('Show this DS18b20-')${c + 1}:</td>
+                    <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
+                        <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>  
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Name for Canvas DS')${c + 1}:</td>
+                    <td title=$:{json.dumps(_(u'Your unique name and units for canvas.'), ensure_ascii=False)}>
+                    <input type='text' value="${plugin_options['s_name'][c] if c < len(plugin_options['s_name']) else ''}"  id="s_name${c}" name="s_name${c}"> $_(u'Units:')
+                    <input type='text' size='2' value="${plugin_options['s_unit'][c] if c < len(plugin_options['s_unit']) else ''}" id="s_unit${c}" name="s_unit${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Scale'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale division for canvas. Example: 0,10,20,30 (type to min 0 and to max 30).'), ensure_ascii=False)}>
+                        <input type='text' size='40' value="${plugin_options['s_tick'][c] if c < len(plugin_options['s_tick']) else ''}"  id="s_tick${c}" name="s_tick${c}"> $_(u'Min:')
+                        <input type='text' size='3' value="${plugin_options['s_min'][c] if c < len(plugin_options['s_min']) else ''}"  id="s_min${c}" name="s_min${c}"> $_(u'Max:')
+                        <input type='text' size='3' value="${plugin_options['s_max'][c] if c < len(plugin_options['s_max']) else ''}"  id="s_max${c}" name="s_max${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Red color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from red color (from - to). Example: 0,10,20,30 (type to from 0 to 10).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_a_high_fr'][c] if c < len(plugin_options['s_a_high_fr']) else ''}"  id="s_a_high_fr${c}" name="s_a_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_a_high_to'][c] if c < len(plugin_options['s_a_high_to']) else ''}"  id="s_a_high_to${c}" name="s_a_high_to${c}">
+                    </td>
+                </tr>  
+                <tr>
+                    <td style='text-transform: none;'>$_('Blue color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from blue color (from - to). Example: 0,10,20,30 (type to from 10 to 20).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_b_high_fr'][c] if c < len(plugin_options['s_b_high_fr']) else ''}"  id="s_b_high_fr${c}" name="s_b_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_b_high_to'][c] if c < len(plugin_options['s_b_high_to']) else ''}"  id="s_b_high_to${c}" name="s_b_high_to${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Green color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from green color (from - to). Example: 0,10,20,30 (type to from 20 to 30).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_c_high_fr'][c] if c < len(plugin_options['s_c_high_fr']) else ''}"  id="s_c_high_fr${c}" name="s_c_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_c_high_to'][c] if c < len(plugin_options['s_c_high_to']) else ''}"  id="s_c_high_to${c}" name="s_c_high_to${c}">
+                    </td>
+                </tr>
+                $if c<5:
+                    <tr><th><hr></th></tr>
             <tr>
                <th colspan="2">
                  <hr>
                  <p>$_('This part needs correct setuped plugin Water Tank Monitor')</p>
+                 <a href='/plugins/tank_monitor/settings' class="button upload">$_('Open package')</a> 
                </th>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Show this Water Percent'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can7' type='checkbox'${" checked" if plugin_options['use_can7'] else ""}>  
-                </td>
-            </tr>               
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas Water Percent'):</td>
-                <td>
-                <input name='can_7_name' type='text' value=$plugin_options['can_7_name']> $_(u'Units:')
-                <input name='can_7_units' type='text' size='2' value='$plugin_options["can_7_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_7_tick' type='text' size='40' value='$plugin_options["can_7_tick"]'> $_(u'Min:')
-                <input name='can_7_min' type='text' size='3' value='$plugin_options["can_7_min"]'> $_(u'Max:')
-                <input name='can_7_max' type='text' size='3' value='$plugin_options["can_7_max"]'>
-                </td>
             </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_7_high_fr' type='number' size='4' value=$plugin_options['can_7_high_fr']> $_(u'To:')
-                <input name='can_7_high_to' type='number' size='4' value=$plugin_options['can_7_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_7_2_high_fr' type='number' size='4' value=$plugin_options['can_7_2_high_fr']> $_(u'To:')
-                <input name='can_7_2_high_to' type='number' size='4' value=$plugin_options['can_7_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_7_3_high_fr' type='number' size='4' value=$plugin_options['can_7_3_high_fr']> $_(u'To:')
-                <input name='can_7_3_high_to' type='number' size='4' value=$plugin_options['can_7_3_high_to']> 
-                </td>
-            </tr>                        
-            <tr>
-               <th>
-               <hr>
-               </th>
-            </tr> 
-            <tr>
-                <td style='text-transform: none;'>$_('Show this Water Volume'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can8' type='checkbox'${" checked" if plugin_options['use_can8'] else ""}>  
-                </td>
-            </tr>               
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas Water Volume'):</td>
-                <td>
-                <input name='can_8_name' type='text' value=$plugin_options['can_8_name']> $_(u'Units:')
-                <input name='can_8_units' type='text' size='2' value='$plugin_options["can_8_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_8_tick' type='text' size='40' value='$plugin_options["can_8_tick"]'> $_(u'Min:')
-                <input name='can_8_min' type='text' size='3' value='$plugin_options["can_8_min"]'> $_(u'Max:')
-                <input name='can_8_max' type='text' size='3' value='$plugin_options["can_8_max"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_8_high_fr' type='number' size='4' value=$plugin_options['can_8_high_fr']> $_(u'To:')
-                <input name='can_8_high_to' type='number' size='4' value=$plugin_options['can_8_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_8_2_high_fr' type='number' size='4' value=$plugin_options['can_8_2_high_fr']> $_(u'To:')
-                <input name='can_8_2_high_to' type='number' size='4' value=$plugin_options['can_8_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_8_3_high_fr' type='number' size='4' value=$plugin_options['can_8_3_high_fr']> $_(u'To:')
-                <input name='can_8_3_high_to' type='number' size='4' value=$plugin_options['can_8_3_high_to']> 
-                </td>
-            </tr>
+            $for c in range(6, 8):
+                <tr>
+                    $if c==6:
+                        <td style='text-transform: none;'>$_('Show this Water Percent'):</td>
+                    $if c==7:
+                        <td style='text-transform: none;'>$_('Show this Water Volume'):</td>
+                    <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
+                        <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>  
+                    </td>
+                </tr>
+                <tr>
+                    $if c==6:
+                        <td style='text-transform: none;'>$_('Name for Canvas Water Volume'):</td>
+                    $if c==7:
+                        <td style='text-transform: none;'>$_('Name for Canvas Water Percent'):</td>
+                    <td title=$:{json.dumps(_(u'Your unique name and units for canvas.'), ensure_ascii=False)}>
+                    <input type='text' value="${plugin_options['s_name'][c] if c < len(plugin_options['s_name']) else ''}"  id="s_name${c}" name="s_name${c}"> $_(u'Units:')
+                    <input type='text' size='2' value="${plugin_options['s_unit'][c] if c < len(plugin_options['s_unit']) else ''}" id="s_unit${c}" name="s_unit${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Scale'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale division for canvas. Example: 0,10,20,30 (type to min 0 and to max 30).'), ensure_ascii=False)}>
+                        <input type='text' size='40' value="${plugin_options['s_tick'][c] if c < len(plugin_options['s_tick']) else ''}"  id="s_tick${c}" name="s_tick${c}"> $_(u'Min:')
+                        <input type='text' size='3' value="${plugin_options['s_min'][c] if c < len(plugin_options['s_min']) else ''}"  id="s_min${c}" name="s_min${c}"> $_(u'Max:')
+                        <input type='text' size='3' value="${plugin_options['s_max'][c] if c < len(plugin_options['s_max']) else ''}"  id="s_max${c}" name="s_max${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Red color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from red color (from - to). Example: 0,10,20,30 (type to from 0 to 10).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_a_high_fr'][c] if c < len(plugin_options['s_a_high_fr']) else ''}"  id="s_a_high_fr${c}" name="s_a_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_a_high_to'][c] if c < len(plugin_options['s_a_high_to']) else ''}"  id="s_a_high_to${c}" name="s_a_high_to${c}">
+                    </td>
+                </tr>  
+                <tr>
+                    <td style='text-transform: none;'>$_('Blue color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from blue color (from - to). Example: 0,10,20,30 (type to from 10 to 20).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_b_high_fr'][c] if c < len(plugin_options['s_b_high_fr']) else ''}"  id="s_b_high_fr${c}" name="s_b_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_b_high_to'][c] if c < len(plugin_options['s_b_high_to']) else ''}"  id="s_b_high_to${c}" name="s_b_high_to${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Green color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from green color (from - to). Example: 0,10,20,30 (type to from 20 to 30).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_c_high_fr'][c] if c < len(plugin_options['s_c_high_fr']) else ''}"  id="s_c_high_fr${c}" name="s_c_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_c_high_to'][c] if c < len(plugin_options['s_c_high_to']) else ''}"  id="s_c_high_to${c}" name="s_c_high_to${c}">
+                    </td>
+                </tr>
+                $if c==6:
+                    <tr><th><hr></th></tr>
             <tr>
                <th colspan="2">
                  <hr>
                  <p>$_('This part needs correct setuped plugin Wind Speed Monitor')</p>
+                 <a href='/plugins/wind_monitor/settings' class="button upload">$_('Open package')</a>
                </th>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Show this Wind Speed'):</td> 
-                <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                    <input name='use_can9' type='checkbox'${" checked" if plugin_options['use_can9'] else ""}>  
-                </td>
-            </tr>            
-            <tr>
-                <td style='text-transform: none;'>$_('Name for Canvas Wind Speed'):</td>
-                <td>
-                <input name='can_9_name' type='text' value=$plugin_options['can_9_name']> $_(u'Units:')
-                <input name='can_9_units' type='text' size='2' value='$plugin_options["can_9_units"]'>
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Scale'):</td>
-                <td>
-                <input name='can_9_tick' type='text' size='40' value='$plugin_options["can_9_tick"]'> $_(u'Min:')
-                <input name='can_9_min' type='text' size='3' value='$plugin_options["can_9_min"]'> $_(u'Max:')
-                <input name='can_9_max' type='text' size='3' value='$plugin_options["can_9_max"]'>
-                </td>
             </tr>
+            $for c in range(8, 9):
+                <tr>
+                    $if c==8:
+                        <td style='text-transform: none;'>$_('Show this Wind Speed'):</td>
+                    <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
+                        <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>  
+                    </td>
+                </tr>
+                <tr>
+                    $if c==8:
+                        <td style='text-transform: none;'>$_('Name for Canvas Wind Speed'):</td>
+                    <td title=$:{json.dumps(_(u'Your unique name and units for canvas.'), ensure_ascii=False)}>
+                    <input type='text' value="${plugin_options['s_name'][c] if c < len(plugin_options['s_name']) else ''}"  id="s_name${c}" name="s_name${c}"> $_(u'Units:')
+                    <input type='text' size='2' value="${plugin_options['s_unit'][c] if c < len(plugin_options['s_unit']) else ''}" id="s_unit${c}" name="s_unit${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Scale'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale division for canvas. Example: 0,10,20,30 (type to min 0 and to max 30).'), ensure_ascii=False)}>
+                        <input type='text' size='40' value="${plugin_options['s_tick'][c] if c < len(plugin_options['s_tick']) else ''}"  id="s_tick${c}" name="s_tick${c}"> $_(u'Min:')
+                        <input type='text' size='3' value="${plugin_options['s_min'][c] if c < len(plugin_options['s_min']) else ''}"  id="s_min${c}" name="s_min${c}"> $_(u'Max:')
+                        <input type='text' size='3' value="${plugin_options['s_max'][c] if c < len(plugin_options['s_max']) else ''}"  id="s_max${c}" name="s_max${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Red color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from red color (from - to). Example: 0,10,20,30 (type to from 0 to 10).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_a_high_fr'][c] if c < len(plugin_options['s_a_high_fr']) else ''}"  id="s_a_high_fr${c}" name="s_a_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_a_high_to'][c] if c < len(plugin_options['s_a_high_to']) else ''}"  id="s_a_high_to${c}" name="s_a_high_to${c}">
+                    </td>
+                </tr>  
+                <tr>
+                    <td style='text-transform: none;'>$_('Blue color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from blue color (from - to). Example: 0,10,20,30 (type to from 10 to 20).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_b_high_fr'][c] if c < len(plugin_options['s_b_high_fr']) else ''}"  id="s_b_high_fr${c}" name="s_b_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_b_high_to'][c] if c < len(plugin_options['s_b_high_to']) else ''}"  id="s_b_high_to${c}" name="s_b_high_to${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Green color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from green color (from - to). Example: 0,10,20,30 (type to from 20 to 30).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_c_high_fr'][c] if c < len(plugin_options['s_c_high_fr']) else ''}"  id="s_c_high_fr${c}" name="s_c_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_c_high_to'][c] if c < len(plugin_options['s_c_high_to']) else ''}"  id="s_c_high_to${c}" name="s_c_high_to${c}">
+                    </td>
+                </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Red color from'):</td>
-                <td>
-                <input name='can_9_high_fr' type='number' size='4' value=$plugin_options['can_9_high_fr']> $_(u'To:')
-                <input name='can_9_high_to' type='number' size='4' value=$plugin_options['can_9_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Blue color from'):</td>
-                <td>
-                <input name='can_9_2_high_fr' type='number' size='4' value=$plugin_options['can_9_2_high_fr']> $_(u'To:')
-                <input name='can_9_2_high_to' type='number' size='4' value=$plugin_options['can_9_2_high_to']> 
-                </td>
-            </tr>  
-            <tr>
-                <td style='text-transform: none;'>$_('Green color from'):</td>
-                <td>
-                <input name='can_9_3_high_fr' type='number' size='4' value=$plugin_options['can_9_3_high_fr']> $_(u'To:')
-                <input name='can_9_3_high_to' type='number' size='4' value=$plugin_options['can_9_3_high_to']> 
-                </td>
-            </tr>                  
-        </table>   
+               <th colspan="2">
+                 <hr>
+                 <p>$_('This part needs correct setuped OSPy sensors')</p>
+                 <a href='/sensors' class="button upload">$_('Open Sensors')</a>
+               </th>
+            </tr>
+            $for c in range(9, sensors.count()+9):
+                $ sensor = sensors.get(c-9)
+                <tr>
+                    <td style='text-transform: none;'>$_('Show this Sensor') ${c-8} $_('(')$sensor.name$_(')'):</td>
+                    <td title=$:{json.dumps(_(u'When checked, showing this sensor (text) is enabled.'), ensure_ascii=False)}>
+                        <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>  
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Name for Canvas'):</td>
+                    <td title=$:{json.dumps(_(u'Your unique name and units for canvas.'), ensure_ascii=False)}>
+                    <input type='text' value="${plugin_options['s_name'][c] if c < len(plugin_options['s_name']) else ''}"  id="s_name${c}" name="s_name${c}"> $_(u'Units:')
+                    <input type='text' size='2' value="${plugin_options['s_unit'][c] if c < len(plugin_options['s_unit']) else ''}" id="s_unit${c}" name="s_unit${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Scale'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale division for canvas. Example: 0,10,20,30 (type to min 0 and to max 30).'), ensure_ascii=False)}>
+                        <input type='text' size='40' value="${plugin_options['s_tick'][c] if c < len(plugin_options['s_tick']) else ''}"  id="s_tick${c}" name="s_tick${c}"> $_(u'Min:')
+                        <input type='text' size='3' value="${plugin_options['s_min'][c] if c < len(plugin_options['s_min']) else ''}"  id="s_min${c}" name="s_min${c}"> $_(u'Max:')
+                        <input type='text' size='3' value="${plugin_options['s_max'][c] if c < len(plugin_options['s_max']) else ''}"  id="s_max${c}" name="s_max${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Red color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from red color (from - to). Example: 0,10,20,30 (type to from 0 to 10).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_a_high_fr'][c] if c < len(plugin_options['s_a_high_fr']) else ''}"  id="s_a_high_fr${c}" name="s_a_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_a_high_to'][c] if c < len(plugin_options['s_a_high_to']) else ''}"  id="s_a_high_to${c}" name="s_a_high_to${c}">
+                    </td>
+                </tr>  
+                <tr>
+                    <td style='text-transform: none;'>$_('Blue color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from blue color (from - to). Example: 0,10,20,30 (type to from 10 to 20).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_b_high_fr'][c] if c < len(plugin_options['s_b_high_fr']) else ''}"  id="s_b_high_fr${c}" name="s_b_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_b_high_to'][c] if c < len(plugin_options['s_b_high_to']) else ''}"  id="s_b_high_to${c}" name="s_b_high_to${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Green color from'):</td>
+                    <td title=$:{json.dumps(_(u'Your scale from green color (from - to). Example: 0,10,20,30 (type to from 20 to 30).'), ensure_ascii=False)}>
+                        <input type='number' size='4' value="${plugin_options['s_c_high_fr'][c] if c < len(plugin_options['s_c_high_fr']) else ''}"  id="s_c_high_fr${c}" name="s_c_high_fr${c}"> $_(u'To:')
+                        <input type='number' size='4' value="${plugin_options['s_c_high_to'][c] if c < len(plugin_options['s_c_high_to']) else ''}"  id="s_c_high_to${c}" name="s_c_high_to${c}">
+                    </td>
+                </tr>
+                $if sensors.count()>1:
+                    <tr><th><hr></th></tr>                                                               
+        </table>
     </form>
 </div>
 

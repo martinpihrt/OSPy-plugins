@@ -1,0 +1,16 @@
+$def with()
+
+$var title: $_(u'Voice Notification - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'Voice Notification - help')</div>
+    <p>$_(u'This plugin allows you to use voice notifications for different events in the OSPy system.')</p>
+    <p>$_(u'Into the Connector from Output on Raspberry Pi connect Amplifier and Speakers for voice notification.')</p>
+    <p>$_(u'This plugin requires pygame installed. If pygame is not installed on the system, plugin it will install it himself. Pygame is comes already installed on the default raspberian installation.')</p>
+    <p>$_(u'Visit') <a href="https://www.pygame.org/wiki/GettingStarted">www.pygame.org</a> $_(u'and') <a href="https://pihrt.com/elektronika/248-moje-rapsberry-pi-zavlazovani-zahrady">www.pihrt.com</a> $_(u'for more information').</p><br>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('voice_notification.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>

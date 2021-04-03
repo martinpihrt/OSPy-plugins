@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Rimco'  
+__author__ = u'Rimco'  
 # Martin Pihrt add i18n language support
 
 import datetime
@@ -20,7 +20,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Weather-based Water Level'
-MENU =  _('Package: Weather-based Water Level')
+MENU =  _(u'Package: Weather-based Water Level')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -70,7 +70,7 @@ class WeatherLevelChecker(Thread):
             try:
                 log.clear(NAME)
                 if plugin_options['enabled']:
-                    log.debug(NAME,  _('Checking weather status') + '...')
+                    log.debug(NAME,  _(u'Checking weather status') + '...')
 
                     info = []
                     days = 0
@@ -84,7 +84,7 @@ class WeatherLevelChecker(Thread):
 
                         total_info['rain_mm'] += weather.get_rain(check_date)
 
-                    log.info(NAME, _('Using') + ' %d ' % days + _('days of information.'))
+                    log.info(NAME, _(u'Using') + ' %d ' % days + _(u'days of information.'))
 
                     total_info.update({
                         'temp_c': sum([val['temperature'] for val in info]) / len(info),
@@ -109,18 +109,18 @@ class WeatherLevelChecker(Thread):
                     water_adjustment = float(
                         max(plugin_options['wl_min'], min(plugin_options['wl_max'], water_adjustment)))
 
-                    log.info(NAME, _('Water needed') + ' %d ' % days + _('days') + ': %.1fmm' % water_needed)
-                    log.info(NAME, _('Total rainfall') + ': %.1fmm' % total_info['rain_mm'])
-                    log.info(NAME, '_______________________________')
-                    log.info(NAME, _('Irrigation needed') +  ': %.1fmm' % water_left)
-                    log.info(NAME, _('Weather Adjustment') + ': %.1f%%' % water_adjustment)
+                    log.info(NAME, _(u'Water needed') + ' %d ' % days + _('days') + ': %.1fmm' % water_needed)
+                    log.info(NAME, _(u'Total rainfall') + ': %.1fmm' % total_info['rain_mm'])
+                    log.info(NAME, u'_______________________________')
+                    log.info(NAME, _(u'Irrigation needed') +  ': %.1fmm' % water_left)
+                    log.info(NAME, _(u'Weather Adjustment') + ': %.1f%%' % water_adjustment)
 
                     level_adjustments[NAME] = water_adjustment / 100
 
                     if plugin_options['protect_enabled']:
                         current_data = weather.get_current_data()
                         temp_local_unit = current_data['temperature'] if options.temp_unit == "C" else 32.0 + 9.0 / 5.0 * current_data['temperature']
-                        log.debug(NAME, _('Temperature') + ': %.1f %s' % (temp_local_unit, options.temp_unit))                       
+                        log.debug(NAME, _(u'Temperature') + ': %.1f %s' % (temp_local_unit, options.temp_unit))                       
                         month = time.localtime().tm_mon  # Current month.
                         if temp_local_unit < plugin_options['protect_temp'] and month in plugin_options['protect_months']:
                             station_seconds = {}
@@ -134,20 +134,20 @@ class WeatherLevelChecker(Thread):
                                 if run_once.is_active(datetime.datetime.now(), station.index):
                                     break
                             else:
-                                log.debug(NAME, _('Protection activated.'))
+                                log.debug(NAME, _(u'Protection activated.'))
                                 run_once.set(station_seconds)
 
                     self._sleep(3600)
 
                 else:
                     log.clear(NAME)
-                    log.info(NAME, _('Plug-in is disabled.'))
+                    log.info(NAME, _(u'Plug-in is disabled.'))
                     if NAME in level_adjustments:
                         del level_adjustments[NAME]
                     self._sleep(24*3600)
 
             except Exception:
-                log.error(NAME, _('Weather-based water level plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Weather-based water level plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(3600)
         weather.remove_callback(self.update)
 
@@ -189,6 +189,13 @@ class settings_page(ProtectedPage):
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help page."""
+
+    def GET(self):
+        return self.plugin_render.weather_based_water_level_help()        
 
 
 class settings_json(ProtectedPage):

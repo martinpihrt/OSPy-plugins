@@ -1,0 +1,15 @@
+$def with()
+
+$var title: $_(u'Weather-based Water Level - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'Weather-based Water Level - help')</div>
+    <p>$_(u'When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly').</p>
+    <p>$_(u'In addition, it is now able to protect plants from frost during the selected months').</p>
+    <p>$_(u'Author Rimco (Thank you).')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('weather_based_water_level.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div> 

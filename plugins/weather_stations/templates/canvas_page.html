@@ -4,55 +4,23 @@ $var title: $_('Weather Stations')
 $var page: plugins
 
 <script src="/static/scripts/gauge.min.js"></script>
-
 <script>
-
-var timers = [];
-var can_data = [];
-var can_1_name = $:{json.dumps(plugin_options['can_1_name'], ensure_ascii=False).encode('utf8')};
-var can_2_name = $:{json.dumps(plugin_options['can_2_name'], ensure_ascii=False).encode('utf8')};
-var can_3_name = $:{json.dumps(plugin_options['can_3_name'], ensure_ascii=False).encode('utf8')};
-var can_4_name = $:{json.dumps(plugin_options['can_4_name'], ensure_ascii=False).encode('utf8')};
-var can_5_name = $:{json.dumps(plugin_options['can_5_name'], ensure_ascii=False).encode('utf8')};
-var can_6_name = $:{json.dumps(plugin_options['can_6_name'], ensure_ascii=False).encode('utf8')};
-var can_7_name = $:{json.dumps(plugin_options['can_7_name'], ensure_ascii=False).encode('utf8')};
-var can_8_name = $:{json.dumps(plugin_options['can_8_name'], ensure_ascii=False).encode('utf8')};
-var can_9_name = $:{json.dumps(plugin_options['can_9_name'], ensure_ascii=False).encode('utf8')};
+var timers = [];   // timers for canvas refresh interval
+var can_data = []; // values from sensors for canvas
+var can_name = []; // sensors names from plugin
+var can_name_len;  // canvas count
+var plugin_options = $:{json.dumps(plugin_options['s_name'], ensure_ascii=False).encode('utf8')};
 
 function animateGauges() {   // send values to canvas by name
     document.gauges.forEach(function(gauge) {
         timers.push(setInterval(function() {
-            switch (gauge.canvas.element.attributes[1].textContent) { // 1 is name in data-title in canvas
-              case can_1_name: 
-                gauge.value = can_data[0];
-              break;
-              case can_2_name: 
-                gauge.value = can_data[1];
-              break;
-              case can_3_name: 
-                gauge.value = can_data[2];
-              break;
-              case can_4_name: 
-                gauge.value = can_data[3];
-              break;
-              case can_5_name: 
-                gauge.value = can_data[4];
-              break;
-              case can_6_name: 
-                gauge.value = can_data[5];
-              break;  
-              case can_7_name: 
-                gauge.value = can_data[6];
-              break; 
-              case can_8_name: 
-                gauge.value = can_data[7];
-              break; 
-              case can_9_name: 
-                gauge.value = can_data[8];
-              break;                                                                                                
-            }
+            for(var i = 0; i < can_name_len; i++) {
+                if (gauge.canvas.element.attributes[1].textContent == can_name[i]) { // 1 is name in data-title in canvas
+                    gauge.value = can_data[i];                                       // set value from this probe to this canvas
+                }
+            }    
         }, gauge.animation.duration + 50));
-    });
+    });    
 }
 
 if (!Array.prototype.forEach) { // canvas array
@@ -70,39 +38,23 @@ function updateFooter(){
         let cpu_usage = osVals.cpu_usage;
         let sys_uptime = osVals.sys_uptime;
         let sys_ip = osVals.ip;
-
         jQuery("#cpu_temp span.cpu_temp").text(cpu_temp);
         jQuery("#cpu_usage span.cpu_usage").text(cpu_usage);
         jQuery("#ip span.ip").text(sys_ip);
         jQuery("#uptime span.uptime").text(sys_uptime);
     })
-        
     setTimeout(updateFooter, 15000); 
 }
 
 function updateData(){
     jQuery.getJSON("/plugins/weather_stations/data_json", function(dataVals) {
-        can_data[0] = dataVals.temp_ds0;
-        can_data[1] = dataVals.temp_ds1;
-        can_data[2] = dataVals.temp_ds2;
-        can_data[3] = dataVals.temp_ds3;
-        can_data[4] = dataVals.temp_ds4;
-        can_data[5] = dataVals.temp_ds5;
-        can_data[6] = dataVals.water_1;
-        can_data[7] = dataVals.water_2;
-        can_data[8] = dataVals.wind_1;
-
-        jQuery("#can0 span.can0").text(can_data[0]);
-        jQuery("#can1 span.can1").text(can_data[1]);
-        jQuery("#can2 span.can2").text(can_data[2]);
-        jQuery("#can3 span.can3").text(can_data[3]);
-        jQuery("#can4 span.can4").text(can_data[4]);
-        jQuery("#can5 span.can5").text(can_data[5]);
-        jQuery("#can6 span.can6").text(can_data[6]);
-        jQuery("#can7 span.can7").text(can_data[7]);
-        jQuery("#can8 span.can8").text(can_data[8]);                       
+        can_name_len = dataVals.length;
+        for(var s = 0; s < dataVals.length; s++) {
+            can_data[s] = dataVals[s];                         // set values from all probes to list
+            jQuery("#can"+s+" span.can"+s).text(can_data[s]);  // set text to span in text mode, not canvas
+            can_name[s] = plugin_options[s];                   // set names from all probes to list
+        }
     })
-        
     setTimeout(updateData, 4000); 
 }
 
@@ -110,58 +62,41 @@ jQuery(document).ready(function(){
     jQuery("button#cCancel").click(function(){
         window.location="/";
     });
-
     updateData();
     updateFooter();
-    setTimeout("animateGauges()", 1000);    
+    setTimeout("animateGauges()", 100);
 });
 </script>
 
-$if not plugin_options['can_or_txt']:    
-    <div id="canvas-container" class="canvas-container">  
-    $for i in range(1, 10):
-        $if plugin_options['use_can%s' %(int(i))]:
+$if not plugin_options['can_or_txt']:
+    <div id="canvas-container" class="canvas-container">
+    $ sensor_count = sensors.count()
+    $for i in range(0, sensor_count+9):
+        $if plugin_options['s_use'][i]:
             <canvas data-type="radial-gauge"
-            data-title= $:{json.dumps(plugin_options['can_%s_name' %(int(i))], ensure_ascii=False).encode('utf8')};
+            data-title= $:{json.dumps(plugin_options['s_name'][i], ensure_ascii=False).encode('utf8')};
             data-value="0"
-            data-min-value= $plugin_options['can_%s_min' %(int(i))]
-            data-max-value= $plugin_options['can_%s_max' %(int(i))]
+            data-min-value= $plugin_options['s_min'][i]
+            data-max-value= $plugin_options['s_max'][i]
             data-width= $plugin_options['can_size_xy']
             data-height= $plugin_options['can_size_xy']
-            data-major-ticks= $plugin_options['can_%s_tick' %(int(i))]
-            data-units= $:{json.dumps(plugin_options['can_%s_units' %(int(i))], ensure_ascii=False).encode('utf8')};
-            data-highlights= '[{"from": $plugin_options['can_%s_high_fr' %(int(i))], "to": $plugin_options['can_%s_high_to' %(int(i))], "color": "red"}, {"from": $plugin_options['can_%s_2_high_fr' %(int(i))], "to": $plugin_options['can_%s_2_high_to' %(int(i))], "color": "blue"},{"from": $plugin_options['can_%s_3_high_fr' %(int(i))], "to": $plugin_options['can_%s_3_high_to' %(int(i))], "color": "green"}]'>
+            data-major-ticks= $plugin_options['s_tick'][i]
+            data-units= $:{json.dumps(plugin_options['s_unit'][i], ensure_ascii=False).encode('utf8')};
+            data-highlights= '[{"from": $plugin_options['s_a_high_fr'][i], "to": $plugin_options['s_a_high_to'][i], "color": "red"}, {"from": $plugin_options['s_b_high_fr'][i], "to": $plugin_options['s_b_high_to'][i], "color": "blue"},{"from": $plugin_options['s_c_high_fr'][i], "to": $plugin_options['s_c_high_to'][i], "color": "green"}]'>
             $_(u'Your web browser does not support canvas elements.') 
             </canvas>
     </div>
 
 $else:
     <div id="text-container" class="text-container">
-    $if plugin_options['use_can1']:
-        <p id='can0' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_1_name']: <span class='can0'></span>$plugin_options['can_1_units']</p>
-    $if plugin_options['use_can2']:        
-        <p id='can1' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_2_name']: <span class='can1'></span>$plugin_options['can_2_units']</p>
-    $if plugin_options['use_can3']:        
-        <p id='can2' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_3_name']: <span class='can2'></span>$plugin_options['can_3_units']</p>
-    $if plugin_options['use_can4']:        
-        <p id='can3' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_4_name']: <span class='can3'></span>$plugin_options['can_4_units']</p>
-    $if plugin_options['use_can5']:        
-        <p id='can4' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_5_name']: <span class='can4'></span>$plugin_options['can_5_units']</p>
-    $if plugin_options['use_can6']:        
-        <p id='can5' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_6_name']: <span class='can5'></span>$plugin_options['can_6_units']</p>
-    $if plugin_options['use_can7']:        
-        <p id='can6' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_7_name']: <span class='can6'></span>$plugin_options['can_7_units']</p>
-    $if plugin_options['use_can8']:        
-        <p id='can7' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_8_name']: <span class='can7'></span>$plugin_options['can_8_units']</p>
-    $if plugin_options['use_can9']:        
-        <p id='can8' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['can_9_name']: <span class='can8'></span>$plugin_options['can_9_units']</p>
-    </div>    
-
+    $ sensor_count = sensors.count()
+    $for c in range(0, sensor_count+9):
+        $if plugin_options['s_use'][c]:
+            <p id='can${c}' style="font-size: $plugin_options['txt_size_font']px"> $plugin_options['s_name'][c]: <span class='can${c}'></span> $plugin_options['s_unit'][c]</p>
+    </div>
 
 <div id="controls">
     <button id="cCancel" class="submit">$_('Cancel')</button>
     <a href=$plugins.plugin_url('weather_stations.settings_page') class="button danger">$_('Settings')</a>
     <a href=$plugins.plugin_url('weather_stations.help_page') class="button upload">$_('Help')</a>
 </div>
-                                  
-                     

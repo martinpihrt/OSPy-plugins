@@ -48,5 +48,8 @@ If the set range is the same (for example from 0 to 0) then the color will not b
   Same setting as in temperature.
  
 ### This part needs correct setuped plugin Wind Speed Monitor
-  Same setting as in temperature.
+  Same setting as in temperature.  
+
+### This part needs correct setuped OSPy sensors
+  Same setting as in temperature.  
 

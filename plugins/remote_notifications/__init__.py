@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # this plugins send GET data to remote web server
 
 import json
@@ -22,15 +22,15 @@ from ospy.helpers import datetime_string, get_input
 
 
 NAME = 'Remote Notifications'
-MENU =  _('Package: Remote Notifications')
+MENU =  _(u'Package: Remote Notifications')
 LINK = 'settings_page'
 
 remote_options = PluginOptions(
     NAME,
     {
-        'use': False,
-        'rem_adr': "your web server",
-        'api': "123456789"
+        u'use': False,
+        u'rem_adr': u"your web server",
+        u'api': u"123456789"
     }
 )
 
@@ -63,9 +63,9 @@ class RemoteSender(Thread):
         log.clear(NAME)
         try:
             send_data(text)  # send get data
-            log.info(NAME, _('Remote was sent') + ':\n' + text)
+            log.info(NAME, _(u'Remote was sent') + ':\n' + text)
         except Exception:
-            log.error(NAME, _('Remote was not sent') + '!\n' + traceback.format_exc())
+            log.error(NAME, _(u'Remote was not sent') + '!\n' + traceback.format_exc())
 
     def run(self):
         send_msg = False  # send get data if change (rain, end program ....
@@ -218,14 +218,14 @@ class RemoteSender(Thread):
                     body += ('&humiDHT=' + str(humiDHT))
                     body += ('&api=' + remote_options['api'])  # API password
                     log.clear(NAME)
-                    log.info(NAME, _('Test data...'))
+                    log.info(NAME, _(u'Test data...'))
                     self.try_send(body)                        # Send GET data to remote server 
                     send_msg = False                           # Disable send data    
                     
                 self._sleep(2)
 
             except Exception:
-                log.error(NAME, _('Remote plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Remote plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -260,9 +260,9 @@ def send_data(text):
         req = urllib2.Request(url=remote_options['rem_adr']+'save.php/?' + text)
         req.add_header('Referer', 'OSPy sprinkler') 
         f = urllib2.urlopen(req)
-        log.info(NAME, _('Remote server reply') + ':\n' + f.read())
+        log.info(NAME, _(u'Remote server reply') + ':\n' + f.read())
     else:
-        raise Exception(_('Remote plug-in is not properly configured') + '!')
+        raise Exception(_(u'Remote plug-in is not properly configured') + '!')
 
 
 ################################################################################
@@ -307,6 +307,13 @@ class settings_page(ProtectedPage):
                 remote_sender.try_send(body)
 
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help page."""
+
+    def GET(self):
+        return self.plugin_render.remote_notifications_help()        
 
 
 class settings_json(ProtectedPage):

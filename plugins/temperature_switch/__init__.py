@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 
 import json
 import time
@@ -344,6 +344,13 @@ class settings_page(ProtectedPage):
         if sender is not None:
             sender.update()                
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help page."""
+
+    def GET(self):
+        return self.plugin_render.temperature_switch_help()         
 
 
 class settings_json(ProtectedPage):

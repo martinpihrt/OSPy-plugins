@@ -1,0 +1,24 @@
+$def with()
+
+$var title: $_('Water meter - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Water meter - help')</div>
+    <p>$_('This plugin needs an enabled') I&sup2;C $_('bus and connected counter PCF8583 on') I&sup2;C $_('address 0x50 or 0x51.')</p>
+    <p>$_('This plugin measures the amount of water flowing per sec, min, hour and the total amount of water').</p>
+    <p>$_('Visit') <a href="http://pihrt.com/elektronika/298-moje-raspberry-pi-plugin-prutokomer">Martin Pihrt blog</a> $_('for more information').</p><br>
+    <p><b>$_('The PCB board for Water meter (board by pihrt.com)')</b></p>
+    <p>$_('Without input amplifier and comparator')</p>
+    <a href="/plugins/water_meter/static/images/aa.png"><img src="/plugins/water_meter/static/images/aa.png" width="60%"></a></br>
+    <a href="/plugins/water_meter/static/images/bb.png"><img src="/plugins/water_meter/static/images/bb.png" width="20%"></a></br>
+    <p>$_('With input amplifier and comparator')</p>
+    <a href="/plugins/water_meter/static/images/schematics.png"><img src="/plugins/water_meter/static/images/schematics.png" width="60%"></a></br>
+    <a href="/plugins/water_meter/static/images/brd.png"><img src="/plugins/water_meter/static/images/brd.png" width="30%"></a></br>
+    <a href="/plugins/water_meter/static/images/top.png"><img src="/plugins/water_meter/static/images/top.png" width="40%"></a></br>
+    <a href="/plugins/water_meter/static/images/bot.png"><img src="/plugins/water_meter/static/images/bot.png" width="40%"></a></br>        
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('water_meter.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div> 

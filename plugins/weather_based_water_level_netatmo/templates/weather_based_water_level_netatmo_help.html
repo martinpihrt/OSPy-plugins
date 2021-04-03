@@ -1,0 +1,15 @@
+$def with()
+
+$var title: $_(u'Weather-based Water Level Netatmo - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'Weather-based Water Level Netatmo - help') </div>
+    <p>$_(u'When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly').</p>
+    <p>$_(u'This plug-in is based on Philippe Larduinat (philippelt@users.sourceforge.net) - for NetAtmo.')</p>
+    <p>$_(u'For OSPy ported Václav Hrabě (Thank you).')</p>    
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('weather_based_water_level_netatmo.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>

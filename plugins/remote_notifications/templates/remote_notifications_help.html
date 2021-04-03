@@ -1,0 +1,49 @@
+$def with()
+
+$var title: $_(u'Remote Notifications - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Remote Notifications - help')</div>
+    <p>$_(u'This plugin can send Notifications on the Remote Webserver. This plugin requre SQL server and Webserver with PHP.')</p>
+    <p>$_(u'This plugin send data as get command to remote PHP web pages.')</p>
+    <p>$_(u'This plugin requred correct settings this plugins: UPS Monitor, Tank Humi Monitor, Air Temperature and Humidity Monitor.')</p>
+    <p>$_(u'If I not have a public IP address, or for some reason can not connect directly to OSPy I use this plugin for display on the site, which is accessible from the Internet.')</p>
+    <p><b>$_(u'Plugin setup')</b></p>
+    <ul>
+    <li>$_(u'Check Use plug-in')</li>
+    $_(u'If checked send data to remote server is active.') 
+    <li>$_(u'Remote server address')</li>
+    $_(u'Type your remote server address where are the php files.') 
+    $_(u'Example: https://server.com/automatOSPy/')
+    <li>$_(u'API for access')</li>
+    $_(u'Type your API key, that is stored in a file save.php on the server.')  
+    $_(u'Example: msd455fsvv4sd5dv445s5s6d5vsdvdsv')
+    <li>$_(u' Status')</li>
+    $_(u'Status window from the plugin.') 
+    </ul></br>
+    $_(u'Visit') [Martin Pihrt blog](https://pihrt.com/automatOSPy/) $_(u'for to demonstrate the function of watering my flowers.')  
+    <p>$_(u'Note: For this plugin we need a public web server with PHP support and access to SQL database into which data is written from this plugin.')</p></br>
+    <p><b>$_(u'Server setup')</b></p>
+    <ul>
+    <li>$_(u'On the Web server will place these files (after unpacking the zip file)')</li>
+    <a href="https://github.com/martinpihrt/OSPy-PHPfile/archive/master.zip">$_(u'download automatOSPy.zip files from github')</a>
+    <li>$_(u'On the SQL server we create new database with new table: ospy as in imagge')</li>
+    <a href="/plugins/remote_notifications/static/images/sql.png"><img src="/plugins/remote_notifications/static/images/sql.png" width="40%"></a>
+    <li>$_(u'On the WEB server we places files as in imagge')</li>
+    <a href="/plugins/remote_notifications/static/images/web.png"><img src="/plugins/remote_notifications/static/images/web.png" width="40%"></a>
+    </ul>
+    <p>$_(u'In file save.php we type own API key same as use this plugin.')
+    <ul>
+    <li>$_(u'In file connect.php we type')</li>
+    <ul>
+    <li>$_(u'server="address SQL server"')</li> 
+    <li>$_(u'user="user name SQL server"') </li> 
+    <li>$_(u'pass="password SQL server"')</li>
+    <li>$_(u'db="ospy" name of table on the SQL server')</li>
+    </ul></ul>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('remote_ftp_control.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>                

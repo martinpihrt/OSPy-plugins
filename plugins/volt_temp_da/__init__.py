@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # This plugin read data (temp or voltage) from I2C PCF8591 on adress 0x48. For temperature probe use LM35D (LM35DZ). 
 
 import json
@@ -18,7 +18,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Voltage and Temperature Monitor'
-MENU =  _('Package: Voltage and Temperature Monitor')
+MENU =  _(u'Package: Voltage and Temperature Monitor')
 LINK = 'settings_page'
 
 pcf_options = PluginOptions(
@@ -82,7 +82,7 @@ class PCFSender(Thread):
 
             self.adc = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         except ImportError:
-            log.warning(NAME, _('Could not import smbus.'))
+            log.warning(NAME, _(u'Could not import smbus.'))
 
         while not self._stop.is_set():
             log.clear(NAME)
@@ -110,7 +110,7 @@ class PCFSender(Thread):
 
             except Exception:
                 self.adc = None
-                log.error(NAME, _('Voltage and Temperature Monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Voltage and Temperature Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -215,6 +215,13 @@ class settings_page(ProtectedPage):
         if pcf_sender is not None:
             pcf_sender.update()                
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class help_page(ProtectedPage):
+    """Load an html page for help page."""
+
+    def GET(self):
+        return self.plugin_render.volt_temp_da_help()        
 
 
 class settings_json(ProtectedPage):
