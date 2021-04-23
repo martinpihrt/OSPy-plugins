@@ -107,9 +107,9 @@ jQuery(document).ready(function(){
                 </tr>
                 <tr>
                     $if c==6:
-                        <td style='text-transform: none;'>$_('Name for Canvas Water Volume'):</td>
-                    $if c==7:
                         <td style='text-transform: none;'>$_('Name for Canvas Water Percent'):</td>
+                    $if c==7:
+                        <td style='text-transform: none;'>$_('Name for Canvas Water Volume'):</td>
                     <td title=$:{json.dumps(_(u'Your unique name and units for canvas.'), ensure_ascii=False)}>
                     <input type='text' value="${plugin_options['s_name'][c] if c < len(plugin_options['s_name']) else ''}"  id="s_name${c}" name="s_name${c}"> $_(u'Units:')
                     <input type='text' size='2' value="${plugin_options['s_unit'][c] if c < len(plugin_options['s_unit']) else ''}" id="s_unit${c}" name="s_unit${c}">
