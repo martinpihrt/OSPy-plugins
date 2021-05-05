@@ -22,18 +22,38 @@ $var page: plugins
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use button control'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'if checked, the extension is enabled.'), ensure_ascii=False)}>
                     <input name='use_button' type='checkbox'${" checked" if plugin_options['use_button'] else ""}>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Address for MCP23017 controller'):</td>
+                <td title=$:{json.dumps(_(u'Select the desired address for the MCP23017 controller.'), ensure_ascii=False)}>
+                <select id="i2c_addr" name="i2c_addr">    
+                    <option value=32 ${"selected" if plugin_options['i2c_addr']== 32 else ""}> $_('Address 0x20')</option>
+                    <option value=33 ${"selected" if plugin_options['i2c_addr']== 33 else ""}> $_('Address 0x21')</option>
+                    <option value=34 ${"selected" if plugin_options['i2c_addr']== 34 else ""}> $_('Address 0x22')</option>
+                    <option value=35 ${"selected" if plugin_options['i2c_addr']== 35 else ""}> $_('Address 0x23')</option>
+                    <option value=36 ${"selected" if plugin_options['i2c_addr']== 36 else ""}> $_('Address 0x24')</option>
+                    <option value=37 ${"selected" if plugin_options['i2c_addr']== 37 else ""}> $_('Address 0x25')</option>
+                    <option value=38 ${"selected" if plugin_options['i2c_addr']== 38 else ""}> $_('Address 0x26')</option>
+                    <option value=39 ${"selected" if plugin_options['i2c_addr']== 39 else ""}> $_('Address 0x27')</option>
+                </select>                    
+                </td>    
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                
             $for i in range(8):
-              <tr>
+                <tr>
                 <td style="text-transform: none;">$_('Button') ${i+1} $_('controls'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'Asociation concrete button with operation.'), ensure_ascii=False)}>
                 <select id="button${i}" name="button${i}">    
                     <option value='reboot'   ${"selected" if plugin_options['button%d' % i]== 'reboot' else ""}> $_('Reboot OS system')</option>
                     <option value='pwrOff'   ${"selected" if plugin_options['button%d' % i]== 'pwrOff' else ""}> $_('Shutdown OS system')</option>
-                    <option value='stopAll'  ${"selected" if plugin_options['button%d' % i]== 'stopAll' else ""}> $_('Stop all station')</option>
+                    <option value='stopAll'  ${"selected" if plugin_options['button%d' % i]== 'stopAll' else ""}> $_('Stop stations')</option>
                     <option value='schedEn'  ${"selected" if plugin_options['button%d' % i]== 'schedEn' else ""}> $_('Enable scheduler')</option>
                     <option value='schedDis' ${"selected" if plugin_options['button%d' % i]== 'schedDis' else ""}> $_('Disable scheduler')</option>
                     <option value='RunP1'    ${"selected" if plugin_options['button%d' % i]== 'RunP1' else ""}> $_('Run program 1')</option>
@@ -46,7 +66,21 @@ $var page: plugins
                     <option value='RunP8'    ${"selected" if plugin_options['button%d' % i]== 'RunP8' else ""}> $_('Run program 8')</option>
                 </select>
                 </td>
-              </tr>
+                </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>     
+            <tr>
+                <td style='text-transform: none;'>$_('Stop this run stations in scheduler')</td>
+                <td title=$:{json.dumps(_(u'If concrete button stops stations, then select the desired stations to stop here.'), ensure_ascii=False)}>
+                <select multiple name="used_stations" width="250" style="width: 250px" size="8">
+                    $for station in [station for station in stations if station.enabled]:
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                </select>
+                </td>
+            </tr>     
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

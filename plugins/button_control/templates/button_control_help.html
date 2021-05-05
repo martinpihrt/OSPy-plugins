@@ -14,6 +14,108 @@ $var page: plugins
     <a href="/plugins/button_control/static/images/bot.png"><img src="/plugins/button_control/static/images/bot.png" width="30%"></a></br>
     <a href="/plugins/button_control/static/images/top2.png"><img src="/plugins/button_control/static/images/top2.png" width="30%"></a></br>
     <a href="/plugins/button_control/static/images/left.png"><img src="/plugins/button_control/static/images/left.png" width="30%"></a></br>
+    <p><b>$_('Address for MCP23017 controller')</b></p>
+    <p>$_('Selector for') I&sup2;C $_('address in range 0x20 to 0x27.')</p>
+    <p>$_('The address is set via inputs A0-A2 on the MCP23017 controller.')</p>
+    <table style="text-align: left; width: 327px;" border="0"
+    cellpadding="2" cellspacing="2">
+    <tbody>
+    <tr>
+    <td style="vertical-align: top; width: 108px;">$_('Chip address')<br>
+    </td>
+    <td style="vertical-align: top;">$_('A2')<br>
+    </td>
+    <td style="vertical-align: top;">$_('A1')<br>
+    </td>
+    <td style="vertical-align: top;">$_('A0')<br>
+    </td>
+    <td style="vertical-align: top; width: 86px;">$_('Address')<br>
+    </td>
+    </tr>
+    <tr>
+    <td style="vertical-align: top; width: 108px;">$_('000')<br>
+    </td>
+    <td style="vertical-align: top;">$_('GND')</td>
+    <td style="vertical-align: top;">$_('GND')</td>
+    <td style="vertical-align: top;">$_('GND')<br>
+    </td>
+    <td style="vertical-align: top; width: 86px;">$_('0x20')<br>
+    </td>
+    </tr>
+    <tr>
+    <td style="vertical-align: top; width: 108px;">$_('001')<br>
+    </td>
+    <td style="vertical-align: top;">$_('GND')</td>
+    <td style="vertical-align: top;">$_('GND')</td>
+    <td style="vertical-align: top;">$_('VCC')<br>
+    </td>
+    <td style="vertical-align: top; width: 86px;">$_('0x21')<br>
+    </td>
+    </tr>
+    <tr>
+    <td style="vertical-align: top; width: 108px;">$_('010')<br>
+    </td>
+    <td style="vertical-align: top;">$_('GND')</td>
+    <td style="vertical-align: top;">$_('VCC')</td>
+    <td style="vertical-align: top;">$_('GND')<br>
+    </td>
+    <td style="vertical-align: top; width: 86px;">$_('0x22')<br>
+    </td>
+    </tr>
+    <tr>
+    <td style="vertical-align: top; width: 108px;">$_('011')<br>
+    </td>
+    <td style="vertical-align: top;">$_('GND')</td>
+    <td style="vertical-align: top;">$_('VCC')</td>
+    <td style="vertical-align: top;">$_('VCC')<br>
+    </td>
+    <td style="vertical-align: top; width: 86px;">$_('0x23')<br>
+    </td>
+    </tr>
+    <tr>
+    <td style="vertical-align: top; width: 108px;">$_('100')<br>
+    </td>
+    <td style="vertical-align: top;">$_('VCC')</td>
+    <td style="vertical-align: top;">$_('GND')</td>
+    <td style="vertical-align: top;">$_('GND')<br>
+    </td>
+    <td style="vertical-align: top; width: 86px;">$_('0x24')<br>
+    </td>
+    </tr>
+    <tr>
+    <td style="vertical-align: top; width: 108px;">$_('101')<br>
+    </td>
+    <td style="vertical-align: top;">$_('VCC')</td>
+    <td style="vertical-align: top;">$_('GND')</td>
+    <td style="vertical-align: top;">$_('VCC')<br>
+    </td>
+    <td style="vertical-align: top; width: 86px;">$_('0x25')<br>
+    </td>
+    </tr>
+    <tr>
+    <td style="vertical-align: top; width: 108px;">$_('110')<br>
+    </td>
+    <td style="vertical-align: top;">$_('VCC')</td>
+    <td style="vertical-align: top;">$_('VCC')</td>
+    <td style="vertical-align: top;">$_('GND')<br>
+    </td>
+    <td style="vertical-align: top; width: 86px;">$_('0x26')<br>
+    </td>
+    </tr>
+    <tr>
+    <td style="vertical-align: top;">$_('111')<br>
+    </td>
+    <td style="vertical-align: top;">$_('VCC')</td>
+    <td style="vertical-align: top;">$_('VCC')</td>
+    <td style="vertical-align: top;">$_('VCC')<br>
+    </td>
+    <td style="vertical-align: top;">$_('0x27')<br>
+    </td>
+    </tr>
+    </tbody>
+    </table>
+    <p>$_('For find your address use System Information plugin.')</p>
+    <p>$_('Note: the buttons must not have the same address as the LCD display. You must change either the address of the display or the buttons address.')</p>
 </div>
 
 <div id="controls">
