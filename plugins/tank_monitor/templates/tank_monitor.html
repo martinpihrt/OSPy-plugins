@@ -222,6 +222,12 @@ function create_graph(result) {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Delay Duration (hours)'):</td>
+                <td title=$:{json.dumps(_(u'If there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking. if the level in the tank rises above the minimum + 5 cm, the delay is deactivated'), ensure_ascii=False)}>
+                    <input name='delay_duration' type='number' min="0" max="96" value='$plugin_options["delay_duration"]'>
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Stop stations if sonic probe has fault'):</td>
                 <td title=$:{json.dumps(_(u'If the level sensor fails, the above selected stations in the scheduler will stop'), ensure_ascii=False)}>
                     <input name='use_water_stop' type='checkbox'${" checked" if plugin_options['use_water_stop'] else ""}>

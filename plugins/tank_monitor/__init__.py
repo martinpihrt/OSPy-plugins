@@ -18,7 +18,7 @@ from threading import Thread, Event
 import web
 
 from ospy import helpers
-from ospy.options import options
+from ospy.options import options, rain_blocks
 from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.helpers import get_rpi_revision
@@ -64,6 +64,7 @@ tank_options = PluginOptions(
        'reg_ss': 0,            # sec for maximal runtime
        'use_water_stop': False,# if the level sensor fails, the above selected stations in the scheduler will stop
        'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
+       'delay_duration': 0,    # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
     } 
 )
 
@@ -237,7 +238,7 @@ class Sender(Thread):
                             qmin = datetime_string()
                             tank_options['log_date_minlevel'] = qmin
                             qdict['log_date_minlevel'] = qmin
-                            tank_options.web_update(qdict)                                 # save to plugin options                          
+                            tank_options.web_update(qdict)                                 # save to plugin options
                              
 
                         if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 2: # level value is lower
@@ -245,12 +246,19 @@ class Sender(Thread):
                                 send = True                                                # send
                                 mini = False 
     
-                            if tank_options['use_stop']:                                   # if stop scheduler                    
+                            if tank_options['use_stop']:                                   # if stop scheduler
                                 set_stations_in_scheduler_off()         
                                 log.info(NAME, datetime_string() + ' ' + _(u'ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _(u'cm') + _(u'!'))
+                                delaytime = int(tank_options['delay_duration'])
+                                if delaytime > 0:                             # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
+                                    rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                                    
                         if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: # refresh send email if actual level > options minimum +5
                             mini = True
+                            delaytime = int(tank_options['delay_duration']) # if the level in the tank rises above the minimum + 5 cm, the delay is deactivated
+                            if delaytime > 0:
+                                if NAME in rain_blocks:
+                                    del rain_blocks[NAME]
 
                         if tank_options['enable_log']:
                             millis = int(round(time.time() * 1000))
