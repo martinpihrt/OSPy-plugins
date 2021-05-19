@@ -8,7 +8,15 @@ $var page: plugins
     <p>$_('This plugin can be used to control devices such as remote RF units via Linux commands.')</p>
     <p>$_('Enter command line commands to be issued when a station is to be started or stopped.')</p>
     <p>$_('For example a command might look like: wget http://xxx.xxx.xxx.xxx/relay1on')</p> 
-    <p>$_('Leave fields blank for any stations not to be controlled from the command line.')</p>
+    <p>$_('Leave fields blank for any stations not to be controlled from the command line.')</p></br>
+    <p><b>$_('Sensors')</b></p>
+    <p>$_('Example of a command to control a relay on the sensor board.')</p>
+    <p>$_('Switching on the station without time limitation (the sensor relay remains closed until a switch-off command arrives).')</p>
+    <ul><li><p>$_('wget http://ip:port/sensorpassword?re=1')</p></li></ul>
+    <p>$_('Switching on the station with time limitation (the sensor relay switches off after this time regardless of whether a switch-off command arrives).')</p>
+    <ul><li><p>$_('wget http://ip:port/sensorpassword?re=1&run=480')</p></li></ul>
+    <p>$_('Command to turn off the relay on the sensor.')</p>
+    <ul><li><p>$_('wget http://ip:port/sensorpassword?re=0')</p></li></ul>   
 </div>
 
 <div id="controls">

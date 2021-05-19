@@ -10,7 +10,10 @@ Plugin setup
 -----------
 
 * Check Use CLI Control:  
-  If checked enabled plugin is enabled.  
+  If checked enabled plugin is enabled. 
+
+* Check Enable logging:  
+  If checked enabled logging is enabled.   
 
 * Station:  
   Station number (Number from set outputs in options.)

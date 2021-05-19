@@ -19,13 +19,25 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('CLI Control settings')</div>
-    <a href=$plugins.plugin_url('cli_control.help_page') class="button upload">$_('Help')</a><br/> 
+    <a href=$plugins.plugin_url('cli_control.help_page') class="button upload">$_('Help')</a><br/>
+    $if plugin_options['use_log']:
+        <p>
+        <a href=$plugins.plugin_url('cli_control.log_csv') class="button download">$_('Download log')</a>
+        <a href="?show" class="button backup">$_('Show logs')</a>
+        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('cli_control.settings_page')" method="post">
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use CLI Control'):</td>
                 <td>
-                    <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>   
+                    <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Enable logging'):</td>
+                <td>
+                    <input name='use_log' type='checkbox'${" checked" if plugin_options['use_log'] else ""}>
                 </td>
             </tr>
             <tr>
@@ -36,20 +48,20 @@ $var page: plugins
             $for c in range(0,options.output_count):
                 <tr>
                     <td class="stationNumber">${c + 1}</td>
-                    <td class="command">                         
+                    <td class="command">
                        <input type="text" size="50" value="${plugin_options['on'][c] if c < len(plugin_options['on']) else ''}" id="con${c}" name="con${c}">
-                    </td>                       
+                    </td>
                     <td>
                        <input type="text" size="50" value="${plugin_options['off'][c] if c < len(plugin_options['off']) else ''}"  id="coff${c}" name="coff${c}">
-                    </td>                       
-                </tr>   
+                    </td>
+                </tr>
             <tr>
                <td style='text-transform: none;'>$_('Status'):</td>
                <td colspan="2">
                     <textarea style="font-family: monospace;" rows="7" cols="105" readonly>$'\n'.join(events)</textarea>
                </td>
-            </tr>                       
-        </table>      
+            </tr>
+        </table>
     </form>
 </div>
 
