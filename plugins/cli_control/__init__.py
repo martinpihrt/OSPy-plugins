@@ -113,7 +113,6 @@ def run_command(cmd):
 
 def on_zone_change(name, **kw):
     """ Switch relays when core program signals a change in station state."""
-    #   command = "wget http://xxx.xxx.xxx.xxx/relay1on"
     log.clear(NAME)
     log.info(NAME, _(u'Zone change signaled...'))
 
@@ -174,6 +173,24 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        state = helpers.get_input(qdict, 'state', False, lambda x: True)
+ 
+        if sender is not None and 'test' in qdict:
+            test = qdict['test']
+            if state:
+                log.clear(NAME)
+                log.info(NAME, _(u'Test CMD: {} ON.').format(int(test)+1))
+                command = plugin_options['on'] 
+                data = command[int(test)]
+                if data:
+                    run_command(data)
+            else:
+                log.clear(NAME)
+                log.info(NAME, _(u'Test CMD: {} OFF.').format(int(test)+1))
+                command = plugin_options['off'] 
+                data = command[int(test)]
+                if data:
+                    run_command(data)
 
         if sender is not None and delete:
             write_log([])
@@ -181,9 +198,9 @@ class settings_page(ProtectedPage):
             raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)            
+            raise web.seeother(plugin_url(log_page), True)
 
-        return self.plugin_render.cli_control(plugin_options, log.events(NAME))        
+        return self.plugin_render.cli_control(plugin_options, log.events(NAME))
 
     def POST(self):
         qdict = web.input()
