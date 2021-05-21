@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
-# This plugin read data from probe DHT11 (temp and humi). # Raspberry Pi pin 19 as GPIO 10
+# This plugin read data from probe DHT11 (22) (temp and humi). # Raspberry Pi pin 19 as GPIO 10
 # This plugin read data from DS18B20 hw I2C board (temp). # Raspberry Pi I2C pin
 
 import json
@@ -26,12 +26,14 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 import RPi.GPIO as GPIO
 
 # Thank's: https://github.com/szazo/DHT11_Python
-import dht11 
+import dht11
+import dht22 
 
-instance = dht11.DHT11(pin=19) # DHT on GPIO 10 pin
+instance = dht11.DHT11(pin=19)   # DHT on GPIO 10 pin
+instance22 = dht22.DHT22(pin=19) # DHT on GPIO 10 pin
 
 NAME = 'Air Temperature and Humidity Monitor'
-MENU =  _('Package: Air Temperature and Humidity Monitor')
+MENU =  _(u'Package: Air Temperature and Humidity Monitor')
 LINK = 'settings_page'
 
 tempDS = [-127,-127,-127,-127,-127,-127]
@@ -46,6 +48,7 @@ plugin_options = PluginOptions(
      'log_interval': 1,
      'log_records': 0,
      'enable_dht': False,
+     'dht_type': 0,
      'label': 'Air Probe',
      'enabled_reg': False,
      'hysteresis': 5,       # %rv hysteresis 5 is +-2,5
@@ -131,10 +134,15 @@ class Sender(Thread):
                     log.info(NAME, datetime_string())
                     tempText = ""
 
-                    if plugin_options['enable_dht']: # if DHT11 probe is enabled
+                    if plugin_options['enable_dht']: # if DHTxx probe is enabled
                       try:
-                        result = instance.read()
-                        if result.is_valid():
+                        result = 1                        # 1=ERR_MISSING_DATA
+                        if plugin_options['dht_type']==0: # DHT11
+                          result = instance.read()
+                        if plugin_options['dht_type']==1: # DHT22
+                          result = instance22.read()
+
+                        if result.is_valid():             # 0=ERR_NO_ERROR, 1=ERR_MISSING_DATA, 2=ERR_CRC 
                           Temperature = result.temperature
                           Humidity = result.humidity
 
@@ -146,9 +154,13 @@ class Sender(Thread):
                       except:
                         log.clear(NAME)
                         log.info(NAME, datetime_string())
-                        log.info(NAME, _(u'DHT11 data is not valid'))  
-                        tempText += ' ' + _(u'DHT11 data is not valid')                                   
-                      
+                        if plugin_options['dht_type']==0: # DHT11
+                          log.info(NAME, _(u'DHT11 data is not valid'))  
+                          tempText += ' ' + _(u'DHT11 data is not valid')
+                        if plugin_options['dht_type']==1: # DHT22
+                          log.info(NAME, _(u'DHT22 data is not valid'))  
+                          tempText += ' ' + _(u'DHT22 data is not valid')
+                                   
                       if Humidity and Temperature != 0:
                         self.status['temp'] = Temperature
                         self.status['humi'] = Humidity
@@ -324,13 +336,11 @@ def DS18B20_read_probe(probe):
 
 def DHT_read_temp_value():
     global tempDHT
-
     return tempDHT
 
 
 def DHT_read_humi_value():
-    global humiDHT  
-    
+    global humiDHT     
     return humiDHT        
    
 
@@ -388,34 +398,34 @@ def update_log(status):
       data['humi'] = str(status['humi'])
       data['outp'] = str(status['outp'])
     else:
-      data['temp'] = str('not used')
-      data['humi'] = str('not used')
-      data['outp'] = str('not used')
+      data['temp'] = _(u'Not used')
+      data['humi'] = _(u'Not used')
+      data['outp'] = _(u'Not used')
 
     if plugin_options['ds_used'] > 0:
       data['ds0']  = str(status['DS0'])
     else:
-      data['ds0']  = str('not used')
+      data['ds0']  = _(u'Not used')
     if plugin_options['ds_used'] > 1:
       data['ds1']  = str(status['DS1'])
     else:
-      data['ds1']  = str('not used')
+      data['ds1']  = _(u'Not used')
     if plugin_options['ds_used'] > 2:
       data['ds2']  = str(status['DS2'])
     else:
-      data['ds2']  = str('not used')
+      data['ds2']  = _(u'Not used')
     if plugin_options['ds_used'] > 3:
       data['ds3']  = str(status['DS3'])
     else:
-      data['ds3']  = str('not used')
+      data['ds3']  = _(u'Not used')
     if plugin_options['ds_used'] > 4:
       data['ds4']  = str(status['DS4'])
     else:
-      data['ds4']  = str('not used')
+      data['ds4']  = _(u'Not used')
     if plugin_options['ds_used'] > 5:
       data['ds5']  = str(status['DS5'])
     else:
-      data['ds5']  = str('not used')
+      data['ds5']  = _(u'Not used')
      
     log_data.insert(0, data)
     if plugin_options['log_records'] > 0:
@@ -464,9 +474,12 @@ def update_log(status):
            temp5.update({timestamp: DS6})
 
     if plugin_options['enable_dht']:
-        temp6 = graph_data[6]['balances']  # DHT    
+        temp6 = graph_data[6]['balances']  # DHT temp  
         DHT = {'total': status['temp']}
         temp6.update({timestamp: DHT})
+        temp7 = graph_data[7]['balances']  # DHT humi
+        DHT2 = {'total': status['humi']}
+        temp7.update({timestamp: DHT2})        
      
     write_graph_log(graph_data)
 
@@ -483,6 +496,7 @@ def create_default_graph():
     name5 = ""
     name6 = ""
     name7 = ""
+    name8 = ""
 
     if plugin_options['ds_used'] > 0:
         name1 = plugin_options['label_ds0']
@@ -497,7 +511,8 @@ def create_default_graph():
     if plugin_options['ds_used'] > 5:
         name6 = plugin_options['label_ds5']
     if plugin_options['enable_dht']:
-        name7 = plugin_options['label']
+        name7 = plugin_options['label'] + ' &deg;C'
+        name8 = plugin_options['label'] + ' %'
 
     graph_data = [
        {"station": name1, "balances": {}},
@@ -506,7 +521,8 @@ def create_default_graph():
        {"station": name4, "balances": {}},
        {"station": name5, "balances": {}},
        {"station": name6, "balances": {}},
-       {"station": name7, "balances": {}}
+       {"station": name7, "balances": {}},
+       {"station": name8, "balances": {}}
     ]
     write_graph_log(graph_data)
 
@@ -523,6 +539,7 @@ class settings_page(ProtectedPage):
         global sender
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
         if sender is not None and delete:
            write_log([])
@@ -531,13 +548,20 @@ class settings_page(ProtectedPage):
 
            raise web.seeother(plugin_url(settings_page), True)
 
+        if sender is not None and 'history' in qdict:
+           history = qdict['history']
+           plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
+
+        if sender is not None and show:
+            raise web.seeother(plugin_url(log_page), True)           
+
         return self.plugin_render.air_temp_humi(plugin_options, log.events(NAME))
 
     def POST(self):
         plugin_options.web_update(web.input())
 
         if sender is not None:
-            sender.update()                
+            sender.update()
         raise web.seeother(plugin_url(settings_page), True)
 
 
@@ -545,8 +569,13 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.air_temp_humi_help()        
+        return self.plugin_render.air_temp_humi_help()
 
+class log_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.air_temp_humi_log(read_log(), plugin_options)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -620,7 +649,7 @@ class graph_json(ProtectedPage):
                 
         json_data = read_graph_log()
 
-        for i in range(0, 7):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT
+        for i in range(0, 8):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
             temp_balances = {}
             for key in json_data[i]['balances']:
               find_key =  int(key.encode('utf8'))                              # key is in unicode ex: u'1601347000' -> find_key is int number
@@ -649,9 +678,9 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         data  = "Date/Time"
         data += ";\t Date"
         data += ";\t Time"
-        data += ";\t Temperature C"
-        data += ";\t Humidity %RH" 
-        data += ";\t Output"
+        data += ";\t DHT Temperature C"
+        data += ";\t DHT Humidity %" 
+        data += ";\t DHT Output"
         data += ";\t" + name1
         data += ";\t" + name2
         data += ";\t" + name3

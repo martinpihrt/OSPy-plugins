@@ -19,7 +19,7 @@ function draw_graph(result) {
 
     for (var i = 0; i < result.length; i++) {
         var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8')} + "</th><th>" + $:{json.dumps(_('(&deg;C)'), ensure_ascii=False).encode('utf8')} + "</th></tr>";
+        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8')} + "</th><th>" + $:{json.dumps(_('&deg;C or %'), ensure_ascii=False).encode('utf8')} + "</th></tr>";
         var texts = [];
         var txt_body = "";
         var txt_footer = "</table>";
@@ -31,9 +31,9 @@ function draw_graph(result) {
             var minutes = "0" + date.getMinutes();
             var seconds = "0" + date.getSeconds();
             var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-            txt_body += "<tr><td>" + $:{json.dumps(_('Actual Temperature'), ensure_ascii=False).encode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+            txt_body += "<tr><td>" + $:{json.dumps(_('Actual'), ensure_ascii=False).encode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
             texts.push("<b>" + result[i]['station'] + "</b> " + toXSDate(date) + "<br>" + formattedTime + "<br>" + txt_header + txt_body + txt_footer);
-            txt_body = "<tr><td>" + $:{json.dumps(_('Previous Temperature'), ensure_ascii=False).encode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+            txt_body = "<tr><td>" + $:{json.dumps(_('Previous'), ensure_ascii=False).encode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
         }
 
         if (i >= legend_items.length || legend_items.eq(i).children().children().attr("data") == 1)
@@ -46,7 +46,7 @@ function draw_graph(result) {
             graph_text.push(texts);
         }
     }
-    var yLabels = $:{json.dumps(_('Temperatures &deg;C'), ensure_ascii=False).encode('utf8')};
+    var yLabels = $:{json.dumps(_('&deg;C or %'), ensure_ascii=False).encode('utf8')};
     return jQuery.plot("#graph-placeholder", data, {
         series: {
             lines: {
@@ -150,6 +150,11 @@ function create_graph(result) {
 
 }
 
+function check_history() {
+    let select_type = jQuery("#history").val();
+    jQuery("#historyForm").submit();
+}
+
     // Initialize behaviors
     jQuery(document).ready(function(){
 
@@ -164,6 +169,8 @@ function create_graph(result) {
         setTimeout(function() {jQuery.getJSON("/plugins/air_temp_humi/graph_json", create_graph)}, 500); 
     }
 
+    jQuery("#history").change(check_history);
+
  });
 </script>
     
@@ -172,7 +179,11 @@ function create_graph(result) {
     <div class="title">$_('Air Temperature and Humidity Monitor')</div>
     <a href=$plugins.plugin_url('air_temp_humi.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log']:
-        <p><a href=$plugins.plugin_url('air_temp_humi.log_csv') class="button download">$_('Download log')</a></p></br>     
+        <p>
+        <a href=$plugins.plugin_url('air_temp_humi.log_csv') class="button download">$_('Download log')</a>
+        <a href="?show" class="button backup">$_('Show logs')</a>
+        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('air_temp_humi.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -205,34 +216,31 @@ function create_graph(result) {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_(u'Select filter for graph history'):</td>
-                <td title=$:{json.dumps(_(u'Select filter for graph history'), ensure_ascii=False)}>  
-                <select name="history">
-                    <option value="0" ${"selected" if plugin_options["history"]==0 else ""}>$_(u'Without limits')</option>
-                    <option value="1" ${"selected" if plugin_options["history"]==1 else ""}>$_(u'Day filter')</option>
-                    <option value="2" ${"selected" if plugin_options["history"]==2 else ""}>$_(u'Week filter')</option>
-                    <option value="3" ${"selected" if plugin_options["history"]==3 else ""}>$_(u'Month filter')</option>
-                    <option value="4" ${"selected" if plugin_options["history"]==4 else ""}>$_(u'Year filter')</option>
-                </select>
-                </td>
-            </tr>             
-            <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>       
+            </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Enable DHT11'):</b></td>
+                <td style='text-transform: none;'><b>$_('Enable DHT'):</b></td>
                 <td>
-                    <input name='enable_dht' type='checkbox'${" checked" if plugin_options['enable_dht'] else ""}>   
+                    <input name='enable_dht' type='checkbox'${" checked" if plugin_options['enable_dht'] else ""}>
                 </td>
-            </tr>                 
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('DHT type'):</td>
+                <td title=$:{json.dumps(_(u'Select type DHT probe'), ensure_ascii=False)}>
+                <select name="dht_type">
+                    <option value="0" ${"selected" if plugin_options["dht_type"]==0 else ""}>$_(u'DHT11')</option>
+                    <option value="1" ${"selected" if plugin_options["dht_type"]==1 else ""}>$_(u'DHT22')</option>
+                </select>
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Label for sensor'):</td>
                 <td>
                 <input name='label' type='text' value='$plugin_options['label']'> 
                 </td>
-            </tr>           
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Allow regulation'):</td>
                 <td>
@@ -348,15 +356,24 @@ function create_graph(result) {
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?delete" class="button upload">$_('Delete all logs')</a>
 </div>
 
 $if plugin_options['enable_log']:
-   <div id="graph-container" class="graph-container">
-   <div id="legend-placeholder" style="display:none;"></div>
-   <div id="legend-visible" style="float: right; width: auto;"></div>
-   <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
-   <div style="clear: both;"></div>
-   <button id="clearSelection">$_('Clear selection')</button>
-   </div>
+    <div id="graph-container" class="graph-container">
+    <div id="legend-placeholder" style="display:none;"></div>
+    <div id="legend-visible" style="float: right; width: auto;"></div>
+    <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
+    <form name="historyForm" id="historyForm" action="" method="get">
+        $_(u'Select filter for graph history'):
+        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_(u'Select a filter for the interval of read data.'), ensure_ascii=False)}>
+        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
+        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
+        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
+        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_(u'Month filter')</option>
+        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_(u'Year filter')</option>
+        </select>
+    </form>    
+    <div style="clear: both;"></div>
+    <button id="clearSelection">$_('Clear selection')</button>
+    </div>
 

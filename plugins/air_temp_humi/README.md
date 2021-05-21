@@ -1,9 +1,7 @@
 Air Temperature and Humidity Monitor Readme
 ====
 
-This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI).
-Range for Humidity: 20 - 90 % Relative Humidity  
-Range for Temperature: 0 - 50 Celsius    
+This plugin needs DHT11 (22) probe connected to GPIO 10 (pin 19 MOSI).   
 This plugin allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03). 
 Visit [Martin Pihrt's blog](https://pihrt.com/elektronika/380-moje-raspberry-pi-plugin-ospy-mereni-teploty-pomoci-ds18b20). for more information for HW.
 
@@ -62,10 +60,6 @@ Plugin setup
   Without limits  
   Day filter  
   Month filter  
-  Year filter    
-
-
-The hardware should be connected as follows (without separate I2C Bus):  
-<a href="/plugins/air_temp_humi/static/images/schematics.png"><img src="/plugins/air_temp_humi/static/images/schematics.png" width="100%"></a>
+  Year filter
 
 Visit [Martin Pihrt's blog](https://pihrt.com/elektronika/380-moje-raspberry-pi-plugin-ospy-mereni-teploty-pomoci-ds18b20). for more information HW board with DS18B20 probe.

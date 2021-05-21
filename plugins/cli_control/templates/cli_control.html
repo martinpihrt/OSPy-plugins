@@ -49,18 +49,18 @@ $var page: plugins
                 <tr>
                     <td class="stationNumber">${c + 1}</td>
                     <td class="command">
-                       <input type="text" size="60" value="${plugin_options['on'][c] if c < len(plugin_options['on']) else ''}" id="con${c}" name="con${c}">
+                       <input type="text" size="30" value="${plugin_options['on'][c] if c < len(plugin_options['on']) else ''}" id="con${c}" name="con${c}">
                        <a href="?test=${c}&state=1" class="button upload">$_('Test')</a>
                     </td>
                     <td>
-                       <input type="text" size="60" value="${plugin_options['off'][c] if c < len(plugin_options['off']) else ''}"  id="coff${c}" name="coff${c}">
+                       <input type="text" size="30" value="${plugin_options['off'][c] if c < len(plugin_options['off']) else ''}"  id="coff${c}" name="coff${c}">
                        <a href="?test=${c}" class="button upload">$_('Test')</a>
                     </td>
                 </tr>
             <tr>
                <td style='text-transform: none;'>$_('Status'):</td>
                <td colspan="2">
-                    <textarea style="font-family: monospace;" rows="10" cols="105" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="15" cols="60" readonly>$'\n'.join(events)</textarea>
                </td>
             </tr>
         </table>

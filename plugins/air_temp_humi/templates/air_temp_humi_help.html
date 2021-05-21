@@ -5,7 +5,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Air Temperature and Humidity Monitor - help')</div>
-    <p>$_('This plugin needs DHT11 sensor connected to GPIO 10 (pin 19 MOSI). Range for Humidity: 20 - 90 %RH. Range for Temperature 0 - 50 Celsius')</p>    
+    <p>$_('This plugin needs DHT11 (22) sensor connected to GPIO 10 (pin 19 MOSI). Sensor DHT11 (22) is placed on main OSPy board by developer pihrt.com')</p>    
     <p>$_('This plugin allows the control of some stations (eg Fan) depending on the humidity of the sensor').</p> 
     <p>$_('This plug-in allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an') I&sup2;C $_('bus (address 0x03)').</p> 
     <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p>
@@ -19,6 +19,23 @@ $var page: plugins
     <p><b>$_('Humidity sensor DHT is connected to Raspberry Pi header')</b></p>
     <p>$_('On the main OSPy board by pihrt.com is already installed.')</p>
     <a href="/plugins/air_temp_humi/static/images/schematics.png"><img src="/plugins/air_temp_humi/static/images/schematics.png" width="30%"></a></br>
+    <p><b>$_('DHT11 vs DHT22')</b></p>
+    <p>$_('We have two versions of the DHT sensor, they look a bit similar and have the same pinout, but have different characteristics. Here are the specs:')</p>
+    <p><ul><li>$_('DHT11')</ul></li></p>
+    <p>$_('Ultra low cost, 3 to 5V power and I/O, 2.5mA max current use during conversion (while requesting data).')</p>
+    <p>$_('Good for 20-80% humidity readings with 5% accuracy.')</p>
+    <p>$_('Good for 0-50C temperature readings +-2C accuracy.')</p>
+    <p>$_('No more than 1 Hz sampling rate (once every second).')</p>
+    <p>$_('Body size 15.5mm x 12mm x 5.5mm.')</p>
+    <p>$_('4 pins with 0.1 inch spacing.')</p>
+    <p><ul><li>$_('DHT22/AM2302 (Wired version)')</ul></li></p>
+    <p>$_('Low cost, 3 to 5V power and I/O, 2.5mA max current use during conversion (while requesting data).')</p>
+    <p>$_('Good for 0-100% humidity readings with 2-5% accuracy.')</p>
+    <p>$_('Good for -40 to 80C temperature readings +-0.5C accuracy.')</p>
+    <p>$_('No more than 0.5 Hz sampling rate (once every 2 seconds).')</p>
+    <p>$_('Body size 15.1mm x 25mm x 7.7mm.')</p>
+    <p>$_('4 pins with 0.1 inch spacing.')</p></br>
+    <a href="/plugins/air_temp_humi/static/images/dht_pin.png"><img src="/plugins/air_temp_humi/static/images/dht_pin.png" width="30%"></a></br>
 </div>
 
 <div id="controls">

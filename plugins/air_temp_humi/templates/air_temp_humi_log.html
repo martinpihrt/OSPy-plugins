@@ -1,0 +1,74 @@
+$def with(records, plugin_options)
+
+$var title: $_('Air Temperature and Humidity Monitor - log')
+$var page: plugins
+
+<div class="title">$_('Air Temperature and Humidity Monitor - log')</div>
+<div id="plugin">
+    <p>$_('Total number of records'): ${len(records)}</p>
+    <p>
+    <a href=$plugins.plugin_url('air_temp_humi.log_csv') class="button download">$_('Download log')</a>
+    <a href="" class="button refresh">$_('Refresh')</a>
+    <a href=$plugins.plugin_url('air_temp_humi.settings_page') class="button danger">$_('Cancel')</a>
+    <p></br>
+    <table class="logList">
+        <tr class="log_rec">
+            <th>$_('Date')</th>
+            <th>$_('Time')</th>
+            <th>$_('DHT') ${plugin_options['label']}</th>
+            <th>$_('DHT') ${plugin_options['label']}</th>
+            <th>$_('DHT') ${plugin_options['label']}</th>
+            <th>$_('DS1') ${plugin_options['label_ds0']}</th>
+            <th>$_('DS2') ${plugin_options['label_ds1']}</th>
+            <th>$_('DS3') ${plugin_options['label_ds2']}</th>
+            <th>$_('DS4') ${plugin_options['label_ds3']}</th>
+            <th>$_('DS5') ${plugin_options['label_ds4']}</th>
+            <th>$_('DS6') ${plugin_options['label_ds5']}</th>
+        </tr>
+        $for interval in reversed(records):
+            <tr class="log_rec ${loop.parity}">
+                <td align='left'>${interval["date"]}</td>
+                <td align='left'>${interval["time"]}</td>
+                <td align='left'>${interval["temp"]}
+                $if interval["temp"] != _(u'Not used'):
+                    &deg$_('C')
+                <td align='left'>${interval["humi"]}
+                $if interval["humi"] != _(u'Not used'):
+                    $_('%')                    
+                <td align='left'>${interval["outp"]}
+                $if interval["outp"] != 0:
+                    ($_('OFF'))
+                $else:
+                    ($_('ON'))
+                </td>
+                <td align='left'>${interval["ds0"]}
+                $if interval["ds0"] != _(u'Not used'):
+                    &deg$_('C')
+                </td>
+                <td align='left'>${interval["ds1"]}
+                $if interval["ds1"] != _(u'Not used'):
+                    &deg$_('C')
+                </td>
+                <td align='left'>${interval["ds2"]}
+                $if interval["ds2"] != _(u'Not used'):
+                    &deg$_('C')
+                </td>
+                <td align='left'>${interval["ds3"]}
+                $if interval["ds3"] != _(u'Not used'):
+                    &deg$_('C')
+                </td>
+                <td align='left'>${interval["ds4"]}
+                $if interval["ds4"] != _(u'Not used'):
+                    &deg$_('C')
+                </td>
+                <td align='left'>${interval["ds5"]}
+                $if interval["ds5"] != _(u'Not used'):
+                    &deg$_('C')
+                </td>                                                                
+            </tr>
+    </table>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('air_temp_humi.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
