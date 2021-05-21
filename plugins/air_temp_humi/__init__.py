@@ -477,9 +477,12 @@ def update_log(status):
         temp6 = graph_data[6]['balances']  # DHT temp  
         DHT = {'total': status['temp']}
         temp6.update({timestamp: DHT})
-        temp7 = graph_data[7]['balances']  # DHT humi
-        DHT2 = {'total': status['humi']}
-        temp7.update({timestamp: DHT2})        
+        try:
+            temp7 = graph_data[7]['balances']  # DHT humi
+            DHT2 = {'total': status['humi']}
+            temp7.update({timestamp: DHT2})
+        except:
+            pass
      
     write_graph_log(graph_data)
 
@@ -649,13 +652,23 @@ class graph_json(ProtectedPage):
                 
         json_data = read_graph_log()
 
-        for i in range(0, 8):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
-            temp_balances = {}
-            for key in json_data[i]['balances']:
-              find_key =  int(key.encode('utf8'))                              # key is in unicode ex: u'1601347000' -> find_key is int number
-              if find_key >= log_start:                                        # timestamp interval 
-                    temp_balances[key] = json_data[i]['balances'][key]
-            data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+        try: # DHT moisture logging has been added to the extension longer, and if there is no DHT record, the original setting is used
+            for i in range(0, 8):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
+                temp_balances = {}
+                for key in json_data[i]['balances']:
+                    find_key =  int(key.encode('utf8'))                              # key is in unicode ex: u'1601347000' -> find_key is int number
+                    if find_key >= log_start:                                        # timestamp interval 
+                        temp_balances[key] = json_data[i]['balances'][key]
+                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+        except:
+            pass
+            for i in range(0, 7):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = no dht
+                temp_balances = {}
+                for key in json_data[i]['balances']:
+                    find_key =  int(key.encode('utf8'))                              # key is in unicode ex: u'1601347000' -> find_key is int number
+                    if find_key >= log_start:                                        # timestamp interval 
+                        temp_balances[key] = json_data[i]['balances'][key]
+                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
