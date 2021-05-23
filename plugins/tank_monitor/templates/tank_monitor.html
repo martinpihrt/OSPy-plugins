@@ -150,6 +150,11 @@ function create_graph(result) {
 
 }
 
+function check_history() {
+    let select_type = jQuery("#history").val();
+    jQuery("#historyForm").submit();
+}
+
     // Initialize behaviors
     jQuery(document).ready(function(){
 
@@ -164,6 +169,8 @@ function create_graph(result) {
         setTimeout(function() {jQuery.getJSON("/plugins/tank_monitor/graph_json", create_graph)}, 500); 
     }
 
+    jQuery("#history").change(check_history);
+
 });
 </script>
 
@@ -171,7 +178,12 @@ function create_graph(result) {
     <div class="title">$_('Water tank monitor settings')</div>
     <a href=$plugins.plugin_url('tank_monitor.help_page') class="button upload">$_('Help')</a><br/> 
     $if plugin_options['enable_log']:
-        <p><a href=$plugins.plugin_url('tank_monitor.log_csv') class="button download">$_('Download log')</a></p></br>     
+        <p>
+        <a href=$plugins.plugin_url('tank_monitor.log_csv') class="button download">$_('Download log')</a>
+        <a href="?show" class="button backup">$_('Show logs')</a>
+        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        <a href="?reset"  class="button cancel danger">$_('Reset min/max level')</a>        
+        </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('tank_monitor.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -326,19 +338,7 @@ function create_graph(result) {
                 <td title=$:{json.dumps(_(u'minutes (Minimum is 1)'), ensure_ascii=False)}>
                     <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> 
                 </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_(u'Select filter for graph history'):</td>
-                <td title=$:{json.dumps(_(u'Select filter for graph history'), ensure_ascii=False)}>  
-                <select name="history">
-                    <option value="0" ${"selected" if plugin_options["history"]==0 else ""}>$_(u'Without limits')</option>
-                    <option value="1" ${"selected" if plugin_options["history"]==1 else ""}>$_(u'Day filter')</option>
-                    <option value="2" ${"selected" if plugin_options["history"]==2 else ""}>$_(u'Week filter')</option>
-                    <option value="3" ${"selected" if plugin_options["history"]==3 else ""}>$_(u'Month filter')</option>
-                    <option value="4" ${"selected" if plugin_options["history"]==4 else ""}>$_(u'Year filter')</option>
-                </select>
-                </td>
-            </tr>   
+            </tr> 
             <tr>
                <th colspan="2">
                  <hr>
@@ -356,15 +356,23 @@ function create_graph(result) {
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?reset"     class="button cancel danger">$_('Reset min/max level')</a>
-    <a href="?delete" class="button upload">$_('Delete all logs')</a>
 </div>
 
 $if plugin_options['enable_log']:
-   <div id="graph-container" class="graph-container">
-   <div id="legend-placeholder" style="display:none;"></div>
-   <div id="legend-visible" style="float: right; width: auto;"></div>
-   <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
-   <div style="clear: both;"></div>
-   <button id="clearSelection">$_('Clear selection')</button>
-   </div>
+    <div id="graph-container" class="graph-container">
+    <div id="legend-placeholder" style="display:none;"></div>
+    <div id="legend-visible" style="float: right; width: auto;"></div>
+    <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
+    <form name="historyForm" id="historyForm" action="" method="get">
+        $_(u'Select filter for graph history'):
+        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_(u'Select a filter for the interval of read data.'), ensure_ascii=False)}>
+        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
+        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
+        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
+        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_(u'Month filter')</option>
+        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_(u'Year filter')</option>
+        </select>
+    </form>    
+    <div style="clear: both;"></div>
+    <button id="clearSelection">$_('Clear selection')</button>
+    </div>

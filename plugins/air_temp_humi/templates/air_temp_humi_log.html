@@ -25,7 +25,7 @@ $var page: plugins
             <th>$_('DS5') ${plugin_options['label_ds4']}</th>
             <th>$_('DS6') ${plugin_options['label_ds5']}</th>
         </tr>
-        $for interval in reversed(records):
+        $for interval in records:
             <tr class="log_rec ${loop.parity}">
                 <td align='left'>${interval["date"]}</td>
                 <td align='left'>${interval["time"]}</td>

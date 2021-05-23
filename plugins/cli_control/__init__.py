@@ -65,10 +65,13 @@ class Sender(Thread):
         if plugin_options['use_control']:  # if plugin is enabled
             log.clear(NAME)
             log.info(NAME, _(u'CLI Control is enabled.'))
-
             try:
-                zones = signal('zone_change')
-                zones.connect(on_zone_change)
+                station_on = signal('station_on')
+                station_on.connect(on_station_on)
+                station_off = signal('station_off')
+                station_off.connect(on_station_off)
+                station_clear = signal('station_clear')
+                station_clear.connect(on_station_clear)
             except Exception:
                 log.error(NAME, _(u'CLI Control plug-in') + ':\n' + traceback.format_exc())
                 pass
@@ -111,22 +114,46 @@ def run_command(cmd):
             log.error(NAME, _(u'CLI Control plug-in') + ':\n' + traceback.format_exc())
             pass
 
-def on_zone_change(name, **kw):
-    """ Switch relays when core program signals a change in station state."""
+def on_station_on(name, **kw):
+    """ Send CMD to ON when core program signals in station state."""
+    index = int(kw[u"txt"])
     log.clear(NAME)
-    log.info(NAME, _(u'Zone change signaled...'))
+    log.info(NAME, _(u'Station {} change to ON').format(index+1))
+    command = plugin_options['on'] 
+    data = command[index]
+    if data:
+        log.info(NAME, _(u'Im trying to send an ON command: {}').format(index+1))
+        run_command(data)
+    else:
+        log.info(NAME, _(u'No command is set for ON: {}').format(index+1))
+    return 
 
+def on_station_off(name, **kw):
+    """ Send CMD to OFF when core program signals in station state."""
+    index = int(kw[u"txt"])    
+    log.clear(NAME)
+    log.info(NAME, _(u'Station {} change to OFF').format(index+1))
+    command = plugin_options['off'] 
+    data = command[index]
+    if data:
+        log.info(NAME, _(u'Im trying to send an OFF command: {}').format(index+1))
+        run_command(data)
+    else:
+        log.info(NAME, _(u'No command is set for OFF: {}').format(index+1))
+    return
+
+def on_station_clear(name, **kw):
+    """ Send all CMD to OFF when core program signals in station state."""
+    log.clear(NAME)
+    log.info(NAME, _(u'All station change to OFF'))
     for station in stations.get():
-        if station.active:
-            command = plugin_options['on'] 
-            data = command[station.index]
-            if data:
-                run_command(data)
+        command = plugin_options['off']
+        data = command[station.index]
+        if data:
+            log.info(NAME, _(u'Im trying to send an OFF command: {}').format(station.index+1))
+            run_command(data)
         else:
-            command = plugin_options['off']
-            data = command[station.index]
-            if data:
-                run_command(data)
+            log.info(NAME, _(u'No command is set for OFF: {}').format(station.index+1))
     return
 
 def read_log():

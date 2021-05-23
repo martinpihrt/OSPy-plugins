@@ -16,7 +16,7 @@ $var page: plugins
             <th>$_('Command')</th>
             <th>$_('Status')</th>
         </tr>
-        $for interval in reversed(records):
+        $for interval in records:
             <tr class="log_rec ${loop.parity}">
                 <td align='left'>${interval["datetime"]}</td>
                 <td align='left'>${interval["cmd"]}</td>

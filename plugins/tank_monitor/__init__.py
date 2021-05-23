@@ -31,7 +31,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Water Tank Monitor'
-MENU =  _('Package: Water Tank Monitor')
+MENU =  _(u'Package: Water Tank Monitor')
 LINK = 'settings_page'
 
 tank_options = PluginOptions(
@@ -44,7 +44,7 @@ tank_options = PluginOptions(
        'diameter': 98,         # cylinder diameter for volume calculation
        'use_stop':      False, # not stop water system
        'use_send_email': True, # send email water level is minimum
-       'emlsubject': _('Report from OSPy TANK plugin'),
+       'emlsubject': _(u'Report from OSPy TANK plugin'),
        'address_ping': 0x04,   # device address for sonic ping HW board
        'log_maxlevel': 400,    # maximal level (log)
        'log_minlevel': 0,      # minimal level (log)
@@ -532,10 +532,10 @@ def update_log():
 def create_default_graph():
     """Create default graph json file."""
 
-    minimum = _('Minimum')
-    maximum = _('Maximum')
-    actual  = _('Actual')
-    volume  = _('Volume')
+    minimum = _(u'Minimum')
+    maximum = _(u'Maximum')
+    actual  = _(u'Actual')
+    volume  = _(u'Volume')
  
     graph_data = [
        {"station": minimum, "balances": {}},
@@ -587,6 +587,7 @@ class settings_page(ProtectedPage):
         qdict  = web.input()
         reset  = helpers.get_input(qdict, 'reset', False, lambda x: True)
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
         if sender is not None and reset:
             qdict['log_minlevel'] = status['level']
@@ -618,9 +619,15 @@ class settings_page(ProtectedPage):
 
         if sender is not None and delete:
            write_log([])
-           create_default_graph()
-
+           create_default_graph()         
            raise web.seeother(plugin_url(settings_page), True)
+
+        if sender is not None and 'history' in qdict:
+           history = qdict['history']
+           tank_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
+
+        if sender is not None and show:
+            raise web.seeother(plugin_url(log_page), True)           
 
         return self.plugin_render.tank_monitor(tank_options, log.events(NAME))
 
@@ -646,8 +653,13 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.tank_monitor_help()        
+        return self.plugin_render.tank_monitor_help()
 
+class log_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.tank_monitor_log(read_log(), tank_options)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""

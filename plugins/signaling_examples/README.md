@@ -44,3 +44,9 @@ Example signals from: webpages.py, scheduler.py, stations.py, plugins:
 * signal('pressurizer_master_relay_off')<br>
 
 * signal('poweroff')<br>
+
+* signal('station_on')<br>
+
+* signal('station_off')<br>
+
+* signal('station_clear')<br>

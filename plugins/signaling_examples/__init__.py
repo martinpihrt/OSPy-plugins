@@ -16,7 +16,7 @@ from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 
 NAME = 'Signaling Examples'  ### name for plugin in plugin manager ###
-MENU =  _('Package: Signaling Examples')
+MENU =  _(u'Package: Signaling Examples')
 LINK = 'settings_page'       ### link for page in plugin manager ###
  
 plugin_options = PluginOptions(
@@ -100,6 +100,12 @@ class Sender(Thread):
            poweroff.connect(notify_poweroff)
            ospyupdate = signal('ospyupdate')
            ospyupdate.connect(notify_ospyupdate)
+           station_on = signal('station_on')
+           station_on.connect(notify_station_on)
+           station_off = signal('station_off')
+           station_off.connect(notify_station_off)
+           station_clear = signal('station_clear')
+           station_clear.connect(notify_station_clear)           
 
 sender = None
 
@@ -123,87 +129,101 @@ def stop():
 
 ### login ###
 def notify_login(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Someone logged in'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Someone logged in'))
     
 ### System settings ###
 def notify_value_change(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Value_change'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Value_change'))
 
 ### Option settings ###
 def notify_option_change(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Options settings changed'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Options settings changed'))
 
 ### Reboot ###
 def notify_rebooted(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('System rebooted'))
+    log.info(NAME, datetime_string() + ': ' + _(u'System rebooted'))
 
 ### Restarted ###
 def notify_restarted(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('System restarted'))
+    log.info(NAME, datetime_string() + ': ' + _(u'System restarted'))
 
 ### station names ###
 def notify_station_names(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Station names changed'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Station names changed'))
 
 ### program change ##
 def notify_program_change(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Programs changed'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Programs changed'))
 
 ### program deleted ###
 def notify_program_deleted(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Program deleted'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Program deleted'))
 
 ### program toggled ###
 def notify_program_toggled(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Program toggled on or off'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Program toggled on or off'))
 
 ### program runnow ###
 def notify_program_runnow(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Program runnow'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Program runnow'))
 
 ### zone change ###
 def notify_zone_change(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Zone change'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Zone change'))
 
 ### rain ###
 def notify_rain_active(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Rain active'))
+    log.info(NAME, datetime_string() + ': ' + _(u'Rain active'))
 
 ### not rain ###
 def notify_rain_not_active(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Rain not active'))    
+    log.info(NAME, datetime_string() + ': ' + _(u'Rain not active'))    
 
 ### master 1 on ###
 def notify_master_one_on(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Master one on'))    
+    log.info(NAME, datetime_string() + ': ' + _(u'Master one on'))    
 
 ### master 1 off ###
 def notify_master_one_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Master one off'))    
+    log.info(NAME, datetime_string() + ': ' + _(u'Master one off'))    
 
 ### master 2 on ###
 def notify_master_two_on(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Master two on'))    
+    log.info(NAME, datetime_string() + ': ' + _(u'Master two on'))    
 
 ### master 2 off ###
 def notify_master_two_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Master two off'))  
+    log.info(NAME, datetime_string() + ': ' + _(u'Master two off'))  
 
 ### pressurizer plugin master relay on ###
 def notify_pressurizer_master_relay_on(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Pressurizer plugin master relay on')) 
+    log.info(NAME, datetime_string() + ': ' + _(u'Pressurizer plugin master relay on')) 
 
 ### pressurizer plugin master relay off ###
 def notify_pressurizer_master_relay_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Pressurizer plugin master relay off')) 
+    log.info(NAME, datetime_string() + ': ' + _(u'Pressurizer plugin master relay off')) 
 
 ### Linux system power off ###
 def notify_poweroff(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('Linux system now powering off')) 
+    log.info(NAME, datetime_string() + ': ' + _(u'Linux system now powering off')) 
 
 ### OSPy system update available ###
 def notify_ospyupdate(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _('OSPy system update available'))       
+    log.info(NAME, datetime_string() + ': ' + _(u'OSPy system update available'))
+
+### Stations ON ###
+def notify_station_on(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _(u'OSPy stations ON, index: {}').format(kw[u"txt"]))
+    #print(u"Messge from {}!: {}".format(name, kw[u"txt"]))
+
+### Stations OFF ###
+def notify_station_off(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _(u'OSPy stations OFF, index: {}').format(kw[u"txt"]))
+    #print(u"Messge from {}!: {}".format(name, kw[u"txt"]))
+
+### All stations set to OFF ###
+def notify_station_clear(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _(u'OSPy all stations OFF'))
 
 
 ################################################################################
