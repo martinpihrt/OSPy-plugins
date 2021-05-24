@@ -11,6 +11,14 @@ $var page: plugins
     <p>$_('Leave fields blank for any stations not to be controlled from the command line.')</p></br>
     <p><b>$_('Sensors')</b></p>
     <p>$_('Example of a command to control a relay on the sensor board.')</p>
+    <h1>$_('CURL')</h1>
+    <p>$_('Switching ON the station without time limitation (the sensor relay remains closed until a switch-off command arrives).')</p>
+    <ul><li><p>$_('curl --data "re=1" "http://10.10.10.34:80/0123456789abcdef"')</p></li></ul>
+    <p>$_('Switching ON the station with time limitation (the sensor relay switches off after this time regardless of whether a switch-off command arrives).')</p>
+    <ul><li><p>$_('curl --data "re=1&run=480" "http://10.10.10.34:80/0123456789abcdef"')</p></li></ul>
+    <p>$_('Switching OFF the station.')</p>
+    <ul><li><p>$_('curl --data "re=0" "http://10.10.10.34:80/0123456789abcdef"')</p></li></ul>    
+    <h1>$_('WGET')</h1>
     <p>$_('Switching ON the station without time limitation (the sensor relay remains closed until a switch-off command arrives).')</p>
     <ul><li><p>$_('wget --post-data "re=1" http://ip:port/sensorpassword')</p></li></ul>
     <p>$_('Switching ON the station with time limitation (the sensor relay switches off after this time regardless of whether a switch-off command arrives).')</p>
@@ -18,6 +26,11 @@ $var page: plugins
     <p>$_('Switching OFF the station.')</p>
     <ul><li><p>$_('wget --post-data "re=0" http://ip:port/sensorpassword')</p></li></ul>
     <p>$_('In the case of a command written in this way, after executing this command, the output will be saved to a file in the root of the OSPy folder (example of the name of the created file: 0123456789abcdef?re=1). If we do not need to save the output, we will use another parameter in wget command.')</p></br>
+    <p><b>$_('Description CURL')</b></p>
+    <p>$_('Curl is a tool to transfer data from or to a server, using one of the supported protocols (DICT, FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, MQTT, POP3, POP3S, RTMP, RTMPS, RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET and TFTP). The command is designed to work without user interaction. Curl offers a busload of useful tricks like proxy support, user authentication, FTP upload, HTTP post, SSL connections, cookies, file transfer resume, Metalink, and more. As you will see below, the number of features will make your head spin!')</p>
+    <p><b>$_('Syntax CURL')</b></p>
+    <p>$_('The URL syntax is protocol-dependent. Youll find a detailed description in RFC 3986. You can specify multiple URLs or parts of URLs by writing part sets within braces and quoting the URL')</p>
+    <p>$_('Source taken from the web') <a href="https://www.computerhope.com/unix/curl.htm">$_('www.computerhope.com')</a><br/>
     <p><b>$_('Description WGET')</b></p>
     <p>$_('WGET is a free utility for non-interactive download of files from the web. It supports HTTP, HTTPS, and FTP protocols, as well as retrieval through HTTP proxies. wget is non-interactive, meaning that it can work in the background, while the user is not logged on, which allows you to start a retrieval and disconnect from the system, letting wget finish the work. By contrast, most web browsers require constant user interaction, which make transferring a lot of data difficult. wget can follow links in HTML and XHTML pages and create local versions of remote websites, fully recreating the directory structure of the original site, which is sometimes called "recursive downloading." While doing that, wget respects the Robot Exclusion Standard (robots.txt). wget can be instructed to convert the links in downloaded HTML files to the local files for offline viewing. wget has been designed for robustness over slow or unstable network connections; if a download fails due to a network problem, it will keep retrying until the whole file has been retrieved. If the server supports regetting, it will instruct the server to continue the download from where it left off.')</p></br>
     <p><b>$_('Syntax WGET')</b></p>
