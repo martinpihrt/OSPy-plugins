@@ -195,52 +195,49 @@ class Sender(Thread):
                                     active = log.active_runs()
                                     for interval in active:
                                         if interval['station'] == sid:
-                                            log.finish_run(interval)                             
+                                            log.finish_run(interval)
 
                         qdict = {}
-                        if status['level'] > tank_options['log_maxlevel']:                # maximum level check 
+                        if status['level'] > tank_options['log_maxlevel']:                # maximum level check
                             if tank_options['use_sonic']:
-                                qdict['use_sonic'] = u'on' 
+                                tank_options.__setitem__('use_sonic', u'on')
                             if tank_options['check_liters']:
-                                qdict['check_liters'] = u'on'  
+                                tank_options.__setitem__('check_liters', u'on')
                             if tank_options['enable_reg']:
-                                qdict['enable_reg'] = u'on'                                                               
-                            if tank_options['use_stop']:
-                                qdict['use_stop']  = u'on'
-                            if tank_options['use_send_email']:     
-                                qdict['use_send_email'] = u'on' 
+                                tank_options.__setitem__('enable_reg', u'on')
                             if tank_options['enable_log']:
-                                qdict['enable_log'] = u'on'
-                            if tank_options['use_water_stop']:     
-                                qdict['use_water_stop'] = u'on'                                
-                            qdict['log_maxlevel'] = status['level']
+                                tank_options.__setitem__('enable_log', u'on')
+                            if tank_options['use_stop']:
+                                tank_options.__setitem__('use_stop', u'on')
+                            if tank_options['use_send_email']:
+                                tank_options.__setitem__('use_send_email', u'on')
+                            if tank_options['use_water_stop']:
+                                tank_options.__setitem__('use_water_stop', u'on')
+                            tank_options.__setitem__('log_maxlevel', status['level'])
                             qmax = datetime_string()
-                            tank_options['log_date_maxlevel'] = qmax
-                            qdict['log_date_maxlevel'] = qmax
-                            tank_options.web_update(qdict)                                # save to plugin options
+                            tank_options.__setitem__('log_date_maxlevel', qmax)
+                            log.info(NAME, datetime_string() + ': ' + _(u'Maximum has updated.'))
   
                         if status['level'] < tank_options['log_minlevel'] and status['level'] > 2:  # minimum level check 
                             if tank_options['use_sonic']:
-                                qdict['use_sonic'] = u'on' 
+                                tank_options.__setitem__('use_sonic', u'on')
                             if tank_options['check_liters']:
-                                qdict['check_liters'] = u'on'
+                                tank_options.__setitem__('check_liters', u'on')
                             if tank_options['enable_reg']:
-                                qdict['enable_reg'] = u'on'                                 
-                            if tank_options['use_stop']:
-                                qdict['use_stop']  = u'on'
-                            if tank_options['use_send_email']:     
-                                qdict['use_send_email'] = u'on'
+                                tank_options.__setitem__('enable_reg', u'on')
                             if tank_options['enable_log']:
-                                qdict['enable_log'] = u'on'
-                            if tank_options['use_water_stop']:     
-                                qdict['use_water_stop'] = u'on'                                
-                            qdict['log_minlevel'] = status['level']
+                                tank_options.__setitem__('enable_log', u'on')
+                            if tank_options['use_stop']:
+                                tank_options.__setitem__('use_stop', u'on')
+                            if tank_options['use_send_email']:
+                                tank_options.__setitem__('use_send_email', u'on')
+                            if tank_options['use_water_stop']:
+                                tank_options.__setitem__('use_water_stop', u'on')
+                            tank_options.__setitem__('log_minlevel', status['level'])
                             qmin = datetime_string()
-                            tank_options['log_date_minlevel'] = qmin
-                            qdict['log_date_minlevel'] = qmin
-                            tank_options.web_update(qdict)                                 # save to plugin options
-                             
-
+                            tank_options.__setitem__('log_date_minlevel', qmin)
+                            log.info(NAME, datetime_string() + ': ' + _(u'Minimum has updated.'))
+                            
                         if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 2: # level value is lower
                             if tank_options['use_send_email']:                             # if email is enabled
                                 send = True                                                # send
@@ -253,9 +250,9 @@ class Sender(Thread):
                                 if delaytime > 0:                             # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
                                     rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                                    
-                        if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: # refresh send email if actual level > options minimum +5
+                        if level_in_tank > int(tank_options['water_minimum']) + 2 and not mini: # refresh send email if actual level > options minimum +2
                             mini = True
-                            delaytime = int(tank_options['delay_duration']) # if the level in the tank rises above the minimum + 5 cm, the delay is deactivated
+                            delaytime = int(tank_options['delay_duration']) # if the level in the tank rises above the minimum + 2 cm, the delay is deactivated
                             if delaytime > 0:
                                 if NAME in rain_blocks:
                                     del rain_blocks[NAME]
@@ -287,9 +284,12 @@ class Sender(Thread):
                                 log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())  
 
                         if tank_options['use_water_stop']:
-                            set_stations_in_scheduler_off()                                   
-
-                        self._sleep(10)        
+                            if NAME not in rain_blocks:
+                                set_stations_in_scheduler_off()
+                                delaytime = int(tank_options['delay_duration'])
+                                if delaytime > 0:                             # if probe has fault, then we set the rain delay for this time for blocking
+                                    rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))                            
+       
 
                     if tank_options['enable_reg']:
                     	tempText += ', ' + regulation_text
@@ -588,38 +588,37 @@ class settings_page(ProtectedPage):
         reset  = helpers.get_input(qdict, 'reset', False, lambda x: True)
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
 
         if sender is not None and reset:
-            qdict['log_minlevel'] = status['level']
-            qdict['log_maxlevel'] = status['level']
+            tank_options.__setitem__('log_minlevel', status['level'])
+            tank_options.__setitem__('log_maxlevel', status['level'])
             qm = datetime_string()
-            qdict['log_date_maxlevel'] = qm
-            qdict['log_date_minlevel'] = qm
-            tank_options['log_date_maxlevel'] = qm
-            tank_options['log_date_minlevel'] = qm
+            tank_options.__setitem__('log_date_maxlevel', qm)
+            tank_options.__setitem__('log_date_minlevel', qm)
+            tank_options.__setitem__('log_date_maxlevel', qm)
+            tank_options.__setitem__('log_date_minlevel', qm)
             if tank_options['use_sonic']:
-                qdict['use_sonic'] = u'on' 
+                tank_options.__setitem__('use_sonic', u'on')
             if tank_options['check_liters']:
-                qdict['check_liters'] = u'on'    
+                tank_options.__setitem__('check_liters', u'on')
             if tank_options['enable_reg']:
-                qdict['enable_reg'] = u'on'                            
+                tank_options.__setitem__('enable_reg', u'on')
             if tank_options['enable_log']:
-                qdict['enable_log'] = u'on'
+                tank_options.__setitem__('enable_log', u'on')
             if tank_options['use_stop']:
-                qdict['use_stop']  = u'on'
-            if tank_options['use_send_email']:     
-                qdict['use_send_email'] = u'on'  
-            if tank_options['use_water_stop']:     
-                qdict['use_water_stop'] = u'on' 
-
-            tank_options.web_update(qdict)    # save to plugin options
+                tank_options.__setitem__('use_stop', u'on')
+            if tank_options['use_send_email']:
+                tank_options.__setitem__('use_send_email', u'on')
+            if tank_options['use_water_stop']:
+                tank_options.__setitem__('use_water_stop', u'on')
             log.info(NAME, datetime_string() + ': ' + _(u'Minimum and maximum has reseted.'))
             
             raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and delete:
            write_log([])
-           create_default_graph()         
+           create_default_graph()
            raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and 'history' in qdict:
@@ -627,7 +626,13 @@ class settings_page(ProtectedPage):
            tank_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
 
         if sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)           
+            raise web.seeother(plugin_url(log_page), True)
+
+        if sender is not None and del_rain:
+            if NAME in rain_blocks:
+                del rain_blocks[NAME]
+                log.info(NAME, datetime_string() + ': ' + _(u'Removing Rain Delay') + '.')
+            raise web.seeother(plugin_url(settings_page), True)
 
         return self.plugin_render.tank_monitor(tank_options, log.events(NAME))
 

@@ -182,8 +182,8 @@ function check_history() {
         <a href=$plugins.plugin_url('tank_monitor.log_csv') class="button download">$_('Download log')</a>
         <a href="?show" class="button backup">$_('Show logs')</a>
         <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
-        <a href="?reset"  class="button cancel danger">$_('Reset min/max level')</a>        
-        </p></br>
+        <a href="?reset"  class="button cancel danger">$_('Reset min/max level')</a>
+    </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('tank_monitor.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -237,6 +237,7 @@ function check_history() {
                 <td style='text-transform: none;'>$_('Delay Duration (hours)'):</td>
                 <td title=$:{json.dumps(_(u'If there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking. if the level in the tank rises above the minimum + 5 cm, the delay is deactivated'), ensure_ascii=False)}>
                     <input name='delay_duration' type='number' min="0" max="96" value='$plugin_options["delay_duration"]'>
+                    <a href="?del_rain"  class="button cancel danger">$_('Removing Rain Delay')</a>
                 </td>
             </tr>            
             <tr>
