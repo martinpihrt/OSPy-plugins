@@ -3,7 +3,7 @@ __author__ = 'Martin Pihrt'
 
 import json
 import time
-from datetime import datetime
+import datetime
 import traceback
 import os
 from threading import Thread, Event
@@ -111,6 +111,7 @@ class Sender(Thread):
             a_state = -1                           # for state in footer "Waiting (not enabled regulation in options)."
 
         log.info(NAME, datetime_string() + ' ' + _(u'Waiting.'))
+        end = datetime.datetime.now()
 
         while not self._stop.is_set():
             try:
@@ -171,18 +172,17 @@ class Sender(Thread):
 
                     probes_ok = True
                     if ds_a_on == -127.0 or ds_a_off == -127.0:
-                    	probes_ok = False
-                    	a_state = -2
+                        probes_ok = False
+                        a_state = -2   
 
                     if (ds_a_off - ds_a_on) > plugin_options['temp_a_on'] and probes_ok: # ON
                         a_state = 1
                         if msg_a_on:
                             msg_a_on = False
                             msg_a_off = True
-                            regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'  
+                            regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'
                             log.clear(NAME) 
-                            log.info(NAME, regulation_text)  
-                            import datetime
+                            log.info(NAME, regulation_text)
                             start = datetime.datetime.now()
                             sid = station_a.index
                             end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss'], minutes=plugin_options['reg_mm'])
@@ -219,6 +219,12 @@ class Sender(Thread):
                             for interval in active:
                                 if interval['station'] == sid:
                                     log.finish_run(interval)
+
+                    ### if "pool" end in schedule release msg_a_on to true in regulation for next scheduling ###
+                    now = datetime.datetime.now()
+                    if now > end:
+                        msg_a_off = False
+                        msg_a_on = True
   
                 else:
                     a_state = -1
