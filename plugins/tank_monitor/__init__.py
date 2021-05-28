@@ -114,6 +114,8 @@ class Sender(Thread):
         sonic_cm = get_sonic_cm()
         level_in_tank = get_sonic_tank_cm(sonic_cm)
         regulation_text = _(u'Regulation NONE.')
+        if NAME in rain_blocks:
+            del rain_blocks[NAME]        
         self._sleep(2)
 
         tank_mon = showInFooter() #  instantiate class to enable data in footer
@@ -134,7 +136,7 @@ class Sender(Thread):
 
                     tempText = ""                    
 
-                    if level_in_tank > 0:                                                 # if level is ok
+                    if level_in_tank > 0 and sonic_cm != 0:  # if level is ok and sonic is ok
                         three_text = True
 
                         status['level']   = level_in_tank
@@ -197,8 +199,7 @@ class Sender(Thread):
                                         if interval['station'] == sid:
                                             log.finish_run(interval)
 
-                        qdict = {}
-                        if status['level'] > tank_options['log_maxlevel']:                # maximum level check
+                        if status['level'] > tank_options['log_maxlevel']:                         # maximum level check
                             if tank_options['use_sonic']:
                                 tank_options.__setitem__('use_sonic', u'on')
                             if tank_options['check_liters']:
@@ -250,12 +251,11 @@ class Sender(Thread):
                                 if delaytime > 0:                             # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
                                     rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                                    
-                        if level_in_tank > int(tank_options['water_minimum']) + 2 and not mini: # refresh send email if actual level > options minimum +2
+                        if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: # refresh send email if actual level > options minimum +5
                             mini = True
-                            delaytime = int(tank_options['delay_duration']) # if the level in the tank rises above the minimum + 2 cm, the delay is deactivated
-                            if delaytime > 0:
-                                if NAME in rain_blocks:
-                                    del rain_blocks[NAME]
+                        
+                        if NAME in rain_blocks and level_in_tank > int(tank_options['water_minimum']):
+                            del rain_blocks[NAME]
 
                         if tank_options['enable_log']:
                             millis = int(round(time.time() * 1000))
