@@ -225,7 +225,9 @@ class Sender(Thread):
                     if now > end:
                         msg_a_off = False
                         msg_a_on = True
-  
+                        if probes_ok:
+                            a_state = -3
+
                 else:
                     a_state = -1
 
