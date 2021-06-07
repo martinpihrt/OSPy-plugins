@@ -199,6 +199,12 @@ class Sender(Thread):
                                         if interval['station'] == sid:
                                             log.finish_run(interval)
 
+                            now = datetime.datetime.now()
+                            if now > end: # if program end in schedule release five_text to true in regulation for next scheduling #
+                                five_text = True
+                                six_text = False
+                                regulation_text = datetime_string() + ' ' + _(u'Waiting.')
+
                         if status['level'] > tank_options['log_maxlevel']:                         # maximum level check
                             if tank_options['use_sonic']:
                                 tank_options.__setitem__('use_sonic', u'on')
