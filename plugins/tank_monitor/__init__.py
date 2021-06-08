@@ -122,6 +122,8 @@ class Sender(Thread):
         tank_mon.button = "tank_monitor/settings"       # button redirect on footer
         tank_mon.label =  _(u'Tank')                     # label on footer
 
+        end = datetime.datetime.now()
+
         while not self._stop.is_set():
             try:
                 if tank_options['use_sonic']: 
