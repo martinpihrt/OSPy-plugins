@@ -43,6 +43,7 @@ plugin_options = PluginOptions(
      'button7': u'runP4',
      'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
      'i2c_addr': 39,         # 32 decimal to 37 decimal (is 0x20 to 0x27)
+     'first_stop': False,    # First stop everything running and then start the program. If we want to start a new program and add it to the running ones, we will leave this option off.
     }
 )
 
@@ -128,9 +129,10 @@ class PluginSender(Thread):
                           log.info(NAME, datetime_string() + ': ' + _(u'Run now program 1')) 
                           for program in programs.get():
                              if (program.index == 0):   # Run-now program 1
-                                options.manual_mode = False   
-                                log.finish_run(None)
-                                stations.clear()    
+                                options.manual_mode = False
+                                if plugin_options['first_stop']:  
+                                  log.finish_run(None)
+                                  stations.clear()    
                                 programs.run_now(program.index)       
                              program.index+1
                           self._sleep(1)
@@ -139,9 +141,10 @@ class PluginSender(Thread):
                           log.info(NAME, datetime_string() + ': ' + _(u'Run now program 2')) 
                           for program in programs.get():
                              if (program.index == 1):   # Run-now program 2  
-                                options.manual_mode = False     
-                                log.finish_run(None)
-                                stations.clear()   
+                                options.manual_mode = False
+                                if plugin_options['first_stop']:     
+                                  log.finish_run(None)
+                                  stations.clear()   
                                 programs.run_now(program.index)
                              program.index+1
                           self._sleep(1)
@@ -150,9 +153,10 @@ class PluginSender(Thread):
                           log.info(NAME, datetime_string() + ': ' + _(u'Run now program 3')) 
                           for program in programs.get():
                              if (program.index == 2):   # Run-now program 3  
-                                options.manual_mode = False     
-                                log.finish_run(None)  
-                                stations.clear() 
+                                options.manual_mode = False
+                                if plugin_options['first_stop']:     
+                                  log.finish_run(None)  
+                                  stations.clear() 
                                 programs.run_now(program.index)
                              program.index+1
                           self._sleep(1)
@@ -161,9 +165,10 @@ class PluginSender(Thread):
                           log.info(NAME, datetime_string() + ': ' + _(u'Run now program 4')) 
                           for program in programs.get():
                              if (program.index == 3):   # Run-now program 4  
-                                options.manual_mode = False   
-                                log.finish_run(None)
-                                stations.clear()     
+                                options.manual_mode = False 
+                                if plugin_options['first_stop']:  
+                                  log.finish_run(None)
+                                  stations.clear()     
                                 programs.run_now(program.index)
                              program.index+1
                           self._sleep(1)        
@@ -173,8 +178,9 @@ class PluginSender(Thread):
                           for program in programs.get():
                              if (program.index == 4):   # Run-now program 5
                                 options.manual_mode = False
-                                log.finish_run(None)
-                                stations.clear() 
+                                if plugin_options['first_stop']:
+                                  log.finish_run(None)
+                                  stations.clear() 
                                 programs.run_now(program.index)
                              program.index+1
                           self._sleep(1)
@@ -184,8 +190,9 @@ class PluginSender(Thread):
                           for program in programs.get():
                              if (program.index == 5):   # Run-now program 6
                                 options.manual_mode = False
-                                log.finish_run(None)
-                                stations.clear() 
+                                if plugin_options['first_stop']:
+                                  log.finish_run(None)
+                                  stations.clear() 
                                 programs.run_now(program.index)
                              program.index+1
                           self._sleep(1)
@@ -195,8 +202,9 @@ class PluginSender(Thread):
                           for program in programs.get():
                              if (program.index == 6):   # Run-now program 7
                                 options.manual_mode = False
-                                log.finish_run(None)
-                                stations.clear() 
+                                if plugin_options['first_stop']:
+                                  log.finish_run(None)
+                                  stations.clear() 
                                 programs.run_now(program.index)
                              program.index+1
                           self._sleep(1)
@@ -206,8 +214,9 @@ class PluginSender(Thread):
                           for program in programs.get():
                              if (program.index == 7):   # Run-now program 8
                                 options.manual_mode = False
-                                log.finish_run(None)
-                                stations.clear() 
+                                if plugin_options['first_stop']:
+                                  log.finish_run(None)
+                                  stations.clear() 
                                 programs.run_now(program.index)
                              program.index+1
                           self._sleep(1)

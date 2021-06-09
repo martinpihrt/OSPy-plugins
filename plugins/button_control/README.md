@@ -12,7 +12,11 @@ Plugin setup
   If checked use button plugin is enabled.  
 
 * Address for MCP23017 controller:
-  Selector for I2C address in range 0x20 to 0x27  
+  Selector for I2C address in range 0x20 to 0x27.  
+
+* First stop:  
+  First stop everything running and then start the program.   
+  If we want to start a new program and add it to the running ones, we will leave this option off.  
 
 * Select:  
   Run-now program 1  

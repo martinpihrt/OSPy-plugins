@@ -42,6 +42,12 @@ $var page: plugins
                 </td>    
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('First stop'):</td>
+                <td title=$:{json.dumps(_(u'First stop everything running and then start the program.'), ensure_ascii=False)}>
+                    <input name='first_stop' type='checkbox'${" checked" if plugin_options['first_stop'] else ""}>
+                </td>
+            </tr>            
+            <tr>
                <th colspan="2">
                  <hr>
                </th>
