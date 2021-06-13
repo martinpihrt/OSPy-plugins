@@ -277,6 +277,8 @@ class data_json(ProtectedPage):
                             data.append(sensor.last_read_value[6])
                         elif sensor.multi_type == 7:                         # multisensor Motion
                             data.append(sensor.last_read_value[7])
+                        elif sensor.multi_type == 8:                         # multisensor Ultrasonic
+                            data.append(sensor.last_read_value[8])                            
                         else:
                             data.append(-127)                                # any errors
                     else:                                                    # any errors
