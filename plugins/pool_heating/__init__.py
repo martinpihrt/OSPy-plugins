@@ -173,7 +173,17 @@ class Sender(Thread):
                     probes_ok = True
                     if ds_a_on == -127.0 or ds_a_off == -127.0:
                         probes_ok = False
-                        a_state = -2   
+                        a_state = -2
+                        # The station switches off if the sensors has a fault
+                        sid = station_a.index
+                        active = log.active_runs()
+                        for interval in active:
+                            if interval['station'] == sid:
+                                stations.deactivate(sid)
+                                log.finish_run(interval)
+                                regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'
+                                log.clear(NAME)
+                                log.info(NAME, regulation_text)
 
                     if (ds_a_off - ds_a_on) > plugin_options['temp_a_on'] and probes_ok: # ON
                         a_state = 1
