@@ -25,7 +25,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Pressure Monitor'
-MENU =  _('Package: Pressure Monitor')
+MENU =  _(u'Package: Pressure Monitor')
 LINK = 'settings_page'
 
 pressure_options = PluginOptions(
@@ -146,6 +146,7 @@ class PressureSender(Thread):
                                 log.info(NAME, _(u'Master station is OFF.'))
                                 two_text = False
                                 five_text = True
+                                once_text = True
                             last_time = int(time.time())
                         else:
                             if two_text:
@@ -367,12 +368,20 @@ class settings_page(ProtectedPage):
 
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
         if pressure_sender is not None and delete:
            write_log([])
            create_default_graph()
 
-           raise web.seeother(plugin_url(settings_page), True) 
+           raise web.seeother(plugin_url(settings_page), True)
+
+        if pressure_sender is not None and 'history' in qdict:
+           history = qdict['history']
+           pressure_options.__setitem__('history', int(history)) #__setitem__(self, key, value)            
+
+        if pressure_sender is not None and show:
+            raise web.seeother(plugin_url(log_page), True)            
 
         return self.plugin_render.pressure_monitor(pressure_options, pressure_sender.status, log.events(NAME))
 
@@ -388,7 +397,14 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.pressure_monitor_help()        
+        return self.plugin_render.pressure_monitor_help()
+
+
+class log_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.pressure_monitor_log(read_log(), pressure_options)                
 
 
 class settings_json(ProtectedPage):
