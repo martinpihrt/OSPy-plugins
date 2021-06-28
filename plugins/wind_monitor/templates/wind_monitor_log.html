@@ -22,8 +22,12 @@ $var page: plugins
             <tr class="log_rec ${loop.parity}">
                 <td align='left'>${interval["date"]}</td>
                 <td align='left'>${interval["time"]}</td>
-                <td align='left'>${interval["maximum"]}</td>
-                <td align='left'>${interval["actual"]}</td>
+                $if plugin_options['use_kmh']:
+                    <td align='left'>${interval["maximum"]}$_('km/h')</td>
+                    <td align='left'>${interval["actual"]}$_('km/h')</td>
+                $else:
+                    <td align='left'>${interval["maximum"]}$_('m/s')</td>
+                    <td align='left'>${interval["actual"]}$_('m/s')</td>
             </tr>
     </table>
 </div>
