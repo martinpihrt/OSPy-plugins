@@ -385,6 +385,7 @@ class settings_page(ProtectedPage):
 
         qdict  = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
         if sender is not None and delete:
             write_log([])
@@ -395,6 +396,13 @@ class settings_page(ProtectedPage):
                 os.remove(log_csv_file)
 
             raise web.seeother(plugin_url(settings_page), True)
+
+        if sender is not None and 'history' in qdict:
+           history = qdict['history']
+           plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)            
+
+        if sender is not None and show:
+            raise web.seeother(plugin_url(log_page), True)            
 
         return self.plugin_render.ping_monitor(plugin_options, log.events(NAME))
 
@@ -417,7 +425,14 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ping_monitor_help()        
+        return self.plugin_render.ping_monitor_help() 
+
+
+class log_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.ping_monitor_log(read_log(), plugin_options)              
 
 
 class settings_json(ProtectedPage):

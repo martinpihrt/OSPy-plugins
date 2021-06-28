@@ -1,0 +1,47 @@
+$def with(records, plugin_options)
+
+$var title: $_('Ping monitor - log')
+$var page: plugins
+
+<div class="title">$_('Ping monitor - log')</div>
+<div id="plugin">
+    <p>$_('Total number of records'): ${len(records)}</p>
+    <p>
+    <a href=$plugins.plugin_url('ping_monitor.log_csv') class="button download">$_('Download log')</a>
+    <a href="" class="button refresh">$_('Refresh')</a>
+    <a href=$plugins.plugin_url('ping_monitor.settings_page') class="button danger">$_('Cancel')</a>
+    <p></br>
+    <table class="logList">
+        <tr class="log_rec">
+            <th>$_('Date')</th>
+            <th>$_('Time')</th>
+            <th>$_('Ping address 1') (${plugin_options['address_1']})</th>
+            <th>$_('Ping address 2') (${plugin_options['address_2']})</th>
+            <th>$_('Ping address 3') (${plugin_options['address_3']})</th>
+            <th>$_('State')</th>
+        </tr>
+        $for interval in records:
+            <tr class="log_rec ${loop.parity}">
+                <td align='left'>${interval["date"]}</td>
+                <td align='left'>${interval["time"]}</td>
+                $if interval["ping1"] == "1":
+                    <td align='left'><p style="color:green">$_('Available')</p></td>
+                $else:
+                    <td align='left'><p style="color:red">$_('Not available')</p></td>
+                $if interval["ping2"] == "1":
+                    <td align='left'><p style="color:green">$_('Available')</p></td>
+                $else:
+                    <td align='left'><p style="color:red">$_('Not available')</p></td>
+                $if interval["ping3"] == "1":
+                    <td align='left'><p style="color:green">$_('Available')</p></td>
+                $else:
+                    <td align='left'><p style="color:red">$_('Not available')</p></td>
+                $if interval["state"] == "ERROR":                                     
+                    <td align='left'><p style="color:red">$_('Connection failure')</p></td>
+            </tr>
+    </table>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('ping_monitor.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
