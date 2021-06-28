@@ -152,6 +152,11 @@ function create_graph(result) {
 
 }
 
+function check_history() {
+    let select_type = jQuery("#history").val();
+    jQuery("#historyForm").submit();
+}
+
     // Initialize behaviors
     jQuery(document).ready(function(){
 
@@ -166,6 +171,8 @@ function create_graph(result) {
         setTimeout(function() {jQuery.getJSON("/plugins/wind_monitor/graph_json", create_graph)}, 500); 
     }
 
+    jQuery("#history").change(check_history);     
+
 });
 </script>
 
@@ -173,15 +180,50 @@ function create_graph(result) {
     <div class="title">$_('Wind Speed Monitor settings')</div>
     <a href=$plugins.plugin_url('wind_monitor.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log']:
-        <a href=$plugins.plugin_url('wind_monitor.log_csv') class="button download">$_('Download log')</a></br>     
+        <p>
+        <a href=$plugins.plugin_url('wind_monitor.log_csv') class="button download">$_('Download log')</a>
+        <a href="?show" class="button backup">$_('Show logs')</a>
+        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        <a href="?reset"  class="button cancel danger">$_('Reset max speed')</a>        
+        </p></br>      
     <form id="pluginForm" action="$plugins.plugin_url('wind_monitor.settings_page')" method="post">
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Use wind monitor'):</td>
+                <td style='text-transform: none;'><b>$_('Use wind monitor'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, wind monitor be enabled.'), ensure_ascii=False)}>
                     <input name='use_wind_monitor' type='checkbox'${" checked" if plugin_options['use_wind_monitor'] else ""}>   
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
+                <td title=$:{json.dumps(_(u'Caution: Frequent log storage may reduce storage capacity'), ensure_ascii=False)}>
+                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Save to log if maximal speed change'):</td>
+                <td title=$:{json.dumps(_(u'If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately'), ensure_ascii=False)}>
+                    <input name='enable_log_change' type='checkbox'${" checked" if plugin_options['enable_log_change'] else ""}>   
+                </td>
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('Delete max speed after 24 hours'):</td>
+                <td title=$:{json.dumps(_(u'If the box is checked, the maximum measured speed is reset after 24 hours (log is not deleted)'), ensure_ascii=False)}>
+                    <input name='delete_max_24h' type='checkbox'${" checked" if plugin_options['delete_max_24h'] else ""}>   
+                </td>
+            </tr>         
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
+                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
+                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Interval for logging'):</td>
+                <td title=$:{json.dumps(_(u'In minutes (Minimum is 1)'), ensure_ascii=False)}>
+                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'>
+                </td>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'>I&sup2;C $_('address 0x50'):</td>
                 <td title=$:{json.dumps(_(u'If the box is checked, wind monitor is on address 0x50.'), ensure_ascii=False)}>
@@ -257,54 +299,6 @@ function create_graph(result) {
                <th colspan="2">
                  <hr>
                </th>
-            </tr>             
-            <tr>
-                <td style='text-transform: none;'>$_('Enable logging'):</td>
-                <td title=$:{json.dumps(_(u'Caution: Frequent log storage may reduce storage capacity'), ensure_ascii=False)}>
-                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Save to log if maximal speed change'):</td>
-                <td title=$:{json.dumps(_(u'If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately'), ensure_ascii=False)}>
-                    <input name='enable_log_change' type='checkbox'${" checked" if plugin_options['enable_log_change'] else ""}>   
-                </td>
-            </tr>    
-            <tr>
-                <td style='text-transform: none;'>$_('Delete max speed after 24 hours'):</td>
-                <td title=$:{json.dumps(_(u'If the box is checked, the maximum measured speed is reset after 24 hours (log is not deleted)'), ensure_ascii=False)}>
-                    <input name='delete_max_24h' type='checkbox'${" checked" if plugin_options['delete_max_24h'] else ""}>   
-                </td>
-            </tr>         
-            <tr>
-                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
-                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Interval for logging'):</td>
-                <td title=$:{json.dumps(_(u'In minutes (Minimum is 1)'), ensure_ascii=False)}>
-                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'>
-                </td>
-            </tr>
-
-            <tr>
-                <td style='text-transform: none;'>$_(u'Select filter for graph history'):</td>
-                <td title=$:{json.dumps(_(u'Select filter for graph history'), ensure_ascii=False)}>  
-                <select name="history">
-                    <option value="0" ${"selected" if plugin_options["history"]==0 else ""}>$_(u'Without limits')</option>
-                    <option value="1" ${"selected" if plugin_options["history"]==1 else ""}>$_(u'Day filter')</option>
-                    <option value="2" ${"selected" if plugin_options["history"]==2 else ""}>$_(u'Week filter')</option>
-                    <option value="3" ${"selected" if plugin_options["history"]==3 else ""}>$_(u'Month filter')</option>
-                    <option value="4" ${"selected" if plugin_options["history"]==4 else ""}>$_(u'Year filter')</option>
-                </select>
-                </td>
-            </tr>             
-            <tr>
-               <th colspan="2">
-                 <hr>
-               </th>
             </tr>    
             <tr>
                 <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (measuring every 10 sec)'):</td>
@@ -333,15 +327,23 @@ function create_graph(result) {
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?reset"     class="button cancel danger">$_('Reset max speed')</a>
-    <a href="?delete"    class="button upload">$_('Delete all logs')</a>
 </div>
 
 $if plugin_options['enable_log']:
-   <div id="graph-container" class="graph-container">
-   <div id="legend-placeholder" style="display:none;"></div>
-   <div id="legend-visible" style="float: right; width: auto;"></div>
-   <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
-   <div style="clear: both;"></div>
-   <button id="clearSelection">$_('Clear selection')</button>
-   </div>
+    <div id="graph-container" class="graph-container">
+    <div id="legend-placeholder" style="display:none;"></div>
+    <div id="legend-visible" style="float: right; width: auto;"></div>
+    <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
+    <form name="historyForm" id="historyForm" action="" method="get">
+        $_(u'Select filter for graph history'):
+        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_(u'Select a filter for the interval of read data.'), ensure_ascii=False)}>
+        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
+        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
+        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
+        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_(u'Month filter')</option>
+        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_(u'Year filter')</option>
+        </select>
+    </form>   
+    <div style="clear: both;"></div>
+    <button id="clearSelection">$_('Clear selection')</button>
+    </div>

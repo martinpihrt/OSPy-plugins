@@ -1,0 +1,33 @@
+$def with(records, plugin_options)
+
+$var title: $_('Wind Speed Monitor - log')
+$var page: plugins
+
+<div class="title">$_('Wind Speed Monitor - log')</div>
+<div id="plugin">
+    <p>$_('Total number of records'): ${len(records)}</p>
+    <p>
+    <a href=$plugins.plugin_url('wind_monitor.log_csv') class="button download">$_('Download log')</a>
+    <a href="" class="button refresh">$_('Refresh')</a>
+    <a href=$plugins.plugin_url('wind_monitor.settings_page') class="button danger">$_('Cancel')</a>
+    <p></br>
+    <table class="logList">
+        <tr class="log_rec">
+            <th>$_('Date')</th>
+            <th>$_('Time')</th>
+            <th>$_('Maximum')</th>
+            <th>$_('Actual')</th>
+        </tr>
+        $for interval in records:
+            <tr class="log_rec ${loop.parity}">
+                <td align='left'>${interval["date"]}</td>
+                <td align='left'>${interval["time"]}</td>
+                <td align='left'>${interval["maximum"]}</td>
+                <td align='left'>${interval["actual"]}</td>
+            </tr>
+    </table>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('wind_monitor.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

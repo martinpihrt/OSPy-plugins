@@ -27,7 +27,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Wind Speed Monitor'
-MENU =  _('Package: Wind Speed Monitor')
+MENU =  _(u'Package: Wind Speed Monitor')
 LINK = 'settings_page'
 
 wind_options = PluginOptions(
@@ -39,10 +39,10 @@ wind_options = PluginOptions(
         'pulses': 2,                 # 2 pulses per rotation
         'metperrot': 1.492,          # 1.492 meter per hour per rotation
         'maxspeed': 20,              # 20 max speed to deactivate stations  
-        'emlsubject': _('Report from OSPy WIND SPEED MONITOR plugin'),
+        'emlsubject': _(u'Report from OSPy WIND SPEED MONITOR plugin'),
         'log_speed': 0,              # actual speed
         'log_maxspeed': 0,           # maximal speed (log) in m/sec
-        'log_date_maxspeed': _('Measuring...'), # maximal speed (date log)
+        'log_date_maxspeed': _(u'Measuring...'), # maximal speed (date log)
         'enable_log': False,         # log to file and graph
         'log_interval': 1,           # log interval in minutes
         'log_records': 0,            # log records 0= unlimited 
@@ -514,6 +514,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        show = helpers.get_input(qdict, 'show', False, lambda x: True)        
 
         if wind_sender is not None and reset:
             if wind_options['use_wind_monitor']:
@@ -551,6 +552,13 @@ class settings_page(ProtectedPage):
 
            raise web.seeother(plugin_url(settings_page), True)
 
+        if wind_sender is not None and 'history' in qdict:
+           history = qdict['history']
+           wind_options.__setitem__('history', int(history)) #__setitem__(self, key, value)            
+
+        if wind_sender is not None and show:
+            raise web.seeother(plugin_url(log_page), True)            
+
         return self.plugin_render.wind_monitor(wind_options, wind_sender.status, log.events(NAME))
 
     def POST(self):
@@ -575,7 +583,14 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.wind_monitor_help()        
+        return self.plugin_render.wind_monitor_help()
+
+
+class log_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.wind_monitor_log(read_log(), wind_options)              
 
 
 class settings_json(ProtectedPage):
