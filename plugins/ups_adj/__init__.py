@@ -24,7 +24,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'UPS Monitor'
-MENU =  _('Package: UPS Monitor')
+MENU =  _(u'Package: UPS Monitor')
 LINK = 'settings_page'
 
 ups_options = PluginOptions(
@@ -33,7 +33,7 @@ ups_options = PluginOptions(
         'time': 60, # in minutes
         'ups': False,
         'sendeml': False,
-        'emlsubject': _('Report from OSPy UPS plugin'),
+        'emlsubject': _(u'Report from OSPy UPS plugin'),
         'enable_log': False,
         'log_records': 0,                             # 0 = unlimited
         'history': 0                                  # selector for graph history
@@ -100,7 +100,7 @@ class UPSSender(Thread):
 
         ups_mon = showInFooter() #  instantiate class to enable data in footer
         ups_mon.button = "ups_adj/settings"            # button redirect on footer
-        ups_mon.label =  _('UPS')                      # label on footer
+        ups_mon.label =  _(u'UPS')                      # label on footer
 
         while not self._stop.is_set():
             try:
@@ -108,9 +108,9 @@ class UPSSender(Thread):
                     test = get_check_power()
                 
                     if not test:
-                        text = _('OK')
+                        text = _(u'OK')
                     else:
-                        text = _('FAULT')
+                        text = _(u'FAULT')
                     self.status['power%d'] = text
 
                     ups_mon.val = text.encode('utf8')              # value on footer
@@ -122,8 +122,8 @@ class UPSSender(Thread):
                         reboot_time = True                                 # start countdown timer
                         if once:
                             # send email with info power line fault
-                            msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _('Detected fault on power line.') + '</p>'
-                            msglog = _('UPS plug-in') + ': ' + _('Detected fault on power line.')
+                            msg = '<b>' + _(u'UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'Detected fault on power line.') + '</p>'
+                            msglog = _(u'UPS plug-in') + ': ' + _(u'Detected fault on power line.')
                             log.info(NAME, msglog)
                             if ups_options['sendeml']:                       # if enabled send email
                                 try:
@@ -131,7 +131,7 @@ class UPSSender(Thread):
                                     try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                 except Exception:     
-                                    log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc())
+                                    log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc())
                                 once_three = True
                             if ups_options['enable_log']:    
                                 update_log(0)
@@ -141,25 +141,25 @@ class UPSSender(Thread):
                         count_val = int(ups_options['time']) * 60             # value for countdown
                         actual_time = int(time.time())
                         log.clear(NAME)
-                        log.info(NAME, _('Time to shutdown') + ': ' + str(count_val - (actual_time - last_time)) + ' ' + _('sec'))
+                        log.info(NAME, _(u'Time to shutdown') + ': ' + str(count_val - (actual_time - last_time)) + ' ' + _(u'sec'))
                         if ((actual_time - last_time) >= count_val):        # if countdown is 0
                             last_time = actual_time
                             test = get_check_power()
                             if test:                                         # if power line is current not active
                                 log.clear(NAME)
-                                log.info(NAME, _('Power line is not restore in time -> sends email and shutdown system.'))
+                                log.info(NAME, _(u'Power line is not restore in time -> sends email and shutdown system.'))
                                 reboot_time = False
                                 if ups_options['sendeml']:                    # if enabled send email
                                     if once_two:
                                         # send email with info shutdown system
-                                        msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _('Power line is not restore in time -> shutdown system!') + '</p>'
-                                        msglog =  _('UPS plug-in') + ': ' + _('Power line is not restore in time -> shutdown system!')
+                                        msg = '<b>' + _(u'UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'Power line is not restore in time -> shutdown system!') + '</p>'
+                                        msglog =  _(u'UPS plug-in') + ': ' + _(u'Power line is not restore in time -> shutdown system!')
                                         try:
                                             from plugins.email_notifications import try_mail                                    
                                             try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                         except Exception:     
-                                            log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc()) 
+                                            log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc()) 
                                         once_two = False
 
                                 GPIO.output(pin_ups_down, GPIO.HIGH)          # switch on GPIO fo countdown UPS battery power off
@@ -170,8 +170,8 @@ class UPSSender(Thread):
                     if not test:
                         if once_three:
                             if ups_options['sendeml']:                     # if enabled send email
-                                msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Power line has restored - OK.') + '</p>'
-                                msglog = _('UPS plug-in') + ': ' +  _('Power line has restored - OK.')
+                                msg = '<b>' + _(u'UPS plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'Power line has restored - OK.') + '</p>'
+                                msglog = _(u'UPS plug-in') + ': ' +  _(u'Power line has restored - OK.')
                                 log.clear(NAME)
                                 log.info(NAME, msglog)
                                 try:
@@ -179,7 +179,7 @@ class UPSSender(Thread):
                                     try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                 except Exception:     
-                                    log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc()) 
+                                    log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc()) 
 
                                 once = True
                                 once_two = True
@@ -190,7 +190,7 @@ class UPSSender(Thread):
                 self._sleep(2)
 
             except Exception:
-                log.error(NAME, _('UPS plug-in') + ': \n' + traceback.format_exc())
+                log.error(NAME, _(u'UPS plug-in') + ': \n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -204,7 +204,7 @@ def start():
     if ups_sender is None:
         ups_sender = UPSSender()
         log.clear(NAME)
-        log.info(NAME, _('UPS plugin is started.'))
+        log.info(NAME, _(u'UPS plugin is started.'))
 
 
 def stop():
@@ -217,10 +217,10 @@ def stop():
 
 def get_check_power_str():
     if GPIO.input(pin_power_ok) == 0:
-        pwr = 'GPIO Pin = 0 Power line is OK.'
+        pwr = _(u'GPIO Pin = 0 Power line is OK.')
     else:
-        pwr = 'GPIO Pin = 1 Power line ERROR.'
-    return str(pwr)
+        pwr = _(u'GPIO Pin = 1 Power line ERROR.')
+    return pwr
 
 
 def get_check_power():
@@ -299,25 +299,29 @@ def update_log(status):
 
     timestamp = int(time.time())
 
-    state = graph_data[0]['balances']
-    stateval = {'total': status}
-    state.update({timestamp: stateval})
+    try:
+        state = graph_data[0]['balances']
+        stateval = {'total': status}
+        state.update({timestamp: stateval})
+    except:
+        create_default_graph()
+        pass    
  
     write_graph_log(graph_data)
 
-    log.info(NAME, _('Saving to log  files OK'))
+    log.info(NAME, _(u'Saving to log  files OK'))
 
 
 def create_default_graph():
     """Create default graph json file."""
 
-    state = _('State')
+    state = _(u'State')
  
     graph_data = [
        {"station": state, "balances": {}}
     ]
     write_graph_log(graph_data)  
-    log.debug(NAME, _('Creating default graph log files OK'))
+    log.debug(NAME, _(u'Creating default graph log files OK'))
 
 ################################################################################
 # Web pages:                                                                   #
@@ -332,12 +336,20 @@ class settings_page(ProtectedPage):
 
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        show = helpers.get_input(qdict, 'show', False, lambda x: True)        
 
         if ups_sender is not None and delete:
            write_log([])
            create_default_graph()
 
-           raise web.seeother(plugin_url(settings_page), True)     
+           raise web.seeother(plugin_url(settings_page), True) 
+
+        if ups_sender is not None and 'history' in qdict:
+           history = qdict['history']
+           ups_options.__setitem__('history', int(history)) #__setitem__(self, key, value)            
+
+        if ups_sender is not None and show:
+            raise web.seeother(plugin_url(log_page), True)                
 
         return self.plugin_render.ups_adj(ups_options, ups_sender.status, log.events(NAME))
 
@@ -353,7 +365,14 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ups_adj_help()        
+        return self.plugin_render.ups_adj_help()
+
+
+class log_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.ups_adj_log(read_log(), ups_options)             
 
 
 class settings_json(ProtectedPage):
@@ -372,9 +391,9 @@ class data_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         test = get_check_power()
         if not test:
-           text = _('OK')
+           text = _(u'OK')
         else:
-           text = _('FAULT')
+           text = _(u'FAULT')
 
         data =  {
           'label': ups_options['emlsubject'],
@@ -424,11 +443,16 @@ class graph_json(ProtectedPage):
             json_data = read_graph_log()
                                           
         temp_balances = {}
-        for key in json_data[0]['balances']:
-            find_key =  int(key.encode('utf8'))                                # key is in unicode ex: u'1601347000' -> find_key is int number
-            if find_key >= log_start:                                          # timestamp interval 
-                temp_balances[key] = json_data[0]['balances'][key]
-        data.append({ 'station': json_data[0]['station'], 'balances': temp_balances })
+        try:
+            for key in json_data[0]['balances']:
+                find_key =  int(key.encode('utf8'))                                # key is in unicode ex: u'1601347000' -> find_key is int number
+                if find_key >= log_start:                                          # timestamp interval 
+                    temp_balances[key] = json_data[0]['balances'][key]
+            data.append({ 'station': json_data[0]['station'], 'balances': temp_balances })
+        except:
+            write_log([])
+            create_default_graph()
+            pass    
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')

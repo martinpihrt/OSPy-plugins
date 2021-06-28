@@ -150,6 +150,11 @@ function create_graph(result) {
 
 }
 
+function check_history() {
+    let select_type = jQuery("#history").val();
+    jQuery("#historyForm").submit();
+}
+
     // Initialize behaviors
     jQuery(document).ready(function(){
 
@@ -164,6 +169,8 @@ function create_graph(result) {
         setTimeout(function() {jQuery.getJSON("/plugins/ups_adj/graph_json", create_graph)}, 500); 
     }
 
+    jQuery("#history").change(check_history);    
+
 });
 </script>
 
@@ -171,7 +178,11 @@ function create_graph(result) {
     <div class="title">$_('UPS monitor settings')</div>
     <a href=$plugins.plugin_url('ups_adj.help_page') class="button upload">$_('Help')</a><br/> 
     $if plugin_options['enable_log']:
-        <p><a href=$plugins.plugin_url('ups_adj.log_csv') class="button download">$_('Download log')</a></p></br>         
+        <p>
+        <a href=$plugins.plugin_url('ups_adj.log_csv') class="button download">$_('Download log')</a>
+        <a href="?show" class="button backup">$_('Show logs')</a>
+        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        </p></br>          
     <form id="pluginForm" action="$plugins.plugin_url('ups_adj.settings_page')" method="post">
         <table class="optionList">
             <tr>
@@ -180,7 +191,18 @@ function create_graph(result) {
                     <input name='ups' type='checkbox'${" checked" if plugin_options['ups'] else ""}>
                 </td>
             </tr>
-
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
+                <td>
+                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
+                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
+                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
+                </td>
+            </tr> 
             <tr>
                 <td style='text-transform: none;'>$_('Max time for shutdown countdown'):</td>
                 <td title=$:{json.dumps(_(u'max 999 minutes'), ensure_ascii=False)}>
@@ -203,36 +225,7 @@ function create_graph(result) {
                 <td>
                     <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]' width="250" style="width: 250px">
                 </td>
-            </tr>
-            <tr>
-               <th colspan="2">
-                 <hr>
-               </th>
-            </tr>             
-            <tr>
-                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
-                <td>
-                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
-                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_(u'Select filter for graph history'):</td>
-                <td title=$:{json.dumps(_(u'Select filter for graph history'), ensure_ascii=False)}>  
-                <select name="history">
-                    <option value="0" ${"selected" if plugin_options["history"]==0 else ""}>$_(u'Without limits')</option>
-                    <option value="1" ${"selected" if plugin_options["history"]==1 else ""}>$_(u'Day filter')</option>
-                    <option value="2" ${"selected" if plugin_options["history"]==2 else ""}>$_(u'Week filter')</option>
-                    <option value="3" ${"selected" if plugin_options["history"]==3 else ""}>$_(u'Month filter')</option>
-                    <option value="4" ${"selected" if plugin_options["history"]==4 else ""}>$_(u'Year filter')</option>
-                </select>
-                </td>
-            </tr>  
+            </tr>            
             <tr>
                <th colspan="2">
                  <hr>
@@ -260,11 +253,22 @@ function create_graph(result) {
         <a href="?delete"    class="button upload">$_('Delete all logs')</a>
 </div>
 
+
 $if plugin_options['enable_log']:
-   <div id="graph-container" class="graph-container">
-   <div id="legend-placeholder" style="display:none;"></div>
-   <div id="legend-visible" style="float: right; width: auto;"></div>
-   <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
-   <div style="clear: both;"></div>
-   <button id="clearSelection">$_('Clear selection')</button>
-   </div>
+    <div id="graph-container" class="graph-container">
+    <div id="legend-placeholder" style="display:none;"></div>
+    <div id="legend-visible" style="float: right; width: auto;"></div>
+    <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
+    <form name="historyForm" id="historyForm" action="" method="get">
+        $_(u'Select filter for graph history'):
+        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_(u'Select a filter for the interval of read data.'), ensure_ascii=False)}>
+        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
+        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
+        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
+        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_(u'Month filter')</option>
+        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_(u'Year filter')</option>
+        </select>
+    </form>   
+    <div style="clear: both;"></div>
+    <button id="clearSelection">$_('Clear selection')</button>
+    </div>

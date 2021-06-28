@@ -1,0 +1,34 @@
+$def with(records, plugin_options)
+
+$var title: $_('UPS monitor - log')
+$var page: plugins
+
+<div class="title">$_('UPS monitor - log')</div>
+<div id="plugin">
+    <p>$_('Total number of records'): ${len(records)}</p>
+    <p>
+    <a href=$plugins.plugin_url('ups_adj.log_csv') class="button download">$_('Download log')</a>
+    <a href="" class="button refresh">$_('Refresh')</a>
+    <a href=$plugins.plugin_url('ups_adj.settings_page') class="button danger">$_('Cancel')</a>
+    <p></br>
+    <table class="logList">
+        <tr class="log_rec">
+            <th>$_('Date')</th>
+            <th>$_('Time')</th>
+            <th>$_('State')</th>
+        </tr>
+        $for interval in records:
+            <tr class="log_rec ${loop.parity}">
+                <td align='left'>${interval["date"]}</td>
+                <td align='left'>${interval["time"]}</td>
+                $if interval["state"] == "0":
+                    <td align='left'><p style="color:red;">$_('Detected fault on power line!')</p></td>
+                $if interval["state"] == "1":
+                    <td align='left'><p style="color:green;">$_('Power line has restored OK')</p></td>
+            </tr>
+    </table>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('ups_adj.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
