@@ -11,7 +11,7 @@ import traceback
 import web
 from ospy.webpages import ProtectedPage
 from ospy.helpers import restart
-from ospy.log import log, logEM
+from ospy.log import log, logEM, logEV
 from plugins import PluginOptions, plugin_url
 from ospy import version
 from ospy.options import options
@@ -135,7 +135,8 @@ class StatusChecker(Thread):
                 except Exception:     
                     log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc()) 
 
-            stats['ver_new'] =  '%d' % new_revision    
+            stats['ver_new'] =  '%d' % new_revision 
+            stats['ver_new_date'] = '%s' % new_date   
             stats['ver_act'] =  '%d' % version.revision       
 
         else:
@@ -200,6 +201,8 @@ checker = None
 # Helper functions:                                                            #
 ################################################################################
 def perform_update():
+    global stats
+
     try:
        # ignore local chmod permission
        command = "git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
@@ -218,6 +221,9 @@ def perform_update():
              subprocess.check_output(command.split())
 
        log.debug(NAME, _(u'Update result') + ': ' + output)
+
+       logEV.save_events_log( _(u'System OSPy'), _(u'Updated to version') + ': {} ({})'.format(str(stats['ver_new']), str(stats['ver_new_date'])))
+
        report_restarted()
        restart(wait=4)
 
