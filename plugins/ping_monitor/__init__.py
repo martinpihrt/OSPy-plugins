@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # this plugin send ping to 1-3 address.
 
-__author__ = 'Martin Pihrt' # www.pihrt.com
+__author__ = u'Martin Pihrt' # www.pihrt.com
 
 #todo restart
 #todo log
@@ -31,7 +31,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Ping Monitor'
-MENU =  _('Package: Ping Monitor')
+MENU =  _(u'Package: Ping Monitor')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -40,13 +40,13 @@ plugin_options = PluginOptions(
        'address_1': '8.8.8.8',      # Google.com
        'address_2': '8.8.4.4',      # Google.com
        'address_3': '77.75.75.176', # Seznam.cz
-       'ping_interval': 2,          # ping interval in second
+       'ping_interval': 5,          # ping interval in second
        'ping_count': 3,             # for reboot (fault counter)
        'use_restart': False,
        'use_send_email': False,
        'send_interval': 24,
        'use_send_delete': False,
-       'emlsubject':  _('Report from OSPy PING plugin'),
+       'emlsubject':  _(u'Report from OSPy PING plugin'),
        'enable_log': False,
        'history': 0                 # selector for graph history
     }
@@ -65,6 +65,8 @@ class Sender(Thread):
 
         global status
 
+        millis = int(round(time.time() * 1000))
+
         status['ping1']  = 0
         status['ping2']  = 0
         status['ping3']  = 0
@@ -72,6 +74,8 @@ class Sender(Thread):
         status['last_ping2'] = 0
         status['last_ping3'] = 0
         status['state'] = "-"
+        status['ms_from'] = millis
+        status['ms_to'] = millis
 
         self._sleep_time = 0
         self.start()
@@ -107,41 +111,49 @@ class Sender(Thread):
             try:
                 if plugin_options['use_ping']: 
                     millis = int(round(time.time() * 1000))           # actual time in ms
-                
+
                     if(millis - last_ping_millis) >= ping_interval:   # is time for pinging?
                         last_ping_millis = millis
                         log.clear(NAME)
                         if plugin_options['address_1'] != '':
                             if ping_ip(plugin_options['address_1']):
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is available.')) 
-                                status['ping1'] = 1                          
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _(u'is available.'))
+                                status['ping1'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is not available.'))
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _(u'is not available.'))
                                 status['ping1'] = 0
                                 en_fault = True
+                        else:
+                            status['ping1'] = 0
 
-                        if plugin_options['address_2'] != '':        
+                        if plugin_options['address_2'] != '':
                             if ping_ip(plugin_options['address_2']):
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is available.'))   
-                                status['ping2'] = 1                        
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _(u'is available.'))
+                                status['ping2'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is not available.'))
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _(u'is not available.'))
                                 status['ping2'] = 0
                                 en_fault = True
+                        else:
+                            status['ping2'] = 0
 
-                        if plugin_options['address_3'] != '':        
+                        if plugin_options['address_3'] != '':
                             if ping_ip(plugin_options['address_3']) and plugin_options['address_3']!='':
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is available.'))   
-                                status['ping3'] = 1                        
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _(u'is available.'))
+                                status['ping3'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is not available.'))  
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _(u'is not available.'))
                                 status['ping3'] = 0
                                 en_fault = True
+                        else:
+                            status['ping3'] = 0
 
-                        if status['ping1'] == 0 and status['ping2'] == 0 and status['ping3'] == 0:  
+                        if status['ping1'] == 0 and status['ping2'] == 0 and status['ping3'] == 0:
                             status['state'] = "ERROR" 
+                            status['ms_from'] = millis         # start time with error 
                         else:
                             status['state'] = "-"
+                            status['ms_to'] = millis           # end time after error
 
                         if status['ping1'] != status['last_ping1']:
                             status['last_ping1'] = status['ping1']
@@ -153,7 +165,7 @@ class Sender(Thread):
 
                         if status['ping3'] != status['last_ping3']:
                             status['last_ping3'] = status['ping3'] 
-                            en_log = True                                                               
+                            en_log = True
 
                         if en_log:                              # is change?
                             en_log = False                      # only if changed
@@ -161,13 +173,13 @@ class Sender(Thread):
                                 update_log()                    # saving to log
 
                             if en_fault:
-                            	en_fault = False
+                                en_fault = False
                                 fault_counter += 1
 
                             if plugin_options['use_restart']:   # is enabled restarting?
                                 if fault_counter >= plugin_options['ping_count']:  # is fault counter ready to restart?
                                     fault_counter = 0
-                                    log.error(NAME, _('Ping has fault. Restarting system!'))
+                                    log.error(NAME, _(u'Ping has fault. Restarting system!'))
                                     reboot(True)                # Linux HW software reboot
 
 
@@ -184,7 +196,7 @@ class Sender(Thread):
                                 try:
                                     from plugins.email_notifications import try_mail
                                     Subject = plugin_options['emlsubject']
-                                    Message =  _('Ping Monitor send statistics at the day and time') + ': ' + datetime_string()
+                                    Message =  _(u'Ping Monitor send statistics at the day and time') + ': ' + datetime_string()
                                     
                                     try_mail(Message, Message, log_csv_file, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
@@ -194,14 +206,13 @@ class Sender(Thread):
                                         os.remove(log_csv_file)
 
                                 except Exception:     
-                                    log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())   
-                                                                   
+                                    log.error(NAME, _(u'Ping Monitor plug-in') + ':\n' + traceback.format_exc())
 
-                self._sleep(1)  
+                self._sleep(1)
 
             except Exception:
                 log.clear(NAME)
-                log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'Ping Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -232,7 +243,7 @@ def ping_ip(current_ip_address):
         else:
             return True
     except Exception:
-        return False     
+        return False
 
 
 def read_log():
@@ -272,7 +283,7 @@ def update_log():
     ### Data for log ###
     try:
         log_data = read_log()
-    except:   
+    except:
         write_log([])
         log_data = read_log()
 
@@ -284,24 +295,26 @@ def update_log():
     data['ping2'] = str(status['last_ping2'])
     data['ping3'] = str(status['last_ping3'])
     data['state'] = str(status['state'])
-      
+    data['ms_from'] = status['ms_from']
+    data['ms_to'] = status['ms_to']
+
     log_data.insert(0, data)
 
-    try:    
+    try:
         write_log(log_data)
-    except:    
+    except:
         write_log([])
 
-    try:  
-        graph_data = read_graph_log()    
-    except: 
+    try:
+        graph_data = read_graph_log()
+    except:
         create_default_graph()
         graph_data = read_graph_log()
 
     timestamp = int(time.time())
 
     try:
-    	if plugin_options['address_1'] != '': 
+        if plugin_options['address_1'] != '': 
             ping1 = graph_data[0]['balances']
             ping1val = {'total': status['last_ping1']}
             ping1.update({timestamp: ping1val})
@@ -315,36 +328,36 @@ def update_log():
             ping3 = graph_data[2]['balances']
             ping3val = {'total': status['last_ping3']}
             ping3.update({timestamp: ping3val})
- 
+
         write_graph_log(graph_data)
 
-        log.info(NAME, _('Saving to log files OK.'))
+        log.info(NAME, _(u'Saving to log files OK.'))
     except:
         create_default_graph()
 
 
 def create_default_graph():
     """Create default graph json file."""
-    if plugin_options['address_1'] != '': 
+    if plugin_options['address_1'] != '':
         ping1 = "IP1: " + plugin_options['address_1']
     else:
         ping1 = ""
-    if plugin_options['address_2'] != '':         
+    if plugin_options['address_2'] != '':
         ping2 = "IP2: " + plugin_options['address_2']
     else:
-        ping2 = ""        
-    if plugin_options['address_3'] != '':     
+        ping2 = ""
+    if plugin_options['address_3'] != '':
         ping3 = "IP3: " + plugin_options['address_3']
     else:
-        ping3 = ""        
-     
+        ping3 = ""
+
     graph_data = [
        {"station": ping1, "balances": {}},
-       {"station": ping2, "balances": {}}, 
+       {"station": ping2, "balances": {}},
        {"station": ping3, "balances": {}}
     ]
     write_graph_log(graph_data)
-    log.info(NAME, _('Deleted all log files OK'))
+    log.info(NAME, _(u'Deleted all log files OK'))
 
 
 def create_csv_file():
@@ -357,7 +370,7 @@ def create_csv_file():
             fieldnames = ['Date', 'Time', 'IP1', 'IP2', 'IP3', 'STATE']
             writer = csv.DictWriter(csv_write, fieldnames=fieldnames)
             writer.writeheader()
- 
+
             log_records = read_log()
             for record in log_records:
                 data = {'Date':  record['date']}
@@ -370,7 +383,7 @@ def create_csv_file():
 
     except Exception:
         log.clear(NAME)
-        log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())            
+        log.error(NAME, _(u'Ping Monitor plug-in') + ':\n' + traceback.format_exc())
 
 
 ################################################################################
@@ -399,10 +412,10 @@ class settings_page(ProtectedPage):
 
         if sender is not None and 'history' in qdict:
            history = qdict['history']
-           plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)            
+           plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
 
         if sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)            
+            raise web.seeother(plugin_url(log_page), True)
 
         return self.plugin_render.ping_monitor(plugin_options, log.events(NAME))
 
@@ -415,9 +428,9 @@ class settings_page(ProtectedPage):
 
         if not plugin_options['use_ping']:
             log.clear(NAME)
-            log.info(NAME, _('Ping monitor is disabled.'))
+            log.info(NAME, _(u'Ping monitor is disabled.'))
 
-        log.info(NAME, _('Options has updated.'))
+        log.info(NAME, _(u'Options has updated.'))
         raise web.seeother(plugin_url(settings_page), True)
 
 
@@ -425,14 +438,14 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ping_monitor_help() 
+        return self.plugin_render.ping_monitor_help()
 
 
 class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ping_monitor_log(read_log(), plugin_options)              
+        return self.plugin_render.ping_monitor_log(read_log(), plugin_options)
 
 
 class settings_json(ProtectedPage):
@@ -483,9 +496,9 @@ class log_json(ProtectedPage):
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
-    def GET(self):    
+    def GET(self):
         data = []
-        
+
         epoch = datetime.date(1970, 1, 1)                                      # first date
         current_time  = datetime.date.today()                                  # actual date
 
@@ -501,10 +514,10 @@ class graph_json(ProtectedPage):
         if plugin_options['history'] == 3:
             check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
         if plugin_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
 
         log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-                
+
         json_data = read_graph_log()
 
         for i in range(0, 3):                                                  # 0 = ping 1, 1 = ping 2, 2 = ping 3
@@ -530,7 +543,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         data += ";\t %s" % "IP2: " + plugin_options['address_2']
         data += ";\t %s" % "IP3: " + plugin_options['address_3']
         data += ";\t State"
-        data += '\n'        
+        data += '\n'
 
         try:
             log_records = read_log()
@@ -543,9 +556,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 data += ";\t" + record["state"]
                 data += '\n'
         except:
-            pass        
+            pass
 
         web.header('Content-Type', 'text/csv')
         return data
-   
-

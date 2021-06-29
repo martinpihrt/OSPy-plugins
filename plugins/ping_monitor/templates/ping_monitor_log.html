@@ -3,6 +3,17 @@ $def with(records, plugin_options)
 $var title: $_('Ping monitor - log')
 $var page: plugins
 
+$code:
+    def two_digits(n):
+        return '%02d' % int(n)
+
+    def convertMillis(millis):
+        seconds=(millis/1000)%60
+        minutes=(millis/(1000*60))%60
+        hours=(millis/(1000*60*60))%24
+        return "{0}:{1}:{2}".format(two_digits(hours), two_digits(minutes), two_digits(seconds))
+
+
 <div class="title">$_('Ping monitor - log')</div>
 <div id="plugin">
     <p>$_('Total number of records'): ${len(records)}</p>
@@ -15,29 +26,42 @@ $var page: plugins
         <tr class="log_rec">
             <th>$_('Date')</th>
             <th>$_('Time')</th>
-            <th>$_('Ping address 1') (${plugin_options['address_1']})</th>
-            <th>$_('Ping address 2') (${plugin_options['address_2']})</th>
-            <th>$_('Ping address 3') (${plugin_options['address_3']})</th>
+            $if plugin_options['address_1'] != '':
+                <th>$_('Ping address 1') (${plugin_options['address_1']})</th>
+            $if plugin_options['address_2'] != '':                
+                <th>$_('Ping address 2') (${plugin_options['address_2']})</th>
+            $if plugin_options['address_3'] != '':            
+                <th>$_('Ping address 3') (${plugin_options['address_3']})</th>
             <th>$_('State')</th>
+            <th>$_('Between the lines (h:m:s)')</th>
         </tr>
         $for interval in records:
             <tr class="log_rec ${loop.parity}">
                 <td align='left'>${interval["date"]}</td>
                 <td align='left'>${interval["time"]}</td>
-                $if interval["ping1"] == "1":
-                    <td align='left'><p style="color:green">$_('Available')</p></td>
-                $else:
-                    <td align='left'><p style="color:red">$_('Not available')</p></td>
-                $if interval["ping2"] == "1":
-                    <td align='left'><p style="color:green">$_('Available')</p></td>
-                $else:
-                    <td align='left'><p style="color:red">$_('Not available')</p></td>
-                $if interval["ping3"] == "1":
-                    <td align='left'><p style="color:green">$_('Available')</p></td>
-                $else:
-                    <td align='left'><p style="color:red">$_('Not available')</p></td>
+                $if plugin_options['address_1'] != '':
+                    $if interval["ping1"] == "1":
+                        <td align='left'><p style="color:green">$_('Available')</p></td>
+                    $else:
+                        <td align='left'><p style="color:red">$_('Not available')</p></td>
+                $if plugin_options['address_2'] != '':
+                    $if interval["ping2"] == "1":
+                        <td align='left'><p style="color:green">$_('Available')</p></td>
+                    $else:
+                        <td align='left'><p style="color:red">$_('Not available')</p></td>
+                $if plugin_options['address_3'] != '':
+                    $if interval["ping3"] == "1":
+                        <td align='left'><p style="color:green">$_('Available')</p></td>
+                    $else:
+                        <td align='left'><p style="color:red">$_('Not available')</p></td>
+
                 $if interval["state"] == "ERROR":                                     
                     <td align='left'><p style="color:red">$_('Connection failure')</p></td>
+                    <td align='left'>${convertMillis(interval["ms_to"]-interval["ms_from"])}</td>
+                $else:
+                    <td align='left'>$_('OK')</td>
+                    <td align='left'>${convertMillis(interval["ms_to"]-interval["ms_from"])}</td>
+                
             </tr>
     </table>
 </div>
