@@ -23,6 +23,7 @@ from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 from ospy.helpers import ASCI_convert, datetime_string
 from ospy.stations import stations
+from ospy.sensors import sensors
 
 from blinker import signal
 
@@ -54,6 +55,7 @@ lcd_options = PluginOptions(
         "d_temperature": True,
         "d_sched_manu": True,
         "d_syst_enabl": True,
+        "d_sensors": True,
         "hw_PCF8574": 1               # 0-4, default is 1 LCD1602 china I2C display
     }
 )
@@ -108,22 +110,25 @@ class LCDSender(Thread):
                     line1 = get_report(report_index)
                     line2 = get_report(report_index + 1)
 
-                    if report_index >= 29:
+                    if report_index >= 31:
                         report_index = 0
-
-                    line1 = get_report(report_index)
-                    line2 = get_report(report_index + 1)
                     
-                    update_lcd(line1, line2)
-                                           
-                    if lcd_options['debug_line'] and line1 is not None:
-                        log.info(NAME, line1)
-                    if lcd_options['debug_line'] and line2 is not None:
-                        log.info(NAME, line2)
+                    skip_lines = False
+                    if line1 is None and line2 is None:
+                        skip_lines = True
+
+                    if not skip_lines:    
+                        update_lcd(line1, line2)                                       
+                        if lcd_options['debug_line'] and line1 is not None:
+                            log.info(NAME, line1)
+                        if lcd_options['debug_line'] and line2 is not None:
+                            log.info(NAME, line2)
+
+                        self._sleep(2)    
 
                     report_index += 2
 
-                self._sleep(2)
+                    time.sleep(0.1)
 
             except Exception:
                 log.error(NAME, _(u'LCD display plug-in:') + '\n' + traceback.format_exc())
@@ -199,6 +204,38 @@ def get_active_state():
     else:
       return False
 
+def maping(x, in_min, in_max, out_min, out_max):
+    """ Return value from range """
+    return ((x - in_min) * (out_max - out_min)) / ((in_max - in_min) + out_min)
+
+def get_tank_cm(level, dbot, dtop):
+    """ Return level from top and bottom distance"""
+    try:
+        if level < 0:
+            return -1
+        tank = maping(level, int(dbot), int(dtop), 0, (int(dbot)-int(dtop)))
+        if tank >= 0:
+            return tank
+        else:
+            return -1
+    except:
+        return -1
+
+def get_percent(level, dbot, dtop):
+    """ Return level 0-100% from top and bottom distance"""
+    try:
+        if level >= 0:
+            perc = float(level)/float((int(dbot)-int(dtop)))
+            perc = float(perc)*100.0 
+            if perc > 100.0:
+                perc = 100.0
+            if perc < 0.0:
+                perc = -1.0
+            return int(perc)
+        else:
+            return -1
+    except:
+        return -1        
 
 def get_report(index):
     result = None
@@ -326,12 +363,12 @@ def get_report(index):
         else: 
             result = None
     elif index == 20:    
-        if lcd_options['d_water_tank_level']:        
+        if lcd_options['d_water_tank_level']:
             result = ASCI_convert(_(u'Water Tank Level:'))
         else: 
             result = None
     elif index == 21:
-        if lcd_options['d_water_tank_level']:    
+        if lcd_options['d_water_tank_level']:
             try:
                 from plugins import tank_monitor
                 cm = tank_monitor.get_all_values()[0]
@@ -351,8 +388,8 @@ def get_report(index):
                 result = ASCI_convert(_(u'Not Available'))
         else: 
             result = None
-    elif index == 22:    
-        if lcd_options['d_temperature']:    
+    elif index == 22:
+        if lcd_options['d_temperature']:
             result = ASCI_convert(_(u'DS Temperature:'))
         else: 
             result = None
@@ -365,43 +402,136 @@ def get_report(index):
                     air_result = ''
                     for i in range(0, air_options['ds_used']):
                         air_result += u'%s' % air_options['label_ds%d' % i] + u': %s' % air_temp_humi.DS18B20_read_probe(i) + ' '
-                    result = ASCI_convert(air_result)    
+                    result = ASCI_convert(air_result)
                 else:     
-                    result = ASCI_convert(_(u'DS temperature not use'))                    
+                    result = ASCI_convert(_(u'DS temperature not use'))
             except Exception:
                 result = ASCI_convert(_(u'Not Available'))
         else: 
             result = None
-    elif index == 24:    
-        if lcd_options['d_running_stations']:    
+    elif index == 24:
+        if lcd_options['d_running_stations']:
             result = ASCI_convert(_(u'Station running:'))
         else: 
             result = None
     elif index == 25:
-        if get_active_state()==False:   
-            result = ASCI_convert(_(u'Nothing running')) 
+        if lcd_options['d_running_stations']:
+            if get_active_state()==False:
+                result = ASCI_convert(_(u'Nothing running')) 
+            else:
+                result = get_active_state()
         else:
-            result = get_active_state()
-    elif index == 26:    
-        if lcd_options['d_sched_manu']:    
+            result = None
+    elif index == 26:
+        if lcd_options['d_sched_manu']:
             result = ASCI_convert(_(u'Control:'))
         else: 
             result = None
     elif index == 27:
-        if options.manual_mode:   
-            result = ASCI_convert(_(u'Manual mode'))
+        if lcd_options['d_sched_manu']:
+            if options.manual_mode:
+                result = ASCI_convert(_(u'Manual mode'))
+            else:
+                result = ASCI_convert(_(u'Scheduler'))
         else:
-            result = ASCI_convert(_(u'Scheduler'))
-    elif index == 28:    
-        if lcd_options['d_syst_enabl']:    
+            result = None
+    elif index == 28:
+        if lcd_options['d_syst_enabl']:
             result = ASCI_convert(_(u'Scheduler:'))
         else: 
             result = None
     elif index == 29:
-        if options.scheduler_enabled:   
-            result = ASCI_convert(_(u'Enabled')) 
+        if lcd_options['d_syst_enabl']:
+            if options.scheduler_enabled:
+                result = ASCI_convert(_(u'Enabled'))
+            else:
+                result = ASCI_convert(_(u'Disabled'))
         else:
-            result = ASCI_convert(_(u'Disabled'))         
+            result = None
+    ### OSPy sensors ###        
+    elif index == 30:
+        if lcd_options['d_sensors']:
+            result = ASCI_convert(_(u'Sensors:'))
+        else: 
+            result = None
+    elif index == 31:
+        if lcd_options['d_sensors']:
+            try:
+                if sensors.count() > 0:
+                    sensor_result = ''
+                    for sensor in sensors.get():
+                        if sensor.enabled:
+                            if sensor.response == 1:
+                                sensor_result += sensor.name + ': '
+                                if sensor.sens_type == 1:                               # dry contact
+                                    sensor_result += _(u'Contact Closed') if int(sensor.last_read_value[4])==1 else _(u'Contact Open')
+                                if sensor.sens_type == 2:                               # leak detector
+                                    if sensor.last_read_value[5] != -1.0 and sensor.last_read_value[5] != -127.0:
+                                        sensor_result += str(sensor.last_read_value[5]) + ' ' + _(u'l/s')
+                                    else:
+                                        sensor_result += _(u'Probe Error')
+                                if sensor.sens_type == 3:                               # moisture
+                                    if sensor.last_read_value[6] != -1.0:
+                                        sensor_result += str(sensor.last_read_value[6]) + _(u'%')
+                                    else:
+                                        sensor_result += _(u'Probe Error')
+                                if sensor.sens_type == 4:                               # motion
+                                    if sensor.last_read_value[7] != -1:
+                                        sensor_result += _(u'Motion Detected') if int(sensor.last_read_value[7])==1 else _(u'No Motion')
+                                    else:
+                                        sensor_result += _(u'Probe Error')
+                                if sensor.sens_type == 5:                               # temperature
+                                    if sensor.last_read_value[0] != -127.0:
+                                        sensor_result += str(sensor.last_read_value[0])
+                                    else:
+                                        sensor_result += _(u'Probe Error')
+                                if sensor.sens_type == 6:                               # multi sensor
+                                    if sensor.multi_type >= 0 and sensor.multi_type <4: # multi temperature DS1-DS4
+                                        if sensor.last_read_value[sensor.multi_type] != -127.0: 
+                                            sensor_result += str(sensor.last_read_value[sensor.multi_type])
+                                        else:
+                                            sensor_result += _(u'Probe Error')
+                                    if sensor.multi_type == 4:                          #  multi dry contact
+                                        if sensor.last_read_value[4] != -1.0  and sensor.last_read_value[4] != -127.0:
+                                            sensor_result += _(u'Contact Closed') if int(sensor.last_read_value[4])==1 else _(u'Contact Open')
+                                        else:
+                                            sensor_result += _(u'Probe Error')
+                                    if sensor.multi_type == 5:                          #  multi leak detector
+                                        if sensor.last_read_value[5] != -1.0  and sensor.last_read_value[5] != -127.0:
+                                            sensor_result += str(sensor.last_read_value[5]) + ' ' + _(u'l/s')
+                                        else:
+                                            sensor_result += _(u'Probe Error')
+                                    if sensor.multi_type == 6:                          #  multi moisture
+                                        if sensor.last_read_value[6] != -1.0  and sensor.last_read_value[6] != -127.0:
+                                            sensor_result += str(sensor.last_read_value[6]) + _(u'%')
+                                        else:
+                                            sensor_result += _(u'Probe Error')
+                                    if sensor.multi_type == 7:                          #  multi motion
+                                        if sensor.last_read_value[7] != -1.0  and sensor.last_read_value[7] != -127.0:
+                                            sensor_result += _(u'Motion Detected') if int(sensor.last_read_value[7])==1 else _(u'No Motion')
+                                        else:
+                                            sensor_result += _(u'Probe Error')
+                                    if sensor.multi_type == 8:                          #  multi ultrasonic
+                                        if sensor.last_read_value[8] != -1.0  and sensor.last_read_value[8] != -127.0:
+                                            get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
+                                            get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
+                                            sensor_result += str(get_cm) + ' ' +  _(u'cm') + '(' + str(get_perc) + ' %)'
+                                        else:
+                                            sensor_result += _(u'Probe Error')
+                            else:
+                                sensor_result += sensor.name + ': ' + _(u'No response!')
+                        else:
+                            sensor_result += sensor.name + ': ' + _(u'Disabled')
+                        if sensors.count() > 1:
+                            sensor_result += ', '      
+                    result = ASCI_convert(sensor_result)
+                else:
+                    result = ASCI_convert(_(u'No sensors available'))
+            except Exception:
+                result = ASCI_convert(_(u'Not Available'))
+                print(traceback.format_exc())
+        else: 
+            result = None
 
     return result
 
