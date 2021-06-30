@@ -41,7 +41,8 @@ plugin_options = PluginOptions(
 stats = {
     'ver_act': '0.0.0',
     'ver_new': '0.0.0',
-    'can_update': False
+    'can_update': False,
+    'ver_new_date': '',
     }
 
 
@@ -204,29 +205,29 @@ def perform_update():
     global stats
 
     try:
-       # ignore local chmod permission
-       command = "git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
-       subprocess.check_output(command.split())
+        # ignore local chmod permission
+        command = "git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
+        subprocess.check_output(command.split())
 
-       command = "git reset --hard"
-       subprocess.check_output(command.split())
+        command = "git reset --hard"
+        subprocess.check_output(command.split())
 
-       command = "git pull"
-       output = subprocess.check_output(command.split())
+        command = "git pull"
+        output = subprocess.check_output(command.split())
     
-       # Go back to master (refactor is old):
-       if checker is not None:
-          if checker.status['remote_branch'] == 'origin/refactor':
-             command = 'git checkout master'
-             subprocess.check_output(command.split())
+        # Go back to master (refactor is old):
+        if checker is not None:
+            if checker.status['remote_branch'] == 'origin/refactor':
+                command = 'git checkout master'
+                subprocess.check_output(command.split())
 
-       log.debug(NAME, _(u'Update result') + ': ' + output)
+        log.debug(NAME, _(u'Update result') + ': ' + output)
 
-       logEV.save_events_log( _(u'System OSPy'), _(u'Updated to version') + ': {} ({})'.format(str(stats['ver_new']), str(stats['ver_new_date'])))
+        if options.run_logEV:
+            logEV.save_events_log( _(u'System OSPy'), _(u'Updated to version') + ': {} ({})'.format(str(stats['ver_new']), str(stats['ver_new_date'])))
 
-       report_restarted()
-       restart(wait=4)
-
+        report_restarted()
+        restart(wait=4)
 
     except Exception:
        log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc())
