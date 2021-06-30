@@ -515,7 +515,7 @@ def get_report(index):
                                         if sensor.last_read_value[8] != -1.0  and sensor.last_read_value[8] != -127.0:
                                             get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
                                             get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
-                                            sensor_result += str(get_cm) + ' ' +  _(u'cm') + '(' + str(get_perc) + ' %)'
+                                            sensor_result += str(get_level) + ' ' +  _(u'cm') + '(' + str(get_perc) + ' %)'
                                         else:
                                             sensor_result += _(u'Probe Error')
                             else:
@@ -529,7 +529,6 @@ def get_report(index):
                     result = ASCI_convert(_(u'No sensors available'))
             except Exception:
                 result = ASCI_convert(_(u'Not Available'))
-                print(traceback.format_exc())
         else: 
             result = None
 
