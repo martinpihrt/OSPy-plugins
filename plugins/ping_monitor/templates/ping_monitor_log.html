@@ -33,7 +33,7 @@ $code:
             $if plugin_options['address_3'] != '':            
                 <th>$_('Ping address 3') (${plugin_options['address_3']})</th>
             <th>$_('State')</th>
-            <th>$_('Between the lines (h:m:s)')</th>
+            <th>$_('Outage was (h:m:s)')</th>
         </tr>
         $for interval in records:
             <tr class="log_rec ${loop.parity}">
@@ -57,10 +57,18 @@ $code:
 
                 $if interval["state"] == "ERROR":                                     
                     <td align='left'><p style="color:red">$_('Connection failure')</p></td>
-                    <td align='left'>${convertMillis(interval["ms_to"]-interval["ms_from"])}</td>
+                    <td align='left'> </td>
                 $else:
                     <td align='left'>$_('OK')</td>
-                    <td align='left'>${convertMillis(interval["ms_to"]-interval["ms_from"])}</td>
+                    <td align='left'>
+                    $if interval["time_dif"] != -1:
+                        $if interval["time_dif"] > 60000 and interval["time_dif"] < 86400000:
+                            <p style="color:DarkOrange">${convertMillis(interval["time_dif"])}
+                        $elif interval["time_dif"] > 86400000:
+                            <p style="color:DarkRed">$_('> 24 hours')
+                        $else:
+                            <p style="color:DodgerBlue">${convertMillis(interval["time_dif"])}
+                    </p></td>
                 
             </tr>
     </table>

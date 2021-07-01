@@ -74,8 +74,9 @@ class Sender(Thread):
         status['last_ping2'] = 0
         status['last_ping3'] = 0
         status['state'] = "-"
-        status['ms_from'] = millis
-        status['ms_to'] = millis
+        status['ERR_diff'] = int(round(time.time() * 1000))
+        status['OK_diff'] = int(round(time.time() * 1000))
+        status['now_run'] = True
 
         self._sleep_time = 0
         self.start()
@@ -122,7 +123,6 @@ class Sender(Thread):
                             else:
                                 log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _(u'is not available.'))
                                 status['ping1'] = 0
-                                en_fault = True
                         else:
                             status['ping1'] = 0
 
@@ -133,7 +133,6 @@ class Sender(Thread):
                             else:
                                 log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _(u'is not available.'))
                                 status['ping2'] = 0
-                                en_fault = True
                         else:
                             status['ping2'] = 0
 
@@ -144,16 +143,14 @@ class Sender(Thread):
                             else:
                                 log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _(u'is not available.'))
                                 status['ping3'] = 0
-                                en_fault = True
                         else:
                             status['ping3'] = 0
 
                         if status['ping1'] == 0 and status['ping2'] == 0 and status['ping3'] == 0:
-                            status['state'] = "ERROR" 
-                            status['ms_from'] = millis         # start time with error 
+                            status['state'] = "ERROR"
+                            en_fault = True
                         else:
                             status['state'] = "-"
-                            status['ms_to'] = millis           # end time after error
 
                         if status['ping1'] != status['last_ping1']:
                             status['last_ping1'] = status['ping1']
@@ -180,7 +177,7 @@ class Sender(Thread):
                                 if fault_counter >= plugin_options['ping_count']:  # is fault counter ready to restart?
                                     fault_counter = 0
                                     log.error(NAME, _(u'Ping has fault. Restarting system!'))
-                                    reboot(True)                # Linux HW software reboot
+                                    reboot(True)                # Linux HW software reboot         
 
 
                     if plugin_options['use_send_email']: 
@@ -275,6 +272,14 @@ def write_graph_log(json_data):
     with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
         json.dump(json_data, outfile)
 
+def two_digits(n):
+    return '%02d' % int(n)
+
+def convertMillis(millis):
+    seconds=(millis/1000)%60
+    minutes=(millis/(1000*60))%60
+    hours=(millis/(1000*60*60))%24
+    return "{0}:{1}:{2}".format(two_digits(hours), two_digits(minutes), two_digits(seconds))
 
 def update_log():
     """Update data in json files.""" 
@@ -295,8 +300,19 @@ def update_log():
     data['ping2'] = str(status['last_ping2'])
     data['ping3'] = str(status['last_ping3'])
     data['state'] = str(status['state'])
-    data['ms_from'] = status['ms_from']
-    data['ms_to'] = status['ms_to']
+
+    if status['state'] == "ERROR":
+        status['ERR_diff'] = int(round(time.time() * 1000))           # actual time in ms
+        data['time_dif'] = -1
+    else:
+        status['OK_diff'] = int(round(time.time() * 1000))            # actual time in ms
+        time_dif = status['OK_diff'] - status['ERR_diff']
+        if not status['now_run']:                                     # blocking save diff time after plugin started
+            data['time_dif'] = time_dif
+        else:
+            data['time_dif'] = -1
+
+        status['now_run'] = False
 
     log_data.insert(0, data)
 
@@ -367,7 +383,7 @@ def create_csv_file():
         log_csv_file = os.path.join(plugin_data_dir(), 'log.csv')
 
         with open(log_csv_file, 'w') as csv_write:
-            fieldnames = ['Date', 'Time', 'IP1', 'IP2', 'IP3', 'STATE']
+            fieldnames = ['Date', 'Time', 'IP1', 'IP2', 'IP3', 'STATE', 'OUTAGE']
             writer = csv.DictWriter(csv_write, fieldnames=fieldnames)
             writer.writeheader()
 
@@ -379,6 +395,14 @@ def create_csv_file():
                 data['IP2']    = record['ping2']
                 data['IP3']    = record['ping3']
                 data['STATE']  = record['state']
+                if record['time_dif'] > 0:
+                    if record['time_dif'] < 86400000:
+                        data['OUTAGE']  = convertMillis(record['time_dif'])
+                    else:
+                        data['OUTAGE'] = '> 24 hours'
+                else:
+                    data['OUTAGE'] = ''
+
                 writer.writerow(data)
 
     except Exception:
@@ -406,7 +430,7 @@ class settings_page(ProtectedPage):
             log_csv_file = os.path.join(plugin_data_dir(), 'log.csv')
             log_csv_exists = os.path.exists(log_csv_file)
             if log_csv_exists:
-                os.remove(log_csv_file)
+                os.remove(log_csv_file)   
 
             raise web.seeother(plugin_url(settings_page), True)
 
@@ -543,6 +567,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         data += ";\t %s" % "IP2: " + plugin_options['address_2']
         data += ";\t %s" % "IP3: " + plugin_options['address_3']
         data += ";\t State"
+        data += ";\t Outage"
         data += '\n'
 
         try:
@@ -554,6 +579,13 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 data += ";\t" + record["ping2"]
                 data += ";\t" + record["ping3"]
                 data += ";\t" + record["state"]
+                if record['time_dif'] > 0:
+                    if record['time_dif'] < 86400000:
+                        data += ";\t" + convertMillis(record['time_dif'])
+                    else:
+                        data += ";\t" + '> 24 hours'
+                else:
+                    data += ";\t" + ''
                 data += '\n'
         except:
             pass
