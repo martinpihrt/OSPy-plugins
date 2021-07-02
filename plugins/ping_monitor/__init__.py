@@ -307,7 +307,10 @@ def update_log():
     else:
         status['OK_diff'] = int(round(time.time() * 1000))            # actual time in ms
         time_dif = status['OK_diff'] - status['ERR_diff']
+
         if not status['now_run']:                                     # blocking save diff time after plugin started
+            if status['last_ping1']=="1" or status['last_ping2']=="1" or status['last_ping3']=="1":
+                status['ERR_diff'] = int(round(time.time() * 1000))   # if any check is ok > remove time outage 
             data['time_dif'] = time_dif
         else:
             data['time_dif'] = -1
@@ -321,6 +324,7 @@ def update_log():
     except:
         write_log([])
 
+    ### Data for graph ###
     try:
         graph_data = read_graph_log()
     except:
@@ -395,7 +399,7 @@ def create_csv_file():
                 data['IP2']    = record['ping2']
                 data['IP3']    = record['ping3']
                 data['STATE']  = record['state']
-                if record['time_dif'] > 0:
+                if record['time_dif'] > 1:
                     if record['time_dif'] < 86400000:
                         data['OUTAGE']  = convertMillis(record['time_dif'])
                     else:
@@ -579,7 +583,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 data += ";\t" + record["ping2"]
                 data += ";\t" + record["ping3"]
                 data += ";\t" + record["state"]
-                if record['time_dif'] > 0:
+                if record['time_dif'] > 1:
                     if record['time_dif'] < 86400000:
                         data += ";\t" + convertMillis(record['time_dif'])
                     else:

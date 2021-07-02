@@ -13,6 +13,22 @@ $code:
         hours=(millis/(1000*60*60))%24
         return "{0}:{1}:{2}".format(two_digits(hours), two_digits(minutes), two_digits(seconds))
 
+    def is_show(ip1,ip2,ip3,s1,s2,s3):
+        if ip1 and ip2 and ip3:
+            if s1=="1" and s2=="1" and s3=="1":
+                return True
+        elif ip1 and ip2 and not ip3:
+            if s1=="1" and s2=="1":
+                return True
+        elif ip1 and not ip2 and ip3:
+            if s1=="1" and s3=="1":
+                return True
+        elif not ip1 and ip2 and ip3:
+            if s2=="1" and s3=="1":
+                return True
+        else:
+                return False                                      
+
 
 <div class="title">$_('Ping monitor - log')</div>
 <div id="plugin">
@@ -26,12 +42,12 @@ $code:
         <tr class="log_rec">
             <th>$_('Date')</th>
             <th>$_('Time')</th>
-            $if plugin_options['address_1'] != '':
-                <th>$_('Ping address 1') (${plugin_options['address_1']})</th>
-            $if plugin_options['address_2'] != '':                
-                <th>$_('Ping address 2') (${plugin_options['address_2']})</th>
-            $if plugin_options['address_3'] != '':            
-                <th>$_('Ping address 3') (${plugin_options['address_3']})</th>
+            $if plugin_options['address_1']:
+                <th>${plugin_options['address_1']}</th>
+            $if plugin_options['address_2']:                
+                <th>${plugin_options['address_2']}</th>
+            $if plugin_options['address_3']:           
+                <th>${plugin_options['address_3']}</th>
             <th>$_('State')</th>
             <th>$_('Outage was (h:m:s)')</th>
         </tr>
@@ -39,37 +55,41 @@ $code:
             <tr class="log_rec ${loop.parity}">
                 <td align='left'>${interval["date"]}</td>
                 <td align='left'>${interval["time"]}</td>
-                $if plugin_options['address_1'] != '':
+                $if plugin_options['address_1']:
                     $if interval["ping1"] == "1":
                         <td align='left'><p style="color:green">$_('Available')</p></td>
                     $else:
                         <td align='left'><p style="color:red">$_('Not available')</p></td>
-                $if plugin_options['address_2'] != '':
+                $if plugin_options['address_2']:
                     $if interval["ping2"] == "1":
                         <td align='left'><p style="color:green">$_('Available')</p></td>
                     $else:
                         <td align='left'><p style="color:red">$_('Not available')</p></td>
-                $if plugin_options['address_3'] != '':
+                $if plugin_options['address_3']:
                     $if interval["ping3"] == "1":
                         <td align='left'><p style="color:green">$_('Available')</p></td>
                     $else:
                         <td align='left'><p style="color:red">$_('Not available')</p></td>
 
-                $if interval["state"] == "ERROR":                                     
+                $if interval["state"] == "ERROR":
                     <td align='left'><p style="color:red">$_('Connection failure')</p></td>
                     <td align='left'> </td>
                 $else:
-                    <td align='left'>$_('OK')</td>
-                    <td align='left'>
                     $if interval["time_dif"] != -1:
-                        $if interval["time_dif"] > 60000 and interval["time_dif"] < 86400000:
-                            <p style="color:DarkOrange">${convertMillis(interval["time_dif"])}
-                        $elif interval["time_dif"] > 86400000:
-                            <p style="color:DarkRed">$_('> 24 hours')
-                        $else:
-                            <p style="color:DodgerBlue">${convertMillis(interval["time_dif"])}
-                    </p></td>
-                
+                        $if is_show(plugin_options['address_1'], plugin_options['address_2'], plugin_options['address_3'], interval["ping1"], interval["ping2"], interval["ping3"]):
+                            <td align='left'>$_('OK')</td>
+                            <td align='left'>
+                            $if interval["time_dif"] > 60000 and interval["time_dif"] < 86400000:
+                                <p style="color:DarkOrange">${convertMillis(interval["time_dif"])}
+                            $elif interval["time_dif"] > 86400000:
+                                <p style="color:DarkRed">$_('> 24 hours')
+                            $else:
+                                <p style="color:DodgerBlue">${convertMillis(interval["time_dif"])}
+                            </p>
+                            </td>
+                    $else:
+                        <td align='left'> </td>
+                        <td align='left'> </td>        
             </tr>
     </table>
 </div>
