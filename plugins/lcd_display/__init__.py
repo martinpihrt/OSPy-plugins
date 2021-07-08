@@ -464,58 +464,63 @@ def get_report(index):
                             if sensor.response == 1:
                                 sensor_result += sensor.name + ': '
                                 if sensor.sens_type == 1:                               # dry contact
-                                    sensor_result += _(u'Contact Closed') if int(sensor.last_read_value[4])==1 else _(u'Contact Open')
+                                    if sensor.last_read_value[4] == 1:
+                                        sensor_result += _(u'Contact Closed')
+                                    elif sensor.last_read_value[4] == 0:
+                                        sensor_result += _(u'Contact Open')
+                                    else:
+                                        sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 2:                               # leak detector
-                                    if sensor.last_read_value[5] != -1.0 and sensor.last_read_value[5] != -127.0:
+                                    if sensor.last_read_value[5] != -127:
                                         sensor_result += str(sensor.last_read_value[5]) + ' ' + _(u'l/s')
                                     else:
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 3:                               # moisture
-                                    if sensor.last_read_value[6] != -1.0:
+                                    if sensor.last_read_value[6] != -127:
                                         sensor_result += str(sensor.last_read_value[6]) + _(u'%')
                                     else:
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 4:                               # motion
-                                    if sensor.last_read_value[7] != -1:
+                                    if sensor.last_read_value[7] != -127:
                                         sensor_result += _(u'Motion Detected') if int(sensor.last_read_value[7])==1 else _(u'No Motion')
                                     else:
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 5:                               # temperature
-                                    if sensor.last_read_value[0] != -127.0:
+                                    if sensor.last_read_value[0] != -127:
                                         sensor_result += str(sensor.last_read_value[0])
                                     else:
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 6:                               # multi sensor
                                     if sensor.multi_type >= 0 and sensor.multi_type <4: # multi temperature DS1-DS4
-                                        if sensor.last_read_value[sensor.multi_type] != -127.0: 
+                                        if sensor.last_read_value[sensor.multi_type] != -127: 
                                             sensor_result += str(sensor.last_read_value[sensor.multi_type])
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 4:                          #  multi dry contact
-                                        if sensor.last_read_value[4] != -1.0  and sensor.last_read_value[4] != -127.0:
+                                        if sensor.last_read_value[4] != -127:
                                             sensor_result += _(u'Contact Closed') if int(sensor.last_read_value[4])==1 else _(u'Contact Open')
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 5:                          #  multi leak detector
-                                        if sensor.last_read_value[5] != -1.0  and sensor.last_read_value[5] != -127.0:
+                                        if sensor.last_read_value[5] != -127:
                                             sensor_result += str(sensor.last_read_value[5]) + ' ' + _(u'l/s')
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 6:                          #  multi moisture
-                                        if sensor.last_read_value[6] != -1.0  and sensor.last_read_value[6] != -127.0:
-                                            sensor_result += str(sensor.last_read_value[6]) + _(u'%')
+                                        if sensor.last_read_value[6] != -127:
+                                            sensor_result += str(sensor.last_read_value[6]) + ' ' + _(u'%')
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 7:                          #  multi motion
-                                        if sensor.last_read_value[7] != -1.0  and sensor.last_read_value[7] != -127.0:
+                                        if sensor.last_read_value[7] != -127:
                                             sensor_result += _(u'Motion Detected') if int(sensor.last_read_value[7])==1 else _(u'No Motion')
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 8:                          #  multi ultrasonic
-                                        if sensor.last_read_value[8] != -1.0  and sensor.last_read_value[8] != -127.0:
+                                        if sensor.last_read_value[8] != -127:
                                             get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
                                             get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
-                                            sensor_result += str(get_level) + ' ' +  _(u'cm') + '(' + str(get_perc) + ' %)'
+                                            sensor_result += str(get_level) + ' ' +  _(u'cm') + ' (' + str(get_perc) + ' %)'
                                         else:
                                             sensor_result += _(u'Probe Error')
                             else:
