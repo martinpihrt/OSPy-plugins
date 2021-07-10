@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # this plugins send E-mail
 
 import json
@@ -25,10 +25,11 @@ from ospy.stations import stations
 from ospy.inputs import inputs
 from ospy.log import log, EVENT_FILE, logEM
 from ospy.helpers import datetime_string, get_input
+from ospy.sensors import sensors
 
 
 NAME = 'E-mail Notifications'
-MENU =  _('Package: E-mail Notifications')
+MENU =  _(u'Package: E-mail Notifications')
 LINK = 'settings_page'
 
 email_options = PluginOptions(
@@ -48,7 +49,7 @@ email_options = PluginOptions(
         'emladr2': '',
         'emladr3': '',
         'emladr4': '',
-        'emlsubject': _('Report from OSPy SYSTEM'),
+        'emlsubject': _(u'Report from OSPy SYSTEM'),
         'emlrepeater': True
     }
 )
@@ -64,7 +65,7 @@ class EmailSender(Thread):
         self._stop = Event()
 
         self._sleep_time = 0
-        self.start()     
+        self.start()
 
     def stop(self):
         self._stop.set()
@@ -86,35 +87,35 @@ class EmailSender(Thread):
         send_interval = 5000  # default time for sending between e-mails (ms)
         last_millis   = 0     # timer for repeating sending e-mails (ms)
         last_rain = False
-        body    = ""
-        logtext = ""
+        body    = u''
+        logtext = u''
         finished_count = len([run for run in log.finished_runs() if not run['blocked']])
 
         if email_options["emlpwron"]:  # if eml_power_on send email is enable (on)
-            body += '<b>' + _('System') + '</b> ' + datetime_string()
-            body += '<br><p style="color:red;">' + _('System was powered on.') + '</p>'
-            logtext = _('System was powered on.')
+            body += u'<b>' + _(u'System') + u'</b> ' + datetime_string()
+            body += u'<br><p style="color:red;">' + _(u'System was powered on.') + u'</p>'
+            logtext = _(u'System was powered on.')
 
             if email_options["emllog"]:
                 file_exists = os.path.exists(EVENT_FILE)
                 if file_exists:
                    try_mail(body, logtext, EVENT_FILE)
                 else:
-                   body += '<br>' + _('Error -  events.log file not exists!') 
+                   body += u'<br>' + _(u'Error -  events.log file not exists!')
                    try_mail(body, logtext)
             else:
                 try_mail(body, logtext)
 
         while not self._stop.is_set():
-            body    = ""
-            logtext = ""
+            body    = u''
+            logtext = u''
             try:
                 # Send E-amil if rain is detected
                 if email_options["emlrain"]:
                     if inputs.rain_sensed() and not last_rain:
-                        body += '<b>' + _('System') + '</b> ' + datetime_string() 
-                        body += '<br><p style="color:red;">' + _('System detected rain.') + '</p>'
-                        logtext = _('System detected rain.')
+                        body += u'<b>' + _(u'System') + u'</b> ' + datetime_string() 
+                        body += u'<br><p style="color:red;">' + _(u'System detected rain.') + u'</p><br>'
+                        logtext = _(u'System detected rain.')
                         try_mail(body, logtext)
                         self._sleep(1)
                     last_rain = inputs.rain_sensed()
@@ -128,16 +129,16 @@ class EmailSender(Thread):
                             minutes, seconds = divmod(duration, 60)
                             pname = run['program_name']
                             sname = stations.get(run['station']).name
-                            body += '<b>' + _('System') + '</b> ' + datetime_string()
-                            body += '<br><b>'  + _('Finished run') + '</b>'
-                            body += '<br>' + _('Program') + u': %s \n' % pname
-                            body += '<br>' + _('Station') + u': %s \n' % sname
-                            body += '<br>' + _('Start time') + ': %s \n' % datetime_string(run['start'])
-                            body += '<br>' + _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
-                            logtext  =  _('Finished run') + '-> ' + _('Program') + u': %s\n' % pname 
-                            logtext +=  _('Station') + u': %s\n' % sname
-                            logtext +=  _('Start time') + ': %s \n' % datetime_string(run['start'])
-                            logtext +=  _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
+                            body += u'<b>' + _(u'System') + u'</b> ' + datetime_string()
+                            body += u'<br><b>'  + _(u'Finished run') + u'</b>'
+                            body += u'<ul><li>' + _(u'Program') + u': %s \n' % pname + u'</li>'
+                            body += u'<li>' + _(u'Station') + u': %s \n' % sname + u'</li>'
+                            body += u'<li>' + _(u'Start time') + u': %s \n' % datetime_string(run['start']) + u'</li>'
+                            body += u'<li>' + _(u'Duration') + u': %02d:%02d\n' % (minutes, seconds) + u'</li></ul>'
+                            logtext  =  _(u'Finished run') + u'-> \n' + _(u'Program') + u': %s\n' % pname 
+                            logtext +=  _(u'Station') + u': %s\n' % sname
+                            logtext +=  _(u'Start time') + u': %s \n' % datetime_string(run['start'])
+                            logtext +=  _(u'Duration') + u': %02d:%02d\n' % (minutes, seconds)
 
                             # Water Tank Monitor
                             try:
@@ -151,23 +152,23 @@ class EmailSender(Thread):
 
                                 msg = ' '
                                 if cm > 0:
-                                    msg =  _('Level') + ': ' + str(cm) + ' ' + _('cm')
-                                    msg += ' (' + str(percent) + ' %), '
-                                    msg += _('Ping') + ': ' + str(ping) + ' ' + _('cm')
+                                    msg =  _(u'Level') + u': ' + str(cm) + u' ' + _(u'cm')
+                                    msg += u' (' + str(percent) + u' %), '
+                                    msg += _(u'Ping') + u': ' + str(ping) + u' ' + _(u'cm')
                                     if units:
-                                        msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('liters')
+                                        msg += u', ' + _(u'Volume') + u': ' + str(volume) + u' ' + _(u'liters')
                                     else:
-                                        msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('m3')    
+                                        msg += u', ' + _(u'Volume') + u': ' + str(volume) + u' ' + _(u'm3')
                                 else: 
-                                    msg = _('Error - I2C device not found!')
+                                    msg = _(u'Error - I2C device not found!')
 
-                                body += '<br><b>'  + _('Water') + '</b>'                                    
-                                body += '<br>' + _('Water level in tank') + ': %s \n' % (msg)
-                                logtext += ' ' + _('Water') + '-> ' + _('Water level in tank') + ': %s \n' % (msg)   
+                                body += u'<b>'  + _(u'Water') + u'</b>'
+                                body += u'<br><ul><li>' + _(u'Water level in tank') + u': %s \n</li></ul>' % (msg)
+                                logtext += _(u'Water') + u'-> \n' + _(u'Water level in tank') + u': %s \n' % (msg)
                             
-                            except:
+                            except ImportError:
+                                log.debug(NAME, _(u'Cannot import plugin: tank monitor.'))
                                 pass
-
 
                             # Water Consumption Counter
                             try:
@@ -179,46 +180,145 @@ class EmailSender(Thread):
                                 consum_one  = water_consumption_counter.get_all_values()[1]
                                 consum_two  = water_consumption_counter.get_all_values()[2]
 
-                                msg = ' '
-                                msg +=  _('Measured from day') + ': ' + str(consum_from) + ', '
-                                msg +=  _('Master Station') + ': ' 
+                                msg = u' '
+                                msg +=  _(u'Measured from day') + u': ' + str(consum_from) + u', '
+                                msg +=  _(u'Master Station') + u': '
                                 if consum_one < 1000:
-                                    msg += str(consum_one) + ' ' 
-                                    msg += _('Liter') + ', '
+                                    msg += str(consum_one) + u' '
+                                    msg += _(u'Liter') + u', '
                                 else: 
-                                    msg += str(round((consum_one/1000.0), 2)) + ' ' 
-                                    msg += _('m3') + ', '
+                                    msg += str(round((consum_one/1000.0), 2)) + u' '
+                                    msg += _(u'm3') + ', '
 
-                                msg +=  _('Second Master Station') + ': '  
+                                msg +=  _(u'Second Master Station') + u': '
                                 if consum_two < 1000:
-                                    msg += str(consum_two) + ' '
-                                    msg += _('Liter') 
-                                else: 
-                                    msg += str(round((consum_two/1000.0), 2)) + ' ' 
-                                    msg += _('m3')
+                                    msg += str(consum_two) + u' '
+                                    msg += _(u'Liter') 
+                                else:
+                                    msg += str(round((consum_two/1000.0), 2)) + u' '
+                                    msg += _(u'm3')
 
-                                body += '<br><b>'  + _('Water Consumption Counter') + '</b>'                                    
-                                body += '<br>%s \n' % (msg)
-                                logtext += ' ' + _('Water Consumption Counter') + ': %s \n' % (msg)   
-                            
-                            except:
+                                body += u'<br><b>'  + _(u'Water Consumption Counter') + u'</b>'
+                                body += u'<br><ul><li>%s \n</li></ul>' % (msg)
+                                logtext += _(u'Water Consumption Counter') + u': %s \n' % (msg)
+
+                            except ImportError:
+                                log.debug(NAME, _(u'Cannot import plugin: water consumption counter.'))
                                 pass
-                                
-                            # Air Temperature and Humidity Monitor   
+
+                            # Air Temperature and Humidity Monitor
                             try:
-                                from plugins import air_temp_humi    
+                                from plugins import air_temp_humi
 
-                                body += '<br><b>' + _('Temperature DS1-DS6') + '</b>'
-                                logtext += ' ' + _('Temperature DS1-DS6') + '-> '
-                                for i in range(0, air_temp_humi.plugin_options['ds_used']):  
-                                    body += '<br>' + u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n'  
-                                    logtext +=  u'%s \n' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + ' ' 
+                                body += u'<br><b>' + _(u'Temperature DS1-DS6') + u'</b><ul>'
+                                logtext += _(u'Temperature DS1-DS6') + u'-> \n'
+                                for i in range(0, air_temp_humi.plugin_options['ds_used']):
+                                    body += u'<li>' + u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + u': ' + u'%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + u'\n</li>'  
+                                    logtext += u'%s' % air_temp_humi.plugin_options['label_ds%d' % i] + u': ' + u'%.1f \u2103\n' % air_temp_humi.DS18B20_read_probe(i) 
+                                body += u'</ul>'    
 
+                            except ImportError:
+                                log.debug(NAME, _(u'Cannot import plugin: air temp humi.'))
+                                pass
+
+                            # OSPy Sensors
+                            try:
+                                body += u'<br><b>' + _(u'Sensors') + u'</b>'
+                                logtext += _(u'Sensors') + u'-> \n'
+                                sensor_result = ''
+                                if sensors.count() > 0:
+                                    body += u'<ul>'
+                                    for sensor in sensors.get():
+                                        sensor_result = ''
+                                        body += u'<li>'
+                                        sensor_result += u'{}: '.format(sensor.name)
+                                        if sensor.enabled:
+                                            if sensor.response == 1:
+                                                if sensor.sens_type == 1:                               # dry contact
+                                                    if sensor.last_read_value[4] == 1:
+                                                        sensor_result += _(u'Contact Closed')
+                                                    elif sensor.last_read_value[4] == 0:
+                                                        sensor_result += _(u'Contact Open')
+                                                    else:
+                                                        sensor_result += _(u'Probe Error')
+                                                if sensor.sens_type == 2:                               # leak detector
+                                                    if sensor.last_read_value[5] != -127:
+                                                        sensor_result += str(sensor.last_read_value[5]) + ' ' + _(u'l/s')
+                                                    else:
+                                                        sensor_result += _(u'Probe Error')
+                                                if sensor.sens_type == 3:                               # moisture
+                                                    if sensor.last_read_value[6] != -127:
+                                                        sensor_result += str(sensor.last_read_value[6]) + ' ' + _(u'%')
+                                                    else:
+                                                        sensor_result += _(u'Probe Error')
+                                                if sensor.sens_type == 4:                               # motion
+                                                    if sensor.last_read_value[7] != -127:
+                                                        sensor_result += _(u'Motion Detected') if int(sensor.last_read_value[7]) == 1 else _(u'No Motion')
+                                                    else:
+                                                        sensor_result += _(u'Probe Error')
+                                                if sensor.sens_type == 5:                               # temperature
+                                                    if sensor.last_read_value[0] != -127:
+                                                        sensor_result += u'%.1f \u2103' % sensor.last_read_value[0]
+                                                    else:
+                                                        sensor_result += _(u'Probe Error')
+                                                if sensor.sens_type == 6:                               # multi sensor
+                                                    if sensor.multi_type >= 0 and sensor.multi_type < 4:# multi temperature DS1-DS4
+                                                        if sensor.last_read_value[sensor.multi_type] != -127: 
+                                                            sensor_result += u'%.1f \u2103' % sensor.last_read_value[sensor.multi_type]
+                                                        else:
+                                                            sensor_result += _(u'Probe Error')
+                                                    if sensor.multi_type == 4:                          #  multi dry contact
+                                                        if sensor.last_read_value[4] != -127:
+                                                            sensor_result += _(u'Contact Closed') if int(sensor.last_read_value[4]) == 1 else _(u'Contact Open')
+                                                        else:
+                                                            sensor_result += _(u'Probe Error')
+                                                    if sensor.multi_type == 5:                          #  multi leak detector
+                                                        if sensor.last_read_value[5] != -127:
+                                                            sensor_result += str(sensor.last_read_value[5]) + ' ' + _(u'l/s')
+                                                        else:
+                                                            sensor_result += _(u'Probe Error')
+                                                    if sensor.multi_type == 6:                          #  multi moisture
+                                                        if sensor.last_read_value[6] != -127:
+                                                            sensor_result += str(sensor.last_read_value[6]) + ' ' + _(u'%')
+                                                        else:
+                                                            sensor_result += _(u'Probe Error')
+                                                    if sensor.multi_type == 7:                          #  multi motion
+                                                        if sensor.last_read_value[7] != -127:
+                                                            sensor_result += _(u'Motion Detected') if int(sensor.last_read_value[7])==1 else _(u'No Motion')
+                                                        else:
+                                                            sensor_result += _(u'Probe Error')
+                                                    if sensor.multi_type == 8:                          #  multi ultrasonic
+                                                        if sensor.last_read_value[8] != -127:
+                                                            get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
+                                                            get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
+                                                            sensor_result += u'{} '.format(get_level) + _(u'cm') + u' ({} %)'.format(get_perc)
+                                                        else:
+                                                            sensor_result += _(u'Probe Error')
+                                            else:
+                                                sensor_result += _(u'No response!')
+                                        else:
+                                            sensor_result += _(u'Disabled')
+
+                                        body += sensor_result
+                                        body += u'</li>'
+                                        logtext += sensor_result
+                                        logtext += u'\n'
+                                    body += u'<ul>'
+                                        
+                                else:
+                                    sensor_result += _(u'No sensors available')
+                                    body += u'<ul><li>'
+                                    body += sensor_result
+                                    body += u'</li></ul>'
+                                    logtext += sensor_result
+                                    logtext += u'\n'
+                                    
                             except:
+                                log.debug(NAME, _(u'E-mail plug-in') + ':\n' + traceback.format_exc())
                                 pass
 
                         try_mail(body, logtext)
-                        
+
                     self._sleep(1)
                     finished_count = len(finished)
 
@@ -237,10 +337,10 @@ class EmailSender(Thread):
                             len_saved_emails = len(saved_emails)
                             if len_saved_emails > 0:                    # if there is something in json
                                 log.clear(NAME)
-                                log.info(NAME, _('Unsent E-mails in queue (in file)') + ': ' + str(len_saved_emails))
+                                log.info(NAME, _(u'Unsent E-mails in queue (in file)') + ': ' + str(len_saved_emails))
                                 try:                                    # try send e-mail
                                     sendtext = u'%s' % saved_emails[0]["text"]
-                                    sendsubject = u'%s' % (saved_emails[0]["subject"] + '-' + _('sending from queue.'))
+                                    sendsubject = u'%s' % (saved_emails[0]["subject"] + '-' + _(u'sending from queue.'))
                                     sendattachment = u'%s' % saved_emails[0]["attachment"]
                                     email(sendtext, sendsubject, sendattachment) # send e-mail  
                                     send_interval = 2000                # repetition of 2 seconds
@@ -248,18 +348,18 @@ class EmailSender(Thread):
                                     write_email(saved_emails)           # save to file after deleting an item
                                     if len(saved_emails) == 0:
                                         log.clear(NAME)
-                                        log.info(NAME, _('All unsent E-mails in the queue have been sent.'))
+                                        log.info(NAME, _(u'All unsent E-mails in the queue have been sent.'))
 
                                 except Exception:
                                     #print traceback.format_exc()
                                     send_interval = 60000               # repetition of 60 seconds   
                     except:
-                        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())  
+                        log.error(NAME, _(u'E-mail plug-in') + ':\n' + traceback.format_exc())  
 
                 self._sleep(1)
 
             except Exception:
-                log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _(u'E-mail plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 email_sender = None
@@ -335,7 +435,7 @@ def email(text, subject=None, attach=None):
         mail_server.quit()    
 
     else:
-        raise Exception(_('E-mail plug-in is not properly configured!'))
+        raise Exception(_(u'E-mail plug-in is not properly configured!'))
 
 
 def read_saved_emails():
@@ -368,17 +468,17 @@ def try_mail(text, logtext, attachment=None, subject=None):
     log.clear(NAME)
     try:
         email(text, subject, attachment)  # send email with attachment from
-        log.info(NAME, _('E-mail was sent') + ':\n' + logtext)
+        log.info(NAME, _(u'E-mail was sent') + ':\n' + logtext)
         if not options.run_logEM:
-            log.info(NAME, _('E-mail logging is disabled in options...'))
+            log.info(NAME, _(u'E-mail logging is disabled in options...'))
         else:    
-            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Sent'))
+            logEM.save_email_log(subject or email_options['emlsubject'], logtext, _(u'Sent'))
 
     except Exception:
-        log.error(NAME, _('E-mail was not sent! Connection to Internet not ready.'))
-        logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('E-mail was not sent! Connection to Internet not ready.'))
+        log.error(NAME, _(u'E-mail was not sent! Connection to Internet not ready.'))
+        logEM.save_email_log(subject or email_options['emlsubject'], logtext, _(u'E-mail was not sent! Connection to Internet not ready.'))
         if not options.run_logEM:
-            log.info(NAME, _('E-mail logging is disabled in options...'))
+            log.info(NAME, _(u'E-mail logging is disabled in options...'))
             
         if email_options["emlrepeater"]: # saving e-mails is enabled  
             data = {}
@@ -391,6 +491,40 @@ def try_mail(text, logtext, attachment=None, subject=None):
 
             update_saved_emails(data)    # saving e-mail data to file: saved_emails.json        
 
+def maping(x, in_min, in_max, out_min, out_max):
+    """ Return value from range """
+    return ((x - in_min) * (out_max - out_min)) / ((in_max - in_min) + out_min)
+
+
+def get_tank_cm(level, dbot, dtop):
+    """ Return level from top and bottom distance"""
+    try:
+        if level < 0:
+            return -1
+        tank = maping(level, int(dbot), int(dtop), 0, (int(dbot)-int(dtop)))
+        if tank >= 0:
+            return tank
+        else:
+            return -1
+    except:
+        return -1
+
+
+def get_percent(level, dbot, dtop):
+    """ Return level 0-100% from top and bottom distance"""
+    try:
+        if level >= 0:
+            perc = float(level)/float((int(dbot)-int(dtop)))
+            perc = float(perc)*100.0 
+            if perc > 100.0:
+                perc = 100.0
+            if perc < 0.0:
+                perc = -1.0
+            return int(perc)
+        else:
+            return -1
+    except:
+        return -1
 
 ################################################################################
 # Web pages:                                                                   #
@@ -410,8 +544,8 @@ class settings_page(ProtectedPage):
             email_sender.update()
 
             if test:
-                body = datetime_string() + ': ' + _('This is test e-mail from OSPy. You can ignore it.')
-                logtext = _('This is test e-mail from OSPy. You can ignore it.')
+                body = datetime_string() + ': ' + _(u'This is test e-mail from OSPy. You can ignore it.')
+                logtext = _(u'This is test e-mail from OSPy. You can ignore it.')
                 try_mail(body, logtext)
 
 

@@ -48,21 +48,26 @@ This extension also sends some statuses from other extensions (if they are insta
 
 Example recieve E-mail
 -----------
-System 2020-07-11 13:50:03
-Finished run
-Program: Run-Once
-Station: Ventilátor sklep
-Start time: 2020-07-11 13:49:53
-Duration: 00:09
-Water
-Water level in tank: Level: 123 cm (52 %), Ping: 280 cm, Volume: 927.78 liters
-Water Consumption Counter
-Measured from day: 2020-04-07 13:37:22, Hlavní stanice: 7.99 m3, Druhá hlavní stanice: 0.0 Liter
-Temperature DS1-DS6
-SKLEP: 19.7 ℃
-BAZÉN: 19.0 ℃
-BOJLER: 55.8 ℃
-UVNITŘ: 23.5 ℃
-STUDNA: 14.8 ℃
-VENKU: 15.7 ℃
+
+Systém 2021-07-10 18:11:33
+Ukončené zalévání
+Program: Jednorázový
+Stanice: Ventilátor sklep
+Čas startu: 2021-07-10 18:11:29
+Trvání: 00:04 
+Voda
+Množství vody v zásobníku: Úroveň: 192 cm (72 %), Ping: 211 cm, Objem: 1448.25 litrů 
+Čítač spotřeby vody
+Měřeno od dne: 2021-04-01 10:18:10, Hlavní stanice: 56.97 m3, Druhá hlavní stanice: 0.0 Litr 
+Teplota DS1-DS6
+SKLEP: 20.0 ℃
+BAZÉN: 21.0 ℃
+BOJLER: 59.3 ℃
+UVNITŘ: 21.6 ℃
+STUDNA: 15.0 ℃
+VENKU: 31.0 ℃ 
+Snímače
+S1: 21.3 ℃
+S2: Kontakt spojený
+S3: 68 cm (100 %)
   
