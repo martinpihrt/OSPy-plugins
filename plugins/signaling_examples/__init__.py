@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 
 import json
 import time
@@ -105,7 +105,11 @@ class Sender(Thread):
            station_off = signal('station_off')
            station_off.connect(notify_station_off)
            station_clear = signal('station_clear')
-           station_clear.connect(notify_station_clear)           
+           station_clear.connect(notify_station_clear)
+           internet_available = signal('internet_available')
+           internet_available.connect(notify_internet_available)
+           internet_not_available = signal('internet_not_available')
+           internet_not_available.connect(notify_internet_not_available)
 
 sender = None
 
@@ -224,6 +228,14 @@ def notify_station_off(name, **kw):
 ### All stations set to OFF ###
 def notify_station_clear(name, **kw):
     log.info(NAME, datetime_string() + ': ' + _(u'OSPy all stations OFF'))
+
+### Internet available ###
+def notify_internet_available(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _(u'Internet is available (external IP)'))
+
+### Internet not available ###
+def notify_internet_not_available(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _(u'Internet is not available (external IP)'))
 
 
 ################################################################################

@@ -45,8 +45,14 @@ Example signals from: webpages.py, scheduler.py, stations.py, plugins:
 
 * signal('poweroff')<br>
 
+* signal('ospyupdate')<br>
+
 * signal('station_on')<br>
 
 * signal('station_off')<br>
 
 * signal('station_clear')<br>
+
+* signal('internet_available')<br>
+
+* signal('internet_not_available')<br>
