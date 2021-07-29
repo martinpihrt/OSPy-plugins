@@ -89,6 +89,23 @@ def stop():
        sender.join()
        sender = None 
 
+### clear plugin settings to default ###
+def set_to_default():
+    plugin_options.__setitem__('s_use', [False]*30)
+    plugin_options.__setitem__('s_unit', [u'']*30)
+    plugin_options.__setitem__('s_name', [u'']*30)
+    plugin_options.__setitem__('s_tick', [u'0,10,20,30']*30)
+    plugin_options.__setitem__('s_min', [u'0']*30)
+    plugin_options.__setitem__('s_max', [u'30']*30)
+    plugin_options.__setitem__('s_a_high_fr', [5]*30)
+    plugin_options.__setitem__('s_a_high_to', [10]*30)
+    plugin_options.__setitem__('s_b_high_fr', [10]*30)
+    plugin_options.__setitem__('s_b_high_to', [20]*30)
+    plugin_options.__setitem__('s_c_high_fr', [20]*30)
+    plugin_options.__setitem__('s_c_high_to', [30]*30)
+    log.clear(NAME)
+    log.info(NAME, _(u'Weather stations plug-in has any error, clear plugin settings to default.'))
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -97,8 +114,11 @@ class canvas_page(ProtectedPage):
     """Load an html page for canvas wieving."""
 
     def GET(self):
-        return self.plugin_render.canvas_page(plugin_options)
-
+        try:
+            return self.plugin_render.canvas_page(plugin_options)
+        except:
+            set_to_default()    
+            return self.plugin_render.canvas_page(plugin_options)
 
 class help_page(ProtectedPage):
     """Load an html page for help page."""
@@ -111,11 +131,14 @@ class settings_page(ProtectedPage):
     """Load an html settings page for canvas options."""
 
     def GET(self):
-        return self.plugin_render.settings_page(plugin_options)
+        try:
+            return self.plugin_render.settings_page(plugin_options)
+        except:
+            set_to_default()
+            return self.plugin_render.settings_page(plugin_options)
 
     def POST(self):
         qdict = web.input()
-        #print('qdict: ', qdict)
 
         try:
             commands = {
@@ -144,16 +167,14 @@ class settings_page(ProtectedPage):
 
             if 'txt_size_font' in qdict:
                 plugin_options.__setitem__('txt_size_font', qdict['txt_size_font'])
-            #print('plugin_options:', plugin_options)
 
             plug_air_temp  = 6
             plug_tank_moni = 2
             plug_wind_moni = 1
             sensor_count   = sensors.count()
             sum_canvas = plug_air_temp + plug_tank_moni + plug_wind_moni + sensor_count # numbers for all canvas from plugins and sensors
-            #print("Canvas count: ", sum_canvas)
 
-            for i in range(0, sum_canvas+1):
+            for i in range(0, sum_canvas+2):
                 if 's_use'+str(i) in qdict:
                     if qdict['s_use'+str(i)]=='on':
                         commands['s_use'].append(True)
@@ -161,28 +182,48 @@ class settings_page(ProtectedPage):
                         commands['s_use'].append(False)
                 if 's_name'+str(i) in qdict:
                     commands['s_name'].append(qdict['s_name'+str(i)])
+                else:
+                    commands['s_name'].append(u'')    
                 if 's_unit'+str(i) in qdict:
                     commands['s_unit'].append(qdict['s_unit'+str(i)])
+                else:
+                    commands['s_unit'].append(u'')    
                 if 's_tick'+str(i) in qdict:
                     commands['s_tick'].append(qdict['s_tick'+str(i)])
+                else:
+                    commands['s_tick'].append(u'0,10,20,30')    
                 if 's_min'+str(i) in qdict:
                     commands['s_min'].append(qdict['s_min'+str(i)])
+                else:
+                    commands['s_min'].append(u'0')    
                 if 's_max'+str(i) in qdict:
                     commands['s_max'].append(qdict['s_max'+str(i)])
+                else:
+                    commands['s_max'].append(u'30')    
                 if 's_a_high_fr'+str(i) in qdict:
                     commands['s_a_high_fr'].append(qdict['s_a_high_fr'+str(i)])
+                else:
+                    commands['s_a_high_fr'].append(5)    
                 if 's_a_high_to'+str(i) in qdict:
                     commands['s_a_high_to'].append(qdict['s_a_high_to'+str(i)])
+                else:
+                    commands['s_a_high_to'].append(10)    
                 if 's_b_high_fr'+str(i) in qdict:
                 	commands['s_b_high_fr'].append(qdict['s_b_high_fr'+str(i)])
+                else:
+                    commands['s_b_high_fr'].append(10)    
                 if 's_b_high_to'+str(i) in qdict:
                     commands['s_b_high_to'].append(qdict['s_b_high_to'+str(i)])
+                else:
+                    commands['s_b_high_to'].append(20)    
                 if 's_c_high_fr'+str(i) in qdict:
                     commands['s_c_high_fr'].append(qdict['s_c_high_fr'+str(i)])
+                else:
+                    commands['s_c_high_fr'].append(20)    
                 if 's_c_high_to'+str(i) in qdict:
                     commands['s_c_high_to'].append(qdict['s_c_high_to'+str(i)])
-
-            #print('Saving commands: ', commands)
+                else:
+                    commands['s_c_high_to'].append(30)
 
             plugin_options.__setitem__('s_use', commands['s_use'])
             plugin_options.__setitem__('s_name', commands['s_name'])
@@ -233,8 +274,7 @@ class data_json(ProtectedPage):
             data.append(air_temp_humi.DS18B20_read_probe(3))
             data.append(air_temp_humi.DS18B20_read_probe(4))
             data.append(air_temp_humi.DS18B20_read_probe(5))
-        except: 
-            #log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
+        except:
             data.append(-127)
             data.append(-127)
             data.append(-127)
@@ -243,21 +283,19 @@ class data_json(ProtectedPage):
             data.append(-127)
             pass
 
-        try:    
+        try:
             from plugins import tank_monitor
             data.append(tank_monitor.get_all_values()[1])
             data.append(tank_monitor.get_all_values()[3])
-        except: 
-            #log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
+        except:
             data.append(-127)
             data.append(-127)
-            pass  
+            pass
 
-        try:    
+        try:
             from plugins import wind_monitor
             data.append(round(wind_monitor.get_all_values()[0], 2))
         except: 
-            #log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
             data.append(-127)
             pass
 
@@ -265,7 +303,18 @@ class data_json(ProtectedPage):
             for sensor in sensors.get():
                 try:
                     if sensor.sens_type > 0 and sensor.sens_type < 6:        # 1-5 is sensor (Dry Contact, Leak Detector, Moisture, Motion, Temperature)
-                        data.append(sensor.last_read_value)
+                        if sensor.sens_type == 1:
+                            data.append(sensor.last_read_value[4])
+                        elif sensor.sens_type == 2:
+                            data.append(sensor.last_read_value[5])
+                        elif sensor.sens_type == 3:
+                            data.append(sensor.last_read_value[6])
+                        elif sensor.sens_type == 4:
+                            data.append(sensor.last_read_value[7])
+                        elif sensor.sens_type == 5:
+                            data.append(sensor.last_read_value[0])
+                        else:
+                            data.append(-127)
                     elif sensor.sens_type == 6:                              # 6 is multisensor
                         if sensor.multi_type >= 0 and sensor.multi_type <4:  # multisensor temperature DS1-DS4
                             data.append(sensor.last_read_value[sensor.multi_type])
@@ -278,13 +327,13 @@ class data_json(ProtectedPage):
                         elif sensor.multi_type == 7:                         # multisensor Motion
                             data.append(sensor.last_read_value[7])
                         elif sensor.multi_type == 8:                         # multisensor Ultrasonic
-                            data.append(sensor.last_read_value[8])                            
+                            data.append(sensor.last_read_value[8])
                         else:
                             data.append(-127)                                # any errors
                     else:                                                    # any errors
                         data.append(-127)
                 except:
-                    #log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
+                    log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
                     data.append(-127)                                        # any errors
                     pass
 
