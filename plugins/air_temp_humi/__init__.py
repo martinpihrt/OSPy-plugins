@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # This plugin read data from probe DHT11 (22) (temp and humi). # Raspberry Pi pin 19 as GPIO 10
 # This plugin read data from DS18B20 hw I2C board (temp). # Raspberry Pi I2C pin
 
@@ -288,11 +288,11 @@ def DS18B20_read_data():
        # Test recieved data byte 1 and 2
        if i2c_data[1] == 255 or i2c_data[2] == 255:         
           log.error(NAME, _(u'Data is not correct. Please try again later.'))
-          return [255,255,255,255,255,255] # data has error 
+          return [-127,-127,-127,-127,-127,-127] # data has error 
 
        # Each float temperature from the hw board is 5 bytes long (5byte * 6 probe = 30 bytes).
        pom = 0
-       teplota = [0,0,0,0,0,0]
+       teplota = [-127,-127,-127,-127,-127,-127]
        for i in range(0, plugin_options['ds_used']):
           priznak=0
           jed=0
@@ -310,13 +310,16 @@ def DS18B20_read_data():
           if(priznak==1):
             soucet = soucet * -1      # negation number
           teplota[i]  = soucet/10.0
+          if teplota[i] > 127:
+             teplota[i] = -127
           tempDS[i] = teplota[i]      # global temperature for all probe DS18B20
 
     except Exception:
       log.debug(NAME, _(u'Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())       
       time.sleep(0.5)
       pass
-      return [255,255,255,255,255,255] # try data has error     
+      return [-127,-127,-127,-127,-127,-127] # try data has error
+           
     return teplota     # data is ok
 
 
