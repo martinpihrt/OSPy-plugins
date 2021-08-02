@@ -1,0 +1,56 @@
+$def with (plugin_options, events)
+
+$var title: $_('Door Opening')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+
+</script>
+
+
+<div id="plugin">
+    <div class="title">$_('Door Opening')</div>
+    <a href=$plugins.plugin_url('door_opening.help_page') class="button upload">$_('Help')</a><br/>
+    <form id="pluginForm" action="$plugins.plugin_url('door_opening.start_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output'):</td>
+                <td>
+                    <select name="open_output">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["open_output"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Time to open'):</td>
+                <td>
+                    <input name='open_time' type='number' value='$plugin_options["open_time"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="1" cols="50" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button id="cSubmit" class="submit"><b>$_('Open Door')</b></button>
+                </td>    
+            <tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
