@@ -77,7 +77,8 @@ def start():
     door_footer = showInFooter()                        # instantiate class to enable data in footer
     door_footer.button = "door_opening/start"           # button redirect on footer
     door_footer.label = _(u'Opening Door')              # label on footer
-    door_footer.val = _(u'Time {} seconds').format(plugin_options['open_time']) # value on footer
+    msg = _(u'Time {} seconds').format(plugin_options['open_time'])
+    door_footer.val = msg.encode('utf8')                # value on footer
     pass
 
 stop = start
