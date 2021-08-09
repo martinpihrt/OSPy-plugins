@@ -8,6 +8,7 @@ import time
 import datetime
 import traceback
 import os
+import mimetypes
 from threading import Thread, Event
 
 import web
@@ -677,48 +678,35 @@ class graph_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(data)
 
-
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
-
     def GET(self):
-
+        log_file = read_log()
         name1 = plugin_options['label_ds0']
         name2 = plugin_options['label_ds1']
         name3 = plugin_options['label_ds2']
         name4 = plugin_options['label_ds3']
         name5 = plugin_options['label_ds4']
         name6 = plugin_options['label_ds5']
+        data = "Date/Time; Date; Time; DHT Temperature C; DHT Humidity %; DHT Output; " + name1 + "; " + name2 + "; " + name3 + "; " + name4 + "; " + name5 + "; " + name6 + "\n"
+        for interval in log_file:
+            data += '; '.join([
+                interval['datetime'],
+                interval['date'],
+                interval['time'],
+                u'{}'.format(interval['temp']),
+                u'{}'.format(interval['humi']),
+                u'{}'.format(interval['outp']),
+                u'{}'.format(interval['ds0']),
+                u'{}'.format(interval['ds1']),
+                u'{}'.format(interval['ds2']),
+                u'{}'.format(interval['ds3']),
+                u'{}'.format(interval['ds4']),
+                u'{}'.format(interval['ds5']),
+            ]) + '\n'
         
-        log_records = read_log()
-        data  = "Date/Time"
-        data += ";\t Date"
-        data += ";\t Time"
-        data += ";\t DHT Temperature C"
-        data += ";\t DHT Humidity %" 
-        data += ";\t DHT Output"
-        data += ";\t" + name1
-        data += ";\t" + name2
-        data += ";\t" + name3
-        data += ";\t" + name4
-        data += ";\t" + name5
-        data += ";\t" + name6
-        data += '\n'
-
-        for record in log_records:
-            data +=         record['datetime']
-            data += ";\t" + record['date']
-            data += ";\t" + record['time']
-            data += ";\t" + record["temp"]
-            data += ";\t" + record["humi"]
-            data += ";\t" + record["outp"]
-            data += ";\t" + record["ds0"]
-            data += ";\t" + record["ds1"]
-            data += ";\t" + record["ds2"]
-            data += ";\t" + record["ds3"]
-            data += ";\t" + record["ds4"]
-            data += ";\t" + record["ds5"]
-            data += '\n'
-
-        web.header('Content-Type', 'text/csv')
+        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', content) 
+        web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data

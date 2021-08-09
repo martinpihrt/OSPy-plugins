@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 
 import json
 import time
@@ -184,6 +184,9 @@ class Sender(Thread):
                                 regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'
                                 log.clear(NAME)
                                 log.info(NAME, regulation_text)
+                        # release msg_a_on and msg_a_off to true for future regulation (after probes is ok)
+                        msg_a_on = True
+                        msg_a_off = True
 
                     if (ds_a_off - ds_a_on) > plugin_options['temp_a_on'] and probes_ok: # ON
                         a_state = 1
