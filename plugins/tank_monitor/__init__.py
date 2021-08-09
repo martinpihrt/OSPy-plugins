@@ -3,7 +3,7 @@
 # for more use this hardware: https://pihrt.com/elektronika/339-moje-raspberry-pi-plugin-ospy-vlhkost-pudy-a-mozstvi-vody-v-tankua
 # HW Atmega328 has 30sec timeout for reboot if not accesing via I2C bus.
 
-__author__ = 'Martin Pihrt' # www.pihrt.com
+__author__ = u'Martin Pihrt' # www.pihrt.com
 
 import json
 import time
@@ -12,6 +12,7 @@ import datetime
 import sys
 import traceback
 import os
+import mimetypes
 
 from threading import Thread, Event
 
@@ -65,7 +66,7 @@ tank_options = PluginOptions(
        'use_water_stop': False,# if the level sensor fails, the above selected stations in the scheduler will stop
        'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
        'delay_duration': 0,    # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
-    } 
+    }
 )
 
 status = { }
@@ -115,7 +116,7 @@ class Sender(Thread):
         level_in_tank = get_sonic_tank_cm(sonic_cm)
         regulation_text = _(u'Regulation NONE.')
         if NAME in rain_blocks:
-            del rain_blocks[NAME]        
+            del rain_blocks[NAME]
         self._sleep(2)
 
         tank_mon = showInFooter() #  instantiate class to enable data in footer
@@ -132,11 +133,11 @@ class Sender(Thread):
                         log.info(NAME, _(u'Water tank monitor is enabled.'))
                         once_text = True
                         two_text = False
- 
+
                     sonic_cm = get_sonic_cm()
                     level_in_tank = get_sonic_tank_cm(sonic_cm)
 
-                    tempText = ""                    
+                    tempText = ""
 
                     if level_in_tank > 0 and sonic_cm != 0:  # if level is ok and sonic is ok
                         three_text = True
@@ -144,7 +145,7 @@ class Sender(Thread):
                         status['level']   = level_in_tank
                         status['ping']    = sonic_cm
                         status['volume']  = get_volume(level_in_tank)
-                        status['percent'] = get_tank(level_in_tank)    
+                        status['percent'] = get_tank(level_in_tank)
 
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _(u'Water level') + ': ' + str(status['level']) + ' ' + _(u'cm') + ' (' + str(status['percent']) + ' ' + (u'%).'))
@@ -165,7 +166,7 @@ class Sender(Thread):
                                     five_text = False
                                     six_text = True
                                     regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _(u'Output') + ' ' +  str(reg_station.index+1) + ').'
-                                    
+
                                     start = datetime.datetime.now()
                                     sid = reg_station.index
                                     end = datetime.datetime.now() + datetime.timedelta(seconds=tank_options['reg_ss'], minutes=tank_options['reg_mm'])
@@ -186,7 +187,7 @@ class Sender(Thread):
                                     }
 
                                     log.start_run(new_schedule)
-                                    stations.activate(new_schedule['station'])    
+                                    stations.activate(new_schedule['station'])
                 
                             if level_in_tank < tank_options['reg_min']:                   # if actual level in tank < set minimum water level
                                 if six_text: # blocking for once
@@ -250,18 +251,18 @@ class Sender(Thread):
                         if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 2: # level value is lower
                             if tank_options['use_send_email']:                             # if email is enabled
                                 send = True                                                # send
-                                mini = False 
-    
+                                mini = False
+
                             if tank_options['use_stop']:                                   # if stop scheduler
-                                set_stations_in_scheduler_off()         
+                                set_stations_in_scheduler_off()
                                 log.info(NAME, datetime_string() + ' ' + _(u'ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _(u'cm') + _(u'!'))
                                 delaytime = int(tank_options['delay_duration'])
                                 if delaytime > 0:                             # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
                                     rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
-                                   
+
                         if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: # refresh send email if actual level > options minimum +5
                             mini = True
-                        
+
                         if NAME in rain_blocks and level_in_tank > int(tank_options['water_minimum']):
                             del rain_blocks[NAME]
 
@@ -279,32 +280,32 @@ class Sender(Thread):
                         log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _(u'Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _(u'cm') + _(u'.'))    
 
                         if tank_options['use_water_err'] and three_text:   # if probe has error send email
-                            three_text = False                                          
+                            three_text = False
                             log.info(NAME, datetime_string() + ' ' + _(u'ERROR: Water probe has fault?'))
-                               
+
                             msg = '<b>' + _(u'Water Tank Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'System detected error: Water probe has fault?') + '</p>'
-                            msglog = _(u'Water Tank Monitor plug-in') + ': ' + _(u'System detected error: Water probe has fault?')  
+                            msglog = _(u'Water Tank Monitor plug-in') + ': ' + _(u'System detected error: Water probe has fault?')
                             try:
-                                from plugins.email_notifications import try_mail                                    
+                                from plugins.email_notifications import try_mail
                                 try_mail(msg, msglog, attachment=None, subject=tank_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
-                            except Exception:     
-                                log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())  
+                            except Exception:
+                                log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
 
                         if tank_options['use_water_stop']:
                             if NAME not in rain_blocks:
                                 set_stations_in_scheduler_off()
                                 delaytime = int(tank_options['delay_duration'])
                                 if delaytime > 0:                             # if probe has fault, then we set the rain delay for this time for blocking
-                                    rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))                            
-       
+                                    rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
+
 
                     if tank_options['enable_reg']:
-                    	tempText += ', ' + regulation_text
-                    tank_mon.val = tempText.encode('utf8')          # value on footer 
+                        tempText += ', ' + regulation_text
+                    tank_mon.val = tempText.encode('utf8')          # value on footer
 
-                    self._sleep(3)                      
-                                        
+                    self._sleep(3)
+
                 else:
                     if once_text:
                        log.clear(NAME)
@@ -312,25 +313,25 @@ class Sender(Thread):
                        once_text = False
                        two_text = True
                        last_level = 0
-                    self._sleep(1)  
-                
+                    self._sleep(1)
+
                 if send:
                     msg = '<b>' + _(u'Water Tank Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _(u'cm') + '.\n' + '</p>'
                     msglog = _(u'Water Tank Monitor plug-in') + ': ' + _(u'System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _(u'cm') + '. '  
-                    send = False                    
+                    send = False
                     try:
-                        from plugins.email_notifications import try_mail                                    
+                        from plugins.email_notifications import try_mail
                         try_mail(msg, msglog, attachment=None, subject=tank_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
-                    except Exception:  
-                        log.info(NAME, _(u'E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))    
-                        log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())                        
+                    except Exception:
+                        log.info(NAME, _(u'E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))
+                        log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
 
 
             except Exception:
                 log.clear(NAME)
                 log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(60)            
+                self._sleep(60)
 
 sender = None
 
@@ -381,7 +382,7 @@ def get_sonic_cm():
         cm = data[1] + data[0]*255
         return cm
     except:
-        return -1   
+        return -1
 
 
 def get_sonic_tank_cm(level):
@@ -389,13 +390,13 @@ def get_sonic_tank_cm(level):
         cm = level
         if cm < 0:
            return -1
-       
+
         tank_cm = maping(cm,int(tank_options['distance_bottom']),int(tank_options['distance_top']),0,(int(tank_options['distance_bottom'])-int(tank_options['distance_top'])))
         if tank_cm >= 0:
            return tank_cm
 
         else:
-           return -1 
+           return -1
     except:
         return -1 # if I2C device not exists
 
@@ -414,7 +415,7 @@ def get_volume(level): # return volume calculation from cylinder diameter and wa
     tank_lvl = level
     if tank_lvl >= 0:
        
-       try:       
+       try:
           import math
           r = tank_options['diameter']/2.0
           area = math.pi*r*r               # calculate area of circle
@@ -439,8 +440,8 @@ def get_all_values():
     global status
 
     return status['level'] , status['percent'], status['ping'], status['volume'], tank_options['log_minlevel'], tank_options['log_maxlevel'], tank_options['log_date_minlevel'], tank_options['log_date_maxlevel'], tank_options['check_liters']
-   
- 
+
+
 def read_log():
     """Read log data from json file."""
 
@@ -476,16 +477,16 @@ def write_graph_log(json_data):
 
 
 def update_log():
-    """Update data in json files.""" 
+    """Update data in json files."""
 
     ### Data for log ###
     try:
         log_data = read_log()
-    except:   
+    except:
         write_log([])
         log_data = read_log()
 
-    from datetime import datetime    
+    from datetime import datetime
 
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
@@ -499,15 +500,15 @@ def update_log():
     if tank_options['log_records'] > 0:
         log_data = log_data[:tank_options['log_records']]
 
-    try:    
+    try:
         write_log(log_data)
-    except:    
+    except:
         write_log([])
 
     ### Data for graph log ###
-    try:  
-        graph_data = read_graph_log()    
-    except: 
+    try:
+        graph_data = read_graph_log()
+    except:
         create_default_graph()
         graph_data = read_graph_log()
 
@@ -529,7 +530,7 @@ def update_log():
         volume = graph_data[3]['balances']
         volumeval = {'total': get_all_values()[3]}
         volume.update({timestamp: volumeval})
- 
+
         write_graph_log(graph_data)
 
         log.info(NAME, _(u'Saving to log  files OK'))
@@ -566,7 +567,7 @@ def set_stations_in_scheduler_off():
     if options.manual_mode:
         active = log.finished_runs() + log.active_runs()
     else:
-        active = combined_schedule(check_start, check_end)    
+        active = combined_schedule(check_start, check_end)
 
     ending = False
 
@@ -621,7 +622,7 @@ class settings_page(ProtectedPage):
             if tank_options['use_water_stop']:
                 tank_options.__setitem__('use_water_stop', u'on')
             log.info(NAME, datetime_string() + ': ' + _(u'Minimum and maximum has reseted.'))
-            
+
             raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and delete:
@@ -631,7 +632,7 @@ class settings_page(ProtectedPage):
 
         if sender is not None and 'history' in qdict:
            history = qdict['history']
-           tank_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
+           tank_options.__setitem__('history', int(history))
 
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
@@ -652,7 +653,7 @@ class settings_page(ProtectedPage):
             sender.update()
 
         if tank_options['use_sonic']:
-            log.clear(NAME) 
+            log.clear(NAME)
             log.info(NAME, _(u'Water tank monitor is enabled.'))
         else:
             log.clear(NAME)
@@ -691,8 +692,8 @@ class data_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         data =  {
           'level': get_all_values()[0],
-          'percent':get_all_values()[1], 
-          'ping': get_all_values()[2],    
+          'percent':get_all_values()[1],
+          'ping': get_all_values()[2],
           'volume': get_all_values()[3],
           'label': tank_options['emlsubject'],
           'unit': get_all_values()[4]
@@ -712,10 +713,10 @@ class log_json(ProtectedPage):
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
-    def GET(self):    
+    def GET(self):
         #import datetime
         data = []
-        
+
         epoch = datetime.date(1970, 1, 1)                                      # first date
         current_time  = datetime.date.today()                                  # actual date
 
@@ -731,10 +732,10 @@ class graph_json(ProtectedPage):
         if tank_options['history'] == 3:
             check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
         if tank_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
 
         log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-                
+
         json_data = read_graph_log()
 
         for i in range(0, 4):                                                  # 0 = minimum, 1 = maximum, 2 = actual, 3 = volume
@@ -751,39 +752,37 @@ class graph_json(ProtectedPage):
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
-
     def GET(self):
+        log_file = read_log()
         minimum = _(u'Minimum')
         maximum = _(u'Maximum')
         actual  = _(u'Actual')
         volume  = _(u'Volume')
-
         data  = "Date/Time"
-        data += ";\t Date"
-        data += ";\t Time"
-        data += ";\t %s cm" % minimum
-        data += ";\t %s cm" % maximum
-        data += ";\t %s cm" % actual
+        data += "; Date"
+        data += "; Time"
+        data += "; %s cm" % minimum
+        data += "; %s cm" % maximum
+        data += "; %s cm" % actual
         if tank_options['check_liters']:
-            data += ";\t %s liters" % volume
+            data += "; %s liters" % volume
         else:    
-            data += ";\t %s m3" % volume
-        data += '\n'        
+            data += "; %s m3" % volume
+        data += '\n'
 
-        try:
-            log_records = read_log()
-            for record in log_records:
-                data +=         record['datetime']
-                data += ";\t" + record['date']
-                data += ";\t" + record['time']
-                data += ";\t" + record["minimum"]
-                data += ";\t" + record["maximum"]
-                data += ";\t" + record["actual"]
-                data += ";\t" + record["volume"]
-                data += '\n'
-        except:
-            pass        
+        for interval in log_file:
+            data += '; '.join([
+                interval['datetime'],
+                interval['date'],
+                interval['time'],
+                u'{}'.format(interval['minimum']),
+                u'{}'.format(interval['maximum']),
+                u'{}'.format(interval['actual']),
+                u'{}'.format(interval['volume']),
+            ]) + '\n'
 
-        web.header('Content-Type', 'text/csv')
+        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', content) 
+        web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data
-   
