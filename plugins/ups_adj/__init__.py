@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # this plugins check power line and shutdown ospi system (count down to reconect power line) and shutdown UPS after time.
 
 import json
@@ -8,6 +8,7 @@ import datetime
 import sys
 import os
 import traceback
+import mimetypes
 
 from threading import Thread, Event
 
@@ -127,13 +128,13 @@ class UPSSender(Thread):
                             log.info(NAME, msglog)
                             if ups_options['sendeml']:                       # if enabled send email
                                 try:
-                                    from plugins.email_notifications import try_mail                                    
+                                    from plugins.email_notifications import try_mail
                                     try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
-                                except Exception:     
+                                except Exception:
                                     log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc())
                                 once_three = True
-                            if ups_options['enable_log']:    
+                            if ups_options['enable_log']:
                                 update_log(0)
                             once = False
 
@@ -155,10 +156,10 @@ class UPSSender(Thread):
                                         msg = '<b>' + _(u'UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'Power line is not restore in time -> shutdown system!') + '</p>'
                                         msglog =  _(u'UPS plug-in') + ': ' + _(u'Power line is not restore in time -> shutdown system!')
                                         try:
-                                            from plugins.email_notifications import try_mail                                    
+                                            from plugins.email_notifications import try_mail
                                             try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
-                                        except Exception:     
+                                        except Exception:
                                             log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc()) 
                                         once_two = False
 
@@ -175,7 +176,7 @@ class UPSSender(Thread):
                                 log.clear(NAME)
                                 log.info(NAME, msglog)
                                 try:
-                                    from plugins.email_notifications import try_mail                                    
+                                    from plugins.email_notifications import try_mail
                                     try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                 except Exception:     
@@ -269,12 +270,12 @@ def write_graph_log(json_data):
 
 
 def update_log(status):
-    """Update data in json files.""" 
+    """Update data in json files."""
 
     ### Data for log ###
     try:
         log_data = read_log()
-    except:   
+    except:
         write_log([])
         log_data = read_log()
 
@@ -291,9 +292,9 @@ def update_log(status):
     write_log(log_data)
 
     ### Data for graph log ###
-    try:  
-        graph_data = read_graph_log()    
-    except: 
+    try:
+        graph_data = read_graph_log()
+    except:
         create_default_graph()
         graph_data = read_graph_log()
 
@@ -305,8 +306,8 @@ def update_log(status):
         state.update({timestamp: stateval})
     except:
         create_default_graph()
-        pass    
- 
+        pass
+
     write_graph_log(graph_data)
 
     log.info(NAME, _(u'Saving to log  files OK'))
@@ -316,11 +317,11 @@ def create_default_graph():
     """Create default graph json file."""
 
     state = _(u'State')
- 
+
     graph_data = [
        {"station": state, "balances": {}}
     ]
-    write_graph_log(graph_data)  
+    write_graph_log(graph_data)
     log.debug(NAME, _(u'Creating default graph log files OK'))
 
 ################################################################################
@@ -336,20 +337,20 @@ class settings_page(ProtectedPage):
 
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
-        show = helpers.get_input(qdict, 'show', False, lambda x: True)        
+        show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
         if ups_sender is not None and delete:
            write_log([])
            create_default_graph()
 
-           raise web.seeother(plugin_url(settings_page), True) 
+           raise web.seeother(plugin_url(settings_page), True)
 
         if ups_sender is not None and 'history' in qdict:
            history = qdict['history']
-           ups_options.__setitem__('history', int(history)) #__setitem__(self, key, value)            
+           ups_options.__setitem__('history', int(history))
 
         if ups_sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)                
+            raise web.seeother(plugin_url(log_page), True)
 
         return self.plugin_render.ups_adj(ups_options, ups_sender.status, log.events(NAME))
 
@@ -372,7 +373,7 @@ class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ups_adj_log(read_log(), ups_options)             
+        return self.plugin_render.ups_adj_log(read_log(), ups_options)
 
 
 class settings_json(ProtectedPage):
@@ -414,9 +415,9 @@ class log_json(ProtectedPage):
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
-    def GET(self):    
+    def GET(self):
         data = []
-        
+
         epoch = datetime.date(1970, 1, 1)                                      # first date
         current_time  = datetime.date.today()                                  # actual date
 
@@ -432,16 +433,16 @@ class graph_json(ProtectedPage):
         if ups_options['history'] == 3:
             check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
         if ups_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
 
         log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-                
-        try:  
-            json_data = read_graph_log()   
-        except: 
+
+        try:
+            json_data = read_graph_log()
+        except:
             create_default_graph()
             json_data = read_graph_log()
-                                          
+
         temp_balances = {}
         try:
             for key in json_data[0]['balances']:
@@ -452,35 +453,30 @@ class graph_json(ProtectedPage):
         except:
             write_log([])
             create_default_graph()
-            pass    
+            pass
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(data)
 
+
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
-
     def GET(self):
+        log_file = read_log()
         state = _('State')
+        data = "Date/Time; Date; Time; " + state + "\n"
 
-        data  = "Date/Time"
-        data += ";\t Date"
-        data += ";\t Time"
-        data += ";\t %s" % state
-        data += '\n'
+        for interval in log_file:
+            data += '; '.join([
+                interval['datetime'],
+                interval['date'],
+                interval['time'],
+                u'{}'.format(interval['state']),
+            ]) + '\n'
 
-        try:
-            log_records = read_log()
-
-            for record in log_records:
-                data +=         record['datetime']
-                data += ";\t" + record['date']
-                data += ";\t" + record['time']
-                data += ";\t" + record["state"]
-                data += '\n'
-        except:
-            pass                  
-
-        web.header('Content-Type', 'text/csv')
+        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', content) 
+        web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data
