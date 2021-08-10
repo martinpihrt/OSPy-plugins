@@ -16,6 +16,7 @@ import sys
 import traceback
 import os
 import subprocess
+import mimetypes
 
 from threading import Thread, Event
 
@@ -440,7 +441,7 @@ class settings_page(ProtectedPage):
 
         if sender is not None and 'history' in qdict:
            history = qdict['history']
-           plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
+           plugin_options.__setitem__('history', int(history))
 
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
@@ -565,34 +566,21 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
 
     def GET(self):
-        data  = "\tDate"
-        data += ";\t Time"
-        data += ";\t %s" % "IP1: " + plugin_options['address_1']
-        data += ";\t %s" % "IP2: " + plugin_options['address_2']
-        data += ";\t %s" % "IP3: " + plugin_options['address_3']
-        data += ";\t State"
-        data += ";\t Outage"
-        data += '\n'
+        data = "Date; Time; IP1 ({}); IP2 ({}); IP3 ({}); State; Outage \n".format(plugin_options['address_1'], plugin_options['address_2'], plugin_options['address_3'])
+        log_file = read_log()
+        for interval in log_file:
+            data += '; '.join([
+                interval['date'],
+                interval['time'],
+                u'{}'.format(interval['ping1']),
+                u'{}'.format(interval['ping2']),
+                u'{}'.format(interval['ping3']),
+                u'{}'.format(interval['state']),
+                u'{}'.format(convertMillis(interval['time_dif']) if interval['time_dif'] > 1 else ''),
+            ]) + '\n'
 
-        try:
-            log_records = read_log()
-            for record in log_records:
-                data +=         record['date']
-                data += ";\t" + record['time']
-                data += ";\t" + record["ping1"]
-                data += ";\t" + record["ping2"]
-                data += ";\t" + record["ping3"]
-                data += ";\t" + record["state"]
-                if record['time_dif'] > 1:
-                    if record['time_dif'] < 86400000:
-                        data += ";\t" + convertMillis(record['time_dif'])
-                    else:
-                        data += ";\t" + '> 24 hours'
-                else:
-                    data += ";\t" + ''
-                data += '\n'
-        except:
-            pass
-
-        web.header('Content-Type', 'text/csv')
+        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', content) 
+        web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data
