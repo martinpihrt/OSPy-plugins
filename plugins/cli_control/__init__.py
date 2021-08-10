@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 
 import json
 import time
@@ -7,7 +7,7 @@ import traceback
 import web
 import subprocess
 import os
-
+import mimetypes
 
 from blinker import signal
 
@@ -23,11 +23,11 @@ from ospy.webpages import ProtectedPage
 NAME = 'CLI Control'         ### name for plugin in plugin manager ###
 MENU =  _(u'Package: CLI Control')
 LINK = 'settings_page'       ### link for page in plugin manager ###
- 
+
 plugin_options = PluginOptions(
     NAME,
     {u'use_control': False,
-     u'on':  [u"echo 'example start command for station 1'",u"",u"",u"",u"",u"",u"",u""], 
+     u'on':  [u"echo 'example start command for station 1'",u"",u"",u"",u"",u"",u"",u""],
      u'off': [u"echo 'example stop command for station 1'",u"",u"",u"",u"",u"",u"",u""],
      u'use_log': False  
     }
@@ -170,7 +170,7 @@ def write_log(json_data):
         json.dump(json_data, outfile)
 
 def update_log(cmd, status):
-    """Update data in json files.""" 
+    """Update data in json files."""
     try:
         log_data = read_log()
     except:   
@@ -186,7 +186,7 @@ def update_log(cmd, status):
 
     log_data.insert(0, data)
     write_log(log_data)
-    log.info(NAME, _(u'Saving to log  files OK'))                    
+    log.info(NAME, _(u'Saving to log files OK'))
 
 ################################################################################
 # Web pages:                                                                   #
@@ -236,17 +236,17 @@ class settings_page(ProtectedPage):
            ### add code to update commands ###
             if 'use_control' in qdict:
                 if qdict['use_control']=='on':
-                    plugin_options.__setitem__('use_control', True) #__setitem__(self, key, value)
+                    plugin_options.__setitem__('use_control', True)
 
             else:  
                 plugin_options.__setitem__('use_control', False)
 
             if 'use_log' in qdict:
                 if qdict['use_log']=='on':
-                    plugin_options.__setitem__('use_log', True) #__setitem__(self, key, value)
+                    plugin_options.__setitem__('use_log', True)
 
-            else:  
-                plugin_options.__setitem__('use_log', False)                 
+            else:
+                plugin_options.__setitem__('use_log', False)
 
             commands = {u'on': [], u'off': []} 
 
@@ -297,17 +297,17 @@ class log_csv(ProtectedPage):
     """Simple Log API"""
 
     def GET(self):
-        data = "%s \n" % _(u'Command and State')
+        data = "Date/Time; Command; State \n"
+        log_file = read_log()
+        for interval in log_file:
+            data += '; '.join([
+                interval['datetime'],
+                u'{}'.format(interval['cmd']),
+                u'{}'.format(interval['status']),
+            ]) + '\n'
 
-        try:
-            log_records = read_log()
-
-            for record in log_records:
-            	data += record["datetime"] + u'\n'
-            	data += _(u'Command') + u': ' + record["cmd"] + u'\n'
-            	data += _(u'State') + u': ' + record["status"] + u'\n'
-        except:
-            pass
-
-        web.header('Content-Type', 'text/csv')
+        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', content) 
+        web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data
