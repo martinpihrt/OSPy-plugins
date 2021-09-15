@@ -129,6 +129,7 @@ class EmailSender(Thread):
                             minutes, seconds = divmod(duration, 60)
                             pname = run['program_name']
                             sname = stations.get(run['station']).name
+                            body += u'<br>'
                             body += u'<b>' + _(u'System') + u'</b> ' + datetime_string()
                             body += u'<br><b>'  + _(u'Finished run') + u'</b>'
                             body += u'<ul><li>' + _(u'Program') + u': %s \n' % pname + u'</li>'
@@ -294,6 +295,39 @@ class EmailSender(Thread):
                                                             sensor_result += u'{} '.format(get_level) + _(u'cm') + u' ({} %)'.format(get_perc)
                                                         else:
                                                             sensor_result += _(u'Probe Error')
+                                                    if sensor.multi_type == 9:                          #  multi soil moisture
+                                                        err_check = 0
+                                                        calculate_soil = [0.0]*16
+                                                        state = [-127]*16
+                                                        for i in range(0, 16):
+                                                            if type(sensor.soil_last_read_value[i]) == float:
+                                                                state[i] = sensor.soil_last_read_value[i]
+                                                                val = state[i]
+                                                                if sensor.soil_invert_probe_in[i]:
+                                                                    if val < sensor.soil_calibration_max[i]:
+                                                                        val = sensor.soil_calibration_max[i]
+                                                                    if val > sensor.soil_calibration_min[i]:
+                                                                        val = sensor.soil_calibration_min[i]
+                                                                    val = sensor.soil_calibration_min[i] - val
+                                                                    calculate_soil[i] = maping(val, float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
+                                                                    calculate_soil[i] = round(calculate_soil[i], 1)
+                                                                else:
+                                                                    if val > sensor.soil_calibration_max[i]:
+                                                                        val = sensor.soil_calibration_max[i]
+                                                                    if val < sensor.soil_calibration_min[i]:
+                                                                        val = sensor.soil_calibration_min[i]
+                                                                    calculate_soil[i] = maping(val, float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
+                                                                    calculate_soil[i] = round(calculate_soil[i], 1)
+                                                                if calculate_soil[i] > 100:
+                                                                    calculate_soil[i] = 100
+                                                                if calculate_soil[i] < 0:
+                                                                    calculate_soil[i] = 0
+                                                                if state[i] > 0.1:   
+                                                                    sensor_result += u'{}: {}% '.format(sensor.soil_probe_label[i], calculate_soil[i])
+                                                            else:
+                                                                err_check += 1
+                                                        if err_check > 15:
+                                                            sensor_result += _(u'Probe Error')
                                             else:
                                                 sensor_result += _(u'No response!')
                                         else:
@@ -303,13 +337,15 @@ class EmailSender(Thread):
                                         body += u'</li>'
                                         logtext += sensor_result
                                         logtext += u'\n'
-                                    body += u'<ul>'
+                                    body += u'</ul>'
+                                    body += u'<br>'
                                         
                                 else:
                                     sensor_result += _(u'No sensors available')
                                     body += u'<ul><li>'
                                     body += sensor_result
                                     body += u'</li></ul>'
+                                    body += u'<br>'
                                     logtext += sensor_result
                                     logtext += u'\n'
                                     
