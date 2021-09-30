@@ -60,14 +60,13 @@ Množství vody v zásobníku: Úroveň: 192 cm (72 %), Ping: 211 cm, Objem: 144
 Čítač spotřeby vody
 Měřeno od dne: 2021-04-01 10:18:10, Hlavní stanice: 56.97 m3, Druhá hlavní stanice: 0.0 Litr 
 Teplota DS1-DS6
-SKLEP: 20.0 ℃
-BAZÉN: 21.0 ℃
-BOJLER: 59.3 ℃
-UVNITŘ: 21.6 ℃
-STUDNA: 15.0 ℃
-VENKU: 31.0 ℃ 
+SKLEP: 20.0 C
+BAZÉN: 21.0 C
+BOJLER: 59.3 C
+UVNITŘ: 21.6 C
+STUDNA: 15.0 C
+VENKU: 31.0 C
 Snímače
-S1: 21.3 ℃
+S1: 21.3 C
 S2: Kontakt spojený
 S3: 68 cm (100 %)
-  

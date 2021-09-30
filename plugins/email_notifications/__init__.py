@@ -84,7 +84,7 @@ class EmailSender(Thread):
             randint(3, 10)
         )  # Sleep some time to prevent printing before startup information
 
-        send_interval = 5000  # default time for sending between e-mails (ms)
+        send_interval = 10000 # default time for sending between e-mails (ms)
         last_millis   = 0     # timer for repeating sending e-mails (ms)
         last_rain = False
         body    = u''
@@ -117,7 +117,6 @@ class EmailSender(Thread):
                         body += u'<br><p style="color:red;">' + _(u'System detected rain.') + u'</p><br>'
                         logtext = _(u'System detected rain.')
                         try_mail(body, logtext)
-                        self._sleep(1)
                     last_rain = inputs.rain_sensed()
 
                 # Send E-mail if a new finished run is found
@@ -173,9 +172,8 @@ class EmailSender(Thread):
 
                             # Water Consumption Counter
                             try:
-                                self._sleep(2) # wait for the meter to save consumption
-
                                 from plugins import water_consumption_counter
+                                self._sleep(2) # wait for the meter to save consumption
 
                                 consum_from = water_consumption_counter.get_all_values()[0]
                                 consum_one  = water_consumption_counter.get_all_values()[1]
@@ -328,6 +326,11 @@ class EmailSender(Thread):
                                                                 err_check += 1
                                                         if err_check > 15:
                                                             sensor_result += _(u'Probe Error')
+
+                                                    if sensor.com_type == 0: # Wi-Fi/LAN
+                                                        sensor_result += u' ' + _(u'Last Wi-Fi signal: {}%, Source: {}V.').format(sensor.rssi, sensor.last_battery)
+                                                    if sensor.com_type == 1: # Radio
+                                                        sensor_result += u' ' + _(u'Last Radio signal: {}%, Source: {}V.').format(sensor.rssi, sensor.last_battery)
                                             else:
                                                 sensor_result += _(u'No response!')
                                         else:
@@ -355,7 +358,6 @@ class EmailSender(Thread):
 
                         try_mail(body, logtext)
 
-                    self._sleep(1)
                     finished_count = len(finished)
 
                 ###Repeating sending e-mails###
@@ -379,7 +381,7 @@ class EmailSender(Thread):
                                     sendsubject = u'%s' % (saved_emails[0]["subject"] + '-' + _(u'sending from queue.'))
                                     sendattachment = u'%s' % saved_emails[0]["attachment"]
                                     email(sendtext, sendsubject, sendattachment) # send e-mail  
-                                    send_interval = 2000                # repetition of 2 seconds
+                                    send_interval = 10000               # repetition of 10 seconds
                                     del saved_emails[0]                 # delete sent email in file
                                     write_email(saved_emails)           # save to file after deleting an item
                                     if len(saved_emails) == 0:
@@ -392,7 +394,7 @@ class EmailSender(Thread):
                     except:
                         log.error(NAME, _(u'E-mail plug-in') + ':\n' + traceback.format_exc())  
 
-                self._sleep(1)
+                self._sleep(2)
 
             except Exception:
                 log.error(NAME, _(u'E-mail plug-in') + ':\n' + traceback.format_exc())
