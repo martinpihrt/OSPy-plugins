@@ -77,7 +77,7 @@ $var page: plugins
                 $for i in range(0, len(plugin_options['sounds'])):
                     <option value="${i}" ${"selected" if plugin_options['off'][c] == i else ''} title=$:{json.dumps(_(u'Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>
                 </select>
-                <a href="?test=${c}" class="button upload">$_('Play')</a>
+                <a href="?test=${c}&state=0" class="button upload">$_('Play')</a>
                 <a href="?stop=1" class="button cancel danger">$_('Stop')</a>
                 </td>
                 </tr>

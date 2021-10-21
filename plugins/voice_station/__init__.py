@@ -30,9 +30,9 @@ plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,                 # default is OFF
-        'volume': 95,                     # master volume 95%
-        'start_hour': 0,                  # voice notification only from 0 
-        'stop_hour': 23,                  # to 23 hours
+        'volume': 99,                     # master volume %
+        'start_hour': 6,                  # voice notification only from 6 
+        'stop_hour': 20,                  # to 20 hours
         'on':  [-1]*8,                    # song name for station 1-8 if ON (8 stations is default)
         'off': [-1]*8,                    # song name for station 1-8 if OFF (8 stations is default)
         'sounds': [],                     # a list of all song names in the plugin data directory
@@ -116,35 +116,41 @@ checker = None
 def notify_station_on(name, **kw):
     if plugin_options['enabled']:
         current_time  = datetime.datetime.now()
-        if current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']:
-            st_nr = int(kw[u"txt"])
-            log.clear(NAME)
-            log.info(NAME, datetime_string() + ': ' + _(u'Stations {} ON').format(str(st_nr + 1)))
-            data = {}
-            data['song'] = plugin_options['sounds'][int(plugin_options['on'][st_nr])]
-            path = os.path.join(plugin_data_dir(), data['song'])
-            if os.path.isfile(path):
-                log.info(NAME, datetime_string() + ': ' + _(u'Stations: {}.').format(data['song']))
-                update_song_queue(data) # save song name to song queue
-            else:
-                log.info(NAME, datetime_string() + ': ' + _(u'File not exists!'))
+        try:
+            if int(current_time.hour) >= int(plugin_options['start_hour']) and int(current_time.hour) <= int(plugin_options['stop_hour']):
+                st_nr = int(kw[u"txt"])
+                log.clear(NAME)
+                log.info(NAME, datetime_string() + u': ' + _(u'Stations {} ON').format(str(st_nr + 1)))
+                data = {}
+                if len(plugin_options['sounds']) > 0:
+                    data['song'] = plugin_options['sounds'][int(plugin_options['on'][st_nr])]  
+                    path = os.path.join(plugin_data_dir(), data['song'])
+                    if os.path.isfile(path):
+                        update_song_queue(data) # save song name to song queue
+                    else:
+                        log.info(NAME, datetime_string() + u': ' + _(u'File not exists!'))
+        except Exception:
+            log.error(NAME, _(u'Voice Station plug-in') + ':\n' + traceback.format_exc())
 
 ### Stations OFF ###
 def notify_station_off(name, **kw):
     if plugin_options['enabled']:
         current_time  = datetime.datetime.now()
-        if current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']:
-            st_nr = int(kw[u"txt"])
-            log.clear(NAME)
-            log.info(NAME, datetime_string() + ': ' + _(u'Stations {} OFF').format(str(st_nr + 1)))
-            data = {}
-            data['song'] = plugin_options['sounds'][int(plugin_options['off'][st_nr])]
-            path = os.path.join(plugin_data_dir(), data['song'])
-            if os.path.isfile(path):
-                log.info(NAME, datetime_string() + ': ' + _(u'Stations: {}.').format(data['song']))
-                update_song_queue(data) # save song name to song queue
-            else:
-                log.info(NAME, datetime_string() + ': ' + _(u'File not exists!'))
+        try:
+            if int(current_time.hour) >= int(plugin_options['start_hour']) and int(current_time.hour) <= int(plugin_options['stop_hour']):
+                st_nr = int(kw[u"txt"])
+                log.clear(NAME)
+                log.info(NAME, datetime_string() + u': ' + _(u'Stations {} OFF').format(str(st_nr + 1)))
+                data = {}
+                if len(plugin_options['sounds']) > 0:
+                    data['song'] = plugin_options['sounds'][int(plugin_options['off'][st_nr])]
+                    path = os.path.join(plugin_data_dir(), data['song'])
+                    if os.path.isfile(path):
+                        update_song_queue(data) # save song name to song queue
+                    else:
+                        log.info(NAME, datetime_string() + u': ' + _(u'File not exists!'))
+        except Exception:
+            log.error(NAME, _(u'Voice Station plug-in') + ':\n' + traceback.format_exc())
 
 def start():
     global checker
@@ -238,13 +244,13 @@ def play_voice():
             mixer.init()
             if os.path.isfile(path):
                 if mixer.music.get_busy() == False:
-                    log.info(NAME, datetime_string() + ': ' + _(u'Songs in queue {}').format(len(song_queue)))
+                    log.info(NAME, datetime_string() + u': ' + _(u'Songs in queue {}').format(len(song_queue)))
                     for i in range(0, len(song_queue)):
                         log.info(NAME, _(u'Nr. {} -> {}').format(str(i+1), song_queue[i]['song']))
-                    log.info(NAME, datetime_string() + ': ' + _(u'Loading: {}').format(song))
+                    log.info(NAME, datetime_string() + u': ' + _(u'Loading: {}').format(song))
                     mixer.music.load(path)
                     mixer.music.set_volume(1.0)  # 0.0 min to 1.0 max 
-                    log.info(NAME, datetime_string() + ': ' + _(u'Set master volume to {}%').format(str(plugin_options['volume'])))
+                    log.info(NAME, datetime_string() + u': ' + _(u'Set master volume to {}%').format(str(plugin_options['volume'])))
                     try:
                         cmd = ["amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])]
                         run_command(cmd)
@@ -252,7 +258,7 @@ def play_voice():
                         cmd = ["amixer", "sset", "Master", "{}%".format(plugin_options['volume'])]
                         run_command(cmd)
                     mixer.music.play()
-                    log.info(NAME, datetime_string() + ': ' + _(u'Playing.'))
+                    log.info(NAME, datetime_string() + u': ' + _(u'Playing.'))
             else:
                 del song_queue[0]
                 write_song_queue(song_queue)
@@ -261,7 +267,7 @@ def play_voice():
                 continue 
 
             mixer.music.stop()
-            log.info(NAME, datetime_string() + ': ' + _(u'Stopping.'))
+            log.info(NAME, datetime_string() + u': ' + _(u'Stopping.'))
             del song_queue[0]                   # delete song queue in file
             write_song_queue(song_queue)        # save to file after deleting an item
             must_stop = False
@@ -281,28 +287,30 @@ class settings_page(ProtectedPage):
         qdict = web.input()
 
         if checker is not None:
-            state = helpers.get_input(qdict, 'state', False, lambda x: True)
-            test = helpers.get_input(qdict, 'test', False, lambda x: True)
             stop = helpers.get_input(qdict, 'stop', False, lambda x: True)
 
-            if test:
-                if state:
-                    command = plugin_options['on']
-                else:
-                    command = plugin_options['off']
+            if 'test' in qdict:
+                command = -1
                 data = {}
-                data['song'] = plugin_options['sounds'][int(command[int(test)])]
-                log.clear(NAME)
-                path = os.path.join(plugin_data_dir(), data['song'])
-                if os.path.isfile(path):
-                    log.info(NAME, datetime_string() + ': ' + _(u'Button test {}.').format(str(test + 1)))
-                    update_song_queue(data) # save song name to song queue
+                if 'state' in qdict and int(qdict['state']) == 1:
+                    command = plugin_options['on'][int(qdict['test'])]
+                if 'state' in qdict and int(qdict['state']) == 0:
+                    command = plugin_options['off'][int(qdict['test'])]
+
+                if len(plugin_options['sounds']) > 0 and command != -1:
+                    data['song'] = plugin_options['sounds'][command]
+                    path = os.path.join(plugin_data_dir(), data['song'])
+                    if os.path.isfile(path):
+                        log.info(NAME, datetime_string() + u': ' + _(u'Button test.'))
+                        update_song_queue(data) # save song name to song queue
+                    else:
+                        log.info(NAME, datetime_string() + u': ' + _(u'File not exists!'))
                 else:
-                    log.info(NAME, datetime_string() + ': ' + _(u'File not exists!'))
+                    log.info(NAME, datetime_string() + u': ' + _(u'File not exists!'))
 
             if stop:
                 must_stop = True
-                log.info(NAME, datetime_string() + ': ' + _(u'Button Stop.'))
+                log.info(NAME, datetime_string() + u': ' + _(u'Button Stop.'))
 
         return self.plugin_render.voice_station(plugin_options, log.events(NAME))
 
