@@ -59,4 +59,5 @@ Available plugins:
 * Weather Stations
 * Telegram Bot
 * Door Opening
+* Voice Station
  

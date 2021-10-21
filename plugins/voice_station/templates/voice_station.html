@@ -1,0 +1,104 @@
+$def with(plugin_options, events)
+
+$var title: $_(u'Voice Station')
+$var page: plugins
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cRefresh").click(function(){
+            window.location="settings";
+        });        
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Voice Station - Settings')</div>
+    <a href=$plugins.plugin_url('voice_station.help_page') class="button upload">$_(u'Help')</a><br/>
+    <a href=$plugins.plugin_url('voice_station.sound_page') class="button submit">$_(u'Sound editing')</a><br/>
+    <form id="pluginForm" action="$plugins.plugin_url('voice_station.settings_page')" method="post">
+        <table class="optionList">
+        <tr>
+          <td style='text-transform: none;'>$_('Enable voice'):</td>
+          <td title=$:{json.dumps(_(u'If the check box is marked, the extension will be active.'), ensure_ascii=False)}>
+          <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+            <small>$_('For proper operation, it is necessary to restart the OSPy after enabling and setting up this extension')</small>
+            </td>
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Master volume'):</td> 
+          <td title=$:{json.dumps(_(u'Setting the Raspberry Pi output volume (0-100%).'), ensure_ascii=False)}> 
+          <input name='volume' type='number' min="0" max="100" value="$plugin_options['volume']"> (0 - 100%)</td> 
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Play only from'):</td>
+          <td title=$:{json.dumps(_(u'Play notifications only from this time (hours).'), ensure_ascii=False)}>  
+          <input name='start_hour' type='number' min="0" max="23" value="$plugin_options['start_hour']"> (0 - 23h)</td> 
+        </tr>
+        <tr>
+          <td style='text-transform: none;'>$_('Play only to'):</td>  
+          <td title=$:{json.dumps(_(u'Play notifications only to this time (hours).'), ensure_ascii=False)}> 
+          <input name='stop_hour' type='number' min="0" max="23" value="$plugin_options['stop_hour']"> (0 - 23h)</td>
+        </tr>
+        <tr>
+           <td colspan="3">
+           <hr>
+           </td>
+        </tr>
+        $if len(plugin_options['sounds']) > 0:
+            <tr>
+            <td>$_('Station')</td>
+            <td>$_('Sound in starting')</td>
+            <td>$_('Sound in stopping')</td>
+            </tr>
+            $for c in range(0, options.output_count):
+                <tr>
+                <td>${c + 1}</td>
+                <td>
+                <select name="con${c}">
+                <option value="-1" ${" selected" if plugin_options['on'][c] == -1 else ""}>$_(u'Not assigned')</option>
+                $for i in range(0, len(plugin_options['sounds'])):
+                    <option value="${i}" ${"selected" if plugin_options['on'][c] == i else ''} title=$:{json.dumps(_(u'Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>  
+                </select>
+                <a href="?test=${c}&state=1" class="button upload">$_('Play')</a>
+                <a href="?stop=1" class="button cancel danger">$_('Stop')</a>
+                </td>
+                <td>
+                <select name="coff${c}">
+                <option value="-1" ${" selected" if plugin_options['off'][c] == -1 else ""}>$_(u'Not assigned')</option>
+                $for i in range(0, len(plugin_options['sounds'])):
+                    <option value="${i}" ${"selected" if plugin_options['off'][c] == i else ''} title=$:{json.dumps(_(u'Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>
+                </select>
+                <a href="?test=${c}" class="button upload">$_('Play')</a>
+                <a href="?stop=1" class="button cancel danger">$_('Stop')</a>
+                </td>
+                </tr>
+            <tr>
+            <td colspan="3">
+            <hr> 
+            </td>
+            </tr>
+        $else:
+            $_('Record some songs first and then you will be able to assign stations to the songs here.')
+        <tr>
+          <td style='text-transform: none;'>$_('Status'):</td>
+          <td colspan="5">
+          <textarea style="font-family: monospace;" rows="15" cols="80" readonly>$'\n'.join(events)</textarea></td>
+        </tr>
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
