@@ -35,7 +35,9 @@ plugin_options = PluginOptions(
         'stop_hour': 20,                  # to 20 hours
         'on':  [-1]*8,                    # song name for station 1-8 if ON (8 stations is default)
         'off': [-1]*8,                    # song name for station 1-8 if OFF (8 stations is default)
-        'sounds': [],                     # a list of all song names in the plugin data directory
+        'sounds': [],                     # a list of all songs names in the plugin data directory
+        'sounds_inserted': [],            # date time inserted songs (sorted by last upload)
+        'sounds_size': [],                # songs size in bytes
     })
 
 must_stop = False                         # stopping play from webpage
@@ -123,7 +125,7 @@ def notify_station_on(name, **kw):
                 log.info(NAME, datetime_string() + u': ' + _(u'Stations {} ON').format(str(st_nr + 1)))
                 data = {}
                 if len(plugin_options['sounds']) > 0:
-                    data['song'] = plugin_options['sounds'][int(plugin_options['on'][st_nr])]  
+                    data['song'] = plugin_options['sounds'][int(plugin_options['on'][st_nr])]
                     path = os.path.join(plugin_data_dir(), data['song'])
                     if os.path.isfile(path):
                         update_song_queue(data) # save song name to song queue
@@ -181,13 +183,31 @@ def run_command(cmd):
 ### Read all songs in folder ###
 def read_folder():
     try:
-        from os import walk
+        import os
+        import time
 
+        dir_name =  plugin_data_dir() + '/'
+        # Get list of all files only in the given directory
+        list_of_files = filter( lambda x: os.path.isfile(os.path.join(dir_name, x)), os.listdir(dir_name) )
+        # Sort list of files based on last modification time in ascending order
+        list_of_files = sorted( list_of_files, key = lambda x: os.path.getmtime(os.path.join(dir_name, x)))
+        # Along with last modification time of file
+        e = []
         f = []
-        for(dirpath, dirnames, filenames) in walk(os.path.join(plugin_data_dir())):
-            f.extend(filenames)
-            break
+        g = []
+
+        for file_name in list_of_files:
+            file_path = os.path.join(dir_name, file_name)
+            timestamp_str = time.strftime('%d/%m/%Y - %H:%M:%S', time.gmtime(os.path.getmtime(file_path)))
+            size = os.path.getsize(file_path)
+            e.append(timestamp_str)
+            f.append(file_name)
+            g.append(size)
+
+        plugin_options.__setitem__('sounds_inserted', e)
         plugin_options.__setitem__('sounds', f)
+        plugin_options.__setitem__('sounds_size', g)
+
     except Exception:
         log.error(NAME, _(u'Voice Station plug-in') + ':\n' + traceback.format_exc())
 
@@ -271,6 +291,7 @@ def play_voice():
             del song_queue[0]                   # delete song queue in file
             write_song_queue(song_queue)        # save to file after deleting an item
             must_stop = False
+            self._sleep(1)
 
     except Exception:
         log.error(NAME, _(u'Voice Station plug-in') + ':\n' + traceback.format_exc())

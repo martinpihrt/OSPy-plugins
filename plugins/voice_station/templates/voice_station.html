@@ -59,25 +59,25 @@ $var page: plugins
             <td>$_('Sound in starting')</td>
             <td>$_('Sound in stopping')</td>
             </tr>
-            $for c in range(0, options.output_count):
+            $for station in stations.get():
                 <tr>
-                <td>${c + 1}</td>
+                <td>${station.index + 1} (${station.name})</td>
                 <td>
-                <select name="con${c}">
-                <option value="-1" ${" selected" if plugin_options['on'][c] == -1 else ""}>$_(u'Not assigned')</option>
+                <select name="con${station.index}">
+                <option value="-1" ${" selected" if plugin_options['on'][station.index] == -1 else ""}>$_(u'Not assigned')</option>
                 $for i in range(0, len(plugin_options['sounds'])):
-                    <option value="${i}" ${"selected" if plugin_options['on'][c] == i else ''} title=$:{json.dumps(_(u'Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>  
+                    <option value="${i}" ${"selected" if plugin_options['on'][station.index] == i else ''} title=$:{json.dumps(_(u'Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>  
                 </select>
-                <a href="?test=${c}&state=1" class="button upload">$_('Play')</a>
+                <a href="?test=${station.index}&state=1" class="button upload">$_('Play')</a>
                 <a href="?stop=1" class="button cancel danger">$_('Stop')</a>
                 </td>
                 <td>
-                <select name="coff${c}">
-                <option value="-1" ${" selected" if plugin_options['off'][c] == -1 else ""}>$_(u'Not assigned')</option>
+                <select name="coff${station.index}">
+                <option value="-1" ${" selected" if plugin_options['off'][station.index] == -1 else ""}>$_(u'Not assigned')</option>
                 $for i in range(0, len(plugin_options['sounds'])):
-                    <option value="${i}" ${"selected" if plugin_options['off'][c] == i else ''} title=$:{json.dumps(_(u'Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>
+                    <option value="${i}" ${"selected" if plugin_options['off'][station.index] == i else ''} title=$:{json.dumps(_(u'Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>
                 </select>
-                <a href="?test=${c}&state=0" class="button upload">$_('Play')</a>
+                <a href="?test=${station.index}&state=0" class="button upload">$_('Play')</a>
                 <a href="?stop=1" class="button cancel danger">$_('Stop')</a>
                 </td>
                 </tr>

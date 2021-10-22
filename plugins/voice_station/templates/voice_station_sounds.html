@@ -2,6 +2,18 @@ $def with(plugin_options, errorCode)
 
 $var title: $_(u'Voice Station - Sounds')
 $var page: plugins
+
+$code:
+    def format_bytes(size):
+        # 2**10 = 1024
+        power = 2**10
+        n = 0
+        _labels = {0 : '', 1: _('kB'), 2: _('mB'), 3: _('Gb'), 4: _('Tb')}
+        while size > power:
+            size /= power
+            n += 1
+        return '{}{}'.format(size, _labels[n])
+
 <script>
     // Initialize behaviors
     var errorCode = "${errorCode}";
@@ -43,7 +55,8 @@ $var page: plugins
       <tr class="log_rec">
         <th>$_('Item')</th>
         <th>$_('File Name')</th>
-        <th>$_('Deletion')</th>
+        <th>$_('Uploaded')</th>
+        <th>$_('Size')</th>
       </tr>
       $ odd = 1
       $for c in range(0, len(plugin_options['sounds'])):
@@ -52,6 +65,12 @@ $var page: plugins
         <td>
         $'{}'.format(plugin_options['sounds'][c])
         </td>
+        <td>
+        $'{}'.format(plugin_options['sounds_inserted'][c])
+        </td>
+        <td>
+        $format_bytes(plugin_options['sounds_size'][c])
+        </td>        
         <td>
         <a href="?delete=${c}" class="button cancel danger">$_('Delete')</a>
         </td>
