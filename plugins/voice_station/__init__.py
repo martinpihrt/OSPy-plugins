@@ -291,7 +291,6 @@ def play_voice():
             del song_queue[0]                   # delete song queue in file
             write_song_queue(song_queue)        # save to file after deleting an item
             must_stop = False
-            self._sleep(1)
 
     except Exception:
         log.error(NAME, _(u'Voice Station plug-in') + ':\n' + traceback.format_exc())
