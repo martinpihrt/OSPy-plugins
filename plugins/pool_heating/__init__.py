@@ -64,20 +64,20 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -113,7 +113,7 @@ class Sender(Thread):
         log.info(NAME, datetime_string() + ' ' + _(u'Waiting.'))
         end = datetime.datetime.now()
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if plugin_options["sensor_probe"] == 2:                                        # loading probe name from plugin air_temp_humi
                     try:
@@ -259,7 +259,7 @@ class Sender(Thread):
                     tempText = _(u'Waiting.')
 
                 if plugin_options['use_footer']:
-                    temp_sw.val = tempText.encode('utf8')    # value on footer
+                    temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
                 self._sleep(2)
 

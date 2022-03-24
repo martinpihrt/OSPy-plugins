@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # This plugin sends data to I2C for LCD 16x2 char with PCF8574.
 # Visit for more: https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2.
 # This plugin requires python pylcd.py library
@@ -68,20 +68,20 @@ class LCDSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -101,7 +101,7 @@ class LCDSender(Thread):
         ospyupdate = signal('ospyupdate')
         ospyupdate.connect(notify_ospyupdate)
         
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if lcd_options['use_lcd']  and not blocker:  # if LCD plugin is enabled
                     if lcd_options['debug_line']:
@@ -583,7 +583,7 @@ def find_lcd_address():
         bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
         # DF - alter RPi version test fallback to value that works on BBB
 
-        for addr, pcf_type in search_range.iteritems():
+        for addr, pcf_type in search_range.items():
             try:
                 # bus.write_quick(addr)
                 try_io(lambda: bus.read_byte(addr)) #bus.read_byte(addr) # DF - write_quick doesn't work on BBB
@@ -607,7 +607,7 @@ def update_lcd(line1, line2=None):
         find_lcd_address()
 
     if lcd_options['address'] != 0:
-        import pylcd  # Library for LCD 16x2 PCF8574
+        from . import pylcd  # Library for LCD 16x2 PCF8574
 
         lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
         # DF - alter RPi version test fallback to value that works on BBB
@@ -644,7 +644,7 @@ def notify_rebooted(name, **kw):
     if lcd_options['address'] == 0:
         find_lcd_address()
     if lcd_options['address'] != 0:
-        import pylcd  # Library for LCD 16x2 PCF8574
+        from . import pylcd  # Library for LCD 16x2 PCF8574
         lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
         # DF - alter RPi version test fallback to value that works on BBB
     else:
@@ -662,7 +662,7 @@ def notify_restarted(name, **kw):
     if lcd_options['address'] == 0:
         find_lcd_address()
     if lcd_options['address'] != 0:
-        import pylcd  # Library for LCD 16x2 PCF8574
+        from . import pylcd  # Library for LCD 16x2 PCF8574
         lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
         # DF - alter RPi version test fallback to value that works on BBB
     else:
@@ -681,7 +681,7 @@ def notify_poweroff(name, **kw):
     if lcd_options['address'] == 0:
         find_lcd_address()
     if lcd_options['address'] != 0:
-        import pylcd  # Library for LCD 16x2 PCF8574
+        from . import pylcd  # Library for LCD 16x2 PCF8574
         lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
         # DF - alter RPi version test fallback to value that works on BBB
     else:
@@ -699,7 +699,7 @@ def notify_ospyupdate(name, **kw):
     if lcd_options['address'] == 0:
         find_lcd_address()
     if lcd_options['address'] != 0:
-        import pylcd  # Library for LCD 16x2 PCF8574
+        from . import pylcd  # Library for LCD 16x2 PCF8574
         lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
         # DF - alter RPi version test fallback to value that works on BBB
     else:

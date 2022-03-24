@@ -58,7 +58,8 @@ plugin_options = PluginOptions(
      'reg_mm_b': 60,       # min for maximal runtime B
      'reg_ss_b': 0,        # sec for maximal runtime B
      'reg_mm_c': 60,       # min for maximal runtime C
-     'reg_ss_c': 0         # sec for maximal runtime C          
+     'reg_ss_c': 0,        # sec for maximal runtime C          
+     'use_footer': True    # show data from plugin in footer on home page
      }
 )
 
@@ -73,20 +74,20 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -99,9 +100,10 @@ class Sender(Thread):
         msg_c_on = True
         msg_c_off = True                
 
-        temp_sw = showInFooter() #  instantiate class to enable data in footer
-        temp_sw.button = "temperature_switch/settings"   # button redirect on footer
-        temp_sw.label =  _(u'Temperature Switch')        # label on footer
+        if plugin_options['use_footer']:
+            temp_sw = showInFooter() #  instantiate class to enable data in footer
+            temp_sw.button = "temperature_switch/settings"   # button redirect on footer
+            temp_sw.label =  _(u'Temperature Switch')        # label on footer
 
         millis = int(round(time.time() * 1000))          # timer for clearing status on the web pages after 60 sec
         last_millis = millis
@@ -110,7 +112,7 @@ class Sender(Thread):
         b_state = -1
         c_state = -1
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 try:
                     from plugins.air_temp_humi import plugin_options as air_temp_data
@@ -296,7 +298,8 @@ class Sender(Thread):
                 if (a_state == -1) and (b_state == -1) and (c_state == -1):
                     tempText = _(u'No change') + '. '
 
-                temp_sw.val = tempText.encode('utf8')    # value on footer                                                          
+                if plugin_options['use_footer']:
+                    temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                          
 
                 self._sleep(2)
 

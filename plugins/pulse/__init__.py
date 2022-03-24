@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # This plugin pulses a selected circuit with a 1 Hz signal with adjusted time. (For discover the location of a valve).
 
 import json
@@ -16,7 +16,7 @@ from ospy.log import log
 
 
 NAME = 'Pulse Output Test'
-MENU =  _('Package: Pulse Output Test')
+MENU =  _(u'Package: Pulse Output Test')
 LINK = 'start_page'
 
 pulse_options = PluginOptions(
@@ -32,20 +32,20 @@ class PulseSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def run(self):
         log.clear(NAME)
-        log.info(NAME, _('Test started for') + ' ' + str(pulse_options['test_time']) + ' sec.')
+        log.info(NAME, _(u'Test started for {} second.').format(pulse_options['test_time']))
         station = stations.get(pulse_options['test_output'])
 
         for x in range(0, pulse_options['test_time']):
@@ -54,10 +54,10 @@ class PulseSender(Thread):
             station.active = False
             time.sleep(0.5)
 
-            if self._stop.is_set():
+            if self._stop_event.is_set():
                 break
 
-        log.info(NAME, _('Test stopped.'))
+        log.info(NAME, _(u'Test stopped.'))
 
         # Activate again if needed:
         if station.remaining_seconds != 0:

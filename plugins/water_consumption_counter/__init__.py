@@ -47,19 +47,19 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -199,7 +199,6 @@ def notify_master_two_off(name, **kw):
 
 ### return all consum counter as summar ###
 def get_all_values():
-
     return plugin_options['last_reset'], plugin_options['sum_one'], plugin_options['sum_two']
 
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # This plugin save image from webcam to ./data/image.jpg
 # fswebcam --list-controls -r 1280x720 --info OpenSprinkler -S 3 --save ./data/image.jpg
 

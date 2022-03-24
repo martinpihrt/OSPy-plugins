@@ -7,11 +7,8 @@ import traceback
 import json
 import time
 import datetime
-import re
-import urllib
-import urllib2
 import web
-from ospy.helpers import stop_onrain
+from ospy.helpers import stop_onrain, is_python2
 from ospy.log import log
 from ospy.options import options, rain_blocks
 from ospy.webpages import ProtectedPage
@@ -21,16 +18,14 @@ from time import strftime
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
-from sys import version_info
 import imghdr
 import warnings
-
-# HTTP libraries depends upon Python 2 or 3
-if version_info.major == 3 :
-    import urllib.parse, urllib.request
-else:
+    
+if is_python2():
     from urllib import urlencode
     import urllib2
+else:
+    import urllib.parse, urllib.request
 
 NAME = 'Weather-based Rain Delay'
 MENU =  _(u'Package: Weather-based Rain Delay')
@@ -51,7 +46,8 @@ plugin_options = PluginOptions(
         'netatmo_level': 0.2,
         'netatmo_hour': 12,
         'netatmo_interval': '60',
-        'use_cleanup': False
+        'use_cleanup': False,
+        'use_footer': False
     })
 
 ################################################################################
@@ -61,30 +57,31 @@ class weather_to_delay(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
     def run(self):
-        weather_mon = showInFooter()                               #  instantiate class to enable data in footer
-        weather_mon.label = _(u'Weather')                          # label on footer
-        weather_mon.button = "weather_based_rain_delay/settings"   # button redirect on footer
-        weather_mon.val = '---'                                    # value on footer
+        if plugin_options['use_footer']:
+            weather_mon = showInFooter()                               #  instantiate class to enable data in footer
+            weather_mon.label = _(u'Weather')                          # label on footer
+            weather_mon.button = "weather_based_rain_delay/settings"   # button redirect on footer
+            weather_mon.val = '---'                                    # value on footer
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if plugin_options['enabled']:  # if Weather-based Rain Delay plug-in is enabled
                     if plugin_options['use_netatmo']:
@@ -115,7 +112,8 @@ class weather_to_delay(Thread):
                         log.info(NAME, _(u'Netatmo detected Rain') + ': %.1f ' % zrain + _(u'mm') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') + '.')
                         tempText = ""
                         tempText += _(u'Netatmo detected Rain') + u' %.1f ' % zrain + _(u'mm') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') 
-                        weather_mon.val = tempText.encode('utf8')    # value on footer
+                        if plugin_options['use_footer']:
+                            weather_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
                         rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                         stop_onrain()
                         self._sleep(delaytimeAtmo)
@@ -142,7 +140,8 @@ class weather_to_delay(Thread):
                                 if NAME in rain_blocks:
                                     del rain_blocks[NAME]
 
-                        weather_mon.val = tempText.encode('utf8')    # value on footer
+                        if plugin_options['use_footer']:
+                            weather_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
                         self._sleep(3600)
                                          
                 else:
@@ -460,16 +459,17 @@ class DeviceList(WeatherStationData):
 
 def postRequest(url, params, json_resp=True, body_size=65535):
     # Netatmo response body size limited to 64k (should be under 16k)
-    if version_info.major == 3:
-        req = urllib.request.Request(url)
-        req.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
-        params = urllib.parse.urlencode(params).encode('utf-8')
-        resp = urllib.request.urlopen(req, params).read(body_size).decode("utf-8")
-    else:
+    if is_python2():
         params = urlencode(params)
         headers = {"Content-Type" : "application/x-www-form-urlencoded;charset=utf-8"}
         req = urllib2.Request(url=url, data=params, headers=headers)
         resp = urllib2.urlopen(req).read(body_size)
+    else:
+        req = urllib.request.Request(url)
+        req.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
+        params = urllib.parse.urlencode(params).encode('utf-8')
+        resp = urllib.request.urlopen(req, params).read(body_size).decode("utf-8")
+        
     if json_resp:
         return json.loads(resp)
     else:

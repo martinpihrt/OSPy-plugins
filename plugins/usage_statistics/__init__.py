@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # this plugins print statistics from web 
 
 from threading import Thread, Event
@@ -17,7 +17,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Usage Statistics'
-MENU =  _('Package: Usage Statistics')
+MENU =  _(u'Package: Usage Statistics')
 LINK = 'status_page'
 
 class StatusChecker(Thread):
@@ -25,10 +25,10 @@ class StatusChecker(Thread):
         Thread.__init__(self)
         self.daemon = True
         self.started = Event()
-        self._stop = Event()
+        self._stop_event = Event()
 
         self.status = {
-            'pageOK': _('Error: data cannot be downloaded from') +  ' www.pihrt.com!',
+            'pageOK': _(u'Error: data cannot be downloaded from') +  ' www.pihrt.com!',
             'pageID': ' ',
             'pageOKstate': False
             }
@@ -37,11 +37,11 @@ class StatusChecker(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -71,20 +71,20 @@ class StatusChecker(Thread):
               log.info(NAME, _('System') + ': ' + str(jsonStr['user'][i]['system']))
               log.info(NAME, _('Python') + ': ' + str(jsonStr['user'][i]['python']) + '\n')
 
-           self.status['pageOK'] =  _('The data from') +  ' www.pihrt.com ' +  _('was downloaded correctly.') + ' ' + datetime_string()
+           self.status['pageOK'] =  _(u'The data from') +  ' www.pihrt.com ' +  _(u'was downloaded correctly.') + ' ' + datetime_string()
            self.status['pageOKstate'] = True
 
            try:
               f = open("./ospy/statistics/user_id", "r")
               userID = (f.read()) 
-              self.status['pageID'] = _('Your ID is: ') + str(userID)
+              self.status['pageID'] = _(u'Your ID is: ') + str(userID)
            except:
               #log.error(NAME, _('Usage statistics plug-in') + ':\n' + traceback.format_exc())
               pass
 
 
         except Exception:
-           self.status['pageOK'] = _('Error: data cannot be downloaded from') +  ' www.pihrt.com!'
+           self.status['pageOK'] = _(u'Error: data cannot be downloaded from') +  ' www.pihrt.com!'
            self.status['pageOKstate'] = False
            log.clear(NAME)
            #log.error(NAME, _('Usage statistics plug-in') + ':\n' + traceback.format_exc())
@@ -96,7 +96,7 @@ class StatusChecker(Thread):
 
         except Exception:
              self.started.set()
-             log.error(NAME, _('Usage statistics plug-in') + ':\n' + traceback.format_exc())
+             log.error(NAME, _(u'Usage statistics plug-in') + ':\n' + traceback.format_exc())
 
 checker = None
 

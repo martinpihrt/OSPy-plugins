@@ -1,6 +1,5 @@
-from __future__ import print_function
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 
 import json
 import time
@@ -61,7 +60,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
         self.bot = None
         self._currentChats = []
         self._lastMsgID = 0
@@ -70,14 +69,14 @@ class Sender(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1        
 
@@ -252,7 +251,7 @@ class Sender(Thread):
                 
                 if plugin_options['use_footer']:
                     tempText = _(u'Hi connect is OK my Name: {}.').format(info_username)
-                    telegram_ftr.val = tempText.encode('utf8')
+                    telegram_ftr.val = tempText.encode('utf8').decode('utf8')
 
                 self._announce(_(u'Bot on {} has just started!').format(options.name))
 
@@ -262,12 +261,12 @@ class Sender(Thread):
             log.error(NAME, _(u'Telegram Bot plug-in') + ':\n' + err_string)
             if plugin_options['use_footer']:
                 tempText = _(u'Telegram Bot has error, check in plugin status!')
-                telegram_ftr.val = tempText.encode('utf8')
+                telegram_ftr.val = tempText.encode('utf8').decode('utf8')
 
         zone_change = signal('zone_change')
         zone_change.connect(notify_zone_change)
 
-        while not self._stop.is_set() and self.bot is not None:
+        while not self._stop_event.is_set() and self.bot is not None:
             try:
                 updates = self.bot.getUpdates()
                 if updates:
@@ -339,7 +338,7 @@ class Sender(Thread):
                                     tempText = txt
                                 
                                 if plugin_options['use_footer']:
-                                    telegram_ftr.val = tempText.encode('utf8')                                       
+                                    telegram_ftr.val = tempText.encode('utf8').decode('utf8')                                       
 
                 self._sleep(5)
  

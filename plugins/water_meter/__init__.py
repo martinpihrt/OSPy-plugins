@@ -40,7 +40,7 @@ class WaterSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self.bus = None
         self.pcf = None
@@ -51,14 +51,14 @@ class WaterSender(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -86,7 +86,7 @@ class WaterSender(Thread):
         last_hour_time = int(time.time())
         actual_time = int(time.time())
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if self.bus is not None and options['enabled']:  # if water meter plugin is enabled
                     val = counter(self.bus) / options['pulses']

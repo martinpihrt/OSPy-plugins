@@ -53,6 +53,7 @@ wind_options = PluginOptions(
         'history': 0,                # selector for graph history
         'stoperr': False,            # True = stoping is enabled
         'used_stations': [],         # use this stations for stoping scheduler if stations is activated in scheduler
+        'use_footer': True           # show data from plugin in footer on home page
     }
 )
 
@@ -65,7 +66,7 @@ class WindSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
    
         self.status = {}
         self.status['meter'] = 0.0
@@ -76,14 +77,14 @@ class WindSender(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time_.sleep(1)
             self._sleep_time -= 1
 
@@ -98,12 +99,13 @@ class WindSender(Thread):
 
         en_del_24h = True
 
-        wind_mon = showInFooter() #  instantiate class to enable data in footer
-        wind_mon.label = _(u'Wind Speed')            # label on footer
-        wind_mon.val = '---'                        # value on footer
-        wind_mon.button = "wind_monitor/settings"   # button redirect on footer
+        if wind_options['use_footer']:
+            wind_mon = showInFooter() #  instantiate class to enable data in footer
+            wind_mon.label = _(u'Wind Speed')            # label on footer
+            wind_mon.val = '---'                        # value on footer
+            wind_mon.button = "wind_monitor/settings"   # button redirect on footer
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if wind_options['use_wind_monitor']:    # if wind plugin is enabled
                     disable_text = True
@@ -234,7 +236,8 @@ class WindSender(Thread):
                             tempText += u'%s' % self.status['kmeter'] + ' ' + _(u'km/h')
                         else:
                             tempText += u'%s' % self.status['meter'] + ' ' + _(u'm/s')
-                        wind_mon.val = tempText.encode('utf8')                # value on footer
+                        if wind_options['use_footer']:
+                            wind_mon.val = tempText.encode('utf8').decode('utf8')                # value on footer
                     else:
                         self._sleep(1)
 

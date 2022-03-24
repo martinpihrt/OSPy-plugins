@@ -1,4 +1,4 @@
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # this plugins enable or disable system RPi HW watchdog 
 # help: https://www.raspberrypi.org/forums/viewtopic.php?f=29&t=147501
 # testing: :(){ :|:&};:
@@ -20,7 +20,7 @@ from plugins import plugin_url
 
 
 NAME = 'System Watchdog'
-MENU =  _('Package: System Watchdog')
+MENU =  _(u'Package: System Watchdog')
 LINK = 'status_page'
 
 
@@ -30,7 +30,7 @@ class StatusChecker(Thread):
         self.daemon = True
         self.started = Event()
         
-        self._stop = Event()
+        self._stop_event = Event()
 
         self.status = {
             'service_install': False,
@@ -40,14 +40,14 @@ class StatusChecker(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -64,8 +64,8 @@ class StatusChecker(Thread):
         cmd = "sudo service watchdog status"
         run_process(cmd) 
         try: 
-           import commands
-           output = commands.getoutput('ps -A')
+           import subprocess
+           output = subprocess.getoutput('ps -A')
            if 'watchdog' in output:
               self.status['service_state'] = True
            else:
@@ -82,7 +82,7 @@ class StatusChecker(Thread):
         self._is_installed()
         self._is_started()
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 self.started.set()
                 self._sleep(60)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt' 
+__author__ = u'Martin Pihrt' 
 
 import datetime
 import time
@@ -18,7 +18,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Direct 16 Relay Outputs'
-MENU =  _('Package: Direct 16 Relay Outputs')
+MENU =  _(u'Package: Direct 16 Relay Outputs')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -37,20 +37,20 @@ class Relay16Checker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -67,7 +67,7 @@ class Relay16Checker(Thread):
         if not plugin_options['enabled']:
            log.info(NAME, _('Relay 16 plug-in') + ': ' +  _('is disabled.'))
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try: 
                 if relay_count != plugin_options['relays'] and plugin_options['enabled']:
                   relay_count = plugin_options['relays']

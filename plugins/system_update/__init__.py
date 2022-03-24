@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # this plugins check sha on github and update ospy file from github
 
 from threading import Thread, Event, Condition
@@ -52,7 +52,7 @@ class StatusChecker(Thread):
         self.daemon = True
         self.started = Event()
         self._done = Condition()
-        self._stop = Event()
+        self._stop_event = Event()
 
         self.status = {
             'ver_str': version.ver_str,
@@ -66,7 +66,7 @@ class StatusChecker(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update_wait(self):
         self._done.acquire()
@@ -79,7 +79,7 @@ class StatusChecker(Thread):
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -92,42 +92,44 @@ class StatusChecker(Thread):
         subprocess.check_output(command.split())
 
         command = 'git config --get remote.origin.url'
-        remote = subprocess.check_output(command.split()).strip()
+        remote = subprocess.check_output(command.split()).decode('utf8').strip()
         if remote:
             self.status['remote'] = remote
 
         command = 'git rev-parse --abbrev-ref --symbolic-full-name @{u}'
-        remote_branch = subprocess.check_output(command.split()).strip()
+        remote_branch = subprocess.check_output(command.split()).decode('utf8').strip()
         if remote_branch:
             self.status['remote_branch'] = remote_branch
 
         command = 'git log -1 %s --format=%%cd --date=short' % remote_branch
-        new_date = subprocess.check_output(command.split()).strip()
+        new_date = subprocess.check_output(command.split()).decode('utf-8').strip()
 
         command = 'git rev-list %s --count --first-parent' % remote_branch
-        new_revision = int(subprocess.check_output(command.split()))
+        new_revision = int(subprocess.check_output(command.split()).decode('utf8'))
 
         command = 'git log HEAD..%s --oneline' % remote_branch
-        changes = '  ' + '\n  '.join(subprocess.check_output(command.split()).split('\n'))
-        changes = changes.decode('utf-8')
+        changes = '  ' + '\n  '.join(subprocess.check_output(command.split()).decode('utf8').split('\n'))
+
+        stats[u'ver_changes'] = u''
 
         if new_revision == version.revision and new_date == version.ver_date:
             log.info(NAME, _(u'Up-to-date.'))
             self.status['can_update'] = False
         elif new_revision > version.revision:
             log.info(NAME, _(u'New version is available!'))
-            log.info(NAME, _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
-            log.info(NAME, _(u'Available revision') + ': %d (%s)' % (new_revision, new_date))
+            log.info(NAME, _(u'Currently running revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date))
+            log.info(NAME, _(u'Available revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date))
             log.info(NAME, _(u'Changes') +':\n' + changes)
             self.status['can_update'] = True
+            stats[u'ver_changes'] = changes
             msg = '<b>' + _(u'System update plug-in') + '</b> ' + '<br><p style="color:red;">' 
             msg += _(u'New OSPy version is available!') + '<br>' 
-            msg += _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + '<br>'
-            msg += _(u'Available revision') + ': %d (%s)' % (new_revision, new_date) + '.' + '</p>'
+            msg += _(u'Currently running revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date) + '<br>'
+            msg += _(u'Available revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date) + '.' + '</p>'
             msglog =   _(u'System update plug-in') + ': '
-            msglog +=  _(u'New OSPy version is available!') + '-> ' + _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date) + ', '
-            msglog +=  _(u'Available revision') + ': %d (%s)' % (new_revision, new_date) + '.'
-
+            msglog +=  _(u'New OSPy version is available!') + '-> ' + _(u'Currently running revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date) + ', '
+            msglog +=  _(u'Available revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date) + '.'
+               
             if plugin_options['use_eml']:
                 try:
                     from plugins.email_notifications import try_mail                                    
@@ -136,9 +138,9 @@ class StatusChecker(Thread):
                 except Exception:     
                     log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc()) 
 
-            stats['ver_new'] =  '%d' % new_revision 
+            stats['ver_new'] =  u'%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date) 
             stats['ver_new_date'] = '%s' % new_date   
-            stats['ver_act'] =  '%d' % version.revision       
+            stats['ver_act'] =  u'%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date)       
 
         else:
             log.info(NAME, _(u'Running unknown version!'))
@@ -158,9 +160,9 @@ class StatusChecker(Thread):
             temp_upd.button = "system_update/status"    # button redirect on footer
             temp_upd.label =  _(u'System Update')       # label on footer
             msg = _(u'Waiting to state')
-            temp_upd.val = msg.encode('utf8')           # value on footer 
+            temp_upd.val = msg.encode('utf8').decode('utf8')           # value on footer 
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if plugin_options['use_update']:
                     log.clear(NAME)
@@ -183,7 +185,7 @@ class StatusChecker(Thread):
 
                 if plugin_options['use_footer']:
                     try:
-                        temp_upd.val = msg.encode('utf8')  # value on footer  
+                        temp_upd.val = msg.encode('utf8').decode('utf8')  # value on footer  
                     except:
                         log.error(NAME, _(u'Error: restart this plugin! Show in homepage footer have enabled.'))    
 
@@ -213,7 +215,7 @@ def perform_update():
         subprocess.check_output(command.split())
 
         command = "git pull"
-        output = subprocess.check_output(command.split())
+        output = subprocess.check_output(command.split()).decode('utf8')
     
         # Go back to master (refactor is old):
         if checker is not None:
@@ -258,7 +260,7 @@ def get_all_values():
     else:
         plg_state = 1 
 
-    return plg_state , stats['ver_new'], stats['ver_act'] # state, new version, actual version  
+    return plg_state , stats['ver_new'], stats['ver_act'], stats['ver_changes'] # state, new version, actual version, 'ver changes  
 
 
 restarted = signal('restarted')

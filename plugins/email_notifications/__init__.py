@@ -54,6 +54,7 @@ email_options = PluginOptions(
     }
 )
 
+global saved_emails
 
 ################################################################################
 # Main function loop:                                                          #
@@ -62,20 +63,20 @@ class EmailSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -106,7 +107,7 @@ class EmailSender(Thread):
             else:
                 try_mail(body, logtext)
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             body    = u''
             logtext = u''
             try:
@@ -574,9 +575,12 @@ class settings_page(ProtectedPage):
         return self.plugin_render.email_notifications(email_options, log.events(NAME))
 
     def POST(self):
+        global saved_emails
+        
         email_options.web_update(web.input())
         qdict = web.input()
         test = get_input(qdict, 'test', False, lambda x: True)
+        delete = get_input(qdict, 'del', False, lambda x: True)
 
         if email_sender is not None:
             email_sender.update()
@@ -585,7 +589,11 @@ class settings_page(ProtectedPage):
                 body = datetime_string() + ': ' + _(u'This is test e-mail from OSPy. You can ignore it.')
                 logtext = _(u'This is test e-mail from OSPy. You can ignore it.')
                 try_mail(body, logtext)
-
+            
+            if delete:
+                log.info(NAME, datetime_string() + ': ' + _(u'Email Queue was deleted.'))         
+                write_email([])
+                saved_emails = 0
 
         raise web.seeother(plugin_url(settings_page), True)
 

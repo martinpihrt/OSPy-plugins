@@ -42,7 +42,8 @@ pressure_options = PluginOptions(
         'enable_log': False,
         'log_records': 0,       # 0 = unlimited
         'history': 0,           # selector for graph history
-        'used_stations': []     # use this stations for stoping scheduler if stations is activated in scheduler
+        'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
+        'use_footer': True    # show data from plugin in footer on home page
     }
 )
 
@@ -71,7 +72,7 @@ class PressureSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
         
         self.status = {}
         self.status['Pstate%d'] = 0
@@ -80,14 +81,14 @@ class PressureSender(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -109,12 +110,13 @@ class PressureSender(Thread):
         last_msg = ""
         now_msg = ""
         tempText = ""
+ 
+        if pressure_options['use_footer']: 
+            press_mon = showInFooter() #  instantiate class to enable data in footer
+            press_mon.button = "pressure_monitor/settings"   # button redirect on footer
+            press_mon.label =  _(u'Pressure')                 # label on footer
 
-        press_mon = showInFooter() #  instantiate class to enable data in footer
-        press_mon.button = "pressure_monitor/settings"   # button redirect on footer
-        press_mon.label =  _(u'Pressure')                 # label on footer
-
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if pressure_options['use_press_monitor']:                              # if pressure plugin is enabled
                     if master:                                                         # if master station 1 or 2 is on
@@ -168,12 +170,14 @@ class PressureSender(Thread):
                     else:
                         self.status['Pstate%d'] = _(u'Active')
                         tempText = _(u'Active')
-                    press_mon.val = tempText.encode('utf8')          # value on footer
+                    if pressure_options['use_footer']:    
+                        press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
 
                 else:
                     self.status['Pstate%d'] = _(u'Disabled')
                     tempText = _(u'Disabled')
-                    press_mon.val = tempText.encode('utf8')          # value on footer
+                    if pressure_options['use_footer']:
+                        press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
 
                 self._sleep(2)
 

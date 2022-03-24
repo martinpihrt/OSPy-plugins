@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 # this plugins print debug info from ./data/events.log 
@@ -55,11 +56,11 @@ def tail(f, lines=20):
             f.seek(0,0)
             # only read what was not read
             blocks.append(f.read(block_end_byte))
-        lines_found = blocks[-1].count('\n') 
+        lines_found = blocks[-1].count(b'\n') 
         lines_to_go -= lines_found
         block_end_byte -= BLOCK_SIZE
         block_number -= 1
-    all_read_text = ''.join(reversed(blocks))
+    all_read_text = (b''.join(reversed(blocks))).decode('utf-8')
     return all_read_text.splitlines()[-total_lines_wanted:]
 
 def get_overview():
@@ -67,11 +68,13 @@ def get_overview():
     result = []    
     max_res = int(debug_options['log_records'])
     try:
-        with open(log.EVENT_FILE) as fh:
+        with open(log.EVENT_FILE, 'rb') as fh:
             result = tail(fh, max_res) 
            
     except Exception:
         pass
+        #import traceback
+        #result = traceback.format_exc().split('\n')
         result.append(_('Error: Log file missing. Enable it in system options.'))
 
     return result

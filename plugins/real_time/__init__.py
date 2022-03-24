@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # This plugin use library rtc_DS1307
 
 
@@ -9,7 +9,7 @@ import datetime
 import time, struct
 import sys, os
 
-import rtc_DS1307
+from . import rtc_DS1307
 
 from threading import Thread, Event
 import socket
@@ -26,7 +26,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Real Time and NTP time'
-MENU =  _('Package: Real Time and NTP time')
+MENU =  _(u'Package: Real Time and NTP time')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -47,26 +47,26 @@ class RealTimeChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
     def run(self):
         dis_text = True
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             rtc_time = None
             ntp_time = None  
             self._sleep(10)

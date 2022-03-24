@@ -9,7 +9,7 @@ var timers = [];   // timers for canvas refresh interval
 var can_data = []; // values from sensors for canvas
 var can_name = []; // sensors names from plugin
 var can_name_len;  // canvas count
-var plugin_options = $:{json.dumps(plugin_options['s_name'], ensure_ascii=False).encode('utf8')};
+var plugin_options = $:{json.dumps(plugin_options['s_name'], ensure_ascii=False).encode('utf8').decode('utf8')};
 
 function animateGauges() {   // send values to canvas by name
     document.gauges.forEach(function(gauge) {
@@ -32,19 +32,6 @@ if (!Array.prototype.forEach) { // canvas array
     }
 }
 
-function updateFooter(){
-    jQuery.getJSON("/update_footer", function(osVals) {
-        let cpu_temp = osVals.cpu_temp;
-        let cpu_usage = osVals.cpu_usage;
-        let sys_uptime = osVals.sys_uptime;
-        let sys_ip = osVals.ip;
-        jQuery("#cpu_temp span.cpu_temp").text(cpu_temp);
-        jQuery("#cpu_usage span.cpu_usage").text(cpu_usage);
-        jQuery("#ip span.ip").text(sys_ip);
-        jQuery("#uptime span.uptime").text(sys_uptime);
-    })
-    setTimeout(updateFooter, 15000); 
-}
 
 function updateData(){
     jQuery.getJSON("/plugins/weather_stations/data_json", function(dataVals) {
@@ -63,7 +50,6 @@ jQuery(document).ready(function(){
         window.location="/";
     });
     updateData();
-    updateFooter();
     setTimeout("animateGauges()", 100);
 });
 </script>

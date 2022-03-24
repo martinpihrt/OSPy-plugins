@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt' 
+__author__ = u'Martin Pihrt' 
 # https://www.eclipse.org/paho/clients/python/docs/
 
 import json
@@ -24,7 +24,7 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'MQTT Zone Broadcaster'
-MENU =  _('Package: MQTT Zone Broadcaster')
+MENU =  _(u'Package: MQTT Zone Broadcaster')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -45,20 +45,20 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -68,7 +68,7 @@ class Sender(Thread):
         log.info(NAME, _('MQTT Zones Plugin started.'))
         once = True
 
-        while not self._stop.is_set(): 
+        while not self._stop_event.is_set(): 
             if plugin_options['use_mqtt']:  
                 once = True
                 try:                    

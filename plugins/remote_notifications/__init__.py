@@ -6,8 +6,7 @@ import json
 import time
 import os
 import os.path
-import traceback
-import urllib2             
+import traceback      
 import re
 from threading import Thread, Event
 
@@ -18,7 +17,7 @@ from ospy.options import options
 from ospy.stations import stations
 from ospy.inputs import inputs
 from ospy.log import log, EVENT_FILE
-from ospy.helpers import datetime_string, get_input
+from ospy.helpers import datetime_string, get_input, is_python2
 
 
 NAME = 'Remote Notifications'
@@ -42,20 +41,20 @@ class RemoteSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -95,7 +94,7 @@ class RemoteSender(Thread):
 
         finished_count = len([run for run in log.finished_runs() if not run['blocked']]) 
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                
                 # Send data if rain detected, power line state a new finished run is found
@@ -257,9 +256,16 @@ def sanity_msg(msg):
 def send_data(text):
     """Send GET data"""
     if remote_options['use'] != '' and remote_options['api'] != '' and remote_options['rem_adr'] != '':
-        req = urllib2.Request(url=remote_options['rem_adr']+'save.php/?' + text)
+        if is_python2():
+            from urllib2 import urlopen
+            from urllib import quote_plus
+        else:
+            from urllib.request import urlopen
+            from urllib.parse import quote_plus 
+
+        req = urlopen(remote_options['rem_adr']+'save.php/?' + text)
         req.add_header('Referer', 'OSPy sprinkler') 
-        f = urllib2.urlopen(req)
+        f = urlopen(req)
         log.info(NAME, _(u'Remote server reply') + ':\n' + f.read())
     else:
         raise Exception(_(u'Remote plug-in is not properly configured') + '!')

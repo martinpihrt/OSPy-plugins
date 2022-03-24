@@ -19,7 +19,7 @@ function draw_graph(result) {
 
     for (var i = 0; i < result.length; i++) {
         var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8')} + "</th><th></th></tr>";
+        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th><th></th></tr>";
         var texts = [];
         var txt_body = "";
         var txt_footer = "</table>";
@@ -31,9 +31,9 @@ function draw_graph(result) {
             var minutes = "0" + date.getMinutes();
             var seconds = "0" + date.getSeconds();
             var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-            txt_body += "<tr><td>" + $:{json.dumps(_('Actual Value'), ensure_ascii=False).encode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+            txt_body += "<tr><td>" + $:{json.dumps(_('Actual Value'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
             texts.push("<b>" + result[i]['station'] + "</b> " + toXSDate(date) + "<br>" + formattedTime + "<br>" + txt_header + txt_body + txt_footer);
-            txt_body = "<tr><td>" + $:{json.dumps(_('Previous Value'), ensure_ascii=False).encode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
+            txt_body = "<tr><td>" + $:{json.dumps(_('Previous Value'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
         }
 
         if (i >= legend_items.length || legend_items.eq(i).children().children().attr("data") == 1)
@@ -46,7 +46,7 @@ function draw_graph(result) {
             graph_text.push(texts);
         }
     }
-    var yLabels = $:{json.dumps(_('2 master on, 1 pres check, 0 stop'), ensure_ascii=False).encode('utf8')};
+    var yLabels = $:{json.dumps(_('2 master on, 1 pres check, 0 stop'), ensure_ascii=False).encode('utf8').decode('utf8')};
     return jQuery.plot("#graph-placeholder", data, {
         series: {
             lines: {
@@ -251,7 +251,13 @@ function check_history() {
                 <td style="background-color: rgb(220, 220, 220);text-align: left;">
                    $status['Pstate%d']
                 </td>
-            </tr>                                 
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>                                             
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

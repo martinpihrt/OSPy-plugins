@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # this plugin read E-mail and control OSPy from msg.
 
-__author__ = 'Martin Pihrt' # www.pihrt.com
+__author__ = u'Martin Pihrt' # www.pihrt.com
 
 # local import
 import json
@@ -91,26 +91,26 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
         self._sleep_time = 0
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
     def run(self):
         last_email_millis = 0    # timer for reading E-mails (ms)
         
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 msgem = ''
                 msglog = ''

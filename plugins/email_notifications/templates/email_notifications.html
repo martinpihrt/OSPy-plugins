@@ -17,6 +17,10 @@ $var page: plugins
             jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications.settings_page')?test")
             jQuery("#pluginForm").submit();
         });
+        jQuery("#cDel").click(function() {
+            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications.settings_page')?del")
+            jQuery("#pluginForm").submit();
+        });        
 
     });
 </script>
@@ -123,8 +127,13 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Save and send it later'):</td>
                 <td>
                     <input name='emlrepeater' type='checkbox'${" checked" if plugin_options['emlrepeater'] else ""}>
-                </td>
-            </tr>            
+                </td>   
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button id="cDel" class="cancel danger">$_('Delete queue')</button>
+                </td> 
+            </tr>        
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

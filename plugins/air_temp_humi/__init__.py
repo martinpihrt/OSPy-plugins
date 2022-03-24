@@ -27,8 +27,8 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 import RPi.GPIO as GPIO
 
 # Thank's: https://github.com/szazo/DHT11_Python
-import dht11
-import dht22 
+from . import dht11
+from . import dht22 
 
 instance = dht11.DHT11(pin=19)   # DHT on GPIO 10 pin
 instance22 = dht22.DHT22(pin=19) # DHT on GPIO 10 pin
@@ -66,7 +66,8 @@ plugin_options = PluginOptions(
      'ds_used': 0,          # count DS18b20, default 0 max 6x
      'history': 0,          # selector for graph history
      'reg_mm': 60,          # min for maximal runtime
-     'reg_ss': 0            # sec for maximal runtime     
+     'reg_ss': 0,           # sec for maximal runtime
+     'use_footer': False
      }
 )
 
@@ -81,7 +82,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
 
         self.status = {}
         self.status['temp'] = 0
@@ -98,14 +99,14 @@ class Sender(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -117,9 +118,10 @@ class Sender(Thread):
         var1 = True     # Auxiliary variable for once on
         var2 = True     # Auxiliary variable for once off
 
-        air_temp = showInFooter() #  instantiate class to enable data in footer
-        air_temp.button = "air_temp_humi/settings"   # button redirect on footer
-        air_temp.label =  _(u'Temperature')           # label on footer
+        if plugin_options['use_footer']:
+            air_temp = showInFooter() #  instantiate class to enable data in footer
+            air_temp.button = "air_temp_humi/settings"   # button redirect on footer
+            air_temp.label =  _(u'Temperature')           # label on footer
 
         regulation_text = ''
 
@@ -128,7 +130,7 @@ class Sender(Thread):
         #flow.val = 10
         #flow.clear
         
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if plugin_options['enabled']:        # if plugin is enabled   
                     log.clear(NAME)
@@ -226,7 +228,9 @@ class Sender(Thread):
                        
                     if plugin_options['enabled_reg']: 
                        tempText += ' ' + regulation_text
-                    air_temp.val = tempText.encode('utf8')    # value on footer                                                 
+                    
+                    if plugin_options['use_footer']:                       
+                        air_temp.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                 
 
                     if plugin_options['enable_log']:  # enabled logging
                           millis = int(round(time.time() * 1000))

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Martin Pihrt'
+__author__ = u'Martin Pihrt'
 # This plugin controls OpenSprinkler OSPy via 8 defined buttons. I2C controller MCP23017 on range 0x20 to 0x27 address.
 
 import json
@@ -63,7 +63,7 @@ class PluginSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop = Event()
+        self._stop_event = Event()
         
         self.bus = None
         
@@ -71,14 +71,14 @@ class PluginSender(Thread):
         self.start()
 
     def stop(self):
-        self._stop.set()
+        self._stop_event.set()
 
     def update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop.is_set():
+        while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
 
@@ -86,7 +86,7 @@ class PluginSender(Thread):
         log.clear(NAME)  
         disable_text = True
 
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 if plugin_options['use_button']:  # if button plugin is enabled
                     disable_text = True
