@@ -1,5 +1,4 @@
-This repository is no longer maintained (it is obsolete for Python 2). Newly this project will be available as OSPy3-plugins (for Python 3.9+)
-https://github.com/martinpihrt/OSPy3-plugins
+Updated to be compatible with Python 3. Existing users do not update their installations until everything is verified!
 
 # OSPy-plug-ins
 ### A collection of user contributed plugins for the Raspberry Pi based irrigation controll software OSPy - Open Sprinkler Python (OSPy).
