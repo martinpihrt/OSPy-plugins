@@ -46,8 +46,12 @@ def get_overview():
         if is_python2():
             result.append(_('Distribution') + ': {} {}'.format(platform.linux_distribution()[0], platform.linux_distribution()[1]))
         else:
-            import distro
-            result.append(_('Distribution') + ': {} {}'.format(distro.linux_distribution()[0], distro.linux_distribution()[1]))
+            try:       # python > 3.9
+                import distro
+                result.append(_('Distribution') + ': {} {}'.format(distro.linux_distribution()[0], distro.linux_distribution()[1]))
+            except:    # python <= 3.9
+                result.append(_('Distribution') + ': {} {}'.format(platform.linux_distribution()[0], platform.linux_distribution()[1]))
+                pass
         result.append(_('Total memory') + ': {}'.format(meminfo['MemTotal']))
         result.append(_('Free memory') + ': {}'.format(meminfo['MemFree']))
         result.append(_('Python') + ': {}'.format(platform.python_version()))
@@ -66,7 +70,7 @@ def get_overview():
             rev = str(0 if helpers.get_rpi_revision() == 1 else 1)
             cmd = 'sudo i2cdetect -y ' + rev
             if (cmd.find('Error') != -1):
-                result.append(_('Could not open any i2c device!'))                
+                result.append(_('Could not open any i2c device!'))
             else:    
                 result.append(process(cmd))
         except Exception:

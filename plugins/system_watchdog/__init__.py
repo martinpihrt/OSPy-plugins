@@ -119,11 +119,11 @@ def run_process(cmd):
             stderr=subprocess.STDOUT, # merge stdout and stderr
             stdout=subprocess.PIPE,
             shell=True)
-        output = proc.communicate()[0]
-        log.info(NAME, _('System watchodg plug-in') + ':\n' + ASCI_convert(output))
+        output = proc.communicate()[0].decode('utf8')
+        log.info(NAME, _('System watchodg plug-in') + ':\n' + output)
 
     except:
-        log.info(NAME, _('System watchodg plug-in') + ':\n' + _('Error in Converting'))
+        log.info(NAME, _('System watchodg plug-in') + ':\n' + traceback.format_exc())
 
 ################################################################################
 # Web pages:                                                                   #
