@@ -1,6 +1,7 @@
 UPS Monitor Readme
 ====
 
+Tested in Python 2.7.16, 3.9.2 -> OK
 UPS Uninterruptible Power Supply (Source)
 This plugin checked power line for system.  
 If is error with power line in a certain time, sends plugin email with error and shutdown system (and generate pulse to GPIO for shutdown Your UPS).</p>
