@@ -1,8 +1,8 @@
 Signaling Examples Readme
 ====
 
+Tested in Python 2.7.16, 3.9.2 -> OK
 This is Example signal plugin provides functions triggered by signals from core program.  
-
 Example signals from: webpages.py, scheduler.py, stations.py, plugins:  
 
 * signal('loggedin')<br>
