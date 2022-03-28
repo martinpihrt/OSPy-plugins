@@ -111,6 +111,8 @@ class PressureSender(Thread):
         now_msg = ""
         tempText = ""
  
+        press_mon = None:
+
         if pressure_options['use_footer']: 
             press_mon = showInFooter() #  instantiate class to enable data in footer
             press_mon.button = "pressure_monitor/settings"   # button redirect on footer
@@ -170,14 +172,16 @@ class PressureSender(Thread):
                     else:
                         self.status['Pstate%d'] = _(u'Active')
                         tempText = _(u'Active')
-                    if pressure_options['use_footer']:    
-                        press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
+                    if pressure_options['use_footer']:
+                        if press_mon is not None:    
+                            press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
 
                 else:
                     self.status['Pstate%d'] = _(u'Disabled')
                     tempText = _(u'Disabled')
                     if pressure_options['use_footer']:
-                        press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
+                        if press_mon is not None:
+                            press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
 
                 self._sleep(2)
 

@@ -86,13 +86,15 @@ class Sender(Thread):
             return val
         except:
             pass
-            return -127.0            
+            return -127.0
 
     def run(self):
         temperature_ds = [-127,-127,-127,-127,-127,-127]
         msg_a_on = True
-        msg_a_off = True              
+        msg_a_off = True
  
+        temp_sw = None
+
         if plugin_options['use_footer']:
             temp_sw = showInFooter() #  instantiate class to enable data in footer
             temp_sw.button = "pool_heating/settings"   # button redirect on footer
@@ -259,7 +261,8 @@ class Sender(Thread):
                     tempText = _(u'Waiting.')
 
                 if plugin_options['use_footer']:
-                    temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                    if temp_sw is not None:
+                        temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
                 self._sleep(2)
 
@@ -311,15 +314,15 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments and deleting logs"""
 
     def GET(self):
-    	global sender
-    	
+        global sender
+        
         if sender is not None:
-            sender.update()           
+            sender.update()
 
         return self.plugin_render.pool_heating(plugin_options, log.events(NAME))
 
     def POST(self):
-    	global sender
+        global sender
         plugin_options.web_update(web.input())
 
         if sender is not None:
@@ -333,7 +336,7 @@ class settings_page(ProtectedPage):
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
-    def GET(self):                
+    def GET(self):
         return self.plugin_render.pool_heating_help()
 
 

@@ -100,6 +100,8 @@ class UPSSender(Thread):
 
         last_time = int(time.time())
 
+        ups_mon = None
+
         if ups_options['use_footer']:
             ups_mon = showInFooter() #  instantiate class to enable data in footer
             ups_mon.button = "ups_adj/settings"            # button redirect on footer
@@ -117,7 +119,8 @@ class UPSSender(Thread):
                     self.status['power%d'] = text
 
                     if ups_options['use_footer']:
-                        ups_mon.val = text.encode('utf8').decode('utf8')              # value on footer
+                        if ups_mon is not None:
+                            ups_mon.val = text.encode('utf8').decode('utf8')              # value on footer
 
                     if not test:
                         last_time = int(time.time())

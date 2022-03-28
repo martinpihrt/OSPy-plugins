@@ -120,6 +120,8 @@ class Sender(Thread):
             del rain_blocks[NAME]
         self._sleep(2)
 
+        tank_mon = None
+
         if tank_options['use_footer']:
             tank_mon = showInFooter() #  instantiate class to enable data in footer
             tank_mon.button = "tank_monitor/settings"       # button redirect on footer
@@ -305,8 +307,9 @@ class Sender(Thread):
                     if tank_options['enable_reg']:
                         tempText += ', ' + regulation_text
 
-                    if tank_options['use_footer']:    
-                        tank_mon.val = tempText.encode('utf8').decode('utf8')           # value on footer
+                    if tank_options['use_footer']:
+                        if tank_mon is not None:    
+                            tank_mon.val = tempText.encode('utf8').decode('utf8')           # value on footer
 
                     self._sleep(3)
 

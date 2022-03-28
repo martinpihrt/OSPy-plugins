@@ -100,6 +100,8 @@ class Sender(Thread):
         msg_c_on = True
         msg_c_off = True                
 
+        temp_sw = None
+
         if plugin_options['use_footer']:
             temp_sw = showInFooter() #  instantiate class to enable data in footer
             temp_sw.button = "temperature_switch/settings"   # button redirect on footer
@@ -299,7 +301,8 @@ class Sender(Thread):
                     tempText = _(u'No change') + '. '
 
                 if plugin_options['use_footer']:
-                    temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                          
+                    if temp_sw is not None:
+                        temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                          
 
                 self._sleep(2)
 

@@ -13,7 +13,7 @@ import traceback
 import web
 from ospy import helpers
 from ospy.options import options
-from ospy.helpers import restart, reboot, ASCI_convert
+from ospy.helpers import restart, reboot, ASCI_convert, is_python2
 from ospy.webpages import ProtectedPage
 from ospy.log import log
 from plugins import plugin_url
@@ -61,15 +61,18 @@ class StatusChecker(Thread):
 
     def _is_started(self):
         """Returns true if watchdog is started."""
-        cmd = "sudo service watchdog status"
-        run_process(cmd) 
         try: 
-           import subprocess
-           output = subprocess.getoutput('ps -A')
-           if 'watchdog' in output:
-              self.status['service_state'] = True
-           else:
-              self.status['service_state'] = False      
+            cmd = "sudo service watchdog status"
+            run_process(cmd)
+            if is_python2():
+                import commands
+                output = commands.getoutput('ps -A')
+            else:
+                output = subprocess.getoutput('ps -A')    
+            if 'watchdog' in output:
+                self.status['service_state'] = True
+            else:
+                self.status['service_state'] = False      
 
         except Exception:
                 self.started.set()

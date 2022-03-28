@@ -141,7 +141,7 @@ class StatusChecker(Thread):
             stats['ver_new'] =  u'%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date) 
             stats['ver_new_date'] = '%s' % new_date   
             stats['ver_act'] =  u'%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date)       
-
+ 
         else:
             log.info(NAME, _(u'Running unknown version!'))
             log.info(NAME, _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
@@ -154,6 +154,8 @@ class StatusChecker(Thread):
 
     def run(self):
         global stats
+
+        temp_upd = None
 
         if plugin_options['use_footer']:
             temp_upd = showInFooter() #  instantiate class to enable data in footer            
@@ -184,9 +186,9 @@ class StatusChecker(Thread):
                     msg =_(u'Plugin is not enabled')
 
                 if plugin_options['use_footer']:
-                    try:
+                    if temp_upd is not None:
                         temp_upd.val = msg.encode('utf8').decode('utf8')  # value on footer  
-                    except:
+                    else:
                         log.error(NAME, _(u'Error: restart this plugin! Show in homepage footer have enabled.'))    
 
                 self._sleep(3600)
@@ -226,7 +228,7 @@ def perform_update():
         log.debug(NAME, _(u'Update result') + ': ' + output)
 
         if options.run_logEV:
-            logEV.save_events_log( _(u'System OSPy'), _(u'Updated to version') + ': {} ({})'.format(str(stats['ver_new']), str(stats['ver_new_date'])))
+            logEV.save_events_log( _(u'System OSPy'), _(u'Updated to version') + ': {}'.format(str(stats['ver_new'])))
 
         report_restarted()
         restart(wait=4)
