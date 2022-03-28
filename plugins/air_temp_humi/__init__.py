@@ -67,7 +67,7 @@ plugin_options = PluginOptions(
      'history': 0,          # selector for graph history
      'reg_mm': 60,          # min for maximal runtime
      'reg_ss': 0,           # sec for maximal runtime
-     'use_footer': False
+     'use_footer': True     # show in footer on home page
      }
 )
 
@@ -117,6 +117,8 @@ class Sender(Thread):
         last_millis = 0 # timer for save log
         var1 = True     # Auxiliary variable for once on
         var2 = True     # Auxiliary variable for once off
+
+        air_temp = None
 
         if plugin_options['use_footer']:
             air_temp = showInFooter() #  instantiate class to enable data in footer
@@ -229,8 +231,9 @@ class Sender(Thread):
                     if plugin_options['enabled_reg']: 
                        tempText += ' ' + regulation_text
                     
-                    if plugin_options['use_footer']:                       
-                        air_temp.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                 
+                    if plugin_options['use_footer']: 
+                        if air_temp is not None:                      
+                            air_temp.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                 
 
                     if plugin_options['enable_log']:  # enabled logging
                           millis = int(round(time.time() * 1000))

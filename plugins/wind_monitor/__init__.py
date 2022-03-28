@@ -99,6 +99,8 @@ class WindSender(Thread):
 
         en_del_24h = True
 
+        wind_mon = None
+
         if wind_options['use_footer']:
             wind_mon = showInFooter() #  instantiate class to enable data in footer
             wind_mon.label = _(u'Wind Speed')            # label on footer
@@ -237,7 +239,8 @@ class WindSender(Thread):
                         else:
                             tempText += u'%s' % self.status['meter'] + ' ' + _(u'm/s')
                         if wind_options['use_footer']:
-                            wind_mon.val = tempText.encode('utf8').decode('utf8')                # value on footer
+                            if wind_mon is not None:
+                                wind_mon.val = tempText.encode('utf8').decode('utf8')                # value on footer
                     else:
                         self._sleep(1)
 
