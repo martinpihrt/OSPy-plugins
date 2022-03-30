@@ -16,7 +16,7 @@ from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, is_python2
 from ospy import helpers
 from ospy.options import options
 from ospy.stations import stations
@@ -206,6 +206,9 @@ class Sender(Thread):
 
     def run(self):
         tempText = ''
+
+        telegram_ftr = None
+        
         if plugin_options['use_footer']:
             telegram_ftr = showInFooter()                         # instantiate class to enable data in footer
             telegram_ftr.button = "telegram_bot/settings"         # button redirect on footer
@@ -222,11 +225,13 @@ class Sender(Thread):
         if telegram_bad_import_test:
             log.clear(NAME)
             log.error(NAME, _(u'Telegram not found, installing. Please wait...'))
-            # https://pypi.org/project/python-telegram-bot/2.4/
-            cmd = "sudo pip install python-telegram-bot==2.4"       # python 2.7 end telegram support
-            #cmd = "sudo pip install python-telegram-bot --upgrade" # python 3+
+            if is_python2():
+                # https://pypi.org/project/python-telegram-bot/2.4/
+                cmd = "sudo pip install python-telegram-bot==2.4"       # python 2.7 end telegram support
+            else:    
+                cmd = "sudo pip3 install python-telegram-bot --upgrade" # python 3+
             proc = subprocess.Popen(cmd,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,shell=True)
-            output = proc.communicate()[0]
+            output = proc.communicate()[0].decode('utf8')
             log.info(NAME, u'{}'.format(output))
         
         try:
@@ -251,7 +256,8 @@ class Sender(Thread):
                 
                 if plugin_options['use_footer']:
                     tempText = _(u'Hi connect is OK my Name: {}.').format(info_username)
-                    telegram_ftr.val = tempText.encode('utf8').decode('utf8')
+                    if telegram_ftr is not None:
+                        telegram_ftr.val = tempText.encode('utf8').decode('utf8')
 
                 self._announce(_(u'Bot on {} has just started!').format(options.name))
 
@@ -261,7 +267,8 @@ class Sender(Thread):
             log.error(NAME, _(u'Telegram Bot plug-in') + ':\n' + err_string)
             if plugin_options['use_footer']:
                 tempText = _(u'Telegram Bot has error, check in plugin status!')
-                telegram_ftr.val = tempText.encode('utf8').decode('utf8')
+                if telegram_ftr is not None:
+                    telegram_ftr.val = tempText.encode('utf8').decode('utf8')
 
         zone_change = signal('zone_change')
         zone_change.connect(notify_zone_change)
@@ -338,7 +345,8 @@ class Sender(Thread):
                                     tempText = txt
                                 
                                 if plugin_options['use_footer']:
-                                    telegram_ftr.val = tempText.encode('utf8').decode('utf8')                                       
+                                    if telegram_ftr is not None:
+                                        telegram_ftr.val = tempText.encode('utf8').decode('utf8')                                       
 
                 self._sleep(5)
  

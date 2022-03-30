@@ -63,7 +63,7 @@ class Sender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
-    def run(self):   
+    def run(self):
         try:
             master_one_on = signal('master_one_on')
             master_one_on.connect(notify_master_one_on)
@@ -72,11 +72,11 @@ class Sender(Thread):
             master_two_on = signal('master_two_on')
             master_two_on.connect(notify_master_two_on)
             master_two_off = signal('master_two_off')
-            master_two_off.connect(notify_master_two_off)  
+            master_two_off.connect(notify_master_two_off)
 
         except Exception:
             log.clear(NAME)
-            log.error(NAME, _(u'Water Consumption Counter plug-in') + traceback.format_exc())       
+            log.error(NAME, _(u'Water Consumption Counter plug-in') + traceback.format_exc())
             self._sleep(60)
 
 sender = None
@@ -103,27 +103,25 @@ def stop():
 ### convert number to decimal ###
 def to_decimal(number):
     try:
-    	import decimal
+        import decimal
         return decimal.Decimal(number)
     
     except decimal.InvalidOperation:
         log.clear(NAME)
         log.error(NAME, _(u'Water Consumption Counter plug-in') + traceback.format_exc()) 
-        return 0.00    
+        return 0.00
 
 ### send email ###
 def send_email(msg, msglog):
     message = datetime_string() + ': ' + msg
     try:
         from plugins.email_notifications import email
-
         Subject = plugin_options['emlsubject']
-
         email(message, subject=Subject)
 
         if not options.run_logEM:
            log.info(NAME, _(u'Email logging is disabled in options...'))
-        else:        
+        else:
            logEM.save_email_log(Subject, msglog, _('Sent'))
 
         log.info(NAME, _(u'Email was sent') + ': ' + msglog)
@@ -162,10 +160,9 @@ def notify_master_one_off(name, **kw):
     msglog = _(u'Water Consumption Counter plug-in') + ': ' + _(u'Water Consumption for master 1') + ': ' + str(round(difference,2)) + ' ' + _(u'liter')
     try:
         if plugin_options['sendeml']:
-        	send_email(msg, msglog)
+           send_email(msg, msglog)
     except Exception:
         log.error(NAME, _(u'Email was not sent') + '! '  + traceback.format_exc())
-    
 
 ### master two on ###
 def notify_master_two_on(name, **kw):
@@ -183,7 +180,7 @@ def notify_master_two_off(name, **kw):
 
     qdict = {}
     qdict['sum_two'] =  plugin_options['sum_two'] + round(difference,2)  # to 2 places
-    if plugin_options['sendeml']:     
+    if plugin_options['sendeml']:
        qdict['sendeml'] = u'on'
 
     plugin_options.web_update(qdict)
@@ -192,9 +189,9 @@ def notify_master_two_off(name, **kw):
     msglog = _(u'Water Consumption Counter plug-in') + ': ' + _(u'Water Consumption for master 2') + ': ' + str(round(difference,2)) + ' ' + _(u'liter')
     try:
         if plugin_options['sendeml']:
-        	send_email(msg, msglog)
+            send_email(msg, msglog)
     except Exception:
-        log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())      
+        log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
 
 
 ### return all consum counter as summar ###
@@ -218,7 +215,7 @@ class settings_page(ProtectedPage):
             qdict['sum_one'] = 0
             qdict['sum_two'] = 0
             qdict['last_reset'] = datetime_string()
-            if plugin_options['sendeml']:     
+            if plugin_options['sendeml']:
                 qdict['sendeml'] = u'on'
             plugin_options.web_update(qdict)
 
@@ -226,13 +223,13 @@ class settings_page(ProtectedPage):
             log.info(NAME, datetime_string() + ': ' + _(u'Counter has reseted'))
             raise web.seeother(plugin_url(settings_page), True)
 
-        return self.plugin_render.water_consumption_counter(plugin_options, log.events(NAME))       
+        return self.plugin_render.water_consumption_counter(plugin_options, log.events(NAME))
 
     def POST(self):
         plugin_options.web_update(web.input()) ### update options from web ###
 
         if sender is not None:
-            sender.update()                
+            sender.update()
         raise web.seeother(plugin_url(settings_page), True)
 
 

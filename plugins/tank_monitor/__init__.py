@@ -748,7 +748,7 @@ class graph_json(ProtectedPage):
         for i in range(0, 4):                                                  # 0 = minimum, 1 = maximum, 2 = actual, 3 = volume
             temp_balances = {}
             for key in json_data[i]['balances']:
-            	find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
+                find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
                 if find_key >= log_start:                                      # timestamp interval 
                     temp_balances[key] = json_data[i]['balances'][key]
             data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })

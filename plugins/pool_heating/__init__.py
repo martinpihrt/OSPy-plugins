@@ -92,6 +92,7 @@ class Sender(Thread):
         temperature_ds = [-127,-127,-127,-127,-127,-127]
         msg_a_on = True
         msg_a_off = True
+        last_text = ''
  
         temp_sw = None
 
@@ -281,7 +282,9 @@ class Sender(Thread):
                     elif plugin_options["sensor_probe"] == 2:
                         log.info(NAME, datetime_string() + '\n' + _(u'Pool') + u' %.1f \u2103 \n' % ds_a_on + _(u'Solar') + u' %.1f \u2103' % ds_a_off)
                         
-                    log.info(NAME, tempText)
+                    if last_text != tempText:
+                        log.info(NAME, tempText)
+                        last_text = tempText
  
             except Exception:
                 log.error(NAME, _(u'Pool Heating plug-in') + ':\n' + traceback.format_exc())

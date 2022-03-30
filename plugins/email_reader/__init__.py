@@ -332,7 +332,7 @@ class Sender(Thread):
                                       msglog += _(u'E-mail Reader plug-in') + ': ' + _(u'The command has been processed.') + ' ' + _(u'MSG: %s') % cmd   
 
                                     except:
-                                      print traceback.format_exc()
+                                      log.error(NAME, traceback.format_exc())
                                       log.info(NAME, _(u'Command') + _(u': %s') % cmd) 
                                       log.info(NAME, _(u'The command has been not processed!'))
                                       msgem += '<b>' + _(u'E-mail Reader plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'The command has been not processed!') + '</p>'
@@ -742,7 +742,8 @@ def write_log(data, filename):
       file.write(data)
       
   except Exception:
-    print traceback.format_exc()
+    log.error(NAME, traceback.format_exc())
+    pass
 
 
 ################################################################################
@@ -1043,9 +1044,9 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
 
             encoded_word_regex = r'=\?{1}(.+)\?{1}([B|Q])\?{1}(.+)\?{1}='
             charset, encoding, encoded_text = re.match(encoded_word_regex, encoded_words).groups()
-            if encoding is 'B':
+            if encoding == 'B':
                 byte_string = base64.b64decode(encoded_text)
-            elif encoding is 'Q':
+            elif encoding == 'Q':
                 byte_string = quopri.decodestring(encoded_text)
             return byte_string.decode(charset)   
 

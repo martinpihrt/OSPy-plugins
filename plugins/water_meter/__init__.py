@@ -238,7 +238,7 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
         return pulses
     except:
-    	log.error(NAME, _(u'Water Meter plug-in') + traceback.format_exc())
+        log.error(NAME, _(u'Water Meter plug-in') + traceback.format_exc())
         return 0
 
 def get_all_values():

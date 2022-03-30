@@ -111,7 +111,7 @@ class PressureSender(Thread):
         now_msg = ""
         tempText = ""
  
-        press_mon = None:
+        press_mon = None
 
         if pressure_options['use_footer']: 
             press_mon = showInFooter() #  instantiate class to enable data in footer

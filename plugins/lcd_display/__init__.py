@@ -120,9 +120,9 @@ class LCDSender(Thread):
                     if not skip_lines:    
                         update_lcd(line1, line2)                                       
                         if lcd_options['debug_line'] and line1 is not None:
-                            log.info(NAME, line1)
+                            log.info(NAME, line1.decode('utf8'))
                         if lcd_options['debug_line'] and line2 is not None:
-                            log.info(NAME, line2)
+                            log.info(NAME, line2.decode('utf8'))
 
                         self._sleep(2)    
 
@@ -147,9 +147,9 @@ class DummyLCD(object):
     def lcd_puts(self, text, line):
         text = text[:16]
         if line == 1:
-            self._lines = text + self._lines[len(text):]
+            self._lines = u'{}'.format(text) + self._lines[len(text):]
         elif line == 2:
-            self._lines = self._lines[:20] + text + self._lines[20 + len(text):]
+            self._lines = self._lines[:20] + u'{}'.format(text) + self._lines[20 + len(text):]
         #log.debug('LCD', self._lines)
 
 
@@ -198,7 +198,7 @@ def get_active_state():
     for station in stations.get(): # check if station runing
       if station.active:
         station_state = True       # yes runing
-        station_result += str(station.index+1) + _(u',') + ' ' # station number runing ex: 2, 6, 20,
+        station_result += u'{}'.format(station.index+1) + _(u',') + ' ' # station number runing ex: 2, 6, 20,
     if station_state:
       return station_result
     else:
@@ -257,7 +257,7 @@ def get_report(index):
             result = None
     elif index == 3:
         if lcd_options['d_sw_version_date']:
-            result = version.ver_str + ' ' + version.ver_date
+            result = u'{} {}'.format(version.ver_str, version.ver_date)
         else: 
             result = None
     elif index == 4:
@@ -267,11 +267,11 @@ def get_report(index):
             result = None
     elif index == 5:
         if lcd_options['d_ip']:
-            ip = ASCI_convert(_(u'http'))
+            ip = ASCI_convert((u'http'))
             if options.use_ssl:
-                ip = ASCI_convert(_(u'https'))
-            ip += ASCI_convert(_(u'://')) + helpers.get_ip() + _(u':') + str(options.web_port)
-            result = str(ip)
+                ip = ASCI_convert((u'https'))
+            ip += ASCI_convert((u'://{}:{}').format(helpers.get_ip(), options.web_port))
+            result = u'{}'.format(ip)
         else: 
             result = None
     elif index == 6:
@@ -281,7 +281,7 @@ def get_report(index):
             result = None
     elif index == 7:
         if lcd_options['d_port']:
-            result = str(options.web_port)
+            result = u'{}'.format(options.web_port)
         else: 
             result = None
     elif index == 8:
@@ -291,7 +291,7 @@ def get_report(index):
             result = None
     elif index == 9:
         if lcd_options['d_cpu_temp']:
-            result = helpers.get_cpu_temp(options.temp_unit) + ' ' + options.temp_unit
+            result = u'{} {}'.format(helpers.get_cpu_temp(options.temp_unit), options.temp_unit)
         else: 
             result = None
     elif index == 10:
@@ -377,11 +377,11 @@ def get_report(index):
                 volume = tank_monitor.get_all_values()[3]
                 units = tank_monitor.get_all_values()[4]
                 if cm > 0: 
-                    result = ASCI_convert(_(u'Level')) + ' ' + str(cm) + ASCI_convert(_(u'cm')) + ' ' + str(percent) + ASCI_convert(_(u'%')) + ' ' + str(int(volume))
+                    result = ASCI_convert(_(u'Level')) + ' ' + u'{}'.format(cm) + ASCI_convert(_(u'cm')) + ' ' + u'{}'.format(percent) + ASCI_convert(_(u'%')) + ' ' + u'{}'.format(int(volume))
                     if units:
-                        result += ASCI_convert(_(u'liter'))# + ' ' + ASCI_convert(_(u'ping')) + ' ' + str(ping) + ASCI_convert(_(u'cm')) 
+                        result += ASCI_convert(_(u'liter')) 
                     else:
-                        result += ASCI_convert(_(u'm3'))# + ' ' + ASCI_convert(_(u'ping')) + ' ' + str(ping) + ASCI_convert(_(u'cm')) 
+                        result += ASCI_convert(_(u'm3')) 
                 else:
                     result = ASCI_convert(_(u'Error - I2C Device Not Found!'))
             except Exception:
@@ -472,12 +472,12 @@ def get_report(index):
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 2:                               # leak detector
                                     if sensor.last_read_value[5] != -127:
-                                        sensor_result += str(sensor.last_read_value[5]) + ' ' + _(u'l/s')
+                                        sensor_result += u'{}'.format(sensor.last_read_value[5]) + ' ' + _(u'l/s')
                                     else:
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 3:                               # moisture
                                     if sensor.last_read_value[6] != -127:
-                                        sensor_result += str(sensor.last_read_value[6]) + _(u'%')
+                                        sensor_result += u'{}'.format(sensor.last_read_value[6]) + _(u'%')
                                     else:
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 4:                               # motion
@@ -487,13 +487,13 @@ def get_report(index):
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 5:                               # temperature
                                     if sensor.last_read_value[0] != -127:
-                                        sensor_result += str(sensor.last_read_value[0])
+                                        sensor_result += u'{}'.format(sensor.last_read_value[0])
                                     else:
                                         sensor_result += _(u'Probe Error')
                                 if sensor.sens_type == 6:                               # multi sensor
                                     if sensor.multi_type >= 0 and sensor.multi_type <4: # multi temperature DS1-DS4
                                         if sensor.last_read_value[sensor.multi_type] != -127: 
-                                            sensor_result += str(sensor.last_read_value[sensor.multi_type])
+                                            sensor_result += u'{}'.format(sensor.last_read_value[sensor.multi_type])
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 4:                          #  multi dry contact
@@ -503,12 +503,12 @@ def get_report(index):
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 5:                          #  multi leak detector
                                         if sensor.last_read_value[5] != -127:
-                                            sensor_result += str(sensor.last_read_value[5]) + ' ' + _(u'l/s')
+                                            sensor_result += u'{}'.format(sensor.last_read_value[5]) + ' ' + _(u'l/s')
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 6:                          #  multi moisture
                                         if sensor.last_read_value[6] != -127:
-                                            sensor_result += str(sensor.last_read_value[6]) + ' ' + _(u'%')
+                                            sensor_result += u'{}'.format(sensor.last_read_value[6]) + ' ' + _(u'%')
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 7:                          #  multi motion
@@ -520,7 +520,7 @@ def get_report(index):
                                         if sensor.last_read_value[8] != -127:
                                             get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
                                             get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
-                                            sensor_result += str(get_level) + ' ' +  _(u'cm') + ' (' + str(get_perc) + ' %)'
+                                            sensor_result += u'{}'.format(get_level) + ' ' +  _(u'cm') + ' (' + u'{}'.format(get_perc) + ' %)'
                                         else:
                                             sensor_result += _(u'Probe Error')
                                     if sensor.multi_type == 9:                          #  multi soil moisture
