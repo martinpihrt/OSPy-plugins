@@ -3,6 +3,8 @@ Weather-based Water Level Netatmo Readme
 Updated version
 -----------
 
+Tested in Python 3 and Python 2
+
 Added NetAtmo support - read data from NetAtmo API of Rain module.  
 
 Used API of [Philippe Larduinat](https://github.com/philippelt/netatmo-api-python). Not necessary to install it, is included in plug-in.  

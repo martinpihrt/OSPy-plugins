@@ -1,6 +1,8 @@
 Weather-based Water Level Readme
 ====
 
+Tested in Python 3 and Python 2
+
 When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly.
 In addition, it is now able to protect plants against freezing during selected months.
 
