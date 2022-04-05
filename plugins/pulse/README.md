@@ -1,7 +1,8 @@
 Pulse Output Test Readme
 ====
 
-Tested in Python 2.7.16, 3.9.2 -> OK
+Tested in Python 3 and Python 2
+
 This plugin sends a 1Hz signal to a selected output for a given amount of time. (To discover the location of a valve.)
 After running the test, the output will be set to the last known state.
 

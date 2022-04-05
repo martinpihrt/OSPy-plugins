@@ -1,7 +1,8 @@
 System Debug Information Readme
 ====
 
-Tested in Python 2.7.16, 3.9.2 -> OK
+Tested in Python 3 and Python 2
+
 This plugin prints debug information from events log file.  
 You must first enabled debug in options.  
 File can be deleted by pressing "Delete file" button.  

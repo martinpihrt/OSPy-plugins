@@ -1,7 +1,8 @@
 Monthly Water Level Readme
 ====
 
-Tested in Python 2.7.16, 3.9.2 -> OK
+Tested in Python 3 and Python 2
+
 Enter an adjustment for each month (% irrigation time).  
 The water level will be adjusted accordingly. 
 

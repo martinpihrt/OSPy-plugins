@@ -75,6 +75,8 @@ class weather_to_delay(Thread):
             self._sleep_time -= 1
 
     def run(self):
+        weather_mon = None
+
         if plugin_options['use_footer']:
             weather_mon = showInFooter()                               #  instantiate class to enable data in footer
             weather_mon.label = _(u'Weather')                          # label on footer
@@ -113,7 +115,8 @@ class weather_to_delay(Thread):
                         tempText = ""
                         tempText += _(u'Netatmo detected Rain') + u' %.1f ' % zrain + _(u'mm') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') 
                         if plugin_options['use_footer']:
-                            weather_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                            if weather_mon is not None:
+                                weather_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
                         rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                         stop_onrain()
                         self._sleep(delaytimeAtmo)
@@ -141,7 +144,8 @@ class weather_to_delay(Thread):
                                     del rain_blocks[NAME]
 
                         if plugin_options['use_footer']:
-                            weather_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                            if weather_mon is not None:
+                                weather_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
                         self._sleep(3600)
                                          
                 else:
