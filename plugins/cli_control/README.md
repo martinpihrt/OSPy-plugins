@@ -1,6 +1,8 @@
 CLI Control Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This plugin can be used to control devices such as remote RF units via Linux commands.
 Enter command line commands to be issued when a station is to be started or stopped.
 For example a command might look like: wget http://xxx.xxx.xxx.xxx/relay1on

@@ -1,7 +1,9 @@
 Email Notifications Readme
 ====
 
-This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider.
+Tested in Python 3 and Python 2
+
+This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider (google.com, seznam.cz)...
 
 Plugin setup
 -----------
@@ -21,7 +23,7 @@ Plugin setup
   Example: smtp.gmail.com
 
 * SMTP port:
-  Example: 587
+  Example: 587 (25)
 
 * Use SMTP username as sender:
   Some SMTP providers prohibit to use another sender than the same mail user.

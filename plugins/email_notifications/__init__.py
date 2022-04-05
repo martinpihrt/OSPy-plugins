@@ -49,7 +49,7 @@ email_options = PluginOptions(
         'emladr2': '',
         'emladr3': '',
         'emladr4': '',
-        'emlsubject': _(u'Report from OSPy SYSTEM'),
+        'emlsubject': _('Report from OSPy SYSTEM'),
         'emlrepeater': True
     }
 )
