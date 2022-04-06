@@ -32,7 +32,7 @@ plugin_options = PluginOptions(
     'sum_one': 0.00,                  # sum for master 1
     'sum_two': 0.00,                  # sum for master 2
     'sendeml': False,
-    'emlsubject': _(u'Report from OSPy Water Consumption Counter plugin')
+    'emlsubject': _('Report from OSPy Water Consumption Counter plugin')
     }
 )
 
@@ -149,12 +149,8 @@ def notify_master_one_off(name, **kw):
     master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() # run time in seconds
     difference = to_decimal(master_one_time_delta) * to_decimal(plugin_options['liter_per_sec_master_one'])
 
-    qdict = {}
-    qdict['sum_one'] =  plugin_options['sum_one'] + round(difference,2)  # to 2 places
-    if plugin_options['sendeml']:     
-       qdict['sendeml'] = u'on'
-
-    plugin_options.web_update(qdict)  
+    _sum = round(to_decimal(plugin_options['sum_one']), 2) + round(difference, 2)  # to 2 places
+    plugin_options.__setitem__('sum_one', _sum)  
 
     msg = '<b>' + _(u'Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _(u'liter') + '</p>'
     msglog = _(u'Water Consumption Counter plug-in') + ': ' + _(u'Water Consumption for master 1') + ': ' + str(round(difference,2)) + ' ' + _(u'liter')
@@ -178,12 +174,8 @@ def notify_master_two_off(name, **kw):
     master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
     difference = to_decimal(master_two_time_delta) * to_decimal(plugin_options['liter_per_sec_master_two'])
 
-    qdict = {}
-    qdict['sum_two'] =  plugin_options['sum_two'] + round(difference,2)  # to 2 places
-    if plugin_options['sendeml']:
-       qdict['sendeml'] = u'on'
-
-    plugin_options.web_update(qdict)
+    _sum = round(to_decimal(plugin_options['sum_two']), 2) + round(difference, 2)  # to 2 places
+    plugin_options.__setitem__('sum_two', _sum)
   
     msg = '<b>' + _(u'Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _(u'liter') + '</p>'
     msglog = _(u'Water Consumption Counter plug-in') + ': ' + _(u'Water Consumption for master 2') + ': ' + str(round(difference,2)) + ' ' + _(u'liter')
@@ -212,12 +204,9 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
         if sender is not None and reset:
-            qdict['sum_one'] = 0
-            qdict['sum_two'] = 0
-            qdict['last_reset'] = datetime_string()
-            if plugin_options['sendeml']:
-                qdict['sendeml'] = u'on'
-            plugin_options.web_update(qdict)
+            plugin_options.__setitem__('sum_one', 0)
+            plugin_options.__setitem__('sum_two', 0)
+            plugin_options.__setitem__('last_reset', datetime_string())
 
             log.clear(NAME)
             log.info(NAME, datetime_string() + ': ' + _(u'Counter has reseted'))

@@ -118,13 +118,14 @@ class LCDSender(Thread):
                         skip_lines = True
 
                     if not skip_lines:    
-                        update_lcd(line1, line2)                                       
+                        update_lcd(line1, line2)
                         if lcd_options['debug_line'] and line1 is not None:
-                            log.info(NAME, line1.decode('utf8'))
+                            L1 = line1.decode('utf8')
+                            log.info(NAME, L1)
                         if lcd_options['debug_line'] and line2 is not None:
-                            log.info(NAME, line2.decode('utf8'))
-
-                        self._sleep(2)    
+                            L2 = line2.decode('utf8') 
+                            log.info(NAME, L2)
+                        self._sleep(2)
 
                     report_index += 2
 
@@ -150,8 +151,6 @@ class DummyLCD(object):
             self._lines = '{}'.format(text) + self._lines[len(text):]
         elif line == 2:
             self._lines = self._lines[:20] + '{}'.format(text) + self._lines[20 + len(text):]
-        #log.debug('LCD', self._lines)
-
 
 dummy_lcd = DummyLCD()
 
@@ -257,7 +256,7 @@ def get_report(index):
             result = None
     elif index == 3:
         if lcd_options['d_sw_version_date']:
-            result = '{} {}'.format(version.ver_str, version.ver_date)
+            result = ASCI_convert('{} {}'.format(version.ver_str, version.ver_date))
         else: 
             result = None
     elif index == 4:
@@ -267,11 +266,10 @@ def get_report(index):
             result = None
     elif index == 5:
         if lcd_options['d_ip']:
-            ip = ASCI_convert(('http'))
             if options.use_ssl:
-                ip = ASCI_convert(('https'))
-            ip += ASCI_convert(('://{}:{}').format(helpers.get_ip(), options.web_port))
-            result = '{}'.format(ip)
+                result = ASCI_convert(('https://{}:{}').format(helpers.get_ip(), options.web_port))
+            else:
+                result = ASCI_convert(('http://{}:{}').format(helpers.get_ip(), options.web_port))
         else: 
             result = None
     elif index == 6:
@@ -281,7 +279,7 @@ def get_report(index):
             result = None
     elif index == 7:
         if lcd_options['d_port']:
-            result = '{}'.format(options.web_port)
+            result = ASCI_convert('{}'.format(options.web_port))
         else: 
             result = None
     elif index == 8:
@@ -291,19 +289,17 @@ def get_report(index):
             result = None
     elif index == 9:
         if lcd_options['d_cpu_temp']:
-            result = '{} {}'.format(helpers.get_cpu_temp(options.temp_unit), options.temp_unit)
+            result = ASCI_convert('{} {}'.format(helpers.get_cpu_temp(options.temp_unit), options.temp_unit))
         else: 
             result = None
     elif index == 10:
         if lcd_options['d_time_date']:
-            str_date = ASCI_convert(_('Date:')) + ' '
-            result = str_date + datetime.now().strftime('%d.%m.%Y')
+            result = ASCI_convert(_('Date:') + ' {}'.format(datetime.now().strftime('%d.%m.%Y')))
         else: 
             result = None
     elif index == 11:
         if lcd_options['d_time_date']:
-            str_time = ASCI_convert(_('Time:')) + ' '
-            result = str_time + datetime.now().strftime('%H:%M:%S')
+            result = ASCI_convert(_('Time:') + ' {}'.format(datetime.now().strftime('%H:%M:%S')))
         else: 
             result = None
     elif index == 12:

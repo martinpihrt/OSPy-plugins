@@ -1,6 +1,8 @@
 Water Consumption Counter Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This plugin read Water consumption on master station or second master station.  
 Total sum is the calculated as run of the main (or second) station per second. This is not an actual flow meter (physical flow sensor).
 Used for an overview of water consumption.

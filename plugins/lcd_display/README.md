@@ -1,6 +1,8 @@
 LCD Settings Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This plugin shows information on 16x2 character LCD with PCF8574.  
 Automatically detects the display at the following I2C addresses: 0x20-0x27, 0x38-0x3F.  
 Compatible with the HD44780 controller.  

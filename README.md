@@ -1,6 +1,4 @@
-Updated to be compatible with Python 3. Existing users do not update their installations until everything is verified!
-
-# OSPy-plug-ins
+# OSPy-plugins
 ### A collection of user contributed plugins for the Raspberry Pi based irrigation controll software OSPy - Open Sprinkler Python (OSPy).
 
 Please note: Unless otherwise stated: This is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
