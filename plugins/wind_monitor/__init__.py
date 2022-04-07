@@ -40,10 +40,10 @@ wind_options = PluginOptions(
         'pulses': 2,                 # 2 pulses per rotation
         'metperrot': 1.492,          # 1.492 meter per hour per rotation
         'maxspeed': 20,              # 20 max speed to deactivate stations  
-        'emlsubject': _(u'Report from OSPy WIND SPEED MONITOR plugin'),
+        'emlsubject': _('Report from OSPy WIND SPEED MONITOR plugin'),
         'log_speed': 0,              # actual speed
         'log_maxspeed': 0,           # maximal speed (log) in m/sec
-        'log_date_maxspeed': _(u'Measuring...'), # maximal speed (date log)
+        'log_date_maxspeed': _('Measuring...'), # maximal speed (date log)
         'enable_log': False,         # log to file and graph
         'log_interval': 1,           # log interval in minutes
         'log_records': 0,            # log records 0= unlimited 
@@ -103,7 +103,7 @@ class WindSender(Thread):
 
         if wind_options['use_footer']:
             wind_mon = showInFooter() #  instantiate class to enable data in footer
-            wind_mon.label = _(u'Wind Speed')            # label on footer
+            wind_mon.label = _(u'Wind Speed')           # label on footer
             wind_mon.val = '---'                        # value on footer
             wind_mon.button = "wind_monitor/settings"   # button redirect on footer
 
@@ -123,47 +123,21 @@ class WindSender(Thread):
                         set_counter(self.bus)     # set pcf8583 as counter
                         puls = counter(self.bus)  # read pulses
 
-                    if puls is not None:
+                    if puls is not None and puls < 1000:        # limiter for maximal pulses from counter (error filter)
                         puls = counter(self.bus)/10.0           # counter value is value/10sec
                         val = puls/(wind_options['pulses']*1.0)
                         val = val*wind_options['metperrot']
-
-                        wind_options['log_speed'] = round(val,2)*1.0 # m/sec
+                        wind_options.__setitem__('log_speed', round(val,2)*1.0) # m/sec
 
                         self.status['meter']  = round(val,2)*1.0
                         self.status['kmeter'] = round(val,2)*3.6
 
                         if self.status['meter'] > self.status['max_meter']:
-                            self.status['max_meter'] = self.status['meter']
+                            self.status['max_meter'] = self.status['meter']                            
+                            wind_options.__setitem__('log_maxspeed', self.status['max_meter']) # m/sec
+                            wind_options.__setitem__('log_date_maxspeed', datetime_string())
                             if wind_options['enable_log_change']:
                                 update_log()
-
-                            qdict = {} # save to options max speed and datetime
-
-                            if wind_options['use_wind_monitor']:
-                               qdict['use_wind_monitor'] = u'on'
-                            if wind_options['address']:
-                               qdict['address']  = u'on'
-                            if wind_options['sendeml']:
-                               qdict['sendeml'] = u'on'
-                            if wind_options['enable_log']:
-                               qdict['enable_log'] = u'on'
-                            if wind_options['use_kmh']:
-                               qdict['use_kmh'] = u'on'
-                            if wind_options['enable_log_change']:
-                               qdict['enable_log_change'] = u'on'
-                            if wind_options['delete_max_24h']:
-                               qdict['delete_max_24h'] = u'on'
-                            if wind_options['stoperr']:
-                               qdict['stoperr'] = u'on'
-
-                            qdict['log_maxspeed'] = self.status['max_meter']         # m/sec
-                            qmax = datetime_string()
-                            qdict['log_date_maxspeed'] = qmax
-                            wind_options['log_maxspeed'] = self.status['max_meter']  # m/sec 
-                            wind_options['log_date_maxspeed'] = qmax  
-
-                            wind_options.web_update(qdict)
 
                         log.info(NAME, datetime_string())
                         if wind_options['use_kmh']:
@@ -204,34 +178,14 @@ class WindSender(Thread):
                             from datetime import datetime, time
                             now = datetime.now()
                             now_time = now.time()
-                            if now_time >= time(0,0) and now_time <= time(0,2) and en_del_24h: # is time for deleting only in time 00:00:00 - 00:02:00
+                            if now_time >= time(0,0) and now_time <= time(0,5) and en_del_24h: # is time for deleting only in time 00:00:00 - 00:05:00
                                 en_del_24h = False
-
-                                qdict = {}
-                                if wind_options['use_wind_monitor']:
-                                    qdict['use_wind_monitor'] = u'on'
-                                if wind_options['address']:
-                                    qdict['address']  = u'on'
-                                if wind_options['sendeml']:
-                                    qdict['sendeml'] = u'on'
-                                if wind_options['enable_log']:
-                                    qdict['enable_log'] = u'on'
-                                if wind_options['use_kmh']:
-                                    qdict['use_kmh'] = u'on'
-                                if wind_options['enable_log_change']:
-                                    qdict['enable_log_change'] = u'on'
-                                if wind_options['delete_max_24h']:
-                                    qdict['delete_max_24h'] = u'on'
-                                if wind_options['stoperr']:
-                                    qdict['stoperr'] = u'on'
-                                qdict['log_maxspeed'] = 0
-                                qdict['log_date_maxspeed'] = datetime_string()
-                                wind_options['log_maxspeed'] = 0
-                                wind_options['log_date_maxspeed'] = datetime_string()
+                                wind_options.__setitem__('log_maxspeed', 0)
+                                wind_options.__setitem__('log_date_maxspeed', datetime_string())
                                 log.info(NAME, datetime_string() + ' ' + _(u'Deleting maximal speed after 24 hours.'))
                                 update_log()
-                        else:
-                            en_del_24h = True
+                            else:
+                                en_del_24h = True
 
                         tempText = ""
                         if wind_options['use_kmh']:
@@ -476,17 +430,11 @@ def update_log():
         actual = graph_data[1]['balances']
         actval = {'total': get_all_values()[0]}
         actual.update({timestamp: actval})
+        
+        write_graph_log(graph_data)
+        log.info(NAME, datetime_string() + ' ' + _(u'Saving to log  files OK'))        
     except:
-        maximum = 0
-        maxval = {'total': get_all_values()[1]}
-        maximum.update({timestamp: maxval})
-        actual = graph_data[1]['balances']
-        actval = {'total': get_all_values()[0]}
-        actual.update({timestamp: actval})
- 
-    write_graph_log(graph_data)
-
-    log.info(NAME, datetime_string() + ' ' + _(u'Saving to log  files OK'))
+        create_default_graph()
 
 
 def create_default_graph():
@@ -520,29 +468,9 @@ class settings_page(ProtectedPage):
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
         if wind_sender is not None and reset:
-            if wind_options['use_wind_monitor']:
-                qdict['use_wind_monitor'] = u'on'
-            if wind_options['address']:
-                qdict['address']  = u'on'
-            if wind_options['sendeml']:
-                qdict['sendeml'] = u'on'
-            if wind_options['enable_log']:
-                qdict['enable_log'] = u'on'
-            if wind_options['use_kmh']:
-                qdict['use_kmh'] = u'on'
-            if wind_options['enable_log_change']:
-                qdict['enable_log_change'] = u'on'
-            if wind_options['delete_max_24h']:
-                qdict['delete_max_24h'] = u'on'
-            if wind_options['stoperr']:
-                qdict['stoperr'] = u'on'
-            qdict['log_maxspeed'] = 0
-            qdict['log_date_maxspeed'] = datetime_string()
-            wind_options['log_maxspeed'] = 0
-            wind_options['log_date_maxspeed'] = datetime_string()
-
-            wind_options.web_update(qdict)
-
+            wind_options.web_update(web.input(**wind_options))
+            wind_options.__setitem__('log_maxspeed', 0)
+            wind_options.__setitem__('log_date_maxspeed', datetime_string())
             log.clear(NAME)
             log.info(NAME, datetime_string() + ' ' + _(u'Maximal speed has reseted.'))
 
@@ -552,7 +480,6 @@ class settings_page(ProtectedPage):
            write_log([])
            create_default_graph()
            log.info(NAME, datetime_string() + ' ' + _(u'Deleted all log files OK'))
-
            raise web.seeother(plugin_url(settings_page), True)
 
         if wind_sender is not None and 'history' in qdict:
@@ -660,13 +587,14 @@ class graph_json(ProtectedPage):
             create_default_graph()
             json_data = read_graph_log()
 
-        for i in range(0, 2):                                                  # 0 = maximum, 2 = actual
-            temp_balances = {}
-            for key in json_data[i]['balances']:
-                find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
-                if find_key >= log_start:                                      # timestamp interval 
-                    temp_balances[key] = json_data[i]['balances'][key]
-            data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+        if len(json_data) > 0:
+            for i in range(0, 2):                                              # 0 = maximum, 2 = actual
+                temp_balances = {}
+                for key in json_data[i]['balances']:
+                    find_key =  int(key.encode('utf8'))                        # key is in unicode ex: u'1601347000' -> find_key is int number
+                    if find_key >= log_start:                                  # timestamp interval 
+                        temp_balances[key] = json_data[i]['balances'][key]
+                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')

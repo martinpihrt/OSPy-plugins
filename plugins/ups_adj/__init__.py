@@ -188,9 +188,9 @@ class UPSSender(Thread):
                                 except Exception:     
                                     log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc()) 
 
-                                once = True
-                                once_two = True
-                                once_three = False
+                            once = True
+                            once_two = True
+                            once_three = False
                             if ups_options['enable_log']:
                                 update_log(1)
 
@@ -310,14 +310,11 @@ def update_log(status):
         state = graph_data[0]['balances']
         stateval = {'total': status}
         state.update({timestamp: stateval})
+    
+        write_graph_log(graph_data)
+        log.info(NAME, _(u'Saving to log  files OK'))        
     except:
         create_default_graph()
-        pass
-
-    write_graph_log(graph_data)
-
-    log.info(NAME, _(u'Saving to log  files OK'))
-
 
 def create_default_graph():
     """Create default graph json file."""
@@ -450,16 +447,13 @@ class graph_json(ProtectedPage):
             json_data = read_graph_log()
 
         temp_balances = {}
-        try:
+
+        if len(json_data) > 0:
             for key in json_data[0]['balances']:
                 find_key =  int(key.encode('utf8'))                                # key is in unicode ex: u'1601347000' -> find_key is int number
                 if find_key >= log_start:                                          # timestamp interval 
                     temp_balances[key] = json_data[0]['balances'][key]
             data.append({ 'station': json_data[0]['station'], 'balances': temp_balances })
-        except:
-            write_log([])
-            create_default_graph()
-            pass
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')

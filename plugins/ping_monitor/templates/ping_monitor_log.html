@@ -4,15 +4,6 @@ $var title: $_('Ping monitor - log')
 $var page: plugins
 
 $code:
-    def two_digits(n):
-        return '%02d' % int(n)
-
-    def convertMillis(millis):
-        seconds=(millis/1000)%60
-        minutes=(millis/(1000*60))%60
-        hours=(millis/(1000*60*60))%24
-        return "{0}:{1}:{2}".format(two_digits(hours), two_digits(minutes), two_digits(seconds))
-
     def is_show(ip1,ip2,ip3,s1,s2,s3):
         if ip1 and ip2 and ip3:
             if s1=="1" and s2=="1" and s3=="1":
@@ -49,7 +40,6 @@ $code:
             $if plugin_options['address_3']:           
                 <th>${plugin_options['address_3']}</th>
             <th>$_('State')</th>
-            <th>$_('Outage was (h:m:s)')</th>
         </tr>
         $for interval in records:
             <tr class="log_rec ${loop.parity}">
@@ -78,18 +68,8 @@ $code:
                     $if interval["time_dif"] != -1:
                         $if is_show(plugin_options['address_1'], plugin_options['address_2'], plugin_options['address_3'], interval["ping1"], interval["ping2"], interval["ping3"]):
                             <td align='left'>$_('OK')</td>
-                            <td align='left'>
-                            $if interval["time_dif"] > 60000 and interval["time_dif"] < 86400000:
-                                <p style="color:DarkOrange">${convertMillis(interval["time_dif"])}
-                            $elif interval["time_dif"] > 86400000:
-                                <p style="color:DarkRed">$_('> 24 hours')
-                            $else:
-                                <p style="color:DodgerBlue">${convertMillis(interval["time_dif"])}
-                            </p>
-                            </td>
                     $else:
-                        <td align='left'> </td>
-                        <td align='left'> </td>        
+                        <td align='left'> </td>    
             </tr>
     </table>
 </div>

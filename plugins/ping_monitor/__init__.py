@@ -47,7 +47,7 @@ plugin_options = PluginOptions(
        'use_send_email': False,
        'send_interval': 24,
        'use_send_delete': False,
-       'emlsubject':  _(u'Report from OSPy PING plugin'),
+       'emlsubject':  _('Report from OSPy PING plugin'),
        'enable_log': False,
        'history': 0                 # selector for graph history
     }
@@ -351,7 +351,6 @@ def update_log():
             ping3.update({timestamp: ping3val})
 
         write_graph_log(graph_data)
-
         log.info(NAME, _(u'Saving to log files OK.'))
     except:
         create_default_graph()
@@ -549,13 +548,14 @@ class graph_json(ProtectedPage):
 
         json_data = read_graph_log()
 
-        for i in range(0, 3):                                                  # 0 = ping 1, 1 = ping 2, 2 = ping 3
-            temp_balances = {}
-            for key in json_data[i]['balances']:
-                find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
-                if find_key >= log_start:                                      # timestamp interval 
-                    temp_balances[key] = json_data[i]['balances'][key]
-            data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+        if len(json_data) > 0:
+            for i in range(0, 3):                                              # 0 = ping 1, 1 = ping 2, 2 = ping 3
+                temp_balances = {}
+                for key in json_data[i]['balances']:
+                    find_key =  int(key.encode('utf8'))                        # key is in unicode ex: u'1601347000' -> find_key is int number
+                    if find_key >= log_start:                                  # timestamp interval 
+                        temp_balances[key] = json_data[i]['balances'][key]
+                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')

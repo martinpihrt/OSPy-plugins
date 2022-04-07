@@ -45,7 +45,7 @@ tank_options = PluginOptions(
        'diameter': 98,         # cylinder diameter for volume calculation
        'use_stop':      False, # not stop water system
        'use_send_email': True, # send email water level is minimum
-       'emlsubject': _(u'Report from OSPy TANK plugin'),
+       'emlsubject': _('Report from OSPy TANK plugin'),
        'address_ping': 0x04,   # device address for sonic ping HW board
        'log_maxlevel': 400,    # maximal level (log)
        'log_minlevel': 0,      # minimal level (log)
@@ -178,7 +178,7 @@ class Sender(Thread):
                                         'active': True,
                                         'program': -1,
                                         'station': sid,
-                                        'program_name': _(u'Tank Monitor'),
+                                        'program_name': _('Tank Monitor'),
                                         'fixed': True,
                                         'cut_off': 0,
                                         'manual': True,
@@ -539,7 +539,6 @@ def update_log():
         volume.update({timestamp: volumeval})
 
         write_graph_log(graph_data)
-
         log.info(NAME, _(u'Saving to log  files OK'))
     except:
         create_default_graph()
@@ -745,13 +744,14 @@ class graph_json(ProtectedPage):
 
         json_data = read_graph_log()
 
-        for i in range(0, 4):                                                  # 0 = minimum, 1 = maximum, 2 = actual, 3 = volume
-            temp_balances = {}
-            for key in json_data[i]['balances']:
-                find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
-                if find_key >= log_start:                                      # timestamp interval 
-                    temp_balances[key] = json_data[i]['balances'][key]
-            data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+        if len(json_data) > 0:
+            for i in range(0, 4):                                              # 0 = minimum, 1 = maximum, 2 = actual, 3 = volume
+                temp_balances = {}
+                for key in json_data[i]['balances']:
+                    find_key =  int(key.encode('utf8'))                        # key is in unicode ex: u'1601347000' -> find_key is int number
+                    if find_key >= log_start:                                  # timestamp interval 
+                        temp_balances[key] = json_data[i]['balances'][key]
+                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')

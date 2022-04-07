@@ -353,11 +353,15 @@ def update_log(status):
 
     timestamp = int(time.time())
 
-    state = graph_data[0]['balances']
-    stateval = {'total': status}
-    state.update({timestamp: stateval})
-
-    write_graph_log(graph_data)
+    try:
+        state = graph_data[0]['balances']
+        stateval = {'total': status}
+        state.update({timestamp: stateval})
+        
+        write_graph_log(graph_data)
+        log.info(NAME, _(u'Saving to log files OK.'))
+    except:
+        create_default_graph()
 
 
 def create_default_graph():
@@ -490,11 +494,13 @@ class graph_json(ProtectedPage):
             json_data = read_graph_log()
 
         temp_balances = {}
-        for key in json_data[0]['balances']:
-            find_key =  int(key.encode('utf8'))                                # key is in unicode ex: u'1601347000' -> find_key is int number
-            if find_key >= log_start:                                          # timestamp interval 
-                temp_balances[key] = json_data[0]['balances'][key]
-        data.append({ 'station': json_data[0]['station'], 'balances': temp_balances })
+
+        if len(json_data) > 0:
+            for key in json_data[0]['balances']:
+                find_key =  int(key.encode('utf8'))                            # key is in unicode ex: u'1601347000' -> find_key is int number
+                if find_key >= log_start:                                      # timestamp interval 
+                    temp_balances[key] = json_data[0]['balances'][key]
+            data.append({ 'station': json_data[0]['station'], 'balances': temp_balances })
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')

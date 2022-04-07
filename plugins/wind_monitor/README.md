@@ -1,6 +1,8 @@
 Wind Speed Monitor Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This plugin checked wind speed, if station is switched on and actual wind speed is > wind speed value in options, switches off all selected stations in scheduler and sends E-mail with error. Preventing for fault watering while wind.
 This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 or 0x51.
 1m/s = 3,6 km/h or 1m/s = 2,237 mile/h.

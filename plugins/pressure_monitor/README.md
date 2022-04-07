@@ -1,6 +1,8 @@
 Pressure Monitor Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This plugin checked pressure in pipe, if master station is switched on must be activated pressure sensor.  
 If is not sensor activated in a certain time, switches off all station  and sends E-mail with error. Prevent safety for master station pump.  
 
