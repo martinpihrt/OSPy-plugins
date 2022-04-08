@@ -1,6 +1,8 @@
 Pressurizer Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This plugin allows the main station (master pump) to be activated for a certain time before the station starts. 
 This is to ensure that there is pressure in the pipeline before the valves are opened. 
 This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options.

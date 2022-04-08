@@ -106,7 +106,7 @@ class Checker(Thread):
 
                     if start_master:  # is time for run relay
                         pname = _('Pressurizer plug-in')
-                        program_name = "%s " % pname.encode("utf-8", errors="ignore") # program name
+                        program_name = "%s " % pname.encode("utf-8", errors="ignore").decode("utf-8") # program name
 
                         sname = 0 
                         
