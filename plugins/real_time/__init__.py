@@ -2,19 +2,18 @@
 __author__ = u'Martin Pihrt'
 # This plugin use library rtc_DS1307
 
-
 import subprocess
-
 import datetime
-import calendar
-
-import time, struct
-import sys, os
+import socket
+import struct
+import sys
+import time
+import os
 
 from . import rtc_DS1307
 
 from threading import Thread, Event
-import socket
+
 from socket import AF_INET, SOCK_DGRAM
 import traceback
 import json
@@ -36,7 +35,7 @@ plugin_options = PluginOptions(
     {
         'enabled': False,
         'use_ntp': True,
-        'ntp_server':     'pool.ntp.org',        # Primary
+        'ntp_server':     '0.cz.pool.ntp.org',   # Primary
         'ntp_server_two': 'tak.cesnet.cz',       # Secondary
         'ntp_port': 123
     })
@@ -177,26 +176,14 @@ def try_io(call, tries=10):
 def getNTPtime(server_address):
     """Return NTP time as datetime"""
     buf = 1024
-    port = int(plugin_options['ntp_port'])
-    host = server_address
-
-    address = (host,port)
-    msg = '\x1b' + 47 * '\0'
-
-    # reference time (in seconds since 1900-01-01 00:00:00)
-    #TIME1970 = 2208988800L # 1970-01-01 00:00:00
-
-    d = datetime.datetime(1970, 1, 1, 0, 0, 0)
-    ttuple = d.timetuple()
-    TIME1970 = calendar.timegm(ttuple)
-
-    # connect to server
-    client = socket.socket( AF_INET, SOCK_DGRAM)
-    client.sendto(msg.encode(), address)
-    msg, address = client.recvfrom( buf )
-
-    t = struct.unpack( "!12I", msg)[10]
-    t -= TIME1970
+    REF_TIME_1970 = 2208988800  # Reference time (in seconds since 1900-01-01 00:00:00)
+    client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    data = b'\x1b' + 47 * b'\0'
+    client.sendto(data, (server_address, int(plugin_options['ntp_port'])))
+    data, address = client.recvfrom(buf)
+    if data:
+        t = struct.unpack('!12I', data)[10]
+        t -= REF_TIME_1970
     try:
         t = datetime.datetime.strptime(time.ctime(t), "%a %b %d %H:%M:%S %Y")
         return t
@@ -217,7 +204,7 @@ def stop():
         checker.stop()
         checker.join()
         checker = None
-    
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
