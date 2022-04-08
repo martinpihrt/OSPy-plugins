@@ -90,7 +90,7 @@ class WaterSender(Thread):
             try:
                 if self.bus is not None and options['enabled']:  # if water meter plugin is enabled
                     val = counter(self.bus) / options['pulses']
-                    self.status['meter'] = val
+                    self.status['meter'] = round(val, 2)
 
                     if once_text:
                         log.clear(NAME)
@@ -100,10 +100,9 @@ class WaterSender(Thread):
                         if self.pcf is None:
                             log.warning(NAME, _(u'Could not find PCF8583.'))
                         else:
-                            log.info(NAME, _(u'Please wait for min/hour data...'))
+                            log.info(NAME, _(u'Please wait for minutes/hours data...'))
                             log.info(NAME, '________________________________')
-                            log.info(NAME, _(u'Water in liters'))
-                            log.info(NAME, str(options['log_date_last_reset']) + ' '+ _(u'Saved water summary') + ': ' + str(sum_water))
+                            log.info(NAME, _(u'Measured from') + ' {}'.format(options['log_date_last_reset']) + u'\n'+ _(u'Total sum') + u': {}'.format(round(sum_water, 2)) + u' ' + _(u'liters'))
 
                     if self.pcf is not None:
                         sum_water = sum_water + val
@@ -114,10 +113,9 @@ class WaterSender(Thread):
                         if actual_time - last_minute_time >= 60:          # minute counter
                             last_minute_time = actual_time
                             log.clear(NAME)
-                            log.info(NAME, _(u'Water in liters'))
-                            log.info(NAME, _(u'Water per minutes') + ': ' + str(minute_water))
-                            log.info(NAME, _(u'Water per hours') + ': ' + str(hour_water))
-                            log.info(NAME, str(options['log_date_last_reset']) + ' ' + _(u'Water summary') + ': ' + str(sum_water))
+                            log.info(NAME, _(u'Water per minutes') + ': {}'.format(round(minute_water, 2)) + u' ' + _(u'liters'))
+                            log.info(NAME, _(u'Water per hours') + ': {}'.format(round(hour_water, 2)) + u' ' + _(u'liters'))
+                            log.info(NAME, _(u'Measured from') + ' {}'.format(options['log_date_last_reset']) + u'\n'+ _(u'Total sum') + u': {}'.format(round(sum_water, 2)) + u' ' + _(u'liters'))
                             minute_water = 0
 
                             # save summary water to options only 1 minutes
@@ -127,7 +125,7 @@ class WaterSender(Thread):
                                 qdict['enabled'] = u'on' 
                             if options['address']:
                                 qdict['address']  = u'on'
-                            qdict['sum'] = sum_water
+                            qdict['sum'] = round(sum_water, 2)
                             options.web_update(qdict)   
 
                         if actual_time - last_hour_time >= 3600:          # hour counter
@@ -242,7 +240,7 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         return 0
 
 def get_all_values():
-    return options['sum'], options['log_date_last_reset']             
+    return round(options['sum'], 2), options['log_date_last_reset']             
 
 ################################################################################
 # Web pages:                                                                   #
@@ -268,11 +266,11 @@ class settings_page(ProtectedPage):
             options.web_update(qdict)    
             log.clear(NAME)
             log.info(NAME, str(options['log_date_last_reset']) + ' ' + _(u'Water summary was reseting...'))
-            log.info(NAME, _(u'Please wait for min/hour data...'))
+            log.info(NAME, _(u'Please wait for minutes/hours data...'))
             
             raise web.seeother(plugin_url(settings_page), True)
 
-        return self.plugin_render.water_meter(options, water_sender.status, log.events(NAME))
+        return self.plugin_render.water_meter(options, log.events(NAME))
 
     def POST(self):
         options.web_update(web.input())
@@ -297,3 +295,14 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(options)
+
+class water_json(ProtectedPage):
+    """Returns seconds water in JSON format."""
+
+    def GET(self):
+        global water_sender
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data = {}
+        data['sec_water'] = water_sender.status['meter']
+        return json.dumps(data)        

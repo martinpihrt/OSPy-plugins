@@ -1,18 +1,28 @@
-$def with(plugin_options, status, events)
+$def with(plugin_options, events)
 
 $var title: $_('Water meter settings')
 $var page: plugins
 
 <script>
+    function updateWater(){
+        jQuery.getJSON("/plugins/water_meter/water_json", function(_data) {
+            let second_water = _data.sec_water;
+            //console.log(second_water);
+            jQuery("#water span.water").text(second_water);
+        })      
+        setTimeout(updateWater, 500); // 1 second
+    } 
+
     // Initialize behaviors
     jQuery(document).ready(function(){
-
         jQuery("#cSubmit").click(function() {
             jQuery("#pluginForm").submit();
         });
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+       
+        updateWater();
     });
 </script>
 
@@ -40,9 +50,9 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('Water meter state'):</td>
+                <td style='text-transform: none; vertical-align: top;'>$_('Flow on the water meter'):</td>
                 <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                   <b>$status['meter']</b> ($_('liter per second'))
+                   <p id="water"><b><span class="water">-</span></b> ($_('liter per second'))</p>
                 </td>
             </tr>
             <tr>
