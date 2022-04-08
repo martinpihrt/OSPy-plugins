@@ -128,14 +128,48 @@ class WindSender(Thread):
                         val = puls/(wind_options['pulses']*1.0)
                         val = val*wind_options['metperrot']
                         wind_options.__setitem__('log_speed', round(val,2)*1.0) # m/sec
+                        wind_options.__setitem__('log_maxspeed', self.status['max_meter']) # m/sec
+                        wind_options.__setitem__('log_date_maxspeed', datetime_string())                        
+                        if wind_options['use_wind_monitor']:
+                            wind_options.__setitem__('use_wind_monitor', 'on')
+                        if wind_options['address']:
+                            wind_options.__setitem__('address', 'on')
+                        if wind_options['sendeml']:
+                            wind_options.__setitem__('sendeml', 'on')
+                        if wind_options['enable_log']:
+                            wind_options.__setitem__('enable_log', 'on')
+                        if wind_options['use_kmh']:
+                            wind_options.__setitem__('use_kmh', 'on')
+                        if wind_options['enable_log_change']:
+                            wind_options.__setitem__('enable_log_change', 'on')
+                        if wind_options['delete_max_24h']:
+                            wind_options.__setitem__('delete_max_24h', 'on')
+                        if wind_options['stoperr']:
+                            wind_options.__setitem__('stoperr', 'on')                        
 
-                        self.status['meter']  = round(val,2)*1.0
-                        self.status['kmeter'] = round(val,2)*3.6
+                        self.status['meter']  = round(val*1.0, 2)
+                        self.status['kmeter'] = round(val*3.6, 2)
 
                         if self.status['meter'] > self.status['max_meter']:
                             self.status['max_meter'] = self.status['meter']                            
                             wind_options.__setitem__('log_maxspeed', self.status['max_meter']) # m/sec
                             wind_options.__setitem__('log_date_maxspeed', datetime_string())
+                            if wind_options['use_wind_monitor']:
+                                wind_options.__setitem__('use_wind_monitor', 'on')
+                            if wind_options['address']:
+                                wind_options.__setitem__('address', 'on')
+                            if wind_options['sendeml']:
+                                wind_options.__setitem__('sendeml', 'on')
+                            if wind_options['enable_log']:
+                                wind_options.__setitem__('enable_log', 'on')
+                            if wind_options['use_kmh']:
+                                wind_options.__setitem__('use_kmh', 'on')
+                            if wind_options['enable_log_change']:
+                                wind_options.__setitem__('enable_log_change', 'on')
+                            if wind_options['delete_max_24h']:
+                                wind_options.__setitem__('delete_max_24h', 'on')
+                            if wind_options['stoperr']:
+                                wind_options.__setitem__('stoperr', 'on')                            
                             if wind_options['enable_log_change']:
                                 update_log()
 
@@ -182,6 +216,22 @@ class WindSender(Thread):
                                 en_del_24h = False
                                 wind_options.__setitem__('log_maxspeed', 0)
                                 wind_options.__setitem__('log_date_maxspeed', datetime_string())
+                                if wind_options['use_wind_monitor']:
+                                    wind_options.__setitem__('use_wind_monitor', 'on')
+                                if wind_options['address']:
+                                    wind_options.__setitem__('address', 'on')
+                                if wind_options['sendeml']:
+                                    wind_options.__setitem__('sendeml', 'on')
+                                if wind_options['enable_log']:
+                                    wind_options.__setitem__('enable_log', 'on')
+                                if wind_options['use_kmh']:
+                                    wind_options.__setitem__('use_kmh', 'on')
+                                if wind_options['enable_log_change']:
+                                    wind_options.__setitem__('enable_log_change', 'on')
+                                if wind_options['delete_max_24h']:
+                                    wind_options.__setitem__('delete_max_24h', 'on')
+                                if wind_options['stoperr']:
+                                    wind_options.__setitem__('stoperr', 'on')
                                 log.info(NAME, datetime_string() + ' ' + _(u'Deleting maximal speed after 24 hours.'))
                                 update_log()
                             else:
@@ -432,7 +482,7 @@ def update_log():
         actual.update({timestamp: actval})
         
         write_graph_log(graph_data)
-        log.info(NAME, datetime_string() + ' ' + _(u'Saving to log  files OK'))        
+        log.info(NAME, datetime_string() + ' ' + _(u'Saving to log  files OK'))
     except:
         create_default_graph()
 
@@ -468,23 +518,54 @@ class settings_page(ProtectedPage):
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
         if wind_sender is not None and reset:
-            wind_options.web_update(web.input(**wind_options))
+            wind_sender.status['max_meter'] = 0
             wind_options.__setitem__('log_maxspeed', 0)
             wind_options.__setitem__('log_date_maxspeed', datetime_string())
+            if wind_options['use_wind_monitor']:
+                wind_options.__setitem__('use_wind_monitor', 'on')
+            if wind_options['address']:
+                wind_options.__setitem__('address', 'on')
+            if wind_options['sendeml']:
+                wind_options.__setitem__('sendeml', 'on')
+            if wind_options['enable_log']:
+                wind_options.__setitem__('enable_log', 'on')
+            if wind_options['use_kmh']:
+                wind_options.__setitem__('use_kmh', 'on')
+            if wind_options['enable_log_change']:
+                wind_options.__setitem__('enable_log_change', 'on')
+            if wind_options['delete_max_24h']:
+                wind_options.__setitem__('delete_max_24h', 'on')
+            if wind_options['stoperr']:
+                wind_options.__setitem__('stoperr', 'on')
             log.clear(NAME)
             log.info(NAME, datetime_string() + ' ' + _(u'Maximal speed has reseted.'))
-
             raise web.seeother(plugin_url(settings_page), True)
 
         if wind_sender is not None and delete:
-           write_log([])
-           create_default_graph()
-           log.info(NAME, datetime_string() + ' ' + _(u'Deleted all log files OK'))
-           raise web.seeother(plugin_url(settings_page), True)
+            write_log([])
+            create_default_graph()
+            log.info(NAME, datetime_string() + ' ' + _(u'Deleted all log files OK'))
+            raise web.seeother(plugin_url(settings_page), True)
 
         if wind_sender is not None and 'history' in qdict:
-           history = qdict['history']
-           wind_options.__setitem__('history', int(history))
+            history = qdict['history']
+            wind_options.__setitem__('history', int(history))
+            if wind_options['use_wind_monitor']:
+                wind_options.__setitem__('use_wind_monitor', 'on')
+            if wind_options['address']:
+                wind_options.__setitem__('address', 'on')
+            if wind_options['sendeml']:
+                wind_options.__setitem__('sendeml', 'on')
+            if wind_options['enable_log']:
+                wind_options.__setitem__('enable_log', 'on')
+            if wind_options['use_kmh']:
+                wind_options.__setitem__('use_kmh', 'on')
+            if wind_options['enable_log_change']:
+                wind_options.__setitem__('enable_log_change', 'on')
+            if wind_options['delete_max_24h']:
+                wind_options.__setitem__('delete_max_24h', 'on')
+            if wind_options['stoperr']:
+                wind_options.__setitem__('stoperr', 'on')
 
         if wind_sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)

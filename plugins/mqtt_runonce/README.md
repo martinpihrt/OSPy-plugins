@@ -1,6 +1,8 @@
 MQTT Run-once Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs paho-mqtt in to the system himself. On first use (if run installation paho-mqtt) please wait for status. We can use a public Broker server to test'): http://www.hivemq.com/demos/websocket-client/.
 
 This MQTT Run-once plugin allows runonce programs to be set over MQTT. The received message is a sheet that contains: station number, time in seconds. 

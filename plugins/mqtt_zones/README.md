@@ -1,6 +1,8 @@
 MQTT Zones Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This MQTT Zones plugin relies on to MQTT, broadcasts the current status of all zones.    
 
 Plugin setup
