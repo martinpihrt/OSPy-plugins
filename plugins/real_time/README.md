@@ -1,6 +1,8 @@
 RTC (real time) and NTP time synchronization Readme
 ====
 
+Not ready to use
+
 When is enabled synchronization RTC Time and NTP time, system time adjusted every hour from NTP server (is posible) or RTC time (if exists). Time from NTP server is saved to real time DS 1307 (on I2C bus 0x68) as HW time.  
 
 RTC Clocks:  

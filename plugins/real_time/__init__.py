@@ -6,6 +6,8 @@ __author__ = u'Martin Pihrt'
 import subprocess
 
 import datetime
+import calendar
+
 import time, struct
 import sys, os
 
@@ -34,9 +36,9 @@ plugin_options = PluginOptions(
     {
         'enabled': False,
         'use_ntp': True,
-        'ntp_server':     'time1.google.com',    # Primary
+        'ntp_server':     'pool.ntp.org',        # Primary
         'ntp_server_two': 'tak.cesnet.cz',       # Secondary
-        'ntp_port': 123     
+        'ntp_port': 123
     })
 
 
@@ -68,8 +70,8 @@ class RealTimeChecker(Thread):
         dis_text = True
         while not self._stop_event.is_set():
             rtc_time = None
-            ntp_time = None  
-            self._sleep(10)
+            ntp_time = None
+            self._sleep(2)
 
             try:
                 if plugin_options['enabled']:
@@ -78,7 +80,6 @@ class RealTimeChecker(Thread):
                     log.info(NAME, _('Local time') + ': ' + datetime_string())
                     try:                                                                 # try use library rtc_DS1307
                        ds1307 = try_io(lambda: rtc_DS1307.rtc_DS1307(1))
-
                     except:
                        pass
                        log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
@@ -87,43 +88,35 @@ class RealTimeChecker(Thread):
                        try:
                            ntp_time = getNTPtime(plugin_options['ntp_server'])          # try read NTP time from web: server 1
                            log.info(NAME, _('NTP time') + ': ' + str(plugin_options['ntp_server']) + ': ' + str(ntp_time))
-
                        except:
                            log.info(NAME, _('Primary NTP server has fault, now trying secondary NTP server.')) 
 
                            try:
                               ntp_time = getNTPtime(plugin_options['ntp_server_two'])   # try read NTP time from web: server 2
                               log.info(NAME, _('NTP time') + ': ' + str(plugin_options['ntp_server_two']) + ': ' + str(ntp_time))
-
                            except:
                               pass
                               log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
-                       
-              
                     try:
                        rtc_time = try_io(lambda:ds1307.read_datetime())                          # try read RTC time from DS1307
                        log.info(NAME, _('RTC time') + ': ' + str(rtc_time))
-
                     except:
                        log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
-                    
 
                     if ntp_time is not None and rtc_time is not None and ntp_time != rtc_time:   # try save NTP time to RTC DS1307 if NTP!=RTC
                        try:
-                          log.info(NAME, _('Saving NTP time to RTC time.'))                 
+                          log.info(NAME, _('Saving NTP time to RTC time.'))
                           try_io(lambda: ds1307.write_datetime(ntp_time))
-                          rtc_time = try_io(lambda: ds1307.read_datetime())                                 
+                          rtc_time = try_io(lambda: ds1307.read_datetime())
                           log.info(NAME, _('RTC time is now') + ': ' + str(rtc_time))
-
                        except:
                           log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
                     if ntp_time is not None and ntp_time != datetime_string():           # try sync local time from NTP time if NTP!=local time
                        try:
-                          log.info(NAME, _('Saving NTP time to local system time.'))                                       
+                          log.info(NAME, _('Saving NTP time to local system time.'))
                           subprocess.call("sudo date -s '{:}'".format(ntp_time.strftime('%Y/%m/%d %H:%M:%S')), shell=True) # Sets system time (Requires root, obviously)
-                          
                        except:
                           log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
                     else:                                                                 # try sync local time from RTC time
@@ -139,7 +132,7 @@ class RealTimeChecker(Thread):
                              os.system('sudo date --set=' + set_time)  
 
                        except:
-                          log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())                         
+                          log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
                     log.info(NAME, _('Waiting one hour for the next update.'))
                     self._sleep(3600)
@@ -185,27 +178,31 @@ def getNTPtime(server_address):
     """Return NTP time as datetime"""
     buf = 1024
     port = int(plugin_options['ntp_port'])
-    host = server_address #old plugin_options['ntp_server']
+    host = server_address
 
     address = (host,port)
     msg = '\x1b' + 47 * '\0'
 
     # reference time (in seconds since 1900-01-01 00:00:00)
-    TIME1970 = 2208988800L # 1970-01-01 00:00:00
+    #TIME1970 = 2208988800L # 1970-01-01 00:00:00
+
+    d = datetime.datetime(1970, 1, 1, 0, 0, 0)
+    ttuple = d.timetuple()
+    TIME1970 = calendar.timegm(ttuple)
 
     # connect to server
     client = socket.socket( AF_INET, SOCK_DGRAM)
-    client.sendto(msg, address)
+    client.sendto(msg.encode(), address)
     msg, address = client.recvfrom( buf )
 
-    t = struct.unpack( "!12I", msg )[10]
+    t = struct.unpack( "!12I", msg)[10]
     t -= TIME1970
     try:
         t = datetime.datetime.strptime(time.ctime(t), "%a %b %d %H:%M:%S %Y")
         return t
     except Exception: 
         pass   
-        return None    
+        return None
 
     
 def start():
@@ -241,7 +238,7 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.real_time_help()        
+        return self.plugin_render.real_time_help()
 
 
 class settings_json(ProtectedPage):

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # rtc_DS1307.py Python Driver Code
 # SwitchDoc Labs 07/10/2014
 # Shovic V 1.0
@@ -74,8 +75,8 @@ class rtc_DS1307():
 
     def _read_hours(self):
         d = self._read(self._REG_HOURS)
-	if (d == 0x64):
-		d = 0x40
+        if (d == 0x64):
+            d = 0x40
         return _bcd_to_int(d & 0x3F)
 
     def _read_day(self):
@@ -108,9 +109,9 @@ class rtc_DS1307():
     def read_datetime(self, century=21, tzinfo=None):
         """Return the datetime.datetime object.
         """
-        return datetime((century - 1) * 100 + self._read_year(),
-                self._read_month(), self._read_date(), self._read_hours(),
-                self._read_minutes(), self._read_seconds(), 0, tzinfo=tzinfo)
+        return datetime((century - 1) * 100 + int(self._read_year()),
+                int(self._read_month()), int(self._read_date()), int(self._read_hours()),
+                int(self._read_minutes()), int(self._read_seconds()), 0, tzinfo=tzinfo)
 
     def write_all(self, seconds=None, minutes=None, hours=None, day=None,
             date=None, month=None, year=None, save_as_24h=True):
@@ -165,4 +166,3 @@ class rtc_DS1307():
         """Equal to DS1307.write_datetime(datetime.datetime.now()).
         """
         self.write_datetime(datetime.now())
-
