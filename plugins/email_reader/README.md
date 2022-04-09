@@ -1,6 +1,8 @@
 E-mail Reader Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This extension allows you to retrieve data from a configured E-mail box and respond to incoming messages that arrive in the mailbox. This extension requires the email_notification extension to be installed and set up correctly. We will send receive messages using the set account. After receiving and processing the message in the E-mail, a confirmation of the message processing will be sent.  
 
 Plugin setup
