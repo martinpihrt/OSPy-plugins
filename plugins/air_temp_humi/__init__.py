@@ -16,8 +16,7 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision
-from ospy.helpers import datetime_string
+from ospy.helpers import get_rpi_revision, is_python2, datetime_string
 from ospy import helpers
 from ospy.stations import stations
 
@@ -25,6 +24,11 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
 import RPi.GPIO as GPIO
+
+if is_python2():
+    import sys
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 
 # Thank's: https://github.com/szazo/DHT11_Python
 from . import dht11
@@ -226,14 +230,17 @@ class Sender(Thread):
                        for i in range(0, plugin_options['ds_used']):
                           self.status['DS%d' % i] = tempDS[i]
                           log.info(NAME, _(u'Temperature') + ' ' + _(u'DS') + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
-                          tempText += u' %s' % plugin_options['label_ds%d' % i] + u' %.1f \u2103' % self.status['DS%d' % i] 
+                          tempText += u' %s' % plugin_options['label_ds%d' % i] + u' %.1f \u2103' % self.status['DS%d' % i]
                        
                     if plugin_options['enabled_reg']: 
                        tempText += ' ' + regulation_text
                     
                     if plugin_options['use_footer']: 
-                        if air_temp is not None:                      
-                            air_temp.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                 
+                        if air_temp is not None:
+                            if is_python2():
+                                air_temp.val = tempText    # value on footer
+                            else:    
+                                air_temp.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                
 
                     if plugin_options['enable_log']:  # enabled logging
                           millis = int(round(time.time() * 1000))
@@ -295,7 +302,7 @@ def DS18B20_read_data():
 
        # Test recieved data byte 1 and 2
        if i2c_data[1] == 255 or i2c_data[2] == 255:         
-          log.error(NAME, _(u'Data is not correct. Please try again later.'))
+          log.debug(NAME, _(u'Data is not correct. Please try again later.'))
           return [-127,-127,-127,-127,-127,-127] # data has error 
 
        # Each float temperature from the hw board is 5 bytes long (5byte * 6 probe = 30 bytes).
@@ -453,52 +460,53 @@ def update_log(status):
 
     timestamp = int(time.time())
 
-    if plugin_options['ds_used'] > 0:      # DS1
-        temp0 = graph_data[0]['balances']
-        if status['DS0'] != -127:
-           DS1 = {'total': status['DS0']}
-           temp0.update({timestamp: DS1})
-    if plugin_options['ds_used'] > 1:      # DS2
-        temp1 = graph_data[1]['balances']
-        if status['DS1'] != -127:
-           DS2 = {'total': status['DS1']}
-           temp1.update({timestamp: DS2})
-    if plugin_options['ds_used'] > 2:      # DS3
-        temp2 = graph_data[2]['balances']
-        if status['DS2'] != -127:
-           DS3 = {'total': status['DS2']}
-           temp2.update({timestamp: DS3})
-    if plugin_options['ds_used'] > 3:      # DS4
-        temp3 = graph_data[3]['balances']
-        if status['DS3'] != -127:
-           DS4 = {'total': status['DS3']}
-           temp3.update({timestamp: DS4})
-    if plugin_options['ds_used'] > 4:      # DS5
-        temp4 = graph_data[4]['balances']
-        if status['DS4'] != -127:
-           DS5 = {'total': status['DS4']}
-           temp4.update({timestamp: DS5})
-    if plugin_options['ds_used'] > 5:      # DS6
-        temp5 = graph_data[5]['balances']
-        if status['DS5'] != -127:
-           DS6 = {'total': status['DS5']}
-           temp5.update({timestamp: DS6})
+    try:
+        if plugin_options['ds_used'] > 0:      # DS1
+            temp0 = graph_data[0]['balances']
+            if status['DS0'] != -127:
+                DS1 = {'total': status['DS0']}
+                temp0.update({timestamp: DS1})
+        if plugin_options['ds_used'] > 1:      # DS2
+            temp1 = graph_data[1]['balances']
+            if status['DS1'] != -127:
+                DS2 = {'total': status['DS1']}
+                temp1.update({timestamp: DS2})
+        if plugin_options['ds_used'] > 2:      # DS3
+            temp2 = graph_data[2]['balances']
+            if status['DS2'] != -127:
+                DS3 = {'total': status['DS2']}
+                temp2.update({timestamp: DS3})
+        if plugin_options['ds_used'] > 3:      # DS4
+            temp3 = graph_data[3]['balances']
+            if status['DS3'] != -127:
+                DS4 = {'total': status['DS3']}
+                temp3.update({timestamp: DS4})
+        if plugin_options['ds_used'] > 4:      # DS5
+            temp4 = graph_data[4]['balances']
+            if status['DS4'] != -127:
+                DS5 = {'total': status['DS4']}
+                temp4.update({timestamp: DS5})
+        if plugin_options['ds_used'] > 5:      # DS6
+            temp5 = graph_data[5]['balances']
+            if status['DS5'] != -127:
+                DS6 = {'total': status['DS5']}
+                temp5.update({timestamp: DS6})
 
-    if plugin_options['enable_dht']:
-        temp6 = graph_data[6]['balances']  # DHT temp  
-        DHT = {'total': status['temp']}
-        temp6.update({timestamp: DHT})
-        try:
-            temp7 = graph_data[7]['balances']  # DHT humi
-            DHT2 = {'total': status['humi']}
-            temp7.update({timestamp: DHT2})
-        except:
-            pass
-     
-    write_graph_log(graph_data)
-
-    log.info(NAME, _(u'Saving to log files OK'))
-
+        if plugin_options['enable_dht']:
+            temp6 = graph_data[6]['balances']  # DHT temp
+            DHT = {'total': status['temp']}
+            temp6.update({timestamp: DHT})
+            try:
+                temp7 = graph_data[7]['balances']  # DHT humi
+                DHT2 = {'total': status['humi']}
+                temp7.update({timestamp: DHT2})
+            except:
+                pass
+        write_graph_log(graph_data)
+        log.info(NAME, _(u'Saving to log files OK'))
+    
+    except:    
+        create_default_graph()
 
 def create_default_graph():
     """Create default graph json file."""
@@ -663,17 +671,8 @@ class graph_json(ProtectedPage):
                 
         json_data = read_graph_log()
 
-        try: # DHT moisture logging has been added to the extension longer, and if there is no DHT record, the original setting is used
+        if len(json_data) > 0:
             for i in range(0, 8):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
-                temp_balances = {}
-                for key in json_data[i]['balances']:
-                    find_key =  int(key.encode('utf8'))                              # key is in unicode ex: u'1601347000' -> find_key is int number
-                    if find_key >= log_start:                                        # timestamp interval 
-                        temp_balances[key] = json_data[i]['balances'][key]
-                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
-        except:
-            pass
-            for i in range(0, 7):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = no dht
                 temp_balances = {}
                 for key in json_data[i]['balances']:
                     find_key =  int(key.encode('utf8'))                              # key is in unicode ex: u'1601347000' -> find_key is int number
