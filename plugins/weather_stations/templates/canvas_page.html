@@ -60,14 +60,14 @@ $if not plugin_options['can_or_txt']:
     $for i in range(0, sensor_count+9):
         $if plugin_options['s_use'][i]:
             <canvas data-type="radial-gauge"
-            data-title= $:{json.dumps(plugin_options['s_name'][i], ensure_ascii=False).encode('utf8')};
+            data-title= $:{json.dumps(plugin_options['s_name'][i], ensure_ascii=False).encode('utf8').decode('utf8')};
             data-value="0"
             data-min-value= $plugin_options['s_min'][i]
             data-max-value= $plugin_options['s_max'][i]
             data-width= $plugin_options['can_size_xy']
             data-height= $plugin_options['can_size_xy']
             data-major-ticks= $plugin_options['s_tick'][i]
-            data-units= $:{json.dumps(plugin_options['s_unit'][i], ensure_ascii=False).encode('utf8')};
+            data-units= $:{json.dumps(plugin_options['s_unit'][i], ensure_ascii=False).encode('utf8').decode('utf8')};
             data-highlights= '[{"from": $plugin_options['s_a_high_fr'][i], "to": $plugin_options['s_a_high_to'][i], "color": "red"}, {"from": $plugin_options['s_b_high_fr'][i], "to": $plugin_options['s_b_high_to'][i], "color": "blue"},{"from": $plugin_options['s_c_high_fr'][i], "to": $plugin_options['s_c_high_to'][i], "color": "green"}]'>
             $_(u'Your web browser does not support canvas elements.') 
             </canvas>

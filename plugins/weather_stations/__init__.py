@@ -19,23 +19,23 @@ LINK = 'canvas_page'
 plugin_options = PluginOptions(
     NAME,
     {
-    u'can_or_txt': False,                                             # canvas or text mode showing data
-    u'can_size_xy': 250,                                              # all canvas x and y size in pixels
-    u'txt_size_font': 40,                                             # size for font in text mode    
+    'can_or_txt': False,                                             # canvas or text mode showing data
+    'can_size_xy': 250,                                              # all canvas x and y size in pixels
+    'txt_size_font': 40,                                             # size for font in text mode    
 
     # for airtemp, watertank, wind plugins and OSPy sensors Wi-Fi/LAN...
-    u's_use':    [False]*30,                 # show or disbale sensor in canvas/text mode
-    u's_unit':   [u'']*30,                   # sensor units
-    u's_name':   [u'']*30,                   # sensor name
-    u's_tick':   [u'0,10,20,30']*30,         # sensor canvas tick scale division
-    u's_min':    [u'0']*30,                  # sensor canvas minimum value for highlights
-    u's_max':    [u'30']*30,                 # sensor canvas maximum value for highlights
-    u's_a_high_fr': [5]*30,                  # sensor red color on highlights from
-    u's_a_high_to': [10]*30,                 # sensor red color on highlights to
-    u's_b_high_fr': [10]*30,                 # sensor blue color on highlights from
-    u's_b_high_to': [20]*30,                 # sensor blue color on highlights to
-    u's_c_high_fr': [20]*30,                 # sensor green color on highlights from
-    u's_c_high_to': [30]*30,                 # sensor green color on highlights to
+    's_use':    [False]*30,                 # show or disbale sensor in canvas/text mode
+    's_unit':   ['']*30,                    # sensor units
+    's_name':   ['']*30,                    # sensor name
+    's_tick':   ['0,10,20,30']*30,          # sensor canvas tick scale division
+    's_min':    ['0']*30,                   # sensor canvas minimum value for highlights
+    's_max':    ['30']*30,                  # sensor canvas maximum value for highlights
+    's_a_high_fr': [5]*30,                  # sensor red color on highlights from
+    's_a_high_to': [10]*30,                 # sensor red color on highlights to
+    's_b_high_fr': [10]*30,                 # sensor blue color on highlights from
+    's_b_high_to': [20]*30,                 # sensor blue color on highlights to
+    's_c_high_fr': [20]*30,                 # sensor green color on highlights from
+    's_c_high_to': [30]*30,                 # sensor green color on highlights to
     }
 )
 
@@ -92,11 +92,11 @@ def stop():
 ### clear plugin settings to default ###
 def set_to_default():
     plugin_options.__setitem__('s_use', [False]*30)
-    plugin_options.__setitem__('s_unit', [u'']*30)
-    plugin_options.__setitem__('s_name', [u'']*30)
-    plugin_options.__setitem__('s_tick', [u'0,10,20,30']*30)
-    plugin_options.__setitem__('s_min', [u'0']*30)
-    plugin_options.__setitem__('s_max', [u'30']*30)
+    plugin_options.__setitem__('s_unit', ['']*30)
+    plugin_options.__setitem__('s_name', ['']*30)
+    plugin_options.__setitem__('s_tick', ['0,10,20,30']*30)
+    plugin_options.__setitem__('s_min', ['0']*30)
+    plugin_options.__setitem__('s_max', ['30']*30)
     plugin_options.__setitem__('s_a_high_fr', [5]*30)
     plugin_options.__setitem__('s_a_high_to', [10]*30)
     plugin_options.__setitem__('s_b_high_fr', [10]*30)
@@ -135,25 +135,26 @@ class settings_page(ProtectedPage):
             return self.plugin_render.settings_page(plugin_options)
         except:
             set_to_default()
-            return self.plugin_render.settings_page(plugin_options)
+        
+        return self.plugin_render.settings_page(plugin_options)
 
     def POST(self):
         qdict = web.input()
 
         try:
             commands = {
-                u's_use' : [],
-                u's_name': [],
-                u's_unit': [],
-                u's_tick': [],
-                u's_min' : [],
-                u's_max' : [],
-                u's_a_high_fr': [],
-                u's_a_high_to': [],
-                u's_b_high_fr': [],
-                u's_b_high_to': [],
-                u's_c_high_fr': [],
-                u's_c_high_to': [],
+                's_use' : [],
+                's_name': [],
+                's_unit': [],
+                's_tick': [],
+                's_min' : [],
+                's_max' : [],
+                's_a_high_fr': [],
+                's_a_high_to': [],
+                's_b_high_fr': [],
+                's_b_high_to': [],
+                's_c_high_fr': [],
+                's_c_high_to': [],
                 }
 
             if 'can_or_txt' in qdict:

@@ -1,6 +1,8 @@
 Weather Stations Readme
 ====
 
+Tested in Python 3 and Python 2
+
 This plugin Displays data probes DS18B20 (DS1-6) from Air Temperature and Humidity Monitor plugin and volume, percent from Water Tank Monitor plugin and more sensors.
 
 Plugin setup
