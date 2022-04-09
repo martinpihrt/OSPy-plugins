@@ -58,7 +58,7 @@ plugin_options = PluginOptions(
      'reg_mm_b': 60,       # min for maximal runtime B
      'reg_ss_b': 0,        # sec for maximal runtime B
      'reg_mm_c': 60,       # min for maximal runtime C
-     'reg_ss_c': 0,        # sec for maximal runtime C          
+     'reg_ss_c': 0,        # sec for maximal runtime C
      'use_footer': True    # show data from plugin in footer on home page
      }
 )
@@ -98,7 +98,7 @@ class Sender(Thread):
         msg_b_on = True
         msg_b_off = True
         msg_c_on = True
-        msg_c_off = True                
+        msg_c_off = True
 
         temp_sw = None
 
@@ -113,6 +113,8 @@ class Sender(Thread):
         a_state = -1                                     # for state in footer (-1 disable regulation A, 0 = Aoff, 1 = Aon)
         b_state = -1
         c_state = -1
+
+        helper_text = ''
 
         while not self._stop_event.is_set():
             try:
@@ -152,7 +154,7 @@ class Sender(Thread):
                                 'active': True,
                                 'program': -1,
                                 'station': sid,
-                                'program_name': _(u'Temperature Switch A'),
+                                'program_name': _('Temperature Switch A'),
                                 'fixed': True,
                                 'cut_off': 0,
                                 'manual': True,
@@ -172,13 +174,13 @@ class Sender(Thread):
                         if msg_a_off:
                             msg_a_off = False
                             msg_a_on = True
-                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_a.name + ' ' + _(u'was turned off.'))  
+                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_a.name + ' ' + _(u'was turned off.'))
                             sid = station_a.index
                             stations.deactivate(sid)
                             active = log.active_runs()
                             for interval in active:
                                 if interval['station'] == sid:
-                                    log.finish_run(interval)                             
+                                    log.finish_run(interval)
  
                 else:
                     a_state = -1    
@@ -201,7 +203,7 @@ class Sender(Thread):
                                 'active': True,
                                 'program': -1,
                                 'station': sid,
-                                'program_name': _(u'Temperature Switch B'),
+                                'program_name': _('Temperature Switch B'),
                                 'fixed': True,
                                 'cut_off': 0,
                                 'manual': True,
@@ -214,23 +216,23 @@ class Sender(Thread):
                             }
 
                             log.start_run(new_schedule)
-                            stations.activate(new_schedule['station'])                             
+                            stations.activate(new_schedule['station'])
 
                     if ds_b_off < plugin_options['temp_b_off']:  # if DSxx < temperature BOFF
                         b_state = 0
                         if msg_b_off:
                             msg_b_off = False
                             msg_b_on = True
-                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_b.name + ' ' + _(u'was turned off.'))   
+                            log.info(NAME, datetime_string() + ' ' + u'%s' % station_b.name + ' ' + _(u'was turned off.'))
                             sid = station_b.index
                             stations.deactivate(sid)
                             active = log.active_runs()
                             for interval in active:
                                 if interval['station'] == sid:
-                                    log.finish_run(interval)                            
+                                    log.finish_run(interval)
   
                 else:
-                    b_state = -1                        
+                    b_state = -1
 
                 # regulation C    
                 if plugin_options['enabled_c']:  
@@ -251,7 +253,7 @@ class Sender(Thread):
                                 'active': True,
                                 'program': -1,
                                 'station': sid,
-                                'program_name': _(u'Temperature Switch C'),
+                                'program_name': _('Temperature Switch C'),
                                 'fixed': True,
                                 'cut_off': 0,
                                 'manual': True,
@@ -264,7 +266,7 @@ class Sender(Thread):
                             }
 
                             log.start_run(new_schedule)
-                            stations.activate(new_schedule['station'])                             
+                            stations.activate(new_schedule['station'])
 
                     if ds_c_off < plugin_options['temp_c_off']:  # if DSxx < temperature COFF
                         c_state = 0
@@ -277,10 +279,10 @@ class Sender(Thread):
                             active = log.active_runs()
                             for interval in active:
                                 if interval['station'] == sid:
-                                    log.finish_run(interval)                              
+                                    log.finish_run(interval)
  
                 else:
-                    c_state = -1                          
+                    c_state = -1
 
                 # footer text
                 tempText = ' '
@@ -302,7 +304,9 @@ class Sender(Thread):
 
                 if plugin_options['use_footer']:
                     if temp_sw is not None:
-                        temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                          
+                        if tempText != helper_text:
+                            temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                            helper_text = tempText
 
                 self._sleep(2)
 
