@@ -263,10 +263,9 @@ def send_data(text):
             from urllib.request import urlopen
             from urllib.parse import quote_plus 
 
-        req = urlopen(remote_options['rem_adr']+'save.php/?' + text)
-        req.add_header('Referer', 'OSPy sprinkler') 
-        f = urlopen(req)
-        log.info(NAME, _(u'Remote server reply') + ':\n' + f.read())
+        url = remote_options['rem_adr'] + 'save.php/?' + text 
+        data = urlopen(url)
+        log.info(NAME, _(u'Remote server reply') + ':\n' + data.read().decode('utf-8'))
     else:
         raise Exception(_(u'Remote plug-in is not properly configured') + '!')
 
