@@ -174,7 +174,7 @@ def run_command(cmd):
         stderr=subprocess.STDOUT, # merge stdout and stderr
         stdout=subprocess.PIPE,
         shell=True)
-        output = proc.communicate()[0]
+        output = proc.communicate()[0].decode('utf-8')
         log.info(NAME, output)
 
     except Exception:
@@ -353,7 +353,7 @@ class settings_page(ProtectedPage):
                 plugin_options.__setitem__('stop_hour', qdict['stop_hour'])
 
             commands = {'on': [], 'off': []} 
-            for i in range(options.output_count):
+            for i in range(0, options.output_count):
                 if 'con'+str(i) in qdict:
                     commands['on'].append(int(qdict['con'+str(i)]))
                 else:
@@ -397,7 +397,7 @@ class upload_page(ProtectedPage):
                 errorCode = qdict.get('errorCode', 'Etype')
                 return self.plugin_render.voice_station_sounds(plugin_options, errorCode)
             else:
-                fout = open(os.path.join(plugin_data_dir(), fname),'w') # ASCI_convert(fname)
+                fout = open(os.path.join(plugin_data_dir(), fname),'wb') # ASCI_convert(fname)
                 fout.write(qdict['myfile'].file.read()) 
                 fout.close() 
                 log.info(NAME, datetime_string() + ': ' + _(u'Uploading file sucesfully.'))
