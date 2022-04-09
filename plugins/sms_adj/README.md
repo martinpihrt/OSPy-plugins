@@ -1,6 +1,8 @@
 SMS Settings Readme
 ====
 
+Old extension for Python 2 (for using in Python 3 is patched but I not have hardware for testing - not tested with hardware)
+
 Control your sprinkler using SMS (Short Message Service).  
 For this plugin is needed to SMS modem with the telephone service provider.  
 This plugin needs Gammu. If not installed Gammu and Python-Gammu, plugin installs Gammu and Python-Gammu in to the system himself.  

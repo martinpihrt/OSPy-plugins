@@ -18,7 +18,7 @@ from ospy.options import options
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import reboot, poweroff
+from ospy.helpers import reboot, poweroff, is_python2
 from ospy.programs import programs
 from ospy.stations import stations
 from ospy.helpers import datetime_string
@@ -94,13 +94,18 @@ class SMSSender(Thread):
                             #http://askubuntu.com/questions/448358/automating-apt-get-install-with-assume-yes
                             #sudo apt-get install -y gammu
                             #sudo apt-get install -y python-gammu
+                            #sudo apt-get install python3-gammu
                             log.clear(NAME)
                             log.info(NAME, _(u'Gammu is not installed.'))
                             log.info(NAME, _(u'Please wait installing Gammu...'))
                             cmd = "sudo apt-get install -y gammu"
                             proc_install(self, cmd)
-                            log.info(NAME, _(u'Please wait installing Python-Gammu...'))
-                            cmd = "sudo apt-get install -y python-gammu"
+                            if is_python2():
+                                log.info(NAME, _(u'Please wait installing Python-Gammu...'))
+                                cmd = "sudo apt-get install -y python-gammu"
+                            else:
+                                log.info(NAME, _(u'Please wait installing Python3-Gammu...'))
+                                cmd = "sudo apt-get install -y python3-gammu"                                    
                             proc_install(self, cmd)
                             log.info(NAME, _(u'Testing attached GSM ttyUSB...'))
                             cmd = "sudo dmesg | grep tty"
@@ -156,7 +161,7 @@ def proc_install(self, cmd):
     stderr=subprocess.STDOUT, # merge stdout and stderr
     stdout=subprocess.PIPE,
     shell=True)
-    output = proc.communicate()[0]
+    output = proc.communicate()[0].decode('utf-8')
     log.info(NAME, output)
 
 def sms_check(self):
@@ -164,7 +169,12 @@ def sms_check(self):
     try:
         import gammu
     except Exception:
-        log.error(NAME, _(u'SMS Modem plug-in') + ':\n' + traceback.format_exc())
+        log.clear(NAME)
+        #log.error(NAME, _(u'SMS Modem plug-in') + ':\n' + traceback.format_exc())
+        log.debug(NAME, _(u'Error: No module named gammu'))
+        pass
+        self._sleep(60)
+        return
         
     tel1 = sms_options['tel1']
     tel2 = sms_options['tel2']
@@ -184,8 +194,11 @@ def sms_check(self):
         sm.Init()
         log.debug(NAME, datetime_string() + ': ' + _(u'Checking SMS...'))
     except:
-        log.error(NAME, _(u'SMS Modem plug-in') + ':\n' + traceback.format_exc())
+        #log.error(NAME, _(u'SMS Modem plug-in') + ':\n' + traceback.format_exc())
+        log.debug(NAME, _(u'Error: Phone (modem) not connected.'))
+        pass
         self._sleep(60)
+        return
 
     if sms_options["use_strength"]:    # print strength signal in status Window every check SMS
         signal = sm.GetSignalQuality() # list: SignalPercent, SignalStrength, BitErrorRate
