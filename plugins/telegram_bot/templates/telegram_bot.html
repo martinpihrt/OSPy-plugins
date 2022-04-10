@@ -45,26 +45,23 @@ $var page: plugins
                 <td style='text-transform: none;'>
                     <div><small>$_(u'Example: 5498756874:AAEPKTa987456SQ')</small></div>
                 </td>
-            </tr>             
-            <tr>
-                <td style='text-transform: none;'>$_(u'Bot Access Key - to Subscribe'):</td>
-                <td title=$:{json.dumps(_(u'Type your Bot Access key to Subscribe.'), ensure_ascii=False)}>
-                     <input name='botAccessKey' type='text' size="55" value="${plugin_options['botAccessKey']}">
-                </td>
             </tr>
-            <tr>
-                <td style='text-transform: none;'>
-                    <div><small>$_(u'Example: 1811878118')</small></div>
-                </td>
-            </tr>            
              <tr>
-                <td style='text-transform: none;'>$_(u'Please restart OSPy if these options are changed!')</td>
-            </tr>
-            <tr>
                 <td style='text-transform: none;'>
-                    <div><small>$_(u'Signals to connect')</small></div>
+                    <div><small>$_(u'Please restart OSPy if these options are changed!')</small></div>
                 </td>
             </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_(u'Your Bot ID'):</td>
+                <td title=$:{json.dumps(_(u'ID for subscribe talk with telegram.'), ensure_ascii=False)}>
+                    <textarea readonly>${plugin_options['botID']}</textarea>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small>$_(u'Signals to connect')
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Zone Change'):</td>
                 <td title=$:{json.dumps(_(u'Send message if there has been a stations changed state.'), ensure_ascii=False)}>

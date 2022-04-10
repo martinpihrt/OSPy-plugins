@@ -35,14 +35,14 @@ plugin_options = PluginOptions(
     NAME,
     {'use_plugin': False, 
      'botToken': '',
-     'botAccessKey': '',
+     'botID': '',
      'zoneChange': False,
-     'help_cmd': _(u'help'),     
-     'info_cmd': _(u'info'),
-     'enable_cmd': _(u'enable'),
-     'disable_cmd': _(u'disable'),
-     'runOnce_cmd': _(u'runOnce'),
-     'stop_cmd': _(u'stop'),
+     'help_cmd': _('help'),     
+     'info_cmd': _('info'),
+     'enable_cmd': _('enable'),
+     'disable_cmd': _('disable'),
+     'runOnce_cmd': _('runOnce'),
+     'stop_cmd': _('stop'),
      'currentChats': [],
      'lastChatDate': [],
      'use_footer': True
@@ -82,43 +82,53 @@ class Sender(Thread):
 
     def _botCmd_start_chat(self, bot, update):
         txt= _(u'Hi! I am a Bot to interface with {}. /{}').format(options.name, plugin_options['help_cmd'])
-        txt= unicode(txt).encode('utf-8')
-        bot.sendMessage(update.message.chat.id, text=txt)
+        if is_python2():
+            bot.sendMessage(update.message.chat.id, text=txt.encode('utf-8'))
+        else:    
+            bot.sendMessage(update.message.chat.id, text=txt)
 
     def _botCmd_subscribe(self, bot, update):
         chats = self._currentChats
         txt=''
-        if update.message.chat.id not in chats:
+        if update.message.chat.id not in list(chats):
             chats.append(update.message.chat.id)
             self._currentChats = chats
             plugin_options['currentChats'] = chats
             txt= _(u'Hi! you are now added to the {} announcement.').format(options.name)
-            txt= unicode(txt).encode('utf-8')
-            bot.sendMessage(update.message.chat.id, text=txt)
             log.info(NAME, txt)
+            if is_python2():
+                bot.sendMessage(update.message.chat.id, text=txt.encode('utf-8'))
+            else:    
+                bot.sendMessage(update.message.chat.id, text=txt)            
         else:
             txt= _(u'Sorry, please enter the correct AccessKey!')
-            txt= unicode(txt).encode('utf-8')
-            bot.sendMessage(update.message.chat.id, text=txt)
             log.info(NAME, txt)
+            if is_python2():
+                bot.sendMessage(update.message.chat.id, text=txt.encode('utf-8'))
+            else:    
+                bot.sendMessage(update.message.chat.id, text=txt) 
 
     def _echo(self, bot, update):
         txt= _(u'You write: {}').format(update.message.text)
-        txt= unicode(txt).encode('utf-8')
-        bot.sendMessage(update.message.chat.id, text=txt)
+        if is_python2():
+            bot.sendMessage(update.message.chat.id, text=txt.encode('utf-8'))
+        else:    
+            bot.sendMessage(update.message.chat.id, text=txt) 
 
     def _announce(self, txt):
         bot = self.bot
-        for chat_id in self._currentChats:
-            txt= unicode(txt).encode('utf-8')
+        for chat_id in list(self._currentChats):
             try:
-                bot.sendMessage(chat_id, text=txt)
+                if is_python2():
+                    bot.sendMessage(chat_id, text=txt.encode('utf-8'))
+                else:    
+                    bot.sendMessage(chat_id, text=txt) 
             except:
                 pass    
 
     def _botCmd_help(self, bot, update):
         chat_id = update.message.chat.id
-        if chat_id in self._currentChats:
+        if chat_id in list(self._currentChats):
             txt = _(u'Help: /{}\n Info Command: /{}\n Enable Command: /{}\n Disable Command: /{}\n Stop Command: /{}\n Run Once Command: /{}\n (use program number as argument).\n /subscribe Subscribe to the Announcement list, need an access Key.').format(
                 plugin_options['help_cmd'],
                 plugin_options['info_cmd'],
@@ -129,12 +139,14 @@ class Sender(Thread):
             )
         else:
             txt = _(u'Sorry I can not do that.')
-        txt= unicode(txt).encode('utf-8')
-        bot.sendMessage(chat_id, text=txt)
+        if is_python2():
+            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
+        else:    
+            bot.sendMessage(chat_id, text=txt) 
 
     def _botCmd_info(self, bot, update):
         chat_id = update.message.chat.id
-        if chat_id in self._currentChats:
+        if chat_id in list(self._currentChats):
             txt =  _(u'Info from {}\n').format(options.name)
             for station in stations.get():
                 txt += _(u'Station: {} State: ').format(station.name)
@@ -150,46 +162,53 @@ class Sender(Thread):
             txt += _(u'Scheduler is {}.\n').format( _(u'enabled') if options.scheduler_enabled else _(u'disabled'))    
         else:
             txt = _(u'Sorry I can not do that.')
-
-        txt = unicode(txt).encode('utf-8')
-        bot.sendMessage(chat_id, text=txt)
+        if is_python2():
+            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
+        else:    
+            bot.sendMessage(chat_id, text=txt)
 
     def _botCmd_enable(self, bot, update):                    # msg for switch scheduler to on
         chat_id = update.message.chat.id
-        if chat_id in self._currentChats:
+        if chat_id in list(self._currentChats):
             txt = _(u'{} System - scheduler ON.').format(options.name)
             options.scheduler_enabled = True 
         else:
             txt = _(u'Sorry I can not do that.')
-        txt = unicode(txt).encode('utf-8')    
-        bot.sendMessage(chat_id, text=txt)
+        if is_python2():
+            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
+        else:    
+            bot.sendMessage(chat_id, text=txt)
 
     def _botCmd_disable(self, bot, update):                   # msg for switch scheduler to off
         chat_id = update.message.chat.id
-        if chat_id in self._currentChats:
+        if chat_id in list(self._currentChats):
             txt = _(u'{} System - scheduler OFF.').format(options.name)
             options.scheduler_enabled = False 
         else:
             txt = _(u'Sorry I can not do that.')
-        txt = unicode(txt).encode('utf-8')    
-        bot.sendMessage(chat_id, text=txt)
+        if is_python2():
+            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
+        else:    
+            bot.sendMessage(chat_id, text=txt)
 
     def _botCmd_stop(self, bot, update):                      # msg for stop all station and disable scheduler
         chat_id = update.message.chat.id
-        if chat_id in self._currentChats:
+        if chat_id in list(self._currentChats):
             txt = _(u'{} System - scheduler OFF. All stations OFF.').format(options.name)
             programs.run_now_program = None
             run_once.clear()
             log.finish_run(None)
             stations.clear() 
         else:
-            txt = _(u'Sorry I can not do that.')
-        txt = unicode(txt).encode('utf-8')    
-        bot.sendMessage(chat_id, text=txt)        
+            txt = _(u'Sorry I can not do that.')   
+        if is_python2():
+            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
+        else:    
+            bot.sendMessage(chat_id, text=txt)    
 
     def _botCmd_runOnce(self, bot, update, args):             # run-now program xx
         chat_id = update.message.chat.id
-        if chat_id in self._currentChats:
+        if chat_id in list(self._currentChats):
             txt = _(u'{} RunOnce: program {}.').format(options.name, args)
             for program in programs.get():
                 if (program.index == int(args-1)):   
@@ -200,9 +219,11 @@ class Sender(Thread):
                     break       
                 program.index+1
         else:
-            txt = _(u'Sorry I can not do that.')
-        txt = unicode(txt).encode('utf-8')    
-        bot.sendMessage(chat_id, text=txt)
+            txt = _(u'Sorry I can not do that.')   
+        if is_python2():
+            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
+        else:    
+            bot.sendMessage(chat_id, text=txt)
 
     def run(self):
         tempText = ''
@@ -242,7 +263,7 @@ class Sender(Thread):
 
         try:
             # https://www.toptal.com/python/telegram-bot-tutorial-python
-            if plugin_options['use_plugin'] and plugin_options['botToken'] != "" and plugin_options['botAccessKey'] != "" and not telegram_bad_import_test:
+            if plugin_options['use_plugin'] and plugin_options['botToken'] != "" and not telegram_bad_import_test:    
                 log.clear(NAME)
                 self._currentChats = plugin_options['currentChats']
                 self._lastChatDate = plugin_options['lastChatDate']
@@ -250,6 +271,7 @@ class Sender(Thread):
                 self.bot = telegram.Bot(token = plugin_options['botToken'])
                 getbot = self.bot.getMe()
                 info_id = getbot.id
+                plugin_options['botID'] = info_id
                 info_username = getbot.username
                 info_first_name = getbot.first_name
                 log.info(NAME, _(u'Hi connect is OK my ID: {}, User Name: {}, First Name: {}.').format(info_id, info_username, info_first_name))
@@ -293,7 +315,7 @@ class Sender(Thread):
                             if msg_id != self._lastMsgID and chat_date not in self._lastChatDate:
                                 self._lastMsgID = msg_id
                                 self._lastChatDate.append(chat_date)
-                                plugin_options['lastChatDate'] = self._lastChatDate
+                                plugin_options['lastChatDate'] = chat_date #self._lastChatDate
 
                                 log.clear(NAME)
                                 log.info(NAME, _(u'New message: {} ID: {}.').format(msg_text, msg_id))
@@ -303,43 +325,42 @@ class Sender(Thread):
 
                                 if msg_text == u'/start':
                                     self._botCmd_start_chat(self.bot, update)                                    
-                                    tempText = _(u'Last msg: /start')
+                                    tempText = _('Last msg: /start')
                                     log.info(NAME, tempText)
-                                    #plugin_options['lastChatDate'] = []
+                                    plugin_options['lastChatDate'] = []
                                 elif msg_text == u'/{}'.format(plugin_options['help_cmd']):
                                     self._botCmd_help(self.bot, update)
-                                    tempText = _(u'Last msg: /{}').format(plugin_options['help_cmd'])
+                                    tempText = _('Last msg: /{}').format(plugin_options['help_cmd'])
                                     log.info(NAME, tempText)
                                 elif msg_text == u'/{}'.format(plugin_options['info_cmd']):
                                     self._botCmd_info(self.bot, update)
-                                    tempText = _(u'Last msg: /{}').format(plugin_options['info_cmd'])
+                                    tempText = _('Last msg: /{}').format(plugin_options['info_cmd'])
                                     log.info(NAME, tempText)
                                 elif msg_text == u'/{}'.format(plugin_options['enable_cmd']):
                                     self._botCmd_enable(self.bot, update)
-                                    tempText = _(u'Last msg: /{}').format(plugin_options['enable_cmd'])
+                                    tempText = _('Last msg: /{}').format(plugin_options['enable_cmd'])
                                     log.info(NAME, tempText)
                                 elif msg_text == u'/{}'.format(plugin_options['disable_cmd']):
                                     self._botCmd_disable(self.bot, update)
-                                    tempText = _(u'Last msg: /{}').format(plugin_options['disable_cmd'])
+                                    tempText = _('Last msg: /{}').format(plugin_options['disable_cmd'])
                                     log.info(NAME, tempText)
                                 elif msg_text == u'/{}'.format(plugin_options['stop_cmd']):
                                     self._botCmd_stop(self.bot, update)
-                                    tempText = _(u'Last msg: /{}').format(plugin_options['stop_cmd'])
+                                    tempText = _('Last msg: /{}').format(plugin_options['stop_cmd'])
                                     log.info(NAME, tempText)                                    
                                 elif u'/{}'.format(plugin_options['runOnce_cmd']) in msg_text:
                                     runlen = len(u'/{}'.format(plugin_options['runOnce_cmd']))
                                     pgmid = int(msg_text[runlen:])
                                     args = pgmid
                                     self._botCmd_runOnce(self.bot, update, args)
-                                    tempText = _(u'Last msg: /{} arg: {}').format(plugin_options['runOnce_cmd'], args)
+                                    tempText = _('Last msg: /{} arg: {}').format(plugin_options['runOnce_cmd'], args)
                                     log.info(NAME, tempText)
-                                elif u'{}'.format(plugin_options['botAccessKey']) in msg_text:
+                                elif u'/{}'.format(plugin_options['botID']) in msg_text:
                                     self._botCmd_subscribe(self.bot, update)
-                                    tempText = _(u'Last msg: /subscribe')
+                                    tempText = _('Last msg: /subscribe')
                                     log.info(NAME, tempText)                                    
                                 else:
-                                    txt= _(u'Sorry command is not supported!')
-                                    txt = unicode(txt).encode('utf-8')
+                                    txt= _('Sorry command "{}" is not supported!').format(msg_text)
                                     self.bot.sendMessage(update.message.chat.id, text= txt)
                                     log.info(NAME, txt)
                                     tempText = txt
@@ -376,18 +397,18 @@ def stop():
 
 def notify_zone_change(name, **kw):
     if plugin_options['zoneChange']:
-        txt =  _(u'There has been a Station Change.\n')
+        txt =  _('There has been a Station Change.\n')
         for station in stations.get():
-            txt += _(u'Station: {} State: ').format(station.name)
+            txt += _('Station: {} State: ').format(station.name)
             if station.active:
-                txt += _(u'ON') + u' ('
+                txt += _('ON') + u' ('
                 if(station.remaining_seconds == -1):
-                    txt += _(u'Forever') + _(u')')
+                    txt += _('Forever') + _(u')')
                 else:    
-                    txt += u'{}'.format(str(int(station.remaining_seconds))) + _(u')')
+                    txt += '{}'.format(str(int(station.remaining_seconds))) + _(')')
             else:
-                txt += _(u'OFF')
-            txt += u'\n'    
+                txt += _('OFF')
+            txt += '\n'    
         sender._announce(txt)                   
 
 ################################################################################
