@@ -164,16 +164,19 @@ class install_page(ProtectedPage):
         run_process(cmd)
 
 
-        cmd = "sudo modprobe bcm2708_wdog"
-        log.debug(NAME, cmd)
-        run_process(cmd)
-        cmd = "sudo modprobe bcm2835_wdog"
-        log.debug(NAME, cmd)
-        run_process(cmd)
-        cmd = "sudo modprobe bcm2711_wdog"
-        log.debug(NAME, cmd)
-        run_process(cmd)
-
+        try:
+            cmd = "sudo modprobe bcm2708_wdog"
+            log.debug(NAME, cmd)
+            run_process(cmd)
+        except:
+            try:
+                cmd = "sudo modprobe bcm2835_wdog"
+                log.debug(NAME, cmd)
+                run_process(cmd)
+            except:
+                cmd = "sudo modprobe bcm2711_wdog"
+                log.debug(NAME, cmd)
+                run_process(cmd)
 
         cmd = "sudo apt-get install -y watchdog chkconfig"
         log.debug(NAME, cmd)
@@ -184,7 +187,7 @@ class install_page(ProtectedPage):
         log.debug(NAME, _('Saving config to /etc/watchdog.conf'))
 
         # http://linux.die.net/man/5/watchdog.conf
-        f = open("/etc/watchdog.conf","w")
+        f = open("/etc/watchdog.conf","wb")
         f.write("watchdog-device = /dev/watchdog\n")
         f.write("watchdog-timeout = 14\n")
         f.write("realtime = yes\n")
