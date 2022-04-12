@@ -19,158 +19,31 @@ from ospy.inputs import inputs
 from ospy.scheduler import predicted_schedule
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_input
-from plugins import PluginOptions, plugin_url
+from ospy.helpers import get_input, datetime_string
+from plugins import PluginOptions, plugin_url, plugin_data_dir
 
 
 NAME = 'Voice Notification'
 MENU =  _(u'Package: Voice Notification')
 LINK = 'settings_page'
 
-MP3_FILE_FOLDER = './plugins/voice_notification/static/mp3'
-
 plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,               # default is OFF
-        'voice_start_station': False,   # start message before turning on the station
-        'pre_time': 5,                  # sound is played 5 second before turning on the station
+        'pre_time': 15,                 # sound is played 5 second before turning on the station
         'repeating': 1,                 # how many times to repeat the same message
         'volume': 95,                   # master volume 95%
         'start_hour': 0,                # voice notification only from 0 
         'stop_hour': 23,                # to 23 hours 
         'skip_stations': [],            # skip voice notification if activated stations xxx
-        'vs0': ' ',                     # station 1 has select voice1.mp3, voice2.mp3 max is voice20.mp3 etc...
-        'vs1': ' ',
-        'vs2': ' ', 
-        'vs3': ' ', 
-        'vs4': ' ', 
-        'vs5': ' ', 
-        'vs6': ' ', 
-        'vs7': ' ', 
-        'vs8': ' ',
-        'vs9': ' ',
-        'vs10': ' ',
-        'vs11': ' ',
-        'vs12': ' ',
-        'vs13': ' ',
-        'vs14': ' ',
-        'vs15': ' ',
-        'vs16': ' ',
-        'vs17': ' ', 
-        'vs18': ' ',
-        'vs19': ' ',
-        'vs20': ' ',
-        'vs21': ' ',
-        'vs22': ' ', 
-        'vs23': ' ', 
-        'vs24': ' ', 
-        'vs25': ' ', 
-        'vs26': ' ', 
-        'vs27': ' ', 
-        'vs28': ' ',
-        'vs29': ' ',
-        'vs30': ' ',
-        'vs31': ' ',
-        'vs32': ' ',
-        'vs33': ' ',
-        'vs34': ' ',
-        'vs35': ' ',
-        'vs36': ' ',
-        'vs37': ' ', 
-        'vs38': ' ',
-        'vs39': ' ',
-        'vs40': ' ',
-        'vs41': ' ',
-        'vs42': ' ', 
-        'vs43': ' ', 
-        'vs44': ' ', 
-        'vs45': ' ', 
-        'vs46': ' ', 
-        'vs47': ' ', 
-        'vs48': ' ',
-        'vs49': ' ',
-        'vs50': ' ',
-        'vs51': ' ',
-        'vs52': ' ',
-        'vs53': ' ',
-        'vs54': ' ',
-        'vs55': ' ',
-        'vs56': ' ',
-        'vs57': ' ', 
-        'vs58': ' ',
-        'vs59': ' ',
-        'vs60': ' ',
-        'vs61': ' ',
-        'vs62': ' ', 
-        'vs63': ' ', 
-        'vs64': ' ', 
-        'vs65': ' ', 
-        'vs66': ' ', 
-        'vs67': ' ', 
-        'vs68': ' ',
-        'vs69': ' ',
-        'vs70': ' ',
-        'vs71': ' ',
-        'vs72': ' ',
-        'vs73': ' ',
-        'vs74': ' ',
-        'vs75': ' ',
-        'vs76': ' ',
-        'vs77': ' ', 
-        'vs78': ' ',
-        'vs79': ' ',
-        'vs80': ' ',
-        'vs81': ' ',
-        'vs82': ' ', 
-        'vs83': ' ', 
-        'vs84': ' ', 
-        'vs85': ' ', 
-        'vs86': ' ', 
-        'vs87': ' ', 
-        'vs88': ' ',
-        'vs89': ' ',
-        'vs90': ' ',
-        'vs91': ' ',
-        'vs92': ' ',
-        'vs93': ' ',
-        'vs94': ' ',
-        'vs95': ' ',
-        'vs96': ' ',
-        'vs97': ' ', 
-        'vs98': ' ',
-        'vs99': ' ',
-        'vs100': ' ',
-        'vs101': ' ',
-        'vs102': ' ', 
-        'vs103': ' ', 
-        'vs104': ' ', 
-        'vs105': ' ', 
-        'vs106': ' ', 
-        'vs107': ' ', 
-        'vs108': ' ',
-        'vs109': ' ',
-        'vs110': ' ',
-        'vs111': ' ',
-        'vs112': ' ',
-        'vs113': ' ',
-        'vs114': ' ',
-        'vs115': ' ',
-        'vs116': ' ',
-        'vs117': ' ', 
-        'vs118': ' ',
-        'vs119': ' ',
-        'vs120': ' ',
-        'vs121': ' ',
-        'vs122': ' ', 
-        'vs123': ' ', 
-        'vs124': ' ', 
-        'vs125': ' ', 
-        'vs126': ' ', 
-        'vs127': ' ', 
-        'vs128': ' '
+        'on':  [-1]*8,                  # song name for station 1-8 if ON (8 stations is default)
+        'sounds': [],                   # a list of all songs names in the plugin data directory
+        'sounds_inserted': [],          # date time inserted songs (sorted by last upload)
+        'sounds_size': [],              # songs size in bytes
     })
 
+must_stop = False                         # stopping play from webpage
 
 ################################################################################
 # Main function loop:                                                          #
@@ -204,10 +77,10 @@ class VoiceChecker(Thread):
         else:
             log.info(NAME, _(u'Voice notification is enabled.'))
  
-        once_test = True  # for test installing pygame
-        play = False      # for enabling play
-        last_play = False # for disabling nonstop playing
-        post_song  = ' '  # mp3 song filename for vs0 - vs128 (stations song)
+        read_folder()       # read name from file in data folder and add to plugin_options "sound"
+        once_test = True    # for test installing pygame
+        is_installed = True # if pygame is installed
+        last_station_on = -1
     
         while not self._stop_event.is_set():
             try: 
@@ -223,19 +96,15 @@ class VoiceChecker(Thread):
                             cmd = "sudo apt-get install python-pygame -y"
                             run_command(cmd)
                             once_test = False
-                            log.info(NAME, _(u'Pygame is now installed.')) 
+                            log.info(NAME, _(u'Pygame is now installed.'))
+                            is_installed = False
 
                     current_time  = datetime.datetime.now()
                     user_pre_time = current_time + datetime.timedelta(seconds=int(plugin_options['pre_time']))
                     check_start   = current_time - datetime.timedelta(days=1)
                     check_end     = current_time + datetime.timedelta(days=1)
 
-     
-                    if plugin_options['voice_start_station'] and current_time.hour >= plugin_options['start_hour'] and current_time.hour <= plugin_options['stop_hour']: # play notifications only from xx hour to yy hour
-                        play = False 
-                        post_song  = ' '     
-                        stat_run_num = -1   
-   
+                    if int(current_time.hour) >= int(plugin_options['start_hour']) and int(current_time.hour) <= int(plugin_options['stop_hour']) and is_installed: # play notifications only from xx hour to yy hour   
                         schedule = predicted_schedule(check_start, check_end)
                         for entry in schedule:
                             if entry['start'] <= user_pre_time < entry['end']:  # is possible program in this interval?
@@ -243,7 +112,7 @@ class VoiceChecker(Thread):
                                     for station_num in plugin_options['skip_stations']:
                                         if entry['station'] == station_num:     # station skiping
                                             log.clear(NAME)
-                                            log.info(NAME, _(u'Skiping playing on station') + ': ' + str(entry['station']+1) + '.')   
+                                            log.info(NAME, _(u'Skiping playing on station') + ': ' + str(entry['station']+1) + '.')
                                             self._sleep(1)
                                             return # not playing skipping
                                   
@@ -251,38 +120,29 @@ class VoiceChecker(Thread):
                                     ignore_rain = stations.get(entry['station']).ignore_rain
 
                                     if not rain or ignore_rain: # if station has ignore rain or not rain
-                                        play = True  
-                                        stat_run_num = entry['station'] 
-                                    
- 
-                        if play != last_play:
-                            last_play = play 
-
-                            if stat_run_num != -1:
-                                post_song = plugin_options['vs%d' % stat_run_num]
-                                #print post_song
-                         
-                            if last_play: 
-                                log.clear(NAME) 
-                                play_voice(self, "voice.mp3") # play voice in folder
-                                if post_song != ' ':
-                                    play_voice(self, post_song) # play post station voice in folder
-                                 
-                                self._sleep(2)
-
-                                if plugin_options['repeating'] == 2 or plugin_options['repeating'] == 3:
-                                    log.info(NAME, _(u'Repeating playing nr. 2...')) 
-                                    play_voice(self, "voice.mp3") # play voice in folder
-                                    if post_song != ' ':
-                                        play_voice(self, post_song) # play post station voice in folder
-                                  
-                                self._sleep(2)
-
-                                if plugin_options['repeating'] == 3:
-                                    log.info(NAME, _(u'Repeating playing nr. 3...')) 
-                                    play_voice(self, "voice.mp3") # play voice in folder
-                                    if post_song != ' ':
-                                        play_voice(self, post_song) # play post station voice in folder
+                                        stat_num = int(entry['station'])
+                                        if len(plugin_options['sounds']) > 0:
+                                            log.clear(NAME)
+                                            data = {}
+                                            data['song'] = plugin_options['sounds'][int(plugin_options['on'][stat_num])]
+                                            path = os.path.join(plugin_data_dir(), data['song'])
+                                            if os.path.isfile(path):
+                                                if last_station_on != stat_num:
+                                                    last_station_on = stat_num
+                                                    log.info(NAME, _(u'Add song {} to queue.').format(data['song']))
+                                                    update_song_queue(data)     # save song name to song queue
+                                                    if plugin_options['repeating'] == 2 or plugin_options['repeating'] == 3:
+                                                        log.info(NAME, _(u'Add 2. repeating for song.'))
+                                                        song_queue = read_song_queue()
+                                                        song_queue.insert(1, data)
+                                                        write_song_queue(song_queue)
+                                                    if plugin_options['repeating'] == 3:
+                                                        log.info(NAME, _(u'Add 3. repeating for song.'))
+                                                        song_queue = read_song_queue()
+                                                        song_queue.insert(2, data)
+                                                        write_song_queue(song_queue)
+                if is_installed:
+                    play_voice()
 
                 self._sleep(1)                   
                                              
@@ -290,9 +150,7 @@ class VoiceChecker(Thread):
                 log.error(NAME, _(u'Voice Notification plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
-
 checker = None
-
 
 ################################################################################
 # Helper functions:                                                            #
@@ -312,52 +170,136 @@ def stop():
         checker = None
 
 
+### Run any cmd ###
 def run_command(cmd):
-    """run command"""
-    proc = subprocess.Popen(
-    cmd,
-    stderr=subprocess.STDOUT, # merge stdout and stderr
-    stdout=subprocess.PIPE,
-    shell=True)
-    output = proc.communicate()[0]
-    log.info(NAME, output) 
-
-
-def play_voice(self, song):
-    """play song"""
     try:
-        from pygame import mixer
-
-        mixer.init()
-        log.info(NAME, _(u'Loading: %s...') % song) 
-
-        patch = (os.path.join(MP3_FILE_FOLDER, song)) # ex: /home/pi/OSPy/plugins/voice_notification/static/mp3/voicexx.mp3
-        mixer.music.load(patch)
-
-        #log.info(NAME, _('Set pygame volume to 1.0'))
-        mixer.music.set_volume(1.0)  # 0.0 min to 1.0 max 
-
-        log.info(NAME, _(u'Set master volume to') + ' ' + str(plugin_options['volume']) + '%')
-        try:
-            cmd = ["amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])]
-            run_command(cmd)
-        except:            
-            cmd = ["amixer", "sset", "Master", "{}%".format(plugin_options['volume'])]
-            run_command(cmd)        
-
-        log.info(NAME, _(u'Playing...'))  
-        mixer.music.play()
-
-        while mixer.music.get_busy() == True:
-            continue                 
-       
-        mixer.music.stop()
-        log.info(NAME, _(u'Stopping...'))
+        proc = subprocess.Popen(
+        cmd,
+        stderr=subprocess.STDOUT, # merge stdout and stderr
+        stdout=subprocess.PIPE,
+        shell=True)
+        output = proc.communicate()[0].decode('utf-8')
+        log.info(NAME, output)
 
     except Exception:
         log.error(NAME, _(u'Voice Notification plug-in') + ':\n' + traceback.format_exc())
 
-       
+
+### Read all songs in folder ###
+def read_folder():
+    try:
+        import os
+        import time
+
+        dir_name =  plugin_data_dir() + '/'
+        # Get list of all files only in the given directory
+        list_of_files = filter( lambda x: os.path.isfile(os.path.join(dir_name, x)), os.listdir(dir_name) )
+        # Sort list of files based on last modification time in ascending order
+        list_of_files = sorted( list_of_files, key = lambda x: os.path.getmtime(os.path.join(dir_name, x)))
+        # Along with last modification time of file
+        e = []
+        f = []
+        g = []
+
+        for file_name in list_of_files:
+            file_path = os.path.join(dir_name, file_name)
+            timestamp_str = time.strftime('%d/%m/%Y - %H:%M:%S', time.gmtime(os.path.getmtime(file_path)))
+            size = os.path.getsize(file_path)
+            e.append(timestamp_str)
+            f.append(file_name)
+            g.append(round(size, 2))
+
+        plugin_options.__setitem__('sounds_inserted', e)
+        plugin_options.__setitem__('sounds', f)
+        plugin_options.__setitem__('sounds_size', g)
+
+    except Exception:
+        log.error(NAME, _(u'Voice Notification plug-in') + ':\n' + traceback.format_exc())
+
+### Read song queue from json file ###
+def read_song_queue():
+    try:
+        with open(os.path.join(plugin_data_dir(), 'json', 'song_queue.json')) as song_queue:
+            return json.load(song_queue)
+    except IOError:
+        return []
+
+### Write song queue to json file ###
+def write_song_queue(json_data):
+    try:
+        _dir = os.path.join(plugin_data_dir(), 'json') 
+        if not os.path.exists(_dir):
+            os.makedirs(_dir)
+        with open(os.path.join(plugin_data_dir(), 'json', 'song_queue.json'), 'w') as song_queue:
+            json.dump(json_data, song_queue)
+    except Exception:
+        log.error(NAME, _(u'Voice Notification plug-in') + ':\n' + traceback.format_exc())
+
+### Update song queue in json file ### 
+def update_song_queue(data):
+    try:                                 # exists file: saved_song_queue.json?
+        song_queue = read_song_queue()
+    except:                              # no! create empty file
+        _dir = os.path.join(plugin_data_dir(), 'json') 
+        if not os.path.exists(_dir):
+            os.makedirs(_dir)
+        write_song_queue([])
+        song_queue = read_song_queue()
+
+    song_queue.insert(0, data)
+    write_song_queue(song_queue)
+
+### Play a song ###
+def play_voice():
+    global must_stop
+
+    try:
+        from pygame import mixer
+
+        try:                                    # exists file: song_queue.json?
+            song_queue = read_song_queue()      # read from file
+        except:                                 # no! create empty file
+            write_song_queue([])                # create file
+            song_queue = read_song_queue()      # read from file
+
+        song = ''
+        if len(song_queue) > 0:                 # if there is something in json
+            song = song_queue[0]['song']
+            path = os.path.join(plugin_data_dir(), song)
+            mixer.init()
+            if os.path.isfile(path):
+                if mixer.music.get_busy() == False:
+                    log.info(NAME, datetime_string() + u': ' + _(u'Songs in queue {}').format(len(song_queue)))
+                    for i in range(0, len(song_queue)):
+                        log.info(NAME, _(u'Nr. {} -> {}').format(str(i+1), song_queue[i]['song']))
+                    log.info(NAME, datetime_string() + u': ' + _(u'Loading: {}').format(song))
+                    mixer.music.load(path)
+                    mixer.music.set_volume(1.0)  # 0.0 min to 1.0 max 
+                    log.info(NAME, datetime_string() + u': ' + _(u'Set master volume to {}%').format(str(plugin_options['volume'])))
+                    try:
+                        cmd = ["amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])]
+                        run_command(cmd)
+                    except:
+                        cmd = ["amixer", "sset", "Master", "{}%".format(plugin_options['volume'])]
+                        run_command(cmd)
+                    mixer.music.play()
+                    log.info(NAME, datetime_string() + u': ' + _(u'Playing.'))
+            else:
+                del song_queue[0]
+                write_song_queue(song_queue)
+
+            while mixer.music.get_busy() == True and not must_stop:
+                continue 
+
+            mixer.music.stop()
+            log.info(NAME, datetime_string() + u': ' + _(u'Stopping.'))
+            del song_queue[0]                   # delete song queue in file
+            write_song_queue(song_queue)        # save to file after deleting an item
+            must_stop = False
+
+    except Exception:
+        log.error(NAME, _(u'Voice Notification plug-in') + ':\n' + traceback.format_exc())
+
 
 ################################################################################
 # Web pages:                                                                   #
@@ -366,64 +308,165 @@ class settings_page(ProtectedPage):
     """Load an html page for entering voice notification adjustments"""
 
     def GET(self):
+        global must_stop
         qdict = web.input()
-        read_test = None
+    
+        if checker is not None:
+            stop = get_input(qdict, 'stop', False, lambda x: True)
+            clear = get_input(qdict, 'clear', False, lambda x: True)
 
-        if 'test' in qdict:
-            read_test = qdict['test']
-   
-            tsound = ['voice.mp3', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']
-            if read_test in tsound:
+            if 'test' in qdict:
+                command = -1
+                data = {}
+                if 'state' in qdict and int(qdict['state']) == 1:
+                    command = plugin_options['on'][int(qdict['test'])]
+                if len(plugin_options['sounds']) > 0 and command != -1:
+                    data['song'] = plugin_options['sounds'][command]
+                    path = os.path.join(plugin_data_dir(), data['song'])
+                    if os.path.isfile(path):
+                        log.clear(NAME)
+                        log.info(NAME, datetime_string() + u': ' + _(u'Button test, song {}.').format(data['song']))
+                        update_song_queue(data) # save song name to song queue
+                    else:
+                        log.clear(NAME)
+                        log.info(NAME, datetime_string() + u': ' + _(u'File not exists!'))
+                else:
+                    log.clear(NAME)                    
+                    log.info(NAME, datetime_string() + u': ' + _(u'File not exists!'))
+
+            if stop:
+                must_stop = True
                 log.clear(NAME)
-                log.info(NAME, _(u'Testing button %s...') % read_test)
-                play_voice(self, "%s" % read_test) # play for test
+                log.info(NAME, datetime_string() + u': ' + _(u'Button Stop.'))
+            
+            if clear:
+                must_stop = True
+                song_queue = read_song_queue()
+                while len(song_queue) > 0:
+                    song_queue = read_song_queue()
+                    del song_queue[0]
+                    write_song_queue(song_queue)
+                log.clear(NAME)
+                log.info(NAME, datetime_string() + u': ' + _(u'Button clear playlist.'))
+
 
         return self.plugin_render.voice_notification(plugin_options, log.events(NAME))
 
     def POST(self):
-        plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
+        qdict = web.input(skip_stations=[]) # skip_stations [] for multiple select
+        try:
+            if 'enabled' in qdict:
+                if qdict['enabled']=='on':
+                    plugin_options.__setitem__('enabled', True)
+            else:
+                plugin_options.__setitem__('enabled', False)
 
-        if checker is not None:
-            checker.update()
+            if 'voice_start_station' in qdict:
+                plugin_options.__setitem__('voice_start_station', qdict['voice_start_station'])
+
+            if 'pre_time' in qdict:
+                plugin_options.__setitem__('pre_time', qdict['pre_time'])
+
+            if 'repeating' in qdict:
+                plugin_options.__setitem__('repeating', qdict['repeating'])
+
+            if 'skip_stations' in qdict:
+                plugin_options.__setitem__('skip_stations', qdict['skip_stations'])
+
+            if 'volume' in qdict:
+                plugin_options.__setitem__('volume', qdict['volume'])
+
+            if 'start_hour' in qdict:
+                plugin_options.__setitem__('start_hour', qdict['start_hour'])
+
+            if 'stop_hour' in qdict:
+                plugin_options.__setitem__('stop_hour', qdict['stop_hour'])
+
+            commands = {'on': [], 'off': []} 
+            for i in range(0, options.output_count):
+                if 'con'+str(i) in qdict:
+                    commands['on'].append(int(qdict['con'+str(i)]))
+                else:
+                    commands['on'].append(-1)
+
+            plugin_options.__setitem__('on', commands['on'])
+
+            if checker is not None:
+                checker.update()
+
+        except Exception:
+            log.error(NAME, _(u'Voice Notification plug-in') + ':\n' + traceback.format_exc())
 
         raise web.seeother(plugin_url(settings_page), True) 
 
 
 class upload_page(ProtectedPage):
-    
+
     def GET(self):
-        return self.plugin_render.voice_notification(plugin_options, log.events(NAME))
+        return self.plugin_render.voice_notification(plugin_options, 'none')
 
     def POST(self):
-        x = web.input(myfile={})
+        qdict = web.input(myfile={})
+        errorCode = qdict.get('errorCode', 'none')
 
-        #web.debug(x['myfile'].filename)    # This is the filename
-        #web.debug(x['myfile'].value)       # This is the file contents
-        #web.debug(x['myfile'].file.read()) # Or use a file(-like) object
+        #web.debug(qdict['myfile'].filename)    # This is the filename
+        #web.debug(qdict['myfile'].value)       # This is the file contents
+        #web.debug(qdict['myfile'].file.read()) # Or use a file(-like) object
 
         try:
-            name = ''
-            name = x['myfile'].filename
-            if name in ('voice.mp3', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3'):
-                fout = open(os.path.join(MP3_FILE_FOLDER, name),'w') 
-                fout.write(x['myfile'].file.read()) 
-                fout.close() 
-                log.info(NAME, _(u'Saving MP3 %s file OK.') % name) 
-
+            fname = qdict['myfile'].filename
+            upload_type = fname[-4:len(fname)]
+            types = ['.mp3','.wav']
+            if upload_type not in types:        # check file type is ok
+                log.info(NAME, datetime_string() + ': ' + _(u'Error. File must be in mp3 or wav format!'))
+                errorCode = qdict.get('errorCode', 'Etype')
+                return self.plugin_render.voice_notification_sounds(plugin_options, errorCode)
             else:
-                log.info(NAME, _(u'Error. MP3 file: %s name is not voice.mp3 or voice0.mp3...voice20.mp3') % name) 
-        
-        except Exception:
-                log.error(NAME, _(u'Voice Notification plug-in') + ':\n' + traceback.format_exc())
+                fout = open(os.path.join(plugin_data_dir(), fname),'wb') # ASCI_convert(fname)
+                fout.write(qdict['myfile'].file.read()) 
+                fout.close() 
+                log.info(NAME, datetime_string() + ': ' + _(u'Uploading file sucesfully.'))
+                errorCode = qdict.get('errorCode', 'UplOK')
+                read_folder()
+                return self.plugin_render.voice_notification_sounds(plugin_options, errorCode)
 
-        raise web.seeother(plugin_url(settings_page), True)
+        except Exception:
+                log.error(NAME, _(u'Voice Station plug-in') + ':\n' + traceback.format_exc())
+                errorCode = qdict.get('errorCode', 'Eupl')
+                return self.plugin_render.voice_notification_sounds(plugin_options, errorCode)
+
+        raise web.seeother(plugin_url(sound_page), True)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help page."""
 
     def GET(self):
-        return self.plugin_render.voice_notification_help()        
+        return self.plugin_render.voice_notification_help()
+
+class sound_page(ProtectedPage):
+    """Load an html page for sound page."""
+
+    def GET(self):
+        qdict = web.input()
+        errorCode = qdict.get('errorCode', 'none')
+
+        if 'delete' in qdict:
+            delete = qdict['delete']
+            if len(plugin_options['sounds']) > 0:
+                del_file = os.path.join(plugin_data_dir(), plugin_options['sounds'][int(delete)] )
+                if os.path.isfile(del_file):
+                    os.remove(del_file)
+                    errorCode = qdict.get('errorCode', 'DelOK')
+                    read_folder()
+                    log.clear(NAME)
+                    log.debug(NAME, datetime_string() + ': ' + _(u'Deleting file has sucesfully.'))
+                else:
+                    errorCode = qdict.get('errorCode', 'DelNex')
+                    log.clear(NAME)
+                    log.error(NAME, datetime_string() + ': ' + _(u'File for deleting not found!'))
+
+        return self.plugin_render.voice_notification_sounds(plugin_options, errorCode)
 
 
 class settings_json(ProtectedPage):

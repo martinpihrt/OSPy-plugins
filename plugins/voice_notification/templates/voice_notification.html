@@ -8,14 +8,11 @@ $var page: plugins
         jQuery("#cSubmit").click(function() {
             jQuery("#pluginForm").submit();
         });
+        jQuery("button#cRefresh").click(function(){
+            window.location="settings";
+        });        
         jQuery("button#cCancel").click(function(){
             window.location="/";
-        });
-        jQuery("#cUpload").click(function() {
-            jQuery("#uploadForm").submit();
-        });
-        jQuery("#cUpload").click(function() {
-            jQuery("#pluginFormUpload").submit();
         });
     });
 </script>
@@ -23,6 +20,7 @@ $var page: plugins
 <div id="plugin">
     <div class="title">$_('Voice Notification - Settings')</div>
     <a href=$plugins.plugin_url('voice_notification.help_page') class="button upload">$_(u'Help')</a><br/>
+    <a href=$plugins.plugin_url('voice_notification.sound_page') class="button submit">$_(u'Sound editing')</a><br/>    
     <form id="pluginForm" action="$plugins.plugin_url('voice_notification.settings_page')" method="post">
         <table class="optionList">
         <tr>
@@ -31,12 +29,9 @@ $var page: plugins
           <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
         </tr>
         <tr>
-          <td style='text-transform: none;'>$_('Enable pre start voice'):</td>
-          <td title=$:{json.dumps(_(u'The sound is played before turning on the station.'), ensure_ascii=False)}>
-          <input type="checkbox" name="voice_start_station" ${"checked" if plugin_options['voice_start_station'] else ""}> (voice.mp3)</td> 
-          <td>
-              <a href="?test=voice.mp3" class="button upload">$_('Test playing')</a> 
-          </td> 
+            <td colspan="2">
+            <small>$_('For proper operation, it is necessary to restart the OSPy after enabling and setting up this extension')</small>
+            </td>
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Pre run time'):</td>
@@ -71,55 +66,46 @@ $var page: plugins
           <td title=$:{json.dumps(_(u'Skip voice notification for these stations.'), ensure_ascii=False)}>  
           <select multiple name="skip_stations" width="250" style="width: 250px">
               $for station in [station for station in stations if station.enabled]:
-                 <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['skip_stations'] else ""}>${station.name} (Output ${str(station.index+1)})</option>
+                 <option value="${str(station.index)}" ${"selected" if str(station.index) in plugin_options['skip_stations'] else ""}>${station.name} (Output ${str(station.index+1)})</option>
           </select>
           </td>
         </tr>
         <tr>
+           <td colspan="3">
+           <hr>
+           </td>
+        </tr>
+        <tr>
           <td style='text-transform: none;'>$_('Select voice for stations'):</td>
         </tr>
-        $for station in stations.get():
-            <tr>
-              <td style='text-transform: none;'>${station.name}</td> 
-              <td title=$:{json.dumps(_(u'Select voice for this station.'), ensure_ascii=False)}>  
-              <select name="vs${station.index}" width="250" style="width: 250px">
-              $for t in [' ', 'voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']:
-                 <option value="${t}" ${" selected" if plugin_options['vs%d' % station.index]==t else ""}><b>${t}</b></option>
-              </select>
-              </td> 
-              <td>
-              $for t in ['voice0.mp3', 'voice1.mp3', 'voice2.mp3', 'voice3.mp3', 'voice4.mp3', 'voice5.mp3', 'voice6.mp3', 'voice7.mp3', 'voice8.mp3', 'voice9.mp3', 'voice10.mp3', 'voice11.mp3', 'voice12.mp3', 'voice13.mp3', 'voice14.mp3', 'voice15.mp3', 'voice16.mp3', 'voice17.mp3', 'voice18.mp3', 'voice19.mp3', 'voice20.mp3']:
-                 $if plugin_options['vs%d' % station.index]==t:
-                     <a href="?test=${t}" class="button upload">$_('Test playing')</a> 
-              </td>
-            </tr>
+        $if len(plugin_options['sounds']) > 0:
+            $for station in stations.get():
+                <tr>
+                <td>${station.index + 1} (${station.name})</td>
+                <td>
+                <select name="con${station.index}">
+                <option value="-1" ${" selected" if plugin_options['on'][station.index] == -1 else ""}>$_(u'Not assigned')</option>
+                $for i in range(0, len(plugin_options['sounds'])):
+                    <option value="${i}" ${"selected" if plugin_options['on'][station.index] == i else ''} title=$:{json.dumps(_(u'Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>  
+                </select>
+                <a href="?test=${station.index}&state=1" class="button upload">$_('Play')</a>
+                <a href="?stop=1" class="button cancel danger">$_('Stop')</a>
+                </td>
+                </tr>
+        $else:
+            $_('Record some songs first and then you will be able to assign stations to the songs here.')        
         <tr>
-          <td style='text-transform: none;'>$_('Status'):</td>
-          <td>
-          <textarea style="font-family: monospace;" rows="15" cols="40" readonly>$'\n'.join(events)</textarea></td>
+            <td style='text-transform: none;'>$_('Status'):</td>
+            <td>
+            <textarea style="font-family: monospace;" rows="20" cols="80" readonly>$'\n'.join(events)</textarea></td>
         </tr>
         </table>
     </form>
 </div>
 
-<div style="margin: 10px 0px 10px 0px;">
-   <form id="pluginFormUpload" action="$plugins.plugin_url('voice_notification.upload_page')" method="POST" enctype="multipart/form-data">
-     <table class="optionList">
-        <tr>
-          <td style='text-transform: none;'>$_('Upload mp3 file'):</td>
-          <td title=$:{json.dumps(_(u'MP3 file must have a name'), ensure_ascii=False)}>  
-              <input type="file" name="myfile" class="upload"/>
-          </td>
-          <td>
-              <button id="cUpload" class="button upload">$_('Upload')</button>
-          </td>
-          </tr>
-        <tr>
-     </table> 
-   </form>
-</div>
-
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>    
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <a href="?clear" class="button cancel danger">$_('Clear playlist')</a>
 </div>

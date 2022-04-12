@@ -1,0 +1,101 @@
+$def with(plugin_options, errorCode)
+
+$var title: $_(u'Voice Notification - Sounds')
+$var page: plugins
+
+$code:
+    def format_bytes(size):
+        # 2**10 = 1024
+        power = 2**10
+        n = 0
+        _labels = {0 : '', 1: _('kB'), 2: _('mB'), 3: _('Gb'), 4: _('Tb')}
+        while size > power:
+            size /= power
+            n += 1
+        return '{}{}'.format(size, _labels[n])
+
+<script>
+    // Initialize behaviors
+    var errorCode = "${errorCode}";
+    jQuery(document).ready(function(){
+        jQuery("#cUpload").click(function() {
+            jQuery("#pluginFormUpload").submit();
+        });
+
+        switch (errorCode) {
+            case "Etype":
+                jQuery("#error").text($:{json.dumps(_('Error. File must be in mp3 or wav format!'), ensure_ascii=False).encode('utf8')}).css('color', 'red');
+            break;
+            case "Eupl":
+                jQuery("#error").text($:{json.dumps(_('Any error, check debug file in OSPy system!'), ensure_ascii=False).encode('utf8')}).css('color', 'red');
+            break;
+            case "DelNex":
+                jQuery("#error").text($:{json.dumps(_('File for deleting not found!'), ensure_ascii=False).encode('utf8')}).css('color', 'red');
+            break;
+            case "DelOK":
+                jQuery("#error").text($:{json.dumps(_('Deleting file sucesfully.'), ensure_ascii=False).encode('utf8')}).css('color', 'green');
+            break;
+            case "UplOK":
+                jQuery("#error").text($:{json.dumps(_('Uploading file sucesfully.'), ensure_ascii=False).encode('utf8')}).css('color', 'green');
+            break;
+        }
+
+        setTimeout(function(){
+            if (jQuery("#error").length > 0) {
+                jQuery("#error").text($:{json.dumps(' ', ensure_ascii=False).encode('utf8')});
+            }
+        }, 5000)
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Voice Notification - Sounds')</div>
+      <span class='Error' id='error'></span>
+      <table class="logList">
+      <tr class="log_rec">
+        <th>$_('Item')</th>
+        <th>$_('File Name')</th>
+        <th>$_('Uploaded')</th>
+        <th>$_('Size')</th>
+      </tr>
+      $ odd = 1
+      $for c in range(0, len(plugin_options['sounds'])):
+        <tr class="log_rec ${'odd' if odd else 'even'}">
+        <td>${c + 1}</td>
+        <td>
+        $'{}'.format(plugin_options['sounds'][c])
+        </td>
+        <td>
+        $'{}'.format(plugin_options['sounds_inserted'][c])
+        </td>
+        <td>
+        $format_bytes(plugin_options['sounds_size'][c])
+        </td>        
+        <td>
+        <a href="?delete=${c}" class="button cancel danger">$_('Delete')</a>
+        </td>
+        </tr>
+        $ odd = 1 - odd
+      </table>
+</div>
+
+<div style="margin: 10px 0px 10px 0px;">
+   <form id="pluginFormUpload" action="$plugins.plugin_url('voice_notification.upload_page')" method="POST" enctype="multipart/form-data">
+     <table class="optionList">
+        <tr>
+          <td style='text-transform: none;'>$_('Upload sound file'):</td>
+          <td title=$:{json.dumps(_(u'File must be in *.mp3 or *.wav format.'), ensure_ascii=False)}>
+              <input type="file" accept=".mp3,.wav" name="myfile" class="upload"/>
+          </td>
+          <td>
+              <button id="cUpload" class="button upload">$_('Upload')</button>
+          </td>
+          </tr>
+        <tr>
+     </table>
+   </form>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('voice_notification.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>

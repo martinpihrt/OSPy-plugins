@@ -202,7 +202,7 @@ def read_folder():
             size = os.path.getsize(file_path)
             e.append(timestamp_str)
             f.append(file_name)
-            g.append(size)
+            g.append(round(size, 2))
 
         plugin_options.__setitem__('sounds_inserted', e)
         plugin_options.__setitem__('sounds', f)
@@ -308,6 +308,7 @@ class settings_page(ProtectedPage):
 
         if checker is not None:
             stop = helpers.get_input(qdict, 'stop', False, lambda x: True)
+            clear = helpers.get_input(qdict, 'clear', False, lambda x: True)
 
             if 'test' in qdict:
                 command = -1
@@ -321,7 +322,7 @@ class settings_page(ProtectedPage):
                     data['song'] = plugin_options['sounds'][command]
                     path = os.path.join(plugin_data_dir(), data['song'])
                     if os.path.isfile(path):
-                        log.info(NAME, datetime_string() + u': ' + _(u'Button test.'))
+                        log.info(NAME, datetime_string() + u': ' + _(u'Button test, song {}.').format(data['song']))
                         update_song_queue(data) # save song name to song queue
                     else:
                         log.info(NAME, datetime_string() + u': ' + _(u'File not exists!'))
@@ -331,6 +332,16 @@ class settings_page(ProtectedPage):
             if stop:
                 must_stop = True
                 log.info(NAME, datetime_string() + u': ' + _(u'Button Stop.'))
+
+            if clear:
+                must_stop = True
+                song_queue = read_song_queue()
+                while len(song_queue) > 0:
+                    song_queue = read_song_queue()
+                    del song_queue[0]
+                    write_song_queue(song_queue)
+                log.clear(NAME)
+                log.info(NAME, datetime_string() + u': ' + _(u'Button clear playlist.'))                
 
         return self.plugin_render.voice_station(plugin_options, log.events(NAME))
 
