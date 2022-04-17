@@ -285,6 +285,7 @@ def try_io(call, tries=10):
         except IOError as e:
             error = e
             tries -= 1
+            time.sleep(1) #wait here to avoid 121 IO Error
         else:
             break
 
@@ -297,8 +298,13 @@ def try_io(call, tries=10):
 def DS18B20_read_data():
     import smbus  
     try:
-       bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)     
-       i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0))
+       bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0) 
+       time.sleep(1) #wait here to avoid 121 IO Error
+       try:    
+            i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0))
+       except:
+            i2c_data = [255, 255, 255]
+            pass
 
        # Test recieved data byte 1 and 2
        if i2c_data[1] == 255 or i2c_data[2] == 255:         
