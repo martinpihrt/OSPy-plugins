@@ -10,6 +10,15 @@ $var page: plugins
 <script src="/static/scripts/jquery.flot.selection.js"></script>
 
 <script>
+function updateWind(){
+    jQuery.getJSON("/plugins/wind_monitor/wind_json", function(_data) {
+        let wind = _data.wind;
+        //console.log(wind);
+        jQuery("#wind span.wind").text(wind);
+    })      
+    setTimeout(updateWind, 2000); // 2 second
+}    
+
 var graph_text;
 
 function draw_graph(result) {
@@ -171,7 +180,9 @@ function check_history() {
         setTimeout(function() {jQuery.getJSON("/plugins/wind_monitor/graph_json", create_graph)}, 500); 
     }
 
-    jQuery("#history").change(check_history);     
+    jQuery("#history").change(check_history);
+
+    updateWind();    
 
 });
 </script>
@@ -304,13 +315,7 @@ function check_history() {
                 <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (measuring every 10 sec)'):</td>
                 <td style="background-color: rgb(220, 220, 220);text-align: left;">
                     $if plugin_options['use_wind_monitor']:
-                        $if status['meter'] >= plugin_options["maxspeed"]: 
-                            <p style="color:red;">
-                        $elif status['meter'] < (plugin_options["maxspeed"] - 3):
-                            <p style="color:green;">
-                        $else: 
-                            <p style="color:orange;">
-                        <b> $status['kmeter'] [$_('km/h')]</b> -> $status['meter'] [$_('m/s')]       
+                        <p id="wind"><b><span class="wind">--</span></b></p>
                     $else:
                         --    
                 </td>
