@@ -334,7 +334,7 @@ def get_report(index):
         if lcd_options['d_last_run']:
             finished = [run for run in log.finished_runs() if not run['blocked']]
             if finished:
-                str_fin= ASCI_convert(finished[-1]['program_name']) + finished[-1]['start'].strftime(' %H:%M')
+                str_fin= '{}{}'.format(finished[-1]['program_name'], finished[-1]['start'].strftime(' %d.%m.%Y %H:%M:%S'))
                 result = ASCI_convert(str_fin) 
             else:
                 result = ASCI_convert(_('None'))
@@ -724,12 +724,14 @@ class settings_page(ProtectedPage):
             raise web.seeother(plugin_url(settings_page), True)
 
         return self.plugin_render.lcd_display(lcd_options, log.events(NAME))
-        
+
  
     def POST(self):
         lcd_options.web_update(web.input())
 
-        lcd_sender.update()
+        if lcd_sender is not None:
+            lcd_sender.update()
+
         raise web.seeother(plugin_url(settings_page), True)
         
 

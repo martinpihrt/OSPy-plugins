@@ -161,9 +161,7 @@ class lcd:
 		if is_python2():
 			self.lcd_write_char(ord(char))
 		else:
-			bytes_char = bytes(str(char), encoding='utf8')
-			for c in bytearray(bytes_char):
-				self.lcd_write_char(c)
+			self.lcd_write_char(char)
 
 
 	# Do clunky bitshifting to account for strangely wired boards
