@@ -1,0 +1,60 @@
+$def with(plugin_options)
+
+$var title: $_('Venetian blind')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+        statusBlind();
+    });
+
+    function statusBlind(){
+        jQuery.getJSON("/plugins/venetian_blind/blind_status_json", function(_data) {
+            console.log(_data);
+            let i;
+            for(i=0; i<_data.length; i++) {
+                let ID = 'blind'  + _data[i]
+                jQuery('#blind'+i ).find('span.bstatus').text(_data[i])
+            }
+        })      
+        setTimeout(statusBlind, 2000); // 2 seconds
+    } 
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Venetian blind')</div>
+    <a href=$plugins.plugin_url('venetian_blind.help_page') class="button upload">$_('Help')</a>
+    <a href=$plugins.plugin_url('venetian_blind.setup_page') class="button danger">$_('Settings')</a>
+    <a href=$plugins.plugin_url('venetian_blind.log_page') class="button submit">$_('Log')</a>
+    <form id="pluginForm" action="$plugins.plugin_url('venetian_blind.home_page')" method="get">
+        $for c in range(0, plugin_options['number_blinds']):
+            <table class="optionList" width="600">
+                <tr><td class="blindNumber"><b><small>
+                $if plugin_options['label'][c] != "":
+                    ${c+1}) ${plugin_options['label'][c]}
+                $else:
+                    ${c+1})
+                </small></b></td></tr>
+                <tr>
+                    <td>
+                        <a href="?btn=${c}&pos=1" id='btn_open' class="button submit">$_('Open') &#8679;</a>
+                        <a href="?btn=${c}&pos=0" id='btn_open' class="button submit">$_('Stop') &#8697;</a>
+                        <a href="?btn=${c}&pos=-1" id='btn_open' class="button submit">$_('Close') &#8681;</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <p id="blind${c}">$_('Blinds state'): <span class="bstatus">$_('unloaded')</span></p>
+                    </td>
+                </tr>
+            </table>
+    </form>
+</div>

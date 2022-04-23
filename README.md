@@ -16,48 +16,48 @@ Theses I2C addresses is used in available plugins:
 * wind_monitor 	0x50, 0x51<br>
 
 Available plugins:
-* Usage Statistics
-* LCD Display
-* Pressure Monitor
-* Voice Notification
-* Pulse Output Test
-* Button Control
-* CLI Control
-* System Watchdog
-* Voltage and Temperature Monitor
-* Remote Notifications
-* System Information
-* Air Temperature and Humidity Monitor
-* Wind Speed Monitor
-* Weather-based Rain Delay
-* Relay Test
-* UPS Monitor
-* Water Consumption Counter
-* SMS Modem
-* Signaling Examples
-* E-mail Notifications
-* Remote FTP Control
-* System Update
-* Water Meter
-* Webcam Monitor
-* Weather-based Water Level Netatmo
-* Direct 16 Relay Outputs
-* MQTT
-* MQTT Zone Broadcaster
-* MQTT Slave
-* MQTT Run-Once
-* System Debug Information
-* Weather-based Water Level
-* Real Time and NTP time
-* Water Tank
-* Monthly Water Level
-* Pressurizer
-* Ping monitor
-* Temperature Switch
-* Pool Heating
-* E-mail Reader
-* Weather Stations
-* Telegram Bot
-* Door Opening
-* Voice Station
- 
+* Usage Statistics  
+* LCD Display  
+* Pressure Monitor  
+* Voice Notification  
+* Pulse Output Test  
+* Button Control  
+* CLI Control  
+* System Watchdog  
+* Voltage and Temperature Monitor  
+* Remote Notifications  
+* System Information  
+* Air Temperature and Humidity Monitor  
+* Wind Speed Monitor  
+* Weather-based Rain Delay  
+* Relay Test  
+* UPS Monitor  
+* Water Consumption Counter  
+* SMS Modem  
+* Signaling Examples  
+* E-mail Notifications  
+* Remote FTP Control  
+* System Update  
+* Water Meter  
+* Webcam Monitor  
+* Weather-based Water Level Netatmo  
+* Direct 16 Relay Outputs  
+* MQTT  
+* MQTT Zone Broadcaster  
+* MQTT Slave  
+* MQTT Run-Once  
+* System Debug Information  
+* Weather-based Water Level  
+* Real Time and NTP time  
+* Water Tank  
+* Monthly Water Level  
+* Pressurizer  
+* Ping monitor  
+* Temperature Switch  
+* Pool Heating  
+* E-mail Reader  
+* Weather Stations  
+* Telegram Bot  
+* Door Opening  
+* Voice Station  
+* Venetian Blind  

@@ -1,0 +1,42 @@
+$def with()
+
+$var title: $_('Venetian blind help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Venetian blind help')</div>
+    <p>$_('This plugin can be used to control blinds and shutters via API and HW module (eg: shelly relays: https://shelly.cloud/products/shelly-25-smart-home-automation-relay/).')</p> 
+    <p>$_('The roller shutter motor is connected to a shelly relay, or some other similar. The relay has two outputs (one for the up direction and the other for the down direction). The relay allows control via the REST API. The relay also allows you to measure consumption.')</p>
+    <p>$_('The devices communicate via wifi (for initial communication it can also AP mode), they contain, for example, some relays, a connector for 230V devices, it can be a light bulb or a sensor. The relays (1, 2.5, etc.) are relatively open to tinkering, nor do they oppose alternative software. But the best part is that there is no need for alternative software, because the original software is excellent.')</p>
+    <p>$_('Check Use Control'): $_('If checked enabled plugin is enabled.')</p>
+    <p>$_('Check Enable logging') $_('If checked enabled logging is enabled.')</p>
+    <p>$_('Show in footer') $_('Show data from plugin in footer on home page.')</p>
+    <p>$_('Number of blinds') $_('Blinds number (eg: 1,2,3...)')</p> 
+    <p>$_('Label for blind') $_('Naming blinds for better identification.')</p>
+    <p>$_('Command for open blind (eg: http://192.168.88.213/roller/0?go=open).')</p>
+    <p>$_('Command for stop blind (eg: http://192.168.88.213/roller/0?go=open).')</p>
+    <p>$_('Command for close blind (eg: http://192.168.88.213/roller/0?go=close).')</p>
+    <p>$_('Command for read status (eg: http://192.168.88.213/status).')</p>
+    <p>$_('Status returns something similar in json'):</p>
+    <ul>
+    <li>
+    {"wifi_sta":{"connected":true,"ssid":"ABCD","ip":"1.1.1.50","rssi":-76},"cloud":{"enabled":false,"connected":false},"mqtt":{"connected":false},"time":"","unixtime":0,"serial":1,"has_update":false,"mac":"C4223DDF69","cfg_changed_cnt":0,"actions_stats":{"skipped":0},"rollers":[{"state":"stop","source":"input","power":0.00,"is_valid":true,"safety_switch":false,"overtemperature":false,"stop_reason":"normal","last_direction":"close","current_pos":0,"calibrating":false,"positioning":true}],"meters":[{"power":0.00,"overpower":0.00,"is_valid":true,"timestamp":0,"counters":[0.000, 0.000, 0.000],"total":0},{"power":0.00,"overpower":0.00,"is_valid":true,"timestamp":0,"counters":[0.000, 0.000, 0.000],"total":0}],"inputs":[{"input":0,"event":"","event_cnt":0},{"input":0,"event":"","event_cnt":0}],"temperature":46.22,"overtemperature":false,"tmp":{"tC":46.22,"tF":115.19, "is_valid":true},"temperature_status":"Normal","update":{"status":"unknown","has_update":false,"new_version":"","old_version":"20211109-125214/v1.11.7-g682a0db"},"ram_total":49944,"ram_free":37284,"fs_size":233681,"fs_free":146584,"voltage":240.33,"uptime":543644}'
+
+    </li>
+    </ul>
+    <p>$_('From the status, this extension processes these returned keys'):</p>
+    <ul>
+    <li>"state"</li>
+    <li>"current_pos"</li>
+    </ul>    
+    <p>$_('View of the relay and its connection')</p></br>
+    <a href="/plugins/venetian_blind/static/images/sheely.png"><img src="/plugins/venetian_blind/static/images/sheely.png" width="25%"></a></br>
+    <a href="/plugins/venetian_blind/static/images/sheely_connect.png"><img src="/plugins/venetian_blind/static/images/sheely_connect.png" width="25%"></a></br>
+    <p>$_('Screen from Shelly installed device')</p></br>
+    <a href="/plugins/venetian_blind/static/images/setup.png"><img src="/plugins/venetian_blind/static/images/setup.png" width="55%"></a></br>
+    <a href="/plugins/venetian_blind/static/images/safety.png"><img src="/plugins/venetian_blind/static/images/safety.png" width="55%"></a></br>    
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('venetian_blind.home_page') class="button danger">$_('Cancel')</a><br/>
+</div>

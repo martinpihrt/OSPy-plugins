@@ -1,0 +1,113 @@
+$def with(plugin_options, msg)
+
+$var title: $_('Venetian blind settings')
+$var page: plugins
+
+<script>
+    var msg = "${msg}";
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("#nbr_blinds").click(function() {
+            jQuery("#pluginForm").submit();
+        });   
+        jQuery('#msgHint').fadeIn(10);
+        switch (msg) {
+            case "saved":
+                jQuery("#msgHint").text($:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+            break;  
+            case "test":
+                jQuery("#msgHint").text($:{json.dumps(_('I confirm press the test button.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+            break;
+        }
+        jQuery('#msgHint').fadeOut(7000);       
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Venetian blind settings')</div>
+    <a href=$plugins.plugin_url('venetian_blind.help_page') class="button upload">$_('Help')</a><br/>
+    $if plugin_options['use_log']:
+        <p>
+        <a href=$plugins.plugin_url('venetian_blind.log_csv') class="button download">$_('Download log')</a>
+        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        </p></br>
+    <span id="msgHint"> </span>    
+    <form id="pluginForm" action="$plugins.plugin_url('venetian_blind.setup_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use Control'):</td>
+                <td>
+                    <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Enable logging'):</td>
+                <td>
+                    <input name='use_log' type='checkbox'${" checked" if plugin_options['use_log'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                    <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('Number of blinds'):</td>
+                <td title=$:{json.dumps(_(u'The number of blinds controlled by this extension.'), ensure_ascii=False)}>
+                <input name='number_blinds' id='nbr_blinds' type='number' min="1" max="50" value='$plugin_options["number_blinds"]'></td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>            
+            $for c in range(0, plugin_options['number_blinds']):
+                <tr><td class="blindNumber"><b><small>$_('Blind') ${c+1}</small></b></td></tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Label for blind'):</td>
+                    <td>
+                       <input type="text" size="20" value="${plugin_options['label'][c] if c < len(plugin_options['label']) else ''}" id="label${c}" name="label${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Command for open blind'):</td>
+                    <td>
+                       <input type="text" size="60" value="${plugin_options['open'][c] if c < len(plugin_options['open']) else ''}" id="open${c}" name="open${c}">
+                       <a href="?test=${c}&pos=1" id='btn_open' class="button upload">$_('Test Open')</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Command for stop blind'):</td>
+                    <td>
+                       <input type="text" size="60" value="${plugin_options['stop'][c] if c < len(plugin_options['stop']) else ''}"  id="stop${c}" name="stop${c}">
+                       <a href="?test=${c}&pos=0" id='btn_stop' class="button upload">$_('Test Stop')</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Command for close blind'):</td>
+                    <td>
+                       <input type="text" size="60" value="${plugin_options['close'][c] if c < len(plugin_options['close']) else ''}"  id="close${c}" name="close${c}">
+                       <a href="?test=${c}&pos=-1" id='btn_close' class="button upload">$_('Test Close')</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Command for read status'):</td>
+                    <td>
+                       <input type="text" size="60" value="${plugin_options['status'][c] if c < len(plugin_options['status']) else ''}"  id="status${c}" name="status${c}">
+                    </td>
+                </tr>
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <a href=$plugins.plugin_url('venetian_blind.home_page') class="button danger">$_('Cancel')</a><br/>
+</div>
