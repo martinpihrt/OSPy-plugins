@@ -155,15 +155,17 @@ function check_history() {
     jQuery("#historyForm").submit();
 }
 
-    // Initialize behaviors
-    jQuery(document).ready(function(){
-
-        jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
-        });
-        jQuery("button#cCancel").click(function(){
-            window.location="/";
-        });
+// Initialize behaviors
+jQuery(document).ready(function(){
+    jQuery("#cSubmit").click(function() {
+        jQuery("#pluginForm").submit();
+    });
+    jQuery("button#cCancel").click(function(){
+        window.location="/";
+    });
+    jQuery("#ds_number").click(function() {
+        jQuery("#pluginForm").submit();
+    });  
     
     if (jQuery("#graph-placeholder").length > 0) {
         setTimeout(function() {jQuery.getJSON("/plugins/air_temp_humi/graph_json", create_graph)}, 500); 
@@ -295,7 +297,7 @@ function check_history() {
             <tr>
                 <td style='text-transform: none;'>$_('Used DS18B20'):</td>
                 <td>
-                    <input name='ds_used' type='number' min='0' max='6' value='$plugin_options["ds_used"]'>
+                    <input id='ds_number' name='ds_used' type='number' min='0' max='6' value='$plugin_options["ds_used"]'>
                 </td>
             </tr>
             <tr>
