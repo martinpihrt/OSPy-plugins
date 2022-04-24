@@ -41,15 +41,13 @@ wind_options = PluginOptions(
         'metperrot': 1.492,          # 1.492 meter per hour per rotation
         'maxspeed': 20,              # 20 max speed to deactivate stations  
         'emlsubject': _('Report from OSPy WIND SPEED MONITOR plugin'),
-        'log_speed': 0,              # actual speed
-        'log_maxspeed': 0,           # maximal speed (log) in m/sec
-        'log_date_maxspeed': _('Measuring...'), # maximal speed (date log)
         'enable_log': False,         # log to file and graph
         'log_interval': 1,           # log interval in minutes
         'log_records': 0,            # log records 0= unlimited 
         'use_kmh': False,            # measure in km/h or m/s
         'enable_log_change': False,  # enable save log max speed if max wind > last max wind
-        'delete_max_24h': False,     # deleting max speed after 24 hours
+        'delete_max_24h': False,     # deleting max speed after xx hours or minutes
+        'delete_max': '24h',         # 24 hours is default interval for deleting maximal speed 
         'history': 0,                # selector for graph history
         'stoperr': False,            # True = stoping is enabled
         'used_stations': [],         # use this stations for stoping scheduler if stations is activated in scheduler
@@ -71,7 +69,8 @@ class WindSender(Thread):
         self.status = {}
         self.status['meter'] = 0.0
         self.status['kmeter'] = 0.0
-        self.status['max_meter'] = wind_options['log_maxspeed']
+        self.status['max_meter'] = 0
+        self.status['log_date_maxspeed'] = datetime_string()
 
         self._sleep_time = 0
         self.start()
@@ -93,12 +92,12 @@ class WindSender(Thread):
 
         last_millis = millis        # timer for save log
         last_clear_millis = millis  # last clear millis for timer
+        last_24h_millis = millis    # deleting maximal spead after 24 hour
+
         send = False                # send email
         disable_text = True
         val = 0
-
         en_del_24h = True
-
         wind_mon = None
 
         if wind_options['use_footer']:
@@ -111,7 +110,6 @@ class WindSender(Thread):
             try:
                 if wind_options['use_wind_monitor']:    # if wind plugin is enabled
                     disable_text = True
-
                     try:
                         import smbus  # for PCF 8583
                         self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
@@ -127,53 +125,13 @@ class WindSender(Thread):
                         puls = counter(self.bus)/10.0           # counter value is value/10sec
                         val = puls/(wind_options['pulses']*1.0)
                         val = val*wind_options['metperrot']
-                        wind_options.__setitem__('log_speed', round(val,2)*1.0) # m/sec
-                        wind_options.__setitem__('log_maxspeed', self.status['max_meter']) # m/sec
-                        wind_options.__setitem__('log_date_maxspeed', datetime_string())                        
-                        if wind_options['use_wind_monitor']:
-                            wind_options.__setitem__('use_wind_monitor', 'on')
-                        if wind_options['address']:
-                            wind_options.__setitem__('address', 'on')
-                        if wind_options['sendeml']:
-                            wind_options.__setitem__('sendeml', 'on')
-                        if wind_options['enable_log']:
-                            wind_options.__setitem__('enable_log', 'on')
-                        if wind_options['use_kmh']:
-                            wind_options.__setitem__('use_kmh', 'on')
-                        if wind_options['enable_log_change']:
-                            wind_options.__setitem__('enable_log_change', 'on')
-                        if wind_options['delete_max_24h']:
-                            wind_options.__setitem__('delete_max_24h', 'on')
-                        if wind_options['stoperr']:
-                            wind_options.__setitem__('stoperr', 'on')
-                        if wind_options['use_footer']:
-                            wind_options.__setitem__('use_footer', 'on')                                                    
 
                         self.status['meter']  = round(val*1.0, 2)
                         self.status['kmeter'] = round(val*3.6, 2)
 
                         if self.status['meter'] > self.status['max_meter']:
-                            self.status['max_meter'] = self.status['meter']                            
-                            wind_options.__setitem__('log_maxspeed', self.status['max_meter']) # m/sec
-                            wind_options.__setitem__('log_date_maxspeed', datetime_string())
-                            if wind_options['use_wind_monitor']:
-                                wind_options.__setitem__('use_wind_monitor', 'on')
-                            if wind_options['address']:
-                                wind_options.__setitem__('address', 'on')
-                            if wind_options['sendeml']:
-                                wind_options.__setitem__('sendeml', 'on')
-                            if wind_options['enable_log']:
-                                wind_options.__setitem__('enable_log', 'on')
-                            if wind_options['use_kmh']:
-                                wind_options.__setitem__('use_kmh', 'on')
-                            if wind_options['enable_log_change']:
-                                wind_options.__setitem__('enable_log_change', 'on')
-                            if wind_options['delete_max_24h']:
-                                wind_options.__setitem__('delete_max_24h', 'on')
-                            if wind_options['stoperr']:
-                                wind_options.__setitem__('stoperr', 'on')
-                            if wind_options['use_footer']:
-                                wind_options.__setitem__('use_footer', 'on')                                                            
+                            self.status['max_meter'] = self.status['meter']
+                            self.status['log_date_maxspeed'] = datetime_string()                                                           
                             if wind_options['enable_log_change']:
                                 update_log()
 
@@ -184,9 +142,9 @@ class WindSender(Thread):
                             log.info(NAME, _(u'Speed') + ': ' + u'%.1f' % round(self.status['meter'], 2) + ' ' + _(u'm/sec') + ', ' + _(u'Pulses') + ': ' +  u'%s' % puls + ' ' + _(u'pulses/sec'))  
 
                         if wind_options['use_kmh']:
-                            log.info(NAME, u'%s' % wind_options['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % round(wind_options['log_maxspeed']*3.6, 2) + ' ' + _(u'km/h'))  
+                            log.info(NAME, u'%s' % self.status['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % round(self.status['max_meter']*3.6, 2) + ' ' + _(u'km/h'))  
                         else:    
-                            log.info(NAME, u'%s' % wind_options['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % round(wind_options['log_maxspeed'], 2)  + ' ' + _(u'm/sec'))  
+                            log.info(NAME, u'%s' % self.status['log_date_maxspeed'] + ' ' + _(u'Maximal speed') + ': ' + u'%s' % round(self.status['max_meter'], 2)  + ' ' + _(u'm/sec'))  
 
                         if self.status['meter'] >= 42: 
                             log.error(NAME, datetime_string() + ' ' + _(u'Wind speed > 150 km/h (42 m/sec)'))
@@ -213,36 +171,32 @@ class WindSender(Thread):
                                log.clear(NAME)  
 
                         if wind_options['delete_max_24h']:                    # if enable deleting max after 24 hours (86400000 ms)
-                            from datetime import datetime, time
-                            now = datetime.now()
-                            now_time = now.time()
-                            if now_time >= time(0,0) and now_time <= time(0,5) and en_del_24h: # is time for deleting only in time 00:00:00 - 00:05:00
-                                en_del_24h = False
-                                wind_options.__setitem__('log_speed', round(val,2)*1.0) # m/sec
-                                wind_options.__setitem__('log_maxspeed', 0)
-                                wind_options.__setitem__('log_date_maxspeed', datetime_string())
-                                if wind_options['use_wind_monitor']:
-                                    wind_options.__setitem__('use_wind_monitor', 'on')
-                                if wind_options['address']:
-                                    wind_options.__setitem__('address', 'on')
-                                if wind_options['sendeml']:
-                                    wind_options.__setitem__('sendeml', 'on')
-                                if wind_options['enable_log']:
-                                    wind_options.__setitem__('enable_log', 'on')
-                                if wind_options['use_kmh']:
-                                    wind_options.__setitem__('use_kmh', 'on')
-                                if wind_options['enable_log_change']:
-                                    wind_options.__setitem__('enable_log_change', 'on')
-                                if wind_options['delete_max_24h']:
-                                    wind_options.__setitem__('delete_max_24h', 'on')
-                                if wind_options['stoperr']:
-                                    wind_options.__setitem__('stoperr', 'on')
-                                if wind_options['use_footer']:
-                                    wind_options.__setitem__('use_footer', 'on')                                    
-                                log.info(NAME, datetime_string() + ' ' + _(u'Deleting maximal speed after 24 hours.'))
-                                update_log()
+                            is_interval = True
+                            if wind_options['delete_max'] == '1':             # after one minute
+                                int_ms = 60000
+                            elif wind_options['delete_max'] == '10':          # after 10 minutes
+                                int_ms = 600000
+                            elif wind_options['delete_max'] == '30':          # after 30 minutes
+                                int_ms = 1800000
+                            elif wind_options['delete_max'] == '1h':          # after one hours
+                                int_ms = 3600000
+                            elif wind_options['delete_max'] == '2h':          # after two hours
+                                int_ms = 7200000
+                            elif wind_options['delete_max'] == '10h':         # after 10 hours
+                                int_ms = 36000000
+                            elif wind_options['delete_max'] == '24h':         # after 24 hours
+                                int_ms = 86400000                                                                                                                                                                
                             else:
-                                en_del_24h = True
+                                is_interval = False
+
+                            if (millis - last_24h_millis) >= int_ms and is_interval:          # after xx minutes or hours deleting maximal speed
+                                last_24h_millis = millis
+                                self.status['meter'] = 0
+                                self.status['kmeter'] = 0
+                                self.status['max_meter'] = 0
+                                self.status['log_date_maxspeed'] = datetime_string()      
+                                log.info(NAME, datetime_string() + ' ' + _(u'Deleting maximal speed after selected interval.'))
+                                update_log()
 
                         tempText = ""
                         if wind_options['use_kmh']:
@@ -256,7 +210,6 @@ class WindSender(Thread):
                         self._sleep(1)
 
                 else:
-                    # text on the web if plugin is disabled
                     if disable_text:  
                         log.clear(NAME)
                         log.info(NAME, _(u'Wind speed monitor plug-in is disabled.'))
@@ -326,19 +279,12 @@ def set_counter(i2cbus):
         if wind_options['address']:
             addr = 0x51
         else:
-            addr = 0x50
-
-        #i2cbus.write_byte_data(addr, 0x00, 0x20) # status registr setup to "EVENT COUNTER"
-        #i2cbus.write_byte_data(addr, 0x01, 0x00) # reset LSB
-        #i2cbus.write_byte_data(addr, 0x02, 0x00) # reset midle Byte
-        #i2cbus.write_byte_data(addr, 0x03, 0x00) # reset MSB
-        
+            addr = 0x50        
         try_io(lambda: i2cbus.write_byte_data(addr, 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
         try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
         try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
         try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
         log.debug(NAME, _(u'Wind speed monitor plug-in') + ': ' + _(u'Setup PCF8583 as event counter - OK')) 
-
     except:
         log.error(NAME, _(u'Wind speed monitor plug-in') + ':\n' + _(u'Setup PCF8583 as event counter - FAULT'))
         log.error(NAME, _(u'Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
@@ -348,12 +294,10 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
     try:
         pulses = 0
         addr = 0
-        
         if wind_options['address']:
             addr = 0x51
         else:
             addr = 0x50
-
         # reset PCF8583
         try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
         try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
@@ -369,12 +313,10 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         num100000 = (counter[3] & 0xF0) >> 4   # hundreds of thousands
         pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
         return pulses
-
     except:
         log.error(NAME, _(u'Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
         time_.sleep(10)
         return None
-
 
 def set_stations_in_scheduler_off():
     """Stoping selected station in scheduler."""
@@ -402,16 +344,16 @@ def set_stations_in_scheduler_off():
     if ending:
         log.info(NAME, _('Stoping stations in scheduler'))
 
-
 def get_all_values():
     """Return all posible values for others use."""
-    st = wind_sender.status
-
-    if wind_options['use_kmh']:
-        return st['meter']*3.6, st['max_meter']*3.6, wind_options['log_date_maxspeed']  # km/hod
-    else:
-        return st['meter'], st['max_meter'], wind_options['log_date_maxspeed']          # m/sec
-
+    status = wind_sender.status
+    try:
+        if wind_options['use_kmh']:
+            return round(status['meter']*3.6, 2), round(status['max_meter']*3.6, 2), status['log_date_maxspeed']  # km/hod
+        else:
+            return round(status['meter'], 2), round(status['max_meter'], 2), status['log_date_maxspeed']          # m/sec
+    except:
+        return -1, -1, datetime_string()
 
 def read_log():
     """Read log data from json file."""
@@ -420,7 +362,6 @@ def read_log():
             return json.load(logf)
     except IOError:
         return []
-
 
 def read_graph_log():
     """Read graph data from json file."""
@@ -431,20 +372,17 @@ def read_graph_log():
     except IOError:
         return []
 
-
 def write_log(json_data):
     """Write data to log json file."""
 
     with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
         json.dump(json_data, outfile)
 
-
 def write_graph_log(json_data):
     """Write data to graph json file."""
 
     with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
         json.dump(json_data, outfile)
-
 
 def update_log():
     """Update data in json files."""
@@ -493,7 +431,6 @@ def update_log():
     except:
         create_default_graph()
 
-
 def create_default_graph():
     """Create default graph json file."""
 
@@ -526,27 +463,7 @@ class settings_page(ProtectedPage):
 
         if wind_sender is not None and reset:
             wind_sender.status['max_meter'] = 0
-            wind_options.__setitem__('log_speed', 0)
-            wind_options.__setitem__('log_maxspeed', 0)
-            wind_options.__setitem__('log_date_maxspeed', datetime_string())
-            if wind_options['use_wind_monitor']:
-                wind_options.__setitem__('use_wind_monitor', 'on')
-            if wind_options['address']:
-                wind_options.__setitem__('address', 'on')
-            if wind_options['sendeml']:
-                wind_options.__setitem__('sendeml', 'on')
-            if wind_options['enable_log']:
-                wind_options.__setitem__('enable_log', 'on')
-            if wind_options['use_kmh']:
-                wind_options.__setitem__('use_kmh', 'on')
-            if wind_options['enable_log_change']:
-                wind_options.__setitem__('enable_log_change', 'on')
-            if wind_options['delete_max_24h']:
-                wind_options.__setitem__('delete_max_24h', 'on')
-            if wind_options['stoperr']:
-                wind_options.__setitem__('stoperr', 'on')
-            if wind_options['use_footer']:
-                wind_options.__setitem__('use_footer', 'on')                
+            wind_sender.status['log_date_maxspeed'] = datetime_string()                                                           
             log.clear(NAME)
             log.info(NAME, datetime_string() + ' ' + _(u'Maximal speed has reseted.'))
             raise web.seeother(plugin_url(settings_page), True)
@@ -560,24 +477,6 @@ class settings_page(ProtectedPage):
         if wind_sender is not None and 'history' in qdict:
             history = qdict['history']
             wind_options.__setitem__('history', int(history))
-            if wind_options['use_wind_monitor']:
-                wind_options.__setitem__('use_wind_monitor', 'on')
-            if wind_options['address']:
-                wind_options.__setitem__('address', 'on')
-            if wind_options['sendeml']:
-                wind_options.__setitem__('sendeml', 'on')
-            if wind_options['enable_log']:
-                wind_options.__setitem__('enable_log', 'on')
-            if wind_options['use_kmh']:
-                wind_options.__setitem__('use_kmh', 'on')
-            if wind_options['enable_log_change']:
-                wind_options.__setitem__('enable_log_change', 'on')
-            if wind_options['delete_max_24h']:
-                wind_options.__setitem__('delete_max_24h', 'on')
-            if wind_options['stoperr']:
-                wind_options.__setitem__('stoperr', 'on')
-            if wind_options['use_footer']:
-                wind_options.__setitem__('use_footer', 'on')
 
         if wind_sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
@@ -601,20 +500,17 @@ class settings_page(ProtectedPage):
 
         raise web.seeother(plugin_url(settings_page), True)
 
-
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
         return self.plugin_render.wind_monitor_help()
 
-
 class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
         return self.plugin_render.wind_monitor_log(read_log(), wind_options)
-
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -624,17 +520,17 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(wind_options)
 
-
 class data_json(ProtectedPage):
     """Returns plugin data in JSON format."""
+    global wind_sender
 
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data =  {
-          'log_maxspeed': round(wind_options['log_maxspeed'],2),    # in m/sec
-          'log_speed': round(wind_options['log_speed'],2),          # in m/sec
-          'log_date_maxspeed': wind_options['log_date_maxspeed'],
+          'log_maxspeed': round(wind_sender.status['max_meter'], 2),    # in m/sec
+          'log_speed': round(wind_sender.status['meter'],2),          # in m/sec
+          'log_date_maxspeed': wind_sender.status['log_date_maxspeed'],
           'label': wind_options['emlsubject']
         }
 
@@ -647,7 +543,6 @@ class log_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(read_log())
-
 
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
@@ -693,7 +588,6 @@ class graph_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(data)
 
-
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
     def GET(self):
@@ -724,7 +618,6 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data
 
-
 class wind_json(ProtectedPage):
     """Returns seconds water in JSON format."""
 
@@ -733,8 +626,11 @@ class wind_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data = {}
-        if wind_options['use_kmh']:
-            data['wind'] = '{} {}'.format(round(wind_sender.status['meter']*3.6, 2), _('km/h'))   
-        else:
-            data['wind'] = '{} {}'.format(round(wind_sender.status['meter'], 2), _('m/s'))
+        try:
+            if wind_options['use_kmh']:
+                data['wind'] = '{} {}'.format(round(wind_sender.status['meter']*3.6, 2), _('km/h'))   
+            else:
+                data['wind'] = '{} {}'.format(round(wind_sender.status['meter'], 2), _('m/s'))
+        except:
+            data['wind'] = '{}'.format(_('Any error'))        
         return json.dumps(data)        
