@@ -47,10 +47,6 @@ tank_options = PluginOptions(
        'use_send_email': True, # send email water level is minimum
        'emlsubject': _('Report from OSPy TANK plugin'),
        'address_ping': 0x04,   # device address for sonic ping HW board
-       'log_maxlevel': 400,    # maximal level (log)
-       'log_minlevel': 0,      # minimal level (log)
-       'log_date_maxlevel': datetime_string(), # maximal level (date log)
-       'log_date_minlevel': datetime_string(), # minimal level (date log)
        'enable_log': False,    # use logging
        'log_interval': 1,      # interval for log in minutes
        'log_records': 0,       # the number of records 
@@ -87,6 +83,10 @@ class Sender(Thread):
         status['percent']  = -1
         status['ping']     = -1
         status['volume']   = -1
+        status['maxlevel'] = 0
+        status['minlevel'] = 400
+        status['maxlevel_datetime'] = datetime_string()
+        status['minlevel_datetime'] = datetime_string()
 
         self._sleep_time = 0
         self.start()
@@ -145,7 +145,6 @@ class Sender(Thread):
 
                     if level_in_tank > 0 and sonic_cm != 0:  # if level is ok and sonic is ok
                         three_text = True
-
                         status['level']   = level_in_tank
                         status['ping']    = sonic_cm
                         status['volume']  = get_volume(level_in_tank)
@@ -159,8 +158,8 @@ class Sender(Thread):
                         else:
                             tempText =  str(status['volume']) + ' ' + _(u'm3') + ', ' + str(status['level']) + ' ' + _(u'cm') + ' (' + str(status['percent']) + ' ' + (u'%)')
                             log.info(NAME, _(u'Ping') + ': ' + str(status['ping']) + ' ' + _(u'cm') + ', ' + _(u'Volume') + ': ' + str(status['volume']) + ' ' + _(u'm3') + '.')
-                        log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _(u'Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _(u'cm') + '.')   
-                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _(u'Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _(u'cm') + '.') 
+                        log.info(NAME, str(status['maxlevel_datetime']) + ' ' + _(u'Maximum Water level') + ': ' + str(status['maxlevel']) + ' ' + _(u'cm') + '.')   
+                        log.info(NAME, str(status['minlevel_datetime']) + ' ' + _(u'Minimum Water level') + ': ' + str(status['minlevel']) + ' ' + _(u'cm') + '.') 
                         log.info(NAME, regulation_text)
 
                         if tank_options['enable_reg']:                                    # if enable regulation "maximum water level"
@@ -212,52 +211,14 @@ class Sender(Thread):
                                 six_text = False
                                 regulation_text = datetime_string() + ' ' + _(u'Waiting.')
 
-                        if status['level'] > tank_options['log_maxlevel']:                         # maximum level check
-                            if tank_options['use_sonic']:
-                                tank_options.__setitem__('use_sonic', 'on')
-                            if tank_options['check_liters']:
-                                tank_options.__setitem__('check_liters', 'on')
-                            if tank_options['enable_reg']:
-                                tank_options.__setitem__('enable_reg', 'on')
-                            if tank_options['enable_log']:
-                                tank_options.__setitem__('enable_log', 'on')
-                            if tank_options['use_stop']:
-                                tank_options.__setitem__('use_stop', 'on')
-                            if tank_options['use_send_email']:
-                                tank_options.__setitem__('use_send_email', 'on')
-                            if tank_options['use_water_stop']:
-                                tank_options.__setitem__('use_water_stop', 'on')
-                            if tank_options['use_water_err']:
-                                tank_options.__setitem__('use_water_err', 'on')
-                            if tank_options['use_footer']:
-                                tank_options.__setitem__('use_footer', 'on')                                
-                            tank_options.__setitem__('log_maxlevel', status['level'])
-                            qmax = datetime_string()
-                            tank_options.__setitem__('log_date_maxlevel', qmax)
+                        if status['level'] > status['maxlevel']:                         # maximum level check                           
+                            status['maxlevel'] = status['level']
+                            status['maxlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Maximum has updated.'))
   
-                        if status['level'] < tank_options['log_minlevel'] and status['level'] > 2:  # minimum level check 
-                            if tank_options['use_sonic']:
-                                tank_options.__setitem__('use_sonic', 'on')
-                            if tank_options['check_liters']:
-                                tank_options.__setitem__('check_liters', 'on')
-                            if tank_options['enable_reg']:
-                                tank_options.__setitem__('enable_reg', 'on')
-                            if tank_options['enable_log']:
-                                tank_options.__setitem__('enable_log', 'on')
-                            if tank_options['use_stop']:
-                                tank_options.__setitem__('use_stop', 'on')
-                            if tank_options['use_send_email']:
-                                tank_options.__setitem__('use_send_email', 'on')
-                            if tank_options['use_water_stop']:
-                                tank_options.__setitem__('use_water_stop', 'on')
-                            if tank_options['use_water_err']:
-                                tank_options.__setitem__('use_water_err', 'on')
-                            if tank_options['use_footer']:
-                                tank_options.__setitem__('use_footer', 'on') 
-                            tank_options.__setitem__('log_minlevel', status['level'])
-                            qmin = datetime_string()
-                            tank_options.__setitem__('log_date_minlevel', qmin)
+                        if status['level'] < status['minlevel'] and status['level'] > 2:  # minimum level check 
+                            status['minlevel'] = status['level']
+                            status['minlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Minimum has updated.'))
                             
                         if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 2: # level value is lower
@@ -288,9 +249,6 @@ class Sender(Thread):
                         tempText =  _('FAULT')
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _(u'Water level: Error.'))
-                        log.info(NAME, str(tank_options['log_date_maxlevel']) + ' ' + _(u'Maximum Water level') + ': ' + str(tank_options['log_maxlevel']) + ' ' + _(u'cm') + _(u'.'))   
-                        log.info(NAME, str(tank_options['log_date_minlevel']) + ' ' + _(u'Minimum Water level') + ': ' + str(tank_options['log_minlevel']) + ' ' + _(u'cm') + _(u'.'))    
-
                         if tank_options['use_water_err'] and three_text:   # if probe has error send email
                             three_text = False
                             log.info(NAME, datetime_string() + ' ' + _(u'ERROR: Water probe has fault?'))
@@ -393,13 +351,11 @@ def get_sonic_cm():
         import smbus
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         time.sleep(1) #wait here to avoid 121 IO Error
-        data = [2]
         try:
             data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'],2))
+            return data[1] + data[0]*255
         except:
             return -1
-        cm = data[1] + data[0]*255
-        return cm
     except:
         return -1
 
@@ -433,7 +389,6 @@ def get_tank(level): # return water tank level 0-100%, -1 is error i2c not found
 def get_volume(level): # return volume calculation from cylinder diameter and water column height in m3
     tank_lvl = level
     if tank_lvl >= 0:
-       
        try:
           import math
           r = tank_options['diameter']/2.0
@@ -443,7 +398,7 @@ def get_volume(level): # return volume calculation from cylinder diameter and wa
             volume = volume*0.001          # convert from cm3 to liter (1 cm3 = 0.001 liter)
           else:  
             volume = volume/1000000.0      # convert from cm3 to m3
-          volume = round(volume,2)         # round only two decimals
+          volume = round(volume, 2)         # round only two decimals
           return volume
        except:
           return -1
@@ -458,7 +413,7 @@ def maping(x, in_min, in_max, out_min, out_max):
 def get_all_values():
     global status
 
-    return status['level'] , status['percent'], status['ping'], status['volume'], tank_options['log_minlevel'], tank_options['log_maxlevel'], tank_options['log_date_minlevel'], tank_options['log_date_maxlevel'], tank_options['check_liters']
+    return status['level'] , status['percent'], status['ping'], status['volume'], status['minlevel'], status['maxlevel'], status['minlevel_datetime'], status['maxlevel_datetime'], tank_options['check_liters']
 
 
 def read_log():
@@ -497,6 +452,7 @@ def write_graph_log(json_data):
 
 def update_log():
     """Update data in json files."""
+    global status
 
     ### Data for log ###
     try:
@@ -510,8 +466,8 @@ def update_log():
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
     data['time'] = str(datetime.now().strftime('%H:%M:%S'))
-    data['minimum'] = str(tank_options['log_minlevel'])
-    data['maximum'] = str(tank_options['log_maxlevel'])
+    data['minimum'] = str(status['minlevel'])
+    data['maximum'] = str(status['maxlevel'])
     data['actual']  = str(get_all_values()[0])
     data['volume']  = str(get_all_values()[3])
       
@@ -535,11 +491,11 @@ def update_log():
 
     try:
         minimum = graph_data[0]['balances']
-        minval = {'total': tank_options['log_minlevel']}
+        minval = {'total': status['minlevel']}
         minimum.update({timestamp: minval})
 
         maximum = graph_data[1]['balances']
-        maxval = {'total': tank_options['log_maxlevel']}
+        maxval = {'total': status['maxlevel']}
         maximum.update({timestamp: maxval})
 
         actual = graph_data[2]['balances']
@@ -618,33 +574,11 @@ class settings_page(ProtectedPage):
         del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
 
         if sender is not None and reset:
-            tank_options.__setitem__('log_minlevel', status['level'])
-            tank_options.__setitem__('log_maxlevel', status['level'])
-            qm = datetime_string()
-            tank_options.__setitem__('log_date_maxlevel', qm)
-            tank_options.__setitem__('log_date_minlevel', qm)
-            tank_options.__setitem__('log_date_maxlevel', qm)
-            tank_options.__setitem__('log_date_minlevel', qm)
-            if tank_options['use_sonic']:
-                tank_options.__setitem__('use_sonic', 'on')
-            if tank_options['check_liters']:
-                tank_options.__setitem__('check_liters', 'on')
-            if tank_options['enable_reg']:
-                tank_options.__setitem__('enable_reg', 'on')
-            if tank_options['enable_log']:
-                tank_options.__setitem__('enable_log', 'on')
-            if tank_options['use_stop']:
-                tank_options.__setitem__('use_stop', 'on')
-            if tank_options['use_send_email']:
-                tank_options.__setitem__('use_send_email', 'on')
-            if tank_options['use_water_stop']:
-                tank_options.__setitem__('use_water_stop', 'on')
-            if tank_options['use_water_err']:
-                tank_options.__setitem__('use_water_err', 'on')
-            if tank_options['use_footer']:
-                tank_options.__setitem__('use_footer', 'on') 
+            status['minlevel'] = status['level']
+            status['maxlevel'] = status['level']
+            status['minlevel_datetime'] = datetime_string()
+            status['maxlevel_datetime'] = datetime_string()
             log.info(NAME, datetime_string() + ': ' + _(u'Minimum and maximum has reseted.'))
-
             raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and delete:
@@ -676,12 +610,11 @@ class settings_page(ProtectedPage):
 
         if tank_options['use_sonic']:
             log.clear(NAME)
-            log.info(NAME, _(u'Water tank monitor is enabled.'))
+            log.info(NAME, _(u'Options has updated.'))
         else:
             log.clear(NAME)
             log.info(NAME, _(u'Water tank monitor is disabled.'))
-
-        log.info(NAME, _(u'Options has updated.'))
+        
         raise web.seeother(plugin_url(settings_page), True)
 
 
