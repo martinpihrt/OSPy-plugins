@@ -88,7 +88,7 @@ class settings_page(ProtectedPage):
         months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
         vals = {}
         for index, month in enumerate(months):
-            vals[index] = max(0, min(10000, int(qdict[month])))
+            vals[index] = max(0, min(10000, int(float(qdict[month]))))
         plugin_options.web_update(vals)
         if checker is not None:
             checker.update()
