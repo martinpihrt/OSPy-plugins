@@ -527,3 +527,18 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         web.header('Content-type', content) 
         web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data
+
+
+class press_json(ProtectedPage):
+    """Returns seconds press state in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data = {}
+        test = get_check_pressure()
+        if not test:
+           data['press'] = _('ACTIVE')
+        else:
+           data['press'] = _('INACTIVE')
+        return json.dumps(data)

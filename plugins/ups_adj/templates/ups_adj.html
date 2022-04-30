@@ -155,15 +155,21 @@ function check_history() {
     jQuery("#historyForm").submit();
 }
 
-    // Initialize behaviors
-    jQuery(document).ready(function(){
+function updateUPS(){
+    jQuery.getJSON("/plugins/ups_adj/ups_json", function(_data) {
+        jQuery("#ups span.ups").text(_data.ups);
+    })      
+    setTimeout(updateUPS, 1000); // 1 second
+}
 
-        jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
-        });
-        jQuery("button#cCancel").click(function(){
-            window.location="/";
-        });
+// Initialize behaviors
+jQuery(document).ready(function(){
+    jQuery("#cSubmit").click(function() {
+        jQuery("#pluginForm").submit();
+    });
+    jQuery("button#cCancel").click(function(){
+        window.location="/";
+    });
 
     if (jQuery("#graph-placeholder").length > 0) {
         setTimeout(function() {jQuery.getJSON("/plugins/ups_adj/graph_json", create_graph)}, 500); 
@@ -171,6 +177,7 @@ function check_history() {
 
     jQuery("#history").change(check_history);    
 
+    updateUPS();
 });
 </script>
 
@@ -230,19 +237,19 @@ function check_history() {
                <th colspan="2">
                  <hr>
                </th>
-            </tr>     
-            <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('Power line state'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                   $status['power%d']
-                </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
                     <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
                 </td>
-            </tr>                                           
+            </tr>                 
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('Power line state'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                   <p id="ups"><b><span class="ups">-</span></b></p>
+                </td>
+            </tr>                                  
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

@@ -480,3 +480,18 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         web.header('Content-type', content) 
         web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data
+
+
+class ups_json(ProtectedPage):
+    """Returns seconds ups state in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data = {}
+        test = get_check_power()
+        if not test:
+           data['ups'] = _('OK')
+        else:
+           data['ups'] = _('FAULT')
+        return json.dumps(data)        
