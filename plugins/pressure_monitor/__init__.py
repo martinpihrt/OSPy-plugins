@@ -121,7 +121,7 @@ class PressureSender(Thread):
         while not self._stop_event.is_set():
             try:
                 if pressure_options['use_press_monitor']:                              # if pressure plugin is enabled
-                    if master:                                                         # if master station 1 or 2 is on
+                    if master and not options.manual_mode:                             # if master station 1 or 2 is on and not manual mode
                         if get_check_pressure():                                       # if pressure sensor is on
                             if pressure_options['enable_log']:                         # if enabled logging and graphing
                                 now_msg = 2
