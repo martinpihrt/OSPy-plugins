@@ -9,7 +9,10 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
-    });
+        jQuery("button#cRefresh").click(function(){
+            window.location="/plugins/system_info/status";
+        });        
+    });  
 </script>
 
 <div id="plugin">
@@ -19,12 +22,18 @@ $var page: plugins
         <table class="optionList">
             <tr>
                 <td>
-                    <textarea style="font-family: monospace;" rows="30" cols="80" readonly>$'\n'.join(overview)</textarea><br/>
+                    <textarea style="font-family: monospace;" rows="30" cols="110" readonly>$'\n'.join(overview)</textarea><br/>
                 </td>
             </tr>
         </table>
     </form>
+    <a href="?find_usb" class="button backup">$_('Find USB devices')</a>
+    <a href="?find_tty" class="button backup">$_('Show TTY devices')</a>
+    <a href="?aux" class="button backup">$_('AUX output')</a>
+    <a href="?part" class="button backup">$_('Show partitions')</a>
+    <a href="?cpu" class="button backup">$_('CPU info')</a>
 </div>
 <div id="controls">
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <button id="cRefresh" class="submit">$_('Refresh')</button>
 </div>

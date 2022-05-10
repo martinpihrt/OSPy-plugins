@@ -13,6 +13,8 @@ from ospy.options import options
 import subprocess
 from ospy.log import log
 
+import web
+
 if is_python2():
     import sys
     reload(sys)
@@ -116,6 +118,88 @@ def get_overview():
     return result
 
 
+def get_usb():
+    """Returns the usb data."""
+    result = []
+    try:
+        cmd = 'lsusb'
+        if (cmd.find('Error') != -1):
+            result.append(_('Could not open lsusb!'))
+        else:    
+            result.append(process(cmd))
+
+    except Exception:
+        log.error(NAME, traceback.format_exc())
+        pass
+
+    return result
+
+
+def get_tty():
+    """Returns the tty data."""
+    result = []
+    try:
+        cmd = 'ls /dev/tty*'
+        if (cmd.find('Error') != -1):
+            result.append(_('Could not open ls /dev/tty*!'))
+        else:    
+            result.append(process(cmd))
+
+    except Exception:
+        log.error(NAME, traceback.format_exc())
+        pass
+
+    return result
+
+def get_aux():
+    """Returns the from aux output."""
+    result = []
+    try:
+        cmd = 'ps aux'
+        if (cmd.find('Error') != -1):
+            result.append(_('Could not open ps aux!'))
+        else:    
+            result.append(process(cmd))
+
+    except Exception:
+        log.error(NAME, traceback.format_exc())
+        pass
+
+    return result
+
+def get_part():
+    """Returns the from partitions."""
+    result = []
+    try:
+        cmd = 'cat /proc/partitions'
+        if (cmd.find('Error') != -1):
+            result.append(_('Could not open cat /proc/partitions!'))
+        else:    
+            result.append(process(cmd))
+
+    except Exception:
+        log.error(NAME, traceback.format_exc())
+        pass
+
+    return result
+
+def get_cpu():
+    """Returns the CPU info."""
+    result = []
+    try:
+        cmd = 'cat /proc/cpuinfo'
+        if (cmd.find('Error') != -1):
+            result.append(_('Could not open cat /proc/cpuinfo!'))
+        else:    
+            result.append(process(cmd))
+
+    except Exception:
+        log.error(NAME, traceback.format_exc())
+        pass
+
+    return result    
+
+
 def find_address(search_range, range=False):
     try:
         import smbus
@@ -140,7 +224,7 @@ def find_address(search_range, range=False):
                return False
 
     except ImportError:
-        log.warning(NAME, _('Could not import smbus.'))           
+        log.warning(NAME, _('Could not import smbus.'))
 
 
 def process(cmd):
@@ -160,4 +244,26 @@ class status_page(ProtectedPage):
     """Load an html page"""
 
     def GET(self):
+        qdict = web.input()
+        find_usb = helpers.get_input(qdict, 'find_usb', False, lambda x: True)
+        find_tty = helpers.get_input(qdict, 'find_tty', False, lambda x: True)
+        aux = helpers.get_input(qdict, 'aux', False, lambda x: True) 
+        part = helpers.get_input(qdict, 'part', False, lambda x: True)
+        cpu = helpers.get_input(qdict, 'cpu', False, lambda x: True)
+
+        if find_usb:
+            return self.plugin_render.system_info(get_usb())
+
+        if find_tty:
+            return self.plugin_render.system_info(get_tty())
+
+        if aux:
+            return self.plugin_render.system_info(get_aux())
+
+        if part:
+            return self.plugin_render.system_info(get_part())
+
+        if cpu:
+            return self.plugin_render.system_info(get_cpu())
+
         return self.plugin_render.system_info(get_overview())
