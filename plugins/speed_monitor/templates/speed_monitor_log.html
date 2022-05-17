@@ -1,0 +1,33 @@
+$def with(records)
+
+$var title: $_('Speed monitor log')
+$var page: plugins
+
+<div class="title">$_('Speed monitor logs')</div>
+<div id="plugin">
+    <p>$_('Here we can see all the events performed in this extension.')</p>
+    <p>$_('Total number of records'): ${len(records)}</p>
+    <p><a href=$plugins.plugin_url('speed_monitor.log_csv') class="button download">$_('Download log')</a>
+    <a href="" class="button refresh">$_('Refresh')</a>
+    <a href=$plugins.plugin_url('speed_monitor.settings_page') class="button danger">$_('Cancel')</a></p></br>
+    <table class="logList">
+        <tr class="log_rec">
+            <th>$_('Date Time')</th>
+            <th>$_('Download (Mb/s)')</th>
+            <th>$_('Upload (Mb/s)')</th>
+            <th>$_('Ping (msec)')</th>
+        </tr>
+        $for interval in records:
+            <tr class="log_rec ${loop.parity}">
+                <td align='left'>${interval["datetime"]}</td>
+                <td align='left'>${interval["down"]}</td>
+                <td align='left'>${interval["up"]}</td>
+                <td align='left'>${interval["ping"]}</td>
+                </td>
+            </tr>
+    </table>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('speed_monitor.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

@@ -1,0 +1,17 @@
+$def with()
+
+$var title: $_('Speed monitor - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Speed monitor - help')</div>
+    <p>$_('This plugin monitors and logs the speed of the Internet connection after a certain set interval').</p>
+    <p>$_('Download and upload speed are in Mbps').</p>
+    <p>$_('The response time (ping) is given in milliseconds').</p>
+    <p>$_('This extension arose as a whip on rogue Internet service providers').</p>
+    <p>$_('Many thanks'): https://github.com/sivel/speedtest-cli $_('and service:') www.speedtest.net</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('speed_monitor.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

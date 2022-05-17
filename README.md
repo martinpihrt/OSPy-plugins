@@ -60,4 +60,5 @@ Available plugins:
 * Telegram Bot  
 * Door Opening  
 * Voice Station  
-* Venetian Blind  
+* Venetian Blind
+* Speed Monitor  
