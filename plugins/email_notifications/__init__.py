@@ -177,13 +177,13 @@ class EmailSender(Thread):
                                 self._sleep(2) # wait for the meter to save consumption
 
                                 consum_from = water_consumption_counter.get_all_values()[0]
-                                consum_one  = water_consumption_counter.get_all_values()[1]
-                                consum_two  = water_consumption_counter.get_all_values()[2]
+                                consum_one  = float(water_consumption_counter.get_all_values()[1])
+                                consum_two  = float(water_consumption_counter.get_all_values()[2])
 
                                 msg = u' '
                                 msg +=  _(u'Measured from day') + u': ' + str(consum_from) + u', '
                                 msg +=  _(u'Master Station') + u': '
-                                if consum_one < 1000:
+                                if consum_one < 1000.0:
                                     msg += str(consum_one) + u' '
                                     msg += _(u'Liter') + u', '
                                 else: 
@@ -191,7 +191,7 @@ class EmailSender(Thread):
                                     msg += _(u'm3') + ', '
 
                                 msg +=  _(u'Second Master Station') + u': '
-                                if consum_two < 1000:
+                                if consum_two < 1000.0:
                                     msg += str(consum_two) + u' '
                                     msg += _(u'Liter') 
                                 else:
@@ -301,28 +301,17 @@ class EmailSender(Thread):
                                                         for i in range(0, 16):
                                                             if type(sensor.soil_last_read_value[i]) == float:
                                                                 state[i] = sensor.soil_last_read_value[i]
-                                                                val = state[i]
-                                                                if sensor.soil_invert_probe_in[i]:
-                                                                    if val < sensor.soil_calibration_max[i]:
-                                                                        val = sensor.soil_calibration_max[i]
-                                                                    if val > sensor.soil_calibration_min[i]:
-                                                                        val = sensor.soil_calibration_min[i]
-                                                                    val = sensor.soil_calibration_min[i] - val
-                                                                    calculate_soil[i] = maping(val, float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
-                                                                    calculate_soil[i] = round(calculate_soil[i], 1)
-                                                                else:
-                                                                    if val > sensor.soil_calibration_max[i]:
-                                                                        val = sensor.soil_calibration_max[i]
-                                                                    if val < sensor.soil_calibration_min[i]:
-                                                                        val = sensor.soil_calibration_min[i]
-                                                                    calculate_soil[i] = maping(val, float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
-                                                                    calculate_soil[i] = round(calculate_soil[i], 1)
-                                                                if calculate_soil[i] > 100:
-                                                                    calculate_soil[i] = 100
-                                                                if calculate_soil[i] < 0:
-                                                                    calculate_soil[i] = 0
-                                                                if state[i] > 0.1:   
-                                                                    sensor_result += u'{}: {}% '.format(sensor.soil_probe_label[i], calculate_soil[i])
+                                                                ### voltage from probe to humidity 0-100% with calibration range (for footer info)
+                                                                if sensor.soil_invert_probe_in[i]:                                  # probe: rotated state 0V=100%, 3V=0% humidity
+                                                                    calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
+                                                                    calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
+                                                                    calculate_soil[i] = 100.0 - calculate_soil[i]                   # ex: 90% - 90% = 10%, 10% is output in invert probe mode
+                                                                else:                                                               # probe: normal state 0V=0%, 3V=100%
+                                                                    calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
+                                                                    calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
+                                                                if state[i] > 0.1:
+                                                                    if sensor.soil_show_in_footer[i]:
+                                                                        sensor_result += '{} {}% ({}V) '.format(sensor.soil_probe_label[i], round(calculate_soil[i], 2), round(state[i], 2))
                                                             else:
                                                                 err_check += 1
                                                         if err_check > 15:
@@ -426,7 +415,7 @@ def safeStr(obj):
        return "u'" + u' '.join(obj).encode('utf-8').strip() + "'"
 
 def email(text, subject=None, attach=None):
-    """Send email with with attachments. If subject is None, the default will be used."""
+    ### Send email with with attachments. If subject is None, the default will be used ###
     if email_options['emlusr'] != '' and email_options['emlpwd'] != '' and email_options['emladr0'] != '' and email_options['emlserver'] != '' and email_options['emlport'] != '':
         recipients_list = [email_options['emladr'+str(i)] for i in range(5) if email_options['emladr'+str(i)]!='']
         SMTP_user = email_options['emlusr']       # SMTP username
@@ -478,7 +467,7 @@ def email(text, subject=None, attach=None):
 
 
 def read_saved_emails():
-###Read saved emails from json file.###
+    ### Read saved emails from json file ###
     try:
         with open(os.path.join(plugin_data_dir(), 'saved_emails.json')) as saved_emails:
             return json.load(saved_emails)
@@ -486,12 +475,12 @@ def read_saved_emails():
         return []     
 
 def write_email(json_data):
-###Write e-mail data to json file.###
+    ###Write e-mail data to json file ###
     with open(os.path.join(plugin_data_dir(), 'saved_emails.json'), 'w') as saved_emails:
         json.dump(json_data, saved_emails)  
 
 def update_saved_emails(data):
-###Update data in json files.### 
+    ### Update data in json files ### 
     try:                                                              # exists file: saved_emails.json?
         saved_emails = read_saved_emails()                       
     except:                                                           # no! create empty file
@@ -503,7 +492,7 @@ def update_saved_emails(data):
 
                    
 def try_mail(text, logtext, attachment=None, subject=None):
-###Try send e-mail###   
+    ### Try send e-mail ###   
     log.clear(NAME)
     try:
         email(text, subject, attachment)  # send email with attachment from
@@ -528,15 +517,22 @@ def try_mail(text, logtext, attachment=None, subject=None):
             data['subject'] = u'%s' % email_options['emlsubject']
             data['attachment'] = u'%s' % attachment
 
-            update_saved_emails(data)    # saving e-mail data to file: saved_emails.json        
+            update_saved_emails(data)    # saving e-mail data to file: saved_emails.json
 
-def maping(x, in_min, in_max, out_min, out_max):
-    """ Return value from range """
-    return ((x - in_min) * (out_max - out_min)) / ((in_max - in_min) + out_min)
+def maping(OldValue, OldMin, OldMax, NewMin, NewMax):
+    ### Convert a number range to another range ###
+    OldRange = OldMax - OldMin
+    NewRange = NewMax - NewMin
+    if OldRange == 0:
+        NewValue = NewMin
+    else:
+        NewRange = NewMax - NewMin
+        NewValue = (((OldValue - OldMin) * NewRange) / OldRange) + NewMin
+    return NewValue
 
 
 def get_tank_cm(level, dbot, dtop):
-    """ Return level from top and bottom distance"""
+    ### Return level from top and bottom distance ###
     try:
         if level < 0:
             return -1
@@ -550,7 +546,7 @@ def get_tank_cm(level, dbot, dtop):
 
 
 def get_percent(level, dbot, dtop):
-    """ Return level 0-100% from top and bottom distance"""
+    ### Return level 0-100% from top and bottom distance ###
     try:
         if level >= 0:
             perc = float(level)/float((int(dbot)-int(dtop)))
@@ -569,7 +565,7 @@ def get_percent(level, dbot, dtop):
 # Web pages:                                                                   #
 ################################################################################
 class settings_page(ProtectedPage):
-    """Load an html page for entering email adjustments."""
+    ### Load an html page for entering email adjustments ###
 
     def GET(self):
         return self.plugin_render.email_notifications(email_options, log.events(NAME))
@@ -599,14 +595,14 @@ class settings_page(ProtectedPage):
 
 
 class help_page(ProtectedPage):
-    """Load an html page for help"""
+    ### Load an html page for help ###
 
     def GET(self):
         return self.plugin_render.email_notifications_help()
 
 
 class settings_json(ProtectedPage):
-    """Returns plugin settings in JSON format."""
+    ### Returns plugin settings in JSON format ###
 
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')

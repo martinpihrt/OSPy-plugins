@@ -203,12 +203,19 @@ def get_active_state():
     else:
       return False
 
-def maping(x, in_min, in_max, out_min, out_max):
-    """ Return value from range """
-    return ((x - in_min) * (out_max - out_min)) / ((in_max - in_min) + out_min)
+def maping(OldValue, OldMin, OldMax, NewMin, NewMax):
+    ### Convert a number range to another range ###
+    OldRange = OldMax - OldMin
+    NewRange = NewMax - NewMin
+    if OldRange == 0:
+        NewValue = NewMin
+    else:
+        NewRange = NewMax - NewMin
+        NewValue = (((OldValue - OldMin) * NewRange) / OldRange) + NewMin
+    return NewValue
 
 def get_tank_cm(level, dbot, dtop):
-    """ Return level from top and bottom distance"""
+    ### Return level from top and bottom distance ###
     try:
         if level < 0:
             return -1
@@ -221,7 +228,7 @@ def get_tank_cm(level, dbot, dtop):
         return -1
 
 def get_percent(level, dbot, dtop):
-    """ Return level 0-100% from top and bottom distance"""
+    ### Return level 0-100% from top and bottom distance ###
     try:
         if level >= 0:
             perc = float(level)/float((int(dbot)-int(dtop)))
@@ -415,7 +422,7 @@ def get_report(index):
             if get_active_state()==False:
                 result = ASCI_convert(_('Nothing running')) 
             else:
-                result = get_active_state()
+                result = ASCI_convert(get_active_state())
         else:
             result = None
     elif index == 26:
@@ -526,28 +533,17 @@ def get_report(index):
                                         for i in range(0, 16):
                                             if type(sensor.soil_last_read_value[i]) == float:
                                                 state[i] = sensor.soil_last_read_value[i]
-                                                val = state[i]
-                                                if sensor.soil_invert_probe_in[i]:
-                                                    if val < sensor.soil_calibration_max[i]:
-                                                        val = sensor.soil_calibration_max[i]
-                                                    if val > sensor.soil_calibration_min[i]:
-                                                        val = sensor.soil_calibration_min[i]
-                                                    val = sensor.soil_calibration_min[i] - val
-                                                    calculate_soil[i] = maping(val, float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
-                                                    calculate_soil[i] = round(calculate_soil[i], 1)
-                                                else:
-                                                    if val > sensor.soil_calibration_max[i]:
-                                                        val = sensor.soil_calibration_max[i]
-                                                    if val < sensor.soil_calibration_min[i]:
-                                                        val = sensor.soil_calibration_min[i]
-                                                    calculate_soil[i] = maping(val, float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
-                                                    calculate_soil[i] = round(calculate_soil[i], 1)
-                                                if calculate_soil[i] > 100:
-                                                    calculate_soil[i] = 100
-                                                if calculate_soil[i] < 0:
-                                                    calculate_soil[i] = 0
+                                                ### voltage from probe to humidity 0-100% with calibration range (for footer info)
+                                                if sensor.soil_invert_probe_in[i]:                                  # probe: rotated state 0V=100%, 3V=0% humidity
+                                                    calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
+                                                    calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
+                                                    calculate_soil[i] = 100.0 - calculate_soil[i]                   # ex: 90% - 90% = 10%, 10% is output in invert probe mode
+                                                else:                                                               # probe: normal state 0V=0%, 3V=100%
+                                                    calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
+                                                    calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
                                                 if state[i] > 0.1:
-                                                    sensor_result += '{}: {}% '.format(sensor.soil_probe_label[i], calculate_soil[i])
+                                                    if sensor.soil_show_in_footer[i]:
+                                                        sensor_result += '{} {}% ({}V) '.format(sensor.soil_probe_label[i], round(calculate_soil[i], 2), round(state[i], 2))
                                             else:
                                                 err_check += 1
                                         if err_check > 15:
@@ -596,7 +592,7 @@ def find_lcd_address():
 
 
 def update_lcd(line1, line2=None):
-    """Print messages to LCD 16x2"""
+    ### Print messages to LCD 16x2 ###
     global blocker
 
     if lcd_options['address'] == 0:
@@ -632,8 +628,8 @@ def update_lcd(line1, line2=None):
         time.sleep(sleep_time)
         sleep_time = 0.9
 
-### Reboot Linux HW software ###
 def notify_rebooted(name, **kw):
+    ### Reboot Linux HW software ###
     global blocker
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _('System rebooting'))
@@ -650,8 +646,8 @@ def notify_rebooted(name, **kw):
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System Linux')), 1))
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
 
-### Restarted OSPy ###
 def notify_restarted(name, **kw):
+    ### Restarted OSPy ###
     global blocker
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _('System restarting'))
@@ -669,8 +665,8 @@ def notify_restarted(name, **kw):
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
 
 
-### Power off Linux HW ###
 def notify_poweroff(name, **kw):
+    ### Power off Linux HW ###
     global blocker
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _('System poweroff'))
@@ -687,8 +683,9 @@ def notify_poweroff(name, **kw):
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System Linux')), 1))
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Power off')), 2))
 
-### OSPy new version availbale ###
+
 def notify_ospyupdate(name, **kw):
+    ### OSPy new version availbale ###
     global blocker
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _('System OSPy Has Update'))
@@ -709,7 +706,7 @@ def notify_ospyupdate(name, **kw):
 # Web pages:                                                                   #
 ################################################################################
 class settings_page(ProtectedPage):
-    """Load an html page for entering lcd adjustments."""
+    ### Load an html page for entering lcd adjustments ###
 
     def GET(self):
         global lcd_sender
@@ -736,14 +733,14 @@ class settings_page(ProtectedPage):
         
 
 class help_page(ProtectedPage):
-    """Load an html page for help"""
+    ### Load an html page for help ###
 
     def GET(self):
         return self.plugin_render.lcd_display_help()
 
 
 class settings_json(ProtectedPage):
-    """Returns plugin settings in JSON format."""
+    ### Returns plugin settings in JSON format ###
 
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')

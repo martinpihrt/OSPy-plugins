@@ -104,12 +104,13 @@ def stop():
 def to_decimal(number):
     try:
         import decimal
-        return decimal.Decimal(number)
+        return decimal.Decimal(float(number))
     
     except decimal.InvalidOperation:
         log.clear(NAME)
         log.error(NAME, _(u'Water Consumption Counter plug-in') + traceback.format_exc()) 
-        return 0.00
+        pass
+        return decimal.Decimal('0.0')
 
 ### send email ###
 def send_email(msg, msglog):
@@ -188,7 +189,7 @@ def notify_master_two_off(name, **kw):
 
 ### return all consum counter as summar ###
 def get_all_values():
-    return plugin_options['last_reset'], plugin_options['sum_one'], plugin_options['sum_two']
+    return plugin_options['last_reset'], round(to_decimal(plugin_options['sum_one']), 2), round(to_decimal(plugin_options['sum_two']), 2)
 
 
 ################################################################################
