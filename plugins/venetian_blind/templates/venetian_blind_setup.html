@@ -103,6 +103,18 @@ $var page: plugins
                        <input type="text" size="60" value="${plugin_options['status'][c] if c < len(plugin_options['status']) else ''}"  id="status${c}" name="status${c}">
                     </td>
                 </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Label for position 0%'):</td>
+                    <td>
+                       <input type="text" size="20" value="${plugin_options['label0'][c] if c < len(plugin_options['label0']) else ''}" id="label0${c}" name="label0${c}">
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Label for position 100%'):</td>
+                    <td>
+                       <input type="text" size="20" value="${plugin_options['label100'][c] if c < len(plugin_options['label100']) else ''}" id="label100${c}" name="label100${c}">
+                    </td>
+                </tr>                                
         </table>
     </form>
 </div>

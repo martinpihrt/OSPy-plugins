@@ -39,11 +39,13 @@ plugin_options = PluginOptions(
         'use_log': False, 
         'number_blinds': 2,
         'use_footer': True,
-        'label':  ["living room","","","","","","",""],
+        'label':  [_('Living room'),"","","","","","",""],
         'open':   ["http://192.168.88.213/roller/0?go=open","","","","","","",""],
         'stop':   ["http://192.168.88.213/roller/0?go=stop","","","","","","",""],
         'close':  ["http://192.168.88.213/roller/0?go=close","","","","","","",""],
         'status': ["http://192.168.88.213/status","","","","","","",""],
+        'label0':   [_('Closed blind'),"","","","","","",""],
+        'label100': [_('Open blind'),"","","","","","",""],
      }
 )
 
@@ -197,6 +199,7 @@ def read_blinds_status():
                             rol_state = data['rollers'][0]['state']
                             rol_current_pos = data['rollers'][0]['current_pos']
                             rol_positioning = data['rollers'][0]['positioning']
+                            rol_power = data['rollers'][0]['power']
                             if rol_state == 'open':
                                 rol_msg = _('opening')
                             elif rol_state == 'stop':
@@ -207,8 +210,13 @@ def read_blinds_status():
                                 rol_msg = _('unkown state')
                             if rol_positioning:
                                 rol_pos_msg = _('position')
-                                rol_pos_msg += ': {}%'.format(rol_current_pos)
-                                sender.status['bstatus'][int(i)] = '{} {} ({})'.format(datetime_string(), rol_msg, rol_pos_msg)
+                                if rol_current_pos == 0:
+                                    rol_pos_msg += ': {}'.format(plugin_options['label0'][i])
+                                elif rol_current_pos == 100:
+                                    rol_pos_msg += ': {}'.format(plugin_options['label100'][i])
+                                else:
+                                    rol_pos_msg += ': {}%'.format(rol_current_pos)    
+                                sender.status['bstatus'][int(i)] = _('{} {} ({}, power {}W)').format(datetime_string(), rol_msg, rol_pos_msg, rol_power)
                                 footer_msg += '{}: {} '.format(plugin_options['label'][i], sender.status['bstatus'][int(i)])
                             else:
                                 rol_pos_msg = ''
@@ -359,7 +367,7 @@ class setup_page(ProtectedPage):
             if 'number_blinds' in qdict:
                 plugin_options.__setitem__('number_blinds', int(qdict['number_blinds']))
 
-            commands = {'open': [], 'stop': [], 'close': [], 'label': [], 'status': []}
+            commands = {'open': [], 'stop': [], 'close': [], 'label': [], 'status': [], 'label0': [], 'label100': []}
 
             for i in range(0, plugin_options['number_blinds']):
                 commands['open'].append(qdict['open'+str(i)])
@@ -367,12 +375,16 @@ class setup_page(ProtectedPage):
                 commands['close'].append(qdict['close'+str(i)])
                 commands['label'].append(qdict['label'+str(i)])
                 commands['status'].append(qdict['status'+str(i)])
+                commands['label0'].append(qdict['label0'+str(i)])
+                commands['label100'].append(qdict['label100'+str(i)])
 
             plugin_options.__setitem__('open', commands['open'])
             plugin_options.__setitem__('stop', commands['stop'])
             plugin_options.__setitem__('close', commands['close'])
             plugin_options.__setitem__('label', commands['label'])
             plugin_options.__setitem__('status', commands['status'])
+            plugin_options.__setitem__('label0', commands['label0'])
+            plugin_options.__setitem__('label100', commands['label100'])
 
             if sender is not None:
                 sender.update()

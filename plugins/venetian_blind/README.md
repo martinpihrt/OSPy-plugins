@@ -34,3 +34,9 @@ Plugin setup
 * Command for read status:
   Command for read blind status (eg: http://192.168.88.213/status)
 
+* Label for position 0%:
+  Msg if position is 0% (for identification)
+
+* Label for position 100%:
+  Msg if position is 100% (for identification)
+
