@@ -71,23 +71,27 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        last_millis = 0         # timer for save log
-        last_test_millis = 0    # timer for testing speed
+        last_millis = 0              # timer for save log
+        last_test_millis = 0         # timer for testing speed
+        
         speed_mon = None
         footText = ""
-        tempText = _(u'Has not been loaded yet')
+        tempText = _('Has not been loaded yet')
+
+        if speed_options['use_monitor']:
+            new_speeds = get_new_speeds()
 
         if speed_options['use_footer']:
             speed_mon = showInFooter() #  instantiate class to enable data in footer
             speed_mon.button = "speed_monitor/settings"       # button redirect on footer
-            speed_mon.label =  _(u'Speed')                    # label on footer
+            speed_mon.label =  _('Speed')                    # label on footer
             speed_mon.val = tempText.encode('utf8').decode('utf8')           # value on footer
         
         if speed_options['use_monitor']: 
             log.clear(NAME)
             log.info(NAME, tempText)
         else:
-            tempText = _(u'Speed monitor is disabled.')
+            tempText = _('Speed monitor is disabled.')
 
         while not self._stop_event.is_set():
             try:
@@ -98,10 +102,10 @@ class Sender(Thread):
                         last_test_millis = millis
                         try:
                             new_speeds = get_new_speeds()
-                            tempText = _(u'Ping {} ms, Download {} Mb/s, Upload {} Mb/s').format(self.status['ping'], self.status['down'], self.status['up'])
+                            tempText = _('Ping {} ms, Download {} Mb/s, Upload {} Mb/s').format(self.status['ping'], self.status['down'], self.status['up'])
                         except:
                             new_speeds = 0,0,0
-                            tempText = _(u'Cannot be loaded')
+                            tempText = _('Cannot be loaded')
                             pass    
                         self.status['ping'] = new_speeds[0] # Ping (ms)
                         self.status['down'] = new_speeds[1] # Download (Mb/s)
@@ -124,7 +128,7 @@ class Sender(Thread):
 
             except Exception:
                 log.clear(NAME)
-                log.error(NAME, _(u'Speed Monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _('Speed Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 sender = None
@@ -249,9 +253,9 @@ def update_log():
         pingdata.update({timestamp: pingval})        
 
         write_graph_log(graph_data)
-        log.info(NAME, _(u'Saving to log files OK'))
+        log.info(NAME, _('Saving to log files OK'))
     except:
-        log.error(NAME, _(u'Speed Monitor plug-in') + ':\n' + traceback.format_exc())
+        log.error(NAME, _('Speed Monitor plug-in') + ':\n' + traceback.format_exc())
         pass
 
 
@@ -268,7 +272,7 @@ def create_default_graph():
        {"station": ping,  "balances": {}}
     ]
     write_graph_log(graph_data)
-    log.info(NAME, _(u'Deleted all log files OK'))
+    log.info(NAME, _('Deleted all log files OK'))
 
 
 ################################################################################
@@ -284,11 +288,29 @@ class settings_page(ProtectedPage):
         qdict  = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        test = helpers.get_input(qdict, 'test', False, lambda x: True)
 
         if sender is not None and delete:
            write_log([])
            create_default_graph()
            raise web.seeother(plugin_url(settings_page), True)
+
+        if sender is not None and test:
+            log.clear(NAME)
+            try:
+                new_speeds = get_new_speeds()
+                sender._sleep(2)
+                tempText = _('Ping {} ms, Download {} Mb/s, Upload {} Mb/s').format(sender.status['ping'], sender.status['down'], sender.status['up'])
+            except:
+                new_speeds = 0,0,0
+                tempText = _('Cannot be loaded')
+                log.error(NAME, _('Speed Monitor plug-in') + ':\n' + traceback.format_exc())
+                pass    
+            sender.status['ping'] = new_speeds[0] # Ping (ms)
+            sender.status['down'] = new_speeds[1] # Download (Mb/s)
+            sender.status['up'] = new_speeds[2]   # Upload (Mb/s)
+            log.info(NAME, datetime_string() + ' ' + _('Test button') + '\n' + tempText) 
+            raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and 'history' in qdict:
            history = qdict['history']
