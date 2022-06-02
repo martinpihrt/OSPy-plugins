@@ -209,14 +209,15 @@ def read_blinds_status():
                             else:
                                 rol_msg = _('unkown state')
                             if rol_positioning:
-                                rol_pos_msg = _('position')
                                 if rol_current_pos == 0:
-                                    rol_pos_msg += ': {}'.format(plugin_options['label0'][i])
+                                    rol_pos_msg = '{}'.format(plugin_options['label0'][i])
                                 elif rol_current_pos == 100:
-                                    rol_pos_msg += ': {}'.format(plugin_options['label100'][i])
+                                    rol_pos_msg = '{}'.format(plugin_options['label100'][i])
                                 else:
+                                    rol_pos_msg = _('position')
                                     rol_pos_msg += ': {}%'.format(rol_current_pos)    
-                                sender.status['bstatus'][int(i)] = _('{} {} ({}, power {}W)').format(datetime_string(), rol_msg, rol_pos_msg, rol_power)
+                                #sender.status['bstatus'][int(i)] = _('{} {} ({}, power {}W)').format(datetime_string(), rol_msg, rol_pos_msg, rol_power)
+                                sender.status['bstatus'][int(i)] = _('{} {} ({})').format(datetime_string(), rol_msg, rol_pos_msg)
                                 footer_msg += '{}: {} '.format(plugin_options['label'][i], sender.status['bstatus'][int(i)])
                             else:
                                 rol_pos_msg = ''
