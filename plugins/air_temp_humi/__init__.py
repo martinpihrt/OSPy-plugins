@@ -186,7 +186,7 @@ class Sender(Thread):
                           if Humidity > (plugin_options['humidity_on'] + plugin_options['hysteresis']/2) and var1 is True:  
                             start = datetime.datetime.now()
                             sid = station.index
-                            end = datetime.datetime.now() + datetime.timedelta(seconds=tank_options['reg_ss'], minutes=tank_options['reg_mm'])
+                            end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss'], minutes=plugin_options['reg_mm'])
                             new_schedule = {
                               'active': True,
                               'program': -1,
