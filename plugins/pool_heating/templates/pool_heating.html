@@ -1,4 +1,4 @@
-$def with(plugin_options, events)
+$def with(plugin_options, events, status)
 
 $var title: $_('Pool Heating')
 $var page: plugins
@@ -29,6 +29,11 @@ $var page: plugins
         jQuery("#temp_a_on").change(check_type);
         jQuery("#temp_a_off").change(check_type);
         jQuery("#use_footer").change(check_type);
+        jQuery("#emlsubject").change(check_type);
+        jQuery("#sendeml").change(check_type);
+        jQuery("#safety_mm").change(check_type);
+        jQuery("#temp_safety").change(check_type);
+        jQuery("#enabled_safety").change(check_type);
     });
 </script>
 
@@ -58,8 +63,8 @@ $var page: plugins
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     $if plugin_options["sensor_probe"]==2:
                         <select id="probe_A_on" name="probe_A_on">
-                        $for i in range(plugin_options["ds_count"]):
-                            <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
+                        $for i in range(status["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${status["ds_name_%d" % i]}</option>
                         </select>    
                     $elif plugin_options["sensor_probe"]==1:
                         <select id="probe_A_on" name="probe_A_on_sens">
@@ -76,8 +81,8 @@ $var page: plugins
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     $if plugin_options["sensor_probe"]==2:
                         <select id="probe_A_off" name="probe_A_off">
-                        $for i in range(plugin_options["ds_count"]):
-                            <option value="${i}" ${"selected" if plugin_options["probe_A_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
+                        $for i in range(status["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_off"]==i else ""}>${status["ds_name_%d" % i]}</option>
                         </select>
                     $elif plugin_options["sensor_probe"]==1:
                         <select id="probe_A_off" name="probe_A_off_sens">
@@ -99,7 +104,7 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Maximum run time in activate'):</td>
                 <td title=$:{json.dumps(_(u'Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}>
                     <input id="reg_mm" name="reg_mm" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm"]' min="0" max="999">:
-                    <input id="reg_ss" name="reg_ss" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss"]' min="0" max="59"> (mm:ss)
+                    <input id="reg_ss" name="reg_ss" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss"]' min="0" max="59"><small>$_('mm:ss')</small>
                 </td>
             </tr>
             <tr>
@@ -116,6 +121,52 @@ $var page: plugins
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
                 </td>
+            </tr>
+            <tr>
+                <th colspan="2">
+                <hr>
+                </th>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small><b>$_('Safety shutdown')</b></small></div>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable Safety'):</b></td>
+                <td title=$:{json.dumps(_(u'If the box is checked, safety will be enabled.'), ensure_ascii=False)}>
+                     <input id="enabled_safety" name='enabled_safety' type='checkbox'${" checked" if plugin_options['enabled_safety'] else ""}>   
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature safety difference'):</td>
+                <td title=$:{json.dumps(_(u'Temperature difference for safety shutdown of automation.'), ensure_ascii=False)}>
+                    <input id="temp_safety" name='temp_safety' type='number' min='0' max='100' value='$plugin_options["temp_safety"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum run time for safety check'):</td>
+                <td title=$:{json.dumps(_(u'Simply put, if the temperature is higher and it takes xxmin then it means that the pump is not running or that it is idling (no water). A fault e-mail is sent and the station is switched off permanently.'), ensure_ascii=False)}>
+                    <input id="safety_mm" name="safety_mm" type="number" size="3" maxlength="3" value='$plugin_options["safety_mm"]' min="1" max="999">
+                    <small>$_('In minutes')</small>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail with error'):</td>
+                <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
+                    <input name='sendeml' id="sendeml" type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td>
+                    <input name='emlsubject' id="emlsubject" type='text' value='$plugin_options["emlsubject"]' width="250" style="width: 250px">
+                </td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>

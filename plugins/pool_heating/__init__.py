@@ -31,29 +31,29 @@ LINK = 'settings_page'
 
 plugin_options = PluginOptions(
     NAME,
-    {'enabled_a': False,   # enable or disable regulation A
-     'probe_A_on': 0,      # for selector temperature probe A ON (0-5)
-     'probe_A_off': 0,     # for selector temperature probe A OFF (0-5)
-     'temp_a_on': 6,       # temperature for output A ON
-     'temp_a_off': 3,      # temperature for output A OFF
-     'control_output_A': 0,# selector for output A (0 to station count)
-     'ds_name_0': '',      # name for DS probe 1 from air temp humi plugin
-     'ds_name_1': '',      # name for DS probe 2 from air temp humi plugin
-     'ds_name_2': '',      # name for DS probe 3 from air temp humi plugin
-     'ds_name_3': '',      # name for DS probe 4 from air temp humi plugin
-     'ds_name_4': '',      # name for DS probe 5 from air temp humi plugin
-     'ds_name_5': '',      # name for DS probe 6 from air temp humi plugin
-     'ds_count': 0,        # DS probe count from air temp humi plugin
-     'reg_mm': 60,         # min for maximal runtime
-     'reg_ss': 0,          # sec for maximal runtime
-     'probe_A_on_sens': 0, # for selector from sensors xx - temperature ON
-     'probe_A_off_sens': 0,# for selector from sensors xx - temperature OFF
-     'sensor_probe': 0,    # selector for type probes: 0=none, 1=sensors, 2=air temp plugin
-     'use_footer': True    # show data from plugin in footer on home page
-     }
+    {
+    'enabled_a': False,   # enable or disable regulation A
+    'probe_A_on': 0,      # for selector temperature probe A ON (0-5)
+    'probe_A_off': 0,     # for selector temperature probe A OFF (0-5)
+    'temp_a_on': 6,       # temperature for output A ON
+    'temp_a_off': 3,      # temperature for output A OFF
+    'control_output_A': 0,# selector for output A (0 to station count)
+    'reg_mm': 60,         # min for maximal runtime
+    'reg_ss': 0,          # sec for maximal runtime
+    'probe_A_on_sens': 0, # for selector from sensors xx - temperature ON
+    'probe_A_off_sens': 0,# for selector from sensors xx - temperature OFF
+    'sensor_probe': 0,    # selector for type probes: 0=none, 1=sensors, 2=air temp plugin
+    'use_footer': True,   # show data from plugin in footer on home page
+    'sendeml': True,      # send e-mail with error
+    'emlsubject': _('Report from OSPy Pool Heating plugin'),
+    'temp_safety': 5,     # temperature diference for test
+    'safety_mm': 5,       # simply put, if the temperature is higher and it takes xxmin then it means that the pump is not running or that it is idling (no water). A fault e-mail is sent and the station is switched off permanently.
+    'enabled_safety': False,   # enable or disable safety
+    }
 )
 
 
+global status
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -65,6 +65,8 @@ class Sender(Thread):
         Thread.__init__(self)
         self.daemon = True
         self._stop_event = Event()
+
+        self.status = {}
 
         self._sleep_time = 0
         self.start()
@@ -93,19 +95,24 @@ class Sender(Thread):
         msg_a_on = True
         msg_a_off = True
         last_text = ''
+
+        send = False
  
         temp_sw = None
 
         if plugin_options['use_footer']:
             temp_sw = showInFooter() #  instantiate class to enable data in footer
             temp_sw.button = "pool_heating/settings"   # button redirect on footer
-            temp_sw.label =  _(u'Pool Heating')        # label on footer
+            temp_sw.label =  _('Pool Heating')        # label on footer
 
         ds_a_on  = -127.0
         ds_a_off = -127.0
 
         millis = 0                                 # timer for clearing status on the web pages after 5 sec
         last_millis = int(round(time.time() * 1000))
+        
+        safety_start = datetime.datetime.now()
+        safety_end = datetime.datetime.now() + datetime.timedelta(minutes=plugin_options['safety_mm'])
 
         a_state = -3                               # for state in footer "Waiting."
         regulation_text = _(u'Waiting to turned on or off.')
@@ -113,7 +120,7 @@ class Sender(Thread):
         if not plugin_options['enabled_a']:
             a_state = -1                           # for state in footer "Waiting (not enabled regulation in options)."
 
-        log.info(NAME, datetime_string() + ' ' + _(u'Waiting.'))
+        log.info(NAME, datetime_string() + ' ' + _('Waiting.'))
         end = datetime.datetime.now()
 
         while not self._stop_event.is_set():
@@ -121,19 +128,19 @@ class Sender(Thread):
                 if plugin_options["sensor_probe"] == 2:                                        # loading probe name from plugin air_temp_humi
                     try:
                         from plugins.air_temp_humi import plugin_options as air_temp_data
-                        plugin_options['ds_name_0'] = air_temp_data['label_ds0']
-                        plugin_options['ds_name_1'] = air_temp_data['label_ds1']
-                        plugin_options['ds_name_2'] = air_temp_data['label_ds2']
-                        plugin_options['ds_name_3'] = air_temp_data['label_ds3']
-                        plugin_options['ds_name_4'] = air_temp_data['label_ds4']
-                        plugin_options['ds_name_5'] = air_temp_data['label_ds5']
-                        plugin_options['ds_count'] = air_temp_data['ds_used']
+                        self.status['ds_name_0'] = air_temp_data['label_ds0']
+                        self.status['ds_name_1'] = air_temp_data['label_ds1']
+                        self.status['ds_name_2'] = air_temp_data['label_ds2']
+                        self.status['ds_name_3'] = air_temp_data['label_ds3']
+                        self.status['ds_name_4'] = air_temp_data['label_ds4']
+                        self.status['ds_name_5'] = air_temp_data['label_ds5']
+                        self.status['ds_count']  = air_temp_data['ds_used']
 
                         from plugins.air_temp_humi import DS18B20_read_probe                    # value with temperature from probe DS1-DS6
                         temperature_ds = [DS18B20_read_probe(0), DS18B20_read_probe(1), DS18B20_read_probe(2), DS18B20_read_probe(3), DS18B20_read_probe(4), DS18B20_read_probe(5)]
                     
                     except:
-                        log.error(NAME, _(u'Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
+                        log.error(NAME, _('Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
                         pass
 
                 # regulation
@@ -173,6 +180,10 @@ class Sender(Thread):
                         
                     station_a = stations.get(plugin_options['control_output_A'])
 
+                    # only for testing... without airtemp plugin or sensors
+                    #ds_a_on = 15
+                    #ds_a_off = 25
+
                     probes_ok = True
                     if ds_a_on == -127.0 or ds_a_off == -127.0:
                         probes_ok = False
@@ -184,7 +195,7 @@ class Sender(Thread):
                             if interval['station'] == sid:
                                 stations.deactivate(sid)
                                 log.finish_run(interval)
-                                regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'
+                                regulation_text = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
                                 log.clear(NAME)
                                 log.info(NAME, regulation_text)
                         # release msg_a_on and msg_a_off to true for future regulation (after probes is ok)
@@ -196,7 +207,7 @@ class Sender(Thread):
                         if msg_a_on:
                             msg_a_on = False
                             msg_a_off = True
-                            regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'
+                            regulation_text = datetime_string() + ' ' + _('Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
                             log.clear(NAME) 
                             log.info(NAME, regulation_text)
                             start = datetime.datetime.now()
@@ -221,12 +232,15 @@ class Sender(Thread):
                             log.start_run(new_schedule)
                             stations.activate(new_schedule['station'])
 
+                            if plugin_options['enabled_safety']:                              # safety check
+                                safety_end = datetime.datetime.now() + datetime.timedelta(minutes=plugin_options['safety_mm'])
+
                     if (ds_a_off - ds_a_on) < plugin_options['temp_a_off'] and probes_ok: # OFF
                         a_state = 0
                         if msg_a_off:
                             msg_a_off = False
                             msg_a_on = True
-                            regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _(u'Output') + ' ' +  str(station_a.index+1) + ').'
+                            regulation_text = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
                             log.clear(NAME)
                             log.info(NAME, regulation_text)
                             sid = station_a.index
@@ -236,6 +250,9 @@ class Sender(Thread):
                                 if interval['station'] == sid:
                                     log.finish_run(interval)
 
+                            if plugin_options['enabled_safety']:                              # safety check
+                                safety_end = datetime.datetime.now() + datetime.timedelta(minutes=plugin_options['safety_mm'])        
+
                     ### if "pool" end in schedule release msg_a_on to true in regulation for next scheduling ###
                     now = datetime.datetime.now()
                     if now > end:
@@ -244,8 +261,28 @@ class Sender(Thread):
                         if probes_ok:
                             a_state = -3
 
+                    if plugin_options['enabled_safety']:                                      # safety check
+                        safety_start = datetime.datetime.now()
+                        if safety_start > safety_end and probes_ok:                           # is time for check
+                            if (ds_a_off - ds_a_on) > plugin_options['temp_safety']:          # temperature difference is bigger
+                                a_state = -4
+                                msg_a_off = False
+                                msg_a_on = True
+                                regulation_text = datetime_string() + ' ' + _('Safety shutdown!') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').\n' + _('Regulation disabled!')
+                                log.clear(NAME)
+                                log.info(NAME, regulation_text)
+                                sid = station_a.index
+                                stations.deactivate(sid)
+                                active = log.active_runs()
+                                for interval in active:                 # stop stations
+                                    if interval['station'] == sid:
+                                        log.finish_run(interval)
+                                send = True                             # send e-mail
+                                plugin_options['enabled_a'] = False     # disabling plugin
+
                 else:
-                    a_state = -1
+                    if a_state != -4:                                   # if safety error not print waiting also safety shutdown!
+                        a_state = -1
 
                 # footer text
                 tempText = ' '
@@ -255,11 +292,13 @@ class Sender(Thread):
                 if a_state == 1:
                     tempText += regulation_text
                 if a_state == -1:
-                    tempText = _(u'Waiting (not enabled regulation in options, or not selected input).')
+                    tempText = _('Waiting (not enabled regulation in options, or not selected input).')
                 if a_state == -2:
-                    tempText = _(u'Some probe shows a fault, regulation is blocked!')
+                    tempText = _('Some probe shows a fault, regulation is blocked!')
                 if a_state == -3:
-                    tempText = _(u'Waiting.')
+                    tempText = _('Waiting.')
+                if a_state == -4:
+                    tempText = _('Safety shutdown!')                    
 
                 if plugin_options['use_footer']:
                     if temp_sw is not None:
@@ -274,20 +313,32 @@ class Sender(Thread):
                     if plugin_options["sensor_probe"] == 1:
                         try:
                             if options.temp_unit == 'C':
-                                log.info(NAME, datetime_string() + '\n' + sensor_on.name + ' (' + _(u'Pool') + u') %.1f \u2103 \n' % ds_a_on + sensor_off.name + ' ('+ _(u'Solar') + u') %.1f \u2103' % ds_a_off)
+                                log.info(NAME, datetime_string() + '\n' + sensor_on.name + ' (' + _('Pool') + ') %.1f \u2103 \n' % ds_a_on + sensor_off.name + ' ('+ _('Solar') + ') %.1f \u2103' % ds_a_off)
                             else:
-                                log.info(NAME, datetime_string() + '\n' + sensor_on.name + ' (' + _(u'Pool') + u') %.1f \u2109 \n' % ds_a_on + sensor_off.name + ' ('+ _(u'Solar') + u') %.1f \u2103' % ds_a_off)
+                                log.info(NAME, datetime_string() + '\n' + sensor_on.name + ' (' + _('Pool') + ') %.1f \u2109 \n' % ds_a_on + sensor_off.name + ' ('+ _('Solar') + ') %.1f \u2103' % ds_a_off)
                         except:
                             pass
                     elif plugin_options["sensor_probe"] == 2:
-                        log.info(NAME, datetime_string() + '\n' + _(u'Pool') + u' %.1f \u2103 \n' % ds_a_on + _(u'Solar') + u' %.1f \u2103' % ds_a_off)
+                        log.info(NAME, datetime_string() + '\n' + _('Pool') + u' %.1f \u2103 \n' % ds_a_on + _('Solar') + ' %.1f \u2103' % ds_a_off)
                         
                     if last_text != tempText:
                         log.info(NAME, tempText)
                         last_text = tempText
+
+                if send:
+                    msg = '<b>' + _('Pool Heating plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: The temperature did not drop when the pump was switched on after the setuped time. Stations set to OFF. Safety shutdown!') + '</p>'
+                    msglog= _('System detected error: The temperature did not drop when the pump was switched on after the setuped time. Stations set to OFF. Safety shutdown!')
+                    send = False
+                    try:
+                        from plugins.email_notifications import try_mail
+                        try_mail(msg, msglog, attachment=None, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+
+                    except Exception:
+                        log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
+                        self._sleep(2)                         
  
             except Exception:
-                log.error(NAME, _(u'Pool Heating plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
           
 sender = None
@@ -322,7 +373,7 @@ class settings_page(ProtectedPage):
         if sender is not None:
             sender.update()
 
-        return self.plugin_render.pool_heating(plugin_options, log.events(NAME))
+        return self.plugin_render.pool_heating(plugin_options, log.events(NAME), sender.status)
 
     def POST(self):
         global sender

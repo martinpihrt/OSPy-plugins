@@ -35,7 +35,23 @@ Plugin setup
   Temperature difference for switch OFF (filtration pump).  
 
 * Select Output:  
-  Select the output you want to control with regulation.
+  Select the output you want to control with regulation.  
+
+* Enable Safety:  
+  If the box is checked, safety will be enabled. 
+
+* Temperature safety difference:  
+  Temperature difference for safety shutdown of automation.  
+
+* Maximum run time for safety check:  
+  Simply put, if the temperature is higher and it takes xxmin then it means that the pump is not running or that it is idling (no water). A fault e-mail is sent and the station is switched off permanently.  
+
+* Check Send E-mail with error:  
+  If checked send e-mail with error e-mail notification plugin sends e-mail with error.    
+  For this function required e-mail notification plugin with all setup in plugin.  
+
+* E-mail subject:
+  Type E-mail subject for send E-mail.  
 
 * Show in footer:  
   Show data from plugin in footer on home page.  
