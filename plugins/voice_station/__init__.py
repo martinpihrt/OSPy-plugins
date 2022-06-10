@@ -33,8 +33,8 @@ plugin_options = PluginOptions(
         'volume': 99,                     # master volume %
         'start_hour': 6,                  # voice notification only from 6 
         'stop_hour': 20,                  # to 20 hours
-        'on':  [-1]*8,                    # song name for station 1-8 if ON (8 stations is default)
-        'off': [-1]*8,                    # song name for station 1-8 if OFF (8 stations is default)
+        'on':  [-1]*options.output_count, # song name for station 1-8 if ON
+        'off': [-1]*options.output_count, # song name for station 1-8 if OFF
         'sounds': [],                     # a list of all songs names in the plugin data directory
         'sounds_inserted': [],            # date time inserted songs (sorted by last upload)
         'sounds_size': [],                # songs size in bytes
@@ -165,6 +165,20 @@ def stop():
         checker.stop()
         checker.join()
         checker = None
+
+def set_to_default():
+    plugin_options.__setitem__('enabled', False)
+    plugin_options.__setitem__('volume', 99)
+    plugin_options.__setitem__('start_hour', 6)
+    plugin_options.__setitem__('stop_hour', 20)
+    plugin_options.__setitem__('on', [-1]*options.output_count)
+    plugin_options.__setitem__('off', [-1]*options.output_count)
+    plugin_options.__setitem__('sounds', [])
+    plugin_options.__setitem__('sounds_inserted', [])
+    plugin_options.__setitem__('sounds_size', [])
+    log.clear(NAME)
+    log.info(NAME, _(u'Voice Station plug-in has any error, clear plugin settings to default.'))
+    read_folder()
 
 ### Run any cmd ###
 def run_command(cmd):
@@ -341,9 +355,14 @@ class settings_page(ProtectedPage):
                     del song_queue[0]
                     write_song_queue(song_queue)
                 log.clear(NAME)
-                log.info(NAME, datetime_string() + u': ' + _(u'Button clear playlist.'))                
+                log.info(NAME, datetime_string() + u': ' + _(u'Button clear playlist.'))
 
-        return self.plugin_render.voice_station(plugin_options, log.events(NAME))
+        try:
+            return self.plugin_render.voice_station(plugin_options, log.events(NAME))
+        except Exception:
+            log.error(NAME, _(u'Voice Station plug-in') + ':\n' + traceback.format_exc())
+            set_to_default()
+            return self.plugin_render.voice_station(plugin_options, log.events(NAME))
 
     def POST(self):
         qdict = web.input()
