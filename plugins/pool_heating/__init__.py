@@ -49,6 +49,7 @@ plugin_options = PluginOptions(
     'temp_safety': 5,     # temperature diference for test
     'safety_mm': 5,       # simply put, if the temperature is higher and it takes xxmin then it means that the pump is not running or that it is idling (no water). A fault e-mail is sent and the station is switched off permanently.
     'enabled_safety': False,   # enable or disable safety
+    'eplug': 0,           # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -330,8 +331,13 @@ class Sender(Thread):
                     msglog= _('System detected error: The temperature did not drop when the pump was switched on after the setuped time. Stations set to OFF. Safety shutdown!')
                     send = False
                     try:
-                        from plugins.email_notifications import try_mail
-                        try_mail(msg, msglog, attachment=None, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+                        try_mail = None
+                        if pressure_options['eplug']==0: # email_notifications
+                            from plugins.email_notifications import try_mail
+                        if pressure_options['eplug']==1: # email_notifications SSL
+                            from plugins.email_notifications_ssl import try_mail    
+                        if try_mail is not None:                        
+                            try_mail(msg, msglog, attachment=None, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                     except Exception:
                         log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
