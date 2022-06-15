@@ -38,7 +38,8 @@ ups_options = PluginOptions(
         'enable_log': False,
         'log_records': 0,                             # 0 = unlimited
         'history': 0,                                 # selector for graph history
-        'use_footer': True    # show data from plugin in footer on home page
+        'use_footer': True,                           # show data from plugin in footer on home page
+        'eplug': 0,                                   # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -134,8 +135,13 @@ class UPSSender(Thread):
                             log.info(NAME, msglog)
                             if ups_options['sendeml']:                       # if enabled send email
                                 try:
-                                    from plugins.email_notifications import try_mail
-                                    try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+                                    try_mail = None
+                                    if ups_options['eplug']==0: # email_notifications
+                                        from plugins.email_notifications import try_mail
+                                    if ups_options['eplug']==1: # email_notifications SSL
+                                        from plugins.email_notifications_ssl import try_mail    
+                                    if try_mail is not None:
+                                        try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                 except Exception:
                                     log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc())
@@ -182,7 +188,12 @@ class UPSSender(Thread):
                                 log.clear(NAME)
                                 log.info(NAME, msglog)
                                 try:
-                                    from plugins.email_notifications import try_mail
+                                    try_mail = None
+                                    if ups_options['eplug']==0: # email_notifications
+                                        from plugins.email_notifications import try_mail
+                                    if ups_options['eplug']==1: # email_notifications SSL
+                                        from plugins.email_notifications_ssl import try_mail    
+                                    if try_mail is not None:
                                     try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                 except Exception:     

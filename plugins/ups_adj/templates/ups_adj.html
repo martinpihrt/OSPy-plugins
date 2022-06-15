@@ -232,7 +232,16 @@ jQuery(document).ready(function(){
                 <td>
                     <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]' width="250" style="width: 250px">
                 </td>
-            </tr>            
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail plug-ins'):</td>
+                <td title=$:{json.dumps(_(u'Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
+                <select name="eplug">
+                    <option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_(u'E-mail notifications V1')</option>
+                    <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
+                </select>
+                </td>
+            </tr>                        
             <tr>
                <th colspan="2">
                  <hr>
