@@ -61,4 +61,5 @@ Available plugins:
 * Door Opening  
 * Voice Station  
 * Venetian Blind
-* Speed Monitor  
+* Speed Monitor 
+* E-mail Notifications SSL 

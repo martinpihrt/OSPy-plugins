@@ -1,0 +1,216 @@
+$def with(plugin_options, events)
+
+$var title: $_('E-mail Notifications SSL')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("#cTest").click(function() {
+            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications_ssl.settings_page')?test")
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("#cDel").click(function() {
+            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications_ssl.settings_page')?del")
+            jQuery("#pluginForm").submit();
+        });        
+
+    });
+
+function showPWD(){
+  var x = document.getElementById("emlpwd");
+  if (x.type === "password") {
+    x.type = "text";
+  } else {
+    x.type = "password";
+  }
+}    
+</script>
+
+<div id="plugin">
+    <div class="title">$_('E-mail Notifications SSL')</div>
+    <div><small>$_('This extension is for Python 3 only!')</small></div>
+    <a href=$plugins.plugin_url('email_notifications_ssl.help_page') class="button upload">$_('Help')</a><br/>
+    <form id="pluginForm" action="$plugins.plugin_url('email_notifications_ssl.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small><b>$_('Events to send')</b></small></div>
+                </td>
+            </tr>       
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail after power on'):</td>
+                <td>
+                    <input name='emlpwron' type='checkbox'${" checked" if plugin_options['emlpwron'] else ""}> $_('with events.log file') <input name='emllog' type='checkbox'${" checked" if plugin_options['emllog'] else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail if rain sensor is activated'):</td>
+                <td>
+                    <input name='emlrain' type='checkbox'${" checked" if plugin_options['emlrain'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail if rain sensor is deactivated'):</td>
+                <td>
+                    <input name='emlrainde' type='checkbox'${" checked" if plugin_options['emlrainde'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail if a program has finished'):</td>
+                <td>
+                    <input name='emlrun' type='checkbox'${" checked" if plugin_options['emlrun'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail if the rain delay has setuped'):</td>
+                <td>
+                    <input name='emlrds' type='checkbox'${" checked" if plugin_options['emlrds'] else ""}>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail if the rain delay has expired'):</td>
+                <td>
+                    <input name='emlrdr' type='checkbox'${" checked" if plugin_options['emlrdr'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail if the user is logged in'):</td>
+                <td>
+                    <input name='emlusrin' type='checkbox'${" checked" if plugin_options['emlusrin'] else ""}>
+                </td>
+            </tr>                        
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small><b>$_('E-mail settings')</b></small></div>
+                </td>
+            </tr>                        
+            <tr>
+                <td style='text-transform: none;'>$_('SMTP server address'):
+                    <div><small>$_('example: smtp.gmail.com')</small></div>
+                </td>
+                <td>
+                    <input name='emlserver' type='text' value='$plugin_options["emlserver"]'>
+                </td>
+            </tr>      
+            <tr>
+                <td style='text-transform: none;'>$_('SMTP port'):
+                    <div><small>$_('example: 465 (number in range 0-65535)')</small></div>
+                </td>
+                <td>
+                    <input name='emlport' type='number' min='0' max='65535' size='65535' value='$plugin_options["emlport"]'> 
+                </td>
+            </tr>
+            <td style='text-transform: none;'>$_('Use SMTP username as sender'):
+              <div><small>$_('Some SMTP providers prohibit to use another sender than the same mail user.')</small></div>
+            </td>
+            <td>
+                <input name='emlsender' type='checkbox' ${" checked" if plugin_options['emlsender'] else ""}>
+            </td>
+            <tr>
+                <td style='text-transform: none;'>$_('SMTP username'):
+                    <div><small>$_('Your E-mail username')</small></div>
+                </td>
+                <td>
+                    <input name='emlusr' type='text' value='$plugin_options["emlusr"]'> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('SMTP password'):
+                    <div><small>$_('Your E-mail password')</small></div>
+                </td>
+                <td>
+                    <input name='emlpwd' type='password' id='emlpwd' value='$plugin_options["emlpwd"]'>
+                    <input type='checkbox' id='show_pwd' onclick='showPWD()'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail to'):</td>
+                <td>
+                    <input name='emladr0' type='text' value='$plugin_options["emladr0"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail to'):</td>
+                <td>
+                    <input name='emladr1' type='text' value='$plugin_options["emladr1"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail to'):</td>
+                <td>
+                    <input name='emladr2' type='text' value='$plugin_options["emladr2"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail to'):</td>
+                <td>
+                    <input name='emladr3' type='text' value='$plugin_options["emladr3"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Send E-mail to'):</td>
+                <td>
+                    <input name='emladr4' type='text' value='$plugin_options["emladr4"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td>
+                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
+                </td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small><b>$_('E-mail queue')</b></small></div>
+                </td>
+            </tr>                        
+            <tr>
+                <td style='text-transform: none;'>$_('Save and send it later'):</td>
+                <td>
+                    <input name='emlrepeater' type='checkbox'${" checked" if plugin_options['emlrepeater'] else ""}>
+                </td>   
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button id="cDel" class="cancel danger">$_('Delete queue')</button>
+                </td> 
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                   
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cTest" class="submit"><b>$_('Send a test E-mail')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+                                  
+                     
