@@ -110,6 +110,10 @@ class Sender(Thread):
            internet_available.connect(notify_internet_available)
            internet_not_available = signal('internet_not_available')
            internet_not_available.connect(notify_internet_not_available)
+           rain_delay_set = signal('rain_delay_set')
+           rain_delay_set.connect(notify_rain_delay_setuped) 
+           rain_delay_remove = signal('rain_delay_remove')
+           rain_delay_remove.connect(notify_rain_delay_expired)          
 
 sender = None
 
@@ -236,6 +240,15 @@ def notify_internet_available(name, **kw):
 ### Internet not available ###
 def notify_internet_not_available(name, **kw):
     log.info(NAME, datetime_string() + ': ' + _(u'Internet is not available (external IP)'))
+
+### Rain delay has setuped ###
+def notify_rain_delay_setuped(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _(u'Rain delay is now set a delay {} hours').format(kw[u"txt"]))
+
+### Rain delay has expired ###
+def notify_rain_delay_expired(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _(u'Rain delay has now been removed'))
+  
 
 
 ################################################################################
