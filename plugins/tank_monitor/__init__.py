@@ -62,7 +62,8 @@ tank_options = PluginOptions(
        'use_water_stop': False,# if the level sensor fails, the above selected stations in the scheduler will stop
        'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
        'delay_duration': 0,    # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
-       'use_footer': True      # show data from plugin in footer on home page
+       'use_footer': True,     # show data from plugin in footer on home page
+       'eplug': 0,             # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -293,8 +294,13 @@ class Sender(Thread):
                     msglog = _(u'Water Tank Monitor plug-in') + ': ' + _(u'System detected error: Water Tank has minimum Water Level') +  ': ' + str(tank_options['water_minimum']) + _(u'cm') + '. '  
                     send = False
                     try:
-                        from plugins.email_notifications import try_mail
-                        try_mail(msg, msglog, attachment=None, subject=tank_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+                        try_mail = None
+                        if tank_options['eplug']==0: # email_notifications
+                            from plugins.email_notifications import try_mail
+                        if tank_options['eplug']==1: # email_notifications SSL
+                            from plugins.email_notifications_ssl import try_mail    
+                        if try_mail is not None:
+                            try_mail(msg, msglog, attachment=None, subject=tank_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                     except Exception:
                         log.info(NAME, _(u'E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))
