@@ -51,7 +51,8 @@ wind_options = PluginOptions(
         'history': 0,                # selector for graph history
         'stoperr': False,            # True = stoping is enabled
         'used_stations': [],         # use this stations for stoping scheduler if stations is activated in scheduler
-        'use_footer': True           # show data from plugin in footer on home page
+        'use_footer': True,          # show data from plugin in footer on home page
+        'eplug': 0,                  # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -221,8 +222,13 @@ class WindSender(Thread):
                     msglog= _(u'System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + u'%.1f' % (round(val,2)*3.6) + ' ' + _(u'km/h') + '.'
                     send = False
                     try:
-                        from plugins.email_notifications import try_mail
-                        try_mail(msg, msglog, attachment=None, subject=wind_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+                        try_mail = None
+                        if wind_options['eplug']==0: # email_notifications
+                            from plugins.email_notifications import try_mail
+                        if wind_options['eplug']==1: # email_notifications SSL
+                            from plugins.email_notifications_ssl import try_mail    
+                        if try_mail is not None:                        
+                            try_mail(msg, msglog, attachment=None, subject=wind_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                     except Exception:
                         log.error(NAME, _(u'Wind Speed monitor plug-in') + ':\n' + traceback.format_exc()) 
