@@ -32,7 +32,8 @@ plugin_options = PluginOptions(
     'sum_one': 0.00,                  # sum for master 1
     'sum_two': 0.00,                  # sum for master 2
     'sendeml': False,
-    'emlsubject': _('Report from OSPy Water Consumption Counter plugin')
+    'emlsubject': _('Report from OSPy Water Consumption Counter plugin'),
+    'eplug': 0,                       # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -115,17 +116,20 @@ def to_decimal(number):
 ### send email ###
 def send_email(msg, msglog):
     message = datetime_string() + ': ' + msg
+    Subject = plugin_options['emlsubject']
     try:
-        from plugins.email_notifications import email
-        Subject = plugin_options['emlsubject']
-        email(message, subject=Subject)
-
-        if not options.run_logEM:
-           log.info(NAME, _(u'Email logging is disabled in options...'))
-        else:
-           logEM.save_email_log(Subject, msglog, _('Sent'))
-
-        log.info(NAME, _(u'Email was sent') + ': ' + msglog)
+        email = None
+        if plugin_options['eplug']==0: # email_notifications
+            from plugins.email_notifications import email
+        if plugin_options['eplug']==1: # email_notifications SSL
+            from plugins.email_notifications_ssl import email
+        if email is not None:        
+            email(message, subject=Subject)
+            if not options.run_logEM:
+                log.info(NAME, _(u'Email logging is disabled in options...'))
+            else:
+                logEM.save_email_log(Subject, msglog, _('Sent'))
+            log.info(NAME, _(u'Email was sent') + ': ' + msglog)
 
     except Exception:
         if not options.run_logEM:
