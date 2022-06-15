@@ -34,7 +34,8 @@ plugin_options = PluginOptions(
         'use_update': False,
         'use_eml': False,
         'eml_subject': _(u'Report from OSPy SYSTEM UPDATE plugin'),
-        'use_footer': False
+        'use_footer': False,
+        'eplug': 0,             # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -132,16 +133,21 @@ class StatusChecker(Thread):
                
             if plugin_options['use_eml']:
                 try:
-                    from plugins.email_notifications import try_mail                                    
-                    try_mail(msg, msglog, attachment=None, subject=plugin_options['eml_subject']) # try_mail(text, logtext, attachment=None, subject=None)
+                    try_mail = None
+                    if plugin_options['eplug']==0: # email_notifications
+                        from plugins.email_notifications import try_mail
+                    if plugin_options['eplug']==1: # email_notifications SSL
+                        from plugins.email_notifications_ssl import try_mail
+                    if try_mail is not None:
+                        try_mail(msg, msglog, attachment=None, subject=plugin_options['eml_subject']) # try_mail(text, logtext, attachment=None, subject=None)
 
-                except Exception:     
+                except Exception:
                     log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc()) 
 
             stats['ver_new'] =  u'%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date) 
             stats['ver_new_date'] = '%s' % new_date   
-            stats['ver_act'] =  u'%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date)       
- 
+            stats['ver_act'] =  u'%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date)
+
         else:
             log.info(NAME, _(u'Running unknown version!'))
             log.info(NAME, _(u'Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
@@ -158,11 +164,11 @@ class StatusChecker(Thread):
         temp_upd = None
 
         if plugin_options['use_footer']:
-            temp_upd = showInFooter() #  instantiate class to enable data in footer            
+            temp_upd = showInFooter() #  instantiate class to enable data in footer
             temp_upd.button = "system_update/status"    # button redirect on footer
             temp_upd.label =  _(u'System Update')       # label on footer
             msg = _(u'Waiting to state')
-            temp_upd.val = msg.encode('utf8').decode('utf8')           # value on footer 
+            temp_upd.val = msg.encode('utf8').decode('utf8')           # value on footer
 
         while not self._stop_event.is_set():
             try:

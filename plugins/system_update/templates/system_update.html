@@ -70,6 +70,15 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('E-mail plug-ins'):</td>
+                <td title=$:{json.dumps(_(u'Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
+                <select name="eplug">
+                    <option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_(u'E-mail notifications V1')</option>
+                    <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
+                </select>
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
                     <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
