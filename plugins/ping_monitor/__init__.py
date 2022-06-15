@@ -49,7 +49,8 @@ plugin_options = PluginOptions(
        'use_send_delete': False,
        'emlsubject':  _('Report from OSPy PING plugin'),
        'enable_log': False,
-       'history': 0                 # selector for graph history
+       'history': 0,                # selector for graph history
+       'eplug': 0,                  # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -195,8 +196,13 @@ class Sender(Thread):
                                     from plugins.email_notifications import try_mail
                                     Subject = plugin_options['emlsubject']
                                     Message =  _(u'Ping Monitor send statistics at the day and time') + ': ' + datetime_string()
-                                    
-                                    try_mail(Message, Message, log_csv_file, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+                                    try_mail = None
+                                    if plugin_options['eplug']==0: # email_notifications
+                                        from plugins.email_notifications import try_mail
+                                    if plugin_options['eplug']==1: # email_notifications SSL
+                                        from plugins.email_notifications_ssl import try_mail    
+                                    if try_mail is not None:
+                                        try_mail(Message, Message, log_csv_file, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                     if plugin_options['use_send_delete']:           # delete all logs after sending email
                                         write_log([])
