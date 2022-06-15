@@ -332,9 +332,9 @@ class Sender(Thread):
                     send = False
                     try:
                         try_mail = None
-                        if pressure_options['eplug']==0: # email_notifications
+                        if plugin_options['eplug']==0: # email_notifications
                             from plugins.email_notifications import try_mail
-                        if pressure_options['eplug']==1: # email_notifications SSL
+                        if plugin_options['eplug']==1: # email_notifications SSL
                             from plugins.email_notifications_ssl import try_mail    
                         if try_mail is not None:                        
                             try_mail(msg, msglog, attachment=None, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
