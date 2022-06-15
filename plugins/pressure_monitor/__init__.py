@@ -43,7 +43,8 @@ pressure_options = PluginOptions(
         'log_records': 0,       # 0 = unlimited
         'history': 0,           # selector for graph history
         'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
-        'use_footer': True    # show data from plugin in footer on home page
+        'use_footer': True,     # show data from plugin in footer on home page
+        'eplug': 0,             # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -157,8 +158,13 @@ class PressureSender(Thread):
                         msg = '<b>' + _(u'Pressure monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'System detected error: pressure sensor.') + '</p>'
                         msglog = _(u'Pressure monitor plug-in') + ': ' + _(u'System detected error: pressure sensor.')
                         try:
-                            from plugins.email_notifications import try_mail
-                            try_mail(msg, msglog, subject=pressure_options['emlsubject'])
+                            try_mail = None
+                            if pressure_options['eplug']==0: # email_notifications
+                                from plugins.email_notifications import try_mail
+                            if pressure_options['eplug']==1: # email_notifications SSL
+                                from plugins.email_notifications_ssl import try_mail
+                            if try_mail is not None:
+                                try_mail(msg, msglog, subject=pressure_options['emlsubject'])
                             send = False
                         except Exception:
                             log.info(NAME, _(u'E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))
