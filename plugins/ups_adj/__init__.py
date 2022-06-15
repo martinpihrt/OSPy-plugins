@@ -168,8 +168,13 @@ class UPSSender(Thread):
                                         msg = '<b>' + _(u'UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'Power line is not restore in time -> shutdown system!') + '</p>'
                                         msglog =  _(u'UPS plug-in') + ': ' + _(u'Power line is not restore in time -> shutdown system!')
                                         try:
-                                            from plugins.email_notifications import try_mail
-                                            try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+                                            try_mail = None
+                                            if ups_options['eplug']==0: # email_notifications
+                                                from plugins.email_notifications import try_mail
+                                            if ups_options['eplug']==1: # email_notifications SSL
+                                                from plugins.email_notifications_ssl import try_mail    
+                                            if try_mail is not None:                                            
+                                                try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                         except Exception:
                                             log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc()) 
@@ -194,7 +199,7 @@ class UPSSender(Thread):
                                     if ups_options['eplug']==1: # email_notifications SSL
                                         from plugins.email_notifications_ssl import try_mail    
                                     if try_mail is not None:
-                                    try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+                                        try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                 except Exception:     
                                     log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc()) 
