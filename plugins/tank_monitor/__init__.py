@@ -22,7 +22,7 @@ from ospy import helpers
 from ospy.options import options, rain_blocks
 from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url, plugin_data_dir
-from ospy.helpers import get_rpi_revision
+from ospy.helpers import get_rpi_revision, is_python2
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy.stations import stations
@@ -64,6 +64,8 @@ tank_options = PluginOptions(
        'delay_duration': 0,    # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
        'use_footer': True,     # show data from plugin in footer on home page
        'eplug': 0,             # email plugin type (email notifications or email notifications SSL)
+       'use_avg':      False,  # use average for sonic samples
+       'avg_samples': 20,      # number of samples for average
     }
 )
 
@@ -130,6 +132,10 @@ class Sender(Thread):
 
         end = datetime.datetime.now()
 
+        avg_lst = [0]*tank_options['avg_samples']
+        avg_cnt = 0
+        avg_rdy = False
+
         while not self._stop_event.is_set():
             try:
                 if tank_options['use_sonic']: 
@@ -139,8 +145,27 @@ class Sender(Thread):
                         once_text = True
                         two_text = False
 
-                    sonic_cm = get_sonic_cm()
-                    level_in_tank = get_sonic_tank_cm(sonic_cm)
+                    if tank_options['use_avg']: # use averaging
+                        try:
+                            avg_lst[avg_cnt] = get_sonic_cm()
+                        except:
+                            avg_lst.append(get_sonic_cm())    
+                        avg_cnt += 1
+                        if avg_cnt > tank_options['avg_samples']:
+                            avg_cnt = 0
+                            avg_rdy = True
+                        if avg_rdy:
+                            sonic_cm = average_list(avg_lst)
+                            level_in_tank = get_sonic_tank_cm(sonic_cm)
+                            log.info(NAME, _(u'Average ping {}cm').format(round(sonic_cm, 2)))
+                        else:    
+                            sonic_cm = 0
+                            level_in_tank = -1
+                            log.clear(NAME)
+                            log.info(NAME, _(u'Waiting for {} samples to be read from the sensor (when using averaging).').format(tank_options['avg_samples']))
+                    else:                       # without averaging
+                        sonic_cm = get_sonic_cm()
+                        level_in_tank = get_sonic_tank_cm(sonic_cm)
 
                     tempText = ""
 
@@ -246,7 +271,9 @@ class Sender(Thread):
                             if (millis - last_millis) > interval:
                                last_millis = millis
                                update_log()
-                    else:
+                    elif level_in_tank == -1 and sonic_cm == 0:     # waiting for samples
+                        tempText =  _('Waiting for samples')
+                    else:                                           # error probe
                         tempText =  _('FAULT')
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _(u'Water level: Error.'))
@@ -330,6 +357,17 @@ def stop():
         sender.join()
         sender = None
 
+def average_list(lst):
+    ### Average of a list ###
+    try:
+        if is_python2():
+            return sum(lst)/float(len(lst))
+        else:
+            import statistics
+            return statistics.mean(lst)
+    except:
+        log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        return -1
 
 def try_io(call, tries=10):
     assert tries > 0
@@ -342,7 +380,7 @@ def try_io(call, tries=10):
         except IOError as e:
             error = e
             tries -= 1
-            time.sleep(1) #wait here to avoid 121 IO Error
+            #time.sleep(1) #wait here to avoid 121 IO Error
         else:
             break
 
@@ -356,7 +394,7 @@ def get_sonic_cm():
     try:
         import smbus
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
-        time.sleep(1) #wait here to avoid 121 IO Error
+        #time.sleep(1) #wait here to avoid 121 IO Error
         try:
             data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'],2))
             return data[1] + data[0]*255

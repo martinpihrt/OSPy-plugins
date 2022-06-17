@@ -31,6 +31,12 @@ Plugin setup
 
 * Display as liters or m3:  
   Show measured water as liters or m3.
+
+* Use averaging for samples:
+  If checked, averaging of measured values will be performed (this option affects the speed of response to the measured value
+
+* Number of samples for average:  
+  Enter the number count for samples
   
 * Send an E-mail with an error that there is minimum water in the tank:  
   For this function required E-mail plugin.
