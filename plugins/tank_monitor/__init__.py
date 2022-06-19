@@ -656,14 +656,17 @@ class settings_page(ProtectedPage):
 
 
     def POST(self):
+        global sender, avg_lst, avg_cnt, avg_rdy
         tank_options.web_update(web.input(**tank_options)) #for save multiple select
 
-        if sender is not None:
-            sender.update()
-
         if tank_options['use_sonic']:
+            avg_lst = [0]*tank_options['avg_samples']
+            avg_cnt = 0
+            avg_rdy = False 
             log.clear(NAME)
             log.info(NAME, _(u'Options has updated.'))
+            if sender is not None:
+                sender.update()
         else:
             log.clear(NAME)
             log.info(NAME, _(u'Water tank monitor is disabled.'))
