@@ -157,7 +157,6 @@ class Sender(Thread):
                         if avg_rdy:
                             sonic_cm = average_list(avg_lst)
                             level_in_tank = get_sonic_tank_cm(sonic_cm)
-                            log.info(NAME, _(u'Average ping {}cm').format(round(sonic_cm, 2)))
                         else:    
                             sonic_cm = 0
                             level_in_tank = -1
@@ -361,10 +360,10 @@ def average_list(lst):
     ### Average of a list ###
     try:
         if is_python2():
-            return sum(lst)/float(len(lst))
+            return int(sum(lst)/float(len(lst)))
         else:
             import statistics
-            return statistics.mean(lst)
+            return int(statistics.mean(lst))
     except:
         log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
         return -1
@@ -380,7 +379,7 @@ def try_io(call, tries=10):
         except IOError as e:
             error = e
             tries -= 1
-            #time.sleep(1) #wait here to avoid 121 IO Error
+            time.sleep(0.1) #wait here to avoid 121 IO Error
         else:
             break
 
@@ -394,10 +393,17 @@ def get_sonic_cm():
     try:
         import smbus
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
-        #time.sleep(1) #wait here to avoid 121 IO Error
         try:
             data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'],2))
-            return data[1] + data[0]*255
+            print(data[1], data[0]*255)
+            if data[1] == 0xFF and data[0]*255 == 0xFF:
+                return -1
+            else:
+                val = data[1] + data[0]*255
+                if val > 4000:
+                    return -1
+                else:        
+                    return val
         except:
             return -1
     except:
