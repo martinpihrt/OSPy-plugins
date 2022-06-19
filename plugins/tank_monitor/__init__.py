@@ -80,7 +80,7 @@ class Sender(Thread):
         self.daemon = True
         self._stop_event = Event()
 
-        global status
+        global status, avg_lst, avg_cnt, avg_rdy
 
         status['level']    = -1
         status['percent']  = -1
@@ -615,7 +615,7 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global sender, status
+        global sender, status, avg_lst, avg_cnt, avg_rdy
 
         qdict  = web.input()
         reset  = helpers.get_input(qdict, 'reset', False, lambda x: True)
@@ -634,6 +634,9 @@ class settings_page(ProtectedPage):
         if sender is not None and delete:
            write_log([])
            create_default_graph()
+           avg_lst = [0]*tank_options['avg_samples']
+           avg_cnt = 0
+           avg_rdy = False 
            raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and 'history' in qdict:
