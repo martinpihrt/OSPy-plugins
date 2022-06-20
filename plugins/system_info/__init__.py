@@ -69,12 +69,7 @@ def get_overview():
         result.append(_('MAC adress') + ': {}'.format(helpers.get_mac()))
         result.append(_('I2C HEX Adress') + ': ')
         try:
-            rev = str(0 if helpers.get_rpi_revision() == 1 else 1)
-            cmd = 'sudo i2cdetect -y ' + rev
-            if (cmd.find('Error') != -1):
-                result.append(_('Could not open any i2c device!'))
-            else:    
-                result.append(process(cmd))
+            result.append(get_all_addr())
         except Exception:
             result.append(_('Could not open any i2c device!'))
 
@@ -225,6 +220,24 @@ def find_address(search_range, range=False):
 
     except ImportError:
         log.warning(NAME, _('Could not import smbus.'))
+
+def get_all_addr():
+    find_adr = ''
+    try:
+        import smbus
+        bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
+        find_adr += _('Available addresses') + '\n' 
+        for addr in range(128):
+            try:
+                bus.read_byte(addr)
+                find_adr +=  '{}\n'.format(hex(addr))   
+            except Exception:
+                pass
+
+    except ImportError:
+        log.warning(NAME, _('Could not import smbus.'))
+
+    return find_adr       
 
 
 def process(cmd):
