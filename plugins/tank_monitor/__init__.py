@@ -395,14 +395,14 @@ def get_sonic_cm():
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         try:
             data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'],2))
-            print(data[1], data[0]*255)
-            if data[1] == 0xFF and data[0]*255 == 0xFF:
+            # debug print(data[1], data[0]*255)
+            if data[1] == 0xFF and data[0]*255 == 0xFF: # first check on buss error
                 return -1
             else:
-                val = data[1] + data[0]*255
-                if val > 4000:
+                val = data[1] + data[0]*255             # next check on value error
+                if val > 400:                           # 400 cm is max ping from ultrasonic sensor
                     return -1
-                else:        
+                else:
                     return val
         except:
             return -1
