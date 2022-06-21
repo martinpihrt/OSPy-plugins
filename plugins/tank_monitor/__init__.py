@@ -66,6 +66,7 @@ tank_options = PluginOptions(
        'eplug': 0,             # email plugin type (email notifications or email notifications SSL)
        'use_avg':      False,  # use average for sonic samples
        'avg_samples': 20,      # number of samples for average
+       'input_byte_debug_log': False # Logging for advanced user (save debug data from I2C bus)
     }
 )
 
@@ -119,6 +120,7 @@ class Sender(Thread):
         sonic_cm = get_sonic_cm()
         level_in_tank = get_sonic_tank_cm(sonic_cm)
         regulation_text = _(u'Regulation NONE.')
+
         if NAME in rain_blocks:
             del rain_blocks[NAME]
         self._sleep(2)
@@ -240,11 +242,13 @@ class Sender(Thread):
                             status['maxlevel'] = status['level']
                             status['maxlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Maximum has updated.'))
+                            update_log()
   
                         if status['level'] < status['minlevel'] and status['level'] > 2:  # minimum level check 
                             status['minlevel'] = status['level']
                             status['minlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Minimum has updated.'))
+                            update_log()
                             
                         if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 2: # level value is lower
                             if tank_options['use_send_email']:                             # if email is enabled
@@ -395,7 +399,9 @@ def get_sonic_cm():
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         try:
             data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'],2))
-            # debug print(data[1], data[0]*255)
+            val = data[1] + data[0]*255
+            if tank_options['input_byte_debug_log']:
+                update_debug_log(data[0], data[1], val)
             if data[1] == 0xFF and data[0]*255 == 0xFF: # first check on buss error
                 return -1
             else:
@@ -416,7 +422,7 @@ def get_sonic_tank_cm(level):
         if cm < 0:
            return -1
 
-        tank_cm = maping(cm,int(tank_options['distance_bottom']),int(tank_options['distance_top']),0,(int(tank_options['distance_bottom'])-int(tank_options['distance_top'])))
+        tank_cm = maping(int(cm),int(tank_options['distance_bottom']),int(tank_options['distance_top']),0,(int(tank_options['distance_bottom'])-int(tank_options['distance_top'])))
         if tank_cm >= 0:
            return tank_cm
 
@@ -475,6 +481,15 @@ def read_log():
     except IOError:
         return []
 
+def read_debug_log():
+    """Read debug log data from json file."""
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'debug_log.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []        
+
 
 def read_graph_log():
     """Read graph data from json file."""
@@ -491,6 +506,12 @@ def write_log(json_data):
 
     with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
         json.dump(json_data, outfile)
+
+def write_debug_log(json_data):
+    """Write data to debug log json file."""
+
+    with open(os.path.join(plugin_data_dir(), 'debug_log.json'), 'w') as outfile:
+        json.dump(json_data, outfile)        
 
 
 def write_graph_log(json_data):
@@ -561,6 +582,30 @@ def update_log():
     except:
         create_default_graph()
 
+def update_debug_log(byte_0 = 0, byte_1 = 0, val = 0):
+    """Update data in debug json files."""
+
+    ### Data for log ###
+    try:
+        log_data = read_debug_log()
+    except:
+        write_log([])
+        log_data = read_debug_log()
+
+    from datetime import datetime
+
+    data = {'datetime': datetime_string()}
+    data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+    data['b0']  = str(byte_0)
+    data['b1']  = str(byte_1)
+    data['val']  = str(val)
+      
+    log_data.insert(0, data)
+
+    try:
+        write_debug_log(log_data)
+    except:
+        write_debug_log([])
 
 def create_default_graph():
     """Create default graph json file."""
@@ -621,6 +666,7 @@ class settings_page(ProtectedPage):
         reset  = helpers.get_input(qdict, 'reset', False, lambda x: True)
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        debug = helpers.get_input(qdict, 'debug', False, lambda x: True)
         del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
 
         if sender is not None and reset:
@@ -634,6 +680,7 @@ class settings_page(ProtectedPage):
         if sender is not None and delete:
            write_log([])
            create_default_graph()
+           write_debug_log([])
            avg_lst = [0]*tank_options['avg_samples']
            avg_cnt = 0
            avg_rdy = False 
@@ -645,6 +692,9 @@ class settings_page(ProtectedPage):
 
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
+
+        if sender is not None and debug:
+            raise web.seeother(plugin_url(log_debug_page), True)            
 
         if sender is not None and del_rain:
             if NAME in rain_blocks:
@@ -681,10 +731,16 @@ class help_page(ProtectedPage):
         return self.plugin_render.tank_monitor_help()
 
 class log_page(ProtectedPage):
-    """Load an html page for help"""
+    """Load an html page for log"""
 
     def GET(self):
         return self.plugin_render.tank_monitor_log(read_log(), tank_options)
+
+class log_debug_page(ProtectedPage):
+    """Load an html page for debug log"""
+
+    def GET(self):
+        return self.plugin_render.tank_monitor_debug_log(read_debug_log(), tank_options)        
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -798,3 +854,27 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
         web.header('Content-type', content) 
         web.header('Content-Disposition', 'attachment; filename="log.csv"')
         return data
+
+class debug_log_csv(ProtectedPage):  # save debug log file from web as csv file type
+    """Simple Log API"""
+    def GET(self):
+        log_file = read_debug_log()
+        data  = "Date/Time"
+        data += "; Byte 0"
+        data += "; Byte 1"
+        data += "; Value"
+        data += '\n'
+
+        for interval in log_file:
+            data += '; '.join([
+                interval['datetime'],
+                u'{}'.format(interval['b0']),
+                u'{}'.format(interval['b1']),
+                u'{}'.format(interval['val']),
+            ]) + '\n'
+
+        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'debug_log.json')[0])
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', content) 
+        web.header('Content-Disposition', 'attachment; filename="debug_log.csv"')
+        return data        

@@ -183,6 +183,8 @@ function check_history() {
         <a href="?show" class="button backup">$_('Show logs')</a>
         <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
         <a href="?reset"  class="button cancel danger">$_('Reset min/max level')</a>
+    $if plugin_options['input_byte_debug_log']:
+        <a href="?debug" class="button cancel danger">$_('Show debug logs')</a>    
     </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('tank_monitor.settings_page')" method="post">
         <table class="optionList">
@@ -339,9 +341,9 @@ function check_history() {
                 </td>
             </tr>
             <tr>
-               <th colspan="2">
-                 <hr>
-               </th>
+                <th colspan="2">
+                <hr>
+                </th>
             </tr>                        
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
@@ -360,11 +362,17 @@ function check_history() {
                 <td title=$:{json.dumps(_(u'minutes (Minimum is 1)'), ensure_ascii=False)}>
                     <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> 
                 </td>
-            </tr> 
+            </tr>
             <tr>
-               <th colspan="2">
-                 <hr>
-               </th>
+                <td style='text-transform: none;'><small>$_('Enable bus logging'):</small></td>
+                <td title=$:{json.dumps(_(u'Logging for advanced user (save debug data from I2C bus)'), ensure_ascii=False)}>
+                    <input name='input_byte_debug_log' type='checkbox'${" checked" if plugin_options['input_byte_debug_log'] else ""}>   
+                </td>
+            </tr>             
+            <tr>
+                <th colspan="2">
+                <hr>
+                </th>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
