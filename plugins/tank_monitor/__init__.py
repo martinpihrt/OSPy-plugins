@@ -66,7 +66,8 @@ tank_options = PluginOptions(
        'eplug': 0,             # email plugin type (email notifications or email notifications SSL)
        'use_avg':      False,  # use average for sonic samples
        'avg_samples': 20,      # number of samples for average
-       'input_byte_debug_log': False # Logging for advanced user (save debug data from I2C bus)
+       'input_byte_debug_log': False, # logging for advanced user (save debug data from I2C bus)
+       'byte_changed': True    # logging of data only when this data changes, otherwise still logging.
     }
 )
 
@@ -392,16 +393,27 @@ def try_io(call, tries=10):
 
     return result
 
+global last_data0, last_data1
+last_data0 = 0
+last_data1 = 0
 
 def get_sonic_cm():
+    global last_data0, last_data1
     try:
         import smbus
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         try:
             data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'],2))
             val = data[1] + data[0]*255
-            if tank_options['input_byte_debug_log']:
-                update_debug_log(data[0], data[1], val)
+            if tank_options['input_byte_debug_log']:    # advanced bus logging
+                if tank_options['byte_changed']:        # only if data changed
+                    if (last_data0 != data[0]) or (last_data1 != data[1]):
+                        last_data0 = data[0]
+                        last_data1 = data[1]
+                        update_debug_log(data[0], data[1], val)
+                else:                                   # every 3 second log 
+                    update_debug_log(data[0], data[1], val)
+
             if data[1] == 0xFF and data[0]*255 == 0xFF: # first check on buss error
                 return -1
             else:
@@ -411,8 +423,10 @@ def get_sonic_cm():
                 else:
                     return val
         except:
+            log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
             return -1
     except:
+        log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
         return -1
 
 
@@ -680,11 +694,10 @@ class settings_page(ProtectedPage):
         if sender is not None and delete:
            write_log([])
            create_default_graph()
-           write_debug_log([])
            avg_lst = [0]*tank_options['avg_samples']
            avg_cnt = 0
            avg_rdy = False 
-           raise web.seeother(plugin_url(settings_page), True)
+           raise web.seeother(plugin_url(settings_page), True)          
 
         if sender is not None and 'history' in qdict:
            history = qdict['history']
@@ -740,6 +753,12 @@ class log_debug_page(ProtectedPage):
     """Load an html page for debug log"""
 
     def GET(self):
+        global sender
+        qdict  = web.input()
+        delete_debug = helpers.get_input(qdict, 'delete_debug', False, lambda x: True)
+        if sender is not None and delete_debug:
+           write_debug_log([])
+
         return self.plugin_render.tank_monitor_debug_log(read_debug_log(), tank_options)        
 
 class settings_json(ProtectedPage):

@@ -6,10 +6,16 @@ $var page: plugins
 <div class="title">$_('Water tank monitor debug log')</div>
 <div id="plugin">
     <p>$_('Logging for advanced user (save debug data from I2C bus).')</p>
-    <p>$_('Warning! Logging is performed every 3 seconds. The file will be large and frequent saving to a file on the SD card can damage the card!')</p>
+    <p>
+    $if tank_options['byte_changed']:
+        $_('Warning! Logging is only done when values change.')
+    $else:
+        $_('Warning! Logging is performed every 3 seconds. The file will be large and frequent saving to a file on the SD card can damage the card!')
+    </p>
     <p>$_('Total number of records'): ${len(records)}</p>
     <p><a href=$plugins.plugin_url('tank_monitor.debug_log_csv') class="button download">$_('Download log')</a>
     <a href="" class="button refresh">$_('Refresh')</a>
+    <a href="?delete_debug" class="button cancel danger">$_('Delete all logs')</a>
     <a href=$plugins.plugin_url('tank_monitor.settings_page') class="button danger">$_('Cancel')</a></p></br>
     <table class="logList">
         <tr class="log_rec">

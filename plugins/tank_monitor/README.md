@@ -68,6 +68,12 @@ Plugin setup
 * Interval for logging:  
   Logging interval (minimum 1 minute).
 
+* Enable bus logging:
+  Logging for advanced user (save debug data from I2C bus).
+
+* Only if data changed:
+  Logging of data only when this data changes, otherwise still logging.    
+
 * Select filter for graph history  
   Without limits
   Day filter

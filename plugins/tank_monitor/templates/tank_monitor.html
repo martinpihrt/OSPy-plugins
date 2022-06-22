@@ -368,7 +368,13 @@ function check_history() {
                 <td title=$:{json.dumps(_(u'Logging for advanced user (save debug data from I2C bus)'), ensure_ascii=False)}>
                     <input name='input_byte_debug_log' type='checkbox'${" checked" if plugin_options['input_byte_debug_log'] else ""}>   
                 </td>
-            </tr>             
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><small>$_('Only if data changed'):</small></td>
+                <td title=$:{json.dumps(_(u'Logging of data only when this data changes, otherwise still logging'), ensure_ascii=False)}>
+                    <input name='byte_changed' type='checkbox'${" checked" if plugin_options['byte_changed'] else ""}>   
+                </td>
+            </tr>                         
             <tr>
                 <th colspan="2">
                 <hr>
