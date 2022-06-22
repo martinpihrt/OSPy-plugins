@@ -414,7 +414,7 @@ def get_sonic_cm():
                 else:                                   # every 3 second log 
                     update_debug_log(data[0], data[1], val)
 
-            if data[1] == 0xFF and data[0]*255 == 0xFF: # first check on buss error
+            if data[1] == 0xFF and data[0] == 0xFF:     # first check on buss error
                 return -1
             else:
                 val = data[1] + data[0]*255             # next check on value error
