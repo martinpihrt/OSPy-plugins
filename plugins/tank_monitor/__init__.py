@@ -403,8 +403,17 @@ def get_sonic_cm():
         import smbus
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         try:
-            data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'],2))
+            data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'], 4)) # read bytes from I2C
+            # data[0] is ultrasonic distance in overflow 255
+            # data[1] is ultrasonic distance in range 0-255cm
+            # ex: sonic is 180cm -> d0=0, d1=180
+            # ex: sonic is 265cm -> d0=1, d1=10
+            # data[2] is firmware version in CPU Atmega328 on board
+            # data[3] is CRC sum
+
             val = data[1] + data[0]*255
+
+            ### logging ###
             if tank_options['input_byte_debug_log']:    # advanced bus logging
                 if tank_options['byte_changed']:        # only if data changed
                     if (last_data0 != data[0]) or (last_data1 != data[1]):
@@ -414,14 +423,29 @@ def get_sonic_cm():
                 else:                                   # every 3 second log 
                     update_debug_log(data[0], data[1], val)
 
-            if data[1] == 0xFF and data[0] == 0xFF:     # first check on buss error
-                return -1
-            else:
-                val = data[1] + data[0]*255             # next check on value error
-                if val > 400:                           # 400 cm is max ping from ultrasonic sensor
+            ### FW version on CPU atmega 328 processing ###
+            # NO CRC init old version FW<1.4
+            if data[2] == 0xFF or data[2] == 0x00:      # not found version in atmega 328 (known version is 0x0D FW1.3, 0x0E FW1.4, 0x0F FW1.5 ...)
+                log.debug(NAME, _(u'FW version in CPU (Atmega 328) is FW <= 1.3'))
+                if data[1] == 0xFF or data[0] == 0xFF:  # first check on buss error on sonic distance (byte 0 or byte 1 is 255 -> error skip)
                     return -1
                 else:
-                    return val
+                    if val > 400:                       # 400 cm is max ping from ultrasonic sensor
+                        return -1
+                    else:
+                        return val
+            # WITH CRC check FW=1.4            
+            elif data[2] == 0x0E:                       # 0x0E is FW1.4 in Atmega 328 (with CRC check sum)
+# TODO               
+               # calculate crc
+               #if check crc:
+                   #if val >400:
+                       return val
+            # UNKOWN VERSION       
+            else:
+                log.debug(NAME, _(u'Unkown FW version in CPU (Atmega 328)')) 
+                return -1       
+
         except:
             log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
             return -1
