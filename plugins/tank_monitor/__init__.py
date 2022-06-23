@@ -71,7 +71,17 @@ tank_options = PluginOptions(
     }
 )
 
-status = { }
+global status
+status = {}
+status['level']    = -1
+status['percent']  = -1
+status['ping']     = -1
+status['volume']   = -1
+status['maxlevel'] = 0
+status['minlevel'] = 400
+status['maxlevel_datetime'] = datetime_string()
+status['minlevel_datetime'] = datetime_string()
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -506,9 +516,7 @@ def maping(x, in_min, in_max, out_min, out_max):
 
 def get_all_values():
     global status
-
-    return status['level'] , status['percent'], status['ping'], status['volume'], status['minlevel'], status['maxlevel'], status['minlevel_datetime'], status['maxlevel_datetime'], tank_options['check_liters']
-
+    return status['level'], status['percent'], status['ping'], status['volume'], status['minlevel'], status['maxlevel'], status['minlevel_datetime'], status['maxlevel_datetime'], tank_options['check_liters']
 
 def read_log():
     """Read log data from json file."""

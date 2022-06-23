@@ -379,16 +379,23 @@ def get_report(index):
                 ping = tank_monitor.get_all_values()[2]
                 volume = tank_monitor.get_all_values()[3]
                 units = tank_monitor.get_all_values()[4]
-                if cm > 0: 
-                    result = ASCI_convert(_('Level')) + ' ' + '{}'.format(cm) + ASCI_convert(_('cm')) + ' ' + '{}'.format(percent) + ASCI_convert(_('%')) + ' ' + '{}'.format(int(volume))
-                    if units:
-                        result += ASCI_convert(_('liter')) 
-                    else:
-                        result += ASCI_convert(_('m3')) 
-                else:
-                    result = ASCI_convert(_('Error - I2C Device Not Found!'))
             except Exception:
+                cm = -1
+                percent = 0
+                ping = -1
+                volume = 0
+                units = -1  
+            
+            if cm > 0 and units != -1: 
+                result = ASCI_convert(_('Level') + ' {}'.format(cm) + _('cm') + ' {}'.format(percent) + _('%') + ' {}'.format(int(volume)))
+                if units:
+                    result += ASCI_convert(_('liter')) 
+                else:
+                    result += ASCI_convert(_('m3')) 
+            elif units == -1:
                 result = ASCI_convert(_('Not Available'))
+            else:
+                result = ASCI_convert(_('Error - I2C Device Not Found!'))
         else: 
             result = None
     elif index == 22:
