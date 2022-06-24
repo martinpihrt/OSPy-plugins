@@ -457,7 +457,7 @@ class StatusChecker(Thread):
             temp_upd.val = msg.encode('utf8').decode('utf8') # value on footer
 
         try:
-            import astral
+            from astral.geocoder import database
         except ImportError:
             log.clear(NAME)
             log.info(NAME, _('Astral is not installed.'))

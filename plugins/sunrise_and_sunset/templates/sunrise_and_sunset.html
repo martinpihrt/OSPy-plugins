@@ -18,7 +18,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Astro Sunrise and Sunset')</div>
-    <p>$_('This extension allows you to run a specific program depending on sunrise or sunset. This extension calculate the following astronomical data.')</p>
+    <p>$_('This extension allows you to run a specific program depending on sunrise or sunset. This extension calculate astronomical data.')</p>
     <p><b>!!!I am working on the plugin, it's not ready to use. At this point, he can read astronomical data, but he has nothing to control yet!!!</b></p>
     <a href=$plugins.plugin_url('sunrise_and_sunset.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" method="post">
@@ -92,7 +92,7 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
                     <textarea style="font-family: monospace;" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
-                    <a href="$plugins.plugin_url('sunrise_and_sunset.refresh_page')" class="button refresh">$_('Update Status')</a>
+                    <a href="$plugins.plugin_url('sunrise_and_sunset.refresh_page')" class="button refresh">$_('Refresh')</a>
                 </td>
             </tr>
             
