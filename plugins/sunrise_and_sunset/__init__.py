@@ -528,7 +528,7 @@ class StatusChecker(Thread):
                             log.info(NAME, _('Sunset') + ': {}'.format(s["sunset"].strftime("%d.%m.%Y %H:%M:%S")))
                             log.info(NAME, _('Dusk') + ': {}'.format(s["dusk"].strftime("%d.%m.%Y %H:%M:%S")))
 
-                            msg = _('Sunrise') + ': {}, '.format(s["sunrise"]) + _('Sunset') + ': {}'.format(s["sunset"])
+                            msg = _('Sunrise') + ': {}, '.format(s["sunrise"].strftime("%d.%m.%Y %H:%M:%S")) + _('Sunset') + ': {}'.format(s["sunset"].strftime("%d.%m.%Y %H:%M:%S"))
 
                             from astral import moon
                             m = moon.phase(datetime.date(_year, _month, _day))
