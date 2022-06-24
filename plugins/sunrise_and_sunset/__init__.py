@@ -449,13 +449,22 @@ class StatusChecker(Thread):
         global stats
 
         temp_upd = None
-#test na astro pripadne install
         if plugin_options['use_footer']:
             temp_upd = showInFooter() #  instantiate class to enable data in footer
             temp_upd.button = "sunrise_and_sunset/status"    # button redirect on footer
             temp_upd.label =  _(u'Sunrise and Sunset')       # label on footer
             msg = _(u'Waiting to state')
-            temp_upd.val = msg.encode('utf8').decode('utf8')           # value on footer
+            temp_upd.val = msg.encode('utf8').decode('utf8') # value on footer
+
+        try:
+            import astral
+        except ImportError:
+            log.clear(NAME)
+            log.info(NAME, _('Astral is not installed.'))
+            log.info(NAME, _('Please wait installing astral...'))
+            cmd = "pip3 install astral"
+            run_command(cmd)
+            log.info(NAME, _('Astral is now installed.'))        
 
         while not self._stop_event.is_set():
             try:
@@ -578,6 +587,19 @@ def stop():
         checker.stop()
         checker.join()
         checker = None
+
+def run_command(cmd):
+    try:
+        proc = subprocess.Popen(
+        cmd,
+        stderr=subprocess.STDOUT, # merge stdout and stderr
+        stdout=subprocess.PIPE,
+        shell=True)
+        output = proc.communicate()[0].decode('utf-8')
+        log.info(NAME, output)
+
+    except Exception:
+        log.error(NAME, _(u'Astral plug-in') + ':\n' + traceback.format_exc())        
 
 
 ################################################################################
