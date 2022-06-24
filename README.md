@@ -62,4 +62,5 @@ Available plugins:
 * Voice Station  
 * Venetian Blind
 * Speed Monitor 
-* E-mail Notifications SSL 
+* E-mail Notifications SSL
+* Astro Sunrise and Sunset 

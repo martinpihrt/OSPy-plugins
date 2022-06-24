@@ -1,0 +1,106 @@
+$def with(plugin_options, events, stat, city_table)
+
+$var title: $_('Astro Sunrise and Sunset')
+$var page: plugins
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Astro Sunrise and Sunset')</div>
+    <p>$_('This extension allows you to run a specific program depending on sunrise or sunset. This extension calculate the following astronomical data.')</p>
+    <p><b>!!!I am working on the plugin, it's not ready to use. At this point, he can read astronomical data, but he has nothing to control yet!!!</b></p>
+    <a href=$plugins.plugin_url('sunrise_and_sunset.help_page') class="button upload">$_('Help')</a><br/>
+    <form id="pluginForm" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use astro plugin'):</td>
+                <td>
+                    <input name='use_astro' type='checkbox'${" checked" if plugin_options['use_astro'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small>$_('Find location')</small></div>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('City Location'):</td>
+                <td title=$:{json.dumps(_(u'Select a city location from the list or enter your own location in the fields below'), ensure_ascii=False)}>
+                <select name="location">
+                    $for i in range(len(city_table)):
+                        <option value=$int(i) ${"selected" if plugin_options["location"]==int(i) else ""}>$city_table[int(i)]</option>
+                </select>
+                </td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>
+                    <div><small>$_('Manual location')</small></div>
+                </td>
+            </tr>                        
+            <tr>
+                <td style='text-transform: none;'>$_('Custom Location'):</td>
+                <td title=$:{json.dumps(_(u'Somewhere on earth (own name). Example: Pilsen'), ensure_ascii=False)}>
+                <input name='custom_location' type='text' value='$plugin_options['custom_location']'> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Custom region'):</td>
+                <td title=$:{json.dumps(_(u'The custom label serves for our better location orientation'), ensure_ascii=False)}>
+                <input name='custom_region' type='text' value='$plugin_options['custom_region']'> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Custom Timezone/name'):</td>
+                <td title=$:{json.dumps(_(u'UTC (Coordinated Universal Time). As the Earths rotation slows slightly, GMT is gradually lagging behind UTC. In order to be used in practical life, which is associated with the rotation of the Earth, UTC is maintained within ± 0.9 seconds of UT1; if this deviation is exceeded, the so-called leap second is added or (theoretically) removed at midnight on the next 30 June or 31 December, so that this day ends at 23.59: 60, resp. 23.59: 58 (as opposed to the usual 23.59: 59). This occurs on average once a year to a year and a half. As the Earths rotation slows down, leap seconds are always added, but theoretically the possibility of taking a leap second is also considered. The International Earth Rotation and Reference Systems Service decides whether to use the leap second in the relevant term according to the Earths rotation measurements.'), ensure_ascii=False)}>
+                <input name='custom_timezone' type='text' value='$plugin_options['custom_timezone']'> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Custom Latitude and longitude'):</td>
+                <td title=$:{json.dumps(_(u'Example city Pilsen 49°44′29",13°22′57"'), ensure_ascii=False)}>
+                <input name='custom_lati_longit' type='text' value='$plugin_options['custom_lati_longit']'> 
+                </td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                                                                                 
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                    <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
+                    <a href="$plugins.plugin_url('sunrise_and_sunset.refresh_page')" class="button refresh">$_('Update Status')</a>
+                </td>
+            </tr>
+            
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

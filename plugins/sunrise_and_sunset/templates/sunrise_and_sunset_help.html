@@ -1,0 +1,87 @@
+$def with()
+
+$var title: $_('Sunrise and Sunset')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Sunrise and Sunset - Help')</div>
+    <div id="controls">
+        <a href=$plugins.plugin_url('sunrise_and_sunset.status_page') class="button danger">$_('Cancel')</a><br/>
+    </div>
+    <p>$_('This extension allows you to run a specific program depending on sunrise or sunset.')</p>
+    <p>$_('This extension calculate the following astronomical data')</p>
+    <p>
+    <ul><li>$_('Dawn')</li></ul>
+    $_('The time in the morning when the sun is a specific number of degrees below the horizon.')
+    <ul><li>$_('Sunrise')</li></ul>
+    $_('The time in the morning when the top of the sun breaks the horizon (asuming a location with no obscuring features.)')
+    <ul><li>$_('Noon')</li></ul>
+    $_('The time when the sun is at highest point directly above the observer.')
+    <ul><li>$_('Sunset')</li></ul>
+    $_('The time in the evening when the sun is about to disappear below the horizon (asuming a location with no obscuring features.)')
+    <ul><li>$_('Dusk')</li></ul>
+    $_('The time in the evening when the sun is a specific number of degrees below the horizon.')
+    </p></br>
+    <p><b>$_('Effect of Elevation')</b></p>
+    <p>$_('Times Of The Sun')</p>
+    <p>$_('The times of the sun that you experience depend on what obscurs your view of it. It may either be obscured by the horizon or some other geographical feature (e.g. mountains)')</p>
+    <p>$_('If what obscures you at ground level is the horizon and you are at a elevation above ground level then the times of the sun depends on how far further round the earth you can see due to your elevation (the sun rises earlier and sets later).')</p>
+    <p>$_('The extra angle you can see round the earth is determined by calculating the angle α in the image below based on your elevation above ground level, and adding this to the depression angle for the sun calculations.')</p></br>
+    <a href="/plugins/sunrise_and_sunset/static/images/elevation_horizon.svg"><img src="/plugins/sunrise_and_sunset/static/images/elevation_horizon.svg" width="60%"></a></br>
+    <p>$_('If your view is obscured by some other geographical feature than the horizon, then the adjustment angle is based on how far you are above or below the feature and your distance to it.')</p>
+    <p>$_('For the first case i.e. obscured by the horizon you need to pass a single float to the Observer as its elevation. For the second case pass a tuple of 2 floats. The first being the vertical distance to the top of the feature and the second the horizontal distance to the feature.')</p></br>
+    <p><b>$_('Elevation Of The Sun')</b></p>
+    <p>$_('Even though an observers elevation can significantly affect the times of the sun the same is not true for the elevation angle from the observer to the sun.')</p>
+    <p>$_('As an example the diagram below shows the difference in angle between an observer at ground level and one on the ISS orbiting 408 km above the earth.')</p>
+    <a href="/plugins/sunrise_and_sunset/static/images/elevation_sun.svg"><img src="/plugins/sunrise_and_sunset/static/images/elevation_sun.svg" width="60%"></a></br>
+    <p>$_('The largest difference between the two angles is when the angle at ground level is 1 degree. The difference then is approximately 0.15 degrees.')</p>
+    <p>$_('At the summit of mount Everest (8,848 m) the maximum difference is 0.00338821 degrees.')</p>
+    <p>$_('Due to the very small difference the astral package does not currently adjust the solar elevation for changes in observer elevation.')</p>
+    <ul><li>$_('Moon Phase')</li></ul>
+    <p>$_('The phase of the moon for a specified date.')</p>
+    <p>$_('The moon phase method returns an number describing the phase, where the value is between 0 and 27.99. The following lists the mapping of various values to the description of the phase of the moon.')</p>
+    <p>$_('If for example the number returned was 27.99 then the moon would be almost at the New Moon phase, and if it was 24.00 it would be half way between the Last Quarter and a New Moon.')</p>
+    <p>$_('Note')</p>
+    <p>$_('The moon phase does not depend on your location. However what the moon actually looks like to you does depend on your location. If you are in the southern hemisphere it looks different than if you were in the northern hemisphere.')</p>
+    <table><tbody valign="top">
+    <tr><td>0 .. 6.99</td>
+    <td>$_('New moon')</td>
+    </tr>
+    <tr><td>7 .. 13.99</td>
+    <td>$_('First quarter')</td>
+    </tr>
+    <tr><td>14 .. 20.99</td>
+    <td>$_('Full moon')</td>
+    </tr>
+    <tr><td>21 .. 27.99</td>
+    <td>$_('Last quarter')</td>
+    </tr>
+    </tbody></table>
+    <a href="/plugins/sunrise_and_sunset/static/images/Moon-Phases-N.gif"><img src="/plugins/sunrise_and_sunset/static/images/Moon-Phases-N.gif" width="60%"></a></br>
+    <p>$_('The top animation shows the Moons orbit as it would be seen looking down on Earth from high above the North Pole, and it shows the Moons phases as they would be seen from most places in the northern hemisphere.')</p>
+    <a href="/plugins/sunrise_and_sunset/static/images/Moon-Phases-S.gif"><img src="/plugins/sunrise_and_sunset/static/images/Moon-Phases-S.gif" width="60%"></a></br>
+    <p>$_('The bottom animation shows the Moons orbit as it would be seen looking down on Earth from high above the South Pole, and it shows the Moons phases as they would be seen from most places in the southern hemisphere.')</p> 
+    </br>
+    <p><b>$_('Cities for location')</b></p>
+    <p>$_('The module includes location and time zone data for the following cities. The list includes all capital cities plus some from the UK. The list also includes the US state capitals and some other US cities.')</p>
+    <p>Aberdeen, Abu Dhabi, Abu Dhabi, Abuja, Accra, Addis Ababa, Adelaide, Al Jubail, Albany, Albuquerque, Algiers, Amman, Amsterdam, Anchorage, Andorra la Vella, Ankara, Annapolis, Antananarivo, Apia, Ashgabat, Asmara, Astana, Asuncion, Athens, Atlanta, Augusta, Austin, Avarua, Baghdad, Baku, Baltimore, Bamako, Bandar Seri Begawan, Bangkok, Bangui, Banjul, Barrow-In-Furness, Basse-Terre, Basseterre, Baton Rouge, Beijing, Beirut, Belfast, Belgrade, Belmopan, Berlin, Bern, Billings, Birmingham, Birmingham, Bishkek, Bismarck, Bissau, Bloemfontein, Bogota, Boise, Bolton, Boston, Bradford, Brasilia, Bratislava, Brazzaville, Bridgeport, Bridgetown, Brisbane, Bristol, Brussels, Bucharest, Bucuresti, Budapest, Buenos Aires, Buffalo, Bujumbura, Burlington, Cairo, Canberra, Cape Town, Caracas, Cardiff, Carson City, Castries, Cayenne, Charleston, Charlotte, Charlotte Amalie, Cheyenne, Chicago, Chisinau, Cleveland, Columbia, Columbus, Conakry, Concord, Copenhagen, Cotonou, Crawley, Dakar, Dallas, Damascus, Dammam, Denver, Des Moines, Detroit, Dhaka, Dili, Djibouti, Dodoma, Doha, Douglas, Dover, Dublin, Dushanbe, Edinburgh, El Aaiun, Fargo, Fort-de-France, Frankfort, Freetown, Funafuti, Gaborone, George Town, Georgetown, Gibraltar, Glasgow, Greenwich, Guatemala, Hanoi, Harare, Harrisburg, Hartford, Havana, Helena, Helsinki, Hobart, Hong Kong, Honiara, Honolulu, Houston, Indianapolis, Islamabad, Jackson, Jacksonville, Jakarta, Jefferson City, Jerusalem, Juba, Jubail, Juneau, Kabul, Kampala, Kansas City, Kathmandu, Khartoum, Kiev, Kigali, Kingston, Kingston, Kingstown, Kinshasa, Koror, Kuala Lumpur, Kuwait, La Paz, Lansing, Las Vegas, Leeds, Leicester, Libreville, Lilongwe, Lima, Lincoln, Lisbon, Little Rock, Liverpool, Ljubljana, Lome, London, Los Angeles, Louisville, Luanda, Lusaka, Luxembourg, Macau, Madinah, Madison, Madrid, Majuro, Makkah, Malabo, Male, Mamoudzou, Managua, Manama, Manchester, Manchester, Manila, Maputo, Maseru, Masqat, Mbabane, Mecca, Medina, Melbourne, Memphis, Mexico, Miami, Milwaukee, Minneapolis, Minsk, Mogadishu, Monaco, Monrovia, Montevideo, Montgomery, Montpelier, Moroni, Moscow, Moskva, Mumbai, Muscat, N'Djamena, Nairobi, Nashville, Nassau, Naypyidaw, New Delhi, New Orleans, New York, Newark, Newcastle, Newcastle Upon Tyne, Ngerulmud, Niamey, Nicosia, Norwich, Nouakchott, Noumea, Nuku'alofa, Nuuk, Oklahoma City, Olympia, Omaha, Oranjestad, Orlando, Oslo, Ottawa, Ouagadougou, Oxford, P'yongyang, Pago Pago, Palikir, Panama, Papeete, Paramaribo, Paris, Perth, Philadelphia, Phnom Penh, Phoenix, Pierre, Plymouth, Podgorica, Port Louis, Port Moresby, Port of Spain, Port-Vila, Port-au-Prince, Portland, Portland, Porto-Novo, Portsmouth, Prague, Praia, Pretoria, Pristina, Providence, Quito, Rabat, Raleigh, Reading, Reykjavik, Richmond, Riga, Riyadh, Road Town, Rome, Roseau, Sacramento, Saint Helier, Saint Paul, Saint Pierre, Saipan, Salem, Salt Lake City, San Diego, San Francisco, San Jose, San Juan, San Marino, San Salvador, Sana, Sana'a, Santa Fe, Santiago, Santo Domingo, Sao Tome, Sarajevo, Seattle, Seoul, Sheffield, Singapore, Sioux Falls, Skopje, Sofia, Southampton, Springfield, Sri Jayawardenapura Kotte, St. George's, St. John's, St. Peter Port, Stanley, Stockholm, Sucre, Suva, Swansea, Swindon, Sydney, T'bilisi, Taipei, Tallahassee, Tallinn, Tarawa, Tashkent, Tbilisi, Tegucigalpa, Tehran, Thimphu, Tirana, Tirane, Tokyo, Toledo, Topeka, Torshavn, Trenton, Tripoli, Tunis, Ulaanbaatar, Ulan Bator, Vaduz, Valletta, Vienna, Vientiane, Vilnius, Virginia Beach, W. Indies, Warsaw, Washington DC, Wellington, Wichita, Willemstad, Wilmington, Windhoek, Wolverhampton, Yamoussoukro, Yangon, Yaounde, Yaren, Yerevan, Zagreb</p>
+    <p>$_('US Cities')</p>
+    <p>Albany, Albuquerque, Anchorage, Annapolis, Atlanta, Augusta, Austin, Baltimore, Baton Rouge, Billings, Birmingham, Bismarck, Boise, Boston, Bridgeport, Buffalo, Burlington, Carson City, Charleston, Charlotte, Cheyenne, Chicago, Cleveland, Columbia, Columbus, Concord, Dallas, Denver, Des Moines, Detroit, Dover, Fargo, Frankfort, Harrisburg, Hartford, Helena, Honolulu, Houston, Indianapolis, Jackson, Jacksonville, Jefferson City, Juneau, Kansas City, Lansing, Las Vegas, Lincoln, Little Rock, Los Angeles, Louisville, Madison, Manchester, Memphis, Miami, Milwaukee, Minneapolis, Montgomery, Montpelier, Nashville, New Orleans, New York, Newark, Oklahoma City, Olympia, Omaha, Orlando, Philadelphia, Phoenix, Pierre, Portland, Portland, Providence, Raleigh, Richmond, Sacramento, Saint Paul, Salem, Salt Lake City, San Diego, San Francisco, Santa Fe, Seattle, Sioux Falls, Springfield, Tallahassee, Toledo, Topeka, Trenton, Virginia Beach, Wichita, Wilmington</p></br>
+    <p><b>$_('Installation')</b></p>
+    <p>$_('To install Astral you should use the pip tool:')</p>
+    <p><code>pip3 install astral</code></p>
+    <p>$_('Note')</p>
+    <p>$_('Now that we are Python 3 only and pip provides a versioned executable on Windows you should use the pip3 command on all operating systems to ensure you are targetting the right Python version.')</p>
+    <p><b>$_('License')</b></p>
+    <p>$_('This module is licensed under the terms of the Apache V2.0 license.')</p>
+    <p><b>$_('Dependencies')</b></p>
+    <p>$_('Astral has one required external Python dependency on pytz.')</p></br>
+    <a href="https://github.com/sffjunkie/astral/blob/master/src/docs/index.rst">$_('Astral on the Github')</a>
+</div>    
+
+<div id="controls">
+    <a href=$plugins.plugin_url('sunrise_and_sunset.status_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+
+
+
