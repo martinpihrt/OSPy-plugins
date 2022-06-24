@@ -520,13 +520,13 @@ class StatusChecker(Thread):
                             _month = int(today.strftime("%m"))
                             _year = int(today.strftime("%Y"))
 
-                            s = sun(city.observer, date=datetime.date(_year, _month, _day))
+                            s = sun(city.observer, date=datetime.date(_year, _month, _day), tzinfo=found_timezone)
                             log.info(NAME, '________________________________________')
-                            log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"]))
-                            log.info(NAME, _('Sunrise') + ': {}'.format(s["sunrise"]))
-                            log.info(NAME, _('Noon') + ': {}'.format(s["noon"]))
-                            log.info(NAME, _('Sunset') + ': {}'.format(s["sunset"]))
-                            log.info(NAME, _('Dusk') + ': {}'.format(s["dusk"]))
+                            log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"].strftime("%d.%m.%Y %H:%M:%S")))
+                            log.info(NAME, _('Sunrise') + ': {}'.format(s["sunrise"].strftime("%d.%m.%Y %H:%M:%S")))
+                            log.info(NAME, _('Noon') + ': {}'.format(s["noon"].strftime("%d.%m.%Y %H:%M:%S")))
+                            log.info(NAME, _('Sunset') + ': {}'.format(s["sunset"].strftime("%d.%m.%Y %H:%M:%S")))
+                            log.info(NAME, _('Dusk') + ': {}'.format(s["dusk"].strftime("%d.%m.%Y %H:%M:%S")))
 
                             msg = _('Sunrise') + ': {}, '.format(s["sunrise"]) + _('Sunset') + ': {}'.format(s["sunset"])
 
