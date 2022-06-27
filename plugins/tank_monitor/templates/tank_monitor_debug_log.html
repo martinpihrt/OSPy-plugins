@@ -25,9 +25,9 @@ $var page: plugins
             <th>$_('Date Time')</th>
             <th>$_('Byte 0')</th>
             <th>$_('Byte 1')</th>
-            <th>$_('Value') ($_('Ping'))</th>
-            <th>$_('Byte 2') ($_('HW CPU FW'))</th>
-            <th>$_('Byte 3') ($_('CRC'))</th>
+            <th>$_('Value') [$_('Ping')]</th>
+            <th>$_('Byte 2') [$_('HW CPU FW')]</th>
+            <th>$_('Byte 3') [$_('CRC')]</th>
         </tr>
         $for interval in records:
             <tr class="log_rec ${loop.parity}">
@@ -36,7 +36,7 @@ $var page: plugins
                 <td align='left'>${interval["b1"]}</td>
                 $if int(interval["val"])> 400:
                     <td bgcolor="red">${interval["val"]}</td>
-                $else:    
+                $else:
                     <td align='left'>${interval["val"]}</td>
                 <td align='left'>${interval["b2"]}</td>
                 <td align='left'>${interval["b3"]}</td>
