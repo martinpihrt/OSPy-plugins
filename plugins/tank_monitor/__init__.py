@@ -730,6 +730,7 @@ class settings_page(ProtectedPage):
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
         debug = helpers.get_input(qdict, 'debug', False, lambda x: True)
         del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
+        log_now = helpers.get_input(qdict, 'log_now', False, lambda x: True)
 
         if sender is not None and reset:
             status['minlevel'] = status['level']
@@ -740,6 +741,9 @@ class settings_page(ProtectedPage):
             status['maxlevel_datetime'] = datetime_string()
             log.info(NAME, datetime_string() + ': ' + _(u'Minimum and maximum has reseted.'))
             raise web.seeother(plugin_url(settings_page), True)
+
+        if sender is not None and log_now:
+            update_log()
 
         if sender is not None and delete:
             write_log([])

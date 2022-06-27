@@ -182,10 +182,13 @@ function check_history() {
         <a href=$plugins.plugin_url('tank_monitor.log_csv') class="button download">$_('Download log')</a>
         <a href="?show" class="button backup">$_('Show logs')</a>
         <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        </p></br>
+        <p>    
         <a href="?reset"  class="button cancel danger">$_('Reset min/max level')</a>
+        <a href="?log_now"  class="button cancel danger">$_('Log sample now')</a>
     $if plugin_options['input_byte_debug_log']:
         <a href="?debug" class="button cancel danger">$_('Show debug logs')</a>    
-    </p></br>
+        </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('tank_monitor.settings_page')" method="post">
         <table class="optionList">
             <tr>
