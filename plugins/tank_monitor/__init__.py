@@ -67,7 +67,9 @@ tank_options = PluginOptions(
        'use_avg':      False,  # use average for sonic samples
        'avg_samples': 20,      # number of samples for average
        'input_byte_debug_log': False, # logging for advanced user (save debug data from I2C bus)
-       'byte_changed': True    # logging of data only when this data changes, otherwise still logging.
+       'byte_changed': True,   # logging of data only when this data changes, otherwise still logging.
+       'saved_min': 0,         # logging min water level
+       'saved_max': 0,         # logging max water level
     }
 )
 
@@ -77,8 +79,8 @@ status['level']    = -1
 status['percent']  = -1
 status['ping']     = -1
 status['volume']   = -1
-status['maxlevel'] = 0
-status['minlevel'] = 400
+status['maxlevel'] = tank_options['saved_max']
+status['minlevel'] = tank_options['saved_min']
 status['maxlevel_datetime'] = datetime_string()
 status['minlevel_datetime'] = datetime_string()
 
@@ -98,8 +100,8 @@ class Sender(Thread):
         status['percent']  = -1
         status['ping']     = -1
         status['volume']   = -1
-        status['maxlevel'] = 0
-        status['minlevel'] = 400
+        status['maxlevel'] = tank_options['saved_max']
+        status['minlevel'] = tank_options['saved_min']
         status['maxlevel_datetime'] = datetime_string()
         status['minlevel_datetime'] = datetime_string()
 
@@ -257,12 +259,14 @@ class Sender(Thread):
 
                         if status['level'] > status['maxlevel']:                         # maximum level check                           
                             status['maxlevel'] = status['level']
+                            tank_options['saved_max'] = status['level']
                             status['maxlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Maximum has updated.'))
                             update_log()
   
                         if status['level'] < status['minlevel'] and status['level'] > 2:  # minimum level check 
                             status['minlevel'] = status['level']
+                            tank_options['saved_min'] = status['level']
                             status['minlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Minimum has updated.'))
                             update_log()
@@ -435,7 +439,7 @@ def get_sonic_cm():
                     if (last_data0 != data[0]) or (last_data1 != data[1]):
                         last_data0 = data[0]
                         last_data1 = data[1]
-                        update_debug_log(data[0], data[1], val)
+                        update_debug_log(data[0], data[1], val, data[2], data[3])
                 else:                                   # every 3 second log 
                     update_debug_log(data[0], data[1], val)
 
@@ -638,7 +642,7 @@ def update_log():
     except:
         create_default_graph()
 
-def update_debug_log(byte_0 = 0, byte_1 = 0, val = 0):
+def update_debug_log(byte_0 = 0, byte_1 = 0, val = 0, byte_2 = 0, byte_3 = 0):
     """Update data in debug json files."""
 
     ### Data for log ###
@@ -654,6 +658,8 @@ def update_debug_log(byte_0 = 0, byte_1 = 0, val = 0):
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
     data['b0']  = str(byte_0)
     data['b1']  = str(byte_1)
+    data['b2']  = str(byte_2)
+    data['b3']  = str(byte_3)
     data['val']  = str(val)
       
     log_data.insert(0, data)
@@ -728,28 +734,32 @@ class settings_page(ProtectedPage):
         if sender is not None and reset:
             status['minlevel'] = status['level']
             status['maxlevel'] = status['level']
+            tank_options['saved_max'] = status['level']
+            tank_options['saved_min'] = status['level']
             status['minlevel_datetime'] = datetime_string()
             status['maxlevel_datetime'] = datetime_string()
             log.info(NAME, datetime_string() + ': ' + _(u'Minimum and maximum has reseted.'))
             raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and delete:
-           write_log([])
-           create_default_graph()
-           avg_lst = [0]*tank_options['avg_samples']
-           avg_cnt = 0
-           avg_rdy = False 
-           raise web.seeother(plugin_url(settings_page), True)          
+            write_log([])
+            create_default_graph()
+            avg_lst = [0]*tank_options['avg_samples']
+            avg_cnt = 0
+            avg_rdy = False 
+            tank_options['saved_max'] = status['level']
+            tank_options['saved_min'] = status['level']
+            raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and 'history' in qdict:
-           history = qdict['history']
-           tank_options.__setitem__('history', int(history))
+            history = qdict['history']
+            tank_options.__setitem__('history', int(history))
 
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
 
         if sender is not None and debug:
-            raise web.seeother(plugin_url(log_debug_page), True)            
+            raise web.seeother(plugin_url(log_debug_page), True)
 
         if sender is not None and del_rain:
             if NAME in rain_blocks:
@@ -924,6 +934,8 @@ class debug_log_csv(ProtectedPage):  # save debug log file from web as csv file 
         data += "; Byte 0"
         data += "; Byte 1"
         data += "; Value"
+        data += "; Byte 2 FW"
+        data += "; Byte 3 CRC"
         data += '\n'
 
         for interval in log_file:
@@ -932,10 +944,12 @@ class debug_log_csv(ProtectedPage):  # save debug log file from web as csv file 
                 u'{}'.format(interval['b0']),
                 u'{}'.format(interval['b1']),
                 u'{}'.format(interval['val']),
+                u'{}'.format(interval['b2']),
+                u'{}'.format(interval['b3']),
             ]) + '\n'
 
         content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'debug_log.json')[0])
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="debug_log.csv"')
+        web.header('Content-Disposition', 'attachment; filename="tank_i2c_debug_log.csv"')
         return data        

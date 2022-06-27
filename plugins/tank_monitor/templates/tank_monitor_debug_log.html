@@ -12,6 +12,9 @@ $var page: plugins
     $else:
         $_('Warning! Logging is performed every 3 seconds. The file will be large and frequent saving to a file on the SD card can damage the card!')
     </p>
+    <p>$_('Byte 0 and byte 1 is ping value. Value=data[0]*255 + data[1].')</p>
+    <p>$_('Byte 2 is firmware version in atmega 328 on sonic board hardware. Known version is 0x0D=FW1.3, 0x0E=FW1.4, 0x0F=FW1.5...')</p>
+    <p>$_('Byte 3 is CRC check from board. Calculating from byte 0 and byte 1.')</p>
     <p>$_('Total number of records'): ${len(records)}</p>
     <p><a href=$plugins.plugin_url('tank_monitor.debug_log_csv') class="button download">$_('Download log')</a>
     <a href="" class="button refresh">$_('Refresh')</a>
@@ -22,7 +25,9 @@ $var page: plugins
             <th>$_('Date Time')</th>
             <th>$_('Byte 0')</th>
             <th>$_('Byte 1')</th>
-            <th>$_('Value')</th>            
+            <th>$_('Value') ($_('Ping'))</th>
+            <th>$_('Byte 2') ($_('HW CPU FW'))</th>
+            <th>$_('Byte 3') ($_('CRC'))</th>
         </tr>
         $for interval in records:
             <tr class="log_rec ${loop.parity}">
@@ -33,6 +38,8 @@ $var page: plugins
                     <td bgcolor="red">${interval["val"]}</td>
                 $else:    
                     <td align='left'>${interval["val"]}</td>
+                <td align='left'>${interval["b2"]}</td>
+                <td align='left'>${interval["b3"]}</td>
             </tr>
     </table>
 </div>
