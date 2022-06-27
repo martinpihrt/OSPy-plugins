@@ -187,6 +187,10 @@ def read_blinds_status():
     global sender
     footer_msg = ''
     try:
+        import datetime
+        today =  datetime.date.today()
+        footer_msg += '{} '.format(today.strftime("%H:%M:%S"))
+
         for i in range(0, plugin_options['number_blinds']):
             if plugin_options['status'][i] != '':
                 if uri_validator(plugin_options['status'][i]):
@@ -216,8 +220,8 @@ def read_blinds_status():
                                 else:
                                     rol_pos_msg = _('position')
                                     rol_pos_msg += ': {}%'.format(rol_current_pos)    
-                                #sender.status['bstatus'][int(i)] = _('{} {} ({}, power {}W)').format(datetime_string(), rol_msg, rol_pos_msg, rol_power)
-                                sender.status['bstatus'][int(i)] = _('{} {} ({})').format(datetime_string(), rol_msg, rol_pos_msg)
+                                #sender.status['bstatus'][int(i)] = _('{} ({}, power {}W)').format(rol_msg, rol_pos_msg, rol_power)
+                                sender.status['bstatus'][int(i)] = _('{} ({})').format(rol_msg, rol_pos_msg)
                                 footer_msg += '{}: {} '.format(plugin_options['label'][i], sender.status['bstatus'][int(i)])
                             else:
                                 rol_pos_msg = ''
@@ -225,7 +229,7 @@ def read_blinds_status():
                     except OSError:
                         url = plugin_options['status'][i]
                         log.debug(NAME, _('No route to host {}.').format(url))
-                        sender.status['bstatus'][int(i)] = '{} {}'.format(datetime_string(), _('No route to host.'))
+                        sender.status['bstatus'][int(i)] = '{}'.format(_('No route to host.'))
                         footer_msg += '{}: {} '.format(plugin_options['label'][i], sender.status['bstatus'][int(i)])
                         pass
                 else:

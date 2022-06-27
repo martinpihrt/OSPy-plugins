@@ -452,8 +452,8 @@ class StatusChecker(Thread):
         if plugin_options['use_footer']:
             temp_upd = showInFooter() #  instantiate class to enable data in footer
             temp_upd.button = "sunrise_and_sunset/status"    # button redirect on footer
-            temp_upd.label =  _(u'Sunrise and Sunset')       # label on footer
-            msg = _(u'Waiting to state')
+            temp_upd.label =  _('Sunrise and Sunset')       # label on footer
+            msg = _('Waiting to state')
             temp_upd.val = msg.encode('utf8').decode('utf8') # value on footer
 
         try:
@@ -521,14 +521,14 @@ class StatusChecker(Thread):
                             _year = int(today.strftime("%Y"))
 
                             s = sun(city.observer, date=datetime.date(_year, _month, _day), tzinfo=found_timezone)
-                            log.info(NAME, '________________________________________')
-                            log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"].strftime("%d.%m.%Y %H:%M:%S")))
-                            log.info(NAME, _('Sunrise') + ': {}'.format(s["sunrise"].strftime("%d.%m.%Y %H:%M:%S")))
-                            log.info(NAME, _('Noon') + ': {}'.format(s["noon"].strftime("%d.%m.%Y %H:%M:%S")))
-                            log.info(NAME, _('Sunset') + ': {}'.format(s["sunset"].strftime("%d.%m.%Y %H:%M:%S")))
-                            log.info(NAME, _('Dusk') + ': {}'.format(s["dusk"].strftime("%d.%m.%Y %H:%M:%S")))
+                            log.info(NAME, '_______________ ' + '{}'.format(today) + ' _______________')
+                            log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"].strftime("%H:%M:%S")))
+                            log.info(NAME, _('Sunrise') + ': {}'.format(s["sunrise"].strftime("%H:%M:%S")))
+                            log.info(NAME, _('Noon') + ': {}'.format(s["noon"].strftime("%H:%M:%S")))
+                            log.info(NAME, _('Sunset') + ': {}'.format(s["sunset"].strftime("%H:%M:%S")))
+                            log.info(NAME, _('Dusk') + ': {}'.format(s["dusk"].strftime("%H:%M:%S")))
 
-                            msg = _('Sunrise') + ': {}, '.format(s["sunrise"].strftime("%d.%m.%Y %H:%M:%S")) + _('Sunset') + ': {}'.format(s["sunset"].strftime("%d.%m.%Y %H:%M:%S"))
+                            msg = _('Sunrise') + ': {}, '.format(s["sunrise"].strftime("%H:%M:%S")) + _('Sunset') + ': {}'.format(s["sunset"].strftime("%H:%M:%S"))
 
                             from astral import moon
                             m = moon.phase(datetime.date(_year, _month, _day))
@@ -561,7 +561,7 @@ class StatusChecker(Thread):
                     if temp_upd is not None:
                         temp_upd.val = msg.encode('utf8').decode('utf8')  # value on footer
                     else:
-                        log.error(NAME, _(u'Error: restart this plugin! Show in homepage footer have enabled.'))
+                        log.error(NAME, _('Error: restart this plugin! Show in homepage footer have enabled.'))
 
                 self._sleep(3600)
 
@@ -599,7 +599,7 @@ def run_command(cmd):
         log.info(NAME, output)
 
     except Exception:
-        log.error(NAME, _(u'Astral plug-in') + ':\n' + traceback.format_exc())        
+        log.error(NAME, _('Astral plug-in') + ':\n' + traceback.format_exc())        
 
 
 ################################################################################
