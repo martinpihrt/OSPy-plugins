@@ -68,7 +68,7 @@ tank_options = PluginOptions(
        'avg_samples': 20,      # number of samples for average
        'input_byte_debug_log': False, # logging for advanced user (save debug data from I2C bus)
        'byte_changed': True,   # logging of data only when this data changes, otherwise still logging.
-       'saved_min': 0,         # logging min water level
+       'saved_min': 400,       # logging min water level
        'saved_max': 0,         # logging max water level
     }
 )
@@ -130,8 +130,8 @@ class Sender(Thread):
         send = False
         mini = True
 
-        sonic_cm = get_sonic_cm()
-        level_in_tank = get_sonic_tank_cm(sonic_cm)
+        sonic_cm = -1
+        level_in_tank = 0
         regulation_text = _(u'Regulation NONE.')
 
         if NAME in rain_blocks:
@@ -176,7 +176,6 @@ class Sender(Thread):
                             level_in_tank = get_sonic_tank_cm(sonic_cm)
                         else:    
                             sonic_cm = 0
-                            level_in_tank = -1
                             log.clear(NAME)
                             log.info(NAME, _(u'Waiting for {} samples to be read from the sensor (when using averaging).').format(tank_options['avg_samples']))
                     else:                       # without averaging

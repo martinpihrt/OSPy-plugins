@@ -176,7 +176,7 @@ function check_history() {
 
 <div id="plugin">
     <div class="title">$_('Water tank monitor settings')</div>
-    <a href=$plugins.plugin_url('tank_monitor.help_page') class="button upload">$_('Help')</a><br/> 
+    <p><a href=$plugins.plugin_url('tank_monitor.help_page') class="button upload">$_('Help')</a></p><br/> 
     $if plugin_options['enable_log']:
         <p>
         <a href=$plugins.plugin_url('tank_monitor.log_csv') class="button download">$_('Download log')</a>
