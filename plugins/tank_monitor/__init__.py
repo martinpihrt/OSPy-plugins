@@ -441,7 +441,7 @@ def get_sonic_cm():
                         last_data1 = data[1]
                         update_debug_log(data[0], data[1], val, data[2], data[3])
                 else:                                   # every 3 second log 
-                    update_debug_log(data[0], data[1], val)
+                    update_debug_log(data[0], data[1], val, data[2], data[3])
 
             ### FW version on CPU atmega 328 processing ###
             # NO CRC init old version FW<1.4
