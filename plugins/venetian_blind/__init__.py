@@ -187,8 +187,8 @@ def read_blinds_status():
     global sender
     footer_msg = ''
     try:
-        import datetime
-        today =  datetime.date.today()
+        from datetime import datetime
+        today =  datetime.today()
         footer_msg += '{} '.format(today.strftime("%H:%M:%S"))
 
         for i in range(0, plugin_options['number_blinds']):
