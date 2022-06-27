@@ -140,7 +140,7 @@ class Sender(Thread):
 
         if tank_options['use_footer']:
             tank_mon = showInFooter() #  instantiate class to enable data in footer
-            tank_mon.button = "tank_monitor/settings"       # button redirect on footer
+            tank_mon.button = "tank_monitor/settings"        # button redirect on footer
             tank_mon.label =  _(u'Tank')                     # label on footer
 
         end = datetime.datetime.now()
@@ -158,11 +158,13 @@ class Sender(Thread):
                         once_text = True
                         two_text = False
 
-                    if tank_options['use_avg']: # use averaging
+                    ping_read = get_sonic_cm()
+
+                    if tank_options['use_avg'] and ping_read > 0: # use averaging
                         try:
-                            avg_lst[avg_cnt] = get_sonic_cm()
+                            avg_lst[avg_cnt] = ping_read
                         except:
-                            avg_lst.append(get_sonic_cm())    
+                            avg_lst.append(ping_read)    
                         avg_cnt += 1
                         if avg_cnt > tank_options['avg_samples']:
                             avg_cnt = 0
@@ -176,8 +178,12 @@ class Sender(Thread):
                             log.clear(NAME)
                             log.info(NAME, _(u'Waiting for {} samples to be read from the sensor (when using averaging).').format(tank_options['avg_samples']))
                     else:                       # without averaging
-                        sonic_cm = get_sonic_cm()
-                        level_in_tank = get_sonic_tank_cm(sonic_cm)
+                        if ping_read > 0:       # if sonic value is bad (-1) not use these
+                            sonic_cm = ping_read
+                            level_in_tank = get_sonic_tank_cm(sonic_cm)
+                        else:
+                            sonic_cm = 0
+                            level_in_tank = 0
 
                     tempText = ""
 
@@ -435,22 +441,26 @@ def get_sonic_cm():
 
             ### FW version on CPU atmega 328 processing ###
             # NO CRC init old version FW<1.4
-            if data[2] == 0xFF or data[2] == 0x00:      # not found version in atmega 328 (known version is 0x0D FW1.3, 0x0E FW1.4, 0x0F FW1.5 ...)
+            if data[2] == 0xFF or data[2] == 0x00:        # not found version in atmega 328 (known version is 0x0D FW1.3, 0x0E FW1.4, 0x0F FW1.5 ...)
                 log.debug(NAME, _(u'FW version in CPU (Atmega 328) is FW <= 1.3'))
-                if data[1] == 0xFF or data[0] == 0xFF:  # first check on buss error on sonic distance (byte 0 or byte 1 is 255 -> error skip)
+                if data[1] == 0xFF or data[0] == 0xFF:    # first check on buss error on sonic distance (byte 0 or byte 1 is 255 -> error skip)
                     return -1
+                elif data[1] == 0x00 and data[0] == 0x00: # next check on buss error on sonic distance (byte 0 or byte 1 is 0 -> error skip)
+                    return -1                    
                 else:
-                    if val > 400:                       # 400 cm is max ping from ultrasonic sensor
+                    if val > 400:                         # 400 cm is max ping from ultrasonic sensor
                         return -1
                     else:
                         return val
+
             # WITH CRC check FW=1.4            
-            elif data[2] == 0x0E:                       # 0x0E is FW1.4 in Atmega 328 (with CRC check sum)
+            elif data[2] == 0x0E:                         # 0x0E is FW1.4 in Atmega 328 (with CRC check sum)
 # TODO               
                # calculate crc
                #if check crc:
                    #if val >400:
                        return val
+            
             # UNKOWN VERSION       
             else:
                 log.debug(NAME, _(u'Unkown FW version in CPU (Atmega 328)')) 
