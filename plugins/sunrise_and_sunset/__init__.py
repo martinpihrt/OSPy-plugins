@@ -19,7 +19,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Astro Sunrise and Sunset'
-MENU =  _(u'Package: Astro Sunrise and Sunset')
+MENU =  _('Package: Astro Sunrise and Sunset')
 LINK = 'status_page'
 
 plugin_options = PluginOptions(
@@ -32,12 +32,15 @@ plugin_options = PluginOptions(
         'custom_timezone': 'UTC',
         'custom_lati_longit': '',
         'use_footer': False,
+        'number_pgm': 2,                # program count number
+        'pgm_type': [0, 1],             # 0=sunrise, 1=sunset 
+        'time_h': [0, -1],              # move the beginning of the program +- hours
+        'time_m': [0, -30],             # move the beginning of the program +- minutes
+        'pgm_run': [-1, -1],            # program for running -1 is not selected
     }
 )
 
-stats = {
-    'can_update': False,
-    }
+stats = {}
 
 city_table = [
     _('Not selected'),
@@ -420,9 +423,7 @@ class StatusChecker(Thread):
         self._done = Condition()
         self._stop_event = Event()
 
-        self.status = {
-            'can_update': False
-            }
+        self.status = {}
 
         self._sleep_time = 0
         self.start()
@@ -620,6 +621,80 @@ class status_page(ProtectedPage):
 
         raise web.seeother(plugin_url(status_page), True)
 
+class setup_page(ProtectedPage):
+    """Load an html setup page."""
+
+    def GET(self):
+        qdict = web.input()
+        msg = 'none'
+  
+        try:
+            return self.plugin_render.sunrise_and_sunset_setup(plugin_options, msg)   
+        except:
+            pgm_type = plugin_options['pgm_type']
+            pgm_type.append(int(0))
+            plugin_options.__setitem__('pgm_type', pgm_type)
+
+            time_h = plugin_options['time_h']
+            time_h.append(int(0))
+            plugin_options.__setitem__('time_h', time_h)
+            
+            time_m = plugin_options['time_m']
+            time_m.append(int(0))
+            plugin_options.__setitem__('time_m', time_m)
+
+            pgm_run = plugin_options['pgm_run']
+            pgm_run.append(int(-1))
+            plugin_options.__setitem__('pgm_run', pgm_run)            
+
+            plugin_options.__setitem__('number_pgm', int(1))
+
+            return self.plugin_render.sunrise_and_sunset_setup(plugin_options, msg) 
+
+    def POST(self):
+        try:
+            qdict = web.input()
+
+            if 'number_pgm' in qdict:
+                plugin_options.__setitem__('number_pgm', int(qdict['number_pgm']))
+
+            commands = {'pgm_type': [], 'time_h': [], 'time_m': [], 'pgm_run': []}
+
+            for i in range(0, plugin_options['number_pgm']):
+                if 'pgm_type'+str(i) in qdict:
+                    commands['pgm_type'].append(int(qdict['pgm_type'+str(i)]))
+                else:
+                    commands['pgm_type'].append(int(0))
+
+                if 'time_h'+str(i) in qdict:
+                    commands['time_h'].append(int(qdict['time_h'+str(i)]))
+                else:
+                    commands['time_h'].append(int(0))
+
+                if 'time_m'+str(i) in qdict:
+                    commands['time_m'].append(int(qdict['time_m'+str(i)]))
+                else:
+                    commands['time_m'].append(int(0))
+
+                if 'pgm_run'+str(i) in qdict:
+                    commands['pgm_run'].append(int(qdict['pgm_run'+str(i)]))
+                else:
+                    commands['pgm_run'].append(int(-1))                    
+
+            plugin_options.__setitem__('pgm_type', commands['pgm_type'])
+            plugin_options.__setitem__('time_h', commands['time_h'])
+            plugin_options.__setitem__('time_m', commands['time_m'])
+            plugin_options.__setitem__('pgm_run', commands['pgm_run'])            
+
+            if checker is not None:
+                checker.update()
+
+        except Exception:
+            log.debug(NAME, _('Astral plug-in') + ':\n' + traceback.format_exc())
+            pass
+
+        msg = 'saved'
+        return self.plugin_render.sunrise_and_sunset_setup(plugin_options, msg)
 
 class refresh_page(ProtectedPage):
     """Refresh status and show it."""

@@ -18,7 +18,9 @@ This extension allows you to run a specific program depending on sunrise or suns
 * Moon Phase
   The moon phase method returns an number describing the phase, where the value is between 0 and 27.99. The following lists the mapping of various values to the description of the phase of the moon.
 
-More information can be found after installing the plugin in the plugin help.  
+More information can be found after installing the plugin in the plugin help. 
+
+In terms of economy and good usability of moisture, early morning watering is optimal. We can also spray the leaves, because they will dry out before the sun can burn them. Plants should not be sprayed at all at noon: water droplets act like small optical lenses on the leaves, in which the sun's rays concentrate and cause burns on the leaves. In addition, it is uneconomical, because part of the water evaporates already in the air and another part immediately upon impact with the hot ground. If the plants wither during the day, we will help them with moisture directly to the roots. In the evening it should be watered only to the roots. The sprinkled leaves do not have time to dry and there is a risk of fungal diseases. Otherwise, evening watering is advantageous because the water absorbs well into the soil overnight and the plants have it in store for the next hot day. 
 
 
 Plugin setup
