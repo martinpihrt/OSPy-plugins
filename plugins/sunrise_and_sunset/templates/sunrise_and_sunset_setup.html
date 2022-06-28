@@ -41,37 +41,37 @@ $var page: plugins
         $for c in range(0, plugin_options['number_pgm']):
             <table class="optionList">
                 <tr>
-                    <td class="PgmNumber"><b><small>${c+1})</small></b></td>
+                <td class="PgmNumber"><b><small>${c+1})</small></b></td>
                 </tr>                
                 <tr>
-                    <td style='text-transform: none;'>$_('Program type'):</td>
-                    <td title=$:{json.dumps(_(u'Select program type (sunrise or sunset).'), ensure_ascii=False)}>
-                    <select name="pgm_type${c}" id='pgm_type'>
-                    <option value="0" ${"selected" if plugin_options["pgm_type"][c]==0 else ""}>$_('Sunrise')</option>
-                    <option value="1" ${"selected" if plugin_options["pgm_type"][c]==1 else ""}>$_('Sunset')</option>
-                    </select>
-                    </td>
+                <td style='text-transform: none;'>$_('Program type'):</td>
+                <td title=$:{json.dumps(_(u'Select program type (sunrise or sunset).'), ensure_ascii=False)}>
+                <select name="pgm_type${c}" id='pgm_type'>
+                <option value="0" ${"selected" if plugin_options["pgm_type"][c]==0 else ""}>$_('Sunrise')</option>
+                <option value="1" ${"selected" if plugin_options["pgm_type"][c]==1 else ""}>$_('Sunset')</option>
+                </select>
+                </td>
                 </tr>
                 <tr>
-                    <td style='text-transform: none;'>$_('Move the beginning of the program'):</td>
-                    <td title=$:{json.dumps(_(u'Enter the time in hours or minutes by which the program should move relative to the selected program type (sunrise or sunset).'), ensure_ascii=False)}>
-                        <input name='time_h${c}' type='number' min='-23' max='23' value='$plugin_options["time_h"][c]'>
-                        <input name='time_m${c}' type='number' min='-59' max='59' value='$plugin_options["time_m"][c]'>
-                    </td>
+                <td style='text-transform: none;'>$_('Move the beginning of the program'):</td>
+                <td title=$:{json.dumps(_(u'Enter the time in hours or minutes by which the program should move relative to the selected program type (sunrise or sunset).'), ensure_ascii=False)}>
+                <input name='time_h${c}' type='number' min='-23' max='23' value='$plugin_options["time_h"][c]'>
+                <input name='time_m${c}' type='number' min='-59' max='59' value='$plugin_options["time_m"][c]'>
+                </td>
                 </tr>
                 <tr>
-                    <td style='text-transform: none;'>$_('Program for run'):</td>
-                    <td title=$:{json.dumps(_(u'Select the program from the list that you want to run with this extension.'), ensure_ascii=False)}>
-                    <select name="pgm_run${c}" id='pgm_run'>
-                    <option value="-1" ${"selected" if plugin_options["pgm_run"][c]==-1 else ""}>$_('Not selected')</option>
-                    $for program in programs.get():
-                        $if program.type != ProgramType.WEEKLY_ADVANCED:
-                            $if program.type != ProgramType.CUSTOM:
-                                $if program.type != ProgramType.WEEKLY_WEATHER:
-                                    <option value="${program.index}" ${"selected" if plugin_options["pgm_run"][c]==program.index else ""}>${program.name}</option>
-                    </select>
-                    </td>
-                </tr>                
+                <td style='text-transform: none;'>$_('Program for run'):</td>
+                <td title=$:{json.dumps(_(u'Select the program from the list that you want to run with this extension.'), ensure_ascii=False)}>
+                <select name="pgm_run${c}" id='pgm_run'>
+                <option value="-1" ${"selected" if plugin_options["pgm_run"][c]==-1 else ""}>$_('Not selected')</option>
+                $for program in programs.get():
+                    $if program.type != ProgramType.WEEKLY_ADVANCED:
+                        $if program.type != ProgramType.CUSTOM:
+                            $if program.type != ProgramType.WEEKLY_WEATHER:
+                                <option value="${program.index}" ${"selected" if plugin_options["pgm_run"][c]==program.index else ""}>${program.name}</option>
+                </select>
+                </td>
+                </tr>
             </table>
             <p></br></p>
     </form>
