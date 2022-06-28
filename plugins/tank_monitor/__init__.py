@@ -457,12 +457,14 @@ def get_sonic_cm():
                         return val
 
             # WITH CRC check FW=1.4            
-            elif data[2] == 0x0E:                         # 0x0E is FW1.4 in Atmega 328 (with CRC check sum)
-# TODO               
-               # calculate crc
-               #if check crc:
-                   #if val >400:
-                       return val
+            elif data[2] == 0x0E:                         # 0x0E is FW1.4 in Atmega 328 (with CRC8 check sum)
+                import crc8                               # online calc http://zorc.breitbandkatze.de/crc.html
+                hash = crc8.crc8()
+                hash.update(b'{}'.format(val))            # val is calculated ping as sum from byte0 + byte1 (number ex: 0-65535)       
+                if hash.digest() == b'{}'.format(hex(data[3])): # compare calculated ping in plugin and calculated on hw board
+                    return val
+                else:
+                    return -1    
             
             # UNKOWN VERSION       
             else:
