@@ -258,14 +258,14 @@ class Sender(Thread):
 
                         if status['level'] > status['maxlevel']:                         # maximum level check                           
                             status['maxlevel'] = status['level']
-                            tank_options['saved_max'] = status['level']
+                            tank_options.__setitem__('saved_max', status['level'])
                             status['maxlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Maximum has updated.'))
                             update_log()
   
                         if status['level'] < status['minlevel'] and status['level'] > 2:  # minimum level check 
                             status['minlevel'] = status['level']
-                            tank_options['saved_min'] = status['level']
+                            tank_options.__setitem__('saved_min', status['level'])
                             status['minlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Minimum has updated.'))
                             update_log()
@@ -444,7 +444,7 @@ def get_sonic_cm():
 
             ### FW version on CPU atmega 328 processing ###
             # NO CRC init old version FW<1.4
-            if data[2] == 0xFF or data[2] == 0x00:        # not found version in atmega 328 (known version is 0x0D FW1.3, 0x0E FW1.4, 0x0F FW1.5 ...)
+            if data[2] == 0xFF or data[2] == 0x00:        # not found version in atmega 328 (known version is 0x0D 13 FW1.3, 0x0E 14 FW1.4, 0x0F 15 FW1.5 ...)
                 log.debug(NAME, _(u'FW version in CPU (Atmega 328) is FW <= 1.3'))
                 if data[1] == 0xFF or data[0] == 0xFF:    # first check on buss error on sonic distance (byte 0 or byte 1 is 255 -> error skip)
                     return -1
@@ -457,14 +457,17 @@ def get_sonic_cm():
                         return val
 
             # WITH CRC check FW=1.4            
-            elif data[2] == 0x0E:                         # 0x0E is FW1.4 in Atmega 328 (with CRC8 check sum)
-                import crc8                               # online calc http://zorc.breitbandkatze.de/crc.html
+            elif data[2] == 14:                           # 0x0E 14 is FW1.4 in Atmega 328 (with CRC8 check sum)
+                from . import crc8                        # online calc http://zorc.breitbandkatze.de/crc.html
                 hash = crc8.crc8()
-                hash.update(b'{}'.format(val))            # val is calculated ping as sum from byte0 + byte1 (number ex: 0-65535)       
-                if hash.digest() == b'{}'.format(hex(data[3])): # compare calculated ping in plugin and calculated on hw board
+                bytes_val = repr(val).encode('utf8')      # convert int val to bytes ex: int 157 to b'157'
+                hash.update(bytes_val)                    # val is calculated ping as sum from byte0 + byte1 (number ex: 0-65535)
+                bytes_data = data[3].to_bytes(1, byteorder='big')
+                hash_data = hash.digest()      
+                if hash_data == bytes_data:               # compare calculated ping in plugin and calculated ping on hw board
                     return val
                 else:
-                    return -1    
+                    return -1                       
             
             # UNKOWN VERSION       
             else:
@@ -727,7 +730,6 @@ class settings_page(ProtectedPage):
 
         qdict  = web.input()
         reset  = helpers.get_input(qdict, 'reset', False, lambda x: True)
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
         debug = helpers.get_input(qdict, 'debug', False, lambda x: True)
         del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
@@ -745,16 +747,6 @@ class settings_page(ProtectedPage):
 
         if sender is not None and log_now:
             update_log()
-
-        if sender is not None and delete:
-            write_log([])
-            create_default_graph()
-            avg_lst = [0]*tank_options['avg_samples']
-            avg_cnt = 0
-            avg_rdy = False 
-            tank_options['saved_max'] = status['level']
-            tank_options['saved_min'] = status['level']
-            raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and 'history' in qdict:
             history = qdict['history']
@@ -800,11 +792,27 @@ class help_page(ProtectedPage):
     def GET(self):
         return self.plugin_render.tank_monitor_help()
 
+
 class log_page(ProtectedPage):
     """Load an html page for log"""
 
     def GET(self):
+        global sender, avg_lst, avg_cnt, avg_rdy
+        qdict  = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+
+        if sender is not None and delete:
+            write_log([])
+            create_default_graph()
+            avg_lst = [0]*tank_options['avg_samples']
+            avg_cnt = 0
+            avg_rdy = False
+            tank_options.__setitem__('saved_max', status['level'])
+            tank_options.__setitem__('saved_min', status['level']) 
+            raise web.seeother(plugin_url(log_page), True)
+
         return self.plugin_render.tank_monitor_log(read_log(), tank_options)
+
 
 class log_debug_page(ProtectedPage):
     """Load an html page for debug log"""
@@ -817,6 +825,7 @@ class log_debug_page(ProtectedPage):
            write_debug_log([])
 
         return self.plugin_render.tank_monitor_debug_log(read_debug_log(), tank_options)        
+
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
