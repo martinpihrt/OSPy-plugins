@@ -102,9 +102,10 @@ class PressureSender(Thread):
         master_two_on.connect(notify_master_two_on)
         master_two_off = signal('master_two_off')
         master_two_off.connect(notify_master_two_off)
+        station_clear = signal('station_clear')
+        station_clear.connect(notify_station_clear)
 
         send = False
-        one = False
 
         last_time = int(time.time())
         actual_time = int(time.time())
@@ -169,8 +170,9 @@ class PressureSender(Thread):
                         except Exception:
                             log.info(NAME, _(u'E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))
                             log.error(NAME, _(u'Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+                            send = False
+                            self._sleep(5)
                             pass
-                            self._sleep(5) 
                         
                     if get_check_pressure():
                         self.status['Pstate%d'] = _(u'Inactive')
@@ -241,15 +243,12 @@ def notify_master_on(name, **kw):
     if pressure_options['enable_log']:
         update_log(2)
     master = True
-    one = True
-
 
 
 ### master 1 off ###
 def notify_master_off(name, **kw):
     global master
     master = False
-    one = False
     log.info(NAME, datetime_string() + ' ' + _(u'Master station 1 is OFF.'))
 
 
@@ -261,15 +260,20 @@ def notify_master_two_on(name, **kw):
     if pressure_options['enable_log']:
         update_log(2)
     master = True
-    one = True
 
 
 ### master 2 off ###
 def notify_master_two_off(name, **kw):
     global master
     master = False
-    one = False
-    log.info(NAME, datetime_string() + ' ' + _(u'Master station 2 is OFF.'))    
+    log.info(NAME, datetime_string() + ' ' + _(u'Master station 2 is OFF.'))
+
+
+### all stations off ###
+def notify_station_clear(name, **kw):
+    global master
+    master = False
+    log.info(NAME, datetime_string() + ' ' + _(u'All stations set to OFF.'))
 
 
 def set_stations_in_scheduler_off():
