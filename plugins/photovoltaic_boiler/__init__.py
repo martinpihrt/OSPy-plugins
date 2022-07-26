@@ -156,6 +156,9 @@ class Sender(Thread):
                         
                     station_a = stations.get(plugin_options['control_output_A'])
 
+                    # only for testing!
+                    ds_a_on = 22.0
+
                     probes_ok = True
                     if ds_a_on == -127.0:
                         probes_ok = False
@@ -177,10 +180,19 @@ class Sender(Thread):
                     current_time  = datetime.datetime.now()
                     start_ok = False
                     stop_ok = False
-                    if int(current_time.hour) >= int(plugin_options['start_hh']) and int(current_time.minute) >= int(plugin_options['start_mm']):
-                        start_ok = True
-                    if int(current_time.hour) <= int(plugin_options['stop_hh']) and int(current_time.minute) <= int(plugin_options['stop_mm']):
-                        stop_ok = True
+                    if int(current_time.hour) == int(plugin_options['start_hh']):
+                        if int(current_time.minute) >= int(plugin_options['start_mm']):
+                            start_ok = True
+                    else:
+                        if int(current_time.hour) >= int(plugin_options['start_hh']):
+                            start_ok = True
+
+                    if int(current_time.hour) == int(plugin_options['stop_hh']):
+                        if int(current_time.minute) <= int(plugin_options['stop_mm']):
+                            stop_ok = True
+                    else:
+                        if int(current_time.hour) <= int(plugin_options['stop_hh']):
+                            stop_ok = True        
 
                     if int(ds_a_on) < int(plugin_options['temp_a_on']) and probes_ok and start_ok and stop_ok: # ON
                         a_state = 1
@@ -191,7 +203,9 @@ class Sender(Thread):
                             log.info(NAME, regulation_text)
                             start = datetime.datetime.now()
                             sid = station_a.index
-                            end = datetime.datetime.now() + datetime.timedelta(hours=plugin_options['stop_hh'], minute=plugin_options['stop_mm'])
+                            dif_h = plugin_options['stop_hh'] - current_time.hour
+                            dif_m = plugin_options['stop_mm'] - current_time.minute
+                            end = datetime.datetime.now() + datetime.timedelta(hours=dif_h, minutes=dif_m)
                             new_schedule = {
                                 'active': True,
                                 'program': -1,
@@ -245,7 +259,7 @@ class Sender(Thread):
                 self._sleep(2)
 
                 millis = int(round(time.time() * 1000))
-                if (millis - last_millis) > 15000:        # 15 second to clearing status on the webpage
+                if (millis - last_millis) > 150000:        # 150 second to clearing status on the webpage
                     last_millis = millis
                     log.clear(NAME)
                     if plugin_options["sensor_probe"] == 1:

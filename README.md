@@ -63,4 +63,5 @@ Available plugins:
 * Venetian Blind
 * Speed Monitor 
 * E-mail Notifications SSL
-* Astro Sunrise and Sunset 
+* Astro Sunrise and Sunset
+* Photovoltaic Boiler 
