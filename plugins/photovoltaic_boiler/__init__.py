@@ -87,11 +87,8 @@ class Sender(Thread):
     def run(self):
         temperature_ds = [-127,-127,-127,-127,-127,-127]
         msg_a_on = True
-        msg_a_off = True
         last_text = ''
-
         send = False
- 
         temp_sw = None
 
         if plugin_options['use_footer']:
@@ -189,7 +186,6 @@ class Sender(Thread):
                         a_state = 1
                         if msg_a_on:
                             msg_a_on = False
-                            msg_a_off = True
                             regulation_text = datetime_string() + ' ' + _('Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
                             log.clear(NAME) 
                             log.info(NAME, regulation_text)
@@ -214,8 +210,9 @@ class Sender(Thread):
 
                             log.start_run(new_schedule)
                             stations.activate(new_schedule['station'])
+                    else:
+                    msg_a_on = True        
        
-
                     ### if "boiler" end in schedule release msg_a_on to true in regulation for next scheduling ###
                     now = datetime.datetime.now()
                     if now > end:
