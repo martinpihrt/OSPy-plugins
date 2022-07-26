@@ -1,0 +1,127 @@
+$def with(plugin_options, events, status)
+
+$var title: $_('Photovoltaic Boiler')
+$var page: plugins
+
+<script>
+    function check_type() {
+       jQuery("#pluginForm").submit();
+    }
+
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("button#docButton").click(function(){
+            window.open("/plugins/photovoltaic_boiler/help')", "_blank");
+        });        
+        jQuery("#sensor_probe").change(check_type);
+        jQuery("#probe_A_on").change(check_type);
+        jQuery("#probe_A_on_sens").change(check_type);
+        jQuery("#control_output_A").change(check_type);
+        jQuery("#enabled_a").change(check_type);
+        jQuery("#start_hh").change(check_type);
+        jQuery("#start_mm").change(check_type);
+        jQuery("#stop_hh").change(check_type);
+        jQuery("#stop_mm").change(check_type);
+        jQuery("#use_footer").change(check_type);
+        jQuery("#temp_a_on").change(check_type);
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Photovoltaic Boiler')</div>
+    <a href=$plugins.plugin_url('photovoltaic_boiler.help_page') class="button upload">$_('Help')</a><br/>    
+    <form id="pluginForm" action="$plugins.plugin_url('photovoltaic_boiler.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable Control'):</b></td>
+                <td title=$:{json.dumps(_(u'If the box is checked, regulation will be enabled.'), ensure_ascii=False)}>
+                     <input id="enabled_a" name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Sensors or plugin'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature probes from sensors or from plugin air temperature.'), ensure_ascii=False)}>
+                    <select id="sensor_probe" name="sensor_probe">
+                    <option value="0" ${"selected" if plugin_options["sensor_probe"]==0 else ""}>$_('Select type')</option>
+                    <option value="1" ${"selected" if plugin_options["sensor_probe"]==1 else ""}>$_('OSPy Sensors')</option>
+                    <option value="2" ${"selected" if plugin_options["sensor_probe"]==2 else ""}>$_('Air temp plugin')</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Probe input for boiler'):</td>
+                <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
+                    $if plugin_options["sensor_probe"]==2:
+                        <select id="probe_A_on" name="probe_A_on">
+                        $for i in range(status["ds_count"]):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${status["ds_name_%d" % i]}</option>
+                        </select>    
+                    $elif plugin_options["sensor_probe"]==1:
+                        <select id="probe_A_on" name="probe_A_on_sens">
+                        $for sensor in sensors.get():
+                            $if sensor.sens_type == 5 or (sensor.sens_type == 6 and sensor.multi_type == 0) or (sensor.sens_type == 6 and sensor.multi_type == 1) or (sensor.sens_type == 6 and sensor.multi_type == 2) or (sensor.sens_type == 6 and sensor.multi_type == 3):
+                                <option value="${sensor.index}" ${"selected" if plugin_options["probe_A_on_sens"]==sensor.index else ""}>${sensor.name}</option>
+                        </select>
+                    $else:
+                        $_('Not selected type')
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Start Time for activating'):</td>
+                <td title=$:{json.dumps(_(u'If the boiler temperature is lower than set in this extension and the current time is greater than the start time, the output will be switched.'), ensure_ascii=False)}>
+                    <input id="start_hh" name="start_hh" type="number" size="2" maxlength="2" value='$plugin_options["start_hh"]' min="0" max="23">:
+                    <input id="start_mm" name="start_mm" type="number" size="2" maxlength="2" value='$plugin_options["start_mm"]' min="0" max="59"><small>$_('hh:mm')</small>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stop Time for activating'):</td>
+                <td title=$:{json.dumps(_(u'If the boiler temperature is lower than set in this extension and the current time is less than the stop time, the output will be active.'), ensure_ascii=False)}>
+                    <input id="stop_hh" name="stop_hh" type="number" size="2" maxlength="2" value='$plugin_options["stop_hh"]' min="0" max="23">:
+                    <input id="stop_mm" name="stop_mm" type="number" size="2" maxlength="2" value='$plugin_options["stop_mm"]' min="0" max="59"><small>$_('hh:mm')</small>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Temperature for ON output'):</td>
+                <td title=$:{json.dumps(_(u'Temperature for switch ON (boiler output).'), ensure_ascii=False)}>
+                    <input id="temp_a_on" name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'>$_('Select Output'):</td>
+                <td title=$:{json.dumps(_(u'Select the output you want to control with regulation.'), ensure_ascii=False)}>
+                    <select id="control_output_A" name="control_output_A">
+                        $for station in stations.get():
+                            <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                </td>
+            </tr> 
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>            
+            <tr>
+                <td style='text-transform: none;'><b>$_('Status'):</b></td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="11" cols="45" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <a href="/plugins/photovoltaic_boiler/settings" class="button add">$_('Refresh')</a>
+</div>

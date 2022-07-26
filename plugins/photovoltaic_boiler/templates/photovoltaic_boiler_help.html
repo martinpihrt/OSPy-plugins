@@ -1,0 +1,20 @@
+$def with()
+
+$var title: $_('Photovoltaic Boiler')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Photovoltaic Boiler - Help')</div>
+    <p>$_('This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Reading temperature using from DS18B20 sensors connected to the external hardware board'). $_('Or it is possible to use temperature measurement from OSPy sensors (LAN/Wi-Fi, radio...) Allows boiler heating regulation.')</p>   
+    <p>$_('Example: for heating boiler with photovoltaic solar panel. During the day, when the solar power plant has excess electricity, we heat the boiler from the solar power plant. In the evening hours, for example, from 8 p.m. to 11 p.m., and if the boiler temperature is lower than set, we switch the station (contactor) to the public network. The contactor has a changeover contact that connects the boiler either to the solar power plant or to the public grid.')</p>  
+    <p>$_('The boiler has its own thermostat with a set temperature to regulate the water temperature. This extension only switches between the public grid and PV if there was no solar heating.')</p>
+    <p>$_('All temperatures is in') &#x2103;.</p>
+    <p>$_('Or in OSPy sensors as well also in') &#x2109;.</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('photovoltaic_boiler.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
+
+
+
