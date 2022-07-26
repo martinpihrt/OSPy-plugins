@@ -211,7 +211,7 @@ class Sender(Thread):
                             log.start_run(new_schedule)
                             stations.activate(new_schedule['station'])
                     else:
-                    msg_a_on = True        
+                        msg_a_on = True        
        
                     ### if "boiler" end in schedule release msg_a_on to true in regulation for next scheduling ###
                     now = datetime.datetime.now()
