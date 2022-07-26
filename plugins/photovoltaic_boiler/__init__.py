@@ -157,7 +157,7 @@ class Sender(Thread):
                     station_a = stations.get(plugin_options['control_output_A'])
 
                     # only for testing!
-                    ds_a_on = 22.0
+                    #ds_a_on = 22.0
 
                     probes_ok = True
                     if ds_a_on == -127.0:
