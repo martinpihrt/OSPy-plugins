@@ -42,6 +42,7 @@ tank_options = PluginOptions(
        'distance_bottom': 213, # sensor <-> bottom tank
        'distance_top': 52,     # sensor <-> top tank
        'water_minimum': 60,    # water level <-> bottom tank
+       'water_unblocking': 10, # unblocking for watering (cut rain delay)
        'diameter': 98,         # cylinder diameter for volume calculation
        'use_stop':      False, # not stop water system
        'use_send_email': True, # send email water level is minimum
@@ -68,7 +69,7 @@ tank_options = PluginOptions(
        'avg_samples': 20,      # number of samples for average
        'input_byte_debug_log': False, # logging for advanced user (save debug data from I2C bus)
        'byte_changed': True,   # logging of data only when this data changes, otherwise still logging.
-       'saved_min': 400,       # logging min water level
+       'saved_min': 0,         # logging min water level
        'saved_max': 0,         # logging max water level
     }
 )
@@ -79,8 +80,8 @@ status['level']    = -1
 status['percent']  = -1
 status['ping']     = -1
 status['volume']   = -1
-status['maxlevel'] = tank_options['saved_max']
-status['minlevel'] = tank_options['saved_min']
+status['maxlevel'] = 0
+status['minlevel'] = 400
 status['maxlevel_datetime'] = datetime_string()
 status['minlevel_datetime'] = datetime_string()
 
@@ -95,15 +96,6 @@ class Sender(Thread):
         self._stop_event = Event()
 
         global status, avg_lst, avg_cnt, avg_rdy
-
-        status['level']    = -1
-        status['percent']  = -1
-        status['ping']     = -1
-        status['volume']   = -1
-        status['maxlevel'] = tank_options['saved_max']
-        status['minlevel'] = tank_options['saved_min']
-        status['maxlevel_datetime'] = datetime_string()
-        status['minlevel_datetime'] = datetime_string()
 
         self._sleep_time = 0
         self.start()
@@ -121,8 +113,8 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        last_millis = 0    # timer for save log
-        once_text = True   # once_text to mini is auxiliary for blocking
+        last_millis = int(round(time.time() * 1000))   # timer for save log
+        once_text = True
         two_text = True
         three_text = True
         five_text = True
@@ -195,6 +187,7 @@ class Sender(Thread):
                         status['volume']  = get_volume(level_in_tank)
                         status['percent'] = get_tank(level_in_tank)
 
+                        ### printing information
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _(u'Water level') + ': ' + str(status['level']) + ' ' + _(u'cm') + ' (' + str(status['percent']) + ' ' + (u'%).'))
                         if tank_options['check_liters']: # display in liters
@@ -203,13 +196,17 @@ class Sender(Thread):
                         else:
                             tempText =  str(status['volume']) + ' ' + _(u'm3') + ', ' + str(status['level']) + ' ' + _(u'cm') + ' (' + str(status['percent']) + ' ' + (u'%)')
                             log.info(NAME, _(u'Ping') + ': ' + str(status['ping']) + ' ' + _(u'cm') + ', ' + _(u'Volume') + ': ' + str(status['volume']) + ' ' + _(u'm3') + '.')
-                        log.info(NAME, str(status['maxlevel_datetime']) + ' ' + _(u'Maximum Water level') + ': ' + str(status['maxlevel']) + ' ' + _(u'cm') + '.')   
-                        log.info(NAME, str(status['minlevel_datetime']) + ' ' + _(u'Minimum Water level') + ': ' + str(status['minlevel']) + ' ' + _(u'cm') + '.') 
+                        if status['maxlevel'] is not None and status['minlevel'] is not None:
+                            log.info(NAME, str(status['maxlevel_datetime']) + ' ' + _(u'Maximum Water level') + ': ' + str(status['maxlevel']) + ' ' + _(u'cm') + '.')
+                            log.info(NAME, str(status['minlevel_datetime']) + ' ' + _(u'Minimum Water level') + ': ' + str(status['minlevel']) + ' ' + _(u'cm') + '.')
+                        else:
+                            log.info(NAME, _(u'The maximum and minimum water levels have not yet been measured.'))
                         log.info(NAME, regulation_text)
 
+                        ### regulation water level (automation)
                         if tank_options['enable_reg']:                                    # if enable regulation "maximum water level"
                             reg_station = stations.get(tank_options['reg_output'])
-                            if level_in_tank > tank_options['reg_max']:                   # if actual level in tank > set maximum water level
+                            if int(status['level']) > int(tank_options['reg_max']):       # if actual level in tank > set maximum water level
                                 if five_text:
                                     five_text = False
                                     six_text = True
@@ -237,12 +234,11 @@ class Sender(Thread):
                                     log.start_run(new_schedule)
                                     stations.activate(new_schedule['station'])
                 
-                            if level_in_tank < tank_options['reg_min']:                   # if actual level in tank < set minimum water level
+                            if int(status['level']) < int(tank_options['reg_min']):        # if actual level in tank < set minimum water level
                                 if six_text: # blocking for once
                                     five_text = True
                                     six_text = False
                                     regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _(u'Output') + ' ' +  str(reg_station.index+1) + ').'
-                                    
                                     sid = reg_station.index
                                     stations.deactivate(sid)
                                     active = log.active_runs()
@@ -256,44 +252,49 @@ class Sender(Thread):
                                 six_text = False
                                 regulation_text = datetime_string() + ' ' + _(u'Waiting.')
 
-                        if status['level'] > status['maxlevel']:                         # maximum level check                           
-                            status['maxlevel'] = status['level']
+                        ### changing the maximum level, so we will save it
+                        if int(status['level']) > int(status['maxlevel']):                           # maximum level check                           
+                            status['maxlevel'] = int(status['level'])
                             tank_options.__setitem__('saved_max', status['level'])
                             status['maxlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Maximum has updated.'))
                             update_log()
   
-                        if status['level'] < status['minlevel'] and status['level'] > 2:  # minimum level check 
-                            status['minlevel'] = status['level']
+                        ### changing the minimum level, so we will save it
+                        if int(status['level']) < int(status['minlevel']):                           # minimum level check 
+                            status['minlevel'] = int(status['level'])
                             tank_options.__setitem__('saved_min', status['level'])
                             status['minlevel_datetime'] = datetime_string()
                             log.info(NAME, datetime_string() + ': ' + _(u'Minimum has updated.'))
                             update_log()
-                            
-                        if status['level'] <= int(tank_options['water_minimum']) and mini and not options.manual_mode and status['level'] > 2: # level value is lower
-                            if tank_options['use_send_email']:                             # if email is enabled
+                        
+                        ### the water level is lower than the set minimum    
+                        if int(status['level']) <= int(tank_options['water_minimum']):
+                            if tank_options['use_send_email'] and mini:                    # if email is enabled
                                 send = True                                                # send
                                 mini = False
-
                             if tank_options['use_stop']:                                   # if stop scheduler
                                 set_stations_in_scheduler_off()
                                 log.info(NAME, datetime_string() + ' ' + _(u'ERROR: Water in Tank') + ' < ' + str(tank_options['water_minimum']) + ' ' + _(u'cm') + _(u'!'))
                                 delaytime = int(tank_options['delay_duration'])
-                                if delaytime > 0:                             # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
-                                    rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
+                                if delaytime > 0:                                          # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
+                                    if NAME not in rain_blocks:
+                                        rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
 
-                        if level_in_tank > int(tank_options['water_minimum']) + 5 and not mini: # refresh send email if actual level > options minimum +5
+                        ### the water level is xx cm higher than the set minimum
+                        if int(status['level']) > int(tank_options['water_minimum']) + int(tank_options['water_unblocking']) and not mini: # refresh send email if actual level > options minimum + xx cm
                             mini = True
+                            if NAME in rain_blocks:
+                                del rain_blocks[NAME]
 
-                        if NAME in rain_blocks and level_in_tank > int(tank_options['water_minimum']):
-                            del rain_blocks[NAME]
-
+                        ### periodically logging
                         if tank_options['enable_log']:
                             millis = int(round(time.time() * 1000))
                             interval = (tank_options['log_interval'] * 60000)
                             if (millis - last_millis) > interval:
                                last_millis = millis
                                update_log()
+
                     elif level_in_tank == -1 and sonic_cm == 0:     # waiting for samples
                         tempText =  _('Waiting for samples')
                     else:                                           # error probe

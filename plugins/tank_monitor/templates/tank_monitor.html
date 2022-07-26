@@ -196,25 +196,25 @@ function check_history() {
             <tr>
                 <td style='text-transform: none;'>$_('The distance from the sensor to the minimum water level in the tank'):</td>
                 <td title=$:{json.dumps(_(u'Thus the distance from the ultrasound to the minimum water level. The sensor is located above the water'), ensure_ascii=False)}>
-                    <input name='distance_bottom' type='number' min="2" max="400" value='$plugin_options["distance_bottom"]'> 
+                    <input name='distance_bottom' type='number' min="2" max="400" value='$plugin_options["distance_bottom"]'>$_('cm')
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The distance from the sensor to the maximum water level in the tank'):</td>
                 <td title=$:{json.dumps(_(u'That is, the distance from the ultrasound to the maximum water level. The sensor is located above the water'), ensure_ascii=False)}>
-                    <input name='distance_top' type='number' min="2" max="400" value='$plugin_options["distance_top"]'>
+                    <input name='distance_top' type='number' min="2" max="400" value='$plugin_options["distance_top"]'>$_('cm')
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('The water level from the bottom to the minimum water level in the tank'):</td>
                 <td title=$:{json.dumps(_(u'Distance from the bottom (ie the minimum water) to the set this minimum level, when it is this activated (send an E-mail)'), ensure_ascii=False)}>
-                    <input name='water_minimum' type='number' min="2" max="400" value='$plugin_options["water_minimum"]'> 
+                    <input name='water_minimum' type='number' min="2" max="400" value='$plugin_options["water_minimum"]'>$_('cm')
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Cylinder diameter for volume calculation'):</td>
                 <td title=$:{json.dumps(_(u'Enter the diameter for volume calculation'), ensure_ascii=False)}>
-                    <input name='diameter' type='number' min="2" max="4000" value='$plugin_options["diameter"]'> 
+                    <input name='diameter' type='number' min="2" max="4000" value='$plugin_options["diameter"]'>$_('cm') 
                 </td>
             </tr>
             <tr>
@@ -241,18 +241,24 @@ function check_history() {
                </th>
             </tr>                         
             <tr>
-                <td style='text-transform: none;'>$_('Stop stations if minimum water level'):</td>
+                <td style='text-transform: none;'><b>$_('Stop stations if minimum water level'):</b></td>
                 <td title=$:{json.dumps(_(u'Stoping these stations if is minimum water level in the tank'), ensure_ascii=False)}>
                     <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Delay Duration (hours)'):</td>
-                <td title=$:{json.dumps(_(u'If there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking. if the level in the tank rises above the minimum + 5 cm, the delay is deactivated'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'If there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking. if the level in the tank rises above the minimum + xx cm, the delay is deactivated'), ensure_ascii=False)}>
                     <input name='delay_duration' type='number' min="0" max="96" value='$plugin_options["delay_duration"]'>
                     <a href="?del_rain"  class="button cancel danger">$_('Removing Rain Delay')</a>
                 </td>
-            </tr>            
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Number for unblocking'):</td>
+                <td title=$:{json.dumps(_(u'Enter the number for unblocking delay duration and stop stations in cm'), ensure_ascii=False)}>
+                    <input name='water_unblocking' type='number' min="5" max="100" value='$plugin_options["water_unblocking"]'>$_('cm')
+                </td>
+            </tr>                        
             <tr>
                 <td style='text-transform: none;'>$_('Stop stations if sonic probe has fault'):</td>
                 <td title=$:{json.dumps(_(u'If the level sensor fails, the above selected stations in the scheduler will stop'), ensure_ascii=False)}>
@@ -274,7 +280,7 @@ function check_history() {
                </th>
             </tr>                
             <tr>
-                <td style='text-transform: none;'>$_('Send an E-mail with an error that there is minimum water in the tank'):</td>
+                <td style='text-transform: none;'><b>$_('Send an E-mail with an error that there is minimum water in the tank'):<b></td>
                 <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
                     <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}>
                 </td>
@@ -314,7 +320,7 @@ function check_history() {
             <tr>
                 <td style='text-transform: none;'>$_('Maximum maintained water level'):</td>
                 <td title=$:{json.dumps(_(u'If the measured water level exceeds this set value, the output is activated'), ensure_ascii=False)}>
-                    <input name='reg_max' type='number' min="10" max="400" value='$plugin_options["reg_max"]'> 
+                    <input name='reg_max' type='number' min="10" max="400" value='$plugin_options["reg_max"]'>$_('cm')
                 </td>
             </tr>
             <tr>
@@ -327,7 +333,7 @@ function check_history() {
             <tr>
                 <td style='text-transform: none;'>$_('Minimum maintained water level'):</td>
                 <td title=$:{json.dumps(_(u'If the measured water level falls below this set value, the output is deactivated'), ensure_ascii=False)}>
-                    <input name='reg_min' type='number' min="10" max="400" value='$plugin_options["reg_min"]'> 
+                    <input name='reg_min' type='number' min="10" max="400" value='$plugin_options["reg_min"]'>$_('cm')
                 </td>
             </tr>            
             <tr>
