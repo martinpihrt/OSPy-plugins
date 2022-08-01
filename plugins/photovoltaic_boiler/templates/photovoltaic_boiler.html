@@ -28,6 +28,11 @@ $var page: plugins
         jQuery("#start_mm").change(check_type);
         jQuery("#stop_hh").change(check_type);
         jQuery("#stop_mm").change(check_type);
+        jQuery("#two_time").change(check_type);
+        jQuery("#start_hh_2").change(check_type);
+        jQuery("#start_mm_2").change(check_type);
+        jQuery("#stop_hh_2").change(check_type);
+        jQuery("#stop_mm_2").change(check_type);        
         jQuery("#use_footer").change(check_type);
         jQuery("#temp_a_on").change(check_type);
     });
@@ -85,10 +90,41 @@ $var page: plugins
                     <input id="stop_hh" name="stop_hh" type="number" size="2" maxlength="2" value='$plugin_options["stop_hh"]' min="0" max="23">:
                     <input id="stop_mm" name="stop_mm" type="number" size="2" maxlength="2" value='$plugin_options["stop_mm"]' min="0" max="59"><small>$_('hh:mm')</small>
                 </td>
+            </tr>           
+            <tr>
+                <td style='text-transform: none;'>$_('Enable secondary time'):</td>
+                <td title=$:{json.dumps(_(u'If the box is checked, second time will be enabled.'), ensure_ascii=False)}>
+                     <input id="two_time" name='two_time' type='checkbox'${" checked" if plugin_options['two_time'] else ""}>   
+                </td>
             </tr>
+            $if plugin_options['two_time']:
+                <tr>
+                <td style='text-transform: none;'>$_('Start secondary Time for activating'):</td>
+                <td title=$:{json.dumps(_(u'If the boiler temperature is lower than set in this extension and the current time is greater than the start time, the output will be switched.'), ensure_ascii=False)}>
+                    <input id="start_hh_2" name="start_hh_2" type="number" size="2" maxlength="2" value='$plugin_options["start_hh_2"]' min="0" max="23">:
+                    <input id="start_mm_2" name="start_mm_2" type="number" size="2" maxlength="2" value='$plugin_options["start_mm_2"]' min="0" max="59"><small>$_('hh:mm')</small>
+                </td>
+                </tr>
+                <tr>
+                <td style='text-transform: none;'>$_('Stop secondary Time for activating'):</td>
+                <td title=$:{json.dumps(_(u'If the boiler temperature is lower than set in this extension and the current time is less than the stop time, the output will be active.'), ensure_ascii=False)}>
+                    <input id="stop_hh_2" name="stop_hh_2" type="number" size="2" maxlength="2" value='$plugin_options["stop_hh_2"]' min="0" max="23">:
+                    <input id="stop_mm_2" name="stop_mm_2" type="number" size="2" maxlength="2" value='$plugin_options["stop_mm_2"]' min="0" max="59"><small>$_('hh:mm')</small>
+                </td>
+                </tr>                                
+            $else:
+                <input id="start_hh_2" name="start_hh_2" type="hidden" value='$plugin_options["start_hh_2"]'>
+                <input id="start_mm_2" name="start_mm_2" type="hidden" value='$plugin_options["start_mm_2"]'>
+                <input id="stop_hh_2" name="stop_hh_2" type="hidden" value='$plugin_options["stop_hh_2"]'>
+                <input id="stop_mm_2" name="stop_mm_2" type="hidden" value='$plugin_options["stop_mm_2"]'>                    
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for ON output'):</td>
-                <td title=$:{json.dumps(_(u'Temperature for switch ON (boiler output).'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'Temperature for switch ON (boiler output). If the temperature of the probe is lower than this set value, the output switches.'), ensure_ascii=False)}>
                     <input id="temp_a_on" name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
                 </td>
             </tr>            

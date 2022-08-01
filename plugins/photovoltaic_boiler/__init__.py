@@ -36,10 +36,15 @@ plugin_options = PluginOptions(
     'probe_A_on': 0,      # for selector temperature probe ON (0-5)
     'temp_a_on': 45,      # temperature for output ON
     'control_output_A': 0,# selector for output (0 to station count)
-    'start_hh': 20,       # hour for start
-    'start_mm': 0,        # minute for start
+    'start_hh': 19,       # hour for start
+    'start_mm': 30,       # minute for start
     'stop_hh': 23,        # hour for stop
-    'stop_mm': 0,         # minute for stop    
+    'stop_mm': 0,         # minute for stop
+    'two_time': True,     # next time for start and stop
+    'start_hh_2': 13,     # hour for start2
+    'start_mm_2': 0,      # minute for start2
+    'stop_hh_2': 18,      # hour for stop2
+    'stop_mm_2': 30,      # minute for stop2       
     'probe_A_on_sens': 0, # for selector from sensors xx - temperature ON
     'sensor_probe': 0,    # selector for type probes: 0=none, 1=sensors, 2=air temp plugin
     'use_footer': True,   # show data from plugin in footer on home page
@@ -87,7 +92,6 @@ class Sender(Thread):
     def run(self):
         temperature_ds = [-127,-127,-127,-127,-127,-127]
         msg_a_on = True
-        last_text = ''
         send = False
         temp_sw = None
 
@@ -173,67 +177,87 @@ class Sender(Thread):
                                 regulation_text = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
                                 log.clear(NAME)
                                 log.info(NAME, regulation_text)
-                        # release msg_a_on and msg_a_off to true for future regulation (after probes is ok)
                         msg_a_on = True
-                        msg_a_off = True
                     
                     current_time  = datetime.datetime.now()
+
+                    ### first time
                     start_ok = False
                     stop_ok = False
                     if int(current_time.hour) == int(plugin_options['start_hh']):
-                        if int(current_time.minute) >= int(plugin_options['start_mm']):
-                            start_ok = True
-                    else:
-                        if int(current_time.hour) >= int(plugin_options['start_hh']):
+                        if int(current_time.minute) == int(plugin_options['start_mm']):
                             start_ok = True
 
                     if int(current_time.hour) == int(plugin_options['stop_hh']):
-                        if int(current_time.minute) <= int(plugin_options['stop_mm']):
+                        if int(current_time.minute) == int(plugin_options['stop_mm']):
                             stop_ok = True
-                    else:
-                        if int(current_time.hour) <= int(plugin_options['stop_hh']):
-                            stop_ok = True        
 
-                    if int(ds_a_on) < int(plugin_options['temp_a_on']) and probes_ok and start_ok and stop_ok: # ON
-                        a_state = 1
-                        if msg_a_on:
-                            msg_a_on = False
-                            regulation_text = datetime_string() + ' ' + _('Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
-                            log.clear(NAME) 
-                            log.info(NAME, regulation_text)
-                            start = datetime.datetime.now()
-                            sid = station_a.index
-                            dif_h = plugin_options['stop_hh'] - current_time.hour
-                            dif_m = plugin_options['stop_mm'] - current_time.minute
-                            end = datetime.datetime.now() + datetime.timedelta(hours=dif_h, minutes=dif_m)
-                            new_schedule = {
-                                'active': True,
-                                'program': -1,
-                                'station': sid,
-                                'program_name': _(u'Photovoltaic Boiler'),
-                                'fixed': True,
-                                'cut_off': 0,
-                                'manual': True,
-                                'blocked': False,
-                                'start': start,
-                                'original_start': start,
-                                'end': end,
-                                'uid': '%s-%s-%d' % (str(start), "Manual", sid),
-                                'usage': stations.get(sid).usage
-                            }
+                    ### second time
+                    start_2_ok = False
+                    stop_2_ok = False
+                    if int(current_time.hour) == int(plugin_options['start_hh_2']):
+                        if int(current_time.minute) == int(plugin_options['start_mm_2']):
+                            if plugin_options['two_time']:
+                                start_2_ok = True
 
-                            log.start_run(new_schedule)
-                            stations.activate(new_schedule['station'])
+                    if int(current_time.hour) == int(plugin_options['stop_hh_2']):
+                        if int(current_time.minute) == int(plugin_options['stop_mm_2']):
+                            if plugin_options['two_time']:
+                                stop_2_ok = True
+
+                    if int(ds_a_on) < int(plugin_options['temp_a_on']) and probes_ok:
+                        if start_ok or start_2_ok: # ON
+                            a_state = 1
+                            if msg_a_on:
+                                msg_a_on = False
+                                regulation_text = datetime_string() + ' ' + _('Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
+                                log.clear(NAME) 
+                                log.info(NAME, regulation_text)
+                                start = datetime.datetime.now()
+                                sid = station_a.index
+                                dif_h = plugin_options['stop_hh'] - current_time.hour
+                                dif_m = plugin_options['stop_mm'] - current_time.minute
+                                dif_h_2 = plugin_options['stop_hh_2'] - current_time.hour
+                                dif_m_2 = plugin_options['stop_mm_2'] - current_time.minute
+                                if plugin_options['two_time']:
+                                    if start_ok:
+                                        end = datetime.datetime.now() + datetime.timedelta(hours=dif_h, minutes=dif_m)
+                                    if start_2_ok:
+                                        end = datetime.datetime.now() + datetime.timedelta(hours=dif_h_2, minutes=dif_m_2)
+                                else:
+                                    end = datetime.datetime.now() + datetime.timedelta(hours=dif_h, minutes=dif_m)                                    
+                                new_schedule = {
+                                    'active': True,
+                                    'program': -1,
+                                    'station': sid,
+                                    'program_name': _(u'Photovoltaic Boiler'),
+                                    'fixed': True,
+                                    'cut_off': 0,
+                                    'manual': True,
+                                    'blocked': False,
+                                    'start': start,
+                                    'original_start': start,
+                                    'end': end,
+                                    'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                                    'usage': stations.get(sid).usage
+                                }
+                                log.start_run(new_schedule)
+                                stations.activate(new_schedule['station'])
                     else:
-                        msg_a_on = True        
+                        msg_a_on = True
        
                     ### if "boiler" end in schedule release msg_a_on to true in regulation for next scheduling ###
-                    now = datetime.datetime.now()
-                    if now > end:
-                        msg_a_off = False
-                        msg_a_on = True
+                    if current_time > end:
                         if probes_ok:
                             a_state = -3
+                        if not msg_a_on:
+                            sid = station_a.index
+                            stations.deactivate(sid)
+                            active = log.active_runs()
+                            for interval in active:
+                                if interval['station'] == sid:
+                                    log.finish_run(interval)        
+                        msg_a_on = True                                
 
                 else:
                     a_state = -1
@@ -250,33 +274,30 @@ class Sender(Thread):
                 if a_state == -2:
                     tempText = _('Some probe shows a fault, regulation is blocked!')
                 if a_state == -3:
-                    tempText = _('Waiting.')                    
+                    tempText = _('Waiting.')
 
                 if plugin_options['use_footer']:
                     if temp_sw is not None:
                         temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
-                self._sleep(2)
-
                 millis = int(round(time.time() * 1000))
-                if (millis - last_millis) > 150000:        # 150 second to clearing status on the webpage
+                if (millis - last_millis) > 2000:        # 2 second to clearing status on the webpage
                     last_millis = millis
                     log.clear(NAME)
                     if plugin_options["sensor_probe"] == 1:
                         try:
                             if options.temp_unit == 'C':
-                                log.info(NAME, datetime_string() + '\n' + sensor_on.name + ' (' + _('Boiler') + ') %.1f \u2103 \n' % ds_a_on + sensor_off.name + ' ('+ _('Solar') + ') %.1f \u2103' % ds_a_off)
+                                log.info(NAME, datetime_string() + '\n' + sensor_on.name + ' (' + _('Boiler') + ') %.1f \u2103 \n' % ds_a_on)
                             else:
-                                log.info(NAME, datetime_string() + '\n' + sensor_on.name + ' (' + _('Boiler') + ') %.1f \u2109 \n' % ds_a_on + sensor_off.name + ' ('+ _('Solar') + ') %.1f \u2103' % ds_a_off)
+                                log.info(NAME, datetime_string() + '\n' + sensor_on.name + ' (' + _('Boiler') + ') %.1f \u2109 \n' % ds_a_on)
                         except:
                             pass
                     elif plugin_options["sensor_probe"] == 2:
                         log.info(NAME, datetime_string() + '\n' + _('Boiler') + u' %.1f \u2103 \n' % ds_a_on)
-                        
-                    if last_text != tempText:
-                        log.info(NAME, tempText)
-                        last_text = tempText                        
- 
+                    log.info(NAME, tempText)
+                
+                self._sleep(1)
+
             except Exception:
                 log.error(NAME, _('Photovoltaic Boiler plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
@@ -290,14 +311,21 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
-       
 
 def stop():
     global sender
     if sender is not None:
-       sender.stop()
-       sender.join()
-       sender = None 
+        sender.stop()
+        sender.join()
+        sender = None
+        ### we stop the running output if the plugin exits
+        station_a = stations.get(plugin_options['control_output_A'])
+        sid = station_a.index
+        stations.deactivate(sid)
+        active = log.active_runs()
+        for interval in active:
+            if interval['station'] == sid:
+                log.finish_run(interval)
 
 
 ################################################################################
@@ -321,10 +349,9 @@ class settings_page(ProtectedPage):
 
         if sender is not None:
             sender.update()
-            log.clear(NAME)
 
         raise web.seeother(plugin_url(settings_page), True)
-        #return self.plugin_render.photovoltaic_boiler(plugin_options, log.events(NAME))  
+        #return self.plugin_render.photovoltaic_boiler(plugin_options, log.events(NAME))
 
 
 class help_page(ProtectedPage):
