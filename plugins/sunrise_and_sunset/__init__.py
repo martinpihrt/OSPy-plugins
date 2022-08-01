@@ -13,6 +13,8 @@ from ospy.log import log, logEM, logEV
 from plugins import PluginOptions, plugin_url
 from ospy.options import options
 from ospy.helpers import datetime_string
+from ospy.programs import programs
+from ospy.runonce import run_once
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
@@ -41,6 +43,7 @@ plugin_options = PluginOptions(
 )
 
 stats = {}
+last_millis = 0
 
 city_table = [
     _('Not selected'),
@@ -447,13 +450,13 @@ class StatusChecker(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        global stats
+        global stats, last_millis
 
         temp_upd = None
         if plugin_options['use_footer']:
             temp_upd = showInFooter() #  instantiate class to enable data in footer
             temp_upd.button = "sunrise_and_sunset/status"    # button redirect on footer
-            temp_upd.label =  _('Sunrise and Sunset')       # label on footer
+            temp_upd.label =  _('Sunrise and Sunset')        # label on footer
             msg = _('Waiting to state')
             temp_upd.val = msg.encode('utf8').decode('utf8') # value on footer
 
@@ -465,106 +468,151 @@ class StatusChecker(Thread):
             log.info(NAME, _('Please wait installing astral...'))
             cmd = "pip3 install astral"
             run_command(cmd)
-            log.info(NAME, _('Astral is now installed.'))        
+            log.info(NAME, _('Astral is now installed.'))
 
+        millis = 0                                           # timer for computing astro state
+        last_millis = 0            
+        
+        city = None
+
+        run_now_pgm_list = {}
+        
         while not self._stop_event.is_set():
             try:
                 if plugin_options['use_astro']:
-                    log.clear(NAME)
-                    city = None
-                    found_name = ''
-                    found_region = ''
-                    found_timezone =''
-                    found_latitude = 0
-                    found_longitude = 0
-                    try:
-                        if plugin_options['location'] != 0:     # 0 is none location
-                            from astral.geocoder import database, lookup
-                            find_loc = city_table[plugin_options['location']]
-                            city = lookup(find_loc, database()) # return example: LocationInfo(name='Addis Ababa', region='Ethiopia', timezone='Africa/Addis_Ababa', latitude=9.033333333333333, longitude=38.7)
-                            found_name = city.name
-                            found_region = city.region
-                            found_timezone = city.timezone
-                            found_latitude = city.latitude
-                            found_longitude = city.longitude
-                        else:
-                            if plugin_options['custom_location'] and plugin_options['custom_region'] and plugin_options['custom_timezone'] and plugin_options['custom_lati_longit']:
-                                from astral.geocoder import add_locations, database, lookup
-                                db = database()
-                                _loc = '{},{},{},{}'.format(plugin_options['custom_location'], plugin_options['custom_region'], plugin_options['custom_timezone'], plugin_options['custom_lati_longit'])
-                                add_locations(_loc, db) # "Somewhere,Secret Location,UTC,24°28'N,39°36'E"
-                                city = lookup(plugin_options['custom_location'], db)
+                    millis = int(round(time.time() * 1000))
+                    if (millis - last_millis) > 60000:       # 60 second interval
+                        last_millis = millis
+                        log.clear(NAME)
+                        found_name = ''
+                        found_region = ''
+                        found_timezone =''
+                        found_latitude = 0
+                        found_longitude = 0
+                        try:
+                            if plugin_options['location'] != 0:     # 0 is none location
+                                ### find automatic location
+                                from astral.geocoder import database, lookup
+                                find_loc = city_table[plugin_options['location']]
+                                city = lookup(find_loc, database()) # return example: LocationInfo(name='Addis Ababa', region='Ethiopia', timezone='Africa/Addis_Ababa', latitude=9.033333333333333, longitude=38.7)
                                 found_name = city.name
                                 found_region = city.region
                                 found_timezone = city.timezone
                                 found_latitude = city.latitude
                                 found_longitude = city.longitude
                             else:
-                                log.info(NAME, _('You must fill in all required fields (location, region, timezone/name, latitude and longitude!'))
-                                city = None
+                                if plugin_options['custom_location'] and plugin_options['custom_region'] and plugin_options['custom_timezone'] and plugin_options['custom_lati_longit']:
+                                    ### manual location
+                                    from astral.geocoder import add_locations, database, lookup
+                                    db = database()
+                                    _loc = '{},{},{},{}'.format(plugin_options['custom_location'], plugin_options['custom_region'], plugin_options['custom_timezone'], plugin_options['custom_lati_longit'])
+                                    add_locations(_loc, db) # "Somewhere,Secret Location,UTC,24°28'N,39°36'E"
+                                    city = lookup(plugin_options['custom_location'], db)
+                                    found_name = city.name
+                                    found_region = city.region
+                                    found_timezone = city.timezone
+                                    found_latitude = city.latitude
+                                    found_longitude = city.longitude
+                                else:
+                                    log.info(NAME, _('You must fill in all required fields (location, region, timezone/name, latitude and longitude!'))
+                                    city = None
+ 
+                            if city is not None:
+                                log.info(NAME, _('Found city'))
+                                log.info(NAME, _('Name') + ': {}'.format(found_name))
+                                log.info(NAME, _('Region') + ': {}'.format(found_region))
+                                log.info(NAME, _('Timezone') + ': {}'.format(found_timezone))
+                                log.info(NAME, _('Latitude') + ': {}'.format(round(found_latitude, 2)))
+                                log.info(NAME, _('Longitude') + ': {}'.format(round(found_longitude, 2)))
 
-                        s = None 
+                                ### compute sun
+                                import datetime
+                                from astral.sun import sun
+
+                                today =  datetime.date.today()
+                                _day = int(today.strftime("%d"))
+                                _month = int(today.strftime("%m"))
+                                _year = int(today.strftime("%Y"))
+                                
+                                s = None
+                                s = sun(city.observer, date=datetime.date(_year, _month, _day), tzinfo=found_timezone)
+                                log.info(NAME, '_______________ ' + '{}'.format(today) + ' _______________')
+                                log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"].strftime("%H:%M:%S")))
+                                log.info(NAME, _('Sunrise') + ': {}'.format(s["sunrise"].strftime("%H:%M:%S")))
+                                log.info(NAME, _('Noon') + ': {}'.format(s["noon"].strftime("%H:%M:%S")))
+                                log.info(NAME, _('Sunset') + ': {}'.format(s["sunset"].strftime("%H:%M:%S")))
+                                log.info(NAME, _('Dusk') + ': {}'.format(s["dusk"].strftime("%H:%M:%S")))
+
+                                msg = _('Sunrise') + ': {}, '.format(s["sunrise"].strftime("%H:%M:%S")) + _('Sunset') + ': {}'.format(s["sunset"].strftime("%H:%M:%S"))
+
+                                ### compute moon phase
+                                from astral import moon
+
+                                m = moon.phase(datetime.date(_year, _month, _day))
+                                log.info(NAME, _('Moon phase') + ': {}'.format(round(m, 2)))
+                                msg += ', ' +  _('Moon phase') + ': '
+                                if m < 7:
+                                    log.info(NAME, '* ' + _('New moon'))
+                                    msg += _('New moon')
+                                elif m >= 7  and m < 14:
+                                    log.info(NAME, '* ' + _('First quarter'))
+                                    msg += _('First quarter')
+                                elif m >= 14  and m < 21:
+                                    log.info(NAME, '* ' + _('Full moon'))
+                                    msg += _('Full moon')
+                                elif m >= 21  and m < 28:
+                                    log.info(NAME, '* ' + _('Last quarter'))
+                                    msg += _('Last quarter')
+                                else:
+                                    log.info(NAME, '* ' + _('Unkown phase'))
+                                    msg += _('Unkown phase')
+
+                        except Exception:
+                            self.started.set()
+                            log.error(NAME, _('Astro plug-in') + ':\n' + traceback.format_exc())
+                            self._sleep(20)
+
+                        ### compute starting datetime for selected programs
                         if city is not None:
-                            log.info(NAME, _('Found city'))
-                            log.info(NAME, _('Name') + ': {}'.format(found_name))
-                            log.info(NAME, _('Region') + ': {}'.format(found_region))
-                            log.info(NAME, _('Timezone') + ': {}'.format(found_timezone))
-                            log.info(NAME, _('Latitude') + ': {}'.format(round(found_latitude, 2)))
-                            log.info(NAME, _('Longitude') + ': {}'.format(round(found_longitude, 2)))
+                            log.info(NAME, '___________ ' + _('Programs for runs') + ' ____________')
+                            for i in range(0, plugin_options['number_pgm']):
+                                if plugin_options['pgm_type'][int(i)] == 0:  # sunrise
+                                    sunrise_time = s["sunrise"]
+                                    start_time = sunrise_time + datetime.timedelta(hours=plugin_options['time_h'][int(i)], minutes=plugin_options['time_m'][int(i)])
+                                else:                                        # sunset
+                                    sunset_time = s["sunset"] 
+                                    start_time = sunset_time + datetime.timedelta(hours=plugin_options['time_h'][int(i)], minutes=plugin_options['time_m'][int(i)])
+                                if plugin_options['pgm_run'][int(i)] != -1:  # if pgm for run is selected in options   
+                                    log.info(NAME, _('The "{}" will be launched at {} hours.').format(programs[plugin_options['pgm_run'][int(i)]].name, start_time.strftime("%d.%m.%Y %H:%M:%S")))
+                                    run_now_pgm_list[programs[plugin_options['pgm_run'][int(i)]].name] = start_time
+                                    # example in list {'Program 01': datetime.datetime(2022, 8, 1, 6, 31, 39, 859458, tzinfo=<DstTzInfo 'Europe/Prague' CEST+2:00:00 DST>), 'Program 02': datetime.datetime(2022, 8, 1, 19, 45, 11, 806923, tzinfo=<DstTzInfo 'Europe/Prague' CEST+2:00:00 DST>)}
 
-                            import datetime
-                            from astral.sun import sun
+                        log.info(NAME, datetime_string() + ' ' + _('Another calculation will take place in one minute...'))
 
-                            today =  datetime.date.today()
+                    ### start run now of the program if the program exists and there is a start time 
+                    for pgm_name, start_time in run_now_pgm_list.items():
+                        # example from name and time: Program 02 2022-08-01 19:45:11.806923+02:00
+                        for pgm_id in programs.get():
+                            if pgm_id.name == pgm_name:                                # the program in OSPy has the same name as the program we want to run
+                                import pytz
+                                tz = pytz.timezone(found_timezone)
+                                now = datetime.datetime.now(tz)
+                                dist_time = start_time + datetime.timedelta(seconds=1) # we will try to start the program within 1 seconds
+                                if now >= start_time and now < dist_time:              # if the set start time from astro is the current time
+                                    programs.run_now(pgm_id.index)
+                                    log.info(NAME, _('I run the program "{}" in time {}.').format(pgm_name, datetime_string()))
 
-                            _day = int(today.strftime("%d"))
-                            _month = int(today.strftime("%m"))
-                            _year = int(today.strftime("%Y"))
-
-                            s = sun(city.observer, date=datetime.date(_year, _month, _day), tzinfo=found_timezone)
-                            log.info(NAME, '_______________ ' + '{}'.format(today) + ' _______________')
-                            log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"].strftime("%H:%M:%S")))
-                            log.info(NAME, _('Sunrise') + ': {}'.format(s["sunrise"].strftime("%H:%M:%S")))
-                            log.info(NAME, _('Noon') + ': {}'.format(s["noon"].strftime("%H:%M:%S")))
-                            log.info(NAME, _('Sunset') + ': {}'.format(s["sunset"].strftime("%H:%M:%S")))
-                            log.info(NAME, _('Dusk') + ': {}'.format(s["dusk"].strftime("%H:%M:%S")))
-
-                            msg = _('Sunrise') + ': {}, '.format(s["sunrise"].strftime("%H:%M:%S")) + _('Sunset') + ': {}'.format(s["sunset"].strftime("%H:%M:%S"))
-
-                            from astral import moon
-                            m = moon.phase(datetime.date(_year, _month, _day))
-                            log.info(NAME, _('Moon phase') + ': {}'.format(round(m, 2)))
-                            msg += ', ' +  _('Moon phase') + ': '
-                            if m < 7:
-                                log.info(NAME, '* ' + _('New moon'))
-                                msg += _('New moon')
-                            elif m >= 7  and m < 14:
-                                log.info(NAME, '* ' + _('First quarter'))
-                                msg += _('First quarter')
-                            elif m >= 14  and m < 21:
-                                log.info(NAME, '* ' + _('Full moon'))
-                                msg += _('Full moon')
-                            elif m >= 21  and m < 28:
-                                log.info(NAME, '* ' + _('Last quarter'))
-                                msg += _('Last quarter')
-                            else:
-                                log.info(NAME, '* ' + _('Unkown phase'))
-                                msg += _('Unkown phase')
-
-                    except Exception:
-                        self.started.set()
-                        log.error(NAME, _('Astro plug-in') + ':\n' + traceback.format_exc())
-                        self._sleep(2)
                 else:
                     msg =_(u'Plugin is not enabled')
 
+                
                 if plugin_options['use_footer']:
                     if temp_upd is not None:
                         temp_upd.val = msg.encode('utf8').decode('utf8')  # value on footer
                     else:
                         log.error(NAME, _('Error: restart this plugin! Show in homepage footer have enabled.'))
 
-                self._sleep(3600)
+                self._sleep(1)
 
             except Exception:
                 self.started.set()
@@ -610,10 +658,14 @@ class status_page(ProtectedPage):
     """Load an html page astro data."""
 
     def GET(self):
+        global last_millis
+        last_millis = 0
         checker.started.wait(4)    # Make sure we are initialized
         return self.plugin_render.sunrise_and_sunset(plugin_options, log.events(NAME), checker.status, city_table)
 
     def POST(self):
+        global last_millis
+        last_millis = 0
         plugin_options.web_update(web.input())
         if checker is not None:
             checker.update()
@@ -653,6 +705,9 @@ class setup_page(ProtectedPage):
 
     def POST(self):
         try:
+            global last_millis
+            last_millis = 0
+
             qdict = web.input()
 
             if 'number_pgm' in qdict:

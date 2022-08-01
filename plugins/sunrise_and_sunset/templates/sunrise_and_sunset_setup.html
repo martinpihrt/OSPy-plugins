@@ -29,6 +29,8 @@ $var page: plugins
 <div id="plugin">
     <div class="title">$_('Astro Sunrise and Sunset - settings') <span id="msgHint"></span></div>
     <p>$_('Cannot be used for these programs: weekly advanced, custom, weekly weather! These programs will not appear in the menu and cannot be selected.')</p>
+    <p>$_('The selected program that we want to run with this extension does not have to be enabled in the programs, but it must have set days when we want the program to run.')</p>
+    <p>$_('If the program does not have a days marked, it will not start (neither by the "run now" button in the programs, nor by this plug-in)!')</p>    
     <a href=$plugins.plugin_url('sunrise_and_sunset.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('sunrise_and_sunset.setup_page')" method="post">
         <table>
