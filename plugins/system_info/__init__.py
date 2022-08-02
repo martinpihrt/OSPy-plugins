@@ -62,6 +62,10 @@ def get_overview():
                 result.append('%-16s %s MiB %s MiB' % (dev + ': ', info['rx'], info['tx']))
         else:
             result.append(_('Network: Unknown'))
+        if options.use_ssl or options.use_own_ssl:
+            result.append(_('IP address') + (': https://{}:{}').format(helpers.get_ip(), options.web_port))
+        else:
+            result.append(_('IP address') + (': http://{}:{}').format(helpers.get_ip(), options.web_port))
         result.append(_('Uptime') + ': {}'.format(helpers.uptime()))
         result.append(_('CPU temp') + ': {} {}'.format(helpers.get_cpu_temp(options.temp_unit), options.temp_unit))
         result.append(_('CPU usage') + ': {} %'.format(helpers.get_cpu_usage()))
@@ -230,7 +234,7 @@ def get_all_addr():
         for addr in range(128):
             try:
                 bus.read_byte(addr)
-                find_adr +=  '{}\n'.format(hex(addr))   
+                find_adr += '0x{:02x}\n'.format(addr) 
             except Exception:
                 pass
 
