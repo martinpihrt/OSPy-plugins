@@ -11,10 +11,11 @@ import web
 from ospy.webpages import ProtectedPage
 from ospy.log import log, logEM, logEV
 from plugins import PluginOptions, plugin_url
-from ospy.options import options
+from ospy.options import options, rain_blocks
 from ospy.helpers import datetime_string
 from ospy.programs import programs
 from ospy.runonce import run_once
+from ospy.inputs import inputs
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
@@ -39,6 +40,9 @@ plugin_options = PluginOptions(
         'time_h': [0, -1],              # move the beginning of the program +- hours
         'time_m': [0, -30],             # move the beginning of the program +- minutes
         'pgm_run': [-1, -1],            # program for running -1 is not selected
+        'pgm_enabled': [True, True],              # program for running is enabled
+        'ignore_rain': [False, False],            # program for running in rain
+        'ignore_rain_delay': [False, False],      # program for running in rain delay
     }
 )
 
@@ -574,6 +578,7 @@ class StatusChecker(Thread):
 
                         ### compute starting datetime for selected programs
                         if city is not None:
+                            run_now_pgm_list = {}
                             log.info(NAME, '___________ ' + _('Programs for runs') + ' ____________')
                             for i in range(0, plugin_options['number_pgm']):
                                 if plugin_options['pgm_type'][int(i)] == 0:  # sunrise
@@ -582,10 +587,24 @@ class StatusChecker(Thread):
                                 else:                                        # sunset
                                     sunset_time = s["sunset"] 
                                     start_time = sunset_time + datetime.timedelta(hours=plugin_options['time_h'][int(i)], minutes=plugin_options['time_m'][int(i)])
-                                if plugin_options['pgm_run'][int(i)] != -1:  # if pgm for run is selected in options   
-                                    log.info(NAME, _('The "{}" will be launched at {} hours.').format(programs[plugin_options['pgm_run'][int(i)]].name, start_time.strftime("%d.%m.%Y %H:%M:%S")))
-                                    run_now_pgm_list[programs[plugin_options['pgm_run'][int(i)]].name] = start_time
-                                    # example in list {'Program 01': datetime.datetime(2022, 8, 1, 6, 31, 39, 859458, tzinfo=<DstTzInfo 'Europe/Prague' CEST+2:00:00 DST>), 'Program 02': datetime.datetime(2022, 8, 1, 19, 45, 11, 806923, tzinfo=<DstTzInfo 'Europe/Prague' CEST+2:00:00 DST>)}
+                                if plugin_options['pgm_run'][int(i)] != -1:  # if pgm for run is selected in options
+                                    if plugin_options['pgm_enabled'][int(i)]:
+                                        if inputs.rain_sensed():    # rain is detected
+                                            if plugin_options['ignore_rain'][int(i)]:
+                                                run_now_pgm_list[programs[plugin_options['pgm_run'][int(i)]].name] = start_time
+                                                log.info(NAME, _('The "{}" will be launched at {} hours (ignore rain).').format(programs[plugin_options['pgm_run'][int(i)]].name, start_time.strftime("%d.%m.%Y %H:%M:%S")))
+                                        elif rain_blocks.seconds_left(): # rain delay is activated        
+                                            if plugin_options['ignore_rain_delay'][int(i)]:        
+                                                run_now_pgm_list[programs[plugin_options['pgm_run'][int(i)]].name] = start_time
+                                                log.info(NAME, _('The "{}" will be launched at {} hours (ignore rain delay).').format(programs[plugin_options['pgm_run'][int(i)]].name, start_time.strftime("%d.%m.%Y %H:%M:%S")))
+                                        else:
+                                            if not inputs.rain_sensed() and not rain_blocks.seconds_left():
+                                                run_now_pgm_list[programs[plugin_options['pgm_run'][int(i)]].name] = start_time
+                                                log.info(NAME, _('The "{}" will be launched at {} hours.').format(programs[plugin_options['pgm_run'][int(i)]].name, start_time.strftime("%d.%m.%Y %H:%M:%S")))
+                                                # example in list {'Program 01': datetime.datetime(2022, 8, 1, 6, 31, 39, 859458, tzinfo=<DstTzInfo 'Europe/Prague' CEST+2:00:00 DST>), 'Program 02': datetime.datetime(2022, 8, 1, 19, 45, 11, 806923, tzinfo=<DstTzInfo 'Europe/Prague' CEST+2:00:00 DST>)}
+                            pgmlen = len(run_now_pgm_list)
+                            if pgmlen > 0:
+                                msg += ', ' + _('{} programs scheduled').format(pgmlen)                    
 
                         log.info(NAME, datetime_string() + ' ' + _('Another calculation will take place in one minute...'))
 
@@ -713,7 +732,7 @@ class setup_page(ProtectedPage):
             if 'number_pgm' in qdict:
                 plugin_options.__setitem__('number_pgm', int(qdict['number_pgm']))
 
-            commands = {'pgm_type': [], 'time_h': [], 'time_m': [], 'pgm_run': []}
+            commands = {'pgm_type': [], 'time_h': [], 'time_m': [], 'pgm_run': [], 'pgm_enabled': [], 'ignore_rain': [], 'ignore_rain_delay': []}
 
             for i in range(0, plugin_options['number_pgm']):
                 if 'pgm_type'+str(i) in qdict:
@@ -734,12 +753,33 @@ class setup_page(ProtectedPage):
                 if 'pgm_run'+str(i) in qdict:
                     commands['pgm_run'].append(int(qdict['pgm_run'+str(i)]))
                 else:
-                    commands['pgm_run'].append(int(-1))                    
+                    commands['pgm_run'].append(int(-1))
+
+                if 'pgm_enabled'+str(i) in qdict:
+                    if qdict['pgm_enabled'+str(i)]=='on':
+                        commands['pgm_enabled'].append(True)
+                else:
+                    commands['pgm_enabled'].append(False)
+
+                if 'ignore_rain'+str(i) in qdict:
+                    if qdict['ignore_rain'+str(i)]=='on':                    
+                        commands['ignore_rain'].append(True)
+                else:
+                    commands['ignore_rain'].append(False)
+
+                if 'ignore_rain_delay'+str(i) in qdict:
+                    if qdict['ignore_rain_delay'+str(i)]=='on':                    
+                        commands['ignore_rain_delay'].append(True)
+                else:
+                    commands['ignore_rain_delay'].append(False)                                                                          
 
             plugin_options.__setitem__('pgm_type', commands['pgm_type'])
             plugin_options.__setitem__('time_h', commands['time_h'])
             plugin_options.__setitem__('time_m', commands['time_m'])
-            plugin_options.__setitem__('pgm_run', commands['pgm_run'])            
+            plugin_options.__setitem__('pgm_run', commands['pgm_run'])
+            plugin_options.__setitem__('pgm_enabled', commands['pgm_enabled'])
+            plugin_options.__setitem__('ignore_rain', commands['ignore_rain'])
+            plugin_options.__setitem__('ignore_rain_delay', commands['ignore_rain_delay'])            
 
             if checker is not None:
                 checker.update()
