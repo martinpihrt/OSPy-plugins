@@ -27,8 +27,10 @@ from ospy.sensors import sensors
 
 from blinker import signal
 
-global blocker
+global blocker, L1web, L2web
 blocker = False
+L1web = ''
+L2web = ''
 
 NAME = 'LCD Display'
 MENU =  _(u'Package: LCD Display')
@@ -273,7 +275,7 @@ def get_report(index):
             result = None
     elif index == 5:
         if lcd_options['d_ip']:
-            if options.use_ssl:
+            if options.use_ssl or options.use_own_ssl:
                 result = ASCI_convert(('https://{}:{}').format(helpers.get_ip(), options.web_port))
             else:
                 result = ASCI_convert(('http://{}:{}').format(helpers.get_ip(), options.web_port))
@@ -600,7 +602,7 @@ def find_lcd_address():
 
 def update_lcd(line1, line2=None):
     ### Print messages to LCD 16x2 ###
-    global blocker
+    global blocker, L1web, L2web
 
     if lcd_options['address'] == 0:
         find_lcd_address()
@@ -615,6 +617,8 @@ def update_lcd(line1, line2=None):
 
     try_io(lambda: lcd.lcd_clear())
     sleep_time = 1
+    L1web = line1
+    L2web = line2
     while line1 is not None and not blocker:
         try_io(lambda: lcd.lcd_puts(line1[:16], 1))
 
@@ -637,7 +641,7 @@ def update_lcd(line1, line2=None):
 
 def notify_rebooted(name, **kw):
     ### Reboot Linux HW software ###
-    global blocker
+    global blocker, L1web, L2web
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _('System rebooting'))
     if lcd_options['address'] == 0:
@@ -652,10 +656,12 @@ def notify_rebooted(name, **kw):
     try_io(lambda: lcd.lcd_clear())    
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System Linux')), 1))
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
+    L1web = ASCI_convert(_('System Linux'))
+    L2web = ASCI_convert(_('Rebooting'))    
 
 def notify_restarted(name, **kw):
     ### Restarted OSPy ###
-    global blocker
+    global blocker, L1web, L2web
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _('System restarting'))
     if lcd_options['address'] == 0:
@@ -670,11 +676,13 @@ def notify_restarted(name, **kw):
     try_io(lambda: lcd.lcd_clear())    
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System OSPy')), 1))
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
+    L1web = ASCI_convert(_('System OSPy'))
+    L2web = ASCI_convert(_('Rebooting'))
 
 
 def notify_poweroff(name, **kw):
     ### Power off Linux HW ###
-    global blocker
+    global blocker, L1web, L2web
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _('System poweroff'))
     if lcd_options['address'] == 0:
@@ -689,11 +697,13 @@ def notify_poweroff(name, **kw):
     try_io(lambda: lcd.lcd_clear())    
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System Linux')), 1))
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Power off')), 2))
+    L1web = ASCI_convert(_('System Linux'))
+    L2web = ASCI_convert(_('Power off'))
 
 
 def notify_ospyupdate(name, **kw):
     ### OSPy new version availbale ###
-    global blocker
+    global blocker, L1web, L2web
     blocker = True
     log.info(NAME, datetime_string() + ': ' + _('System OSPy Has Update'))
     if lcd_options['address'] == 0:
@@ -707,7 +717,9 @@ def notify_ospyupdate(name, **kw):
 
     try_io(lambda: lcd.lcd_clear())    
     try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System OSPy')), 1))
-    try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Has Update')), 2))    
+    try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Has Update')), 2))
+    L1web = ASCI_convert(_('System OSPy'))
+    L2web = ASCI_convert(_('Has Update'))
 
 ################################################################################
 # Web pages:                                                                   #
@@ -753,3 +765,16 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(lcd_options)
+
+
+class lcd_json(ProtectedPage):
+    """Returns seconds LCD state in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        global L1web, L2web
+        data = {}
+        data['L1'] = '{}'.format(L1web.decode('utf8'))
+        data['L2'] = '{}'.format(L2web.decode('utf8'))
+        return json.dumps(data)

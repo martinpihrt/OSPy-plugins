@@ -4,6 +4,14 @@ $var title: $_('LCD settings')
 $var page: plugins
 
 <script>
+    function updateLCD(){
+        jQuery.getJSON("/plugins/lcd_display/lcd_json", function(_data) {
+            jQuery("#L1 span.L1").text(_data.L1);
+            jQuery("#L2 span.L2").text(_data.L2);
+        })      
+        setTimeout(updateLCD, 1000); // 1 second
+    }
+
     // Initialize behaviors
     jQuery(document).ready(function(){
 
@@ -13,7 +21,7 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
-
+    updateLCD();
     });
 </script>
 
@@ -143,6 +151,13 @@ $var page: plugins
                     <input name='d_sensors' type='checkbox'${" checked" if plugin_options['d_sensors'] else ""}>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('LCD line state'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                   <p id="L1"><b><span class="L1">-</span></b></p>
+                   <p id="L2"><b><span class="L2">-</span></b></p>
+                </td>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
