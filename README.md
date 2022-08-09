@@ -60,8 +60,9 @@ Available plugins:
 * Telegram Bot  
 * Door Opening  
 * Voice Station  
-* Venetian Blind
-* Speed Monitor 
-* E-mail Notifications SSL
-* Astro Sunrise and Sunset
-* Photovoltaic Boiler 
+* Venetian Blind  
+* Speed Monitor  
+* E-mail Notifications SSL  
+* Astro Sunrise and Sunset  
+* Photovoltaic Boiler  
+* IP CAM  
