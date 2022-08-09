@@ -11,8 +11,7 @@ import web
 
 # Local imports
 from ospy.log import log
-from ospy.options import options
-from ospy.options import rain_blocks
+from ospy.options import options, rain_blocks
 from ospy.scheduler import predicted_schedule
 from ospy.stations import stations
 from ospy.inputs import inputs
@@ -35,6 +34,10 @@ plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,               # default is OFF
+        'ignore_manual': False,         # default is OFF (ignore manual mode - pressurezing even when in manual mode)
+        'ignore_rain': False,           # default is OFF (pressurezing even when is rain detected)
+        'ignore_rain_delay': False,     # default is OFF (pressurezing even when is rain delay detected)
+        'ignore_stations': [],          # skip selected stations
         'pre_time': 20,                 # how many seconds before turning on station has turning on master station 0-999s
         'run_time': 5,                  # for what time will turn on the master station (5 sec) 0-999s
         'mm':       60,                 # How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on) 0-999 min
@@ -87,7 +90,21 @@ class Checker(Thread):
                     check_end     = current_time + datetime.timedelta(days=1)
 
                     schedule = predicted_schedule(check_start, check_end)
-                    rain = not options.manual_mode and (rain_blocks.block_end() > datetime.datetime.now() or inputs.rain_sensed())                                   
+
+                    if plugin_options['ignore_manual']:
+                        manu = False
+                    else:
+                        manu = options.manual_mode
+                    if plugin_options['ignore_rain']:
+                        rblock = False
+                    else:    
+                        rblock = rain_blocks.block_end() > datetime.datetime.now()
+                    if plugin_options['ignore_rain_delay']:
+                        rsensed = False
+                    else:    
+                        rsensed = inputs.rain_sensed()
+
+                    rain = not manu and (rblock or rsensed)
        
                     if stations.master is None:
                         start_master = False
@@ -97,11 +114,13 @@ class Checker(Thread):
 
                     for entry in schedule:
                         if entry['start'] <= user_pre_time < entry['end']:       # is possible program in this interval?
-                           if not rain and not entry['blocked']:                 # is not blocked and not ignored rain?  
-                                if stations.master is not None:
-                                    log.clear(NAME)
-                                    log.info(NAME, datetime_string() + ' ' + _('Is time for pump running...')) 
-                                    start_master = True
+                           if not rain and not entry['blocked']:                 # is not blocked and not ignored rain?
+                                for ignore_stations in plugin_options['ignore_stations']:  # selected stations for skipping
+                                    if entry['station'] != ignore_stations:                # is this station in selected stations?
+                                        if stations.master is not None:
+                                            log.clear(NAME)
+                                            log.info(NAME, datetime_string() + ' ' + _('Is time for pump running...'))
+                                            start_master = True
 
 
                     if start_master:  # is time for run relay
@@ -204,7 +223,7 @@ class settings_page(ProtectedPage):
         return self.plugin_render.pressurizer(plugin_options, log.events(NAME))
 
     def POST(self):
-        plugin_options.web_update(web.input())
+        plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
 
         if checker is not None:
             checker.update()

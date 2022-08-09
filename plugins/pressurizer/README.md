@@ -9,13 +9,25 @@ This plugin requires setting master station to enabled. Setup this in options! A
 Some valves require some switching pressure. The set "Run time" of the main station must not be longer than the set time before switching on the stations.
 
 
-  Example: "Pre station run time" = 10 sec, "Run time" = max 10 seconds!  
+  Example: "Pre station run time" = 10 sec, "Run time" = max 10 seconds!
 
 Plugin setup
 -----------
 
 * Enable:  
   If the check box is marked, the master pump is activated before turning on the stations.
+
+* Ignore manual mode:  
+  If the check box is marked, the master pump is activated before turning on the stations in manual mode (ignore manual).
+
+* Ignore rain:  
+  If the check box is marked, the master pump is activated before turning on the stations if rain is detected (ignore rain).
+
+* Ignore rain delay:  
+  If the check box is marked, the master pump is activated before turning on the stations if rain delay is detected (ignore rain delay).
+
+* Skip these stations:  
+  These marked stations will be skipped and the pressurizer will not respond to them.
 
 * Pre station run time:  
   How many seconds before turning on station has turning on master station (1 - 999 sec).
@@ -24,7 +36,7 @@ Plugin setup
   For what time will turn on the master station (1 - 999 sec). 
 
 * Wait after activation:
-  How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on) 0-999 min, 0-59 sec.  
+  How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on) 0-999 min, 0-59 sec.
   All values should be positive and seconds should not exceed 59.
 
 * Activated relay:

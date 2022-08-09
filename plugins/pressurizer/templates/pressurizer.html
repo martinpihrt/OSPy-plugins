@@ -45,6 +45,30 @@ jQuery(document).ready(function(){
 					<input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
 				</tr>
 				<tr>
+					<td style='text-transform: none;'>$_('Ignore manual mode'):</td>
+					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations in manual mode.'), ensure_ascii=False)}>
+					<input type="checkbox" name="ignore_manual" ${"checked" if plugin_options['ignore_manual'] else ""}></td>
+				</tr>
+				<tr>
+					<td style='text-transform: none;'>$_('Ignore rain'):</td>
+					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations if rain is detected.'), ensure_ascii=False)}>
+					<input type="checkbox" name="ignore_rain" ${"checked" if plugin_options['ignore_rain'] else ""}></td>
+				</tr>
+				<tr>
+					<td style='text-transform: none;'>$_('Ignore rain delay'):</td>
+					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations if rain delay is detected.'), ensure_ascii=False)}>
+					<input type="checkbox" name="ignore_rain_delay" ${"checked" if plugin_options['ignore_rain_delay'] else ""}></td>
+				</tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Skip these stations')</td>
+                    <td title=$:{json.dumps(_(u'These marked stations will be skipped and the pressurizer will not respond to them.'), ensure_ascii=False)}>
+                    <select multiple name="skip_stations" width="350" style="width: 350px" size="12">
+                    $for station in [station for station in stations if station.enabled]:
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['skip_stations'] else ""}>${station.name}</option>
+                    </select>
+                </td>
+                </tr>
+				<tr>
 					<td style='text-transform: none;'>$_('Pre run time'):</td>
 					<td title=$:{json.dumps(_(u'How many seconds before turning on station has turning on master station.'), ensure_ascii=False)}>
 					<input name='pre_time' type='number' min="1" max="999" value="$plugin_options['pre_time']"> (1 - 999s)</td> 
