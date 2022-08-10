@@ -113,10 +113,12 @@ class Checker(Thread):
                         self._sleep(10)
 
                     for entry in schedule:
-                        if entry['start'] <= user_pre_time < entry['end']:       # is possible program in this interval?
-                           if not rain and not entry['blocked']:                 # is not blocked and not ignored rain?
+                        if entry['start'] <= user_pre_time < entry['end']:                 # is possible program in this interval?
+                           if not rain and not entry['blocked']:                           # is not blocked and not ignored rain?
                                 for ignore_stations in plugin_options['ignore_stations']:  # selected stations for skipping
-                                    if entry['station'] != ignore_stations:                # is this station in selected stations?
+                                    if entry['station'] == ignore_stations:                # is this station in selected stations?
+                                        break
+                                    else:    
                                         if stations.master is not None:
                                             log.clear(NAME)
                                             log.info(NAME, datetime_string() + ' ' + _('Is time for pump running...'))
