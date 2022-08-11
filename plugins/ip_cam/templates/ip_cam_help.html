@@ -5,12 +5,26 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_(u'IP Cam - help')</div>
-    <p>$_(u'The extension is being worked on, it doesnot do anything yet.')</p>     
+    <p>$_(u'To use the cameras, you need to know two IP routes:')</p>
+    <p>$_(u'a) path to still image (JPEG)')</p>
+    <p>$_(u'b) moving image stream path (MJPEG)')</p>
+    <p><b>$_(u'An example for a Hikvision IP camera')</b></p>
+    <ul>
+        <li>http://user:password@ipaddress:port/ISAPI/Streaming/channels/101/picture</li>
+        <li>http://user:password@ipaddress:port/ISAPI/Streaming/channels/102/httpPreview</li>
+    </ul>
+    <p><b>$_(u'An example for a AVtech IP camera')</b></p>
+    <ul>
+        <li>http://user:password@ipaddress:port/cgi-bin/guest/Video.cgi?media=JPEG&channel=1</li>
+        <li>http://user:password@ipaddress:port/cgi-bin/guest/Video.cgi?media=MJPEG&channel=1</li>
+    </ul>
+    <p><b>$_(u'An example for a Dahua IP camera')</b></p>
+    <ul>
+        <li>http://user:password@ipaddress:port/TODO</li>
+        <li>http://user:password@ipaddress:port/cgi-bin/mjpg/video.cgi?subtype=1</li>
+    </ul>        
 </div>
 
 <div id="controls">
     <a href=$plugins.plugin_url('ip_cam.settings_page') class="button danger">$_(u'Cancel')</a><br/>
 </div>
-
-
-

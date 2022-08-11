@@ -1,0 +1,57 @@
+$def with(plugin_options, msg)
+
+$var title: $_('IP cam - settings')
+$var page: plugins
+
+<script>
+    var msg = "${msg}";
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("#number_pgm").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery('#msgHint').fadeIn(10);
+        switch (msg) {
+            case "saved":
+                jQuery("#msgHint").text($:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+            break;
+        }
+        jQuery('#msgHint').fadeOut(4000);       
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('IP cam - settings') <span id="msgHint"></span></div>    
+    <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a><br/>
+    <p>$_('Assignment of IP cameras to OSPy stations.')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('ip_cam.setup_page')" method="post">                           
+        $for c in range(0, options.output_count):
+            <table class="optionList">
+            <tr>
+            <td class="NumberCam"><b><small>Station ${c+1})</small></b></td>
+            <tr>
+            <td style='text-transform: none;'>$_('JPEG IP address'):</td>
+            <td title=$:{json.dumps(_(u'Example for Hikvision cam: http://username:password.@ipaddress:port/ISAPI/Streaming/channels/101/picture'), ensure_ascii=False)}>
+            <input name='jpg${c}' type='text' size='90' value='$plugin_options['jpg'][c]'> 
+            </td>
+            </tr>
+            <tr>
+            <td style='text-transform: none;'>$_('MJPEG IP address'):</td>
+            <td title=$:{json.dumps(_(u'Example for Hikvision cam: http://username:password.@ipaddress:port/ISAPI/Streaming/channels/102/httpPreview'), ensure_ascii=False)}>
+            <input name='mjpeg${c}' type='text' size='90' value='$plugin_options['mjpeg'][c]'> 
+            </td>
+            </tr>
+            </table>            
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <a href=$plugins.plugin_url('ip_cam.status_page') class="button danger">$_('Cancel')</a><br/>
+</div>

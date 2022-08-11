@@ -6,8 +6,8 @@ $var page: plugins
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
-        jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
+        jQuery("#cRefresh").click(function() {
+            window.location="/plugins/ip_cam/settings";
         });
         jQuery("button#cCancel").click(function(){
             window.location="/";
@@ -17,21 +17,26 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_(u'IP cam')</div>
-    <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_(u'Help')</a><br/>
-    <p>!The extension is being worked on, it doesn't do anything yet. in the future, it will enable preview from IP cameras for running stations (and sending images in e-mail)!</p>
-    <form id="pluginForm" action="$plugins.plugin_url('ip_cam.settings_page')" method="post">
-        <table class="optionList">            
-            <tr>
-                <td style='text-transform: none;'><b>$_('Status'):</b></td>
+    <p><a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_(u'Help')</a><p/>
+    <p><a href=$plugins.plugin_url('ip_cam.setup_page') class="button submit">$_('CAM Settings')</a></p>
+    <table class="optionList">
+        $for c in range(0, options.output_count):
+            $if plugin_options['jpg'][c]:
+                <tr>
+                <td style='text-transform: none;'>$stations[c].name (${c+1})</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="11" cols="45" readonly>$'\n'.join(events)</textarea>
-                </td>
-            </tr>
-        </table>
-    </form>
+                <a href="?cam=$c">
+                <img id="jpeg${c}" src="$plugin_options['jpg'][c]" width="160" height="120" /></td>
+                </a>
+                </tr>
+        <tr>
+            <td style='text-transform: none;'>$_('Status'):</td>
+            <td><textarea style="font-family: monospace;" rows="2" cols="22" readonly>$'\n'.join(events)</textarea></td>
+        </tr>        
+    </table>
 </div>
 <div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
 

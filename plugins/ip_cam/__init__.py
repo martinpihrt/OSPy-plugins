@@ -13,9 +13,9 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision
-from ospy.helpers import datetime_string
+from ospy.helpers import get_rpi_revision, datetime_string, get_input
 from ospy import helpers
+from ospy.options import options
 
 
 NAME = 'IP Cam'
@@ -26,6 +26,8 @@ LINK = 'settings_page'
 plugin_options = PluginOptions(
     NAME,
     {
+        'jpg':   ['']*options.output_count,        # IP address for jpeg image
+        'mjpeg': ['']*options.output_count,        # IP address for jpeg image
      }
 )
 
@@ -91,14 +93,60 @@ class settings_page(ProtectedPage):
     """Main html page"""
 
     def GET(self):
+        global sender
+        qdict = web.input()
+
+        cam = get_input(qdict, 'cam', False, lambda x: True)
+        if sender is not None and cam:
+            cam_nr = int(qdict['cam'])
+            if plugin_options['mjpeg'][cam_nr]:
+                return self.plugin_render.ip_cam_mjpeg(plugin_options, cam_nr)
+
         return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
 
-    def POST(self):
-        plugin_options.web_update(web.input())
+class setup_page(ProtectedPage):
+    """Load an html setup page."""
 
-        if sender is not None:
-            sender.update()                
-        raise web.seeother(plugin_url(settings_page), True)
+    def GET(self):
+        qdict = web.input()
+        msg = 'none'
+  
+        try:
+            return self.plugin_render.ip_cam_setup(plugin_options, msg)   
+        except:
+            plugin_options.__setitem__('jpg', ['']*options.output_count)            
+            plugin_options.__setitem__('mjpeg', ['']*options.output_count)
+
+            return self.plugin_render.ip_cam_setup(plugin_options, msg)
+
+    def POST(self):
+        global sender
+        try:
+            qdict = web.input()
+            commands = {'jpg': [], 'mjpeg': []}
+            for i in range(0, options.output_count):
+                if 'jpg'+str(i) in qdict:
+                    commands['jpg'].append(qdict['jpg'+str(i)])
+                else:
+                    commands['jpg'].append('')
+
+                if 'mjpeg'+str(i) in qdict:
+                    commands['mjpeg'].append(qdict['mjpeg'+str(i)])
+                else:
+                    commands['mjpeg'].append('')                    
+
+            plugin_options.__setitem__('jpg', commands['jpg'])
+            plugin_options.__setitem__('mjpeg', commands['mjpeg'])
+
+            if sender is not None:
+                sender.update()
+
+        except Exception:
+            log.debug(NAME, _('IP cam plug-in') + ':\n' + traceback.format_exc())
+            pass
+
+        msg = 'saved'
+        return self.plugin_render.ip_cam_setup(plugin_options, msg)
 
 
 class help_page(ProtectedPage):

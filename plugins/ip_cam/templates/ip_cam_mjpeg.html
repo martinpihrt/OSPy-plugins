@@ -1,0 +1,28 @@
+$def with(plugin_options, nr)
+
+$var title: $_(u'IP Camera'): $stations[nr].name ($_(u'station') ${nr+1})
+$var page: plugins
+
+<script src="motionjpeg.js"></script>
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        motionjpeg("#motionjpeg");
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_(u'IP Cam') $stations[nr].name (${nr+1})</div>
+    <p>
+    <a href=$plugins.plugin_url('ip_cam.settings_page')>
+    <img id="motionjpeg" src="$plugin_options['mjpeg'][nr]" width="640" height="480" />
+    </a>
+    </p>     
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('ip_cam.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>
+
+
+
