@@ -17,6 +17,10 @@ from ospy.helpers import get_rpi_revision, datetime_string, get_input
 from ospy import helpers
 from ospy.options import options
 
+import requests, shutil
+from requests.auth import HTTPBasicAuth
+import mimetypes
+
 
 NAME = 'IP Cam'
 MENU =  _(u'Package: IP Cam')
@@ -26,8 +30,13 @@ LINK = 'settings_page'
 plugin_options = PluginOptions(
     NAME,
     {
-        'jpg':   ['']*options.output_count,        # IP address for jpeg image
-        'mjpeg': ['']*options.output_count,        # IP address for jpeg image
+        'jpg_ip': ['']*options.output_count,       # IP address for jpeg image
+        'jpg_que': ['']*options.output_count,      # Query for jpeg image
+        'mjpeg_que': ['']*options.output_count,    # Query for mjpeg image        
+        'jpg_user': ['']*options.output_count,     # Username for access to jpeg image
+        'jpg_pass': ['']*options.output_count,     # Password for access to jpeg image
+        'use_jpg': True,                           # first download jpeg from IP address to plugin folder and next show these jpg on webpage
+        'use_gif': True,                           # first download jpeg from IP address to plugin folder and next create gif and show these gif on webpage
      }
 )
 
@@ -61,7 +70,30 @@ class Sender(Thread):
     def run(self):
         while not self._stop_event.is_set():
             try:
-                self._sleep(1)
+                if plugin_options['use_jpg']:
+                    img_down_state = []
+                    for c in range(0, options.output_count):
+                        if plugin_options['jpg_ip'][c] and plugin_options['jpg_que'][c] and plugin_options['jpg_user'][c] and plugin_options['jpg_pass'][c]:
+                            url_ip_port = '{}'.format(plugin_options['jpg_ip'][c])
+                            url_query = '{}'.format(plugin_options['jpg_que'][c])
+                            url_user = '{}'.format(plugin_options['jpg_user'][c])
+                            url_pass = '{}'.format(plugin_options['jpg_pass'][c])
+                            img_path = os.path.join(plugin_data_dir(), '{}.jpg'.format(c))
+                            try:
+                                res = requests.get(url_ip_port + '/' + url_query, stream = True, verify=False, auth=HTTPBasicAuth(url_user, url_pass))
+                                if res.status_code == 200:
+                                    with open(img_path, 'wb') as f:
+                                        shutil.copyfileobj(res.raw, f)
+                                    img_down_state.append('{}.jpg'.format(c))
+                            except:
+                                log.error(NAME, _(u'IP Cam plug-in') + ':\n' + traceback.format_exc())
+                                pass
+
+                    log.clear(NAME)
+                    log.info(NAME, _(u'Downloaded images') + ': ' + datetime_string())
+                    log.info(NAME, str(img_down_state)[1:-1])            
+
+                self._sleep(5)
             except Exception:
                 log.error(NAME, _(u'IP Cam plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
@@ -97,12 +129,32 @@ class settings_page(ProtectedPage):
         qdict = web.input()
 
         cam = get_input(qdict, 'cam', False, lambda x: True)
+        cam_foto = get_input(qdict, 'cam_foto', False, lambda x: True)
+        cam_gif = get_input(qdict, 'cam_gif', False, lambda x: True)
+
         if sender is not None and cam:
             cam_nr = int(qdict['cam'])
-            if plugin_options['mjpeg'][cam_nr]:
-                return self.plugin_render.ip_cam_mjpeg(plugin_options, cam_nr)
+            return self.plugin_render.ip_cam_mjpeg(plugin_options, cam_nr)
 
-        return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
+        if sender is not None:
+            if cam_foto:
+                cam_nr = qdict['cam_foto']
+                download_name = plugin_data_dir() + '/' + '{}.jpg'.format(cam_nr)
+            elif cam_gif:
+                cam_nr = qdict['cam_gif']
+                download_name = plugin_data_dir() + '/' + '{}.gif'.format(cam_nr)
+            else:
+                return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
+
+            if os.path.isfile(download_name):     # exists image? 
+                content = mimetypes.guess_type(download_name)[0]
+                web.header('Content-type', content)
+                web.header('Content-Length', os.path.getsize(download_name))
+                web.header('Content-Disposition', 'attachment; filename=%s' % str(id))
+                img = open(download_name,'rb')
+                return img.read()
+            else:
+                return None
 
 class setup_page(ProtectedPage):
     """Load an html setup page."""
@@ -113,9 +165,12 @@ class setup_page(ProtectedPage):
   
         try:
             return self.plugin_render.ip_cam_setup(plugin_options, msg)   
-        except:
-            plugin_options.__setitem__('jpg', ['']*options.output_count)            
-            plugin_options.__setitem__('mjpeg', ['']*options.output_count)
+        except:           
+            plugin_options.__setitem__('jpg_ip', ['']*options.output_count)
+            plugin_options.__setitem__('jpg_que', ['']*options.output_count)
+            plugin_options.__setitem__('mjpeg_que', ['']*options.output_count)
+            plugin_options.__setitem__('jpg_user', ['']*options.output_count)
+            plugin_options.__setitem__('jpg_pass', ['']*options.output_count)
 
             return self.plugin_render.ip_cam_setup(plugin_options, msg)
 
@@ -123,20 +178,50 @@ class setup_page(ProtectedPage):
         global sender
         try:
             qdict = web.input()
-            commands = {'jpg': [], 'mjpeg': []}
+            commands = {'mjpeg_que': [], 'jpg_ip': [], 'jpg_que': [], 'jpg_user': [], 'jpg_pass': []}
             for i in range(0, options.output_count):
-                if 'jpg'+str(i) in qdict:
-                    commands['jpg'].append(qdict['jpg'+str(i)])
+                if 'mjpeg_que'+str(i) in qdict:
+                    commands['mjpeg_que'].append(qdict['mjpeg_que'+str(i)])
                 else:
-                    commands['jpg'].append('')
+                    commands['mjpeg_que'].append('')
 
-                if 'mjpeg'+str(i) in qdict:
-                    commands['mjpeg'].append(qdict['mjpeg'+str(i)])
+                if 'jpg_ip'+str(i) in qdict:
+                    commands['jpg_ip'].append(qdict['jpg_ip'+str(i)])
                 else:
-                    commands['mjpeg'].append('')                    
+                    commands['jpg_ip'].append('')
 
-            plugin_options.__setitem__('jpg', commands['jpg'])
-            plugin_options.__setitem__('mjpeg', commands['mjpeg'])
+                if 'jpg_que'+str(i) in qdict:
+                    commands['jpg_que'].append(qdict['jpg_que'+str(i)])
+                else:
+                    commands['jpg_que'].append('')
+
+                if 'jpg_user'+str(i) in qdict:
+                    commands['jpg_user'].append(qdict['jpg_user'+str(i)])
+                else:
+                    commands['jpg_user'].append('')
+
+                if 'jpg_pass'+str(i) in qdict:
+                    commands['jpg_pass'].append(qdict['jpg_pass'+str(i)])
+                else:
+                    commands['jpg_pass'].append('')                                                                                
+
+            if 'use_jpg' in qdict:
+                if qdict['use_jpg']=='on':
+                     plugin_options.__setitem__('use_jpg', True)
+                else:
+                    plugin_options.__setitem__('use_jpg', False)
+
+            if 'use_gif' in qdict:
+                if qdict['use_gif']=='on':
+                     plugin_options.__setitem__('use_gif', True)
+                else:
+                    plugin_options.__setitem__('use_gif', False)                    
+
+            plugin_options.__setitem__('mjpeg_que', commands['mjpeg_que'])
+            plugin_options.__setitem__('jpg_ip', commands['jpg_ip'])
+            plugin_options.__setitem__('jpg_que', commands['jpg_que'])
+            plugin_options.__setitem__('jpg_user', commands['jpg_user'])
+            plugin_options.__setitem__('jpg_pass', commands['jpg_pass'])
 
             if sender is not None:
                 sender.update()

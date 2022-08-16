@@ -17,21 +17,21 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_(u'IP cam')</div>
-    <p><a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_(u'Help')</a><p/>
+    <p><a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a><p/>
     <p><a href=$plugins.plugin_url('ip_cam.setup_page') class="button submit">$_('CAM Settings')</a></p>
     <table class="optionList">
         $for c in range(0, options.output_count):
-            $if plugin_options['jpg'][c]:
+            $if plugin_options['jpg_ip'][c]:
                 <tr>
                 <td style='text-transform: none;'>$stations[c].name (${c+1})</td>
                 <td>
                 <a href="?cam=$c">
-                <img id="jpeg${c}" src="$plugin_options['jpg'][c]" width="160" height="120" /></td>
+                <img id="jpeg${c}" src="?cam_foto=$c" width="160" height="120" /></td>
                 </a>
-                </tr>
+                </tr>              
         <tr>
             <td style='text-transform: none;'>$_('Status'):</td>
-            <td><textarea style="font-family: monospace;" rows="2" cols="22" readonly>$'\n'.join(events)</textarea></td>
+            <td><textarea style="font-family: monospace;" rows="4" cols="50" readonly>$'\n'.join(events)</textarea></td>
         </tr>        
     </table>
 </div>
