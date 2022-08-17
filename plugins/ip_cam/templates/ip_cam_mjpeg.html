@@ -1,6 +1,6 @@
 $def with(plugin_options, nr)
 
-$var title: $_(u'IP Camera'): $stations[nr].name
+$var title: $_(u'IP Camera'): $stations[nr-1].name
 $var page: plugins
 
 <script src="motionjpeg.js"></script>
@@ -12,7 +12,7 @@ $var page: plugins
 </script>
 
 <div id="plugin">
-    <div class="title">$_(u'IP Cam') $stations[nr].name</div>
+    <div class="title">$_(u'IP Cam') $stations[nr-1].name</div>
     <p>
     <a href=$plugins.plugin_url('ip_cam.settings_page')>
     <img id="motionjpeg" src="?cam_gif=$nr" width="640" height="480" />
