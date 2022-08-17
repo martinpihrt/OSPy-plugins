@@ -21,6 +21,9 @@ import requests, shutil
 from requests.auth import HTTPBasicAuth
 import mimetypes
 
+from PIL import Image
+import glob
+
 
 NAME = 'IP Cam'
 MENU =  _(u'Package: IP Cam')
@@ -68,6 +71,7 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
+        img_counter = 0
         while not self._stop_event.is_set():
             try:
                 if plugin_options['use_jpg']:
@@ -78,22 +82,50 @@ class Sender(Thread):
                             url_query = '{}'.format(plugin_options['jpg_que'][c])
                             url_user = '{}'.format(plugin_options['jpg_user'][c])
                             url_pass = '{}'.format(plugin_options['jpg_pass'][c])
-                            img_path = os.path.join(plugin_data_dir(), '{}.jpg'.format(c))
+                            img_path = os.path.join(plugin_data_dir(), '{}.jpg'.format(c+1))
                             try:
                                 res = requests.get(url_ip_port + '/' + url_query, stream = True, verify=False, auth=HTTPBasicAuth(url_user, url_pass))
                                 if res.status_code == 200:
                                     with open(img_path, 'wb') as f:
                                         shutil.copyfileobj(res.raw, f)
-                                    img_down_state.append('{}.jpg'.format(c))
+                                    img_down_state.append('{}.jpg'.format(c+1))
                             except:
                                 log.error(NAME, _(u'IP Cam plug-in') + ':\n' + traceback.format_exc())
                                 pass
 
                     log.clear(NAME)
                     log.info(NAME, _(u'Downloaded images') + ': ' + datetime_string())
-                    log.info(NAME, str(img_down_state)[1:-1])            
+                    log.info(NAME, str(img_down_state)[1:-1])
+                
+                self._sleep(2)
 
-                self._sleep(5)
+                if plugin_options['use_gif']:                
+                    for c in range(0, options.output_count):
+                        if plugin_options['jpg_ip'][c] and plugin_options['jpg_que'][c] and plugin_options['jpg_user'][c] and plugin_options['jpg_pass'][c]:
+                            IMG_FILE = os.path.join(plugin_data_dir(), str(c+1), '{}.jpg'.format(img_counter))
+                            SOURCE_FILE = os.path.join(plugin_data_dir(), '{}.jpg'.format(c+1))                            
+                            if not os.path.isdir(os.path.dirname(IMG_FILE)):
+                                helpers.mkdir_p(os.path.dirname(IMG_FILE))
+                            if os.path.isfile(SOURCE_FILE):
+                                shutil.copy(SOURCE_FILE, IMG_FILE)
+                    
+                    img_counter += 1
+                    if img_counter >= 10:
+                        img_counter = 0
+                        for c in range(0, options.output_count):
+                            if plugin_options['jpg_ip'][c] and plugin_options['jpg_que'][c] and plugin_options['jpg_user'][c] and plugin_options['jpg_pass'][c]:
+                                frames = []
+                                for i in range(0, 9):
+                                    IMG_FILE = os.path.join(plugin_data_dir(), str(c+1), '{}.jpg'.format(i))
+                                    if os.path.isfile(IMG_FILE):
+                                        frames.append(Image.open(IMG_FILE))
+                                if len(frames) > 0:
+                                    frame_one = frames[0]
+                                    frame_one.save('plugins/ip_cam/data/{}.gif'.format(c+1), format='GIF', append_images=frames, save_all=True, duration=100, loop=0)
+                                    log.info(NAME, _(u'Creating {}.gif').format(c+1))      
+
+                self._sleep(3)
+
             except Exception:
                 log.error(NAME, _(u'IP Cam plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
@@ -155,6 +187,10 @@ class settings_page(ProtectedPage):
                 return img.read()
             else:
                 return None
+
+    def POST(self):
+        return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
+                
 
 class setup_page(ProtectedPage):
     """Load an html setup page."""

@@ -33,13 +33,13 @@ $var page: plugins
     <form id="pluginForm" action="$plugins.plugin_url('ip_cam.setup_page')" method="post">
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Use downloaded images instead of JPEG stream'):</td>
+                <td style='text-transform: none;'>$_('Use JPEG image downloads'):</td>
                 <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds to the plugin folder and these images will be previewed on the web page. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
                 <input type="checkbox" name="use_jpg" ${"checked" if plugin_options['use_jpg'] else ""}></td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Use downloaded GIF images instead of MJPEG stream'):</td>
-                <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
+                <td style='text-transform: none;'>$_('Use GIF image creating'):</td>
+                <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from 10 images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
                 <input type="checkbox" name="use_gif" ${"checked" if plugin_options['use_gif'] else ""}></td>
             </tr>            
         </table>
@@ -85,5 +85,5 @@ $var page: plugins
 
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
-    <a href=$plugins.plugin_url('ip_cam.status_page') class="button danger">$_('Cancel')</a><br/>
+    <a href=$plugins.plugin_url('ip_cam.settings_page') class="button danger">$_('Cancel')</a><br/>
 </div>
