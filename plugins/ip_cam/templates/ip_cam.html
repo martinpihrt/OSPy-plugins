@@ -28,17 +28,17 @@ $var page: plugins
                 <a href="?cam=${c+1}">
                 <img id="jpeg${c+1}" src="?cam_foto=${c+1}" width="320" height="240" /></td>
                 </a>
-                </tr>              
+                <td>
+                <a href="?cam_stream=${c+1}" class="submit button">$_('Stream')</a>
+                </td>
+                </tr>
         <tr>
             <td style='text-transform: none;'>$_('Status'):</td>
             <td><textarea style="font-family: monospace;" rows="4" cols="50" readonly>$'\n'.join(events)</textarea></td>
-        </tr>        
+        </tr>
     </table>
 </div>
 <div id="controls">
     <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
-
-
-

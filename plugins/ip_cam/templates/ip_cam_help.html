@@ -5,6 +5,9 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_(u'IP Cam - help')</div>
+    <table class="optionList">
+    <tr>
+    <td>   
     <p>$_(u'To use the cameras, you need to know two IP routes:')</p>
     <p>$_(u'a) path to still image (JPEG)')</p>
     <p>$_(u'b) moving image stream path (MJPEG)')</p>
@@ -27,6 +30,8 @@ $var page: plugins
     <p>$_(u'When this option is checked, JPEG images will be downloaded after 5 seconds to the plugin folder and these images will be previewed on the web page. This option will make it possible to see preview images even from an external IP address.')</p>
     <p><b>$_(u'Use GIF image creating')</b></p>
     <p>$_(u'When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from 10 images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.')</p>
+    <p><b>$_(u'Number of frames in GIF')</b></p>
+    <p>$_(u'How many images from the camera are saved and then used to create a GIF image. (The more frames, the longer the gif will be refreshed. Frames are created every 5 seconds. eg: 10 frames - gif is created in 10x5sec=50sec).')</p>
     <p><b>$_(u'IP address and port')</b></p>
     <p>$_(u'Example: http://12.34.56.78:88')</p>
     <p><b>$_(u'Query for get JPEG image')</b></p>
@@ -37,6 +42,9 @@ $var page: plugins
     <p>$_(u'Example: admin')</p>
     <p><b>$_(u'Password for access')</b></p>
     <p>$_(u'Example: 1234')</p>
+    </td>
+    </tr> 
+    </table>
 </div>
 
 <div id="controls">

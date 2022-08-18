@@ -22,14 +22,13 @@ $var page: plugins
                 jQuery("#msgHint").text($:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
             break;
         }
-        jQuery('#msgHint').fadeOut(4000);       
+        jQuery('#msgHint').fadeOut(4000);
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_('IP cam - settings') <span id="msgHint"></span></div>    
     <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a><br/>
-    <p>$_('Assignment of IP cameras to OSPy stations.')</p>
     <form id="pluginForm" action="$plugins.plugin_url('ip_cam.setup_page')" method="post">
         <table class="optionList">
             <tr>
@@ -39,16 +38,22 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use GIF image creating'):</td>
-                <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from 10 images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from xx images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
                 <input type="checkbox" name="use_gif" ${"checked" if plugin_options['use_gif'] else ""}></td>
-            </tr>            
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Number of frames in GIF'):</td>
+                <td title=$:{json.dumps(_(u'How many images from the camera are saved and then used to create a GIF image. (The more frames, the longer the gif will be refreshed. Frames are created every 5 seconds. eg: 10 frames - gif is created in 10x5sec=50sec).'), ensure_ascii=False)}>
+                <input name='gif_frames' type='number' min="3" max="50" value="$plugin_options['gif_frames']"> (3-50)</td> 
+            </tr>
         </table>
-        <p></br></p>                               
+        <p></br></p>
+        <p>$_('Assignment of IP cameras to OSPy stations.')</p>
         $for c in range(0, options.output_count):
             <table class="optionList">
             <tr>
             <td class="NumberCam"><b><small>Station ${c+1})</small></b></td>
-            </tr>                
+            </tr>
             <tr>
             <td style='text-transform: none;'>$_('IP address and port'):</td>
             <td title=$:{json.dumps(_(u'Example: http://12.34.56.78:88'), ensure_ascii=False)}>
@@ -66,7 +71,7 @@ $var page: plugins
             <td title=$:{json.dumps(_(u'Example ISAPI/Streaming/channels/102/httpPreview'), ensure_ascii=False)}>
             <input name='mjpeg_que${c}' type='text' size='60' value='$plugin_options['mjpeg_que'][c]'> 
             </td>
-            </tr>            
+            </tr>
             <tr>
             <td style='text-transform: none;'>$_('Username for access'):</td>
             <td title=$:{json.dumps(_(u'Example: admin'), ensure_ascii=False)}>

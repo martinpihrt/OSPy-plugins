@@ -1,0 +1,20 @@
+$def with(plugin_options, nr)
+
+$var title: $_(u'IP Camera'): $stations[nr-1].name
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_(u'IP Cam') $stations[nr-1].name</div>
+    <p><small>$_(u'Image created from') $plugin_options['gif_frames'] $_(u'frames.') $_(u'Not stream from camera.')</small></p>
+    <table class="optionList">
+        <tr>
+            <td>
+                <a href=$plugins.plugin_url('ip_cam.settings_page')><img src="?cam_gif=$nr" width="640" height="480" /></a>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('ip_cam.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+</div>

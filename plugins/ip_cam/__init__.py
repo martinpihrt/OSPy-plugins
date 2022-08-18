@@ -40,6 +40,7 @@ plugin_options = PluginOptions(
         'jpg_pass': ['']*options.output_count,     # Password for access to jpeg image
         'use_jpg': True,                           # first download jpeg from IP address to plugin folder and next show these jpg on webpage
         'use_gif': True,                           # first download jpeg from IP address to plugin folder and next create gif and show these gif on webpage
+        'gif_frames': 20,                          # s new gif will be created in 100 seconds (20 frame x 5 sec)
      }
 )
 
@@ -110,18 +111,22 @@ class Sender(Thread):
                                 shutil.copy(SOURCE_FILE, IMG_FILE)
                     
                     img_counter += 1
-                    if img_counter >= 10:
+                    if img_counter >= int(plugin_options['gif_frames']):
                         img_counter = 0
                         for c in range(0, options.output_count):
                             if plugin_options['jpg_ip'][c] and plugin_options['jpg_que'][c] and plugin_options['jpg_user'][c] and plugin_options['jpg_pass'][c]:
                                 frames = []
-                                for i in range(0, 9):
+                                for i in range(0, int(plugin_options['gif_frames'])):
                                     IMG_FILE = os.path.join(plugin_data_dir(), str(c+1), '{}.jpg'.format(i))
                                     if os.path.isfile(IMG_FILE):
                                         frames.append(Image.open(IMG_FILE))
                                 if len(frames) > 0:
-                                    frame_one = frames[0]
-                                    frame_one.save('plugins/ip_cam/data/{}.gif'.format(c+1), format='GIF', append_images=frames, save_all=True, duration=100, loop=0)
+                                    gif = []
+                                    for image in frames:
+                                        gif.append(image.convert("P",palette=Image.ADAPTIVE))
+                                        gif[0].save('plugins/ip_cam/data/{}.gif'.format(c+1), save_all=True, optimize=False, append_images=gif[1:], loop=0)
+                                    #frame_one = frames[0]
+                                    #frame_one.save('plugins/ip_cam/data/{}.gif'.format(c+1), format='GIF', append_images=frames, save_all=True, duration=100, loop=0)
                                     log.info(NAME, _(u'Creating {}.gif').format(c+1))      
 
                 self._sleep(3)
@@ -163,10 +168,11 @@ class settings_page(ProtectedPage):
         cam = get_input(qdict, 'cam', False, lambda x: True)
         cam_foto = get_input(qdict, 'cam_foto', False, lambda x: True)
         cam_gif = get_input(qdict, 'cam_gif', False, lambda x: True)
+        cam_stream = get_input(qdict, 'cam_stream', False, lambda x: True)
 
         if sender is not None and cam:
             cam_nr = int(qdict['cam'])
-            return self.plugin_render.ip_cam_mjpeg(plugin_options, cam_nr)
+            return self.plugin_render.ip_cam_gif(plugin_options, cam_nr)
 
         if sender is not None:
             if cam_foto:
@@ -175,6 +181,17 @@ class settings_page(ProtectedPage):
             elif cam_gif:
                 cam_nr = qdict['cam_gif']
                 download_name = plugin_data_dir() + '/' + '{}.gif'.format(cam_nr)
+            elif cam_stream:
+                cam_nr = int(qdict['cam_stream'])
+                url_ip_port = '{}'.format(plugin_options['jpg_ip'][cam_nr-1])
+                url_query = '{}'.format(plugin_options['mjpeg_que'][cam_nr-1])
+                url_user = '{}'.format(plugin_options['jpg_user'][cam_nr-1])
+                url_pass = '{}'.format(plugin_options['jpg_pass'][cam_nr-1])                
+                http_head = url_ip_port.split("//")[0] + '//'    # example -> "http://" or "https://"
+                http_ip_port = url_ip_port.split("//")[1]        # example -> "12.34.56.78:80"
+                stream = '{}{}:{}@{}/{}'.format(http_head, url_user, url_pass, http_ip_port, url_query)
+                # example: http://user:pass@ip_port/cgi-bin/guest/Video.cgi?media=MJPEG&channel=1
+                return self.plugin_render.ip_cam_mjpeg(plugin_options, cam_nr, stream)                
             else:
                 return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
 
@@ -207,6 +224,9 @@ class setup_page(ProtectedPage):
             plugin_options.__setitem__('mjpeg_que', ['']*options.output_count)
             plugin_options.__setitem__('jpg_user', ['']*options.output_count)
             plugin_options.__setitem__('jpg_pass', ['']*options.output_count)
+            plugin_options.__setitem__('gif_frames', 20)
+            plugin_options.__setitem__('use_jpg', True)
+            plugin_options.__setitem__('use_gif', True)
 
             return self.plugin_render.ip_cam_setup(plugin_options, msg)
 
@@ -251,7 +271,10 @@ class setup_page(ProtectedPage):
                 if qdict['use_gif']=='on':
                      plugin_options.__setitem__('use_gif', True)
                 else:
-                    plugin_options.__setitem__('use_gif', False)                    
+                    plugin_options.__setitem__('use_gif', False)
+
+            if 'gif_frames' in qdict:
+                plugin_options.__setitem__('gif_frames', int(qdict['gif_frames']))                                       
 
             plugin_options.__setitem__('mjpeg_que', commands['mjpeg_que'])
             plugin_options.__setitem__('jpg_ip', commands['jpg_ip'])
