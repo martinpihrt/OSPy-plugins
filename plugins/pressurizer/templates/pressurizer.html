@@ -60,8 +60,8 @@ jQuery(document).ready(function(){
 					<input type="checkbox" name="ignore_rain_delay" ${"checked" if plugin_options['ignore_rain_delay'] else ""}></td>
 				</tr>
                 <tr>
-                    <td style='text-transform: none;'>$_('Skip these stations')</td>
-                    <td title=$:{json.dumps(_(u'These marked stations will be skipped and the pressurizer will not respond to them.'), ensure_ascii=False)}>
+                    <td style='text-transform: none;'>$_('Use these stations')</td>
+                    <td title=$:{json.dumps(_(u'These marked stations will be used and the pressurizer will respond to them.'), ensure_ascii=False)}>
                     <select multiple name="ignore_stations" width="350" style="width: 350px" size="12">
                     $for station in [station for station in stations if station.enabled]:
                         <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['ignore_stations'] else ""}>${station.name}</option>

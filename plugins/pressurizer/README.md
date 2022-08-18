@@ -26,8 +26,8 @@ Plugin setup
 * Ignore rain delay:  
   If the check box is marked, the master pump is activated before turning on the stations if rain delay is detected (ignore rain delay).
 
-* Skip these stations:  
-  These marked stations will be skipped and the pressurizer will not respond to them.
+* Use these stations:  
+  These marked stations will be used and the pressurizer will respond to them.
 
 * Pre station run time:  
   How many seconds before turning on station has turning on master station (1 - 999 sec).

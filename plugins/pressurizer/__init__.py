@@ -37,7 +37,7 @@ plugin_options = PluginOptions(
         'ignore_manual': False,         # default is OFF (ignore manual mode - pressurezing even when in manual mode)
         'ignore_rain': False,           # default is OFF (pressurezing even when is rain detected)
         'ignore_rain_delay': False,     # default is OFF (pressurezing even when is rain delay detected)
-        'ignore_stations': [],          # skip selected stations
+        'ignore_stations': [],          # used selected stations
         'pre_time': 20,                 # how many seconds before turning on station has turning on master station 0-999s
         'run_time': 5,                  # for what time will turn on the master station (5 sec) 0-999s
         'mm':       60,                 # How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on) 0-999 min
@@ -83,7 +83,7 @@ class Checker(Thread):
      
         while not self._stop_event.is_set():
             try: 
-                if plugin_options['enabled']:     # plugin is enabled
+                if plugin_options['enabled'] and options.scheduler_enabled:     # plugin is enabled and scheduler is enabled
                     current_time  = datetime.datetime.now()
                     user_pre_time = current_time + datetime.timedelta(seconds=int(plugin_options['pre_time']))
                     check_start   = current_time - datetime.timedelta(days=1)
@@ -103,27 +103,22 @@ class Checker(Thread):
                         rsensed = False
                     else:    
                         rsensed = inputs.rain_sensed()
-
-                    rain = not manu and (rblock or rsensed)
-       
+                    
+                    start_master = False      
                     if stations.master is None:
-                        start_master = False
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options!'))
                         self._sleep(10)
 
                     for entry in schedule:
-                        if entry['start'] <= user_pre_time < entry['end']:                 # is possible program in this interval?
-                           if not rain and not entry['blocked']:                           # is not blocked and not ignored rain?
-                                for ignore_stations in plugin_options['ignore_stations']:  # selected stations for skipping
-                                    if entry['station'] == ignore_stations:                # is this station in selected stations?
-                                        break
-                                    else:    
+                        if entry['start'] <= user_pre_time < entry['end']:                       # is possible program in this interval?
+                           if not manu and not rblock and not rsensed and not entry['blocked']:  # is not blocked and not ignored rain?
+                                for ignore_stations in plugin_options['ignore_stations']:        # selected stations for skipping
+                                    if entry['station'] == ignore_stations:                      # is this station in selected stations?
                                         if stations.master is not None:
                                             log.clear(NAME)
                                             log.info(NAME, datetime_string() + ' ' + _('Is time for pump running...'))
                                             start_master = True
-
 
                     if start_master:  # is time for run relay
                         pname = _('Pressurizer plug-in')
@@ -182,13 +177,20 @@ class Checker(Thread):
                             self._sleep(seconds) # How long after the relay is activated wait for another stations 
 
                     else:
-                        self._sleep(2)        
+                        self._sleep(2)
 
                 else:
-                    self._sleep(5)                   
+                    if not options.scheduler_enabled:
+                        log.clear(NAME)
+                        log.info(NAME, datetime_string() + ' ' + _('Scheduler is disabled or plugin is disabled.'))
+                    else:
+                        log.clear(NAME)
+                        log.info(NAME, _('Pressurizer is disabled.'))
 
-                self._sleep(1)    
-                                             
+                    self._sleep(5)
+
+                self._sleep(1)
+
             except Exception:
                 log.error(NAME, _('Pressurizer plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
