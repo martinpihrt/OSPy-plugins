@@ -66,3 +66,4 @@ Available plugins:
 * Astro Sunrise and Sunset  
 * Photovoltaic Boiler  
 * IP CAM  
+* Modbus stations

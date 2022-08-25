@@ -1,0 +1,30 @@
+$def with(records)
+
+$var title: $_('Modbus Stations log')
+$var page: plugins
+
+<div class="title">$_('Modbus Stations logs')</div>
+<div id="plugin">
+    <p>$_('Here we can see all the events performed in this extension.')</p>
+    <p>$_('Total number of records'): ${len(records)}</p>
+    <p><a href=$plugins.plugin_url('modbus_stations.log_csv') class="button download">$_('Download log')</a>
+    <a href="" class="button refresh">$_('Refresh')</a>
+    <a href=$plugins.plugin_url('modbus_stations.settings_page') class="button danger">$_('Cancel')</a></p></br>
+    <table class="logList">
+        <tr class="log_rec">
+            <th>$_('Date Time')</th>
+            <th>$_('Command')</th>
+            <th>$_('Status')</th>
+        </tr>
+        $for interval in records:
+            <tr class="log_rec ${loop.parity}">
+                <td align='left'>${interval["datetime"]}</td>
+                <td align='left'>${interval["cmd"]}</td>
+                <td align='left'>${interval["status"]}</td>
+            </tr>
+    </table>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('modbus_stations.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
