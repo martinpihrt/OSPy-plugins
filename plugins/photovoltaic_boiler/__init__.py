@@ -166,18 +166,18 @@ class Sender(Thread):
                     probes_ok = True
                     if ds_a_on == -127.0:
                         probes_ok = False
-                        a_state = -2
+                        #a_state = -2
                         # The station switches off if the sensors has a fault
-                        sid = station_a.index
-                        active = log.active_runs()
-                        for interval in active:
-                            if interval['station'] == sid:
-                                stations.deactivate(sid)
-                                log.finish_run(interval)
-                                regulation_text = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
-                                log.clear(NAME)
-                                log.info(NAME, regulation_text)
-                        msg_a_on = True
+                        #sid = station_a.index
+                        #active = log.active_runs()
+                        #for interval in active:
+                        #    if interval['station'] == sid:
+                        #        stations.deactivate(sid)
+                        #        log.finish_run(interval)
+                        #        regulation_text = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
+                        #        log.clear(NAME)
+                        #        log.info(NAME, regulation_text)
+                        #msg_a_on = True
                     
                     current_time  = datetime.datetime.now()
 
