@@ -5,8 +5,74 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Modbus Stations - help')</div>
-    <p>$_('Under construction...')</p>
-    
+    <p><b>$_('Modbus RTU Relay')</b></p>
+    <p>$_('The industrial module controlled via the RS485 bus uses the Modbus RTU protocol.')</p>
+    <a href="https://rpishop.cz/pro-raspberry-pi/4631-waveshare-industrial-modbus-rtu-8kanalovy-rele-modul-rs485-bus-multi-ochrana.html">$_('Buy example on') www.rpishop.cz</a>
+    <a href="/plugins/modbus_stations/static/images/1.png"><img src="/plugins/modbus_stations/static/images/1.png" width="60%"></a>
+    <p>$_('The durable case made of high-quality ABS plastic enables easy mounting on the DIN bar.')</p>
+    <a href="/plugins/modbus_stations/static/images/2.png"><img src="/plugins/modbus_stations/static/images/2.png" width="60%"></a>
+    <a href="/plugins/modbus_stations/static/images/3.png"><img src="/plugins/modbus_stations/static/images/3.png" width="60%"></a>
+    <a href="/plugins/modbus_stations/static/images/4.png"><img src="/plugins/modbus_stations/static/images/4.png" width="60%"></a>
+    <a href="/plugins/modbus_stations/static/images/5.png"><img src="/plugins/modbus_stations/static/images/5.png" width="60%"></a>
+    <p>$_('Thanks to the configurable device address (1~255) on the RS485 bus, multiple devices can be cascaded. If many devices are cascaded or the communication distance is too long, RS485 repeaters should be used.')</p>
+    <a href="/plugins/modbus_stations/static/images/6.png"><img src="/plugins/modbus_stations/static/images/6.png" width="60%"></a>
+    <p>$_('Relay connection diagram. Rated current of the built-in relay contacts: up to 10A 250V AC nebo 30 V DC. Direct control of household appliances: 230 V AC or devices below 30 V DC.')</p>
+    <a href="/plugins/modbus_stations/static/images/7.png"><img src="/plugins/modbus_stations/static/images/7.png" width="60%"></a>
+    <p>$_('Built-in Optocoupler isolation prevents interference from an external high-voltage circuit connected to the relay.')</p>
+    <p>$_('Anti-reverse circuit prevents accidental damage to the circuit by incorrect connection.')</p>
+    <p>$_('High quality relay, contact rating: ≤10A 250V AC/30V DC.')</p>
+    <p>$_('ABS plastic cover for rail mounting, easy to install, safe to use.')</p>
+    <p>$_('3 LEDs for indicating MCU status and signal transmission status.')</p>
+    <p>$_('Supply voltage: 5 V.')</p>
+    <p>$_('Communication interface: RS485.')</p>
+    <p>$_('Baud rate: 4800, 9600, 19200, 38400, 57600, 115200, 128000, 256000.')</p>
+    <p>$_('Default communication format: 9600, N, 8, 1.')</p>
+    <p>$_('Form of contacts: 1NO 1NC.')</p>
+    <p>$_('Communication protocol: Standard Modbus RTU protocol.')</p> 
+    <p>$_('RS485 address: 1-255.')</p> 
+    <p>$_('Number of relay channels: 8.')</p> 
+    <p>$_('RS485 terminal protection: 600 W lightning arrester and surge protection, 15 KV ESD protection (dedicated solder pads with 120 R compensation resistor).')</p>
+    <p>$_('LED indicators')
+    <ul><li>$_('STA')</li></ul>
+    $_('MCU indicator, flashes when the MCU is working normally.')
+    <ul><li>$_('TXD')</li></ul>
+    $_('TX indicator, lights up when sending data.')
+    <ul><li>$_('RXD')</li></ul>
+    $_('RX indicator, lights up when receiving data.')
+    </p></br>
+    <p><b>$_('Command format')</b></p>
+    <p>$_('The command contains 8 bytes.')</p>
+    <p>$_('Byte 1：Device Address')</p>
+    <p>$_('Byte 2：Function code')</p>
+    <p>$_('Byte 3 4：Address of register (big-endian)')</p>
+    <p>$_('Byte 5 6：data of register (big-endian)')</p>
+    <p>$_('Byte 7 8：CRC16 cheksum (little-endian)')</p>
+    <p><b>$_('Function code')</b></p>
+    <p>$_('01 Read state of Relay')</p>
+    <p>$_('03 Read address, revision')</p>
+    <p>$_('05 Write single Relay')</p>
+    <p>$_('06 Configure baudrate, address')</p>
+    <p>$_('0F Write all Relays')</p>
+    <p><b>$_('Examples： [Device with address 01]: Open Relay 0: 01 05 00 00 FF 00 8C 3A')</b></p>
+    <p>$_('Close Relay 0: 01 05 00 00 00 00 CD CA')</p>
+    <p>$_('Open Relay 1: 01 05 00 01 FF 00 DD FA')</p>
+    <p>$_('Close Relay 1: 01 05 00 01 00 00 9C 0A')</p>
+    <p>$_('Open Relay 2: 01 05 00 02 FF 00 2D FA')</p>
+    <p>$_('Close Relay 2: 01 05 00 02 00 00 6C 0A')</p>
+    <p>$_('Open Relay 3: 01 05 00 03 FF 00 7C 3A')</p>
+    <p>$_('Close Relay 3: 01 05 00 03 00 00 3D CA')</p>
+    <p>$_('Flip Relay 0: 01 05 00 00 55 00 F2 9A')</p>
+    <p>$_('Flip Relay 1: 01 05 00 01 55 00 A3 5A')</p>
+    <p>$_('Flip Relay 2: 01 05 00 02 55 00 53 5A')</p>
+    <p>$_('Flip Relay 3: 01 05 00 03 55 00 02 9A')</p>
+    <p><a href="https://www.waveshare.com/wiki/Modbus_RTU_Relay">$_('Waveshare.com/wiki')</a></p>
+    <p><b>$_('USB TO RS485')</b></p>
+    <p>$_('This is an industrial USB to RS485 converter with original FT232RL inside.')</p>
+    <a href="https://rpishop.cz/moduly/4651-waveshare-prumyslovy-prevodnik-usb-na-rs485.html">$_('Buy example on') www.rpishop.cz</a>   
+    <a href="/plugins/modbus_stations/static/images/8.png"><img src="/plugins/modbus_stations/static/images/8.png" width="60%"></a>
+    <a href="/plugins/modbus_stations/static/images/9.png"><img src="/plugins/modbus_stations/static/images/9.png" width="60%"></a>
+    <a href="/plugins/modbus_stations/static/images/10.png"><img src="/plugins/modbus_stations/static/images/10.png" width="60%"></a>
+    <p><a href="https://www.waveshare.com/wiki/USB_TO_RS485">$_('Waveshare.com/wiki')</a></p>
 </div>
 
 <div id="controls">

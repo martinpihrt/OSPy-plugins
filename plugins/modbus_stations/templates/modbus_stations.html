@@ -29,15 +29,33 @@ $var page: plugins
     <form id="pluginForm" action="$plugins.plugin_url('modbus_stations.settings_page')" method="post">
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Use Control'):</td>
+                <td style='text-transform: none;'>$_('Use Modbus Control'):</td>
                 <td>
-                    <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>
+                    <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}><small>$_('A restart of the plugin is required when changing')<small>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Enable logging'):</td>
                 <td>
                     <input name='use_log' type='checkbox'${" checked" if plugin_options['use_log'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Number of relay boards'):</td>
+                <td title=$:{json.dumps(_(u'Enter how many relay boards are used (each board has 8 relay outputs). Example: 2 means 16 outputs and 2 boards.'), ensure_ascii=False)}>
+                    <input name='nr_boards' type='number' min='1' max='255' value='$plugin_options["nr_boards"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Serial port'):</td>
+                <td title=$:{json.dumps(_(u'Specify which port will be used for communication. Use the system information plugin to find the port. Example: /dev/ttyUSB0.'), ensure_ascii=False)}>
+                    <input name='port' type='text' value='$plugin_options['port']'> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Communication speed'):</td>
+                <td title=$:{json.dumps(_(u'Enter the speed at which the connected modules communicate. Example: 9600 (in Baud).'), ensure_ascii=False)}>
+                    <input name='baud' type='number' value='$plugin_options["baud"]'>
                 </td>
             </tr>
             <tr>
