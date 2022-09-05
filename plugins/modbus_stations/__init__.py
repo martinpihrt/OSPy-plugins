@@ -243,20 +243,110 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
             if state == 'off':
                 cmd[4] = 0x00 # Command 0x0 = OFF
             if state == 'flip':
-                cmd[4] = 0x55 # Command 0x55 = Flip relay            
+                cmd[4] = 0x55 # Command 0x55 = Flip relay
             cmd[5] = 0
             crc = ModbusCRC(cmd[0:6]) # CRC from first 6 byte
             cmd[6] = crc & 0xFF
             cmd[7] = crc >> 8
             s.write(cmd)
-            status = _('Addr: {} Out: {} To: {}').format(address, relay_nr, state)
+            status = _('Addr: {} Out: {} To: {}.').format(address, relay_nr, state)
             update_log(cmd, status)
 
     except Exception:
         log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
         status = _('Err: {}').format(traceback.format_exc())
-        update_log(cmd, status)        
+        update_log(cmd, status)
         pass
+
+def Read_address():
+    cmd = [0]*8
+    # https://www.waveshare.com/wiki/Modbus_RTU_Relay
+    # Command：00 03 40 00 00 01 90 1B
+    # 00    Device address  0 x 00 is the boradcast address；0 x 01-0 x FF are device addresses
+    # 03    03 Command, Read Device address 
+    # 40 00 Command register 0 x 0200: Read software revision，0 x 0040: Read device address 
+    # 00 01 Device address  Device address
+    # 90 1B CRC16, The CRC16 checksum of the first six bytes. 
+    try:
+        s = None
+        try:
+            s = serial.Serial(plugin_options['port'], plugin_options['baud'])
+        except:
+            log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
+
+        if s is not None:  
+            # writing  
+            cmd[0] = 0
+            cmd[1] = 3
+            cmd[2] = 40
+            cmd[3] = 0
+            cmd[4] = 0    
+            cmd[5] = 1
+            crc = ModbusCRC(cmd[0:6]) # CRC from first 6 byte
+            cmd[6] = crc & 0xFF
+            cmd[7] = crc >> 8
+            status = _('Address request.')
+            update_log(cmd, status)            
+            s.write(cmd)
+
+            sender._sleep(1)
+
+            # reading
+            cmd = [0]*7
+            cmd = s.read(8) # read 7 bytes
+            if cmd[0] != 0 and s is not None:
+                status = _('Found address') + ': {}.'.format(cmd[0])
+                update_log(cmd, status)
+            else:
+                status = _('Not Found any device.')
+                update_log(cmd, status)
+            return -1
+
+    except Exception:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+        status = _('Err: {}').format(traceback.format_exc())
+        update_log(cmd, status)
+        pass
+        return -1
+
+
+def Write_address(address):
+    cmd = [0]*8
+    # https://www.waveshare.com/wiki/Modbus_RTU_Relay
+    # Command：00 06 40 00 00 01 5C 1B
+    # Byte    Meaning     Description
+    # 00      Device address  0 x 00 is the boradcast address；0 x 01-0 x FF are device addresses
+    # 06      06 Command  Set baud rate or device address
+    # 40 00   Command register    0 x 2000: Set baud rate，0 x 4000: Set device address
+    # 00 01   Device address  The device address,0 x 0001-0 x 00FF
+    # 5C 1B   CRC16   The CRC16 checksum of the first six bytes.  
+    try:
+        s = None
+        try:
+            s = serial.Serial(plugin_options['port'], plugin_options['baud'])
+        except:
+            log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
+
+        if s is not None:  
+            # writing  
+            cmd[0] = 0
+            cmd[1] = 6
+            cmd[2] = 40
+            cmd[3] = 0
+            cmd[4] = 0    
+            cmd[5] = address
+            crc = ModbusCRC(cmd[0:6]) # CRC from first 6 byte
+            cmd[6] = crc & 0xFF
+            cmd[7] = crc >> 8
+            status = _('Set device address {}.').format(address)
+            update_log(cmd, status)            
+            s.write(cmd)                  
+
+    except Exception:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+        status = _('Err: {}').format(traceback.format_exc())
+        update_log(cmd, status)        
+        pass                
 
 ################################################################################
 # Web pages:                                                                   #
@@ -270,6 +360,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        program = helpers.get_input(qdict, 'program', False, lambda x: True)
  
         if sender is not None and delete:
             write_log([])
@@ -278,6 +369,9 @@ class settings_page(ProtectedPage):
 
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
+
+        if sender is not None and program:
+            raise web.seeother(plugin_url(address_page), True)            
 
         return self.plugin_render.modbus_stations(plugin_options, log.events(NAME))
 
@@ -292,6 +386,33 @@ class settings_page(ProtectedPage):
             pass
 
         raise web.seeother(plugin_url(settings_page), True)
+
+class address_page(ProtectedPage):
+    """html page for programming address."""
+
+    def GET(self):
+        global sender
+        qdict = web.input()
+        adr = helpers.get_input(qdict, 'adr', False, lambda x: True)
+        log.clear(NAME)
+        log.info(NAME, _('I am retrieving the address of the device.'))
+        adr_in_device = Read_address()
+        if adr_in_device != -1:
+            log.info(NAME, _('Found the address of the connected device') + ': {}.'.format(adr_in_device))
+        
+        if sender is not None and adr:
+            adr = int(qdict['adr'])
+            Write_address(adr)
+            log.info(NAME, _('The address that should have been set on the device') + ': {}.'.format(adr))
+            adr_in_device = Read_address()
+            if adr_in_device != -1:
+                log.info(NAME, _('Found the address of the connected device') + ': {}.'.format(adr_in_device))
+            raise web.seeother(plugin_url(address_page), True)
+
+        return self.plugin_render.modbus_stations_address(plugin_options, log.events(NAME))
+
+    def POST(self):
+        raise web.seeother(plugin_url(address_page), True)        
 
 class help_page(ProtectedPage):
     """Load an html page for help"""

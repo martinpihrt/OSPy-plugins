@@ -1,0 +1,50 @@
+$def with(plugin_options, events)
+
+$var title: $_('Modbus Stations Address')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Modbus Stations Address')</div>
+    <form id="pluginForm" action="$plugins.plugin_url('modbus_stations.address_page')" method="get">
+        <p>$_('Device (relay module) address programming procedure.')</p>
+        <p><ul>
+            <li>$_('Disconnect all modules from the bus except the one you want to set')</li>
+            <li>$_('In the window below, enter the desired device address in the range 1-255')</li>
+            <li>$_('Press the button for programming (Upload to device)')</li>
+            <li>$_('Verify that the new address has been set (in the status window below)')</li>
+            <li>$_('Reconnect the other modules on the bus')</li>
+            <li>$_('The default address set by the manufacturer is address number 1')</li>
+        </ul></p>
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Set address'):</td>
+                <td title=$:{json.dumps(_(u'Enter the address where you want to set the device.'), ensure_ascii=False)}>
+                    <input name='adr' type='number' min='1' max='255' value='1'>
+                </td>
+                <td>
+                    <button id="cSubmit" class="button cancel danger"><b>$_('Upload to device')</b></button>
+                </td>
+            </tr>
+            <tr>
+               <td style='text-transform: none;'>$_('Status'):</td>
+               <td colspan="2">
+                    <textarea style="font-family: monospace;" rows="10" cols="50" readonly>$'\n'.join(events)</textarea>
+               </td>
+            </tr>            
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('modbus_stations.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
