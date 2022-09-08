@@ -9,6 +9,7 @@ $var page: plugins
     <p>$_('Total number of records'): ${len(records)}</p>
     <p><a href=$plugins.plugin_url('modbus_stations.log_csv') class="button download">$_('Download log')</a>
     <a href="" class="button refresh">$_('Refresh')</a>
+    <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
     <a href=$plugins.plugin_url('modbus_stations.settings_page') class="button danger">$_('Cancel')</a></p></br>
     <table class="logList">
         <tr class="log_rec">

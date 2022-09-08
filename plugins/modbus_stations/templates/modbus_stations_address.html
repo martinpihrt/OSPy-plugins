@@ -27,6 +27,9 @@ $var page: plugins
         </ul></p>
         <table class="optionList">
             <tr>
+                <td><a href="?find" class="button submit">$_('Find address and firmware')</a></td
+            </tr>    
+            <tr>
                 <td style='text-transform: none;'>$_('Set address'):</td>
                 <td title=$:{json.dumps(_(u'Enter the address where you want to set the device.'), ensure_ascii=False)}>
                     <input name='adr' type='number' min='1' max='255' value='1'>
@@ -40,7 +43,7 @@ $var page: plugins
                <td colspan="2">
                     <textarea style="font-family: monospace;" rows="10" cols="50" readonly>$'\n'.join(events)</textarea>
                </td>
-            </tr>            
+            </tr>
         </table>
     </form>
 </div>

@@ -229,7 +229,7 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
     try:
         s = None
         try:
-            s = serial.Serial(plugin_options['port'], plugin_options['baud'])
+            s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
         except:
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
 
@@ -251,64 +251,137 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
             s.write(cmd)
             status = _('Addr: {} Out: {} To: {}.').format(address, relay_nr, state)
             update_log(cmd, status)
+            s.close()
 
     except Exception:
         log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-        status = _('Err: {}').format(traceback.format_exc())
+        status = _('Error: {}').format(traceback.format_exc())
         update_log(cmd, status)
         pass
 
 def Read_address():
-    cmd = [0]*8
     # https://www.waveshare.com/wiki/Modbus_RTU_Relay
     # Command：00 03 40 00 00 01 90 1B
     # 00    Device address  0 x 00 is the boradcast address；0 x 01-0 x FF are device addresses
     # 03    03 Command, Read Device address 
     # 40 00 Command register 0 x 0200: Read software revision，0 x 0040: Read device address 
     # 00 01 Device address  Device address
-    # 90 1B CRC16, The CRC16 checksum of the first six bytes. 
+    # 90 1B CRC16, The CRC16 checksum of the first six bytes.
+    cmd = [0]*8 
     try:
         s = None
         try:
-            s = serial.Serial(plugin_options['port'], plugin_options['baud'])
+            s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
         except:
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
+            pass
+            return -1
 
-        if s is not None:  
-            # writing  
-            cmd[0] = 0
-            cmd[1] = 3
-            cmd[2] = 40
-            cmd[3] = 0
-            cmd[4] = 0    
-            cmd[5] = 1
-            crc = ModbusCRC(cmd[0:6]) # CRC from first 6 byte
+        if s is not None:
+            # writing
+            cmd = [0]*8
+            cmd[0] = 0x00
+            cmd[1] = 0x03
+            cmd[2] = 0x40
+            cmd[3] = 0x00
+            cmd[4] = 0x00
+            cmd[5] = 0x01
+            crc = ModbusCRC(cmd[0:6])             # CRC from first 6 byte
             cmd[6] = crc & 0xFF
             cmd[7] = crc >> 8
-            status = _('Address request.')
-            update_log(cmd, status)            
+            status = _('Address request...')
+            update_log(cmd, status)
             s.write(cmd)
 
-            sender._sleep(1)
-
             # reading
-            cmd = [0]*7
-            cmd = s.read(8) # read 7 bytes
-            if cmd[0] != 0 and s is not None:
-                status = _('Found address') + ': {}.'.format(cmd[0])
-                update_log(cmd, status)
-            else:
-                status = _('Not Found any device.')
-                update_log(cmd, status)
+            rx_raw = s.read(7)                    # read 7 byte from serial
+            if rx_raw:
+                rx_list = list(rx_raw)            # raw string to array
+                status = _('Incomming data...')
+                update_log(rx_list, status)
+                crc = ModbusCRC(rx_list[0:5])     # CRC from first 6 byte
+                cmd[6] = crc & 0xFF
+                cmd[7] = crc >> 8
+                if rx_list[5] == cmd[6] and rx_list[6] == cmd[7]: # crc check
+                    status = _('Found address') + ': {}.'.format(rx_list[0])
+                    update_log(rx_list, status)
+                    s.close()
+                    return rx_list[0]
+                else:
+                    status = _('CRC not match!')
+                    update_log(rx_list, status)
+
+            s.close()
+            return -1
+        else:
             return -1
 
     except Exception:
         log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-        status = _('Err: {}').format(traceback.format_exc())
+        status = _('Error: {}').format(traceback.format_exc())
         update_log(cmd, status)
         pass
         return -1
 
+def Read_firmware_version(address=0x01):
+    # https://www.waveshare.com/wiki/Modbus_RTU_Relay
+    # Command： 00 03 80 00 00 01 AC 1B
+    cmd = [0]*8 
+    try:
+        s = None
+        try:
+            s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
+        except:
+            log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
+            pass
+            return -1
+
+        if s is not None:
+            # writing
+            cmd = [0]*8
+            cmd[0] = address
+            cmd[1] = 0x03
+            cmd[2] = 0x80
+            cmd[3] = 0x00
+            cmd[4] = 0x00
+            cmd[5] = 0x01
+            crc = ModbusCRC(cmd[0:6])             # CRC from first 6 byte
+            cmd[6] = crc & 0xFF
+            cmd[7] = crc >> 8
+            status = _('Address request...')
+            update_log(cmd, status)
+            s.write(cmd)
+
+            # reading
+            rx_raw = s.read(7)                    # read 7 byte from serial
+            if rx_raw:
+                rx_list = list(rx_raw)            # raw string to array
+                status = _('Incomming data...')
+                update_log(rx_list, status)
+                crc = ModbusCRC(rx_list[0:5])     # CRC from first 6 byte
+                cmd[6] = crc & 0xFF
+                cmd[7] = crc >> 8
+                if rx_list[5] == cmd[6] and rx_list[6] == cmd[7]: # crc check
+                    # for example: 0 x 00C8 = 200 = V2.00
+                    fw = (rx_list[3]+rx_list[4])/100
+                    status = _('Firmware is') + ': {}.'.format(fw)
+                    s.close()
+                    return fw
+                else:
+                    status = _('CRC not match!')
+                    update_log(rx_list, status)
+
+            s.close()
+            return -1
+        else:
+            return -1
+
+    except Exception:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+        status = _('Error: {}').format(traceback.format_exc())
+        update_log(cmd, status)
+        pass
+        return -1
 
 def Write_address(address):
     cmd = [0]*8
@@ -327,26 +400,27 @@ def Write_address(address):
         except:
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
 
-        if s is not None:  
+        if s is not None:
             # writing  
-            cmd[0] = 0
-            cmd[1] = 6
-            cmd[2] = 40
-            cmd[3] = 0
-            cmd[4] = 0    
+            cmd[0] = 0x00
+            cmd[1] = 0x06
+            cmd[2] = 0x40
+            cmd[3] = 0x00
+            cmd[4] = 0x00
             cmd[5] = address
             crc = ModbusCRC(cmd[0:6]) # CRC from first 6 byte
             cmd[6] = crc & 0xFF
             cmd[7] = crc >> 8
             status = _('Set device address {}.').format(address)
-            update_log(cmd, status)            
-            s.write(cmd)                  
+            update_log(cmd, status)
+            s.write(cmd)
+            s.close()
 
     except Exception:
         log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-        status = _('Err: {}').format(traceback.format_exc())
-        update_log(cmd, status)        
-        pass                
+        status = _('Error: {}').format(traceback.format_exc())
+        update_log(cmd, status)
+        pass
 
 ################################################################################
 # Web pages:                                                                   #
@@ -358,15 +432,9 @@ class settings_page(ProtectedPage):
     def GET(self):
         global sender
         qdict = web.input()
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
         program = helpers.get_input(qdict, 'program', False, lambda x: True)
  
-        if sender is not None and delete:
-            write_log([])
-            log.info(NAME, _('Deleted all log files OK'))
-            raise web.seeother(plugin_url(settings_page), True)
-
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
 
@@ -393,22 +461,27 @@ class address_page(ProtectedPage):
     def GET(self):
         global sender
         qdict = web.input()
-        adr = helpers.get_input(qdict, 'adr', False, lambda x: True)
-        log.clear(NAME)
-        log.info(NAME, _('I am retrieving the address of the device.'))
-        adr_in_device = Read_address()
-        if adr_in_device != -1:
-            log.info(NAME, _('Found the address of the connected device') + ': {}.'.format(adr_in_device))
-        
-        if sender is not None and adr:
-            adr = int(qdict['adr'])
-            Write_address(adr)
-            log.info(NAME, _('The address that should have been set on the device') + ': {}.'.format(adr))
-            adr_in_device = Read_address()
-            if adr_in_device != -1:
-                log.info(NAME, _('Found the address of the connected device') + ': {}.'.format(adr_in_device))
-            raise web.seeother(plugin_url(address_page), True)
+        adr_btn = helpers.get_input(qdict, 'adr', False, lambda x: True)
+        find_btn = helpers.get_input(qdict, 'find', False, lambda x: True)
 
+        log.clear(NAME)
+
+        if sender is not None and adr_btn:
+            adr = int(qdict['adr'])
+            #Write_address(adr)
+            log.info(NAME, _('The address that should have been set on the device') + ': {}.'.format(adr))
+
+        if sender is not None and find_btn:
+            find_adr = int(Read_address())
+            if find_adr > 0:
+                log.info(NAME, _('Found device on address') + ': {}.'.format(find_adr))
+                fw = Read_firmware_version(find_adr)
+                print("test", fw)
+                if fw > 0:
+                    log.info(NAME, _('Firmware is') + ': {}.'.format(fw))
+            else:
+                log.info(NAME, _('Not Found any address or device.'))            
+        
         return self.plugin_render.modbus_stations_address(plugin_options, log.events(NAME))
 
     def POST(self):
@@ -424,6 +497,13 @@ class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
+        qdict = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        if sender is not None and delete:
+            write_log([])
+            log.info(NAME, _('Deleted all log files OK'))
+            raise web.seeother(plugin_url(settings_page), True)
+
         return self.plugin_render.modbus_stations_log(read_log())
 
 class settings_json(ProtectedPage): 

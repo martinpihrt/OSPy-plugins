@@ -19,14 +19,10 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Modbus Stations')</div>
-    <a href=$plugins.plugin_url('modbus_stations.help_page') class="button upload">$_('Help')</a><br/>
+    <p><a href=$plugins.plugin_url('modbus_stations.help_page') class="button upload">$_('Help')</a></p>
     $if plugin_options['use_log']:
-        <p>
-        <a href=$plugins.plugin_url('modbus_stations.log_csv') class="button download">$_('Download log')</a>
-        <a href="?show" class="button backup">$_('Show logs')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
-        </p></br>
-    <a href="?program" class="button backup">$_('Address programming')</a>    
+        <p><a href="?show" class="button backup">$_('Show logs')</a></p>
+    <p><a href="?program" class="button backup">$_('Address programming')</a></p>
     <form id="pluginForm" action="$plugins.plugin_url('modbus_stations.settings_page')" method="post">
         <table class="optionList">
             <tr>
