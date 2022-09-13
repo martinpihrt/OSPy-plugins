@@ -103,6 +103,20 @@ def stop():
         sender = None
 
 
+def Compute_address_and_out(station_nr):
+    ### compute address and output from input number. Ex: sr=0 -> adr=1, out=0. sr=8 -> adr=2, out=1... ###
+    adr = 0
+    out = 0
+    num = int(station_nr)
+    if num < 8:
+        adr = 1
+        out = station_nr
+    else:
+        adr = int(num/8)
+        out = (num - (adr * 8))
+        adr = adr+1
+    return adr, out
+
 def on_station_on(name, **kw):
     """ Send CMD to ON when core program signals in station state."""
     index = int(kw["txt"])
@@ -110,8 +124,9 @@ def on_station_on(name, **kw):
     log.info(NAME, _('Station {} change to ON').format(index+1))
     if plugin_options['nr_boards'] == 1: # relay 1-8, adr 1
         Send_data(address=0x01, command=0x05, relay_nr=int(index), state='on')
-    #else:
-        # todo adr 2... station 9 as relay 1, 10 -> 2 ...        
+    else:
+        adr, out = Compute_address_and_out(index)
+        Send_data(address=adr, command=0x05, relay_nr=int(out), state='on')
     
 
 def on_station_off(name, **kw):
@@ -121,8 +136,9 @@ def on_station_off(name, **kw):
     log.info(NAME, _('Station {} change to OFF').format(index+1))
     if plugin_options['nr_boards'] == 1: # relay 1-8, adr 1
         Send_data(address=0x01, command=0x05, relay_nr=int(index), state='off')
-    #else:
-        # todo adr 2... station 9 as relay 1, 10 -> 2 ...
+    else:
+        adr, out = Compute_address_and_out(index)
+        Send_data(address=adr, command=0x05, relay_nr=int(out), state='off')
     
 
 def on_station_clear(name, **kw):
@@ -130,8 +146,10 @@ def on_station_clear(name, **kw):
     log.clear(NAME)
     log.info(NAME, _('All station change to OFF'))
     for i in range(plugin_options['nr_boards']*8):
-        Send_data(address=0x01, command=0x05, relay_nr=i, state='off')
-    
+        adr, out = Compute_address_and_out(i)
+        Send_data(address=adr, command=0x05, relay_nr=int(out), state='off')
+        time.sleep(0.1)
+
 
 def read_log():
     """Read log data from json file."""
@@ -217,9 +235,12 @@ def ModbusCRC(data):
     crcLow = 0xff; 
     index = 0;
     for byte in data:
-        index = crcLow ^ byte
-        crcLow  = crcHigh ^ CRCTableHigh[index]
-        crcHigh = CRCTableLow[index]
+        if byte is not None:
+            index = crcLow ^ byte
+            crcLow  = crcHigh ^ CRCTableHigh[index]
+            crcHigh = CRCTableLow[index]
+        else:
+            return 0    
     
     return (crcHigh << 8 | crcLow)
 
@@ -238,20 +259,25 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
             cmd[1] = command  # Command for controlling Relay
             cmd[2] = 0        # The register address of controlled Relay, 0x0000 - 0x0008 (in relay mode)
             cmd[3] = relay_nr # Output relay 1-8 (in single mode)
+            msg = ''
             if state == 'on':
                 cmd[4] = 0xFF # Command 0xFF = ON,
+                msg = _('ON') 
             if state == 'off':
                 cmd[4] = 0x00 # Command 0x0 = OFF
+                msg = _('OFF')
             if state == 'flip':
                 cmd[4] = 0x55 # Command 0x55 = Flip relay
+                msg = _('FLIP')
             cmd[5] = 0
             crc = ModbusCRC(cmd[0:6]) # CRC from first 6 byte
             cmd[6] = crc & 0xFF
             cmd[7] = crc >> 8
             s.write(cmd)
-            status = _('Addr: {} Out: {} To: {}.').format(address, relay_nr, state)
+            status = _('Addr: {} Out: {} To: {}.').format(address, relay_nr, msg)
             update_log(cmd, status)
             s.close()
+            time.sleep(0.1)
 
     except Exception:
         log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
@@ -292,7 +318,8 @@ def Read_address():
             status = _('Address request...')
             update_log(cmd, status)
             s.write(cmd)
-
+            time.sleep(1)
+            
             # reading
             rx_raw = s.read(7)                    # read 7 byte from serial
             if rx_raw:
@@ -325,7 +352,7 @@ def Read_address():
 
 def Read_firmware_version(address=0x01):
     # https://www.waveshare.com/wiki/Modbus_RTU_Relay
-    # Command： 00 03 80 00 00 01 AC 1B
+    # Command： 00 03 80 00 00 01
     cmd = [0]*8 
     try:
         s = None
@@ -338,7 +365,6 @@ def Read_firmware_version(address=0x01):
 
         if s is not None:
             # writing
-            cmd = [0]*8
             cmd[0] = address
             cmd[1] = 0x03
             cmd[2] = 0x80
@@ -348,9 +374,10 @@ def Read_firmware_version(address=0x01):
             crc = ModbusCRC(cmd[0:6])             # CRC from first 6 byte
             cmd[6] = crc & 0xFF
             cmd[7] = crc >> 8
-            status = _('Address request...')
+            status = _('Firmware request...')
             update_log(cmd, status)
             s.write(cmd)
+            time.sleep(1)
 
             # reading
             rx_raw = s.read(7)                    # read 7 byte from serial
@@ -358,18 +385,12 @@ def Read_firmware_version(address=0x01):
                 rx_list = list(rx_raw)            # raw string to array
                 status = _('Incomming data...')
                 update_log(rx_list, status)
-                crc = ModbusCRC(rx_list[0:5])     # CRC from first 6 byte
-                cmd[6] = crc & 0xFF
-                cmd[7] = crc >> 8
-                if rx_list[5] == cmd[6] and rx_list[6] == cmd[7]: # crc check
-                    # for example: 0 x 00C8 = 200 = V2.00
-                    fw = (rx_list[3]+rx_list[4])/100
-                    status = _('Firmware is') + ': {}.'.format(fw)
-                    s.close()
-                    return fw
-                else:
-                    status = _('CRC not match!')
-                    update_log(rx_list, status)
+                # for example: 0 x 00C8 = 200 = V2.00
+                fw = (rx_list[3] + rx_list[4]) / 100
+                status = _('Firmware is') + ': {}.'.format(fw)
+                s.close()
+                time.sleep(1)
+                return fw
 
             s.close()
             return -1
@@ -396,9 +417,10 @@ def Write_address(address):
     try:
         s = None
         try:
-            s = serial.Serial(plugin_options['port'], plugin_options['baud'])
+            s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
         except:
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
+            s.close()
 
         if s is not None:
             # writing  
@@ -415,6 +437,7 @@ def Write_address(address):
             update_log(cmd, status)
             s.write(cmd)
             s.close()
+            time.sleep(1)
 
     except Exception:
         log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
@@ -468,17 +491,20 @@ class address_page(ProtectedPage):
 
         if sender is not None and adr_btn:
             adr = int(qdict['adr'])
-            #Write_address(adr)
+            Write_address(adr)
             log.info(NAME, _('The address that should have been set on the device') + ': {}.'.format(adr))
+            log.info(NAME, _('Now I will try to load the address after programming...'))
+            find_btn = True
 
         if sender is not None and find_btn:
             find_adr = int(Read_address())
             if find_adr > 0:
                 log.info(NAME, _('Found device on address') + ': {}.'.format(find_adr))
-                fw = Read_firmware_version(find_adr)
-                print("test", fw)
+                fw = Read_firmware_version(int(find_adr))
                 if fw > 0:
                     log.info(NAME, _('Firmware is') + ': {}.'.format(fw))
+                else:
+                    log.info(NAME, _('Not Read firmware from device.'))
             else:
                 log.info(NAME, _('Not Found any address or device.'))            
         
