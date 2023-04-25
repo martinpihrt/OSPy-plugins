@@ -90,7 +90,7 @@ class StatusChecker(Thread):
         global stats
 
         command = 'git remote update'
-        subprocess.check_output(command.split())
+        run_command(command)
 
         command = 'git config --get remote.origin.url'
         remote = subprocess.check_output(command.split()).decode('utf8').strip()
@@ -217,10 +217,10 @@ def perform_update():
     try:
         # ignore local chmod permission
         command = "git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
-        subprocess.check_output(command.split())
+        run_command(command)
 
         command = "git reset --hard"
-        subprocess.check_output(command.split())
+        run_command(command)
 
         command = "git pull"
         output = subprocess.check_output(command.split()).decode('utf8')
@@ -229,7 +229,7 @@ def perform_update():
         if checker is not None:
             if checker.status['remote_branch'] == 'origin/refactor':
                 command = 'git checkout master'
-                subprocess.check_output(command.split())
+                run_command(command)
 
         log.debug(NAME, _(u'Update result') + ': ' + output)
 
@@ -268,7 +268,22 @@ def get_all_values():
     else:
         plg_state = 1 
 
-    return plg_state , stats['ver_new'], stats['ver_act'], stats['ver_changes'] # state, new version, actual version, 'ver changes  
+    return plg_state , stats['ver_new'], stats['ver_act'], stats['ver_changes'] # state, new version, actual version, 'ver changes
+
+
+### Run any cmd ###
+def run_command(cmd):
+    try:
+        proc = subprocess.Popen(
+        cmd,
+        stderr=subprocess.STDOUT, # merge stdout and stderr
+        stdout=subprocess.PIPE,
+        shell=True)
+        output = proc.communicate()[0].decode('utf-8')
+        log.info(NAME, output)
+
+    except Exception:
+        log.error(NAME, _(u'System update plug-in') + ':\n' + traceback.format_exc())      
 
 
 restarted = signal('restarted')

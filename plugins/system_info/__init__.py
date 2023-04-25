@@ -50,7 +50,7 @@ def get_overview():
         else:
             try:       # python > 3.9
                 import distro
-                result.append(_('Distribution') + ': {} {}'.format(distro.linux_distribution()[0], distro.linux_distribution()[1]))
+                result.append(_('Distribution') + ': {} {} {}'.format(distro.linux_distribution()[0], distro.linux_distribution()[1], distro.linux_distribution()[2]))
             except:    # python <= 3.9
                 result.append(_('Distribution') + ': {} {}'.format(platform.linux_distribution()[0], platform.linux_distribution()[1]))
                 pass
@@ -59,7 +59,7 @@ def get_overview():
         result.append(_('Python') + ': {}'.format(platform.python_version()))
         if netdevs:
             for dev, info in netdevs.items():
-                result.append('%-16s %s MiB %s MiB' % (dev + ': ', info['rx'], info['tx']))
+                result.append(_('{}: Rx={}MB Tx={}MB ').format(dev, round(info['rx'],2), round(info['tx'],2)))
         else:
             result.append(_('Network: Unknown'))
         if options.use_ssl or options.use_own_ssl:
@@ -71,6 +71,10 @@ def get_overview():
         result.append(_('CPU usage') + ': {} %'.format(helpers.get_cpu_usage()))
         result.append(_('CPU serial number') + ': {}'.format(helpers.cpu_info()))
         result.append(_('MAC adress') + ': {}'.format(helpers.get_mac()))
+        try:
+            result.append(_('Wi-Fi signal') + ': {} %'.format(helpers.read_wifi_signal()))
+        except:
+            pass    
         result.append(_('I2C HEX Adress') + ': ')
         try:
             result.append(get_all_addr())
