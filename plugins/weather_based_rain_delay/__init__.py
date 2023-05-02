@@ -123,21 +123,21 @@ class weather_to_delay(Thread):
                         
 
                     else:
-                        if 'precipProbability' in current_data:
-                            if current_data['precipProbability'] > 0.75:
-                                log.info(NAME, _(u'Weather detected Rain') + ': ' + current_data['summary'] + _(u'Adding delay of') + ' ' + str(plugin_options['delay_duration']) + '.')
+                        if 'precipitation' in current_data:
+                            if current_data['precipitation'] > 0.75:
+                                log.info(NAME, _(u'Weather detected Rain') + '. ' + _(u'Adding delay of') + ' ' + str(plugin_options['delay_duration']) + '.')
                                 rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(plugin_options['delay_duration']))
                                 stop_onrain()
                                 tempText = ""
                                 tempText += _(u'Weather detected Rain') 
 
-                            elif current_data['precipProbability'] > 0.1:
-                                log.info(NAME, _(u'No rain detected') + ': ' + current_data['summary'] + '. ' + _(u'No action.'))
+                            elif current_data['precipitation'] > 0.1:
+                                log.info(NAME, _(u'No rain detected') + '. ' + _(u'No action.'))
                                 tempText = ""
                                 tempText +=  _(u'No rain detected') 
 
                             else:
-                                log.info(NAME, _(u'Good weather detected') + ': ' + current_data['summary'] + '. ' + _(u'Removing rain delay.'))
+                                log.info(NAME, _(u'Good weather detected') + '. ' +  _(u'Removing rain delay.'))
                                 tempText = ""
                                 tempText += _(u'Good weather detected') 
                                 if NAME in rain_blocks:
