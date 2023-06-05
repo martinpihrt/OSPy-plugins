@@ -93,7 +93,7 @@ class VoiceChecker(Thread):
                             log.clear(NAME)
                             log.info(NAME, _(u'Pygame is not installed.'))
                             log.info(NAME, _(u'Please wait installing pygame...'))
-                            cmd = "sudo apt-get install python-pygame -y"
+                            cmd = "sudo apt-get install python3-pygame -y"
                             run_command(cmd)
                             log.info(NAME, _(u'Pygame is now installed.'))
                             once_test = False
