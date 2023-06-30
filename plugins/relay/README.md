@@ -1,6 +1,6 @@
 Relay Test Readme
 ====
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 Example plugin to demonstrate OSPY on-board relay.  
 Plugin switch relay to ON (2 sec) and next switch relay to OFF.    
