@@ -1,7 +1,7 @@
 System Debug Information Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin prints debug information from events log file.  
 You must first enabled debug in options.  
