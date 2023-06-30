@@ -1,7 +1,7 @@
 Email Notifications SSL Readme
 ====
 
-Only for Python 3
+Only for Python 3+
 
 This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider.
 This extension is a more modern variant of the original E-mail notifications extension (Connection via SSL layer)
