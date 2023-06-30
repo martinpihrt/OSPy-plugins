@@ -1,7 +1,7 @@
 System update from GitHub Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin compares the local copy with the remote repository and can automatically update the local copy.  
 For check new version OSPy click on update status button.  
