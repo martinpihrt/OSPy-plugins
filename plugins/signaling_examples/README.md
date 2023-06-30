@@ -1,7 +1,7 @@
 Signaling Examples Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This is Example signal plugin provides functions triggered by signals from core program.  
 Example signals from: webpages.py, scheduler.py, stations.py, plugins:  
