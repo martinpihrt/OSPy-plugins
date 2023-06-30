@@ -1,7 +1,7 @@
 Sunrise and Sunset Readme
 ====
 
-Only for Python 3
+Only for Python 3+
 
 This extension allows you to run a specific program depending on sunrise or sunset. This extension calculate the following astronomical data.
 
