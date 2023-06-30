@@ -1,7 +1,7 @@
 Photovoltaic Boiler Readme
 ====
 
-Tested in Python 3
+Tested in Python 3+
 
 This plugin needs enabled and corect setup the Air Temperature and Humidity Monitor. Reading temperature using from DS18B20 sensors connected to the external hardware board'). Or it is possible to use temperature measurement from OSPy sensors (LAN/Wi-Fi, radio...) Allows boiler heating regulation. Example: for heating boiler with photovoltaic solar panel. During the day, when the solar power plant has excess electricity, we heat the boiler from the solar power plant. In the evening hours, for example, from 8 p.m. to 11 p.m., and if the boiler temperature is lower than set, we switch the station (contactor) to the public network. The contactor has a changeover contact that connects the boiler either to the solar power plant or to the public grid. The boiler has its own thermostat with a set temperature to regulate the water temperature. This extension only switches between the public grid and PV if there was no solar heating.
 
