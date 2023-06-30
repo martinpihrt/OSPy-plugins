@@ -4,7 +4,7 @@ Modbus Stations Readme
 Tested in Python 3
 
 This plugin can be used to control devices via modbus protocol (8ch relay boards).
-Under construction...
+Requires to be installed in to the Linux system. Use: sudo apt install python3-serial and restart ospy!
 
 Plugin setup
 -----------

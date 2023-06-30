@@ -20,7 +20,6 @@ from threading import Thread, Event
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 
-import serial
 
 NAME = 'Modbus Stations'     ### name for plugin in plugin manager ###
 MENU =  _('Package: Modbus Stations')
@@ -36,6 +35,13 @@ plugin_options = PluginOptions(
     }
 )
 
+try:
+    import serial
+    ser_test = True
+except:
+    ser_test = False
+    log.error(NAME, _('Serial not found. Use: sudo apt install python3-serial.'))
+    pass
 
 ################################################################################
 # Main function loop:                                                          #
@@ -67,7 +73,10 @@ class Sender(Thread):
     def run(self):
         if plugin_options['use_control']:  # if plugin is enabled
             log.clear(NAME)
-            log.info(NAME, _('Modbus Stations enabled.'))
+            if not ser_test:
+                log.error(NAME, _('Serial not found. Requires to be installed in to the Linux system. Use: sudo apt install python3-serial and restart ospy!'))
+            else:    
+                log.info(NAME, _('Modbus Stations enabled.'))
             try:
                 station_on = signal('station_on')
                 station_on.connect(on_station_on)
@@ -250,7 +259,8 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
     try:
         s = None
         try:
-            s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
+            if ser_test:
+                s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
         except:
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
 
@@ -297,9 +307,10 @@ def Read_address():
     try:
         s = None
         try:
-            s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
-        except:
-            log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
+            if ser_test:
+                s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
+        except Exception:
+            log.info(NAME, _('No such file or directory'))
             pass
             return -1
 
