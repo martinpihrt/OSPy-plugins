@@ -1,7 +1,7 @@
 Speed Monitor Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin monitors and logs the speed of the Internet connection after a certain set interval. Download and upload speed are in Mbps. The response time (ping) is given in milliseconds. This extension arose as a whip on rogue Internet service providers. Many thanks: https://github.com/sivel/speedtest-cli.
 
