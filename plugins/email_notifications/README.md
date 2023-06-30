@@ -1,7 +1,7 @@
 Email Notifications Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider (google.com, seznam.cz)...
 
