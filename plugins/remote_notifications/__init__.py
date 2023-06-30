@@ -17,7 +17,7 @@ from ospy.options import options
 from ospy.stations import stations
 from ospy.inputs import inputs
 from ospy.log import log, EVENT_FILE
-from ospy.helpers import datetime_string, get_input, is_python2
+from ospy.helpers import datetime_string, get_input
 
 
 NAME = 'Remote Notifications'
@@ -256,12 +256,8 @@ def sanity_msg(msg):
 def send_data(text):
     """Send GET data"""
     if remote_options['use'] != '' and remote_options['api'] != '' and remote_options['rem_adr'] != '':
-        if is_python2():
-            from urllib2 import urlopen
-            from urllib import quote_plus
-        else:
-            from urllib.request import urlopen
-            from urllib.parse import quote_plus 
+        from urllib.request import urlopen
+        from urllib.parse import quote_plus 
 
         url = remote_options['rem_adr'] + 'save.php/?' + text 
         data = urlopen(url)

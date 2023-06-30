@@ -1,7 +1,7 @@
 Remote Notifications Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin can send Notifications on the Remote Webserver. This plugin requre SQL server and Webserver with PHP.  
 This plugin send data as get command to remote PHP web pages.  
