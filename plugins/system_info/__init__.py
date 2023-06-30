@@ -7,7 +7,6 @@ from collections import OrderedDict
 
 import traceback
 from ospy import helpers
-from ospy.helpers import is_python2
 from ospy.webpages import ProtectedPage
 from ospy.options import options
 import subprocess
@@ -15,10 +14,6 @@ from ospy.log import log
 
 import web
 
-if is_python2():
-    import sys
-    reload(sys)
-    sys.setdefaultencoding('utf8')
 
 NAME = 'System Information'
 MENU =  _(u'Package: System Information')
@@ -45,15 +40,12 @@ def get_overview():
         result.append(_('System name') + ': {}'.format(platform.system()))
         result.append(_('Node') + ': {}'.format(platform.node()))
         result.append(_('Machine') + ': {}'.format(platform.machine()))
-        if is_python2():
+        try:       # python > 3.9
+            import distro
+            result.append(_('Distribution') + ': {} {} {}'.format(distro.linux_distribution()[0], distro.linux_distribution()[1], distro.linux_distribution()[2]))
+        except:    # python <= 3.9
             result.append(_('Distribution') + ': {} {}'.format(platform.linux_distribution()[0], platform.linux_distribution()[1]))
-        else:
-            try:       # python > 3.9
-                import distro
-                result.append(_('Distribution') + ': {} {} {}'.format(distro.linux_distribution()[0], distro.linux_distribution()[1], distro.linux_distribution()[2]))
-            except:    # python <= 3.9
-                result.append(_('Distribution') + ': {} {}'.format(platform.linux_distribution()[0], platform.linux_distribution()[1]))
-                pass
+            pass
         result.append(_('Total memory') + ': {}'.format(meminfo['MemTotal']))
         result.append(_('Free memory') + ': {}'.format(meminfo['MemFree']))
         result.append(_('Python') + ': {}'.format(platform.python_version()))
