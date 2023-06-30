@@ -1,7 +1,7 @@
 Ping Monitor Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This extension allows you to ping addresses. All pings are recorded in a file (always the first successful and the first unsuccessful).
 The log file (pings) can be sent by E-mail after a certain time. At the same time, we can restart the device after a certain number of unsuccessful attempts. 
