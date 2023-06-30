@@ -1,7 +1,7 @@
 MQTT Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 * MQTT client
 This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. On this page, the shared client is configured. Having a shared MQTT client simplifies configuration and lowers overhead on the OSPy process, network and broker. 

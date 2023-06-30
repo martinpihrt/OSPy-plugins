@@ -16,7 +16,7 @@ from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.options import options
-from ospy.helpers import datetime_string, is_python2
+from ospy.helpers import datetime_string
 from ospy.stations import stations
 from ospy.options import rain_blocks
 from ospy.inputs import inputs
@@ -204,22 +204,13 @@ def on_message(client, userdata, message):
         
 
 def get_client():
-    if is_python2():
-        if not os.path.exists("/usr/lib/python2.7/dist-packages/pip"):
-            log.clear(NAME)
-            log.info(NAME, _('PIP is not installed.'))
-            log.info(NAME, _('Please wait installing python-pip...'))
-            log.info(NAME, _('This operation takes longer (minutes)...'))
-            cmd = "sudo apt-get install python-pip -y"
-            proc_install(cmd)
-    else:
-        if not os.path.exists("/usr/lib/python3/dist-packages/pip"):
-            log.clear(NAME)
-            log.info(NAME, _('PIP3 is not installed.'))
-            log.info(NAME, _('Please wait installing python3-pip...'))
-            log.info(NAME, _('This operation takes longer (minutes)...'))
-            cmd = "sudo apt-get install python3-pip -y"
-            proc_install(cmd)                
+    if not os.path.exists("/usr/lib/python3/dist-packages/pip"):
+        log.clear(NAME)
+        log.info(NAME, _('PIP3 is not installed.'))
+        log.info(NAME, _('Please wait installing python3-pip...'))
+        log.info(NAME, _('This operation takes longer (minutes)...'))
+        cmd = "sudo apt-get install python3-pip -y"
+        proc_install(cmd)                
 
     try:
         import paho.mqtt.client as mqtt
@@ -228,10 +219,7 @@ def get_client():
         log.info(NAME, _('Paho-mqtt is not installed.'))
         log.info(NAME, _('Please wait installing paho-mqtt...'))
         log.info(NAME, _('This operation takes longer (minutes)...'))
-        if is_python2():
-            cmd = "sudo pip install paho-mqtt"
-        else:
-            cmd = "sudo pip3 install paho-mqtt"    
+        cmd = "sudo pip3 install paho-mqtt"    
         proc_install(cmd)
     try:
         import paho.mqtt.client as mqtt
