@@ -13,7 +13,7 @@ import traceback
 import web
 from ospy import helpers
 from ospy.options import options
-from ospy.helpers import restart, reboot, ASCI_convert, is_python2
+from ospy.helpers import restart, reboot, ASCI_convert
 from ospy.webpages import ProtectedPage
 from ospy.log import log
 from plugins import plugin_url
@@ -64,12 +64,8 @@ class StatusChecker(Thread):
         try: 
             cmd = "sudo service watchdog status"
             run_process(cmd)
-            if is_python2():
-                import commands
-                output = commands.getoutput('ps -A')
-            else:
-                output = subprocess.getoutput('ps -A')    
-            if 'watchdog' in output:
+            output = subprocess.getoutput('ps -A')    
+            if 'running' in output:
                 self.status['service_state'] = True
             else:
                 self.status['service_state'] = False      
@@ -187,14 +183,15 @@ class install_page(ProtectedPage):
         log.debug(NAME, _('Saving config to /etc/watchdog.conf'))
 
         # http://linux.die.net/man/5/watchdog.conf
-        f = open("/etc/watchdog.conf","wb")
-        f.write("watchdog-device = /dev/watchdog\n")
-        f.write("watchdog-timeout = 14\n")
-        f.write("realtime = yes\n")
-        f.write("priority = 1\n")
-        f.write("interval = 4\n")
-        f.write("max-load-1 = 24\n")
-        f.close()
+        fname = "/etc/watchdog.conf"
+        with open(fname, 'rb') as f:
+            f.write(b"watchdog-device = /dev/watchdog\n")
+            f.write(b"watchdog-timeout = 14\n")
+            f.write(b"realtime = yes\n")
+            f.write(b"priority = 1\n")
+            f.write(b"interval = 4\n")
+            f.write(b"max-load-1 = 24\n")
+            f.close()
 
         cmd = "sudo systemctl enable watchdog"
         log.debug(NAME, cmd)

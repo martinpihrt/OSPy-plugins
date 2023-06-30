@@ -1,7 +1,7 @@
 System Watchdog Readme  
 ====  
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 Attention: it depends on the version of Raspberry Pi! whether it is version 2, 3, 4... (version 4 is not stable).
 
