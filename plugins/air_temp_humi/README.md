@@ -1,7 +1,7 @@
 Air Temperature and Humidity Monitor Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin needs DHT11 (22) probe connected to GPIO 10 (pin 19 MOSI).   
 This plugin allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03). 

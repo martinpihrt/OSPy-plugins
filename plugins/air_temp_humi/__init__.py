@@ -2,6 +2,7 @@
 __author__ = u'Martin Pihrt'
 # This plugin read data from probe DHT11 (22) (temp and humi). # Raspberry Pi pin 19 as GPIO 10
 # This plugin read data from DS18B20 hw I2C board (temp). # Raspberry Pi I2C pin
+# Only for Python 3+
 
 import json
 import time
@@ -16,7 +17,7 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision, is_python2, datetime_string
+from ospy.helpers import get_rpi_revision, datetime_string
 from ospy import helpers
 from ospy.stations import stations
 
@@ -24,11 +25,6 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
 import RPi.GPIO as GPIO
-
-if is_python2():
-    import sys
-    reload(sys)
-    sys.setdefaultencoding('utf8')
 
 # Thank's: https://github.com/szazo/DHT11_Python
 from . import dht11
@@ -82,7 +78,7 @@ plugin_options = PluginOptions(
 
 
 class Sender(Thread):
-    
+
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
@@ -116,7 +112,7 @@ class Sender(Thread):
 
     def run(self):
         Temperature = 0
-        Humidity = 0  
+        Humidity = 0
 
         last_millis = 0 # timer for save log
         var1 = True     # Auxiliary variable for once on
@@ -135,7 +131,7 @@ class Sender(Thread):
         #flow.unit = _(u'Liters')
         #flow.val = 10
         #flow.clear
-        
+
         while not self._stop_event.is_set():
             try:
                 if plugin_options['enabled']:        # if plugin is enabled   
@@ -156,20 +152,20 @@ class Sender(Thread):
                           Humidity = result.humidity
 
                           global tempDHT, humiDHT
-                           
+
                           tempDHT = Temperature
-                          humiDHT = Humidity 
+                          humiDHT = Humidity
 
                       except:
                         log.clear(NAME)
                         log.info(NAME, datetime_string())
                         if plugin_options['dht_type']==0: # DHT11
-                          log.info(NAME, _(u'DHT11 data is not valid'))  
+                          log.info(NAME, _(u'DHT11 data is not valid'))
                           tempText += ' ' + _(u'DHT11 data is not valid')
                         if plugin_options['dht_type']==1: # DHT22
-                          log.info(NAME, _(u'DHT22 data is not valid'))  
+                          log.info(NAME, _(u'DHT22 data is not valid'))
                           tempText += ' ' + _(u'DHT22 data is not valid')
-                                   
+
                       if Humidity and Temperature != 0:
                         self.status['temp'] = Temperature
                         self.status['humi'] = Humidity
@@ -183,7 +179,7 @@ class Sender(Thread):
                         station = stations.get(plugin_options['control_output'])
 
                         if plugin_options['enabled_reg']:  # if regulation is enabled
-                          if Humidity > (plugin_options['humidity_on'] + plugin_options['hysteresis']/2) and var1 is True:  
+                          if Humidity > (plugin_options['humidity_on'] + plugin_options['hysteresis']/2) and var1 is True:
                             start = datetime.datetime.now()
                             sid = station.index
                             end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss'], minutes=plugin_options['reg_mm'])
@@ -204,43 +200,40 @@ class Sender(Thread):
                             }
 
                             log.start_run(new_schedule)
-                            stations.activate(new_schedule['station'])    
+                            stations.activate(new_schedule['station'])
                             var1 = False
                             var2 = True
                             self.status['outp'] = 1
                             regulation_text = datetime_string() + ' ' + _(u'Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(station.index+1) + ').'
                             update_log(self.status)
-                             
-                          if Humidity < (plugin_options['humidity_off'] - plugin_options['hysteresis']/2) and var2 is True:  
+
+                          if Humidity < (plugin_options['humidity_off'] - plugin_options['hysteresis']/2) and var2 is True:
                             sid = station.index
                             stations.deactivate(sid)
                             active = log.active_runs()
                             for interval in active:
                               if interval['station'] == sid:
-                                log.finish_run(interval) 
+                                log.finish_run(interval)
                             var1 = True
-                            var2 = False 
+                            var2 = False
                             self.status['outp'] = 0
                             regulation_text = datetime_string() + ' ' + _(u'Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station.index+1) + ').'
-                            update_log(self.status)    
+                            update_log(self.status)
 
                     if plugin_options['ds_enabled']:  # if in plugin is enabled DS18B20
-                       DS18B20_read_data()            # get read DS18B20 temperature data to global tempDS[xx] 
-                       tempText +=  _(u'DS') + ': '                     
+                       DS18B20_read_data()            # get read DS18B20 temperature data to global tempDS[xx]
+                       tempText +=  _(u'DS') + ': '
                        for i in range(0, plugin_options['ds_used']):
                           self.status['DS%d' % i] = tempDS[i]
                           log.info(NAME, _(u'Temperature') + ' ' + _(u'DS') + str(i+1) + ' (' + u'%s' % plugin_options['label_ds%d' % i] + '): ' + u'%.1f \u2103' % self.status['DS%d' % i])   
                           tempText += u' %s' % plugin_options['label_ds%d' % i] + u' %.1f \u2103' % self.status['DS%d' % i]
-                       
-                    if plugin_options['enabled_reg']: 
+
+                    if plugin_options['enabled_reg']:
                        tempText += ' ' + regulation_text
-                    
-                    if plugin_options['use_footer']: 
+
+                    if plugin_options['use_footer']:
                         if air_temp is not None:
-                            if is_python2():
-                                air_temp.val = tempText    # value on footer
-                            else:    
-                                air_temp.val = tempText.encode('utf8').decode('utf8')    # value on footer                                                
+                            air_temp.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
                     if plugin_options['enable_log']:  # enabled logging
                           millis = int(round(time.time() * 1000))
@@ -248,13 +241,13 @@ class Sender(Thread):
                           if (millis - last_millis) > interval:
                              last_millis = millis
                              update_log(self.status)
-                    
-                self._sleep(5)    
- 
+
+                self._sleep(5)
+
             except Exception:
                 log.error(NAME, _(u'Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
-          
+
 sender = None
 
 ################################################################################
@@ -264,7 +257,7 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
-       
+
 
 def stop():
     global sender
@@ -340,7 +333,7 @@ def DS18B20_read_data():
       time.sleep(0.5)
       pass
       return [-127,-127,-127,-127,-127,-127] # try data has error
-           
+
     return teplota     # data is ok
 
 
@@ -355,7 +348,7 @@ def DS18B20_read_probe(probe):
     try:
        return tempDS[probe]
     except:
-       return -127        
+       return -127
 
 
 def DHT_read_temp_value():
@@ -364,8 +357,8 @@ def DHT_read_temp_value():
 
 
 def DHT_read_humi_value():
-    global humiDHT     
-    return humiDHT        
+    global humiDHT
+    return humiDHT
    
 
 def read_log():
@@ -408,7 +401,7 @@ def update_log(status):
     ### Data for log ###
     try:
         log_data = read_log()
-    except:   
+    except:
         write_log([])
         log_data = read_log()
 
@@ -450,14 +443,14 @@ def update_log(status):
       data['ds5']  = str(status['DS5'])
     else:
       data['ds5']  = _(u'Not used')
-     
+
     log_data.insert(0, data)
     if plugin_options['log_records'] > 0:
         log_data = log_data[:plugin_options['log_records']]
     write_log(log_data)
 
     ### Data for graph log ###
-    try:  
+    try:
         graph_data = read_graph_log()     # example default -> [{"station": "DS1", "balances": {}, {"station": "DS2", "balances": {}},{"station": "DS3", "balances": {}}}]
     except: 
         create_default_graph()
@@ -511,7 +504,7 @@ def update_log(status):
         write_graph_log(graph_data)
         log.info(NAME, _(u'Saving to log files OK'))
     
-    except:    
+    except:
         create_default_graph()
 
 def create_default_graph():
@@ -581,7 +574,7 @@ class settings_page(ProtectedPage):
            plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
 
         if sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)           
+            raise web.seeother(plugin_url(log_page), True)
 
         return self.plugin_render.air_temp_humi(plugin_options, log.events(NAME))
 
@@ -622,8 +615,8 @@ class data_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         data =  {
           'label': plugin_options['label'],
-          'label_ds0': plugin_options['label_ds0'],  
-          'label_ds1': plugin_options['label_ds1'], 
+          'label_ds0': plugin_options['label_ds0'],
+          'label_ds1': plugin_options['label_ds1'],
           'label_ds2': plugin_options['label_ds2'],
           'label_ds3': plugin_options['label_ds3'],
           'label_ds4': plugin_options['label_ds4'],
@@ -653,9 +646,9 @@ class log_json(ProtectedPage):
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
-    def GET(self):    
+    def GET(self):
         data = []
-        
+
         epoch = datetime.date(1970, 1, 1)                                      # first date
         current_time  = datetime.date.today()                                  # actual date
 
@@ -671,10 +664,10 @@ class graph_json(ProtectedPage):
         if plugin_options['history'] == 3:
             check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
         if plugin_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)                       
+            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
 
         log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-                
+
         json_data = read_graph_log()
 
         if len(json_data) > 0:
@@ -716,7 +709,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 u'{}'.format(interval['ds4']),
                 u'{}'.format(interval['ds5']),
             ]) + '\n'
-        
+
         content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-type', content) 
