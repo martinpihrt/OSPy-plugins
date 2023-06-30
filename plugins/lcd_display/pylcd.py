@@ -22,8 +22,6 @@ Edit: Martin Pihrt - www.pihrt.com
 import smbus
 from time import *
 
-from ospy.helpers import is_python2
-
 # General i2c device class so that other devices can be added easily
 class i2c_device:
 	def __init__(self, addr, port):
@@ -158,10 +156,7 @@ class lcd:
 
 	# put char function
 	def lcd_putc(self, char):
-		if is_python2():
-			self.lcd_write_char(ord(char))
-		else:
-			self.lcd_write_char(char)
+		self.lcd_write_char(char)
 
 
 	# Do clunky bitshifting to account for strangely wired boards
