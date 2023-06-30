@@ -1,7 +1,7 @@
 Door Opening Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin allows to activate for a certain time a given output (station) to which an electromagnetic lock is connected, or an input for controlling the door gate travel). 
 
