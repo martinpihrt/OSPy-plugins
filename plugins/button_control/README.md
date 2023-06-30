@@ -1,7 +1,7 @@
 Button Control Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin uses a circuit board with MCP23017 controller connected to the OSPy Sprinkler board via the I2C interface.  
 This plug-in includes eight buttons with optional functions and signalisating via eicht LEDs.  
