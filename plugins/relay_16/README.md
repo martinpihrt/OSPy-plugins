@@ -1,7 +1,7 @@
 Direct 16 Relay Outputs Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This is plugin is designed for use with Raspberry Pi models with a 40 pin GPIO header and example this board: https://www.tiaowiki.com/w/TIAO_Smart_Sprinkler_Pi_Hardware_Layout. This plugin allows OSPy to control relay boards with up to 16 relays.<br>
 The diagram below shows the GPIO pin header and indicates the pins to use with this plugin.<br>
