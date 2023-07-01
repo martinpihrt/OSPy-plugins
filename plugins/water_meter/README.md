@@ -1,7 +1,7 @@
 Water Meter Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 or 0x51.  
 This plugin measures the amount of water flowing per sec, min, hour and the total amount of water.
