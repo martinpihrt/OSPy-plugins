@@ -1,7 +1,7 @@
 Temperature Switch Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin needs enabled and corect setup  the "Air Temperature and Humidity Monitor".
 This plugin allows regulation from DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03). 
