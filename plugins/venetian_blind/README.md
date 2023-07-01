@@ -1,6 +1,8 @@
 Venetian Blind Readme
 ====
 
+Tested in Python 3+
+
 This plugin can be used to control blinds and shutters via API and HW module (eg: shelly relays: https://shelly.cloud/products/shelly-25-smart-home-automation-relay/). 
 The roller shutter motor is connected to a shelly relay, or some other similar. The relay has two outputs (one for the up direction and the other for the down direction). The relay allows control via the http API rest. The relay also allows you to measure consumption.
 

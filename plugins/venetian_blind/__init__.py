@@ -10,7 +10,7 @@ import os
 import mimetypes
 
 from ospy.options import options
-from ospy.helpers import datetime_string, is_python2
+from ospy.helpers import datetime_string
 from ospy import helpers 
 from ospy.log import log
 from threading import Thread, Event
@@ -19,14 +19,9 @@ from ospy.webpages import ProtectedPage
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
-if is_python2():
-    from urllib2 import urlopen
-    from urllib import quote_plus
-    from urlparse import urlparse
-else:
-    from urllib.request import urlopen
-    from urllib.parse import quote_plus
-    from urllib.parse import urlparse
+from urllib.request import urlopen
+from urllib.parse import quote_plus
+from urllib.parse import urlparse
 
 NAME = 'Venetian blind'      ### name for plugin in plugin manager ###
 MENU =  _(u'Package: Venetian blind')
@@ -94,10 +89,7 @@ class Sender(Thread):
                     show_msg = read_blinds_status()
                     if plugin_options['use_footer']:          # if footer is enabled
                         if ven_blind is not None:
-                            if is_python2():                  # in Python 2
-                                ven_blind.val = show_msg
-                            else:                             # in Python 3
-                                ven_blind.val = show_msg.encode('utf8').decode('utf8')       # value on footer                    
+                            ven_blind.val = show_msg.encode('utf8').decode('utf8')       # value on footer                    
                 else:
                     act_msg = _('Venetian blind is disabled.')
                     if act_msg != last_msg:
@@ -106,10 +98,7 @@ class Sender(Thread):
                         last_msg = act_msg
                         if plugin_options['use_footer']:
                             if ven_blind is not None:
-                                if is_python2():
-                                    ven_blind.val = act_msg
-                                else:    
-                                    ven_blind.val = act_msg.encode('utf8').decode('utf8')    # value on footer                            
+                                ven_blind.val = act_msg.encode('utf8').decode('utf8')    # value on footer                            
                 
                 self._sleep(2)
 
