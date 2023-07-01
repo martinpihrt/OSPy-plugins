@@ -22,7 +22,7 @@ from ospy import helpers
 from ospy.options import options, rain_blocks
 from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url, plugin_data_dir
-from ospy.helpers import get_rpi_revision, is_python2
+from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy.stations import stations
@@ -384,11 +384,8 @@ def stop():
 def average_list(lst):
     ### Average of a list ###
     try:
-        if is_python2():
-            return int(sum(lst)/float(len(lst)))
-        else:
-            import statistics
-            return int(statistics.mean(lst))
+        import statistics
+        return int(statistics.mean(lst))
     except:
         log.error(NAME, _(u'Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
         return -1
