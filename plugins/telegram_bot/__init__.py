@@ -16,7 +16,7 @@ from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision
-from ospy.helpers import datetime_string, is_python2
+from ospy.helpers import datetime_string
 from ospy import helpers
 from ospy.options import options
 from ospy.stations import stations
@@ -82,10 +82,7 @@ class Sender(Thread):
 
     def _botCmd_start_chat(self, bot, update):
         txt= _(u'Hi! I am a Bot to interface with {}. /{}').format(options.name, plugin_options['help_cmd'])
-        if is_python2():
-            bot.sendMessage(update.message.chat.id, text=txt.encode('utf-8'))
-        else:    
-            bot.sendMessage(update.message.chat.id, text=txt)
+        bot.sendMessage(update.message.chat.id, text=txt)
 
     def _botCmd_subscribe(self, bot, update):
         chats = self._currentChats
@@ -96,33 +93,21 @@ class Sender(Thread):
             plugin_options['currentChats'] = chats
             txt= _(u'Hi! you are now added to the {} announcement.').format(options.name)
             log.info(NAME, txt)
-            if is_python2():
-                bot.sendMessage(update.message.chat.id, text=txt.encode('utf-8'))
-            else:    
-                bot.sendMessage(update.message.chat.id, text=txt)            
+            bot.sendMessage(update.message.chat.id, text=txt)            
         else:
             txt= _(u'Sorry, please enter the correct AccessKey!')
             log.info(NAME, txt)
-            if is_python2():
-                bot.sendMessage(update.message.chat.id, text=txt.encode('utf-8'))
-            else:    
-                bot.sendMessage(update.message.chat.id, text=txt) 
+            bot.sendMessage(update.message.chat.id, text=txt) 
 
     def _echo(self, bot, update):
         txt= _(u'You write: {}').format(update.message.text)
-        if is_python2():
-            bot.sendMessage(update.message.chat.id, text=txt.encode('utf-8'))
-        else:    
-            bot.sendMessage(update.message.chat.id, text=txt) 
+        bot.sendMessage(update.message.chat.id, text=txt) 
 
     def _announce(self, txt):
         bot = self.bot
         for chat_id in list(self._currentChats):
             try:
-                if is_python2():
-                    bot.sendMessage(chat_id, text=txt.encode('utf-8'))
-                else:    
-                    bot.sendMessage(chat_id, text=txt) 
+                bot.sendMessage(chat_id, text=txt) 
             except:
                 pass    
 
@@ -139,9 +124,6 @@ class Sender(Thread):
             )
         else:
             txt = _(u'Sorry I can not do that.')
-        if is_python2():
-            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
-        else:    
             bot.sendMessage(chat_id, text=txt) 
 
     def _botCmd_info(self, bot, update):
@@ -162,10 +144,7 @@ class Sender(Thread):
             txt += _(u'Scheduler is {}.\n').format( _(u'enabled') if options.scheduler_enabled else _(u'disabled'))    
         else:
             txt = _(u'Sorry I can not do that.')
-        if is_python2():
-            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
-        else:    
-            bot.sendMessage(chat_id, text=txt)
+        bot.sendMessage(chat_id, text=txt)
 
     def _botCmd_enable(self, bot, update):                    # msg for switch scheduler to on
         chat_id = update.message.chat.id
@@ -174,10 +153,7 @@ class Sender(Thread):
             options.scheduler_enabled = True 
         else:
             txt = _(u'Sorry I can not do that.')
-        if is_python2():
-            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
-        else:    
-            bot.sendMessage(chat_id, text=txt)
+        bot.sendMessage(chat_id, text=txt)
 
     def _botCmd_disable(self, bot, update):                   # msg for switch scheduler to off
         chat_id = update.message.chat.id
@@ -186,10 +162,7 @@ class Sender(Thread):
             options.scheduler_enabled = False 
         else:
             txt = _(u'Sorry I can not do that.')
-        if is_python2():
-            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
-        else:    
-            bot.sendMessage(chat_id, text=txt)
+        bot.sendMessage(chat_id, text=txt)
 
     def _botCmd_stop(self, bot, update):                      # msg for stop all station and disable scheduler
         chat_id = update.message.chat.id
@@ -201,10 +174,7 @@ class Sender(Thread):
             stations.clear() 
         else:
             txt = _(u'Sorry I can not do that.')   
-        if is_python2():
-            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
-        else:    
-            bot.sendMessage(chat_id, text=txt)    
+        bot.sendMessage(chat_id, text=txt)    
 
     def _botCmd_runOnce(self, bot, update, args):             # run-now program xx
         chat_id = update.message.chat.id
@@ -220,10 +190,7 @@ class Sender(Thread):
                 program.index+1
         else:
             txt = _(u'Sorry I can not do that.')   
-        if is_python2():
-            bot.sendMessage(chat_id, text=txt.encode('utf-8'))
-        else:    
-            bot.sendMessage(chat_id, text=txt)
+        bot.sendMessage(chat_id, text=txt)
 
     def run(self):
         tempText = ''
@@ -246,11 +213,7 @@ class Sender(Thread):
         if telegram_bad_import_test:
             log.clear(NAME)
             log.error(NAME, _(u'Telegram not found, installing. Please wait...'))
-            if is_python2():
-                # https://pypi.org/project/python-telegram-bot/2.4/
-                cmd = "sudo pip install python-telegram-bot==2.4"       # python 2.7 end telegram support
-            else:    
-                cmd = "sudo pip3 install python-telegram-bot --upgrade" # python 3+
+            cmd = "sudo pip3 install python-telegram-bot --upgrade" # python 3+
             proc = subprocess.Popen(cmd,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,shell=True)
             output = proc.communicate()[0].decode('utf8')
             log.info(NAME, u'{}'.format(output))
