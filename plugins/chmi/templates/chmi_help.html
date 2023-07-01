@@ -1,0 +1,15 @@
+$def with()
+
+$var title: $_('CHMI - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('CHMI - help')</div>
+    <p>$_('When is enabled extension retrieves data from the meteorological radar of the Czech Hydrometeorological Institute.')</p>
+    Interaktivní mapa České republiky je založena na mikrokontroleru ESP32 a na přední straně obsahuje 72 RGB LED diod WS2812 - každá pro jedno okresní město. Lze tak např. zobrazovat aktuální výstrahy v daných lokalitách, popř. jiná data. Lze připojit různé snímače a všechny použitelné piny jsou vyvedeny na pájecí plošky pro případné připojení různých čidel a zařízení. Deska je osazena i programovacím USB převodníkem a tak pro její naprogramování stačí pouze kabel s USB-C konektorem. Deska též disponuje čtyřmi upevňovacími otvory.
+    <a href="/plugins/chmi/static/images/demomap.png"><img src="/plugins/chmi/static/images/demomap.png" width="40%"></a></br> 
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('chmi.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
