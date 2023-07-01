@@ -1,7 +1,7 @@
 UPS Monitor Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 UPS Uninterruptible Power Supply (Source)
 This plugin checked power line for system.  
