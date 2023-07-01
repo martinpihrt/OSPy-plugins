@@ -1,7 +1,7 @@
 Voltage and Temperature Monitor Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin needs an enabled I2C bus and connected I2C A/D converter PCF8591 on I2C address 0x48.
 For measuring temperature use temp probe LM35D (0-100 &deg;C) on AD0-3 converter.  
