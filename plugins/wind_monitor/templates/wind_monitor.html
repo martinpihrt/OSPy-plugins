@@ -335,6 +335,50 @@ function check_history() {
                </th>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Run program when exceeded'):</td>
+                <td title=$:{json.dumps(_(u'When the set speed is exceeded, start the selected program and close the window blinds, for example.'), ensure_ascii=False)}>
+                    <input name='use_stop_pgm' type='checkbox'${" checked" if plugin_options['use_stop_pgm'] else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Running program'):</td>
+                <td>
+                    <select name='used_program' width="250" style="width: 250px" size="8"> title=$:{json.dumps(_(u'Mark the required programs to run.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+                    $for program in programs.get():
+                        <option value="${str(program.index)}" ${" selected" if program.index in plugin_options['used_program'] else ""}>${program.name}</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum wind speed for starting the program in m/s'):</td>
+                <td title=$:{json.dumps(_(u'If this set speed is exceeded, another condition will be activated.'), ensure_ascii=False)}>
+                    <input name='m_speed_trig' type='number' min='1' value='$plugin_options["m_speed_trig"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Number of event repetitions for the action'):</td>
+                <td title=$:{json.dumps(_(u'If the maximum wind speed is repeatedly exceeded in a given time period (it is set in the box below), the program will be started.'), ensure_ascii=False)}>
+                    <input name='event_repetitions' type='number' min='1' value='$plugin_options["event_repetitions"]'> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Repeatedly exceeded in these interval'):</td>
+                <td title=$:{json.dumps(_(u'In this time period, the number of set exceeded events (time in minutes) is measured.'), ensure_ascii=False)}>
+                    <input name='event_interval' type='number' min='1' value='$plugin_options["event_interval"]'> 
+                </td>
+            </tr>     
+            <tr>
+                <td style='text-transform: none;'>$_('Ignore other events for a while'):</td>
+                <td title=$:{json.dumps(_(u'If the program has been started, the next possible start will be triggered by an event only after this set time (in hours).'), ensure_ascii=False)}>
+                    <input name='ignore_interval' type='number' min='1' value='$plugin_options["ignore_interval"]'> 
+                </td>
+            </tr>                                                      
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>            
+            <tr>
                 <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (measuring every 10 sec)'):</td>
                 <td style="background-color: rgb(220, 220, 220);text-align: left;">
                     $if plugin_options['use_wind_monitor']:

@@ -53,6 +53,12 @@ wind_options = PluginOptions(
         'used_stations': [],         # use this stations for stoping scheduler if stations is activated in scheduler
         'use_footer': True,          # show data from plugin in footer on home page
         'eplug': 0,                  # email plugin type (email notifications or email notifications SSL)
+        'use_stop_pgm': False,       # run the program when exceeded
+        'm_speed_trig': 10,          # maximum wind speed for starting the program in m/s
+        'event_repetitions': 3,      # number of event repetitions for the action (3x repeating)
+        'event_interval': 1,         # repeatedly exceeded in these interval (minutes)
+        'ignore_interval': 24,       # ignore other events for a while (24 hours)
+        'used_program': [],          # selector for running program (-1 is none)
     }
 )
 

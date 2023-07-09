@@ -1,7 +1,7 @@
 Wind Speed Monitor Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin checked wind speed, if station is switched on and actual wind speed is > wind speed value in options, switches off all selected stations in scheduler and sends E-mail with error. Preventing for fault watering while wind.
 This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 or 0x51.
@@ -66,7 +66,25 @@ Plugin setup
   Logging interval (minimum 1 minute).
 
 * Display in km/h:  
-  the measured data will be displayed in km/h.  
+  the measured data will be displayed in km/h.
+
+* Run the program when exceeded
+  When the set speed is exceeded, start the selected program and close the window blinds, for example.
+
+* Running program:  
+  Select the program will be run after event.   
+
+* Maximum wind speed for starting the program in m/s
+  If this set speed is exceeded, another condition will be activated.
+
+* Number of event repetitions for the action
+  If the maximum wind speed is repeatedly exceeded in a given time period (it is set in the box below), the program will be started.
+
+* Repeatedly exceeded in these interval
+  In this time period, the number of set exceeded events (time in minutes) is measured.
+
+* Ignore other events for a while
+  If the program has been started, the next possible start will be triggered by an event only after this set time (in hours).  
 
 * Select filter for graph history  
   Without limits  
