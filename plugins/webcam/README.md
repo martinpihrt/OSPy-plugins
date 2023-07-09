@@ -1,7 +1,7 @@
 Webcam Monitor Readme
 ====
 
-Tested in Python 3 and Python 2
+Tested in Python 3+
 
 This plugin show image from USB Webcam. This plugin needs fswebcam.  
 If not installed fswebcam, plugin installs fswebcam in to the system himself.  
