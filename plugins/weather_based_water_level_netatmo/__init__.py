@@ -18,7 +18,7 @@ from time import strftime
 from ospy.log import log
 from ospy.options import options
 from ospy.options import level_adjustments
-from ospy.helpers import mkdir_p, is_python2
+from ospy.helpers import mkdir_p
 from ospy.webpages import ProtectedPage
 from ospy.weather import weather
 from plugins import PluginOptions, plugin_url, plugin_data_dir
@@ -26,11 +26,7 @@ from plugins import PluginOptions, plugin_url, plugin_data_dir
 import imghdr
 import warnings
 
-if is_python2():
-    from urllib import urlencode
-    import urllib2
-else:
-    import urllib.parse, urllib.request
+import urllib.parse, urllib.request
 
 NAME = 'Weather-based Water Level Netatmo'
 MENU =  _(u'Package: Weather-based Water Level Netatmo')
@@ -478,16 +474,10 @@ class DeviceList(WeatherStationData):
 
 def postRequest(url, params, json_resp=True, body_size=65535):
     # Netatmo response body size limited to 64k (should be under 16k)
-    if is_python2():
-        params = urlencode(params)
-        headers = {"Content-Type" : "application/x-www-form-urlencoded;charset=utf-8"}
-        req = urllib2.Request(url=url, data=params, headers=headers)
-        resp = urllib2.urlopen(req).read(body_size)
-    else:
-        req = urllib.request.Request(url)
-        req.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
-        params = urllib.parse.urlencode(params).encode('utf-8')
-        resp = urllib.request.urlopen(req, params).read(body_size).decode("utf-8")
+    req = urllib.request.Request(url)
+    req.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
+    params = urllib.parse.urlencode(params).encode('utf-8')
+    resp = urllib.request.urlopen(req, params).read(body_size).decode("utf-8")
                 
     if json_resp:
         return json.loads(resp)
