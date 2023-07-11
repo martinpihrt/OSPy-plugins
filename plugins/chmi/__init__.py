@@ -111,7 +111,7 @@ class CHMI_Checker(Thread):
                             # ID represents the order of RGB LEDs on the LaskaKit map of the Czech Republic
                             cities_with_rain = []
                             log.debug(NAME, _('Loading cities database...'))
-                            cities_path = os.path.join(plugin_data_dir(), 'cities.csv')
+                            cities_path = os.path.join('plugins', 'chmi', 'static', 'cities.csv')
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
                                 log.debug(NAME, _('Analyzing if is raining in the cities...'))
@@ -264,7 +264,7 @@ class download_page(ProtectedPage):
                 img = open(download_name,'rb')
                 return img.read()
             else:
-                download_name = plugin_data_dir() + '/' + 'none.png'  
+                download_name = os.path.join('plugins', 'chmi', 'static', 'images', 'none.png')  
                 content = mimetypes.guess_type(download_name)[0]
                 web.header('Content-type', content)
                 web.header('Content-Length', os.path.getsize(download_name))
