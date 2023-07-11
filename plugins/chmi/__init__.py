@@ -111,7 +111,7 @@ class CHMI_Checker(Thread):
                             # ID represents the order of RGB LEDs on the LaskaKit map of the Czech Republic
                             cities_with_rain = []
                             log.debug(NAME, _('Loading cities database...'))
-                            cities_path = os.path.join('plugins', 'chmi', 'static', 'cities.csv')
+                            cities_path = os.path.join('plugins', 'chmi', 'static', 'cities')
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
                                 log.debug(NAME, _('Analyzing if is raining in the cities...'))
