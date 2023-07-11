@@ -5,7 +5,9 @@ $var page: plugins
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
-
+        jQuery("#cRefresh").click(function() {
+            window.location="/plugins/chmi/settings";
+        });
         jQuery("#cSubmit").click(function() {
             jQuery("#pluginForm").submit();
         });
@@ -23,8 +25,19 @@ $var page: plugins
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use CHMI'):</td>
-                <td>
+                <td title=$:{json.dumps(_(u'When the box is checked, the extension will be active.'), ensure_ascii=False)}>
                     <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Map IP address'):</td>
+                <td title=$:{json.dumps(_(u'IP address for map https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/.'), ensure_ascii=False)}><input name='IP_ADDR' id='IP_ADDR' type='text' value='$plugin_options["IP_ADDR"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Meteo map'):</td>
+                <td title=$:{json.dumps(_(u'A downloaded map from the Meteo Institute is displayed here.'), ensure_ascii=False)}>
+                    <a href="$plugins.plugin_url('chmi.download_page')"><img src="$plugins.plugin_url('chmi.download_page')" width="320"></a>
                 </td>
             </tr>
             <tr>
@@ -37,6 +50,7 @@ $var page: plugins
     </form>
 </div>
 <div id="controls">
+    <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>

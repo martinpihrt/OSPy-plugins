@@ -8,6 +8,7 @@ from datetime import timedelta
 import time
 import sys
 import os
+import mimetypes
 
 from threading import Thread, Event
 import traceback
@@ -247,6 +248,33 @@ class settings_page(ProtectedPage):
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)
+
+
+class download_page(ProtectedPage):
+    """Returns plugin settings in JSON format."""
+
+    def GET(self):
+        try:
+            download_name = plugin_data_dir() + '/' + 'last.png'          
+            if os.path.isfile(download_name):     # exists image? 
+                content = mimetypes.guess_type(download_name)[0]
+                web.header('Content-type', content)
+                web.header('Content-Length', os.path.getsize(download_name))
+                web.header('Content-Disposition', 'attachment; filename=last_map')
+                img = open(download_name,'rb')
+                return img.read()
+            else:
+                download_name = plugin_data_dir() + '/' + 'none.png'  
+                content = mimetypes.guess_type(download_name)[0]
+                web.header('Content-type', content)
+                web.header('Content-Length', os.path.getsize(download_name))
+                web.header('Content-Disposition', 'attachment; filename=none_map')
+                img = open(download_name,'rb')
+                return img.read()
+        except:
+            pass
+            log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+            return self.plugin_render.chmi(plugin_options, log.events(NAME))
 
 
 class help_page(ProtectedPage):
