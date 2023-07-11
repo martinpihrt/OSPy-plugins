@@ -67,3 +67,4 @@ Available plugins:
 * Photovoltaic Boiler  
 * IP CAM  
 * Modbus stations
+* CHMI meteo radar
