@@ -23,6 +23,7 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy import helpers
 from ospy.scheduler import predicted_schedule, combined_schedule
+from ospy.programs import programs
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
@@ -97,15 +98,23 @@ class WindSender(Thread):
     def run(self):
         millis = int(round(time_.time() * 1000))
 
-        last_millis = millis        # timer for save log
-        last_clear_millis = millis  # last clear millis for timer
-        last_24h_millis = millis    # deleting maximal spead after 24 hour
+        last_millis = millis                            # timer for save log
+        last_clear_millis = millis                      # last clear millis for timer
+        last_24h_millis = millis                        # deleting maximal spead after 24 hour
 
-        send = False                # send email
+        last_ignore_interval_millis = millis            # timer ignore other events for a while (in running program section)
+        last_event_interval = millis                    # timer repeatedly exceeded in these interval (in running program section)
+
+        send = False                                    # send email
         disable_text = True
         val = 0
         en_del_24h = True
         wind_mon = None
+
+        ignore_intervals = False
+        trig_once = False
+        last_trig_once = False
+        trig_count = 0
 
         if wind_options['use_footer']:
             wind_mon = showInFooter() #  instantiate class to enable data in footer
@@ -205,6 +214,43 @@ class WindSender(Thread):
                                 log.info(NAME, datetime_string() + ' ' + _(u'Deleting maximal speed after selected interval.'))
                                 update_log()
 
+                        # running program after action ------------------------------------------------------------------------------------------------------
+                        if wind_options['use_stop_pgm'] and not ignore_intervals:                                     # action is enabled and not active delay ignore
+                            if self.status['meter'] >= wind_options['m_speed_trig']:                                  # wind is > trig
+                                trig_once = True
+                                if not last_trig_once and trig_once:
+                                    last_trig_once = True
+                                    last_event_interval = millis                                                      # start minutes event counter
+                                if (millis - last_event_interval) < (wind_options['event_interval']*60000):           # in minutes (ex: 1 min = 1x60000ms)
+                                    trig_count += 1
+                                    log.info(NAME, datetime_string() + ' ' + _(u'Speed was exceeded! Event # {}/{}.').format(trig_count, wind_options['event_repetitions']))
+                                    if trig_count >= wind_options['event_repetitions']:
+                                        trig_count = 0
+                                        ignore_intervals = True
+                                        last_trig_once = False
+                                        last_ignore_interval_millis = millis
+                                        log.info(NAME, datetime_string() + ' ' + _(u'The program will now start and setup block for {} hours.').format(wind_options['ignore_interval']))
+                                        # run program
+                                        for program in programs.get():
+                                            if (program.index == wind_options['used_program'][0]):   
+                                                # options.manual_mode = False
+                                                # log.finish_run(None)
+                                                # stations.clear()    
+                                                programs.run_now(program.index)
+                                                log.debug(NAME, datetime_string() + ' ' + _(u'Run now program # {}.').format(program.index)) 
+                                            program.index+1    
+                                if (millis - last_event_interval) >= (wind_options['event_interval']*60000): 
+                                    last_event_interval = millis
+                                    trig_count = 0
+                                    log.info(NAME, datetime_string() + ' ' + _(u'The number of exceedances in the set interval has not been exceeded, I reset the counter.'))
+                        if wind_options['use_stop_pgm'] and ignore_intervals:                                         # reseting ignore interval (ex: after 24 hours)
+                            if (millis - last_ignore_interval_millis) >= (wind_options['ignore_interval'] * 3600000): # ex: 1 hour (3600000)= 1000ms * 60sec * 60min
+                                last_ignore_interval_millis = millis
+                                ignore_intervals = False
+                                log.info(NAME, datetime_string() + ' ' + _(u'The program has now been unblocked.'))
+                        #------------------------------------------------------------------------------------------------------------------------------------        
+
+                        # footer msg
                         tempText = ""
                         if wind_options['use_kmh']:
                             tempText += u'%s' % self.status['kmeter'] + ' ' + _(u'km/h')
@@ -212,7 +258,7 @@ class WindSender(Thread):
                             tempText += u'%s' % self.status['meter'] + ' ' + _(u'm/s')
                         if wind_options['use_footer']:
                             if wind_mon is not None:
-                                wind_mon.val = tempText.encode('utf8').decode('utf8')                # value on footer
+                                wind_mon.val = tempText.encode('utf8').decode('utf8')         # value on footer
                     else:
                         self._sleep(1)
 
