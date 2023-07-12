@@ -139,7 +139,7 @@ class CHMI_Checker(Thread):
                                             screen.rectangle((x-5, y-5, x+5, y+5), fill=(r, g, b), outline=(255, 0, 0))
                                             # If logging is active, we will display colored text indicating that it is raining in the given city,
                                             # and we add the city to the list as a structure {"id":id, "r":r, "g":g, "b":b} 
-                                            log.info(NAME, _('In city {} ({}) it is probably raining right now').format(name, idg))
+                                            log.info(NAME, _('In city {} ({}) it is probably raining right now').format(name, idx))
                                             log.debug(NAME, "{rgb_msg(r,g,b, f'(R={} G={} B={})')}").format(r, g, b)
                                             cities_with_rain.append({"id": idx, "r": r, "g": g, "b": b})
                                         else:
