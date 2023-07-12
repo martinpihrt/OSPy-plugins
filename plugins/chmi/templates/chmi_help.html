@@ -4,13 +4,417 @@ $var title: $_('CHMI - help')
 $var page: plugins
 
 <div id="plugin">
-    <div class="title">$_('CHMI - help')</div>
-    <p>$_('When is enabled extension retrieves data from the meteorological radar of the Czech Hydrometeorological Institute.')</p>
-    <p>$_('The interactive map of the Czech Republic is based on an ESP32 microcontroller and contains 72 WS2812 RGB LEDs on the front - each for one district city.')</p>
-    <p>$_('It is thus possible, for example, to display current warnings in given locations, or other dates. Different sensors can be connected and all usable pins are brought out on solder pads for possible connection of different sensors and devices.')</p>
-    <p>$_('The board is equipped with a USB programming converter, so all you need to program it is a cable with a USB-C connector and, for example, the Arduino IDE.')</p>
-    <p>$_('Visit') <a href="https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b">laskakit.cz</a> $_('for more information').</p><br>
-    <a href="/plugins/chmi/static/images/laskamap.png"><img src="/plugins/chmi/static/images/laskamap.png" width="40%"></a></br> 
+<div class="title">$_('CHMI - help')</div>
+<p>$_('When is enabled extension retrieves data from the meteorological radar of the Czech Hydrometeorological Institute.')</p>
+<p>$_('The interactive map of the Czech Republic is based on an ESP32 microcontroller and contains 72 WS2812 RGB LEDs on the front - each for one district city.')</p>    <p>$_('It is thus possible, for example, to display current warnings in given locations, or other dates. Different sensors can be connected and all usable pins are brought out on solder pads for possible connection of different sensors and devices.')</p>
+<p>$_('The board is equipped with a USB programming converter, so all you need to program it is a cable with a USB-C connector and, for example, the Arduino IDE.')</p>
+<p>$_('Visit') <a href="https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b">laskakit.cz</a> $_('for more information').</p><br>
+<a href="/plugins/chmi/static/images/laskamap.png"><img src="/plugins/chmi/static/images/laskamap.png" width="40%"></a></br>
+<p>$_('Visit') <a href="https://wiki.tmep.cz/doku.php?id=ruzne:led_mapa_okresu_cr">tmep.cz</a> $_('for more information').</p><br>
+<a href="/plugins/chmi/static/images/tmepmap.png"><img src="/plugins/chmi/static/images/tmepmap.png" width="40%"></a></br>
+<p>$_('Visit') <a href="https://github.com/jakubcizek/pojdmeprogramovatelektroniku/tree/master/SrazkovyRadar">Jakub Cizek</a> $_('for more information').</p><br>
+<p>$_('Arduino code for ESP32') <a href="https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/chmi/static/arduino">$_('source')</a>.</p><br>
+<p>$_('LEDs sequence and districts')</p>
+<p>
+<table>
+<thead>
+<tr>
+<th align="center">LaskaKit ID</th>
+<th align="center">TMEP ID</th>
+<th align="left">Okres</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">25</td>
+<td align="center">1</td>
+<td align="left">Cheb</td>
+</tr>
+<tr>
+<td align="center">20</td>
+<td align="center">2</td>
+<td align="left">Sokolov</td>
+</tr>
+<tr>
+<td align="center">17</td>
+<td align="center">3</td>
+<td align="left">Karlovy Vary</td>
+</tr>
+<tr>
+<td align="center">11</td>
+<td align="center">4</td>
+<td align="left">Chomutov</td>
+</tr>
+<tr>
+<td align="center">16</td>
+<td align="center">5</td>
+<td align="left">Louny</td>
+</tr>
+<tr>
+<td align="center">10</td>
+<td align="center">6</td>
+<td align="left">Most</td>
+</tr>
+<tr>
+<td align="center">7</td>
+<td align="center">7</td>
+<td align="left">Teplice</td>
+</tr>
+<tr>
+<td align="center">9</td>
+<td align="center">8</td>
+<td align="left">Litoměřice</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td align="center">9</td>
+<td align="left">Ústí nad Labem</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="center">10</td>
+<td align="left">Děčín</td>
+</tr>
+<tr>
+<td align="center">5</td>
+<td align="center">11</td>
+<td align="left">Česká Lípa</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">12</td>
+<td align="left">Liberec</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">13</td>
+<td align="left">Jablonec nad Nisou</td>
+</tr>
+<tr>
+<td align="center">6</td>
+<td align="center">14</td>
+<td align="left">Semily</td>
+</tr>
+<tr>
+<td align="center">12</td>
+<td align="center">15</td>
+<td align="left">Jičín</td>
+</tr>
+<tr>
+<td align="center">8</td>
+<td align="center">16</td>
+<td align="left">Trutnov</td>
+</tr>
+<tr>
+<td align="center">13</td>
+<td align="center">17</td>
+<td align="left">Náchod</td>
+</tr>
+<tr>
+<td align="center">19</td>
+<td align="center">18</td>
+<td align="left">Hradec Králové</td>
+</tr>
+<tr>
+<td align="center">22</td>
+<td align="center">19</td>
+<td align="left">Rychnov nad Kněžnou</td>
+</tr>
+<tr>
+<td align="center">30</td>
+<td align="center">20</td>
+<td align="left">Ústí nad Orlicí</td>
+</tr>
+<tr>
+<td align="center">28</td>
+<td align="center">21</td>
+<td align="left">Pardubice</td>
+</tr>
+<tr>
+<td align="center">35</td>
+<td align="center">22</td>
+<td align="left">Chrudim</td>
+</tr>
+<tr>
+<td align="center">39</td>
+<td align="center">23</td>
+<td align="left">Svitavy</td>
+</tr>
+<tr>
+<td align="center">32</td>
+<td align="center">24</td>
+<td align="left">Šumperk</td>
+</tr>
+<tr>
+<td align="center">18</td>
+<td align="center">25</td>
+<td align="left">Jeseník</td>
+</tr>
+<tr>
+<td align="center">26</td>
+<td align="center">26</td>
+<td align="left">Bruntál</td>
+</tr>
+<tr>
+<td align="center">46</td>
+<td align="center">27</td>
+<td align="left">Olomouc</td>
+</tr>
+<tr>
+<td align="center">31</td>
+<td align="center">28</td>
+<td align="left">Opava</td>
+</tr>
+<tr>
+<td align="center">37</td>
+<td align="center">29</td>
+<td align="left">Ostrava-město</td>
+</tr>
+<tr>
+<td align="center">36</td>
+<td align="center">30</td>
+<td align="left">Karviná</td>
+</tr>
+<tr>
+<td align="center">43</td>
+<td align="center">31</td>
+<td align="left">Frýdek-Místek</td>
+</tr>
+<tr>
+<td align="center">45</td>
+<td align="center">32</td>
+<td align="left">Nový Jičín</td>
+</tr>
+<tr>
+<td align="center">57</td>
+<td align="center">33</td>
+<td align="left">Vsetín</td>
+</tr>
+<tr>
+<td align="center">49</td>
+<td align="center">34</td>
+<td align="left">Přerov</td>
+</tr>
+<tr>
+<td align="center">62</td>
+<td align="center">35</td>
+<td align="left">Zlín</td>
+</tr>
+<tr>
+<td align="center">58</td>
+<td align="center">36</td>
+<td align="left">Kroměříž</td>
+</tr>
+<tr>
+<td align="center">66</td>
+<td align="center">37</td>
+<td align="left">Uherské Hradiště</td>
+</tr>
+<tr>
+<td align="center">69</td>
+<td align="center">38</td>
+<td align="left">Hodonín</td>
+</tr>
+<tr>
+<td align="center">60</td>
+<td align="center">39</td>
+<td align="left">Vyškov</td>
+</tr>
+<tr>
+<td align="center">50</td>
+<td align="center">40</td>
+<td align="left">Prostějov</td>
+</tr>
+<tr>
+<td align="center">56</td>
+<td align="center">41</td>
+<td align="left">Blansko</td>
+</tr>
+<tr>
+<td align="center">64</td>
+<td align="center">42</td>
+<td align="left">Brno-město</td>
+</tr>
+<tr>
+<td align="center">xx</td>
+<td align="center">43</td>
+<td align="left">Brno-venkov</td>
+</tr>
+<tr>
+<td align="center">72</td>
+<td align="center">44</td>
+<td align="left">Břeclav</td>
+</tr>
+<tr>
+<td align="center">70</td>
+<td align="center">45</td>
+<td align="left">Znojmo</td>
+</tr>
+<tr>
+<td align="center">63</td>
+<td align="center">46</td>
+<td align="left">Třebíč</td>
+</tr>
+<tr>
+<td align="center">48</td>
+<td align="center">47</td>
+<td align="left">Žďár nad Sázavou</td>
+</tr>
+<tr>
+<td align="center">54</td>
+<td align="center">48</td>
+<td align="left">Jihlava</td>
+</tr>
+<tr>
+<td align="center">47</td>
+<td align="center">49</td>
+<td align="left">Havlíčkův Brod</td>
+</tr>
+<tr>
+<td align="center">52</td>
+<td align="center">50</td>
+<td align="left">Pelhřimov</td>
+</tr>
+<tr>
+<td align="center">65</td>
+<td align="center">51</td>
+<td align="left">Jindřichův Hradec</td>
+</tr>
+<tr>
+<td align="center">53</td>
+<td align="center">52</td>
+<td align="left">Tábor</td>
+</tr>
+<tr>
+<td align="center">68</td>
+<td align="center">53</td>
+<td align="left">České Budějovice</td>
+</tr>
+<tr>
+<td align="center">71</td>
+<td align="center">54</td>
+<td align="left">Český Krumlov</td>
+</tr>
+<tr>
+<td align="center">67</td>
+<td align="center">55</td>
+<td align="left">Prachatice</td>
+</tr>
+<tr>
+<td align="center">61</td>
+<td align="center">56</td>
+<td align="left">Strakonice</td>
+</tr>
+<tr>
+<td align="center">59</td>
+<td align="center">57</td>
+<td align="left">Písek</td>
+</tr>
+<tr>
+<td align="center">55</td>
+<td align="center">58</td>
+<td align="left">Klatovy</td>
+</tr>
+<tr>
+<td align="center">51</td>
+<td align="center">59</td>
+<td align="left">Domažlice</td>
+</tr>
+<tr>
+<td align="center">38</td>
+<td align="center">60</td>
+<td align="left">Tachov</td>
+</tr>
+<tr>
+<td align="center">xx</td>
+<td align="center">61</td>
+<td align="left">Plzeň-sever</td>
+</tr>
+<tr>
+<td align="center">41</td>
+<td align="center">62</td>
+<td align="left">Plzeň-město</td>
+</tr>
+<tr>
+<td align="center">xx</td>
+<td align="center">63</td>
+<td align="left">Plzeň-jih</td>
+</tr>
+<tr>
+<td align="center">42</td>
+<td align="center">64</td>
+<td align="left">Rokycany</td>
+</tr>
+<tr>
+<td align="center">24</td>
+<td align="center">65</td>
+<td align="left">Rakovník</td>
+</tr>
+<tr>
+<td align="center">23</td>
+<td align="center">66</td>
+<td align="left">Kladno</td>
+</tr>
+<tr>
+<td align="center">15</td>
+<td align="center">67</td>
+<td align="left">Mělník</td>
+</tr>
+<tr>
+<td align="center">14</td>
+<td align="center">68</td>
+<td align="left">Mladá Boleslav</td>
+</tr>
+<tr>
+<td align="center">21</td>
+<td align="center">69</td>
+<td align="left">Nymburk</td>
+</tr>
+<tr>
+<td align="center">29</td>
+<td align="center">70</td>
+<td align="left">Kolín</td>
+</tr>
+<tr>
+<td align="center">34</td>
+<td align="center">71</td>
+<td align="left">Kutná Hora</td>
+</tr>
+<tr>
+<td align="center">40</td>
+<td align="center">72</td>
+<td align="left">Benešov</td>
+</tr>
+<tr>
+<td align="center">44</td>
+<td align="center">73</td>
+<td align="left">Příbram</td>
+</tr>
+<tr>
+<td align="center">33</td>
+<td align="center">74</td>
+<td align="left">Beroun</td>
+</tr>
+<tr>
+<td align="center">xx</td>
+<td align="center">75</td>
+<td align="left">Praha-západ</td>
+</tr>
+<tr>
+<td align="center">xx</td>
+<td align="center">76</td>
+<td align="left">Praha-východ</td>
+</tr>
+<tr>
+<td align="center">27</td>
+<td align="center">77</td>
+<td align="left">Praha</td>
+</tr>
+</tbody>
+</table>
+</p>
+
+
 </div>
 
 <div id="controls">

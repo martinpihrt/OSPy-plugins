@@ -40,7 +40,8 @@ plugin_options = PluginOptions(
         'LAT_0': 52.1670717,
         'LON_1': 20.7703153,         # LOWER RIGHT CORNER
         'LAT_1': 48.1,
-        'IP_ADDR': '192.168.88.2'    # remote map IP address
+        'IP_ADDR': '192.168.88.2',   # remote map IP address
+        'HW_BOARD': '0'              # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
     })
 
 # We work in the WGS-84 coordinate system
@@ -92,6 +93,15 @@ class CHMI_Checker(Thread):
                         # We will create a bitmap object in PIL/Pillow format from the HTTP data
                         try:
                             bitmap = Image.open(BytesIO(byte))
+                            
+                            # Save img to local file
+                            img_path = os.path.join(plugin_data_dir(), 'last.png')
+                            try:
+                                bitmap.save(img_path)
+                            except:
+                                pass
+                                log.error(NAME, _('Image cannot be saved.') + ':\n' + traceback.format_exc())
+
                             # The original image uses an indexed color palette. This can be useful, but for the simplicity of the example, we will convert the image to full RGB
                             log.debug(NAME, _('Converting the image to RGB...'))
                             bitmap = bitmap.convert("RGB")
@@ -109,13 +119,23 @@ class CHMI_Checker(Thread):
                             # In the cities.csv file, we have all the municipalities on the map by line
                             # The line has the format: ID;name;country. width; ground length
                             # ID represents the order of RGB LEDs on the LaskaKit map of the Czech Republic
-                            cities_with_rain = []
+
                             log.debug(NAME, _('Loading cities database...'))
-                            cities_path = os.path.join('plugins', 'chmi', 'static', 'cities')
+                            if plugin_options['HW_BOARD']   == "0":
+                                city_table = 'laska_cities'
+                            elif plugin_options['HW_BOARD'] == "1":
+                                city_table = 'tmep_cities'
+                            elif plugin_options['HW_BOARD'] == "2":
+                                city_table = 'pihrt_cities'
+                            else:
+                                return
+
+                            cities_with_rain = []        
+                            cities_path = os.path.join('plugins', 'chmi', 'static', city_table)
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
                                 log.debug(NAME, _('Analyzing if is raining in the cities...'))
-                                log.debug(NAME, '-' * 80)
+                                log.debug(NAME, '-' * 40)
                                 # We go through the list city by city
                                 for city in cities:
                                     cell = city.split(";")
@@ -140,30 +160,36 @@ class CHMI_Checker(Thread):
                                             # If logging is active, we will display colored text indicating that it is raining in the given city,
                                             # and we add the city to the list as a structure {"id":id, "r":r, "g":g, "b":b} 
                                             log.info(NAME, _('In city {} ({}) it is probably raining right now').format(name, idx))
-                                            log.debug(NAME, "{rgb_msg(r,g,b, f'(R={} G={} B={})')}").format(r, g, b)
+                                            log.debug(NAME, 'msg R={} G={} B={}'.format(r, g, b))
                                             cities_with_rain.append({"id": idx, "r": r, "g": g, "b": b})
                                         else:
                                             # If it is not raining in the given city, we draw an empty square with a white outline in its coordinates
-                                            screen.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
-
-                            img_path = os.path.join(plugin_data_dir(), 'last.png')
-                            try:
-                                bitmap.save(img_path)
-                            except:
-                                pass
-                                log.error(NAME, _('Image cannot be saved.') + ':\n' + traceback.format_exc())
+                                            screen.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))                                           
 
                             # We ve gone through all the cities, so well see if we have any on the list that are raining
                             if len(cities_with_rain) > 0:
                                 # we save the list of cities that had rain as JSON
                                 # We then send the JSON form with the variable name "city" to the LaskaKit map of the Czech Republic via HTTP POST
-                                log.info(NAME, _('I am sending JSON with cities to the LaskaKit map of the Czech Republic...'))
+                                if plugin_options['HW_BOARD']   == "0":
+                                    map_name = _('Laskakit')
+                                if plugin_options['HW_BOARD']   == "1":
+                                    map_name = _('TMEP')
+                                if plugin_options['HW_BOARD']   == "2":
+                                    map_name = _('Pihrt')                                                                        
+                                log.info(NAME, _('I am sending JSON with cities to the {} map of the Czech Republic...').format(map_name))
                                 form_data = {"mesta": json.dumps(cities_with_rain)}
-                                r = requests.post("http://{}/", data=form_data).format(plugin_options['IP_ADDR'])
-                                if r.status_code == 200:
-                                    log.debug(NAME, _('HTTP {} OK').format(r.text))
-                                else:
-                                    log.error(NAME, _('HTTP {}: I cannot connect to the LaskaKit map of the Czech Republic at the URL http://{}/').format(r.status_code,plugin_options['IP_ADDR']))
+                                try:
+                                    addr = 'http://{}/'.format(plugin_options['IP_ADDR'])
+                                    log.debug(NAME, _('I will try to send to {} post data {}').format(addr, form_data))
+                                    r = requests.post(addr, data=form_data)
+                                    if r.status_code == 200:
+                                        log.debug(NAME, _('HTTP {}').format(r.text))
+                                    else:
+                                        log.error(NAME, _('HTTP {}: I cannot connect to the board map of the Czech Republic at the URL http://{}/').format(r.status_code, plugin_options['IP_ADDR']))
+                                except:
+                                    pass
+                                    log.debug(NAME, traceback.format_exc())
+                                    log.error(NAME, _('I cannot connect to the map board of the Czech Republic at the URL http://{}/').format(plugin_options['IP_ADDR']))                                        
                             else:
                                 log.info(NAME, _('Looks like it is not raining in any city.'))
 

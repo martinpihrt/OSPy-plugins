@@ -3,16 +3,37 @@ $def with(plugin_options, events)
 $var title: $_('CHMI meteoradar')
 $var page: plugins
 <script>
+    function checkIP(){
+        let IPAddress = jQuery(".IPnumbersOnly").val();
+        let IPRegex=new RegExp("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
+        let test = IPRegex.test(IPAddress);
+        if(test){
+            return 0;
+        }
+        else{    
+            alert($:{json.dumps(_('IP map address is not valid!'), ensure_ascii=False).encode('utf8').decode('utf-8')});
+            return 1;
+        }
+    }
+
     // Initialize behaviors
     jQuery(document).ready(function(){
         jQuery("#cRefresh").click(function() {
             window.location="/plugins/chmi/settings";
         });
         jQuery("#cSubmit").click(function() {
+            if(checkIP()){
+                return;
+            }
             jQuery("#pluginForm").submit();
         });
         jQuery("button#cCancel").click(function(){
             window.location="/";
+        });
+
+        jQuery(".IPnumbersOnly").keyup(function () {
+            let newValue = this.value.replace(/[^0-9\.]/g, '');
+            this.value = newValue;
         });
 
     });
@@ -31,9 +52,19 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Map IP address'):</td>
-                <td title=$:{json.dumps(_(u'IP address for map https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/.'), ensure_ascii=False)}><input name='IP_ADDR' id='IP_ADDR' type='text' value='$plugin_options["IP_ADDR"]'>
+                <td title=$:{json.dumps(_(u'IP address for map.'), ensure_ascii=False)}><input name='IP_ADDR' class="Input IPnumbersOnly" type='text' size='15' maxlength='15' id='IPnumbersOnly' value='$plugin_options["IP_ADDR"]'>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Map board type'):</td>
+                <td>
+                    <select name='HW_BOARD' title=$:{json.dumps(_(u'Mark used your board hardware.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+                    <option value="0" ${" selected" if plugin_options['HW_BOARD']=="0" else ""}>$_('Laskakit')</option>
+                    <option value="1" ${" selected" if plugin_options['HW_BOARD']=="1" else ""}>$_('TMEP')</option>
+                    <option value="2" ${" selected" if plugin_options['HW_BOARD']=="2" else ""}>$_('Pihrt')</option>
+                    </select>
+                </td>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Meteo map'):</td>
                 <td title=$:{json.dumps(_(u'A downloaded map from the Meteo Institute is displayed here.'), ensure_ascii=False)}>
@@ -43,7 +74,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="10" cols="75" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
