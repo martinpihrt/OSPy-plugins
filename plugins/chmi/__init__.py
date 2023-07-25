@@ -88,7 +88,7 @@ class CHMI_Checker(Thread):
                     # If successful, ok = True, bytes = HTTP data of response (image), txt_date = YYYYMMDD.HHM0 of downloaded image
                     ok, byte, txt_date = download_radar()
                     if not ok:
-                        log.info(NAME, _('Failed to download radar data.'))
+                        log.info(NAME, datetime_string() + ' ' + _('Failed to download radar data.'))
                     else:
                         # We will create a bitmap object in PIL/Pillow format from the HTTP data
                         try:
@@ -100,10 +100,10 @@ class CHMI_Checker(Thread):
                                 bitmap.save(img_path)
                             except:
                                 pass
-                                log.error(NAME, _('Image cannot be saved.') + ':\n' + traceback.format_exc())
+                                log.error(NAME, datetime_string() + ' ' + _('Image cannot be saved.') + ':\n' + traceback.format_exc())
 
                             # The original image uses an indexed color palette. This can be useful, but for the simplicity of the example, we will convert the image to full RGB
-                            log.debug(NAME, _('Converting the image to RGB...'))
+                            log.debug(NAME, datetime_string() + ' ' + _('Converting the image to RGB...'))
                             bitmap = bitmap.convert("RGB")
                             screen = ImageDraw.Draw(bitmap)
                             # We calculate the step size of the vertical from the pixel dimension of the bitmap
@@ -120,7 +120,7 @@ class CHMI_Checker(Thread):
                             # The line has the format: ID;name;country. width; ground length
                             # ID represents the order of RGB LEDs on the LaskaKit map of the Czech Republic
 
-                            log.debug(NAME, _('Loading cities database...'))
+                            log.debug(NAME, datetime_string() + ' ' + _('Loading cities database...'))
                             if plugin_options['HW_BOARD']   == "0":
                                 city_table = 'laska_cities'
                             elif plugin_options['HW_BOARD'] == "1":
@@ -134,7 +134,7 @@ class CHMI_Checker(Thread):
                             cities_path = os.path.join('plugins', 'chmi', 'static', city_table)
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
-                                log.debug(NAME, _('Analyzing if is raining in the cities...'))
+                                log.debug(NAME, datetime_string() + ' ' + _('Analyzing if is raining in the cities...'))
                                 log.debug(NAME, '-' * 40)
                                 # We go through the list city by city
                                 for city in cities:
@@ -159,7 +159,7 @@ class CHMI_Checker(Thread):
                                             screen.rectangle((x-5, y-5, x+5, y+5), fill=(r, g, b), outline=(255, 0, 0))
                                             # If logging is active, we will display colored text indicating that it is raining in the given city,
                                             # and we add the city to the list as a structure {"id":id, "r":r, "g":g, "b":b} 
-                                            log.info(NAME, _('In city {} ({}) it is probably raining right now').format(name, idx))
+                                            log.info(NAME, datetime_string() + ' ' + _('In city {} ({}) it is probably raining right now').format(name, idx))
                                             log.debug(NAME, 'msg R={} G={} B={}'.format(r, g, b))
                                             cities_with_rain.append({"id": idx, "r": r, "g": g, "b": b})
                                         else:
@@ -176,28 +176,28 @@ class CHMI_Checker(Thread):
                                     map_name = _('TMEP')
                                 if plugin_options['HW_BOARD']   == "2":
                                     map_name = _('Pihrt')                                                                        
-                                log.info(NAME, _('I am sending JSON with cities to the {} map of the Czech Republic...').format(map_name))
+                                log.info(NAME, datetime_string() + ' ' + _('I am sending JSON with cities to the {} map of the Czech Republic...').format(map_name))
                                 form_data = {"mesta": json.dumps(cities_with_rain)}
                                 try:
                                     addr = 'http://{}/'.format(plugin_options['IP_ADDR'])
-                                    log.debug(NAME, _('I will try to send to {} post data {}').format(addr, form_data))
+                                    log.debug(NAME, datetime_string() + ' ' + _('I will try to send to {} post data {}').format(addr, form_data))
                                     r = requests.post(addr, data=form_data)
                                     if r.status_code == 200:
-                                        log.debug(NAME, _('HTTP {}').format(r.text))
+                                        log.debug(NAME, datetime_string() + ' ' + _('HTTP {}').format(r.text))
                                     else:
-                                        log.error(NAME, _('HTTP {}: I cannot connect to the board map of the Czech Republic at the URL http://{}/').format(r.status_code, plugin_options['IP_ADDR']))
+                                        log.error(NAME, datetime_string() + ' ' + _('HTTP {}: I cannot connect to the board map of the Czech Republic at the URL http://{}/').format(r.status_code, plugin_options['IP_ADDR']))
                                 except:
                                     pass
                                     log.debug(NAME, traceback.format_exc())
-                                    log.error(NAME, _('I cannot connect to the map board of the Czech Republic at the URL http://{}/').format(plugin_options['IP_ADDR']))                                        
+                                    log.error(NAME, datetime_string() + ' ' + _('I cannot connect to the map board of the Czech Republic at the URL http://{}/').format(plugin_options['IP_ADDR']))                                        
                             else:
-                                log.info(NAME, _('Looks like it is not raining in any city.'))
+                                log.info(NAME, datetime_string() + ' ' + _('Looks like it is not raining in any city.'))
 
                         except:
-                            log.info(NAME, _('Failed to load rain radar bitmap.') + ':\n' + traceback.format_exc())
+                            log.info(NAME, datetime_string() + ' ' + _('Failed to load rain radar bitmap.') + ':\n' + traceback.format_exc())
                             pass
                     
-                    log.info(NAME, _('Waiting 10 minutes for next update...'))
+                    log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
                     self._sleep(1000 * 60 * 10)
 
                 else:
@@ -207,7 +207,7 @@ class CHMI_Checker(Thread):
                         dis_text = False
 
             except Exception:
-                log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, datetime_string() + ' ' + _('CHMI plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -242,18 +242,23 @@ def download_radar(date=None, trials=5):
 
     while trials > 0:
         date_txt = date.strftime("%Y%m%d.%H%M")[:-1] + "0"
-        url = f"https://www.chmi.cz/files/portal/docs/meteo/rad/inca-cz/data/czrad-z_max3d_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png"
-        log.debug(NAME, _('Downloading a file: {}').format(url))
-        r = requests.get(url)
-        if r.status_code != 200:
-            log.error(NAME, _('HTTP {}: I can not download the file.').format(r.status_code))
-            log.info(NAME, _('I will try to download a file that is 10 minutes older.'))
-            date -= timedelta(minutes=10)
-            trials -= 1
-            time.sleep(.5)
-        else:
-            return True, r.content, date_txt
-    return False, None, date_txt
+        try:
+            url = f"https://www.chmi.cz/files/portal/docs/meteo/rad/inca-cz/data/czrad-z_max3d_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png"
+            log.debug(NAME, _('Downloading a file: {}').format(url))
+            r = requests.get(url)
+            if r.status_code != 200:
+                log.error(NAME, _('HTTP {}: I can not download the file.').format(r.status_code))
+                log.info(NAME, _('I will try to download a file that is 10 minutes older.'))
+                date -= timedelta(minutes=10)
+                trials -= 1
+                time.sleep(1)
+            else:
+                return True, r.content, date_txt
+            return False, None, date_txt
+        except:
+            log.debug(NAME, traceback.format_exc())
+            pass
+            return False, None, date_txt
 
 
 def rgb_msg(r,g,b, msg):
