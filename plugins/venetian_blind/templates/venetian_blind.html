@@ -33,9 +33,10 @@ $var page: plugins
     <div class="title">$_('Venetian blind')</div>
     <a href=$plugins.plugin_url('venetian_blind.help_page') class="button upload">$_('Help')</a>
     <a href=$plugins.plugin_url('venetian_blind.setup_page') class="button danger">$_('Settings')</a>
-    <a href=$plugins.plugin_url('venetian_blind.log_page') class="button submit">$_('Log')</a>
+    $if plugin_options['use_log']:
+        <a href=$plugins.plugin_url('venetian_blind.log_page') class="button submit">$_('Log')</a>
     <form id="pluginForm" action="$plugins.plugin_url('venetian_blind.home_page')" method="get">
-        $for c in range(0, plugin_options['number_blinds']):
+        $for c in range(0, len(plugin_options['label'])):
             <table class="optionList" width="600">
                 <tr><td class="blindNumber"><b><small>
                 $if plugin_options['label'][c] != "":

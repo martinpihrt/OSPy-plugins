@@ -3,6 +3,29 @@ $def with(plugin_options, msg)
 $var title: $_('Venetian blind settings')
 $var page: plugins
 
+<style>
+.alert-box {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;  
+}
+
+.success {
+    color: #3c763d;
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+    display: none;
+}
+
+.test {
+    color: #8a6d3b;
+    background-color: #fcf8e3;
+    border-color: #faebcc;
+    display: none;
+}
+</style>
+
 <script>
     var msg = "${msg}";
     // Initialize behaviors
@@ -16,28 +39,28 @@ $var page: plugins
         jQuery("#nbr_blinds").click(function() {
             jQuery("#pluginForm").submit();
         });   
-        jQuery('#msgHint').fadeIn(10);
         switch (msg) {
             case "saved":
-                jQuery("#msgHint").text($:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+                jQuery("div.success").fadeIn(100).delay(2000).fadeOut(2000);
             break;  
             case "test":
-                jQuery("#msgHint").text($:{json.dumps(_('I confirm press the test button.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+                jQuery("div.test").fadeIn(100).delay(2000).fadeOut(2000);
             break;
         }
-        jQuery('#msgHint').fadeOut(7000);       
+       
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_('Venetian blind settings')</div>
+    <div class="alert-box success" id="success">$_('Changing the number of blinds, do not forget to confirm with the "Submit" button.')</div>
+    <div class="alert-box test" id="test">$_('I confirm press the test button.')</div>
     <a href=$plugins.plugin_url('venetian_blind.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['use_log']:
         <p>
         <a href=$plugins.plugin_url('venetian_blind.log_csv') class="button download">$_('Download log')</a>
         <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
-        </p></br>
-    <span id="msgHint"> </span>    
+        </p></br>    
     <form id="pluginForm" action="$plugins.plugin_url('venetian_blind.setup_page')" method="post">
         <table class="optionList">
             <tr>
@@ -61,7 +84,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Number of blinds'):</td>
                 <td title=$:{json.dumps(_(u'The number of blinds controlled by this extension.'), ensure_ascii=False)}>
-                <input name='number_blinds' id='nbr_blinds' type='number' min="1" max="50" value='$plugin_options["number_blinds"]'></td>
+                <input name='number_blinds' id='nbr_blinds' type='number' min="1" max="100" value='$plugin_options["number_blinds"]'></td>
             </tr>
             <tr>
                <th colspan="2">

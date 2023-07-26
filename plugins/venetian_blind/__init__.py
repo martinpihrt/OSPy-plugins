@@ -32,15 +32,15 @@ plugin_options = PluginOptions(
     {
         'use_control': False,
         'use_log': False, 
-        'number_blinds': 2,
+        'number_blinds': 1,
         'use_footer': True,
-        'label':  [_('Living room'),"","","","","","",""],
-        'open':   ["http://192.168.88.213/roller/0?go=open","","","","","","",""],
-        'stop':   ["http://192.168.88.213/roller/0?go=stop","","","","","","",""],
-        'close':  ["http://192.168.88.213/roller/0?go=close","","","","","","",""],
-        'status': ["http://192.168.88.213/status","","","","","","",""],
-        'label0':   [_('Closed blind'),"","","","","","",""],
-        'label100': [_('Open blind'),"","","","","","",""],
+        'label':  [_('Living room')],
+        'open':   ["http://192.168.88.213/roller/0?go=open"],
+        'stop':   ["http://192.168.88.213/roller/0?go=stop"],
+        'close':  ["http://192.168.88.213/roller/0?go=close"],
+        'status': ["http://192.168.88.213/status"],
+        'label0':   [_('Closed blind')],
+        'label100': [_('Open blind')],
      }
 )
 
@@ -364,13 +364,13 @@ class setup_page(ProtectedPage):
             commands = {'open': [], 'stop': [], 'close': [], 'label': [], 'status': [], 'label0': [], 'label100': []}
 
             for i in range(0, plugin_options['number_blinds']):
-                commands['open'].append(qdict['open'+str(i)])
-                commands['stop'].append(qdict['stop'+str(i)])
-                commands['close'].append(qdict['close'+str(i)])
-                commands['label'].append(qdict['label'+str(i)])
-                commands['status'].append(qdict['status'+str(i)])
-                commands['label0'].append(qdict['label0'+str(i)])
-                commands['label100'].append(qdict['label100'+str(i)])
+                commands['open'].append(qdict['open'+str(i)] if qdict['open'+str(i)] else '')
+                commands['stop'].append(qdict['stop'+str(i)] if qdict['stop'+str(i)] else '')
+                commands['close'].append(qdict['close'+str(i)] if qdict['close'+str(i)] else '')
+                commands['label'].append(qdict['label'+str(i)] if qdict['label'+str(i)] else '')
+                commands['status'].append(qdict['status'+str(i)] if qdict['status'+str(i)] else '')
+                commands['label0'].append(qdict['label0'+str(i)] if qdict['label0'+str(i)] else '')
+                commands['label100'].append(qdict['label100'+str(i)] if qdict['label100'+str(i)] else '')
 
             plugin_options.__setitem__('open', commands['open'])
             plugin_options.__setitem__('stop', commands['stop'])
