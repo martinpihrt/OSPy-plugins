@@ -192,13 +192,13 @@ class CHMI_Checker(Thread):
                                     log.error(NAME, datetime_string() + ' ' + _('I cannot connect to the map board of the Czech Republic at the URL http://{}/').format(plugin_options['IP_ADDR']))                                        
                             else:
                                 log.info(NAME, datetime_string() + ' ' + _('Looks like it is not raining in any city.'))
+                            
+                            log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
+                            self._sleep(60 * 10)  # 60 seconds * 10 = 600 -> 10 minutes                              
 
                         except:
                             log.info(NAME, datetime_string() + ' ' + _('Failed to load rain radar bitmap.') + ':\n' + traceback.format_exc())
                             pass
-                    
-                    log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
-                    self._sleep(1000 * 60 * 10)
 
                 else:
                     if dis_text:
@@ -240,25 +240,27 @@ def download_radar(date=None, trials=5):
     if date == None:
         date = datetime.datetime.utcnow()
 
+    date_txt = date
     while trials > 0:
         date_txt = date.strftime("%Y%m%d.%H%M")[:-1] + "0"
         try:
             url = f"https://www.chmi.cz/files/portal/docs/meteo/rad/inca-cz/data/czrad-z_max3d_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png"
-            log.debug(NAME, _('Downloading a file: {}').format(url))
+            log.debug(NAME,datetime_string() + ' ' + _('Downloading a file: {}').format(url))
             r = requests.get(url)
-            if r.status_code != 200:
+            if r and r.status_code == 200:
+                return True, r.content, date_txt
+            else:
                 log.error(NAME, _('HTTP {}: I can not download the file.').format(r.status_code))
                 log.info(NAME, _('I will try to download a file that is 10 minutes older.'))
                 date -= timedelta(minutes=10)
                 trials -= 1
-                time.sleep(1)
-            else:
-                return True, r.content, date_txt
-            return False, None, date_txt
+                time.sleep(1)                
         except:
             log.debug(NAME, traceback.format_exc())
             pass
             return False, None, date_txt
+
+    return False, None, date_txt        
 
 
 def rgb_msg(r,g,b, msg):
