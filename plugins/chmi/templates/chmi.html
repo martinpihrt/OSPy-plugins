@@ -83,11 +83,17 @@ $var page: plugins
                 <td title=$:{json.dumps(_(u'Delay time in hours.'), ensure_ascii=False)}>
                     <input name='RAIN_DELAY' type='number' min='1' value='$plugin_options["RAIN_DELAY"]'> $_('hours)')
                 </td>
-            </tr>            
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False).encode('utf-8').decode('utf-8')}>
+                    <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>                        
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="30" cols="95" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="18" cols="95" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>

@@ -16,10 +16,12 @@ import json
 
 import web
 from ospy.log import log
-from ospy.options import options
+from ospy.options import options, rain_blocks
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, stop_onrain
 from plugins import PluginOptions, plugin_url, plugin_data_dir
+
+from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
 from PIL import Image
 from PIL import ImageDraw
@@ -36,6 +38,7 @@ plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,
+        'use_footer': False,         # Information in footer
         'USE_RAIN_DELAY': False,     # If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
         'RAIN_DELAY': 1,             # In hours
         'LON_0': 11.2673442,         # TOP LEFT CORNER
@@ -80,6 +83,13 @@ class CHMI_Checker(Thread):
             self._sleep(1)
             try:
                 if plugin_options['enabled']:
+                    chmi_mon = None
+                    if plugin_options['use_footer']:
+                        chmi_mon = showInFooter()                               # instantiate class to enable data in footer
+                        chmi_mon.label = _('CHMI meteoradar')                   # label on footer
+                        chmi_mon.button = "chmu/settings"                       # button redirect on footer
+                        chmi_mon.val = '---'                                    # value on footer
+
                     log.clear(NAME)
                     dis_text = True
                     # Bitmap dimensions in degrees
@@ -186,6 +196,21 @@ class CHMI_Checker(Thread):
                                         else:
                                             # If it is not raining in the given city, we draw an empty square with a white outline in its coordinates
                                             screen.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
+                            
+                            # RAIND DELAY and FOOTER
+                            tempText = ""
+                            if plugin_options['USE_RAIN_DELAY']:
+                                delaytime = int(plugin_options['RAIN_DELAY'])
+                                if options.weather_lat and options.weather_lon:
+                                    log.debug(NAME, datetime_string() + ' ' + _('My location latitude {}  longitude {}.').format(options.weather_lat, options.weather_lon))
+                                    # TODO
+                                    #rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
+                                    #stop_onrain()
+                                    if plugin_options['use_footer']:
+                                        if chmi_mon is not None:
+                                            tempText += _(u'CHMI detected Rain') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') 
+                                            chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+
 
                             # We ve gone through all the cities, so well see if we have any on the list that are raining
                             if len(cities_with_rain) > 0:
