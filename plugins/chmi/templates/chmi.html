@@ -75,7 +75,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Use a rain delay'):</td>
                 <td title=$:{json.dumps(_(u'If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).'), ensure_ascii=False)}>
-                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                    <input name='USE_RAIN_DELAY' type='checkbox'${" checked" if plugin_options['USE_RAIN_DELAY'] else ""}>
                 </td>
             </tr>
             <tr>

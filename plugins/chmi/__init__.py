@@ -97,13 +97,14 @@ class CHMI_Checker(Thread):
                             bitmap = Image.open(BytesIO(byte))
                             
                             # Save radar img to local file
-                            image = os.path.join(plugin_data_dir(), 'last.png')
-                            watermark = os.path.join(plugin_data_dir(),'cr_borders.png')
+                            image_path = os.path.join(plugin_data_dir(), 'last.png')
+                            watermark_path = os.path.join('plugins','chmi','static','images','cr_borders.png')
+                            result_path = os.path.join(plugin_data_dir(),'result.png')
                             try:
-                                bitmap.save(image)
+                                bitmap.save(image_path)
                                 # Merge images (radar and outline of the Czech Republic)
-                                wmark = Image.open(watermark)
-                                img = Image.open(image)
+                                wmark = Image.open(watermark_path)
+                                img = Image.open(image_path)
                                 ia, wa = None, None
                                 if len(img.getbands()) == 4:
                                     ir, ig, ib, ia = img.split()
@@ -116,7 +117,7 @@ class CHMI_Checker(Thread):
                                         # This seems to solve the contradiction, discard if unwanted
                                         ia = max_alpha(wa, ia)
                                     img.putalpha(ia)
-                                img.save('result.png')
+                                img.save(result_path)
                                 log.debug(NAME, datetime_string() + ' ' + _('The merging of the images (radar and outline of the Czech Republic) went OK.'))
                             except:
                                 pass
