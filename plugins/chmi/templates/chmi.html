@@ -41,6 +41,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('CHMI meteoradar')</div>
+    <p>$_('The measurement time is primarily given in UTC world time (UTC=UT=GMT=SELC-2h = CET-1h).')</p>
     <a href=$plugins.plugin_url('chmi.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('chmi.settings_page')" method="post">
         <table class="optionList">
@@ -64,7 +65,7 @@ $var page: plugins
                     <option value="2" ${" selected" if plugin_options['HW_BOARD']=="2" else ""}>$_('Pihrt')</option>
                     </select>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Meteo map'):</td>
                 <td title=$:{json.dumps(_(u'A downloaded map from the Meteo Institute is displayed here.'), ensure_ascii=False)}>
@@ -72,9 +73,21 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Use a rain delay'):</td>
+                <td title=$:{json.dumps(_(u'If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).'), ensure_ascii=False)}>
+                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Delay time'):</td>
+                <td title=$:{json.dumps(_(u'Delay time in hours.'), ensure_ascii=False)}>
+                    <input name='RAIN_DELAY' type='number' min='1' value='$plugin_options["RAIN_DELAY"]'> $_('hours)')
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="10" cols="75" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="30" cols="95" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>

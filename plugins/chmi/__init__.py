@@ -36,6 +36,8 @@ plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,
+        'USE_RAIN_DELAY': False,     # If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
+        'RAIN_DELAY': 1,             # In hours
         'LON_0': 11.2673442,         # TOP LEFT CORNER
         'LAT_0': 52.1670717,
         'LON_1': 20.7703153,         # LOWER RIGHT CORNER
@@ -94,10 +96,28 @@ class CHMI_Checker(Thread):
                         try:
                             bitmap = Image.open(BytesIO(byte))
                             
-                            # Save img to local file
-                            img_path = os.path.join(plugin_data_dir(), 'last.png')
+                            # Save radar img to local file
+                            image = os.path.join(plugin_data_dir(), 'last.png')
+                            watermark = os.path.join(plugin_data_dir(),'cr_borders.png')
                             try:
-                                bitmap.save(img_path)
+                                bitmap.save(image)
+                                # Merge images (radar and outline of the Czech Republic)
+                                wmark = Image.open(watermark)
+                                img = Image.open(image)
+                                ia, wa = None, None
+                                if len(img.getbands()) == 4:
+                                    ir, ig, ib, ia = img.split()
+                                    img = Image.merge('RGB', (ir, ig, ib))
+                                if len(wmark.getbands()) == 4:
+                                    wa = wmark.split()[-1]
+                                img.paste(wmark, (0, 0), wmark)
+                                if ia:
+                                    if wa:
+                                        # This seems to solve the contradiction, discard if unwanted
+                                        ia = max_alpha(wa, ia)
+                                    img.putalpha(ia)
+                                img.save('result.png')
+                                log.debug(NAME, datetime_string() + ' ' + _('The merging of the images (radar and outline of the Czech Republic) went OK.'))
                             except:
                                 pass
                                 log.error(NAME, datetime_string() + ' ' + _('Image cannot be saved.') + ':\n' + traceback.format_exc())
@@ -130,7 +150,7 @@ class CHMI_Checker(Thread):
                             else:
                                 return
 
-                            cities_with_rain = []        
+                            cities_with_rain = []
                             cities_path = os.path.join('plugins', 'chmi', 'static', city_table)
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
@@ -164,7 +184,7 @@ class CHMI_Checker(Thread):
                                             cities_with_rain.append({"id": idx, "r": r, "g": g, "b": b})
                                         else:
                                             # If it is not raining in the given city, we draw an empty square with a white outline in its coordinates
-                                            screen.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))                                           
+                                            screen.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
 
                             # We ve gone through all the cities, so well see if we have any on the list that are raining
                             if len(cities_with_rain) > 0:
@@ -175,7 +195,7 @@ class CHMI_Checker(Thread):
                                 if plugin_options['HW_BOARD']   == "1":
                                     map_name = _('TMEP')
                                 if plugin_options['HW_BOARD']   == "2":
-                                    map_name = _('Pihrt')                                                                        
+                                    map_name = _('Pihrt')
                                 log.info(NAME, datetime_string() + ' ' + _('I am sending JSON with cities to the {} map of the Czech Republic...').format(map_name))
                                 form_data = {"mesta": json.dumps(cities_with_rain)}
                                 try:
@@ -194,7 +214,7 @@ class CHMI_Checker(Thread):
                                 log.info(NAME, datetime_string() + ' ' + _('Looks like it is not raining in any city.'))
                             
                             log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
-                            self._sleep(60 * 10)  # 60 seconds * 10 = 600 -> 10 minutes                              
+                            self._sleep(60 * 10)  # 60 seconds * 10 = 600 -> 10 minutes
 
                         except:
                             log.info(NAME, datetime_string() + ' ' + _('Failed to load rain radar bitmap.') + ':\n' + traceback.format_exc())
@@ -254,17 +274,31 @@ def download_radar(date=None, trials=5):
                 log.info(NAME, _('I will try to download a file that is 10 minutes older.'))
                 date -= timedelta(minutes=10)
                 trials -= 1
-                time.sleep(1)                
+                time.sleep(1)
         except:
             log.debug(NAME, traceback.format_exc())
             pass
             return False, None, date_txt
 
-    return False, None, date_txt        
+    return False, None, date_txt
 
 
 def rgb_msg(r,g,b, msg):
     return '\x1b[38;2;{};{};{}m{}\x1b[0m'.format(r, g, b, msg)
+
+
+def max_alpha(a, b):
+    # Assumption: 'a' and 'b' are of same size
+    im_a = a.load()
+    im_b = b.load()
+    width, height = a.size
+
+    alpha = Image.new('L', (width, height))
+    im = alpha.load()
+    for x in xrange(width):
+        for y in xrange(height):
+            im[x, y] = max(im_a[x, y], im_b[x, y])
+    return alpha
 
 
 ################################################################################
@@ -288,7 +322,7 @@ class download_page(ProtectedPage):
 
     def GET(self):
         try:
-            download_name = plugin_data_dir() + '/' + 'last.png'          
+            download_name = plugin_data_dir() + '/' + 'result.png'          
             if os.path.isfile(download_name):     # exists image? 
                 content = mimetypes.guess_type(download_name)[0]
                 web.header('Content-type', content)
