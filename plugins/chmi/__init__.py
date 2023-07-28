@@ -107,9 +107,11 @@ class CHMI_Checker(Thread):
                             bitmap = Image.open(BytesIO(byte))
                             
                             # Save radar img to local file
-                            image_path = os.path.join(plugin_data_dir(), 'last.png')
-                            watermark_path = os.path.join('plugins','chmi','static','images','cr_borders.png')
-                            result_path = os.path.join(plugin_data_dir(),'result.png')
+                            image_path = os.path.join(plugin_data_dir(), 'last.png')                              # last radar image
+                            watermark_path = os.path.join('plugins','chmi','static','images','cr_borders.png')    # čr borders map image
+                            result_path = os.path.join(plugin_data_dir(),'result.png')                            # merge radar + borders image
+                            corner_path = os.path.join(plugin_data_dir(),'corner.png')                            # image with corners and datetime
+                            final_path = os.path.join(plugin_data_dir(),'final.png')                              # final merged image
                             try:
                                 bitmap.save(image_path)
                                 # Merge images (radar and outline of the Czech Republic)
@@ -136,7 +138,6 @@ class CHMI_Checker(Thread):
                             # The original image uses an indexed color palette. This can be useful, but for the simplicity of the example, we will convert the image to full RGB
                             log.debug(NAME, datetime_string() + ' ' + _('Converting the image to RGB...'))
                             bitmap = bitmap.convert("RGB")
-                            screen = ImageDraw.Draw(bitmap)
                             # We calculate the step size of the vertical from the pixel dimension of the bitmap
                             # and horizontal pixel for further conversions between degrees and pixels
                             size_lat_pixel = degree_heigth / bitmap.height
@@ -163,6 +164,12 @@ class CHMI_Checker(Thread):
 
                             cities_with_rain = []
                             cities_path = os.path.join('plugins', 'chmi', 'static', city_table)
+
+                            fin_img = Image.new('RGB', (680, 460), (255, 255, 255)) # xy, RGB
+                            draw = ImageDraw.Draw(fin_img) 
+                            drawtext = datetime_string()
+                            draw.text((5, 10), drawtext, fill="red")
+
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
                                 log.debug(NAME, datetime_string() + ' ' + _('Analyzing if is raining in the cities...'))
@@ -187,7 +194,7 @@ class CHMI_Checker(Thread):
                                             # If we activated drawing at the beginning of the program,
                                             # on the canvas we draw a square with dimensions of 10×10 px representing the city
                                             # The square will have the color of rain and a red outline
-                                            screen.rectangle((x-5, y-5, x+5, y+5), fill=(r, g, b), outline=(255, 0, 0))
+                                            draw.rectangle((x-5, y-5, x+5, y+5), fill=(r, g, b), outline=(255, 0, 0))
                                             # If logging is active, we will display colored text indicating that it is raining in the given city,
                                             # and we add the city to the list as a structure {"id":id, "r":r, "g":g, "b":b} 
                                             log.info(NAME, datetime_string() + ' ' + _('In city {} ({}) it is probably raining right now').format(name, idx))
@@ -195,14 +202,33 @@ class CHMI_Checker(Thread):
                                             cities_with_rain.append({"id": idx, "r": r, "g": g, "b": b})
                                         else:
                                             # If it is not raining in the given city, we draw an empty square with a white outline in its coordinates
-                                            screen.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
-                            
+                                            draw.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
+
+                                fin_img.save(corner_path)
+
+                                # merge final images
+                                wmark = Image.open(corner_path)
+                                img = Image.open(result_path)
+                                ia, wa = None, None
+                                if len(img.getbands()) == 4:
+                                    ir, ig, ib, ia = img.split()
+                                    img = Image.merge('RGB', (ir, ig, ib))
+                                if len(wmark.getbands()) == 4:
+                                    wa = wmark.split()[-1]
+                                img.paste(wmark, (0, 0), wmark)
+                                if ia:
+                                    if wa:
+                                        # This seems to solve the contradiction, discard if unwanted
+                                        ia = max_alpha(wa, ia)
+                                    img.putalpha(ia)
+                                img.save(final_path)
+
                             # RAIND DELAY and FOOTER
                             tempText = ""
                             if plugin_options['USE_RAIN_DELAY']:
                                 delaytime = int(plugin_options['RAIN_DELAY'])
                                 if options.weather_lat and options.weather_lon:
-                                    log.debug(NAME, datetime_string() + ' ' + _('My location latitude {}  longitude {}.').format(options.weather_lat, options.weather_lon))
+                                    log.info(NAME, datetime_string() + ' ' + _('My location latitude {}  longitude {}.').format(options.weather_lat, options.weather_lon))
                                     # TODO
                                     #rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                                     #stop_onrain()
@@ -348,7 +374,7 @@ class download_page(ProtectedPage):
 
     def GET(self):
         try:
-            download_name = plugin_data_dir() + '/' + 'result.png'          
+            download_name = plugin_data_dir() + '/' + 'final.png' # result.png (without corner and datetime)          
             if os.path.isfile(download_name):     # exists image? 
                 content = mimetypes.guess_type(download_name)[0]
                 web.header('Content-type', content)
