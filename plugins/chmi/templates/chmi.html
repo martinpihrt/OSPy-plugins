@@ -74,7 +74,11 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'><small>$_('My location lat/lon') ${options.weather_lat}/${options.weather_lon}</small></td>
-            </tr>    
+                <td>
+                    $ patch = 'https://www.openstreetmap.org/#map=15/' + options.weather_lat + '/' + options.weather_lon
+                    <a href="${patch}" class="button upload" target="_blank" title=$:{json.dumps(_(u'Displaying the found area on the map'), ensure_ascii=False).encode('utf8').decode('utf-8')}>$_('Map')</a>
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use a rain delay'):</td>
                 <td title=$:{json.dumps(_(u'If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).'), ensure_ascii=False)}>

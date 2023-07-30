@@ -88,7 +88,7 @@ class CHMI_Checker(Thread):
                     if plugin_options['use_footer']:
                         chmi_mon = showInFooter()                               # instantiate class to enable data in footer
                         chmi_mon.label = _('CHMI meteoradar')                   # label on footer
-                        chmi_mon.button = "chmu/settings"                       # button redirect on footer
+                        chmi_mon.button = "chmi/settings"                       # button redirect on footer
                         chmi_mon.val = '---'                                    # value on footer
 
                     log.clear(NAME)
