@@ -73,6 +73,9 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'><small>$_('My location lat/lon') ${options.weather_lat}/${options.weather_lon}</small></td>
+            </tr>    
+            <tr>
                 <td style='text-transform: none;'>$_('Use a rain delay'):</td>
                 <td title=$:{json.dumps(_(u'If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).'), ensure_ascii=False)}>
                     <input name='USE_RAIN_DELAY' type='checkbox'${" checked" if plugin_options['USE_RAIN_DELAY'] else ""}>
@@ -81,7 +84,13 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Delay time'):</td>
                 <td title=$:{json.dumps(_(u'Delay time in hours.'), ensure_ascii=False)}>
-                    <input name='RAIN_DELAY' type='number' min='1' value='$plugin_options["RAIN_DELAY"]'> $_('hours)')
+                    <input name='RAIN_DELAY' type='number' min='1' value='$plugin_options["RAIN_DELAY"]'> $_('(in hours)')
+                </td>
+            </tr            
+            <tr>
+                <td style='text-transform: none;'>$_('Intensity threshold'):</td>
+                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location.'), ensure_ascii=False)}>
+                    <input name='RGB_INTENS' type='number' min='0' max='765' value='$plugin_options["RGB_INTENS"]'> $_('R+G+B (max is 255+255+255)')
                 </td>
             </tr>
             <tr>

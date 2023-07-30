@@ -21,7 +21,10 @@ Plugin setup
   If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
 
 * Delay time:
-  Delay time in hours. 
+  Delay time in hours.
+
+* Intensity threshold:
+  Intensity threshold for activate rain delay in my location. R+G+B (maximum rain is 255+255+255=765, minimum rain is 1).   
  
 * Status:  
   Status window from the plugin.

@@ -46,7 +46,8 @@ plugin_options = PluginOptions(
         'LON_1': 20.7703153,         # LOWER RIGHT CORNER
         'LAT_1': 48.1,
         'IP_ADDR': '192.168.88.2',   # remote map IP address
-        'HW_BOARD': '0'              # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
+        'HW_BOARD': '0',             # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
+        'RGB_INTENS' : 0             # R+G+B intensity threshold for activate rain delay
     })
 
 # We work in the WGS-84 coordinate system
@@ -108,12 +109,13 @@ class CHMI_Checker(Thread):
                             
                             # Save radar img to local file
                             image_path = os.path.join(plugin_data_dir(), 'last.png')                              # last radar image
-                            watermark_path = os.path.join('plugins','chmi','static','images','cr_borders.png')    # čr borders map image
+                            borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')      # čr borders map image
                             result_path = os.path.join(plugin_data_dir(),'result.png')                            # merge radar + borders image
+                            corner_path = os.path.join(plugin_data_dir(),'corner.png')                            # draw corner to result
                             try:
                                 bitmap.save(image_path)
                                 # Merge images (radar and outline of the Czech Republic)
-                                wmark = Image.open(watermark_path)
+                                wmark = Image.open(borders_path)
                                 img = Image.open(image_path)
                                 ia, wa = None, None
                                 if len(img.getbands()) == 4:
@@ -163,10 +165,11 @@ class CHMI_Checker(Thread):
                             cities_with_rain = []
                             cities_path = os.path.join('plugins', 'chmi', 'static', city_table)
 
-                            #fin_img = Image.new('RGB', (680, 460), (255, 255, 255)) # xy, RGB
-                            #draw = ImageDraw.Draw(bitmap) 
-                            #drawtext = datetime_string()
-                            #draw.text((5, 10), drawtext, fill="red")
+                            corner_img = Image.open(result_path)
+                            c_img = img.convert("RGBA")
+                            draw = ImageDraw.Draw(c_img) 
+                            drawtext = datetime_string()
+                            draw.text((5, 10), drawtext, fill="red")
 
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
@@ -192,32 +195,47 @@ class CHMI_Checker(Thread):
                                             # If we activated drawing at the beginning of the program,
                                             # on the canvas we draw a square with dimensions of 10×10 px representing the city
                                             # The square will have the color of rain and a red outline
-                                            #draw.rectangle((x-5, y-5, x+5, y+5), fill=(r, g, b), outline=(255, 0, 0))
+                                            draw.rectangle((x-5, y-5, x+5, y+5), fill=(r, g, b), outline=(255, 0, 0))
                                             # If logging is active, we will display colored text indicating that it is raining in the given city,
                                             # and we add the city to the list as a structure {"id":id, "r":r, "g":g, "b":b} 
                                             log.info(NAME, datetime_string() + ' ' + _('In city {} ({}) it is probably raining right now').format(name, idx))
                                             log.debug(NAME, 'msg R={} G={} B={}'.format(r, g, b))
                                             cities_with_rain.append({"id": idx, "r": r, "g": g, "b": b})
-                                        #else:
+                                        else:
                                             # If it is not raining in the given city, we draw an empty square with a white outline in its coordinates
-                                            #draw.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
+                                            draw.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
 
-                                #draw.save(corner_path)
-
-
-                            # RAIND DELAY and FOOTER
-                            tempText = ""
-                            if plugin_options['USE_RAIN_DELAY']:
-                                delaytime = int(plugin_options['RAIN_DELAY'])
+                                # MY LOCATION
+                                lat = float(options.weather_lat)
+                                lon = float(options.weather_lon)
+                                # We calculate the pixel coordinates my location on the radar image
+                                x = int((lon - plugin_options['LON_0']) / size_lon_pixel)
+                                y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
+                                r,g,b = bitmap.getpixel((x, y))
+                                rad = 8
                                 if options.weather_lat and options.weather_lon:
-                                    log.info(NAME, datetime_string() + ' ' + _('My location latitude {}  longitude {}.').format(options.weather_lat, options.weather_lon))
-                                    # TODO
-                                    #rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
-                                    #stop_onrain()
-                                    if plugin_options['use_footer']:
-                                        if chmi_mon is not None:
-                                            tempText += _(u'CHMI detected Rain') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') 
-                                            chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                                    if r+g+b > int(plugin_options['RGB_INTENS']):
+                                        draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=1)
+                                        log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
+                                        # RAIND DELAY and FOOTER
+                                        tempText = ""
+                                        if plugin_options['USE_RAIN_DELAY']:
+                                            delaytime = int(plugin_options['RAIN_DELAY'])
+                                            rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
+                                            stop_onrain()
+                                        if plugin_options['use_footer']:
+                                            if chmi_mon is not None:
+                                                tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') 
+                                                chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                                    else:
+                                        draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(0, 0, 0), outline=(255, 255, 255))
+                                        log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably not rain.').format(options.weather_lat, options.weather_lon))
+                                        if plugin_options['use_footer']:
+                                            if chmi_mon is not None:
+                                                tempText += _('Probably not rain') 
+                                                chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+
+                                c_img.save(corner_path)
 
 
                             # We ve gone through all the cities, so well see if we have any on the list that are raining
@@ -356,12 +374,12 @@ class download_page(ProtectedPage):
 
     def GET(self):
         try:
-            download_name = plugin_data_dir() + '/' + 'result.png'          
+            download_name = plugin_data_dir() + '/' + 'corner.png'          
             if os.path.isfile(download_name):     # exists image? 
                 content = mimetypes.guess_type(download_name)[0]
                 web.header('Content-type', content)
                 web.header('Content-Length', os.path.getsize(download_name))
-                web.header('Content-Disposition', 'attachment; filename=last_map')
+                web.header('Content-Disposition', 'attachment; filename=meteomap')
                 img = open(download_name,'rb')
                 return img.read()
             else:
