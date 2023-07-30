@@ -213,27 +213,29 @@ class CHMI_Checker(Thread):
                                 y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
                                 r,g,b = bitmap.getpixel((x, y))
                                 rad = 8
+                                tempText = ""
                                 if options.weather_lat and options.weather_lon:
                                     if r+g+b > int(plugin_options['RGB_INTENS']):
                                         draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=1)
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
                                         # RAIND DELAY and FOOTER
-                                        tempText = ""
                                         if plugin_options['USE_RAIN_DELAY']:
                                             delaytime = int(plugin_options['RAIN_DELAY'])
                                             rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                                             stop_onrain()
-                                        if plugin_options['use_footer']:
-                                            if chmi_mon is not None:
-                                                tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') 
-                                                chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                                            tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours')
+                                        else:
+                                            tempText += _('Probably raining right now')
                                     else:
                                         draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(0, 0, 0), outline=(255, 255, 255))
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably not rain.').format(options.weather_lat, options.weather_lon))
-                                        if plugin_options['use_footer']:
-                                            if chmi_mon is not None:
-                                                tempText += _('Probably not rain') 
-                                                chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                                        tempText += _('Probably not rain')
+                                else:
+                                    tempText += _('Location is not set!')
+                                
+                                if plugin_options['use_footer']:
+                                    if chmi_mon is not None:
+                                        chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
                                 c_img.save(corner_path)
 
