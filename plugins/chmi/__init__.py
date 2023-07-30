@@ -80,17 +80,17 @@ class CHMI_Checker(Thread):
 
     def run(self):
         dis_text = True
+        chmi_mon = None
+        if plugin_options['enabled']:
+            if plugin_options['use_footer']:
+                chmi_mon = showInFooter()                               # instantiate class to enable data in footer
+                chmi_mon.label = _('CHMI meteoradar')                   # label on footer
+                chmi_mon.button = "chmi/settings"                       # button redirect on footer
+                chmi_mon.val = '---'                                    # value on footer        
         while not self._stop_event.is_set():
             self._sleep(1)
             try:
                 if plugin_options['enabled']:
-                    chmi_mon = None
-                    if plugin_options['use_footer']:
-                        chmi_mon = showInFooter()                               # instantiate class to enable data in footer
-                        chmi_mon.label = _('CHMI meteoradar')                   # label on footer
-                        chmi_mon.button = "chmi/settings"                       # button redirect on footer
-                        chmi_mon.val = '---'                                    # value on footer
-
                     log.clear(NAME)
                     dis_text = True
                     # Bitmap dimensions in degrees
