@@ -23,8 +23,7 @@ from plugins import PluginOptions, plugin_url, plugin_data_dir
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
-from PIL import Image
-from PIL import ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import requests
 from io import BytesIO
 
@@ -47,7 +46,9 @@ plugin_options = PluginOptions(
         'LAT_1': 48.1,
         'IP_ADDR': '192.168.88.2',   # remote map IP address
         'HW_BOARD': '0',             # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
-        'RGB_INTENS' : 0             # R+G+B intensity threshold for activate rain delay
+        'R_INTENS' : 0,              # R intensity threshold for activate rain delay
+        'G_INTENS' : 0,              # G intensity threshold for activate rain delay
+        'B_INTENS' : 0,              # B intensity threshold for activate rain delay
     })
 
 # We work in the WGS-84 coordinate system
@@ -170,7 +171,10 @@ class CHMI_Checker(Thread):
                             draw = ImageDraw.Draw(c_img) 
                             draw.rectangle((0,0,680,25), fill=(0, 0, 0), outline=(0, 0, 0))
                             drawtext = datetime_string()
-                            draw.text((5, 10), drawtext, fill="white")
+                            font_path = os.path.join('plugins', 'chmi', 'static', 'font', 'Roboto-Bold.ttf')
+                            font_size = 18
+                            font = ImageFont.truetype(font_path, font_size)
+                            draw.text((5, 5), drawtext, font=font, fill="white")
 
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
@@ -216,9 +220,9 @@ class CHMI_Checker(Thread):
                                 rad = 8
                                 tempText = ""
                                 if options.weather_lat and options.weather_lon:
-                                    drawtext =  _('RGB in my location is {}').format(r+g+b)
-                                    draw.text((450, 10), drawtext, fill="white")
-                                    if r+g+b > int(plugin_options['RGB_INTENS']):
+                                    drawtext =  _('RGB in my location is R:{}, G:{}, B:{}').format(r,g,b)
+                                    draw.text((300, 5), drawtext, font=font, fill="white")
+                                    if r > int(plugin_options['R_INTENS']) and g > int(plugin_options['G_INTENS']) and b > int(plugin_options['B_INTENS']):
                                         draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=1)
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
                                         # RAIND DELAY and FOOTER
@@ -369,13 +373,16 @@ class settings_page(ProtectedPage):
         qdict  = web.input()
 
         del_rain = get_input(qdict, 'del_rain', False, lambda x: True)
+        refresh = get_input(qdict, 'refresh', False, lambda x: True)
 
         if checker is not None and del_rain:
             if NAME in rain_blocks:
                 del rain_blocks[NAME]
                 log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
 
-        checker.update()
+        if checker is not None and refresh:
+            checker.update()
+
         return self.plugin_render.chmi(plugin_options, log.events(NAME))
 
     def POST(self):

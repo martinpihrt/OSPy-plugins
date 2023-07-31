@@ -98,11 +98,23 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Intensity threshold'):</td>
+                <td style='text-transform: none;'>$_('RED Intensity threshold'):</td>
                 <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location.'), ensure_ascii=False)}>
-                    <input name='RGB_INTENS' type='number' min='0' max='765' value='$plugin_options["RGB_INTENS"]'> $_('R+G+B (max is 255+255+255)')
+                    <input name='R_INTENS' type='number' min='0' max='255' value='$plugin_options["R_INTENS"]'>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('GREEN Intensity threshold'):</td>
+                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location.'), ensure_ascii=False)}>
+                    <input name='G_INTENS' type='number' min='0' max='255' value='$plugin_options["G_INTENS"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('BLUE Intensity threshold'):</td>
+                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location.'), ensure_ascii=False)}>
+                    <input name='B_INTENS' type='number' min='0' max='255' value='$plugin_options["B_INTENS"]'>
+                </td>
+            </tr>                        
             <tr>
                <th colspan="2">
                  <hr>
@@ -124,7 +136,7 @@ $var page: plugins
     </form>
 </div>
 <div id="controls">
-    <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>
+    <a href="?refresh"  class="button backup">$_('Refresh')</a>
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
