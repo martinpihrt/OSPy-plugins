@@ -18,7 +18,7 @@ import web
 from ospy.log import log
 from ospy.options import options, rain_blocks
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string, stop_onrain
+from ospy.helpers import datetime_string, stop_onrain, get_input
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
@@ -168,8 +168,9 @@ class CHMI_Checker(Thread):
                             corner_img = Image.open(result_path)
                             c_img = img.convert("RGBA")
                             draw = ImageDraw.Draw(c_img) 
+                            draw.rectangle((0,0,680,25), fill=(0, 0, 0), outline=(0, 0, 0))
                             drawtext = datetime_string()
-                            draw.text((5, 10), drawtext, fill="red")
+                            draw.text((5, 10), drawtext, fill="white")
 
                             with open(cities_path, "r") as fi:
                                 cities = fi.readlines()
@@ -215,6 +216,8 @@ class CHMI_Checker(Thread):
                                 rad = 8
                                 tempText = ""
                                 if options.weather_lat and options.weather_lon:
+                                    drawtext =  _('RGB in my location is {}').format(r+g+b)
+                                    draw.text((450, 10), drawtext, fill="white")
                                     if r+g+b > int(plugin_options['RGB_INTENS']):
                                         draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=1)
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
@@ -362,6 +365,17 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments"""
 
     def GET(self):
+        global checker
+        qdict  = web.input()
+
+        del_rain = get_input(qdict, 'del_rain', False, lambda x: True)
+
+        if checker is not None and del_rain:
+            if NAME in rain_blocks:
+                del rain_blocks[NAME]
+                log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
+
+        checker.update()
         return self.plugin_render.chmi(plugin_options, log.events(NAME))
 
     def POST(self):
