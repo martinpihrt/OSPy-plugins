@@ -24,7 +24,7 @@ Plugin setup
   Delay time in hours.
 
 * Intensity threshold:
-  Intensity threshold for activate rain delay in my location. R+G+B (maximum rain is 255+255+255=765, minimum rain is 1).   
+  Intensity threshold for activate rain delay in my location. The detection logic is of the "or" type. This means that when the red color exceeds the value 50, or the green value 100, or the blue value 200, for example, rain is detected.  
  
 * Status:  
   Status window from the plugin.
