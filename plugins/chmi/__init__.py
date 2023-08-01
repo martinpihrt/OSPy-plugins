@@ -222,7 +222,7 @@ class CHMI_Checker(Thread):
                                 if options.weather_lat and options.weather_lon:
                                     drawtext =  _('RGB in my location is R:{}, G:{}, B:{}').format(r,g,b)
                                     draw.text((300, 5), drawtext, font=font, fill="white")
-                                    if r > int(plugin_options['R_INTENS']) and g > int(plugin_options['G_INTENS']) and b > int(plugin_options['B_INTENS']):
+                                    if (r > int(plugin_options['R_INTENS'])) or (g > int(plugin_options['G_INTENS'])) or (b > int(plugin_options['B_INTENS'])):
                                         draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=1)
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
                                         # RAIND DELAY and FOOTER

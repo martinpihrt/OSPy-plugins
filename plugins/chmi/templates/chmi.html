@@ -98,21 +98,11 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('RED Intensity threshold'):</td>
-                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location.'), ensure_ascii=False)}>
-                    <input name='R_INTENS' type='number' min='0' max='255' value='$plugin_options["R_INTENS"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('GREEN Intensity threshold'):</td>
-                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location.'), ensure_ascii=False)}>
-                    <input name='G_INTENS' type='number' min='0' max='255' value='$plugin_options["G_INTENS"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('BLUE Intensity threshold'):</td>
-                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location.'), ensure_ascii=False)}>
-                    <input name='B_INTENS' type='number' min='0' max='255' value='$plugin_options["B_INTENS"]'>
+                <td style='text-transform: none;'>$_('Intensity threshold'):</td>
+                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location. The detection logic is of the "or" type. This means that when the red color exceeds the value 50, or the green value 100, or the blue value 200, for example, rain is detected.'), ensure_ascii=False)}>
+                    $_('RED')<input name='R_INTENS' type='number' min='0' max='255' value='$plugin_options["R_INTENS"]'>
+                    $_('GREEN')<input name='G_INTENS' type='number' min='0' max='255' value='$plugin_options["G_INTENS"]'>
+                    $_('BLUE')<input name='B_INTENS' type='number' min='0' max='255' value='$plugin_options["B_INTENS"]'>
                 </td>
             </tr>                        
             <tr>
