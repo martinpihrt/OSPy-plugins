@@ -38,6 +38,8 @@ plugin_options = PluginOptions(
     {
         'enabled': False,
         'use_footer': False,         # Information in footer
+        'enable_log': False,         # Enable log
+        'log_records': 0,            # Number of max logs (0=unlimited)
         'USE_RAIN_DELAY': False,     # If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
         'RAIN_DELAY': 1,             # In hours
         'LON_0': 11.2673442,         # TOP LEFT CORNER
@@ -63,6 +65,12 @@ class CHMI_Checker(Thread):
         Thread.__init__(self)
         self.daemon = True
         self._stop_event = Event()
+
+        self.status = {}
+        self.status['red'] = 0
+        self.status['green'] = 0
+        self.status['blue'] = 0
+        self.status['state'] = 0
 
         self._sleep_time = 0
         self.start()
@@ -211,20 +219,36 @@ class CHMI_Checker(Thread):
                                             draw.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
 
                                 # MY LOCATION
-                                lat = float(options.weather_lat)
-                                lon = float(options.weather_lon)
-                                # We calculate the pixel coordinates my location on the radar image
-                                x = int((lon - plugin_options['LON_0']) / size_lon_pixel)
-                                y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
-                                r,g,b = bitmap.getpixel((x, y))
-                                rad = 8
                                 tempText = ""
+                                is_lat_lon = None
+                                r=g=b=rad=0
+
                                 if options.weather_lat and options.weather_lon:
+                                    lat = float(options.weather_lat)
+                                    lon = float(options.weather_lon)
+                                    is_lat_lon = True
+                                    # We calculate the pixel coordinates my location on the radar image
+                                    x = int((lon - plugin_options['LON_0']) / size_lon_pixel)
+                                    y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
+                                    r,g,b = bitmap.getpixel((x, y))
+                                    rad = 8
+                                else:
+                                    lat = 0.0
+                                    lon = 0.0
+
+                                if is_lat_lon is not None:
                                     drawtext =  _('RGB in my location is R:{}, G:{}, B:{}').format(r,g,b)
                                     draw.text((300, 5), drawtext, font=font, fill="white")
                                     if (r > int(plugin_options['R_INTENS'])) or (g > int(plugin_options['G_INTENS'])) or (b > int(plugin_options['B_INTENS'])):
                                         draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=1)
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
+                                        self.status['red'] = r
+                                        self.status['green'] = g
+                                        self.status['blue'] = b
+                                        self.status['state'] = 1
+                                        # LOG
+                                        if plugin_options['enable_log']:
+                                            update_log(self.status)
                                         # RAIND DELAY and FOOTER
                                         if plugin_options['USE_RAIN_DELAY']:
                                             delaytime = int(plugin_options['RAIN_DELAY'])
@@ -237,6 +261,7 @@ class CHMI_Checker(Thread):
                                         draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(0, 0, 0), outline=(255, 255, 255))
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably not rain.').format(options.weather_lat, options.weather_lon))
                                         tempText += _('Probably not rain')
+                                        self.status['state'] = 0
                                 else:
                                     tempText += _('Location is not set!')
                                 
@@ -349,7 +374,7 @@ def rgb_msg(r,g,b, msg):
 
 
 def max_alpha(a, b):
-    # Assumption: 'a' and 'b' are of same size
+    """Assumption: 'a' and 'b' are of same size"""
     im_a = a.load()
     im_b = b.load()
     width, height = a.size
@@ -361,6 +386,43 @@ def max_alpha(a, b):
             im[x, y] = max(im_a[x, y], im_b[x, y])
     return alpha
 
+
+def read_log():
+    """Read log data from json file."""
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
+            return json.load(logf)
+    except IOError:
+        return []
+
+
+def write_log(json_data):
+    """Write data to log json file."""
+    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
+def update_log(status):
+    """Update data in json files.""" 
+    try:
+        log_data = read_log()
+    except:
+        write_log([])
+        log_data = read_log()
+
+    from datetime import datetime 
+
+    data = {'datetime': datetime_string()}
+    data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+    data['time'] = str(datetime.now().strftime('%H:%M:%S'))
+    data['red'] = str(status['red'])
+    data['green'] = str(status['green'])
+    data['blue'] = str(status['blue'])
+
+    log_data.insert(0, data)
+    if plugin_options['log_records'] > 0:
+        log_data = log_data[:plugin_options['log_records']]
+    write_log(log_data)
 
 ################################################################################
 # Web pages:                                                                   #
@@ -374,6 +436,8 @@ class settings_page(ProtectedPage):
 
         del_rain = get_input(qdict, 'del_rain', False, lambda x: True)
         refresh = get_input(qdict, 'refresh', False, lambda x: True)
+        delete = get_input(qdict, 'delete', False, lambda x: True)
+        show = get_input(qdict, 'show', False, lambda x: True)        
 
         if checker is not None and del_rain:
             if NAME in rain_blocks:
@@ -382,6 +446,14 @@ class settings_page(ProtectedPage):
 
         if checker is not None and refresh:
             checker.update()
+
+        if checker is not None and delete:            
+           write_log([])
+           create_default_graph()
+           log.info(NAME, datetime_string() + ': ' + _('Deleted all log files OK'))
+
+        if checker is not None and show:
+            raise web.seeother(plugin_url(log_page), True)   
 
         return self.plugin_render.chmi(plugin_options, log.events(NAME))
 
@@ -426,6 +498,13 @@ class help_page(ProtectedPage):
         return self.plugin_render.chmi_help()
 
 
+class log_page(ProtectedPage):
+    """Load an html page for help"""
+
+    def GET(self):
+        return self.plugin_render.chmi_log(read_log(), plugin_options)
+
+
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format"""
 
@@ -433,3 +512,51 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
+
+
+class log_json(ProtectedPage):
+    """Returns data in JSON format."""
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        return json.dumps(read_log())
+
+
+class log_csv(ProtectedPage):  # save log file from web as csv file type
+    """Simple Log API"""
+    def GET(self):
+        log_file = read_log()
+        data = "Date/Time; Date; Time; Red; Green; Blue\n"
+        for interval in log_file:
+            data += '; '.join([
+                interval['datetime'],
+                interval['date'],
+                interval['time'],
+                '{}'.format(interval['red']),
+                '{}'.format(interval['green']),
+                '{}'.format(interval['blue']),
+            ]) + '\n'
+
+        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', content) 
+        web.header('Content-Disposition', 'attachment; filename="meteo_log.csv"')
+        return data
+
+
+class state_json(ProtectedPage):
+    """Returns seconds location state in JSON format."""
+    def GET(self):
+        global checker
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data = {}
+
+        if checker.status['state']:
+           data['state'] = _('RAIN IN LOCATION')
+        else:
+           if options.weather_lat and options.weather_lon:
+              data['state'] = _('NOT RAIN IN LOCATION')
+           else:
+              data['state'] = _('MY LOCATION IS NOT SET')
+        return json.dumps(data)            

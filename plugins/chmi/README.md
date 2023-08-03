@@ -18,13 +18,19 @@ Plugin setup
   A downloaded map from the Meteo Institute is displayed here.
 
 * Use a rain delay:
-  If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
+  If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague). Warning: you have to enable "Use Weather" and "Storm Glass API key". If you don't use a key, enter anything.
 
 * Delay time:
   Delay time in hours.
 
 * Intensity threshold:
-  Intensity threshold for activate rain delay in my location. The detection logic is of the "or" type. This means that when the red color exceeds the value 50, or the green value 100, or the blue value 200, for example, rain is detected.  
+  Intensity threshold for activate rain delay in my location. The detection logic is of the "or" type. This means that when the red color exceeds the value 50, or the green value 100, or the blue value 200, for example, rain is detected. 
+
+* Enable logging:
+  When an event is triggered in my location, the rgb value and the date and time when the event occurred are saved in the log.
+
+* Maximum number of log records:
+  0 = unlimited.     
  
 * Status:  
   Status window from the plugin.

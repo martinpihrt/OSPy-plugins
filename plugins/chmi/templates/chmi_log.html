@@ -1,0 +1,48 @@
+$def with(records, plugin_options)
+
+$var title: $_('CHMI meteoradar - log')
+$var page: plugins
+
+<style>
+.dot {
+  height: 25px;
+  width: 25px;
+  background-color: #000;
+  border-radius: 50%;
+  display: inline-block;
+}
+</style>
+
+<div class="title">$_('CHMI meteoradar - log')</div>
+<div id="plugin">
+    <p>$_('Total number of records'): ${len(records)}</p>
+    <p>
+    <a href=$plugins.plugin_url('chmi.log_csv') class="button download">$_('Download log')</a>
+    <a href="" class="button refresh">$_('Refresh')</a>
+    <a href=$plugins.plugin_url('chmi.settings_page') class="button danger">$_('Cancel')</a>
+    <p></br>
+    <table class="logList">
+        <tr class="log_rec">
+            <th>$_('Date')</th>
+            <th>$_('Time')</th>
+            <th>$_('Red')</th>
+            <th>$_('Green')</th>
+            <th>$_('Blue')</th>
+            <th>$_('Color')</th>
+        </tr>
+        $for interval in records:
+            $ color = interval["red"], interval["green"], interval["blue"]
+            <tr class="log_rec ${loop.parity}">
+                <td align='left'>${interval["date"]}</td>
+                <td align='left'>${interval["time"]}</td>
+                <td align='left'>${color[0]}</td>
+                <td align='left'>${color[1]}</td>
+                <td align='left'>${color[2]}</td>
+                <td align='left'><span class="dot" body style="background-color: rgb(${color[0]},${color[1]},${color[2]})"></span></td>                                                   
+            </tr>
+    </table>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('chmi.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

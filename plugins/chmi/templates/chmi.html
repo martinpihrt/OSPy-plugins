@@ -2,6 +2,7 @@ $def with(plugin_options, events)
 
 $var title: $_('CHMI meteoradar')
 $var page: plugins
+
 <script>
     function checkIP(){
         let IPAddress = jQuery(".IPnumbersOnly").val();
@@ -14,6 +15,13 @@ $var page: plugins
             alert($:{json.dumps(_('IP map address is not valid!'), ensure_ascii=False).encode('utf8').decode('utf-8')});
             return 1;
         }
+    }
+
+    function updateStatus(){
+        jQuery.getJSON("/plugins/chmi/state_json", function(_data) {
+            jQuery("#state span.state").text(_data.state);
+        })      
+        setTimeout(updateStatus, 2000); // 2 second
     }
 
     // Initialize behaviors
@@ -36,6 +44,7 @@ $var page: plugins
             this.value = newValue;
         });
 
+        updateStatus();
     });
 </script>
 
@@ -43,10 +52,16 @@ $var page: plugins
     <div class="title">$_('CHMI meteoradar')</div>
     <p>$_('The measurement time is primarily given in UTC world time (UTC=UT=GMT=SELC-2h = CET-1h).')</p>
     <a href=$plugins.plugin_url('chmi.help_page') class="button upload">$_('Help')</a><br/>
+    $if plugin_options['enable_log']:
+        <p>
+        <a href=$plugins.plugin_url('chmi.log_csv') class="button download">$_('Download log')</a>
+        <a href="?show" class="button backup">$_('Show logs')</a>
+        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('chmi.settings_page')" method="post">
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Use CHMI'):</td>
+                <td style='text-transform: none;'><b>$_('Use CHMI'):</b></td>
                 <td title=$:{json.dumps(_(u'When the box is checked, the extension will be active.'), ensure_ascii=False)}>
                     <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
                 </td>
@@ -67,26 +82,34 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('State in my location'):</td>
+                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                <p id="state"><b><span class="state">-</span></b></p>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Meteo map'):</td>
                 <td title=$:{json.dumps(_(u'A downloaded map from the Meteo Institute is displayed here.'), ensure_ascii=False)}>
                     <a href="$plugins.plugin_url('chmi.download_page')"><img src="$plugins.plugin_url('chmi.download_page')" width="640"></a>
                 </td>
             </tr>
-            <tr>
-                <td style='text-transform: none;'><small>$_('My location lat/lon') ${options.weather_lat}/${options.weather_lon}</small></td>
-                <td>
-                    $ patch = 'https://www.openstreetmap.org/#map=15/' + options.weather_lat + '/' + options.weather_lon
-                    <a href="${patch}" class="button upload" target="_blank" title=$:{json.dumps(_(u'Displaying the found area on the map'), ensure_ascii=False).encode('utf8').decode('utf-8')}>$_('Map')</a>
-                </td>
-            </tr>
+            $if options.weather_lat and options.weather_lon:
+                <tr>
+                    <td style='text-transform: none;'><small>$_('My location lat/lon') ${options.weather_lat}/${options.weather_lon}</small></td>
+                    <td>
+                        $ patch = 'https://www.openstreetmap.org/#map=15/' + options.weather_lat + '/' + options.weather_lon
+                        <a href="${patch}" class="button upload" target="_blank" title=$:{json.dumps(_(u'Displaying the found area on the map'), ensure_ascii=False).encode('utf8').decode('utf-8')}>$_('Map')
+                        </a>
+                    </td>
+                </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>            
+            </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Use a rain delay'):</td>
-                <td title=$:{json.dumps(_(u'If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).'), ensure_ascii=False)}>
+                <td style='text-transform: none;'><b>$_('Use a rain delay'):</b></td>
+                <td title=$:{json.dumps(_(u'If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague). Warning: you have to enable Use Weather and Storm Glass API key. If you do not use a key, enter anything.'), ensure_ascii=False)}>
                     <input name='USE_RAIN_DELAY' type='checkbox'${" checked" if plugin_options['USE_RAIN_DELAY'] else ""}>
                 </td>
             </tr>
@@ -104,14 +127,31 @@ $var page: plugins
                     $_('GREEN')<input name='G_INTENS' type='number' min='0' max='255' value='$plugin_options["G_INTENS"]'>
                     $_('BLUE')<input name='B_INTENS' type='number' min='0' max='255' value='$plugin_options["B_INTENS"]'>
                 </td>
-            </tr>                        
+            </tr>
+           <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>             
+            <tr>
+                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
+                <td>
+                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
+                <td>
+                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
+                </td>
+            </tr>                                    
             <tr>
                <th colspan="2">
                  <hr>
                </th>
             </tr>            
             <tr>
-                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td style='text-transform: none;'><b>$_('Show in footer'):</b></td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False).encode('utf-8').decode('utf-8')}>
                     <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
                 </td>
