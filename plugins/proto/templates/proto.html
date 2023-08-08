@@ -1,0 +1,100 @@
+$def with(plugin_options, events)
+
+$var title: $_('OSPy Proto Plugin') <!--Edit: Title to show on browser tab-->
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Proto Plugin')</div> <!--Edit: User page heading, Make relevant to your plugin-->
+    <p><a href=$plugins.plugin_url('proto.help_page') class="button upload">$_('Help')</a></p><br/> <!--Edit: Replace "proto.help_page" with URL of plugin class for help-->
+    <p>$_('Example Check Boxes')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('proto.settings_page')" method="post"> <!--Edit: Replace "proto.settings_page" with URL of plugin class for saving settings-->
+        <table class="optionList">
+            <!--Check boxes-->
+            <thead>
+                <th class="stationNumber">$_('Heading')</th>  <!--Edit: Optional-->
+                <th class="stationNumber">$_('Heading')</th>  <!--Edit: Optional-->
+            </thead>
+            <tr>
+                <td style='text-transform: none;'>$_('Check Box 1'):</td>  <!--Edit check-1-->
+                <td><input name='check-1' type='checkbox' ${" checked" if plugin_options['check-1'] else ""}></td> <!--Edit check-1-->
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Check Box 2'):</td>  <!--Edit check-2-->
+                <td><input name='check-2' type='checkbox' ${" checked" if plugin_options['check-2'] else ""}></td> <!--Edit check-2-->
+            </tr>
+        </table></br>
+        <p>$_('Example Text Entry Fields')</p>  <!--Edit-->
+        <table class="optionList">
+            <!--Text fields-->
+            <thead>
+                <th class="stationNumber">$_('Heading')</th>  <!--Edit: Optional-->
+                <th class="stationNumber">$_('Heading')</th>  <!--Edit: Optional-->
+            </thead>
+            <tr>
+                <td style='text-transform: none;'>$_('Text Field 1'):</td>  <!--Edit-->
+                <td><input name='text-1' type='text' value='$plugin_options["text-1"]'></td> <!--Edit text-1-->
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Text Field 2'):</td>  <!--Edit-->
+                <td><input name='text-2' type='text' value='$plugin_options["text-2"]'></td> <!--Edit text-2-->
+            </tr>
+        </table></br>
+        <p>$_('Example Number Entry Fields')</p>  <!--Edit-->
+        <table class="optionList">
+            <!--Number fields-->
+            <thead>
+                <th class="stationNumber">$_('Heading')</th>  <!--Edit: Optional-->
+                <th class="stationNumber">$_('Heading')</th>  <!--Edit: Optional-->
+            </thead>
+            <tr>
+                <td style='text-transform: none;'>$_('Number 1'):</td> <!--Edit-->
+                <td title=$:{json.dumps(_('Here is help for these options)'), ensure_ascii=False)}> <!--Edit text-->
+                <input name='number-1' type='number' min='1' max='100' value='$plugin_options["number-1"]'> <!--Edit number-1-->
+                </td>
+            </tr>
+            <tr>
+               <th colspan="2"> <!--Example show line-->
+                 <hr>
+               </th>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Number 2'):</td> <!--Edit-->
+                <td title=$:{json.dumps(_('Here is help for these options)'), ensure_ascii=False)}> <!--Edit text-->
+                <input name='number-2' type='number' value='$plugin_options["number-2"]'> <!--Edit number-2-->
+                </td>
+            </tr>
+        </table></br>
+        <p>$_('Show in footer')</p>
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="50" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

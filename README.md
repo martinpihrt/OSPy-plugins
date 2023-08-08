@@ -68,3 +68,4 @@ Available plugins:
 * IP CAM  
 * Modbus stations
 * CHMI meteo radar
+* Proto
