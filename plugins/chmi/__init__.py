@@ -449,7 +449,6 @@ class settings_page(ProtectedPage):
 
         if checker is not None and delete:            
            write_log([])
-           create_default_graph()
            log.info(NAME, datetime_string() + ': ' + _('Deleted all log files OK'))
 
         if checker is not None and show:
