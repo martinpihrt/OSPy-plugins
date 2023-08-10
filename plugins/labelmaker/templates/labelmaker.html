@@ -1,0 +1,71 @@
+$def with(plugin_options, events)
+
+$var title: $_('Bar and QR code label maker generator')
+$var page: plugins
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+        jQuery("button#cErase").click(function(){
+            jQuery("textarea[name=msg").val('');
+            jQuery("#pluginForm").submit();
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Bar and QR code label maker generator')</div>
+    <p>$_('This extension allows you to generate bar or QR codes for your use...')</p>
+    <a href=$plugins.plugin_url('labelmaker.help_page') class="button upload">$_('Help')</a><br/>
+    <form id="pluginForm" action="$plugins.plugin_url('labelmaker.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Select output format'):</td>
+                <td>
+                    <select name='code_type' title=$:{json.dumps(_(u'Mark used your code.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+                    <option value="0" ${" selected" if plugin_options['code_type']=="0" else ""}>$_('BAR EAN13')</option>
+                    <option value="1" ${" selected" if plugin_options['code_type']=="1" else ""}>$_('QR black and white')</option>
+                    <option value="2" ${" selected" if plugin_options['code_type']=="2" else ""}>$_('QR color')</option>
+                    <option value="3" ${" selected" if plugin_options['code_type']=="3" else ""}>$_('QR with logo')</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Message'):</td>
+                <td title=$:{json.dumps(_('Message embedded in the code.'), ensure_ascii=False)}>
+                    <textarea id="msg" name="msg" rows="3" cols="50" size="500">$plugin_options["msg"]</textarea>
+                    
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <button id="cSubmit" class="submit"><b>$_('Generate')</b></button>
+                    <button id="cErase" class="cancel danger">$_('Erase')</button>
+                </td>
+            </tr>    
+            <tr>
+                <td style='text-transform: none;'>$_('Image for download'):</td>
+                <td title=$:{json.dumps(_(u'Your generated barcode or qr code.'), ensure_ascii=False)}>
+                    <a href="$plugins.plugin_url('labelmaker.download_page')"><img src="$plugins.plugin_url('labelmaker.download_page')" width="200"></a>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="2" cols="50" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

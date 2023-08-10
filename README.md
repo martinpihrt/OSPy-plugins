@@ -69,3 +69,4 @@ Available plugins:
 * Modbus stations
 * CHMI meteo radar
 * Proto
+* Label Maker
