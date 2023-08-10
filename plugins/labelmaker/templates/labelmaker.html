@@ -4,6 +4,17 @@ $var title: $_('Bar and QR code label maker generator')
 $var page: plugins
 
 <script>
+    function check_type() {
+        let code_type = jQuery("#code_type").val(); // 0=BAR EAN13, 1=QR BW, 2=QR color, 3=QR logo
+        if (code_type == 2 || code_type == 3) { 
+            jQuery("#color_type_1").show()
+            jQuery("#color_type_2").show()
+        } else {
+            jQuery("#color_type_1").hide()
+            jQuery("#color_type_2").hide()
+        }    
+    }
+
     // Initialize behaviors
     jQuery(document).ready(function(){
         jQuery("#cSubmit").click(function() {
@@ -16,6 +27,8 @@ $var page: plugins
             jQuery("textarea[name=msg").val('');
             jQuery("#pluginForm").submit();
         });
+        jQuery("#code_type").change(check_type);
+        check_type();
     });
 </script>
 
@@ -28,7 +41,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Select output format'):</td>
                 <td>
-                    <select name='code_type' title=$:{json.dumps(_(u'Mark used your code.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+                    <select id='code_type' name='code_type' title=$:{json.dumps(_('Mark used your code.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
                     <option value="0" ${" selected" if plugin_options['code_type']=="0" else ""}>$_('BAR EAN13')</option>
                     <option value="1" ${" selected" if plugin_options['code_type']=="1" else ""}>$_('QR black and white')</option>
                     <option value="2" ${" selected" if plugin_options['code_type']=="2" else ""}>$_('QR color')</option>
@@ -40,9 +53,24 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Message'):</td>
                 <td title=$:{json.dumps(_('Message embedded in the code.'), ensure_ascii=False)}>
                     <textarea id="msg" name="msg" rows="3" cols="50" size="500">$plugin_options["msg"]</textarea>
-                    
                 </td>
             </tr>
+            <tr><td>
+                    <div class='option' id="color_type_1" style="display: none;">$_('QR color'):</div>
+                </td>
+                <td>
+                    <div class='option' id="color_type_2" style="display: none;">
+                        <select id='color' name='color' title=$:{json.dumps(_('Color used in QR code.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+                        <option value="0" ${" selected" if plugin_options['color']=="0" else ""}>$_('BLACK')</option>
+                        <option value="1" ${" selected" if plugin_options['color']=="1" else ""}>$_('RED')</option>
+                        <option value="2" ${" selected" if plugin_options['color']=="2" else ""}>$_('GREEN')</option>
+                        <option value="3" ${" selected" if plugin_options['color']=="3" else ""}>$_('BLUE')</option>
+                        <option value="4" ${" selected" if plugin_options['color']=="4" else ""}>$_('ORANGE')</option>
+                        <option value="5" ${" selected" if plugin_options['color']=="5" else ""}>$_('BROWN')</option>
+                        </select>
+                    </div>     
+                </td>
+            </tr>            
             <tr>
                 <td></td>
                 <td>
