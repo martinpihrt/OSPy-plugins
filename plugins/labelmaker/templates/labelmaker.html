@@ -56,23 +56,24 @@ $var page: plugins
                 </td>
             </tr>
             <tr><td>
-                    <div class='option' id="color_type_1" style="display: none;">$_('QR color'):</div>
-                </td>
-                <td>
-                    <div class='option' id="color_type_2" style="display: none;">
-                        <select id='color' name='color' title=$:{json.dumps(_('Color used in QR code.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
-                        <option value="0" ${" selected" if plugin_options['color']=="0" else ""}>$_('BLACK')</option>
-                        <option value="1" ${" selected" if plugin_options['color']=="1" else ""}>$_('RED')</option>
-                        <option value="2" ${" selected" if plugin_options['color']=="2" else ""}>$_('GREEN')</option>
-                        <option value="3" ${" selected" if plugin_options['color']=="3" else ""}>$_('BLUE')</option>
-                        <option value="4" ${" selected" if plugin_options['color']=="4" else ""}>$_('ORANGE')</option>
-                        <option value="5" ${" selected" if plugin_options['color']=="5" else ""}>$_('BROWN')</option>
-                        </select>
-                    </div>     
-                </td>
+            <div class='option' id="color_type_1" style="display: none;">$_('QR color'):</div>
+            </td>
+            <td>
+            <div class='option' id="color_type_2" style="display: none;">
+            <select id='color' name='color' title=$:{json.dumps(_('Color used in QR code.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+            <option value="0" ${" selected" if plugin_options['color']=="0" else ""}>$_('BLACK')</option>
+            <option value="1" ${" selected" if plugin_options['color']=="1" else ""}>$_('RED')</option>
+            <option value="2" ${" selected" if plugin_options['color']=="2" else ""}>$_('GREEN')</option>
+            <option value="3" ${" selected" if plugin_options['color']=="3" else ""}>$_('BLUE')</option>
+            <option value="4" ${" selected" if plugin_options['color']=="4" else ""}>$_('ORANGE')</option>
+            <option value="5" ${" selected" if plugin_options['color']=="5" else ""}>$_('BROWN')</option>
+            </select>
+            </div>     
+            </td>
             </tr>            
             <tr>
-                <td></td>
+                <td>
+                </td>
                 <td>
                     <button id="cSubmit" class="submit"><b>$_('Generate')</b></button>
                     <button id="cErase" class="cancel danger">$_('Erase')</button>
