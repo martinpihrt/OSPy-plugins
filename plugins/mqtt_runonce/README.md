@@ -35,17 +35,4 @@ Plugin setup
 Status window from the plugin.
 
 
-MQTT data example
------------
-
-* Sending message in MQTT as list:  
-  Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...  
-```bash
-[0,0,100,30]    
-``` 
-
-* Sending message in MQTT as dict:  
-  Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...  
-```bash
-{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}  
-```  
+Explanation and example is given directly in the plugin (help button)...

@@ -1,24 +1,49 @@
 $def with()
 
-$var title: $_(u'MQTT Runonce - help')
+$var title: $_('MQTT Runonce - help')
 $var page: plugins
 
 <div id="plugin">
-    <div class="title">$_(u'MQTT Runonce settings - help')</div>
-    <p>$_(u'This MQTT Run-once plugin Relies on the base MQTT plugin, allows runonce stations to be set over MQTT. The received message is a sheet that contains list or dict (station number, time in seconds.)')</p><p>$_('This extension requires the MQTT extension!')</p><p>$_('If you change settings in MQTT plugins or this plugin you must restarting OSPy!')</p> 
-    <br/><p><b>$_(u'MQTT data example')</b></p>
-    <p>* $_(u'Sending message in MQTT as list'):</p>
-    <p>$_(u'Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
-    <p>$_(u'[0,0,100,30]')</p><br/>   
-    <p>* $_(u'Sending message in MQTT as dict'):</p>
-    <p>$_(u'Station 1 -> OFF, 2 -> OFF, 3 -> ON 100 second, 4 -> ON 30 second...')</p>
-    <p>$_(u'{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30}')</p>
-    <br/><p><b>$_(u'MQTT plugin publish this states')</b></p>
-    <p>$_(u'RunOnce Restart - restart MQTT connection')</p>
-    <p>$_(u'RunOnce Exit - OSPy exit')</p>
-    <p>$_(u'RunOnce Ready - Ready for processing')</p>
-    <p>$_(u'RunOnce Processing - Processing command')</p>
-    <p>$_(u'RunOnce Error - Any Error')</p>
+    <div class="title">$_('MQTT Runonce settings - help')</div>
+    <p>$_('This MQTT Run-once plugin Relies on the base MQTT plugin, allows runonce stations to be set over MQTT. The received message is a sheet that contains list or dict (station number, time in seconds.)')</p><p>$_('This extension does not require the MQTT plugin. It works completely independently regardless of other MQTT plugins in OSPy.')</p>
+    <p>$_('If you change settings in this plugin you must restarting OSPy!')</p><br/>
+    <p><b>$_('MQTT data example')</b></p>
+    <p>$_('Note: the list or dict must be as long as the number of stations. Otherwise, the processing will not take place!')</p>
+    We can use a dictionary or list for control. The list is simpler than the dictionary (we do not have to change it in the commands every time we change the name of a station).
+    <p>$_('The value in the list or dictionary determines the behavior of the control: 0 (the state of the station will not be changed in any way. If the station is already running, it will not be affected). >1 (one-shot time in seconds. for example 10 will be for a time of 10 seconds). -1 (If the station is running, it will be stopped).')</p><br>
+    <p>$_('Example for 5 stations (5 stations are set in OSPy).')</p>
+    <p>* $_('Sending message in MQTT as list - prefered method'):</p>
+    <p>$_('Station 1 -> ignore, 2 -> ignore, 3 -> ON time 100 second, 4 -> ON time 30 second, 5 -> OFF...')</p>
+    <p>$_('[0,0,100,30,-1]')</p>
+    <p>$_('Example for 17 stations (17 stations are set in OSPy).')</p> 
+    <p>$_('[0,0,0,0,0,0,0,0,0,0,20,0,0,0,0,0,-1]')</p><br/>  
+    <p>* $_('Sending message in MQTT as dict'):</p>
+    <p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON time 100 second, 4 -> ON time 30 second, 5 -> OFF...')</p>
+    <p>$_('{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30, "station name 5": -1}')</p><br/>
+    <p><b>$_('MQTT plugin publish this states')</b></p>
+    <p>$_('RunOnce Restart - restart MQTT connection')</p>
+    <p>$_('RunOnce Exit - OSPy exit')</p>
+    <p>$_('RunOnce Ready - Ready for processing')</p>
+    <p>$_('RunOnce Processing - Processing command')</p>
+    <p>$_('RunOnce Error - Any Error')</p><br>
+    <p><b>$_('Examples and demonstration of control via MQTT')</b></p>
+    <p>$_('Creating an MQTT broker (we can use https://www.hivemq.com/demos/websocket-client/ to try it out).')</p>
+    <a href="/plugins/mqtt_runonce/static/images/broker.png"><img src="/plugins/mqtt_runonce/static/images/broker.png" width="60%"></a><br>
+    <p>$_('Subscribe (run-once and ospy/system)')</p>
+    <a href="/plugins/mqtt_runonce/static/images/subscriptions.png"><img src="/plugins/mqtt_runonce/static/images/subscriptions.png" width="20%"></a><br>
+    <p>$_('In OSPy, we start the plugin and fill in the login data (then we restart OSPy).')</p>
+    <a href="/plugins/mqtt_runonce/static/images/plugin.png"><img src="/plugins/mqtt_runonce/static/images/plugin.png" width="60%"></a><br>
+    <p>$_('A "RunOnce Ready" message will appear when set correctly and reboot.')</p>
+    <a href="/plugins/mqtt_runonce/static/images/msg1.png"><img src="/plugins/mqtt_runonce/static/images/msg1.png" width="40%"></a><br>
+    <p>$_('In this example we will want to turn on station 11 for 20 seconds. Circled in green in the image below - the station is now switched off.')</p>
+    <a href="/plugins/mqtt_runonce/static/images/off.png"><img src="/plugins/mqtt_runonce/static/images/off.png" width="20%"></a><br>
+    <p>$_('Now we will try to send a command to the run-once topic to turn on station 11 for 20 seconds.')</p>
+    <a href="/plugins/mqtt_runonce/static/images/publish.png"><img src="/plugins/mqtt_runonce/static/images/publish.png" width="60%"></a><br>
+    <p>$_('The received message can be seen in the plugin. At the same time, we see a reply on the broker about receiving the message. On the home page of OSPy, the station started for 20 seconds.')</p>
+    <a href="/plugins/mqtt_runonce/static/images/plugin2.png"><img src="/plugins/mqtt_runonce/static/images/plugin2.png" width="60%"></a><br>
+    <a href="/plugins/mqtt_runonce/static/images/on.png"><img src="/plugins/mqtt_runonce/static/images/on.png" width="20%"></a><br>
+    <a href="/plugins/mqtt_runonce/static/images/broker2.png"><img src="/plugins/mqtt_runonce/static/images/broker2.png" width="60%"></a><br>
+    <p>$_('The plugin uses Python paho-mqtt for running in OSPy. If paho-mqtt is not available on the system, the plugin will try to install it on the system itself.')</p>            
 </div>
 
 <div id="controls">

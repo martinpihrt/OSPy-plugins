@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt' 
+__author__ = 'Martin Pihrt' 
 
 import json
 import time
@@ -26,14 +26,14 @@ import atexit # For publishing down message
 
 
 NAME = 'MQTT Run-once'
-MENU =  _(u'Package: MQTT Run-once')
+MENU =  _('Package: MQTT Run-once')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
     NAME,
     {  
         'use_mqtt': False,
-        'schedule_topic': u'run-once',
+        'schedule_topic': 'run-once',
         'broker_host': 'broker.mqttdashboard.com', # http://www.hivemq.com/demos/websocket-client/
         'broker_port': 1883,
         'publish_up_down': 'ospy/system',
@@ -191,14 +191,14 @@ def on_message(client, userdata, message):
         pass
 
     try:
-        log.info(NAME, datetime_string() + ' ' + _(u'Try-ing to processing command.'))
+        log.info(NAME, datetime_string() + ' ' + _('Try-ing to processing command.'))
         num_sta = options.output_count
         if type(cmd) is list:            # cmd is list
             if len(cmd) < num_sta:
-                log.info(NAME, datetime_string() + ' ' + _(u'Not enough stations specified, assuming first {} of {}').format(len(cmd), num_sta))
+                log.info(NAME, datetime_string() + ' ' + _('Not enough stations specified, assuming first {} of {}').format(len(cmd), num_sta))
                 rovals = cmd + ([0] * (num_sta - len(cmd)))              
             elif len(cmd) > num_sta:
-                log.info(NAME, datetime_string() + ' ' + _(u'Too many stations specified, truncating to {}').format(num_sta))
+                log.info(NAME, datetime_string() + ' ' + _('Too many stations specified, truncating to {}').format(num_sta))
                 rovals = cmd[0:num_sta]
             else:
                 rovals = cmd
@@ -210,14 +210,14 @@ def on_message(client, userdata, message):
                                                 
             for k, v in list(cmd.items()):
                 if k not in snames:      # station name in dict is not in OSPy stations name (ERROR)
-                    log.warning(NAME, _(u'No station named') + (u': %s') % k)
+                    log.warning(NAME, _('No station named') + (': %s') % k)
                                                     
                 else:                    # station name in dict is in OSPy stations name (OK)
                     # v is value for time, k is station name in dict
                     rovals[jnames.index(k)] = v         
 
         else:
-            log.error(NAME, datetime_string() + ' ' + _(u'Unexpected command') + (u': %s') % message.payload)
+            log.error(NAME, datetime_string() + ' ' + _('Unexpected command') + (': %s') % message.payload)
             rovals = None
             status = "RunOnce Error"
             client.publish(plugin_options['publish_up_down'], status)
@@ -230,14 +230,14 @@ def on_message(client, userdata, message):
                     end = datetime.datetime.now() + datetime.timedelta(seconds=int(rovals[i]))
                 except:
                     end = datetime.datetime.now()
-                    log.error(NAME, _(u'MQTT Run-once plug-in') + ':\n' + traceback.format_exc())
+                    log.error(NAME, _('MQTT Run-once plug-in') + ':\n' + traceback.format_exc())
                     pass
 
                 new_schedule = {
                     'active': True,
                     'program': -1,
                     'station': sid,
-                    'program_name': _(u'MQTT Run-once'),
+                    'program_name': _('MQTT Run-once'),
                     'fixed': True,
                     'cut_off': 0,
                     'manual': True,
@@ -248,8 +248,10 @@ def on_message(client, userdata, message):
                     'uid': '%s-%s-%d' % (str(start), "Manual", sid),
                     'usage': stations.get(sid).usage
                 }
-                log.start_run(new_schedule)
-                stations.activate(new_schedule['station'])
+                
+                if int(rovals[i]) > 1:                 # station has time for run (starting)
+                    log.start_run(new_schedule)
+                    stations.activate(new_schedule['station'])
 
                 if int(rovals[i]) < 1:                 # station has no time for run (stoping)
                     stations.deactivate(sid)
@@ -263,7 +265,7 @@ def on_message(client, userdata, message):
 
     except Exception:
         log.clear(NAME)
-        log.error(NAME, _(u'MQTT Run-once plug-in') + ':\n' + traceback.format_exc())
+        log.error(NAME, _('MQTT Run-once plug-in') + ':\n' + traceback.format_exc())
         status = "RunOnce Error"
         client.publish(plugin_options['publish_up_down'], status)
         pass
@@ -293,12 +295,10 @@ def subscribe(topic, callback, qos=0):
 def on_connect(client, userdata, flags, rc):
    global flag_connected
    flag_connected = 1
-   #log.debug(NAME, datetime_string() + ' ' + _('Connected to broker.'))
 
 def on_disconnect(client, userdata, rc):
    global flag_connected
    flag_connected = 0
-   #log.debug(NAME, datetime_string() + ' ' + _('Disconnected from broker!'))
 
 def on_restart():
     client = get_client()
