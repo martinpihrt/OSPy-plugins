@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt' 
+__author__ = 'Martin Pihrt'
 
 import json
 import time
@@ -15,32 +15,46 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.options import options
-from ospy.helpers import datetime_string
+from ospy.options import options, rain_blocks
+from ospy.helpers import datetime_string, get_cpu_temp, uptime
 from ospy.stations import stations
-from ospy.options import rain_blocks
 from ospy.inputs import inputs
+from ospy import version
+
+from blinker import signal 
 
 import atexit # For publishing down message
 
 
 NAME = 'MQTT'
-MENU =  _(u'Package: MQTT')
+MENU =  _('Package: MQTT')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
     NAME,
     {
-     'use_mqtt': False,
-     'broker_host': 'broker.mqttdashboard.com', # http://www.hivemq.com/demos/websocket-client/
-     'broker_port': 1883,
-     'publish_up_down': 'ospy/system',
-     'user_name': '',
-     'user_password': '',
-     'use_mqtt_secondary': False,
-     'control_topic': 'ospy/system/stations',
-     'first_station': 1,
-     'station_count': 8
+    ### core ###
+    'use_mqtt': False,
+    'broker_host': 'broker.mqttdashboard.com', # for testing use http://www.hivemq.com/demos/websocket-client/
+    'broker_port': 1883,
+    'publish_up_down': 'ospy/system',
+    'user_name': '',
+    'user_password': '',
+    ### manual control ###
+    'use_mqtt_secondary': False,
+    'control_topic': 'ospy/control/zones',
+    'first_station': 1,
+    'station_count': 8,
+    ### zones ###
+    'use_zones': False,
+    'zone_topic': 'ospy/events/zones',
+    ### run-once ###
+    'use_runonce': False,
+    'runonce_topic': 'ospy/control/run-once',
+    ### get values ###
+    'use_get_val': False,
+    'get_val_topic': 'ospy/values',    
+
      }
 )
 
@@ -124,49 +138,56 @@ def proc_install(cmd):
     output = proc.communicate()[0].decode('utf8')
     log.info(NAME, output)
 
+
+def validateJSON(jsonData):
+    """Checking if the json format is correct"""
+    try:
+        json.loads(jsonData)
+    except ValueError as err:
+        return False
+    return True
+
+
+def station_names():
+    """Return station names as a list"""
+    station_list = []
+
+    for station in stations.get():
+        station_list.append(station.name)
+
+    return json.dumps(station_list)
+
+
 def on_message(client, userdata, message):
-    log.clear(NAME) 
-    log.info(NAME, datetime_string() + ' ' + _('Message received') + ': ' + str(message.payload.decode("utf-8")))
-    #print("Message topic=",message.topic)
-    #print("Message qos=",message.qos)
-    #print("Message retain flag=",message.retain)
+    log.clear(NAME)
+    log.info(NAME, datetime_string() + ' '  + _('Message received') + ': {}'.format(message.payload.decode("utf-8")))
+    log.info(NAME, datetime_string() + ' ' + _('Message topic') + ': {}'.format(message.topic))
+    log.info(NAME, datetime_string() + ' ' + _('Message qos') + ': {}'.format(message.qos))
+    log.info(NAME, datetime_string() + ' ' + _('Message retain flag') + ': {}'.format(message.retain))
 
-    if plugin_options["use_mqtt_secondary"]:
-        if not options.manual_mode:     # check operation status
-            log.info(NAME, datetime_string() + ' ' + _('You must this OSPy switch to manual mode!'))
-            return
+    cmd = []
+    payload = message.payload.decode("utf-8")
 
-        if inputs.rain_sensed():        # check rain sensor
-            log.info(NAME, datetime_string() + ' ' + _('Skipping command, rain sense is detected!'))
-            return        
+    isValid = validateJSON(payload)
+    if isValid:
+        cmd = json.loads(payload)
 
-        if rain_blocks.seconds_left():  # check rain delay
-            log.info(NAME, datetime_string() + ' ' + _('Skipping command, rain delay is activated!'))
-            return             
+    try:
+        ### manual control ###
+        if plugin_options["use_mqtt_secondary"] and isValid and message.topic == plugin_options["control_topic"]:
+            log.info(NAME, datetime_string() + ' ' + _('Try-ing to processing command.'))
+            if options.manual_mode:                              # check operation status
+                first = int(plugin_options["first_station"])-1   # first secondary station
+                count = int(plugin_options["station_count"])     # count secondary station
 
-        try:
-            rec_data = str(message.payload)
-            cmd = json.loads(rec_data)
-        except ValueError as e:
-            log.info(NAME, _('Could not decode command:') + ':\n' + message.payload, e)
-            return
- 
-        first = int(plugin_options["first_station"])-1       # first secondary station
-        count = int(plugin_options["station_count"])         # count secondary station
-
-        try:
-            for i in range(first, first+count):              # count of station (example on main OSPy: 5 to 10) 
-                zone    = cmd[i]["status"]                   # "off" or "on" state 
-                #station = cmd[i]["station"] 
-                #name    = cmd[i]["name"] 
-                #print station, name, zone
-
-                sid = i-first
-                if sid <= stations.count():                  # local station size check
-                    if zone == "on":
-                        start = datetime.datetime.now()
-                        mqn = _('MQTT Manual')
-                        new_schedule = {
+                for i in range(first, first+count):              # count of station (example on main OSPy: 5 to 10) 
+                    zone = cmd[i]["status"]                      # "off" or "on" state
+                    sid = i-first
+                    if sid <= stations.count():                  # local station size check
+                        if zone == "on":
+                            start = datetime.datetime.now()
+                            mqn = _('MQTT Manual')
+                            new_schedule = {
                             'active': True,
                             'program': -1,
                             'station': sid,
@@ -180,28 +201,118 @@ def on_message(client, userdata, message):
                             'end': start + datetime.timedelta(days=3650),
                             'uid': '%s-%s-%d' % (str(start), mqn, sid),
                             'usage': stations.get(sid).usage
-                        }
-                        # if an optional duration time is given
-                        #set_time = xxx second
-                        #new_schedule['end'] = datetime.datetime.now() + datetime.timedelta(seconds=set_time)
+                            }
 
-                        log.start_run(new_schedule)
-                        stations.activate(new_schedule['station'])
-                    if zone == "off":
-                        stations.deactivate(sid)
-                        active = log.active_runs()
-                        for interval in active:
-                            if interval['station'] == i:
-                                log.finish_run(interval)
-                            
+                            log.start_run(new_schedule)
+                            stations.activate(new_schedule['station'])
+                        if zone == "off":
+                            stations.deactivate(sid)
+                            active = log.active_runs()
+                            for interval in active:
+                                if interval['station'] == i:
+                                    log.finish_run(interval)
+                    else:
+                        log.error(NAME, _('MQTT plug-in') + ':\n' + _('Setup stations count is smaler! Set correct first station and station count.'))
+
+                status = "Manual command was processed OK"
+                client.publish(plugin_options['control_topic'], status)
+
+            else:
+                log.info(NAME, datetime_string() + ' ' + _('You must this OSPy switch to manual mode!'))
+                status = "Manual command was not processed! You must OSPy switch to manual mode!"
+                client.publish(plugin_options['control_topic'], status)
+
+        ### run-once ###
+        if plugin_options["use_runonce"] and isValid and message.topic == plugin_options["runonce_topic"]:
+            log.info(NAME, datetime_string() + ' ' + _('Try-ing to processing command.'))
+            if options.manual_mode:
+                log.info(NAME, datetime_string() + ' ' + _('You must this OSPy switch to scheduler mode!'))
+                status = "Run-once command was not processed! You must OSPy switch to scheduler mode!"
+                client.publish(plugin_options['runonce_topic'], status)
+            else:    
+                num_sta = options.output_count
+                if type(cmd) is list:            # cmd is list
+                    if len(cmd) < num_sta:
+                        log.info(NAME, datetime_string() + ' ' + _('Not enough stations specified, assuming first {} of {}').format(len(cmd), num_sta))
+                        rovals = cmd + ([0] * (num_sta - len(cmd)))
+                        status =  "Run-once command was not processed!" + " "
+                        status += "Not enough stations specified, assuming first {} of {}".format(len(cmd), num_sta)
+                        client.publish(plugin_options['runonce_topic'], status)
+                    elif len(cmd) > num_sta:
+                        log.info(NAME, datetime_string() + ' ' + _('Too many stations specified, truncating to {}').format(num_sta))
+                        status =  "Run-once command was not processed!" + " "
+                        status += "Too many stations specified, truncating to {}".format(num_sta)
+                        client.publish(plugin_options['runonce_topic'], status)
+                        rovals = cmd[0:num_sta]
+                    else:
+                        rovals = cmd
+
+                elif type(cmd) is dict:          # cmd is dictionary
+                    rovals = [0] * num_sta
+                    snames = station_names()     # Load station names from file
+                    jnames = json.loads(snames)  # Load as json
+                    for k, v in list(cmd.items()):
+                        if k not in snames:      # station name in dict is not in OSPy stations name (ERROR)
+                            log.warning(NAME, _('No station named') + (': %s') % k)
+                        else:                    # station name in dict is in OSPy stations name (OK)
+                                                 # v is value for time, k is station name in dict
+                            rovals[jnames.index(k)] = v
+
                 else:
-                    log.error(NAME, _('MQTT plug-in') + ':\n' + _('Setup stations count is smaler! Set correct first station and station count.'))   
-        except Exception:
-            log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+                    log.error(NAME, datetime_string() + ' ' + _('Unexpected command') + (': {}').format(cmd))
+                    rovals = None
+                    status =  "Run-once command was not processed!" + " "
+                    status += "Unexpected command {}".format(cmd)
+                    client.publish(plugin_options['runonce_topic'], status)
 
-        time.sleep(1)
-            
-        
+                if rovals is not None and any(rovals):
+                    for i in range(0, len(rovals)):
+                        sid = i
+                        start = datetime.datetime.now()
+                        try:
+                            end = datetime.datetime.now() + datetime.timedelta(seconds=int(rovals[i]))
+                        except:
+                            end = datetime.datetime.now()
+                            log.error(NAME, _('MQTT Run-once plug-in') + ':\n' + traceback.format_exc())
+                            status =  "Run-once command was not processed!" + " "
+                            status += "The command is not valid!"
+                            client.publish(plugin_options['runonce_topic'], status)
+                            pass
+
+                        new_schedule = {
+                            'active': True,
+                            'program': -1,
+                            'station': sid,
+                            'program_name': _('MQTT Run-once'),
+                            'fixed': True,
+                            'cut_off': 0,
+                            'manual': True,
+                            'blocked': False,
+                            'start': start,
+                            'original_start': start,
+                            'end': end,
+                            'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                            'usage': stations.get(sid).usage
+                        }
+
+                        if int(rovals[i]) > 1:                 # station has time for run (starting)
+                            log.start_run(new_schedule)
+                            stations.activate(new_schedule['station'])
+
+                        if int(rovals[i]) < 1:                 # station has no time for run (stoping)
+                            stations.deactivate(sid)
+                            active = log.active_runs()
+                            for interval in active:
+                                if interval['station'] == sid:
+                                    log.finish_run(interval)
+
+                    status = "Run-once command was processed OK"
+                    client.publish(plugin_options['runonce_topic'], status)
+ 
+    except Exception:
+        log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+        pass
+
 
 def get_client():
     if not os.path.exists("/usr/lib/python3/dist-packages/pip"):
@@ -210,7 +321,7 @@ def get_client():
         log.info(NAME, _('Please wait installing python3-pip...'))
         log.info(NAME, _('This operation takes longer (minutes)...'))
         cmd = "sudo apt-get install python3-pip -y"
-        proc_install(cmd)                
+        proc_install(cmd)
 
     try:
         import paho.mqtt.client as mqtt
@@ -223,7 +334,7 @@ def get_client():
         proc_install(cmd)
     try:
         import paho.mqtt.client as mqtt
-    except ImportError:      
+    except ImportError:
         mqtt = None
         log.error(NAME, _('Error try install paho-mqtt manually.'))
         time.sleep(60)
@@ -233,7 +344,7 @@ def get_client():
             _client = mqtt.Client(options.name)                  # Use system name as client ID 
             _client.on_connect = on_connect                      # flag = 1 is connected
             _client.on_disconnect = on_disconnect                # flag = 0 is disconnected
-            _client.on_message = on_message                      # Attach function to callback            
+            _client.on_message = on_message                      # Attach function to callback
             log.clear(NAME)
             log.info(NAME, datetime_string() + ' ' + _('Connecting to broker') + '...')
             _client.username_pw_set(plugin_options['user_name'], plugin_options['user_password'])
@@ -252,12 +363,18 @@ def publish_status(status="UP"):
     time.sleep(2)
     if client and plugin_options["use_mqtt"]:  # Publish message
         if status != last_status:
-            last_status = status  
+            last_status = status
+            ### mqtt core ###  
             log.info(NAME, datetime_string() + ' ' + _('Subscribing to topic') + ': ' + str(plugin_options['publish_up_down']))
             client.subscribe(plugin_options['publish_up_down'])
+            ### manual control ###
             if plugin_options["use_mqtt_secondary"]:
-                log.info(NAME, datetime_string() + ' ' + _('Subscribing to topic') + ': ' + str(plugin_options['control_topic']))    
-                client.subscribe(plugin_options['control_topic'])        
+                log.info(NAME, datetime_string() + ' ' + _('Subscribing to topic') + ': ' + str(plugin_options['control_topic']))
+                client.subscribe(plugin_options['control_topic'])
+            ### run-once ###
+            if plugin_options["use_runonce"]:
+                log.info(NAME, datetime_string() + ' ' + _('Subscribing to topic') + ': ' + str(plugin_options['runonce_topic']))
+                client.subscribe(plugin_options['runonce_topic'])
             client.publish(plugin_options['publish_up_down'], status)
 
 def subscribe(topic, callback, qos=0):
@@ -271,7 +388,7 @@ def subscribe(topic, callback, qos=0):
             client.subscribe(topic, qos)
             log.info(NAME, datetime_string() + ' ' + _('Subscribe topic') + ': ' + str(topic))
         else:
-            _subscriptions[topic].append(callback)    
+            _subscriptions[topic].append(callback)
 
 def on_connect(client, userdata, flags, rc):
    global flag_connected
@@ -291,7 +408,7 @@ def on_restart():
         client.disconnect()
         client.loop_stop()
         client = None
-        log.info(NAME, datetime_string() + ' ' +  _('Client stop'))
+        log.info(NAME, datetime_string() + ' ' +  _('MQTT Client restart'))
 
 def on_stop():
     client = get_client()
@@ -299,7 +416,70 @@ def on_stop():
         client.disconnect()
         client.loop_stop()
         client = None
-        log.info(NAME, datetime_string() + ' ' +  _('Client stop'))        
+        log.info(NAME, datetime_string() + ' ' +  _('MQTT Client stop'))
+
+
+### System value change ###
+def notify_value_change(name, **kw):
+    payload = {
+        "cpu_temp": get_cpu_temp(options.temp_unit),
+        "temp_unit": options.temp_unit,
+        "manual_mode": options.manual_mode,
+        "scheduler_enabled": options.scheduler_enabled,
+        "system_name": options.name,
+        "output_count": options.output_count,
+        "rain_sensed": inputs.rain_sensed(),
+        "rain_block": rain_blocks.seconds_left(),
+        "level_adjustment": options.level_adjustment,
+        "ospy_version": version.ver_str,
+        "release_date": version.ver_date,
+        "uptime": uptime(),
+    }
+    if plugin_options["use_get_val"]:
+        client = get_client()
+        if client:
+            client.publish(plugin_options["get_val_topic"], json.dumps(payload), qos=1, retain=True)
+            log.info(NAME, datetime_string() + ' ' +  _('Posting to topic {} because OSPy change the settings.').format(plugin_options["get_val_topic"]))
+
+value = signal("value_change")
+value.connect(notify_value_change)
+
+
+### Stations (zone) state changed ###
+def notify_zone_change(name, **kw):
+    statuslist = []
+    for station in stations.get():
+        if station.enabled or station.is_master or station.is_master_two: 
+            status = {
+            'station': station.index,
+            'status':  'on' if station.active else 'off',
+            'name':    station.name,
+            'reason':  'master' if station.is_master or station.is_master_two else ''
+            }
+            if not station.is_master or not station.is_master_two:
+                if station.active:
+                    active = log.active_runs()
+                    for interval in active:
+                        if not interval['blocked'] and interval['station'] == station.index:
+                            status['reason'] = 'program'   
+
+                        elif not options.scheduler_enabled:
+                            status['reason'] = 'system_off'
+                        elif not station.ignore_rain and inputs.rain_sensed():
+                            status['reason'] = 'rain_sensed'
+                        elif not station.ignore_rain and rain_blocks.seconds_left():
+                            status['reason'] = 'rain_delay'
+
+            statuslist.append(status)
+
+    if plugin_options["use_zones"]:
+        client = get_client()
+        if client:
+            client.publish(plugin_options["zone_topic"], json.dumps(statuslist), qos=1, retain=True)
+            log.info(NAME, datetime_string() + ' ' +  _('Posting to topic {} because OSPy change stations state.').format(plugin_options["zone_topic"]))
+
+value = signal("zone_change")
+value.connect(notify_zone_change)
 
 ################################################################################
 # Web pages:                                                                   #
@@ -321,7 +501,7 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.mqtt_help()        
+        return self.plugin_render.mqtt_help()
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -329,4 +509,4 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)    
+        return json.dumps(plugin_options)

@@ -5,13 +5,83 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('MQTT settings - help')</div>
-    <p><b>$_('MQTT client')</b></p>
-    <p>$_('This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. On this page, the shared client is configured').</p>
-    <p>$_('Having a shared MQTT client simplifies configuration and lowers overhead on the OSPy process, network and broker').
-    <p>$_('This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs paho-mqtt in to the system himself. On first use (if run installation paho-mqtt) please wait for status').</p>
-    <p>$_('We can use a public Broker server to test'): http://www.hivemq.com/demos/websocket-client/.</p>
-    <p><b>$_('MQTT secondary')</b></p>
-    <p>$_('The MQTT plugin allows multiple secondary OSPy controlers to be running with the control OSPy system running. This means that one OSPy system can act as the control driver for secondary systems that also use OSPy and have the mqtt_secondary plugin installed. The control OSPy sends a list containing the on/off states of all stations. The secondary system receives the list and checks whether it is necessary to switch on one of its stations or switch it off and make the necessary changes. All irrigation plans are set on the main system and it records all running stations as if they were on the OSPy control system itself. There is no feedback from the secondary  OSPy, so the control system assumes that all stations are working as they should. If enabled logging in secondary OSPy, stations running on this secondary OSPy are also stored in the log. This provides a way to check if the station on the secondary is working properly. Requirements: This plugin requires the main OSPy control system, which has the basic mqtt plugin and the mqtt_zones plugin installed. Each secondary OSPy system must have the basic mqtt plugin installed. You must this OSPy switch to manual mode! If you change settings you must restarting OSPy!')</p>     
+    <p>$_('If you change settings you must restarting OSPy!')
+    <br>
+    <p><b>$_('* MQTT core')</b></p>
+    <br>
+    <p>$_('This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. On this page, the shared client is configured. Having a shared MQTT client simplifies configuration and lowers overhead on the OSPy process, network and broker. This plugin needs paho-mqtt. If not installed paho-mqtt, plugin installs paho-mqtt in to the system himself. On first use (if run installation paho-mqtt) please wait for status. We can use a public Broker server to test http://www.hivemq.com/demos/websocket-client/.')
+    </p>
+    <br>
+    <p><b>$_('* MQTT manual control')</b></p>
+    <br>
+    <p>$_('The MQTT plugin allows multiple secondary OSPy controlers to be running with the control OSPy system running. This means that one OSPy system can act as the control driver for secondary systems that also use OSPy and have the mqtt plugin installed. The control OSPy sends a list containing the on/off states of all stations. The secondary system receives the list and checks whether it is necessary to switch on one of its stations or switch it off and make the necessary changes. All irrigation plans are set on the main system and it records all running stations as if they were on the OSPy control system itself. There is no feedback from the secondary  OSPy, so the control system assumes that all stations are working as they should. If enabled logging in secondary OSPy, stations running on this secondary OSPy are also stored in the log. This provides a way to check if the station on the secondary is working properly. You must this OSPy switch to manual mode! MQTT core is required for this feature.')
+    </p>
+    <br>
+    <p><b>$_('* MQTT zones state')</b></p>
+    <br>
+    <p>$_('Status of all stations will be sent to the given topic. MQTT core is required for this feature. Example: [{"station": 0, "status": "off", "name": "Station 01", "reason": ""}, {"station": 1, "status": "off", "name": "Station 02", "reason": ""}, {"station": 2, "status": "off", "name": "Station 03", "reason": ""}, {"station": 3, "status": "off", "name": "Station 04", "reason": ""}, {"station": 4, "status": "off", "name": "Station 05", "reason": ""}, {"station": 5, "status": "off", "name": "Station 06", "reason": ""}, {"station": 6, "status": "off", "name": "Station 07", "reason": ""}, {"station": 7, "status": "off", "name": "Station 08", "reason": ""}]')
+    </p>
+    <br>
+    <p><b>$_('* MQTT run-once')</b></p>
+    <br>
+    <p>$_('will be received from the given topic for commands to start stations. MQTT core is required for this feature. The received message is a sheet that contains list or dict (station number, time in seconds.) Note: the list or dict must be as long as the number of stations. Otherwise, the processing will not take place! We can use a dictionary or list for control. The list is simpler than the dictionary (we do not have to change it in the commands every time we change the name of a station. You must this OSPy switch to scheduler mode!')
+    </p>
+    <br>
+    <p><b>$_('* MQTT get values')</b></p>
+    <br>
+    <p>$_('The status of the system settings will be sent to the given topic (cpu temperature, manual mode, scheduler enabled...) This list is sent whenever there is a change in the system. Example: {"cpu_temp": "47.1", "temp_unit": "C", "manual_mode": true, "scheduler_enabled": true, "system_name": "Test VIP2", "output_count": 8, "rain_sensed": false, "rain_block": 0, "level_adjustment": 1.0, "ospy_version": "3.0.58", "release_date": "2023-08-13", "uptime": "3. day 05:38"}')</p>
+    <br>
+    <p><b>$_('Example of settings for two OSPy systems (main OSPy and more secondary OSPy.)')</b></p>
+    <br>
+    <p>$_('OSPy main system')</p>
+    <br>
+    <p>$_('There are a total of 8 physical stations on the control OSPy system. We want to control another secondary OSPy system, which also has 8 physical stations. On the control OSPy system, set a total of 16 stations in the settings tab. The scheduler will control all 16 stations through the set programs. Run the "MQTT" plugin on the control OSPy system and set it (server, user, password, port) for connection to MQTT server (message broker). Manual MQTT control will not be used on the OSPy controller! Next, check "MQTT Use zones" for sharing stations status.')
+    </p>
+    <br>
+    <p>$_('Example of outgoing message (main OSPy): [{"station": 0, "status": "off", "name": "Station 01", "reason": ""}, {"station": 1, "status": "off", "name": "Station 02", "reason": ""}, {"station": 2, "status": "off", "name": "Station 03", "reason": ""}, {"station": 3, "status": "off", "name": "Station 04", "reason": ""}, {"station": 4, "status": "off", "name": "Station 05", "reason": ""}, {"station": 5, "status": "off", "name": "Station 06", "reason": ""}, {"station": 6, "status": "off", "name": "Station 07", "reason": ""}, {"station": 7, "status": "off", "name": "Station 08", "reason": ""}]')</p>
+    <p>$_('OSPy secondary system')</p>
+    <p>$_('There are a total of 8 physical stations. On the secondary OSPy system, set a total of 8 stations in the settings tab. Run the "MQTT" plugin on the control OSPy system and set it (server, user, password, port) for connection to MQTT server (message broker). MQTT manual control will be used on the secondary OSPy system! Fill in the Zones topic to receive messages with station statuses. With the control system we want to control this secondary system from station 1 from station 9. So we fill in the First station number to the number 9. Next, fill in the number of controlled stations from the control system. the control system will control stations 9-16. So we enter Station count to the number 8. we switch the secondary ospy system to manual control on the main screen! We can also use a plugin for sending emails from the slave system (as a feedback check of the device operation).')
+    </p>
+    <br>
+    <p><b>$_('Example MQTT run-once')</b></p>
+    <br>
+    <p>$_('The value in the list or dictionary determines the behavior of the control: 0 (the state of the station will not be changed in any way. If the station is already running, it will not be affected). >1 (one-shot time in seconds. for example 10 will be for a time of 10 seconds). -1 (If the station is running, it will be stopped).')
+    </p>
+    <br>
+    <p>$_('Example for 5 stations (5 stations are set in OSPy).')</p>
+    <p>* $_('Sending message in MQTT as list - prefered method'):</p>
+    <p>$_('Station 1 -> ignore, 2 -> ignore, 3 -> ON time 100 second, 4 -> ON time 30 second, 5 -> OFF...')</p>
+    <p>$_('[0,0,100,30,-1]')</p>
+    <p>$_('Example for 17 stations (17 stations are set in OSPy).')</p> 
+    <p>$_('[0,0,0,0,0,0,0,0,0,0,20,0,0,0,0,0,-1]')</p><br/>  
+    <p>* $_('Sending message in MQTT as dict'):</p>
+    <p>$_('Station 1 -> OFF, 2 -> OFF, 3 -> ON time 100 second, 4 -> ON time 30 second, 5 -> OFF...')</p>
+    <p>$_('{"station name 1": 0, "station name 2": 0, "station name 3": 100, "station name 4": 30, "station name 5": -1}')</p><br/>
+    <p><b>$_('MQTT plugin publish this states')</b></p>
+    <p>$_('RunOnce Restart - restart MQTT connection')</p>
+    <p>$_('RunOnce Exit - OSPy exit')</p>
+    <p>$_('RunOnce Ready - Ready for processing')</p>
+    <p>$_('RunOnce Processing - Processing command')</p>
+    <p>$_('RunOnce Error - Any Error')</p><br>
+    <p><b>$_('Examples and demonstration of control via MQTT')</b></p>
+    <p>$_('Creating an MQTT broker (we can use https://www.hivemq.com/demos/websocket-client/ to try it out).')</p>
+    <a href="/plugins/mqtt/static/images/broker.png"><img src="/plugins/mqtt/static/images/broker.png" width="60%"></a><br>
+    <p>$_('Subscribe (run-once and ospy/system)')</p>
+    <a href="/plugins/mqtt/static/images/subscriptions.png"><img src="/plugins/mqtt/static/images/subscriptions.png" width="20%"></a><br>
+    <p>$_('In OSPy, we start the plugin and fill in the login data (then we restart OSPy).')</p>
+    <a href="/plugins/mqtt/static/images/plugin.png"><img src="/plugins/mqtt/static/images/plugin.png" width="60%"></a><br>
+    <p>$_('A "RunOnce Ready" message will appear when set correctly and reboot.')</p>
+    <a href="/plugins/mqtt/static/images/msg1.png"><img src="/plugins/mqtt/static/images/msg1.png" width="40%"></a><br>
+    <p>$_('In this example we will want to turn on station 11 for 20 seconds. Circled in green in the image below - the station is now switched off.')</p>
+    <a href="/plugins/mqtt/static/images/off.png"><img src="/plugins/mqtt/static/images/off.png" width="20%"></a><br>
+    <p>$_('Now we will try to send a command to the run-once topic to turn on station 11 for 20 seconds.')</p>
+    <a href="/plugins/mqtt/static/images/publish.png"><img src="/plugins/mqtt/static/images/publish.png" width="60%"></a><br>
+    <p>$_('The received message can be seen in the plugin. At the same time, we see a reply on the broker about receiving the message. On the home page of OSPy, the station started for 20 seconds.')</p>
+    <a href="/plugins/mqtt/static/images/plugin2.png"><img src="/plugins/mqtt/static/images/plugin2.png" width="60%"></a><br>
+    <a href="/plugins/mqtt/static/images/on.png"><img src="/plugins/mqtt/static/images/on.png" width="20%"></a><br>
+    <a href="/plugins/mqtt/static/images/broker2.png"><img src="/plugins/mqtt/static/images/broker2.png" width="60%"></a><br>
+    <p>$_('The plugin uses Python paho-mqtt for running in OSPy. If paho-mqtt is not available on the system, the plugin will try to install it on the system itself.')
+    </p>
 </div>
 
 <div id="controls">
