@@ -24,6 +24,7 @@ from ospy import version
 from blinker import signal 
 
 import atexit # For publishing down message
+import ssl
 
 
 NAME = 'MQTT'
@@ -36,8 +37,9 @@ plugin_options = PluginOptions(
     ### core ###
     'use_mqtt': False,
     'use_mqtt_log': False,
-    'broker_host': 'broker.mqttdashboard.com', # for testing use http://www.hivemq.com/demos/websocket-client/
-    'broker_port': 1883,
+    'use_tls': True,
+    'broker_host': '****.eu.hivemq.cloud', # for testing use http://www.hivemq.com/demos/websocket-client/
+    'broker_port': 8883,
     'publish_up_down': 'ospy/system',
     'user_name': '',
     'user_password': '',
@@ -329,7 +331,8 @@ def get_client():
         proc_install(cmd)
 
     try:
-        import paho.mqtt.client as mqtt
+        import paho.mqtt.client as paho
+        from paho import mqtt
     except ImportError:
         log.error(NAME, _('MQTT Plugin requires paho mqtt.'))
         log.info(NAME, _('Paho-mqtt is not installed.'))
@@ -338,19 +341,30 @@ def get_client():
         cmd = "sudo pip3 install paho-mqtt"
         proc_install(cmd)
         try:
-            import paho.mqtt.client as mqtt
+            import paho.mqtt.client as paho
+            from paho import mqtt
         except ImportError:
             mqtt = None
             log.error(NAME, _('Error try install paho-mqtt manually.'))
  
     if mqtt is not None and plugin_options["use_mqtt"]:  
         try:
-            _client = mqtt.Client(options.name)                  # Use system name as client ID 
-            _client.on_connect = on_connect                      # flag = 1 is connected
-            _client.on_disconnect = on_disconnect                # flag = 0 is disconnected
-            _client.on_message = on_message                      # Attach function to callback
+            # using MQTT version 5 here, for 3.1.1: MQTTv311, 3.1: MQTTv31
+            # userdata is user defined data of any type, updated by user_data_set()
+            # client_id is the given name of the client
+            _client = paho.Client(client_id=options.name, userdata=None, protocol=paho.MQTTv5) # Use system name as client ID 
+            _client.on_connect = on_connect                                                    # flag = 1 is connected
+            _client.on_disconnect = on_disconnect                                              # flag = 0 is disconnected
+            _client.on_message = on_message                                                    # Attach function to callback
             if plugin_options["use_mqtt_log"]:
-                _client.on_log = on_log                          # debug MQTT communication log
+                _client.on_log = on_log                                                        # debug MQTT communication log
+            if plugin_options["use_tls"]:
+                _client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLSv1_2,
+                                ciphers=None, 
+                                certfile=None,
+                                keyfile=None,
+                                )
+                _client.tls_insecure_set(False)
             log.clear(NAME)
             log.info(NAME, datetime_string() + ' ' + _('Connecting to broker') + '...')
             _client.username_pw_set(plugin_options['user_name'], plugin_options['user_password'])
@@ -387,7 +401,7 @@ def subscribe(topic, callback, qos=0):
             _subscriptions[topic].append(callback)
 
 
-def on_connect(client, userdata, flags, rc):
+def on_connect(client, userdata, flags, rc, properties=None):
     global flag_connected
     flag_connected = 1
     ### mqtt core ###  
@@ -404,7 +418,7 @@ def on_connect(client, userdata, flags, rc):
     #log.debug(NAME, datetime_string() + ' ' + _('Connected to broker.'))
 
 
-def on_disconnect(client, userdata, rc):
+def on_disconnect(client, userdata, rc, properties=None):
     global flag_connected
     flag_connected = 0
     #log.debug(NAME, datetime_string() + ' ' + _('Disconnected from broker!'))
@@ -443,6 +457,7 @@ def notify_value_change(name, **kw):
             client = sender.client
             if client:
                 client.publish(plugin_options["get_val_topic"], json.dumps(payload), qos=1, retain=True)
+                log.clear(NAME)
                 log.info(NAME, datetime_string() + ' ' +  _('Posting to topic {} because OSPy change the settings.').format(plugin_options["get_val_topic"]))
     
     except Exception:
@@ -488,6 +503,7 @@ def notify_zone_change(name, **kw):
                 client = sender.client
                 if client:
                     client.publish(plugin_options["zone_topic"], json.dumps(statuslist), qos=1, retain=True)
+                    log.clear(NAME)
                     log.info(NAME, datetime_string() + ' ' +  _('Posting to topic {} because OSPy change stations state.').format(plugin_options["zone_topic"]))
 
     except Exception:

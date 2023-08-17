@@ -30,6 +30,12 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none; width:30%'><b>$_('Use TLS'):</b></td>
+                <td title=$:{json.dumps(_('As HiveMQ Cloud does not support insecure connections, TLS is required. This enables a secure connection and sets the default security context. The default port used for secure MQTT connections is 8883.'), ensure_ascii=False)}>
+                    <input name='use_tls' type='checkbox'${" checked" if plugin_options['use_tls'] else ""}>
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Broker Host'):</td>
                 <td title=$:{json.dumps(_('For test use: http://www.hivemq.com/demos/websocket-client/.'), ensure_ascii=False)}>
                     <input style='width:60%' type="text" name="broker_host" value="${plugin_options['broker_host']}">
