@@ -83,6 +83,11 @@ $var page: plugins
     <a href="/plugins/mqtt/static/images/broker2.png"><img src="/plugins/mqtt/static/images/broker2.png" width="60%"></a><br>
     <p>$_('The plugin uses Python paho-mqtt for running in OSPy. If paho-mqtt is not available on the system, the plugin will try to install it on the system itself.')
     </p>
+    <br>
+    <p><b>$_('QoS Publisher')</b></p>
+    <p>$_('0: at most once. Will send a message only once.')</p>
+    <p>$_('1: at least once. Will send a message at least once as long as an acknowledgement is received or the command to end the transmission is received.')</p>
+    <p>$_('2: exactly once. Will only send a message once.')</p>
 </div>
 
 <div id="controls">
