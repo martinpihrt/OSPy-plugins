@@ -59,6 +59,12 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Client ID'):</td>
                 <td>${client_id}</td>
             </tr>
+            <tr>
+                <td style='text-transform: none; width:30%'><small>$_('Show MQTT communication'):</small></td>
+                <td title=$:{json.dumps(_('When checked, communication between the client and the server will be written in the OSPy log (OSPy debug level. Must be enabled in OSPy settings).'), ensure_ascii=False)}>
+                    <input name='use_mqtt_log' type='checkbox'${" checked" if plugin_options['use_mqtt_log'] else ""}>
+                </td>
+            </tr>            
         </table>
         <table class="optionList" style="width:80%">
             <caption>$_('MQTT manual control')</caption>
