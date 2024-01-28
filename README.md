@@ -67,3 +67,4 @@ Available plugins:
 * CHMI meteo radar
 * Proto
 * Label Maker
+* IP Scanner

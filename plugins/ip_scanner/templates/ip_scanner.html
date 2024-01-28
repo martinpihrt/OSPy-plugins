@@ -1,0 +1,50 @@
+$var title: $_('IP Scanner Plugin')
+$var page: plugins
+
+<script>
+    function updateMSG() {
+        jQuery.getJSON("/plugins/ip_scanner/msg_json", function(data) {
+            if (Array.isArray(data.msg)) {
+                var formattedMsg = data.msg.join('\n');
+                jQuery('textarea.msg').text(formattedMsg);
+            } else if (typeof data.msg === 'string') {
+                var formattedMsg = data.msg.split(/\n/).map(function(line) {
+                    return line.replace(/^,/, '');
+                }).join('\n');
+                jQuery('textarea.msg').text(formattedMsg);
+            } else {
+                console.error("Error: The received data.msg is neither a string nor an array.", data);
+            }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error("AJAX request failed:", textStatus, errorThrown);
+        });
+
+        setTimeout(updateMSG, 1500);
+    }
+
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+
+        jQuery("button#cFind").click(function(){
+            jQuery('textarea.msg').text($:{json.dumps(_('Processing...'), ensure_ascii=False).encode('utf8').decode('utf8')});
+            jQuery.get("?find", function(data) {
+                console.log(data);
+            });
+        });
+        updateMSG();
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('IP Scanner Plugin')</div>
+    <button id="cFind" class="cancel download">$_('Find device')</button>
+    <p>$_('This plugin prints all available network devices on same range as OSPy.')</p>
+    <p><textarea class="msg" style="font-family: monospace;" rows="15" cols="50" readonly></textarea></p>
+</div>
+
+<div id="controls">
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
