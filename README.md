@@ -68,3 +68,4 @@ Available plugins:
 * Proto
 * Label Maker
 * IP Scanner
+* Database Connector
