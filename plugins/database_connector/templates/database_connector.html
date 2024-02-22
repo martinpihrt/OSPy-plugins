@@ -1,0 +1,96 @@
+$def with(plugin_options, events)
+
+$var title: $_('Database Connector')
+$var page: plugins
+
+<script>
+    function checkIP(){
+        let IPAddress = jQuery(".IPnumbersOnly").val();
+        let IPRegex=new RegExp("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
+        let test = IPRegex.test(IPAddress);
+        if(test){
+            return 0;
+        }
+        else{    
+            alert($:{json.dumps(_('IP map address is not valid!'), ensure_ascii=False).encode('utf8').decode('utf-8')});
+            return 1;
+        }
+    }
+
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            if(checkIP()){
+                return;
+            }            
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });    
+        jQuery(".IPnumbersOnly").keyup(function () {
+            let newValue = this.value.replace(/[^0-9\.]/g, '');
+            this.value = newValue;
+        });        
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Database Connector')</div>
+    <p>$_('When changing the settings, it is necessary to restart the OSPy system.')</p>
+    <p><a href=$plugins.plugin_url('database_connector.help_page') class="button upload">$_('Help')</a></p><br/>
+    <form id="pluginForm" action="$plugins.plugin_url('database_connector.settings_page')" method="post">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use plugin'):</td>
+                <td title=$:{json.dumps(_('When the box is checked, the extension will be active. After filling in all the fields, ospy must be restarted!'), ensure_ascii=False)}>
+                <input name='use' type='checkbox' ${" checked" if plugin_options['use'] else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Host'):</td>
+                <td title=$:{json.dumps(_('IP address to the database server.'), ensure_ascii=False)}>
+                <input name='host' class="Input IPnumbersOnly" type='text' size='15' maxlength='15' id='IPnumbersOnly' value='$plugin_options["host"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Username'):</td>
+                <td title=$:{json.dumps(_('The login name to log in to the database.'), ensure_ascii=False)}>
+                <input name='user' type='text' size='20' maxlength='30' id='user' value='$plugin_options["user"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Password'):</td>
+                <td title=$:{json.dumps(_('The login password to log in to the database.'), ensure_ascii=False)}>
+                <input name='pass' type='text' size='20' maxlength='30' id='pass' value='$plugin_options["pass"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Port'):</td>
+                <td title=$:{json.dumps(_('Port for connecting to the database server. The default is usually 3306.'), ensure_ascii=False)}>
+                <input name='port' class="numbers" type='number' size='20' maxlength='5' id='port' value='$plugin_options["port"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Database name'):</td>
+                <td title=$:{json.dumps(_('The name of the database in which there will be tables with measured data. To be able to connect multiple ospy systems to one database server. Each ospy will have its own database (example: ospy_1, ospy_2...)'), ensure_ascii=False)}>
+                <input name='database' type='text' size='20' maxlength='30' id='database' value='$plugin_options["database"]'>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Connection test'):</td>
+                <td title=$:{json.dumps(_('After pressing the test button, this extension will try to connect to the database.'), ensure_ascii=False)}>
+                <a href="?test" class="button backup">$_('Test')</a>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td><textarea style="font-family: monospace;" rows="15" cols="50" readonly>$'\n'.join(events)</textarea></td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

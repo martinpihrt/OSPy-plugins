@@ -13,8 +13,11 @@ Plugin setup
 * Check Enabled:  
   If checked enabled plugin is enabled.
 
-* Check Enable logging and show graph:  
+* Check Enable local logging and show graph:  
   If checked enabled logging save measure value to logfile (format .csv for Excel) and logfile for graph.
+
+* Check Enable SQL logging:  
+  If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured.
 
 * Maximum number of log records:  
   Type maximum records in log file. 0 is unlimited.  

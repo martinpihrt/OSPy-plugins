@@ -1,0 +1,19 @@
+$def with()
+
+$var title: $_('Database Connector - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Database Connector - help')</div> 
+    <p>$_('We will create access for OSPy (username, password) on our database server, for example Synology. Warning: some web hosting companies (for example Wedos) allow you to set up a database with them as part of the web hosting. However, this database is only available via phpMyAdmin and php scripts on the hosting! It is therefore not possible to connect to it from our OSPy.')</p><br>
+    <p>$_('An example of a set this extension and a statement after pressing the test button. If everything is set correctly, it will list which database it is and, if necessary, the name of the databases.')</p><br>
+    <a href="/plugins/database_connector/static/images/test.png"><img src="/plugins/database_connector/static/images/test.png" width="30%"></a></br>
+    <p>$_('For example, if we use saving to the database from the airtemp humi extension, this extension will first create the airtemp table (if it does not exist).')</p><br>
+    <p>CREATE TABLE airtemp (id INT AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ds1 VARCHAR(7), ds2 VARCHAR(7), ds3 VARCHAR(7), ds4 VARCHAR(7), ds5 VARCHAR(7), ds6 VARCHAR(7), dht1 VARCHAR(7), dht2 VARCHAR(7), dht3 VARCHAR(2))</p></br>
+    <p>$_('The data is incremented and has this structure:')</p><br>
+    <p>ds1 ds2 ds3 ds4 ds5 ds6 dht-temp dht-humi dht-output-state</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('database_connector.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

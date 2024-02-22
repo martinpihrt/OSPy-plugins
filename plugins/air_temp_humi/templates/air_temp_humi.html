@@ -200,20 +200,26 @@ jQuery(document).ready(function(){
                </th>
             </tr>             
             <tr>
-                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
-                <td>
+                <td style='text-transform: none;'><b>$_('Enable local logging'):</b></td>
+                <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
                     <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
+                <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured.'), ensure_ascii=False)}>
+                    <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))      
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td>
+                <td title=$:{json.dumps(_('The maximum number of records sets the number of saved records, i.e. after exceeding the set limit, older data is overwritten.'), ensure_ascii=False)}>
                     <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Interval for logging'):</td>
-                <td>
+                <td title=$:{json.dumps(_('The logging interval is common for both local storage and sql storage of measured data.'), ensure_ascii=False)}>
                     <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> $_('minutes (Minimum is 1)')
                 </td>
             </tr>
@@ -221,7 +227,7 @@ jQuery(document).ready(function(){
                <th colspan="2">
                  <hr>
                </th>
-            </tr>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable DHT'):</b></td>
                 <td>
@@ -232,8 +238,8 @@ jQuery(document).ready(function(){
                 <td style='text-transform: none;'>$_('DHT type'):</td>
                 <td title=$:{json.dumps(_(u'Select type DHT probe'), ensure_ascii=False)}>
                 <select name="dht_type">
-                    <option value="0" ${"selected" if plugin_options["dht_type"]==0 else ""}>$_(u'DHT11')</option>
-                    <option value="1" ${"selected" if plugin_options["dht_type"]==1 else ""}>$_(u'DHT22')</option>
+                    <option value="0" ${"selected" if plugin_options["dht_type"]==0 else ""}>$_('DHT11')</option>
+                    <option value="1" ${"selected" if plugin_options["dht_type"]==1 else ""}>$_('DHT22')</option>
                 </select>
                 </td>
             </tr>
