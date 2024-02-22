@@ -748,6 +748,7 @@ class settings_page(ProtectedPage):
         debug = helpers.get_input(qdict, 'debug', False, lambda x: True)
         del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
         log_now = helpers.get_input(qdict, 'log_now', False, lambda x: True)
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
         if sender is not None and reset:
             status['minlevel'] = status['level']
@@ -777,6 +778,16 @@ class settings_page(ProtectedPage):
                 del rain_blocks[NAME]
                 log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
             raise web.seeother(plugin_url(settings_page), True)
+
+        if sender is not None and delSQL:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `tankmonitor`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the tankmonitor table from the database.'))
+            except:
+                log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+                pass
 
         return self.plugin_render.tank_monitor(tank_options, log.events(NAME))
 

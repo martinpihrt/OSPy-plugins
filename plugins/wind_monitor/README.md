@@ -53,8 +53,11 @@ Plugin setup
 * Wind speed state:  
   Show actual wind speed in meter per second.
 
-* Enable logging:  
+* Enable local logging:  
   Enable logging and graphing.
+
+* Check Enable SQL logging:  
+  If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured. The button will delete the windmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!  
 
 * Save to log if maximal speed change:  
   If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately.

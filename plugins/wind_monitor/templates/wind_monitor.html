@@ -201,32 +201,39 @@ function check_history() {
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use wind monitor'):</b></td>
-                <td title=$:{json.dumps(_(u'If the box is checked, wind monitor be enabled.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If the box is checked, wind monitor be enabled.'), ensure_ascii=False)}>
                     <input name='use_wind_monitor' type='checkbox'${" checked" if plugin_options['use_wind_monitor'] else ""}>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
-                <td title=$:{json.dumps(_(u'Caution: Frequent log storage may reduce storage capacity'), ensure_ascii=False)}>
+                <td style='text-transform: none;'><b>$_('Enable local logging'):</b></td>
+                <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
                     <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
+                <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the windmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
+                    <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))  
+                    <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>    
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Save to log if maximal speed change'):</td>
-                <td title=$:{json.dumps(_(u'If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately'), ensure_ascii=False)}>
                     <input name='enable_log_change' type='checkbox'${" checked" if plugin_options['enable_log_change'] else ""}>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Delete max speed after selected interval'):</td>
-                <td title=$:{json.dumps(_(u'If the box is checked, the maximum measured speed is reset after selected interval (log is not deleted)'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If the box is checked, the maximum measured speed is reset after selected interval (log is not deleted)'), ensure_ascii=False)}>
                     <input name='delete_max_24h' type='checkbox'${" checked" if plugin_options['delete_max_24h'] else ""}>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Delete max speed interval'):</td>
-                <td title=$:{json.dumps(_(u'Select interval for reseting maximal speed'), ensure_ascii=False)}>
-                    <select id="delete_max" name="delete_max" style="width: 200px" title=$:{json.dumps(_(u'Select interval for reseting maximal speed'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Select interval for reseting maximal speed'), ensure_ascii=False)}>
+                    <select id="delete_max" name="delete_max" style="width: 200px" title=$:{json.dumps(_('Select interval for reseting maximal speed'), ensure_ascii=False)}>
                     <option value="1" ${"selected" if plugin_options['delete_max']=="1" else ""}>$_(u'1 minute')</option>
                     <option value="10" ${"selected" if plugin_options['delete_max']=="10" else ""}>$_(u'10 minutes')</option>
                     <option value="30" ${"selected" if plugin_options['delete_max']=="30" else ""}>$_(u'30 minutes')</option>
@@ -239,43 +246,43 @@ function check_history() {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('0 = unlimited'), ensure_ascii=False)}>
                     <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Interval for logging'):</td>
-                <td title=$:{json.dumps(_(u'In minutes (Minimum is 1)'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('In minutes (Minimum is 1)'), ensure_ascii=False)}>
                     <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>I&sup2;C $_('address 0x50'):</td>
-                <td title=$:{json.dumps(_(u'If the box is checked, wind monitor is on address 0x50.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If the box is checked, wind monitor is on address 0x50.'), ensure_ascii=False)}>
                     <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of pulses per rotation'):</td>
-                <td title=$:{json.dumps(_(u'pulses/rotation'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('pulses/rotation'), ensure_ascii=False)}>
                     <input name='pulses' type='text' value='$plugin_options["pulses"]' style="width:40px;">
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of wind speed per rotation in m/s'):</td>
-                <td title=$:{json.dumps(_(u'Wind speed set in meter/second'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Wind speed set in meter/second'), ensure_ascii=False)}>
                     <input name='metperrot' type='text' value='$plugin_options["metperrot"]' style="width:40px;">
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Display in km/h'):</td>
-                <td title=$:{json.dumps(_(u'If the box is checked, the speed is in km/h'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If the box is checked, the speed is in km/h'), ensure_ascii=False)}>
                     <input name='use_kmh' type='checkbox'${" checked" if plugin_options['use_kmh'] else ""}>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Max wind speed for stop stations in m/s'):</td>
-                <td title=$:{json.dumps(_(u'If the wind speed exceeds this value, the station will stop'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If the wind speed exceeds this value, the station will stop'), ensure_ascii=False)}>
                     <input name='maxspeed' type='text' value='$plugin_options["maxspeed"]' style="width:40px;">
                 </td>
             </tr>
@@ -286,19 +293,19 @@ function check_history() {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if stop'):</td>
-                <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('For this function required E-mail plugin'), ensure_ascii=False)}>
                     <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
-                <td title=$:{json.dumps(_(u'Subject for E-mail from this wind monitor'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Subject for E-mail from this wind monitor'), ensure_ascii=False)}>
                     <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('E-mail plug-ins'):</td>
-                <td title=$:{json.dumps(_(u'Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
                 <select name="eplug">
                     <option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_(u'E-mail notifications V1')</option>
                     <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
@@ -312,7 +319,7 @@ function check_history() {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Stoping stations'):</td>
-                <td title=$:{json.dumps(_(u'Stoping selected stations in scheduler if stations has run'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Stoping selected stations in scheduler if stations has run'), ensure_ascii=False)}>
                     <input name='stoperr' type='checkbox'${" checked" if plugin_options['stoperr'] else ""}> 
                 </td>
             </tr>
@@ -322,7 +329,7 @@ function check_history() {
             </tr>
             <tr>
                 <td></td>
-                <td title=$:{json.dumps(_(u'If wind speed is bigger stop this selected stations'), ensure_ascii=False)}>  
+                <td title=$:{json.dumps(_('If wind speed is bigger stop this selected stations'), ensure_ascii=False)}>  
                 <select multiple name="used_stations" width="250" style="width: 250px" size="8">
                     $for station in [station for station in stations if station.enabled]:
                         <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
@@ -336,7 +343,7 @@ function check_history() {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Run program when exceeded'):</td>
-                <td title=$:{json.dumps(_(u'When the set speed is exceeded, start the selected program and close the window blinds, for example.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('When the set speed is exceeded, start the selected program and close the window blinds, for example.'), ensure_ascii=False)}>
                     <input name='use_stop_pgm' type='checkbox'${" checked" if plugin_options['use_stop_pgm'] else ""}> 
                 </td>
             </tr>
@@ -351,25 +358,25 @@ function check_history() {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum wind speed for starting the program in m/s'):</td>
-                <td title=$:{json.dumps(_(u'If this set speed is exceeded, another condition will be activated.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If this set speed is exceeded, another condition will be activated.'), ensure_ascii=False)}>
                     <input name='m_speed_trig' type='number' min='1' value='$plugin_options["m_speed_trig"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of event repetitions for the action'):</td>
-                <td title=$:{json.dumps(_(u'If the maximum wind speed is repeatedly exceeded in a given time period (it is set in the box below), the program will be started.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If the maximum wind speed is repeatedly exceeded in a given time period (it is set in the box below), the program will be started.'), ensure_ascii=False)}>
                     <input name='event_repetitions' type='number' min='1' value='$plugin_options["event_repetitions"]'> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Repeatedly exceeded in these interval'):</td>
-                <td title=$:{json.dumps(_(u'In this time period, the number of set exceeded events (time in minutes) is measured.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('In this time period, the number of set exceeded events (time in minutes) is measured.'), ensure_ascii=False)}>
                     <input name='event_interval' type='number' min='1' value='$plugin_options["event_interval"]'> 
                 </td>
             </tr>     
             <tr>
                 <td style='text-transform: none;'>$_('Ignore other events for a while'):</td>
-                <td title=$:{json.dumps(_(u'If the program has been started, the next possible start will be triggered by an event only after this set time (in hours).'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If the program has been started, the next possible start will be triggered by an event only after this set time (in hours).'), ensure_ascii=False)}>
                     <input name='ignore_interval' type='number' min='1' value='$plugin_options["ignore_interval"]'> 
                 </td>
             </tr>                                                      
@@ -389,7 +396,7 @@ function check_history() {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
-                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
                     <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
                 </td>
             </tr>
@@ -414,7 +421,7 @@ $if plugin_options['enable_log']:
     <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
     <form name="historyForm" id="historyForm" action="" method="get">
         $_(u'Select filter for graph history'):
-        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_(u'Select a filter for the interval of read data.'), ensure_ascii=False)}>
+        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_('Select a filter for the interval of read data.'), ensure_ascii=False)}>
         <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
         <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
         <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
