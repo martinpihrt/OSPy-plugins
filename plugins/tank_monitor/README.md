@@ -59,8 +59,11 @@ Plugin setup
 * Select Output for regulation:  
   Select Output for regulation zones.
 
-* Enable logging:  
+* Enable local logging:  
   Enable logging and graphing.
+
+* Check Enable SQL logging:  
+  If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured. The button will delete the tankmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!  
 
 * Maximum number of log records:  
   Maximum number of log records (only for csv file).

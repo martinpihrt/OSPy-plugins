@@ -695,7 +695,11 @@ class graph_json(ProtectedPage):
 
         log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
 
-        json_data = read_graph_log()
+        try:
+            json_data = read_graph_log()
+        except:
+            json_data = []
+            pass
 
         if len(json_data) > 0:
             for i in range(0, 8):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
