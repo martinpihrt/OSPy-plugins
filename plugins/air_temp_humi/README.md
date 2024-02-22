@@ -17,7 +17,7 @@ Plugin setup
   If checked enabled logging save measure value to logfile (format .csv for Excel) and logfile for graph.
 
 * Check Enable SQL logging:  
-  If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured.
+  If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured. The button will delete the airtemp table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!
 
 * Maximum number of log records:  
   Type maximum records in log file. 0 is unlimited.  

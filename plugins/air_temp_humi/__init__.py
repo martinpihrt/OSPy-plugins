@@ -518,10 +518,10 @@ def update_log(status):
             # next insert data to table airtemp
             sql = "INSERT INTO `airtemp` (`ds1`, `ds2`, `ds3`, `ds4`, `ds5`, `ds6`, `dht1`, `dht2`, `dht3`) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s')" % (status['DS0'],status['DS1'],status['DS2'],status['DS3'],status['DS4'],status['DS5'],status['temp'],status['humi'],status['outp'])
             execute_db(sql, test=False, commit=True)  # yes commit inserted data
-            log.debug(NAME, _('Saving to SQL database.'))
+            log.info(NAME, _('Saving to SQL database.'))
         except:
-            log.debug(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
-            pass                        
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
 
 def create_default_graph():
     """Create default graph json file."""
@@ -577,6 +577,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
         if sender is not None and delete:
            write_log([])
@@ -591,6 +592,16 @@ class settings_page(ProtectedPage):
 
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
+
+        if sender is not None and delSQL:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `airtemp`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the airtemp table from the database.'))
+            except:
+                log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+                pass
 
         return self.plugin_render.air_temp_humi(plugin_options, log.events(NAME))
 
