@@ -412,6 +412,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
         if pressure_sender is not None and delete:
            write_log([])
@@ -425,6 +426,16 @@ class settings_page(ProtectedPage):
 
         if pressure_sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
+
+        if pressure_sender is not None and delSQL:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `pressmonitor`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the pressmonitor table from the database.'))
+            except:
+                log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+                pass
 
         return self.plugin_render.pressure_monitor(pressure_options, pressure_sender.status, log.events(NAME))
 
