@@ -24,7 +24,13 @@ Plugin setup
 
 * Check Send email with error:
   If checked send E-mail with error E-mail notification plugin sends E-mail with error.  
-  For this function required E-mail notification plugin with all setup in plugin.   
+  For this function required E-mail notification plugin with all setup in plugin.
+
+* Enable local logging:  
+  Enable logging and graphing.
+
+* Check Enable SQL logging:  
+  If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured. The button will delete the pressmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!     
 
 * Select filter for graph history  
   Without limits  

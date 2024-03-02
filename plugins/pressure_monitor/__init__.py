@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 # this plugins check pressure in pipe if master station is switched on
 
 import json
@@ -28,7 +28,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Pressure Monitor'
-MENU =  _(u'Package: Pressure Monitor')
+MENU =  _('Package: Pressure Monitor')
 LINK = 'settings_page'
 
 pressure_options = PluginOptions(
@@ -38,13 +38,14 @@ pressure_options = PluginOptions(
         'use_press_monitor': False,
         'normally': False,
         'sendeml': True,
-        'emlsubject': _(u'Report from OSPy PRESSURE MONITOR plugin'),
+        'emlsubject': _('Report from OSPy PRESSURE MONITOR plugin'),
         'enable_log': False,
         'log_records': 0,       # 0 = unlimited
         'history': 0,           # selector for graph history
         'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
         'use_footer': True,     # show data from plugin in footer on home page
         'eplug': 0,             # email plugin type (email notifications or email notifications SSL)
+        'en_sql_log': False,    # logging temperature to sql database
     }
 )
 
@@ -118,32 +119,32 @@ class PressureSender(Thread):
         if pressure_options['use_footer']: 
             press_mon = showInFooter() #  instantiate class to enable data in footer
             press_mon.button = "pressure_monitor/settings"   # button redirect on footer
-            press_mon.label =  _(u'Pressure')                 # label on footer
+            press_mon.label =  _('Pressure')                 # label on footer
 
         while not self._stop_event.is_set():
             try:
                 if pressure_options['use_press_monitor']:                              # if pressure plugin is enabled
                     if master and not options.manual_mode:                             # if master station 1 or 2 is on and not manual mode
                         if get_check_pressure():                                       # if pressure sensor is on
-                            if pressure_options['enable_log']:                         # if enabled logging and graphing
+                            if pressure_options['enable_log'] or pressure_options['en_sql_log']: # if enabled logging and graphing
                                 now_msg = 2
                                 if now_msg != last_msg:
                                     update_log(1)
                                     last_msg = 1
                             actual_time = int(time.time())
                             count_val = int(pressure_options['time'])
-                            log.info(NAME, _(u'Time to test pressure sensor') + ': ' + str(
-                                count_val - (actual_time - last_time)) + ' ' + _(u'sec') + '.')
+                            log.info(NAME, _('Time to test pressure sensor') + ': ' + str(
+                                count_val - (actual_time - last_time)) + ' ' + _('sec') + '.')
                             if actual_time - last_time > int(pressure_options['time']):# wait for activated pressure sensor (time delay)
                                 last_time = actual_time
                                 if get_check_pressure():                               # if pressure sensor is actual on
                                     set_stations_in_scheduler_off()
                                     log.clear(NAME)
-                                    log.info(NAME, _(u'Pressure sensor is not activated in time, stoping all stations in scheduler.'))
+                                    log.info(NAME, _('Pressure sensor is not activated in time, stoping all stations in scheduler.'))
                                     if pressure_options['sendeml']:                    # if enabled send email
                                         send = True
-                                        log.info(NAME, _(u'Sending E-Mail.'))
-                                    if pressure_options['enable_log']:                 # if enabled logging and graphing
+                                        log.info(NAME, _('Sending E-Mail.'))
+                                    if pressure_options['enable_log'] or pressure_options['en_sql_log']: # if enabled logging and graphing
                                         now_msg = 0
                                         if now_msg != last_msg:
                                             update_log(0)
@@ -156,8 +157,8 @@ class PressureSender(Thread):
                             last_time = int(time.time())
 
                     if send:
-                        msg = '<b>' + _(u'Pressure monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'System detected error: pressure sensor.') + '</p>'
-                        msglog = _(u'Pressure monitor plug-in') + ': ' + _(u'System detected error: pressure sensor.')
+                        msg = '<b>' + _('Pressure monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: pressure sensor.') + '</p>'
+                        msglog = _('Pressure monitor plug-in') + ': ' + _('System detected error: pressure sensor.')
                         try:
                             try_mail = None
                             if pressure_options['eplug']==0: # email_notifications
@@ -168,25 +169,25 @@ class PressureSender(Thread):
                                 try_mail(msg, msglog, subject=pressure_options['emlsubject'])
                             send = False
                         except Exception:
-                            log.info(NAME, _(u'E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))
-                            log.error(NAME, _(u'Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+                            log.info(NAME, _('E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))
+                            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
                             send = False
                             self._sleep(5)
                             pass
                         
                     if get_check_pressure():
-                        self.status['Pstate%d'] = _(u'Inactive')
-                        tempText = _(u'Inactive')
+                        self.status['Pstate%d'] = _('Inactive')
+                        tempText = _('Inactive')
                     else:
-                        self.status['Pstate%d'] = _(u'Active')
-                        tempText = _(u'Active')
+                        self.status['Pstate%d'] = _('Active')
+                        tempText = _('Active')
                     if pressure_options['use_footer']:
                         if press_mon is not None:    
                             press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
 
                 else:
-                    self.status['Pstate%d'] = _(u'Disabled')
-                    tempText = _(u'Disabled')
+                    self.status['Pstate%d'] = _('Disabled')
+                    tempText = _('Disabled')
                     if pressure_options['use_footer']:
                         if press_mon is not None:
                             press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
@@ -194,7 +195,7 @@ class PressureSender(Thread):
                 self._sleep(2)
 
             except Exception:
-                log.error(NAME, _(u'Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -231,7 +232,7 @@ def get_check_pressure():
                 press = 0
         return press
     except:
-        log.error(NAME, _(u'Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
         pass
 
 
@@ -239,8 +240,8 @@ def get_check_pressure():
 def notify_master_on(name, **kw):
     global master
     log.clear(NAME)
-    log.info(NAME, datetime_string() + ' ' + _(u'Master station 1 is ON.'))
-    if pressure_options['enable_log']:
+    log.info(NAME, datetime_string() + ' ' + _('Master station 1 is ON.'))
+    if pressure_options['enable_log'] or pressure_options['en_sql_log']:
         update_log(2)
     master = True
 
@@ -249,15 +250,15 @@ def notify_master_on(name, **kw):
 def notify_master_off(name, **kw):
     global master
     master = False
-    log.info(NAME, datetime_string() + ' ' + _(u'Master station 1 is OFF.'))
+    log.info(NAME, datetime_string() + ' ' + _('Master station 1 is OFF.'))
 
 
 ### master 2 on ###
 def notify_master_two_on(name, **kw):
     global master
     log.clear(NAME)
-    log.info(NAME, datetime_string() + ' ' + _(u'Master station 2 is ON.'))
-    if pressure_options['enable_log']:
+    log.info(NAME, datetime_string() + ' ' + _('Master station 2 is ON.'))
+    if pressure_options['enable_log'] or pressure_options['en_sql_log']:
         update_log(2)
     master = True
 
@@ -266,14 +267,14 @@ def notify_master_two_on(name, **kw):
 def notify_master_two_off(name, **kw):
     global master
     master = False
-    log.info(NAME, datetime_string() + ' ' + _(u'Master station 2 is OFF.'))
+    log.info(NAME, datetime_string() + ' ' + _('Master station 2 is OFF.'))
 
 
 ### all stations off ###
 def notify_station_clear(name, **kw):
     global master
     master = False
-    log.info(NAME, datetime_string() + ' ' + _(u'All stations set to OFF.'))
+    log.info(NAME, datetime_string() + ' ' + _('All stations set to OFF.'))
 
 
 def set_stations_in_scheduler_off():
@@ -299,7 +300,7 @@ def set_stations_in_scheduler_off():
                 ending = True   
 
     if ending:
-        log.info(NAME, _(u'Stoping stations in scheduler'))
+        log.info(NAME, _('Stoping stations in scheduler'))
 
 
 def read_log():
@@ -335,44 +336,58 @@ def write_graph_log(json_data):
 def update_log(status):
     """Update data in json files."""
 
-    ### Data for log ###
-    try:
-        log_data = read_log()
-    except:
-        write_log([])
-        log_data = read_log()
+    if pressure_options['enable_log']:
+        ### Data for log ###
+        try:
+            log_data = read_log()
+        except:
+            write_log([])
+            log_data = read_log()
 
-    from datetime import datetime
+        from datetime import datetime
 
-    data = {'datetime': datetime_string()}
-    data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
-    data['time'] = str(datetime.now().strftime('%H:%M:%S'))
-    data['state'] = str(status)
+        data = {'datetime': datetime_string()}
+        data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+        data['time'] = str(datetime.now().strftime('%H:%M:%S'))
+        data['state'] = str(status)
 
-    log_data.insert(0, data)
-    if pressure_options['log_records'] > 0:
-        log_data = log_data[:pressure_options['log_records']]
-    write_log(log_data)
+        log_data.insert(0, data)
+        if pressure_options['log_records'] > 0:
+            log_data = log_data[:pressure_options['log_records']]
+        write_log(log_data)
 
-    ### Data for graph log ###
-    try:  
-        graph_data = read_graph_log()    
-    except: 
-        create_default_graph()
-        graph_data = read_graph_log()
+        ### Data for graph log ###
+        try:
+            graph_data = read_graph_log()
+        except:
+            create_default_graph()
+            graph_data = read_graph_log()
 
-    timestamp = int(time.time())
+        timestamp = int(time.time())
 
-    try:
-        state = graph_data[0]['balances']
-        stateval = {'total': status}
-        state.update({timestamp: stateval})
+        try:
+            state = graph_data[0]['balances']
+            stateval = {'total': status}
+            state.update({timestamp: stateval})
         
-        write_graph_log(graph_data)
-        log.info(NAME, _(u'Saving to log files OK.'))
-    except:
-        create_default_graph()
+            write_graph_log(graph_data)
+            log.info(NAME, _('Saving to log files OK.'))
+        except:
+            create_default_graph()
 
+    if pressure_options['en_sql_log']:
+        try:
+            from plugins.database_connector import execute_db
+            # first create table upsmonitor if not exists
+            sql = "CREATE TABLE IF NOT EXISTS pressmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, actual VARCHAR(3))"
+            execute_db(sql, test=False, commit=False) # not commit
+            # next insert data to table pressmonitor
+            sql = "INSERT INTO `pressmonitor` (`actual`) VALUES ('%s')" % (status)
+            execute_db(sql, test=False, commit=True)  # yes commit inserted data
+            log.info(NAME, _('Saving to SQL database.'))
+        except:
+            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
 
 def create_default_graph():
     """Create default graph json file."""
@@ -381,7 +396,7 @@ def create_default_graph():
        {"station": state, "balances": {}}
     ]
     write_graph_log(graph_data)  
-    log.debug(NAME, _('Creating default graph log files OK'))                    
+    log.debug(NAME, _('Creating default graph log files OK'))
 
 ################################################################################
 # Web pages:                                                                   #
@@ -500,8 +515,8 @@ class graph_json(ProtectedPage):
         try:
             json_data = read_graph_log()
         except:
-            create_default_graph()
-            json_data = read_graph_log()
+            json_data = []
+            pass
 
         temp_balances = {}
 
@@ -529,7 +544,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 interval['datetime'],
                 interval['date'],
                 interval['time'],
-                u'{}'.format(interval['state']),
+                '{}'.format(interval['state']),
             ]) + '\n'
 
         content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])

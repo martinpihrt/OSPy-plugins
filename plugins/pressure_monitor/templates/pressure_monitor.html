@@ -200,31 +200,38 @@ jQuery(document).ready(function(){
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
-                <td>
+                <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
                     <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
+                <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the pressmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
+                    <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))
+                    <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td title=$:{json.dumps(_(u'0 = unlimited'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('0 = unlimited'), ensure_ascii=False)}>
                     <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
                 </td>
             </tr>             
             <tr>
                 <td style='text-transform: none;'>$_('Normally open'):</td>
-                <td title=$:{json.dumps(_(u'If checked normally open sensor without pressure has contact open'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('If checked normally open sensor without pressure has contact open'), ensure_ascii=False)}>
                     <input name='normally' type='checkbox'${" checked" if plugin_options['normally'] else ""}>  
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Max time to activate pressure sensor'):</td>
-                <td title=$:{json.dumps(_(u'max 999 seconds'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('max 999 seconds'), ensure_ascii=False)}>
                     <input name='time' type='number' min="0" max="999" value='$plugin_options["time"]'> 
                 </td>
             </tr>   
             <tr>
                 <td style='text-transform: none;'>$_('Stop this run stations in scheduler')</td> 
-                <td title=$:{json.dumps(_(u'Stoping these stations if no pressure in pipe. Selector for stop stations in scheduler'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Stoping these stations if no pressure in pipe. Selector for stop stations in scheduler'), ensure_ascii=False)}>
                 <select multiple name="used_stations" width="250" style="width: 250px" size="8">
                     $for station in [station for station in stations if station.enabled]:
                         <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
@@ -238,19 +245,19 @@ jQuery(document).ready(function(){
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail with error'):</td>
-                <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('For this function required E-mail plugin'), ensure_ascii=False)}>
                     <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
-                <td title=$:{json.dumps(_(u'Subject for E-mail from this pressure monitor'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Subject for E-mail from this pressure monitor'), ensure_ascii=False)}>
                     <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]' width="250" style="width: 250px">
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('E-mail plug-ins'):</td>
-                <td title=$:{json.dumps(_(u'Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
                 <select name="eplug">
                     <option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_(u'E-mail notifications V1')</option>
                     <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
@@ -264,7 +271,7 @@ jQuery(document).ready(function(){
             </tr> 
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
-                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
                     <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
                 </td>
             </tr>
@@ -295,7 +302,7 @@ $if plugin_options['enable_log']:
     <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
     <form name="historyForm" id="historyForm" action="" method="get">
         $_(u'Select filter for graph history'):
-        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_(u'Select a filter for the interval of read data.'), ensure_ascii=False)}>
+        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_('Select a filter for the interval of read data.'), ensure_ascii=False)}>
         <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
         <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
         <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
