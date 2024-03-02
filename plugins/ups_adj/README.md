@@ -26,8 +26,11 @@ Plugin setup
 * Status:  
   Status window from the plugin.  
 
-* Enable logging:  
-  Enable logging and graphing.  
+* Enable local logging:  
+  Enable logging and graphing.
+
+* Check Enable SQL logging:  
+  If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured. The button will delete the upsmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!   
 
 * Select filter for graph history  
   Without limits  

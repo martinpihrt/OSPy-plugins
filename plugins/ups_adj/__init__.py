@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 # this plugins check power line and shutdown ospi system (count down to reconect power line) and shutdown UPS after time.
 
 import json
@@ -25,7 +25,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'UPS Monitor'
-MENU =  _(u'Package: UPS Monitor')
+MENU =  _('Package: UPS Monitor')
 LINK = 'settings_page'
 
 ups_options = PluginOptions(
@@ -34,12 +34,13 @@ ups_options = PluginOptions(
         'time': 60, # in minutes
         'ups': False,
         'sendeml': False,
-        'emlsubject': _(u'Report from OSPy UPS plugin'),
+        'emlsubject': _('Report from OSPy UPS plugin'),
         'enable_log': False,
         'log_records': 0,                             # 0 = unlimited
         'history': 0,                                 # selector for graph history
         'use_footer': True,                           # show data from plugin in footer on home page
         'eplug': 0,                                   # email plugin type (email notifications or email notifications SSL)
+        'en_sql_log': False,                          # logging temperature to sql database
     }
 )
 
@@ -106,7 +107,7 @@ class UPSSender(Thread):
         if ups_options['use_footer']:
             ups_mon = showInFooter() #  instantiate class to enable data in footer
             ups_mon.button = "ups_adj/settings"            # button redirect on footer
-            ups_mon.label =  _(u'UPS')                      # label on footer
+            ups_mon.label =  _('UPS')                      # label on footer
 
         while not self._stop_event.is_set():
             try:
@@ -130,8 +131,8 @@ class UPSSender(Thread):
                         reboot_time = True                                 # start countdown timer
                         if once:
                             # send email with info power line fault
-                            msg = '<b>' + _(u'UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'Detected fault on power line.') + '</p>'
-                            msglog = _(u'UPS plug-in') + ': ' + _(u'Detected fault on power line.')
+                            msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _('Detected fault on power line.') + '</p>'
+                            msglog = _('UPS plug-in') + ': ' + _('Detected fault on power line.')
                             log.info(NAME, msglog)
                             if ups_options['sendeml']:                       # if enabled send email
                                 try:
@@ -144,9 +145,9 @@ class UPSSender(Thread):
                                         try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                 except Exception:
-                                    log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc())
+                                    log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc())
                                 once_three = True
-                            if ups_options['enable_log']:
+                            if ups_options['enable_log'] or ups_options['en_sql_log']:
                                 update_log(0)
                             once = False
 
@@ -154,19 +155,19 @@ class UPSSender(Thread):
                         count_val = int(ups_options['time']) * 60             # value for countdown
                         actual_time = int(time.time())
                         log.clear(NAME)
-                        log.info(NAME, _(u'Time to shutdown') + ': ' + str(count_val - (actual_time - last_time)) + ' ' + _(u'sec'))
+                        log.info(NAME, _('Time to shutdown') + ': ' + str(count_val - (actual_time - last_time)) + ' ' + _('sec'))
                         if ((actual_time - last_time) >= count_val):        # if countdown is 0
                             last_time = actual_time
                             test = get_check_power()
                             if test:                                         # if power line is current not active
                                 log.clear(NAME)
-                                log.info(NAME, _(u'Power line is not restore in time -> sends email and shutdown system.'))
+                                log.info(NAME, _('Power line is not restore in time -> sends email and shutdown system.'))
                                 reboot_time = False
                                 if ups_options['sendeml']:                    # if enabled send email
                                     if once_two:
                                         # send email with info shutdown system
-                                        msg = '<b>' + _(u'UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _(u'Power line is not restore in time -> shutdown system!') + '</p>'
-                                        msglog =  _(u'UPS plug-in') + ': ' + _(u'Power line is not restore in time -> shutdown system!')
+                                        msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _('Power line is not restore in time -> shutdown system!') + '</p>'
+                                        msglog =  _('UPS plug-in') + ': ' + _('Power line is not restore in time -> shutdown system!')
                                         try:
                                             try_mail = None
                                             if ups_options['eplug']==0: # email_notifications
@@ -177,7 +178,7 @@ class UPSSender(Thread):
                                                 try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                         except Exception:
-                                            log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc()) 
+                                            log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc()) 
                                         once_two = False
 
                                 GPIO.output(pin_ups_down, GPIO.HIGH)          # switch on GPIO fo countdown UPS battery power off
@@ -188,8 +189,8 @@ class UPSSender(Thread):
                     if not test:
                         if once_three:
                             if ups_options['sendeml']:                     # if enabled send email
-                                msg = '<b>' + _(u'UPS plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'Power line has restored - OK.') + '</p>'
-                                msglog = _(u'UPS plug-in') + ': ' +  _(u'Power line has restored - OK.')
+                                msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:green;">' + _('Power line has restored - OK.') + '</p>'
+                                msglog = _('UPS plug-in') + ': ' +  _('Power line has restored - OK.')
                                 log.clear(NAME)
                                 log.info(NAME, msglog)
                                 try:
@@ -202,18 +203,18 @@ class UPSSender(Thread):
                                         try_mail(msg, msglog, attachment=None, subject=ups_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                                 except Exception:     
-                                    log.error(NAME, _(u'UPS plug-in') + ':\n' + traceback.format_exc()) 
+                                    log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc()) 
 
                             once = True
                             once_two = True
                             once_three = False
-                            if ups_options['enable_log']:
+                            if ups_options['enable_log'] or ups_options['en_sql_log']:
                                 update_log(1)
 
                 self._sleep(2)
 
             except Exception:
-                log.error(NAME, _(u'UPS plug-in') + ': \n' + traceback.format_exc())
+                log.error(NAME, _('UPS plug-in') + ': \n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -227,7 +228,7 @@ def start():
     if ups_sender is None:
         ups_sender = UPSSender()
         log.clear(NAME)
-        log.info(NAME, _(u'UPS plugin is started.'))
+        log.info(NAME, _('UPS plugin is started.'))
 
 
 def stop():
@@ -240,9 +241,9 @@ def stop():
 
 def get_check_power_str():
     if GPIO.input(pin_power_ok) == 0:
-        pwr = _(u'GPIO Pin = 0 Power line is OK.')
+        pwr = _('GPIO Pin = 0 Power line is OK.')
     else:
-        pwr = _(u'GPIO Pin = 1 Power line ERROR.')
+        pwr = _('GPIO Pin = 1 Power line ERROR.')
     return pwr
 
 
@@ -294,54 +295,69 @@ def write_graph_log(json_data):
 def update_log(status):
     """Update data in json files."""
 
-    ### Data for log ###
-    try:
-        log_data = read_log()
-    except:
-        write_log([])
-        log_data = read_log()
+    if ups_options['enable_log']:
+        ### Data for log ###
+        try:
+            log_data = read_log()
+        except:
+            write_log([])
+            log_data = read_log()
 
-    from datetime import datetime 
+        from datetime import datetime 
 
-    data = {'datetime': datetime_string()}
-    data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
-    data['time'] = str(datetime.now().strftime('%H:%M:%S'))
-    data['state'] = str(status)
+        data = {'datetime': datetime_string()}
+        data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+        data['time'] = str(datetime.now().strftime('%H:%M:%S'))
+        data['state'] = str(status)
       
-    log_data.insert(0, data)
-    if ups_options['log_records'] > 0:
-        log_data = log_data[:ups_options['log_records']]
-    write_log(log_data)
+        log_data.insert(0, data)
+        if ups_options['log_records'] > 0:
+            log_data = log_data[:ups_options['log_records']]
+        write_log(log_data)
 
-    ### Data for graph log ###
-    try:
-        graph_data = read_graph_log()
-    except:
-        create_default_graph()
-        graph_data = read_graph_log()
+        ### Data for graph log ###
+        try:
+            graph_data = read_graph_log()
+        except:
+            create_default_graph()
+            graph_data = read_graph_log()
 
-    timestamp = int(time.time())
+        timestamp = int(time.time())
 
-    try:
-        state = graph_data[0]['balances']
-        stateval = {'total': status}
-        state.update({timestamp: stateval})
+        try:
+            state = graph_data[0]['balances']
+            stateval = {'total': status}
+            state.update({timestamp: stateval})
     
-        write_graph_log(graph_data)
-        log.info(NAME, _(u'Saving to log  files OK'))        
-    except:
-        create_default_graph()
+            write_graph_log(graph_data)
+            log.info(NAME, _('Saving to log  files OK'))
+        except:
+            create_default_graph()
+
+    if ups_options['en_sql_log']:
+        try:
+            from plugins.database_connector import execute_db
+            # first create table upsmonitor if not exists
+            sql = "CREATE TABLE IF NOT EXISTS upsmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, actual VARCHAR(3))"
+            execute_db(sql, test=False, commit=False) # not commit
+            # next insert data to table upsmonitor
+            sql = "INSERT INTO `upsmonitor` (`actual`) VALUES ('%s')" % (status)
+            execute_db(sql, test=False, commit=True)  # yes commit inserted data
+            log.info(NAME, _('Saving to SQL database.'))
+        except:
+            log.error(NAME, _('UPS plugin') + ':\n' + traceback.format_exc())
+            pass
 
 def create_default_graph():
     """Create default graph json file."""
 
-    state = _(u'State')
+    state = _('State')
 
     graph_data = [
        {"station": state, "balances": {}}
     ]
     write_graph_log(graph_data)
-    log.debug(NAME, _(u'Creating default graph log files OK'))
+    log.debug(NAME, _('Creating default graph log files OK'))
 
 ################################################################################
 # Web pages:                                                                   #
@@ -357,6 +373,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
         if ups_sender is not None and delete:
            write_log([])
@@ -370,6 +387,16 @@ class settings_page(ProtectedPage):
 
         if ups_sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
+
+        if ups_sender is not None and delSQL:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `upsmonitor`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the upsmonitor table from the database.'))
+            except:
+                log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc())
+                pass            
 
         return self.plugin_render.ups_adj(ups_options, ups_sender.status, log.events(NAME))
 
@@ -459,8 +486,8 @@ class graph_json(ProtectedPage):
         try:
             json_data = read_graph_log()
         except:
-            create_default_graph()
-            json_data = read_graph_log()
+            json_data = []
+            pass
 
         temp_balances = {}
 
@@ -488,7 +515,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 interval['datetime'],
                 interval['date'],
                 interval['time'],
-                u'{}'.format(interval['state']),
+                '{}'.format(interval['state']),
             ]) + '\n'
 
         content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
@@ -510,4 +537,4 @@ class ups_json(ProtectedPage):
            data['ups'] = _('OK')
         else:
            data['ups'] = _('FAULT')
-        return json.dumps(data)        
+        return json.dumps(data)
