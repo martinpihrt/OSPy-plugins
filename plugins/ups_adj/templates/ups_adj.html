@@ -206,7 +206,7 @@ jQuery(document).ready(function(){
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
-                <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the tankmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the upsmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
                     <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))
                     <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>
                 </td>
