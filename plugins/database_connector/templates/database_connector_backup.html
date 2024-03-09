@@ -1,0 +1,55 @@
+$def with(plugin_options, events)
+
+$var title: $_('Database Connector - backup')
+$var page: plugins
+
+$code:
+    def format_bytes(size):
+        # 2**10 = 1024
+        power = 2**10
+        n = 0
+        _labels = {0 : '', 1: _('kB'), 2: _('mB'), 3: _('Gb'), 4: _('Tb')}
+        while size > power:
+            size /= power
+            n += 1
+        return '{}{}'.format(round(size, 2), _labels[n])
+
+<div id="plugin">
+    <div class="title">$_('Database Connector - backup')</div>
+    <p>$_('This window is used to create a current backup of the database.')</p>
+    <form id="pluginForm" action="$plugins.plugin_url('database_connector.backup_page')" method="get">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Backup'):</td>
+                <td title=$:{json.dumps(_('After pressing the button, the current backup of the database is created.'), ensure_ascii=False)}>
+                <a href="?backup" class="button backup">$_('Backup now')</a>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td><textarea style="font-family: monospace;" rows="2" cols="60" readonly>$'\n'.join(events)</textarea></td>
+            </tr>
+        <tr class="log_rec">
+        <th>$_('Item')</th>
+        <th>$_('File Name')</th>
+        <th>$_('Size')</th>
+        <th> </th>
+        <th> </th>
+        </tr>
+        $ odd = 1
+        $for c in range(0, len(plugin_options['sql_name'])):
+            <tr class="log_rec ${'odd' if odd else 'even'}">
+            <td>${c + 1}</td>
+            <td><center>$'{}'.format(plugin_options['sql_name'][c])</center></td>
+            <td><center>$format_bytes(plugin_options['sql_size'][c])</center></td>        
+            <td><a href="?delete=${c}" class="button cancel danger">$_('Delete')</a></td>
+            <td><a href="?download=${c}" class="button submit">$_('Download')</a></td>            
+            </tr>
+            $ odd = 1 - odd
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('database_connector.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
