@@ -176,7 +176,7 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
 
         except mariadb.Error as e:
             log.error(NAME, datetime_string() + '\n' + _('Error connecting to MariaDB Platform') + ':\n{}'.format(e))
-            return e
+            return None
 
 def get_dump():
     try:
