@@ -152,6 +152,7 @@ function create_graph(result) {
 
 function check_history() {
     let select_type = jQuery("#history").val();
+    let check_err = jQuery("#show_err").val();
     jQuery("#historyForm").submit();
 }
 
@@ -172,7 +173,7 @@ jQuery(document).ready(function(){
     }
 
     jQuery("#history").change(check_history);
-
+    jQuery("#show_err").change(check_history);
  });
 </script>
     
@@ -180,25 +181,24 @@ jQuery(document).ready(function(){
 <div id="plugin">
     <div class="title">$_('Air Temperature and Humidity Monitor')</div>
     <a href=$plugins.plugin_url('air_temp_humi.help_page') class="button upload">$_('Help')</a><br/>
-    $if plugin_options['enable_log']:
+    $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
         <p>
-        <a href=$plugins.plugin_url('air_temp_humi.log_csv') class="button download">$_('Download log')</a>
         <a href="?show" class="button backup">$_('Show logs')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
-        </p></br>
+        </p>
+        </br>
     <form id="pluginForm" action="$plugins.plugin_url('air_temp_humi.settings_page')" method="post">
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable plugin'):</b></td>
-                <td>
-                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}> ($_('Enable the plugin and then enable the dht, ds18b20 and logging'))   
+                <td title=$:{json.dumps(_('Enable the plugin and then enable the dht, ds18b20 and logging'), ensure_ascii=False)}>
+                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>   
                 </td>
             </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable local logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
@@ -211,24 +211,33 @@ jQuery(document).ready(function(){
                     <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))  
                     <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>    
                 </td>
-            </tr>            
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show data from'):</td>
+                <td>
+                <select id="type_log" name="type_log" style="width: 200px" title=$:{json.dumps(_('Choose from where the displayed data in the log and graph will be loaded.'), ensure_ascii=False)}>
+                <option value="0" ${"selected" if plugin_options['type_log']==0 else ""}>$_('Local file')</option>
+                <option value="1" ${"selected" if plugin_options['type_log']==1 else ""}>$_('Database file')</option>
+                </select>
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td title=$:{json.dumps(_('The maximum number of records sets the number of saved records, i.e. after exceeding the set limit, older data is overwritten.'), ensure_ascii=False)}>
-                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
+                <td title=$:{json.dumps(_('The maximum number of records sets the number of saved records, i.e. after exceeding the set limit, older data is overwritten. 0 = unlimited. The maximum number is only for local storage (not for database).'), ensure_ascii=False)}>
+                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Interval for logging'):</td>
-                <td title=$:{json.dumps(_('The logging interval is common for both local storage and sql storage of measured data.'), ensure_ascii=False)}>
-                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> $_('minutes (Minimum is 1)')
+                <td title=$:{json.dumps(_('The logging interval is common for both local storage and sql storage of measured data. minutes (Minimum is 1)'), ensure_ascii=False)}>
+                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'>
                 </td>
             </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable DHT'):</b></td>
                 <td>
@@ -274,7 +283,7 @@ jQuery(document).ready(function(){
                     <input id="reg_mm" name="reg_mm" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm"]' min="0" max="999">:
                     <input id="reg_ss" name="reg_ss" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss"]' min="0" max="59"> (mm:ss)
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Humidity for output OFF'):</td>
                 <td>
@@ -373,20 +382,25 @@ jQuery(document).ready(function(){
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
 
-$if plugin_options['enable_log']:
+$if plugin_options['enable_log'] or plugin_options['en_sql_log']:
+    $if plugin_options['type_log'] == 0:
+        $_('The chart from local file')
+    $if plugin_options['type_log'] == 1:
+        $_('The chart from database')
     <div id="graph-container" class="graph-container">
     <div id="legend-placeholder" style="display:none;"></div>
     <div id="legend-visible" style="float: right; width: auto;"></div>
     <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
     <form name="historyForm" id="historyForm" action="" method="get">
-        $_(u'Select filter for graph history'):
-        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_(u'Select a filter for the interval of read data.'), ensure_ascii=False)}>
-        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
-        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
-        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
-        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_(u'Month filter')</option>
-        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_(u'Year filter')</option>
+        $_('Select filter for graph history'):
+        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_('Select a filter for the interval of read data.'), ensure_ascii=False)}>
+        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_('Without limits')</option>
+        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_('Day filter')</option>
+        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_('Week filter')</option>
+        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_('Month filter')</option>
+        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_('Year filter')</option>
         </select>
+        $_('Show also errors') <input name="show_err" id="show_err" type="checkbox"${" checked" if plugin_options['show_err'] else ""} title=$:{json.dumps(_(u'Show also errors in graph. Example: -127'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
     </form>    
     <div style="clear: both;"></div>
     <button id="clearSelection">$_('Clear selection')</button>

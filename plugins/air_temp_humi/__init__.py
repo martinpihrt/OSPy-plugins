@@ -9,7 +9,6 @@ import time
 import datetime
 import traceback
 import os
-import mimetypes
 from threading import Thread, Event
 
 import web
@@ -41,7 +40,6 @@ tempDS = [-127,-127,-127,-127,-127,-127]
 tempDHT = 0
 humiDHT = 0
 
-
 plugin_options = PluginOptions(
     NAME,
     {'enabled': False,
@@ -69,6 +67,8 @@ plugin_options = PluginOptions(
      'reg_ss': 0,           # sec for maximal runtime
      'use_footer': True,    # show in footer on home page
      'en_sql_log': False,   # logging temperature to sql database
+     'type_log': 0,         # 0 = show log and graph from local log file, 1 = from database
+     'show_err': 0          # 0 = disable show error values in graph ex: -127 C
      }
 )
 
@@ -369,35 +369,152 @@ def read_log():
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             return json.load(logf)
     except IOError:
+        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
         return []
+
+
+def read_sql_log():
+    """Read log data from database file."""
+    data = None
+
+    try:
+        from plugins.database_connector import execute_db
+        sql = "SELECT * FROM airtemp"
+        data = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,ds1,ds2,ds3,ds4,ds5,ds6,dhttemp,dhthumi,dhtstate
+    except:
+        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
 
 
 def read_graph_log():
-    """Read graph data from json file."""
+    """Read graph data from local json file."""
+    data = []
 
     try:
         with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
-            return json.load(logf)
+            data = json.load(logf)
     except IOError:
-        return []
+        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+    
+    return data
+
+
+def read_graph_sql_log():
+    """Read graph data from database file and convert it to json balance file."""
+    data = []
+
+    try:
+        sql_data = read_sql_log()
+
+        name1 = ""
+        name2 = ""
+        name3 = ""
+        name4 = ""
+        name5 = ""
+        name6 = ""
+        name7 = ""
+        name8 = ""
+
+        if plugin_options['ds_used'] > 0:
+            name1 = plugin_options['label_ds0']
+        if plugin_options['ds_used'] > 1:
+            name2 = plugin_options['label_ds1']
+        if plugin_options['ds_used'] > 2:
+            name3 = plugin_options['label_ds2']
+        if plugin_options['ds_used'] > 3:
+            name4 = plugin_options['label_ds3']
+        if plugin_options['ds_used'] > 4:
+            name5 = plugin_options['label_ds4']
+        if plugin_options['ds_used'] > 5:
+            name6 = plugin_options['label_ds5']
+        if plugin_options['enable_dht']:
+            name7 = plugin_options['label'] + ' &deg;C'
+            name8 = plugin_options['label'] + ' %'
+
+        graph_data = [
+            {"station": name1, "balances": {}}, # ds0
+            {"station": name2, "balances": {}}, # ds1
+            {"station": name3, "balances": {}}, # ds2
+            {"station": name4, "balances": {}}, # ds3
+            {"station": name5, "balances": {}}, # ds4
+            {"station": name6, "balances": {}}, # ds5
+            {"station": name7, "balances": {}}, # dht temp
+            {"station": name8, "balances": {}}  # dht humi
+        ]
+
+        if sql_data is not None:
+            for row in sql_data:
+                # row[0] is ID, row[1] is datetime, row[2] is ds1 ...
+                epoch = int(datetime.datetime.timestamp(row[1]))
+            
+                temp0 = graph_data[0]['balances']
+                DS1 = {'total': float(row[2])}
+                temp0.update({epoch: DS1})
+            
+                temp1 = graph_data[1]['balances']
+                DS2 = {'total': float(row[3])}
+                temp1.update({epoch: DS2})
+            
+                temp2 = graph_data[2]['balances']
+                DS3 = {'total': float(row[4])}
+                temp2.update({epoch: DS3})
+            
+                temp3 = graph_data[3]['balances']
+                DS4 = {'total': float(row[5])}
+                temp3.update({epoch: DS4})
+            
+                temp4 = graph_data[4]['balances']
+                DS5 = {'total': float(row[6])}
+                temp4.update({epoch: DS5})
+            
+                temp5 = graph_data[5]['balances']
+                DS6 = {'total': float(row[7])}
+                temp5.update({epoch: DS6})
+            
+                if plugin_options['enable_dht']:
+                    temp6 = graph_data[6]['balances']
+                    DH1 = {'total': float(row[8])}
+                    temp6.update({epoch: DH1})
+
+                    temp7 = graph_data[7]['balances']
+                    DH2 = {'total': float(row[9])}
+                    temp7.update({epoch: DH2})
+
+        data = graph_data
+
+    except:
+        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
 
 
 def write_log(json_data):
     """Write data to log json file."""
 
-    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
 
 
 def write_graph_log(json_data):
     """Write data to graph json file."""
 
-    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
 
 
 def update_log(status):
-    """Update data in json files.""" 
+    """Update data in json files."""
 
     if plugin_options['enable_log']:
         ### Data for log ###
@@ -407,7 +524,7 @@ def update_log(status):
             write_log([])
             log_data = read_log()
 
-        from datetime import datetime 
+        from datetime import datetime
 
         data = {'datetime': datetime_string()}
         data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
@@ -464,34 +581,28 @@ def update_log(status):
         try:
             if plugin_options['ds_used'] > 0:      # DS1
                 temp0 = graph_data[0]['balances']
-                if status['DS0'] != -127:
-                    DS1 = {'total': status['DS0']}
-                    temp0.update({timestamp: DS1})
+                DS1 = {'total': status['DS0']}
+                temp0.update({timestamp: DS1})
             if plugin_options['ds_used'] > 1:      # DS2
                 temp1 = graph_data[1]['balances']
-                if status['DS1'] != -127:
-                    DS2 = {'total': status['DS1']}
-                    temp1.update({timestamp: DS2})
+                DS2 = {'total': status['DS1']}
+                temp1.update({timestamp: DS2})
             if plugin_options['ds_used'] > 2:      # DS3
                 temp2 = graph_data[2]['balances']
-                if status['DS2'] != -127:
-                    DS3 = {'total': status['DS2']}
-                    temp2.update({timestamp: DS3})
+                DS3 = {'total': status['DS2']}
+                temp2.update({timestamp: DS3})
             if plugin_options['ds_used'] > 3:      # DS4
                 temp3 = graph_data[3]['balances']
-                if status['DS3'] != -127:
-                    DS4 = {'total': status['DS3']}
-                    temp3.update({timestamp: DS4})
+                DS4 = {'total': status['DS3']}
+                temp3.update({timestamp: DS4})
             if plugin_options['ds_used'] > 4:      # DS5
                 temp4 = graph_data[4]['balances']
-                if status['DS4'] != -127:
-                    DS5 = {'total': status['DS4']}
-                    temp4.update({timestamp: DS5})
+                DS5 = {'total': status['DS4']}
+                temp4.update({timestamp: DS5})
             if plugin_options['ds_used'] > 5:      # DS6
                 temp5 = graph_data[5]['balances']
-                if status['DS5'] != -127:
-                    DS6 = {'total': status['DS5']}
-                    temp5.update({timestamp: DS6})
+                DS6 = {'total': status['DS5']}
+                temp5.update({timestamp: DS6})
 
             if plugin_options['enable_dht']:
                 temp6 = graph_data[6]['balances']  # DHT temp
@@ -575,20 +686,16 @@ class settings_page(ProtectedPage):
     def GET(self):
         global sender
         qdict = web.input()
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
-        if sender is not None and delete:
-           write_log([])
-           create_default_graph()
-           log.info(NAME, _('Deleted all log files OK'))
-
-           raise web.seeother(plugin_url(settings_page), True)
-
         if sender is not None and 'history' in qdict:
-           history = qdict['history']
-           plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
+            history = qdict['history']
+            plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
+            if 'show_err' in qdict:
+                plugin_options.__setitem__('show_err', True)
+            else:
+                plugin_options.__setitem__('show_err', False)
 
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
@@ -623,7 +730,27 @@ class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.air_temp_humi_log(read_log(), plugin_options)
+        global sender
+        qdict = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        
+        if sender is not None and delete and plugin_options['enable_log']:
+           write_log([])
+           create_default_graph()
+           log.info(NAME, _('Deleted all log files OK'))
+
+        if sender is not None and delSQL and plugin_options['en_sql_log']:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `airtemp`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the airtemp table from the database.'))
+            except:
+                log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+                pass          
+
+        return self.plugin_render.air_temp_humi_log(read_log(), read_sql_log(), plugin_options)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -662,12 +789,33 @@ class data_json(ProtectedPage):
 
 
 class log_json(ProtectedPage):
-    """Returns data in JSON format."""
+    """Returns data in JSON format from local file log."""
 
     def GET(self):
+        data = []
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_log())
+        try:
+            data = json.dumps(read_log())
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+        return data
+
+
+class log_sql_json(ProtectedPage):
+    """Returns data in JSON format from database file log."""
+
+    def GET(self):
+        data = []
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            data = json.dumps(read_sql_log())
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+        return data
 
 
 class graph_json(ProtectedPage):
@@ -675,40 +823,58 @@ class graph_json(ProtectedPage):
 
     def GET(self):
         data = []
-
-        epoch = datetime.date(1970, 1, 1)                                      # first date
-        current_time  = datetime.date.today()                                  # actual date
-
-        if plugin_options['history'] == 0:                                     # without filtering
-            web.header('Access-Control-Allow-Origin', '*')
-            web.header('Content-Type', 'application/json')
-            return json.dumps(read_graph_log())
-
-        if plugin_options['history'] == 1:
-            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
-        if plugin_options['history'] == 2:
-            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
-        if plugin_options['history'] == 3:
-            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
-        if plugin_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
-
-        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-
         try:
-            json_data = read_graph_log()
-        except:
-            json_data = []
-            pass
+            epoch = datetime.date(1970, 1, 1)                                      # first date
+            current_time  = datetime.date.today()                                  # actual date
 
-        if len(json_data) > 0:
-            for i in range(0, 8):                                                  # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
-                temp_balances = {}
-                for key in json_data[i]['balances']:
-                    find_key =  int(key.encode('utf8'))                              # key is in unicode ex: u'1601347000' -> find_key is int number
-                    if find_key >= log_start:                                        # timestamp interval 
-                        temp_balances[key] = json_data[i]['balances'][key]
-                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+            if plugin_options['history'] == 0:                                     # without filtering
+                web.header('Access-Control-Allow-Origin', '*')
+                web.header('Content-Type', 'application/json')
+                if plugin_options['type_log'] == 0:
+                    return json.dumps(read_graph_log())
+                if plugin_options['type_log'] == 1:
+                    return json.dumps(read_graph_sql_log())
+
+            if plugin_options['history'] == 1:
+                check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
+            if plugin_options['history'] == 2:
+                check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
+            if plugin_options['history'] == 3:
+                check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
+            if plugin_options['history'] == 4:
+                check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
+
+            log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
+
+            try:
+                if plugin_options['type_log'] == 0:
+                    json_data = read_graph_log()
+                if plugin_options['type_log'] == 1:
+                    json_data = read_graph_sql_log()
+            except:
+                json_data = []
+                pass
+
+            if len(json_data) > 0:
+                for i in range(0, 8):                                              # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
+                    temp_balances = {}
+                    for key in json_data[i]['balances']:
+                        try:
+                            find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
+                        except:
+                            find_key = key   
+                        if find_key >= log_start:                                  # timestamp interval
+                            find_data = json_data[i]['balances'][key] 
+                            if plugin_options['show_err']:                         # if is checked show error values in graph
+                                temp_balances[key] = json_data[i]['balances'][key]
+                            else:
+                                if float(find_data['total']) != -127.0:            # not checked, add values if not -127
+                                    temp_balances[key] = json_data[i]['balances'][key]    
+                    data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
@@ -717,32 +883,80 @@ class graph_json(ProtectedPage):
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
     def GET(self):
-        log_file = read_log()
-        name1 = plugin_options['label_ds0']
-        name2 = plugin_options['label_ds1']
-        name3 = plugin_options['label_ds2']
-        name4 = plugin_options['label_ds3']
-        name5 = plugin_options['label_ds4']
-        name6 = plugin_options['label_ds5']
-        data = "Date/Time; Date; Time; DHT Temperature C; DHT Humidity %; DHT Output; " + name1 + "; " + name2 + "; " + name3 + "; " + name4 + "; " + name5 + "; " + name6 + "\n"
-        for interval in log_file:
-            data += '; '.join([
-                interval['datetime'],
-                interval['date'],
-                interval['time'],
-                u'{}'.format(interval['temp']),
-                u'{}'.format(interval['humi']),
-                u'{}'.format(interval['outp']),
-                u'{}'.format(interval['ds0']),
-                u'{}'.format(interval['ds1']),
-                u'{}'.format(interval['ds2']),
-                u'{}'.format(interval['ds3']),
-                u'{}'.format(interval['ds4']),
-                u'{}'.format(interval['ds5']),
-            ]) + '\n'
+        data = []
+        try:
+            log_file = read_log()
+            name1 = plugin_options['label_ds0']
+            name2 = plugin_options['label_ds1']
+            name3 = plugin_options['label_ds2']
+            name4 = plugin_options['label_ds3']
+            name5 = plugin_options['label_ds4']
+            name6 = plugin_options['label_ds5']
+            data = "Date/Time; Date; Time; DHT Temperature C; DHT Humidity %; DHT Output; " + name1 + "; " + name2 + "; " + name3 + "; " + name4 + "; " + name5 + "; " + name6 + "\n"
+            for interval in log_file:
+                data += '; '.join([
+                    interval['datetime'],
+                    interval['date'],
+                    interval['time'],
+                    '{}'.format(interval['temp']),
+                    '{}'.format(interval['humi']),
+                    '{}'.format(interval['outp']),
+                    '{}'.format(interval['ds0']),
+                    '{}'.format(interval['ds1']),
+                    '{}'.format(interval['ds2']),
+                    '{}'.format(interval['ds3']),
+                    '{}'.format(interval['ds4']),
+                    '{}'.format(interval['ds5']),
+                ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'log_{}_.csv'.format(filestamp)
         web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="log.csv"')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types 
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
+        return data
+
+class log_sql_csv(ProtectedPage):  # save log file from database as csv file type from web
+    """Simple Log API"""
+    def GET(self):
+        data = []
+        try:
+            from plugins.database_connector import execute_db
+            sql = "SELECT * FROM airtemp"
+            log_file = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,ds1,ds2,ds3,ds4,ds5,ds6,dhttemp,dhthumi,dhtstate
+            name1 = plugin_options['label_ds0']
+            name2 = plugin_options['label_ds1']
+            name3 = plugin_options['label_ds2']
+            name4 = plugin_options['label_ds3']
+            name5 = plugin_options['label_ds4']
+            name6 = plugin_options['label_ds5']
+            data = "Id; DateTime; DHT Temperature C; DHT Humidity %; DHT Output; " + name1 + "; " + name2 + "; " + name3 + "; " + name4 + "; " + name5 + "; " + name6 + "\n"
+            for interval in log_file:
+                data += '; '.join([
+                    '{}'.format(str(interval[0])),
+                    '{}'.format(str(interval[1])),
+                    '{}'.format(str(interval[8])),
+                    '{}'.format(str(interval[9])),
+                    '{}'.format(str(interval[10])),
+                    '{}'.format(str(interval[2])),
+                    '{}'.format(str(interval[3])),
+                    '{}'.format(str(interval[4])),
+                    '{}'.format(str(interval[5])),
+                    '{}'.format(str(interval[6])),
+                    '{}'.format(str(interval[7])),
+                ]) + '\n'
+
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+        
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'log_{}_.csv'.format(filestamp)
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
         return data
