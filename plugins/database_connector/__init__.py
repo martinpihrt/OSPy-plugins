@@ -127,7 +127,7 @@ def run_command(cmd):
         log.error(NAME, _('Database Connector plug-in') + ':\n' + traceback.format_exc())
 
 
-def execute_db(sql = "", commit = False, test = False):
+def execute_db(sql = "", commit = False, test = False, fetch = False):
     global maria_installed_ok
     if maria_installed_ok:
         import mariadb
@@ -167,6 +167,9 @@ def execute_db(sql = "", commit = False, test = False):
                     log.info(NAME, _('Database type') + ': {}'.format(dbtype) + '\n' + _('Found databases') + ': \n{}'.format(dbname))
                 else:
                     log.info(NAME, _('Not found') + '.')
+
+            if fetch and not test:
+                msg = cur.fetchall()        
             
             cur.close()
             return -1 if msg is None else msg
