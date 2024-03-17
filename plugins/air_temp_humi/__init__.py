@@ -62,13 +62,14 @@ plugin_options = PluginOptions(
      'label_ds4': 'label',  # label for DS5
      'label_ds5': 'label',  # label for DS6
      'ds_used': 0,          # count DS18b20, default 0 max 6x
-     'history': 0,          # selector for graph history
      'reg_mm': 60,          # min for maximal runtime
      'reg_ss': 0,           # sec for maximal runtime
      'use_footer': True,    # show in footer on home page
      'en_sql_log': False,   # logging temperature to sql database
      'type_log': 0,         # 0 = show log and graph from local log file, 1 = from database
-     'show_err': 0          # 0 = disable show error values in graph ex: -127 C
+     'show_err': 0,         # 0 = disable show error values in graph ex: -127 C
+     'dt_from' : '',        # for graph history (from date time ex: 2024-02-01T6:00)
+     'dt_to' : '',          # for graph history (to date time ex: 2024-03-17T12:00)
      }
 )
 
@@ -161,17 +162,17 @@ class Sender(Thread):
                         log.clear(NAME)
                         log.info(NAME, datetime_string())
                         if plugin_options['dht_type']==0: # DHT11
-                          log.info(NAME, _('DHT11 data is not valid'))
+                          log.debug(NAME, _('DHT11 data is not valid'))
                           tempText += ' ' + _('DHT11 data is not valid')
                         if plugin_options['dht_type']==1: # DHT22
-                          log.info(NAME, _('DHT22 data is not valid'))
+                          log.debug(NAME, _('DHT22 data is not valid'))
                           tempText += ' ' + _('DHT22 data is not valid')
 
                       if Humidity and Temperature != 0:
                         self.status['temp'] = Temperature
                         self.status['humi'] = Humidity
-                        log.info(NAME, _('Temperature') + ' ' + _('DHT') + ': ' + '%.1f \u2103' % Temperature)
-                        log.info(NAME, _('Humidity') + ' ' + _('DHT') + ': ' + '%.1f' % Humidity + ' %RH')
+                        log.debug(NAME, _('Temperature') + ' ' + _('DHT') + ': ' + '%.1f \u2103' % Temperature)
+                        log.debug(NAME, _('Humidity') + ' ' + _('DHT') + ': ' + '%.1f' % Humidity + ' %RH')
                         tempText += ' ' +  _('DHT') + ': ' + '%.1f \u2103' % Temperature + ' ' + '%.1f' % Humidity + ' %RH' + ' '
 
                         if plugin_options['enabled_reg']:
@@ -226,7 +227,7 @@ class Sender(Thread):
                        tempText +=  _('DS') + ': '
                        for i in range(0, plugin_options['ds_used']):
                           self.status['DS%d' % i] = tempDS[i]
-                          log.info(NAME, _('Temperature') + ' ' + _('DS') + str(i+1) + ' (' + '%s' % plugin_options['label_ds%d' % i] + '): ' + '%.1f \u2103' % self.status['DS%d' % i])   
+                          log.debug(NAME, _('Temperature') + ' ' + _('DS') + str(i+1) + ' (' + '%s' % plugin_options['label_ds%d' % i] + '): ' + '%.1f \u2103' % self.status['DS%d' % i])   
                           tempText += ' %s' % plugin_options['label_ds%d' % i] + ' %.1f \u2103' % self.status['DS%d' % i]
 
                     if plugin_options['enabled_reg']:
@@ -364,13 +365,15 @@ def DHT_read_humi_value():
 
 def read_log():
     """Read log data from json file."""
+    data = []
 
     try:
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
-            return json.load(logf)
-    except IOError:
-        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
-        return []
+            data = json.load(logf)
+    except:
+        pass
+    
+    return []
 
 
 def read_sql_log():
@@ -379,7 +382,7 @@ def read_sql_log():
 
     try:
         from plugins.database_connector import execute_db
-        sql = "SELECT * FROM airtemp"
+        sql = "SELECT * FROM airtemp ORDER BY id DESC"
         data = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,ds1,ds2,ds3,ds4,ds5,ds6,dhttemp,dhthumi,dhtstate
     except:
         log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
@@ -395,8 +398,8 @@ def read_graph_log():
     try:
         with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
             data = json.load(logf)
-    except IOError:
-        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+    except:
+        pass
     
     return data
 
@@ -688,14 +691,23 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
-        if sender is not None and 'history' in qdict:
-            history = qdict['history']
-            plugin_options.__setitem__('history', int(history)) #__setitem__(self, key, value)
+        if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+            dt_from = qdict['dt_from']
+            dt_to = qdict['dt_to']
+            plugin_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
+            plugin_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
             if 'show_err' in qdict:
                 plugin_options.__setitem__('show_err', True)
             else:
                 plugin_options.__setitem__('show_err', False)
+
+        if sender is not None and delfilter:
+            from datetime import datetime, timedelta
+            dt_now = (datetime.today() + timedelta(days=1)).date()
+            plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
+            plugin_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
         if sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
@@ -824,28 +836,16 @@ class graph_json(ProtectedPage):
     def GET(self):
         data = []
         try:
-            epoch = datetime.date(1970, 1, 1)                                      # first date
-            current_time  = datetime.date.today()                                  # actual date
+            from datetime import datetime
 
-            if plugin_options['history'] == 0:                                     # without filtering
-                web.header('Access-Control-Allow-Origin', '*')
-                web.header('Content-Type', 'application/json')
-                if plugin_options['type_log'] == 0:
-                    return json.dumps(read_graph_log())
-                if plugin_options['type_log'] == 1:
-                    return json.dumps(read_graph_sql_log())
+            dt_from = datetime.strptime(plugin_options['dt_from'], '%Y-%m-%dT%H:%M') # from
+            dt_to   = datetime.strptime(plugin_options['dt_to'], '%Y-%m-%dT%H:%M')   # to
 
-            if plugin_options['history'] == 1:
-                check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
-            if plugin_options['history'] == 2:
-                check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
-            if plugin_options['history'] == 3:
-                check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
-            if plugin_options['history'] == 4:
-                check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
+            epoch_time = datetime(1970, 1, 1)
 
-            log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-
+            log_start = int((dt_from - epoch_time).total_seconds())
+            log_end = int((dt_to - epoch_time).total_seconds())
+ 
             try:
                 if plugin_options['type_log'] == 0:
                     json_data = read_graph_log()
@@ -863,7 +863,7 @@ class graph_json(ProtectedPage):
                             find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
                         except:
                             find_key = key   
-                        if find_key >= log_start:                                  # timestamp interval
+                        if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
                             find_data = json_data[i]['balances'][key] 
                             if plugin_options['show_err']:                         # if is checked show error values in graph
                                 temp_balances[key] = json_data[i]['balances'][key]

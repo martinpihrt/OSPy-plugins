@@ -148,12 +148,31 @@ function create_graph(result) {
         jQuery.getJSON("/plugins/air_temp_humi/graph_json", create_graph)
     });
 
+    jQuery('#filterSelection').on('click', function(){
+        check_history();
+    });   
+
 }
 
 function check_history() {
-    let select_type = jQuery("#history").val();
+    let dt_from = jQuery("#dt_from").val();
+    let dt_to = jQuery("#dt_to").val();
     let check_err = jQuery("#show_err").val();
     jQuery("#historyForm").submit();
+}
+
+function updateTemperatures(){
+    jQuery.getJSON("/plugins/air_temp_humi/data_json", function(_data) {
+        jQuery("#temp1").text(_data.temp_ds0);
+        jQuery("#temp2").text(_data.temp_ds1);
+        jQuery("#temp3").text(_data.temp_ds2);
+        jQuery("#temp4").text(_data.temp_ds3);
+        jQuery("#temp5").text(_data.temp_ds4);
+        jQuery("#temp6").text(_data.temp_ds5);
+        jQuery("#dht1").text(_data.temp_dht);
+        jQuery("#dht2").text(_data.humi_dht);
+    })
+    setTimeout(updateTemperatures, 3000); // 3 seconds
 }
 
 // Initialize behaviors
@@ -172,8 +191,8 @@ jQuery(document).ready(function(){
         setTimeout(function() {jQuery.getJSON("/plugins/air_temp_humi/graph_json", create_graph)}, 500); 
     }
 
-    jQuery("#history").change(check_history);
     jQuery("#show_err").change(check_history);
+    updateTemperatures();
  });
 </script>
     
@@ -256,7 +275,7 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'>$_('Label for sensor'):</td>
                 <td>
-                <input name='label' type='text' value='$plugin_options['label']'> 
+                <input name='label' type='text' value='$plugin_options['label']'> <b><span id="dht1">-</span>&deg;C <span id="dht2">-</span>%</b> 
                 </td>
             </tr>
             <tr>
@@ -319,42 +338,42 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'>$_('Label for sensor') DS1:</td>
                 <td>
-                <input name='label_ds0' type='text' value='$plugin_options['label_ds0']'> 
+                <input name='label_ds0' type='text' value='$plugin_options['label_ds0']'> <b><span id="temp1">-</span>&deg;C</b>
                 </td>
             </tr>
             $if plugin_options["ds_used"]>1:
               <tr>
                  <td style='text-transform: none;'>$_('Label for sensor') DS2:</td>
                  <td>
-                 <input name='label_ds1' type='text' value='$plugin_options['label_ds1']'> 
+                 <input name='label_ds1' type='text' value='$plugin_options['label_ds1']'> <b><span id="temp2">-</span>&deg;C</b>
                  </td>
               </tr>
             $if plugin_options["ds_used"]>2:
               <tr>
                  <td style='text-transform: none;'>$_('Label for sensor') DS3:</td>
                  <td>
-                 <input name='label_ds2' type='text' value='$plugin_options['label_ds2']'> 
+                 <input name='label_ds2' type='text' value='$plugin_options['label_ds2']'> <b><span id="temp3">-</span>&deg;C</b>
                  </td>
               </tr>
             $if plugin_options["ds_used"]>3:
               <tr>
                  <td style='text-transform: none;'>$_('Label for sensor') DS4:</td>
                  <td>
-                 <input name='label_ds3' type='text' value='$plugin_options['label_ds3']'> 
+                 <input name='label_ds3' type='text' value='$plugin_options['label_ds3']'> <b><span id="temp4">-</span>&deg;C</b>
                  </td>
               </tr>
             $if plugin_options["ds_used"]>4:
               <tr>
                  <td style='text-transform: none;'>$_('Label for sensor') DS5:</td>
                  <td>
-                 <input name='label_ds4' type='text' value='$plugin_options['label_ds4']'> 
+                 <input name='label_ds4' type='text' value='$plugin_options['label_ds4']'> <b><span id="temp5">-</span>&deg;C</b>
                  </td>
               </tr>
             $if plugin_options["ds_used"]>5:
               <tr>
                  <td style='text-transform: none;'>$_('Label for sensor') DS6:</td>
                  <td>
-                 <input name='label_ds5' type='text' value='$plugin_options['label_ds5']'> 
+                 <input name='label_ds5' type='text' value='$plugin_options['label_ds5']'> <b><span id="temp6">-</span>&deg;C</b>
                  </td>
               </tr>
             <tr>
@@ -364,14 +383,14 @@ jQuery(document).ready(function(){
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
-                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
                     <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
                 </td>
             </tr>                          
             <tr>
                 <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="11" cols="45" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="1" cols="60" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
@@ -392,17 +411,13 @@ $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
     <div id="legend-visible" style="float: right; width: auto;"></div>
     <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
     <form name="historyForm" id="historyForm" action="" method="get">
-        $_('Select filter for graph history'):
-        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_('Select a filter for the interval of read data.'), ensure_ascii=False)}>
-        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_('Without limits')</option>
-        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_('Day filter')</option>
-        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_('Week filter')</option>
-        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_('Month filter')</option>
-        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_('Year filter')</option>
-        </select>
-        $_('Show also errors') <input name="show_err" id="show_err" type="checkbox"${" checked" if plugin_options['show_err'] else ""} title=$:{json.dumps(_(u'Show also errors in graph. Example: -127'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+        $_('From') <input name='dt_from' id="dt_from" input type="datetime-local" value='$plugin_options['dt_from']' />
+        $_('To') <input name='dt_to' id="dt_to" input type="datetime-local" value='$plugin_options['dt_to']' />
+        <button id="filterSelection">$_('Filtering')</button>
+        <button id="clearSelection"  class="button backup">$_('Reload chart')</button>
+        <a href="?delfilter" class="button cancel danger">$_('Delete range')</a></br>
+        $_('Show also errors') <input name="show_err" id="show_err" type="checkbox"${" checked" if plugin_options['show_err'] else ""} title=$:{json.dumps(_('Show also errors in graph. Example: -127'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
     </form>    
     <div style="clear: both;"></div>
-    <button id="clearSelection">$_('Clear selection')</button>
     </div>
 
