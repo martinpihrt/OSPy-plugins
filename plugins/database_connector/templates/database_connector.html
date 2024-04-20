@@ -85,6 +85,12 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Install Mariadb'):</td>
+                <td title=$:{json.dumps(_('It was pressed button for install, I will try to install Mariadb in the system. If everything goes successfully, restart this extension!'), ensure_ascii=False)}>
+                <a href="?install" class="button danger">$_('Install')</a>
+                </td>
+            </tr>            
+            <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td><textarea style="font-family: monospace;" rows="15" cols="50" readonly>$'\n'.join(events)</textarea></td>
             </tr>

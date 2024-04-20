@@ -74,20 +74,11 @@ class Sender(Thread):
                 if plugin_options['use']:
                     try:
                         import mariadb
-                        log.info(NAME, _('Mariadb installed - OK.'))
+                        log.info(NAME, _('Version: ' + '{}\n'.format(test_maria())))
                         maria_installed_ok = True
                     except ImportError:
-                        log.info(NAME, _('Mariadb is not installed.'))
-                        log.info(NAME, _('Please wait installing mariadb...'))
-                        cmd = "sudo apt-get install -y libmariadb-dev"
-                        run_command(cmd)
-                        cmd = "sudo apt-get install libmariadb3"
-                        run_command(cmd)
-                        log.info(NAME, _('Mariadb is now installed.'))
-                        log.info(NAME, _('Please wait installing mariadb-client-10.0...'))
-                        cmd = "sudo apt-get install mariadb-client-10.0"
-                        run_command(cmd)
-
+                        log.info(NAME, _('Mariadb is not installed or you have a newer version.'))
+                        log.info(NAME, _('If you do not have Maria installed, try installing it using the button below...'))
 
             except Exception:
                 log.clear(NAME)
@@ -113,7 +104,23 @@ def stop():
         sender = None
 
 
-def run_command(cmd):
+def test_maria():
+    cmd = "mysql -V | grep -oP 'Distrib \K[^,]+'"
+    return run_command(cmd, return_text = True)
+    
+
+def install_maria():
+    cmd = "sudo apt-get install -y libmariadb-dev"
+    run_command(cmd)
+    cmd = "sudo apt-get install libmariadb3"
+    run_command(cmd)
+    log.info(NAME, _('Mariadb is now installed.'))
+    log.info(NAME, _('Please wait installing mariadb-client-10.0...'))
+    cmd = "sudo apt-get install mariadb-client-10.0"
+    run_command(cmd)
+
+
+def run_command(cmd, return_text = None):
     try:
         proc = subprocess.Popen(
         cmd,
@@ -121,7 +128,10 @@ def run_command(cmd):
         stdout=subprocess.PIPE,
         shell=True)
         output = proc.communicate()[0].decode('utf-8')
-        log.info(NAME, output)
+        if return_text is not None:
+            return output
+        else:
+            log.info(NAME, output)    
 
     except Exception:
         log.error(NAME, _('Database Connector plug-in') + ':\n' + traceback.format_exc())
@@ -227,24 +237,7 @@ def read_sql_folder():
 
     except Exception:
         log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
-
-
-def read_file(filename):
-    """Read data from file."""
-
-    try:
-        with open(os.path.join(plugin_data_dir(), filename)) as logf:
-            return logf.read()
-    except IOError:
-        return []
-
-
-def download_sql_file(path, name):
-    content = mimetypes.guess_type(os.path.join(plugin_data_dir(), name)[0])
-    web.header('Access-Control-Allow-Origin', '*')
-    web.header('Content-type', content) 
-    web.header('Content-Disposition', 'attachment; filename="{}"'.format(name))
-    return read_file(path)               
+              
 
 ################################################################################
 # Web pages:                                                                   #
@@ -257,10 +250,14 @@ class settings_page(ProtectedPage):
         global sender
         qdict  = web.input()
         test = get_input(qdict, 'test', False, lambda x: True)
+        install = get_input(qdict, 'install', False, lambda x: True)
 
         if sender is not None and test:
             sql = "SHOW DATABASES"
             execute_db(sql, test=True, commit=False)
+
+        if sender is not None and install:
+            install_maria()
 
         return self.plugin_render.database_connector(plugin_options, log.events(NAME))
     
@@ -300,9 +297,17 @@ class backup_page(ProtectedPage):
                 down_name = plugin_options['sql_name'][int(download)]
                 down_path = os.path.join(plugin_data_dir(), down_name)
                 if os.path.isfile(down_path):
-                    download_sql_file(down_path, down_name)
+                    _file = os.path.join(plugin_data_dir(), down_name)
+                    _content = mimetypes.guess_type(down_path)[0]                                     
+                    log.debug(NAME, _('Download file: {} type: {}.'.format(_file, _content)))
+                    web.header('Access-Control-Allow-Origin', '*')                                    
+                    web.header('Content-type', _content)
+                    web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))
+                    with open(down_path, 'rb') as f:
+                        return f.read()
         
         read_sql_folder()
+
         return self.plugin_render.database_connector_backup(plugin_options, log.events(NAME))
 
 
