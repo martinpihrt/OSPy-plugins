@@ -105,13 +105,13 @@ def get_backup():
                 src_plugin_data_dir = os.path.join(os.path.abspath(plugin_dir(module)), 'data')        # ex: /home/pi/OSPy/plugins/wind_monitor/data
                 dst_plugin_dir = os.path.join(temp_folder, name)
                 if os.path.isdir(src_plugin_data_dir):                                                 # if data dir exist
-                    log.debug(NAME, _('Copying folder' + ': {}.'.format(src_plugin_data_dir)))
+                    log.debug(NAME, _('Copying folder') + ': {}.'.format(src_plugin_data_dir))
                     shutil.copytree(src_plugin_data_dir, dst_plugin_dir, copy_function = shutil.copy)  # copy from all plugins/plugins_name/data to ospy_backup/temp 
 
         log.debug(NAME, _('Creating zip file in ospy_backup/backup.'))
         shutil.make_archive(backup_folder + '/' + bkp_name, format='zip', root_dir=temp_folder)        # create zip file
 
-        log.debug(NAME, _('Moving file: {}.zip to ospy_backup/data.'.format(bkp_name)))
+        log.debug(NAME, _('Moving file: {}.zip to ospy_backup/data.').format(bkp_name))
         shutil.move(backup_folder + '/' + bkp_name + '.zip', data_folder)                              # move zip from to
 
         return True
@@ -183,7 +183,7 @@ class settings_page(ProtectedPage):
                     if os.path.isfile(down_path):
                         _file = os.path.join(plugin_data_dir(), down_name)
                         _content = mimetypes.guess_type(down_path)[0]                                     
-                        log.debug(NAME, _('Download file: {} type: {}.'.format(_file, _content)))
+                        log.debug(NAME, _('Download file: {} type: {}.').format(_file, _content))
                         web.header('Access-Control-Allow-Origin', '*')                                    
                         web.header('Content-type', _content)
                         web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))

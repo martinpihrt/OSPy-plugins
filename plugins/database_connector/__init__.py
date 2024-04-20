@@ -74,7 +74,7 @@ class Sender(Thread):
                 if plugin_options['use']:
                     try:
                         import mariadb
-                        log.info(NAME, _('Version: ' + '{}\n'.format(test_maria())))
+                        log.info(NAME, _('Version: ') + '{}\n'.format(test_maria()))
                         maria_installed_ok = True
                     except ImportError:
                         log.info(NAME, _('Mariadb is not installed or you have a newer version.'))
@@ -299,7 +299,7 @@ class backup_page(ProtectedPage):
                 if os.path.isfile(down_path):
                     _file = os.path.join(plugin_data_dir(), down_name)
                     _content = mimetypes.guess_type(down_path)[0]                                     
-                    log.debug(NAME, _('Download file: {} type: {}.'.format(_file, _content)))
+                    log.debug(NAME, _('Download file: {} type: {}.').format(_file, _content))
                     web.header('Access-Control-Allow-Origin', '*')                                    
                     web.header('Content-type', _content)
                     web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))
