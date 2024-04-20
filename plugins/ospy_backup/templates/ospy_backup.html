@@ -1,0 +1,63 @@
+$def with(plugin_options, events)
+
+$var title: $_('OSPy Backup')
+$var page: plugins
+
+$code:
+    def format_bytes(size):
+        # 2**10 = 1024
+        power = 2**10
+        n = 0
+        _labels = {0 : '', 1: _('kB'), 2: _('mB'), 3: _('Gb'), 4: _('Tb')}
+        while size > power:
+            size /= power
+            n += 1
+        return '{}{}'.format(round(size, 2), _labels[n])
+
+<script>
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('OSPy Backup Plugin')</div>
+    <p><a href=$plugins.plugin_url('ospy_backup.help_page') class="button upload">$_('Help')</a></p><br/>
+    <table class="optionList">
+        <tr>
+            <td style='text-transform: none;'>$_('Backup'):</td>
+            <td title=$:{json.dumps(_('After pressing the button, the current backup is created.'), ensure_ascii=False)}>
+            <a href="?bkp" class="button backup">$_('Backup now')</a>
+            </td>
+        </tr>
+        <tr>
+            <td style='text-transform: none;'>$_('Status'):</td>
+            <td><textarea style="font-family: monospace;" rows="20" cols="60" readonly>$'\n'.join(events)</textarea></td>
+        </tr>
+        <tr class="log_rec">
+        <th>$_('Item')</th>
+        <th>$_('File Name')</th>
+        <th>$_('Size')</th>
+        <th> </th>
+        <th> </th>
+        </tr>
+        $ odd = 1
+        $for c in range(0, len(plugin_options['bkp_name'])):
+            <tr class="log_rec ${'odd' if odd else 'even'}">
+            <td>${c + 1}</td>
+            <td><center>$'{}'.format(plugin_options['bkp_name'][c])</center></td>
+            <td><center>$format_bytes(plugin_options['bkp_size'][c])</center></td>        
+            <td><a href="?delete=${c}" class="button cancel danger">$_('Delete')</a></td>
+            <td><a href="?download=${c}" class="button submit">$_('Download')</a></td>            
+            </tr>
+            $ odd = 1 - odd            
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>

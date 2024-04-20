@@ -69,3 +69,4 @@ Available plugins:
 * Label Maker
 * IP Scanner
 * Database Connector
+* OSPy Backup

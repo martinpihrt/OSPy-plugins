@@ -1,0 +1,17 @@
+$def with()
+
+$var title: $_('OSPy Backup Plugin - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('OSPy Backup Plugin - help')</div>
+    <p>$_('This extension creates a backup of data directories from all available installed extensions in OSPy. Example: "Air Temperature and Humidity Monitor/data". Local records from plugins (for example json files with temperature, etc...) are most often found in the plugins data directories.')</p>
+    <p>$_('Backups can be downloaded to our computer (phone) and possibly uploaded back to data directories in specific plugins after unpacking. Backups are in zip format (example: 20240417-201606-PluginsBackup.zip)')</p>
+    <p>$_('If possible, store all records from the plugins on to your own database storage (MySQL) instead of in local "data" directories.')</p>
+    <p>$_('Not only does this save the Raspberry Pi SD card, but in the event of an OSPy crash, we wont lose the saved data (since its outside of OSPy in the database).')</p>
+    <p>$_('To connect to the database, we can use an extension called: database_connector. Which will ensure the storage of data from our plugins.')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('ospy_backup.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
