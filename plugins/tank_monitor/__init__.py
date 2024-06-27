@@ -3,7 +3,7 @@
 # for more use this hardware: https://pihrt.com/elektronika/339-moje-raspberry-pi-plugin-ospy-vlhkost-pudy-a-mozstvi-vody-v-tankua
 # HW Atmega328 has 30sec timeout for reboot if not accesing via I2C bus.
 
-__author__ = u'Martin Pihrt' # www.pihrt.com
+__author__ = 'Martin Pihrt' # www.pihrt.com
 
 import json
 import time
@@ -12,7 +12,6 @@ import datetime
 import sys
 import traceback
 import os
-import mimetypes
 
 from threading import Thread, Event
 
@@ -57,7 +56,6 @@ tank_options = PluginOptions(
        'reg_max': 300,         # maximal water level in cm for activate
        'reg_min': 280,         # minimal water level in cm for deactivate
        'reg_output': 0,        # selector for output
-       'history': 0,           # selector for graph history
        'reg_mm': 60,           # min for maximal runtime
        'reg_ss': 0,            # sec for maximal runtime
        'use_water_stop': False,# if the level sensor fails, the above selected stations in the scheduler will stop
@@ -72,6 +70,10 @@ tank_options = PluginOptions(
        'saved_min': 0,         # logging min water level
        'saved_max': 0,         # logging max water level
        'en_sql_log': False,    # logging temperature to sql database
+       'type_log': 0,          # 0 = show log and graph from local log file, 1 = from database
+       'dt_from' : '',         # for graph history (from date time ex: 2024-02-01T6:00)
+       'dt_to' : '',           # for graph history (to date time ex: 2024-03-17T12:00)
+
     }
 )
 
@@ -190,18 +192,6 @@ class Sender(Thread):
 
                         ### printing information
                         log.clear(NAME)
-                        log.info(NAME, datetime_string() + ' ' + _('Water level') + ': ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%).'))
-                        if tank_options['check_liters']: # display in liters
-                            tempText =  str(status['volume']) + ' ' + _('liters') + ', ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%)')
-                            log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('liters') + '.')
-                        else:
-                            tempText =  str(status['volume']) + ' ' + _('m3') + ', ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%)')
-                            log.info(NAME, _('Ping') + ': ' + str(status['ping']) + ' ' + _('cm') + ', ' + _('Volume') + ': ' + str(status['volume']) + ' ' + _('m3') + '.')
-                        if status['maxlevel'] is not None and status['minlevel'] is not None:
-                            log.info(NAME, str(status['maxlevel_datetime']) + ' ' + _('Maximum Water level') + ': ' + str(status['maxlevel']) + ' ' + _('cm') + '.')
-                            log.info(NAME, str(status['minlevel_datetime']) + ' ' + _('Minimum Water level') + ': ' + str(status['minlevel']) + ' ' + _('cm') + '.')
-                        else:
-                            log.info(NAME, _('The maximum and minimum water levels have not yet been measured.'))
                         log.info(NAME, regulation_text)
 
                         ### regulation water level (automation)
@@ -531,57 +521,145 @@ def maping(x, in_min, in_max, out_min, out_max):
     # return value from map. example (x=1023,0,1023,0,100) -> x=1023 return 100
     return ((x - in_min) * (out_max - out_min)) / ((in_max - in_min) + out_min)
 
+
 def get_all_values():
     global status
     return status['level'], status['percent'], status['ping'], status['volume'], status['minlevel'], status['maxlevel'], status['minlevel_datetime'], status['maxlevel_datetime'], tank_options['check_liters']
 
+
 def read_log():
     """Read log data from json file."""
-
+    data = []
     try:
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
-            return json.load(logf)
-    except IOError:
-        return []
+            data = json.load(logf)
+    except:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
+
+
+def read_sql_log():
+    """Read log data from database file."""
+    data = None
+
+    try:
+        from plugins.database_connector import execute_db
+        sql = "SELECT * FROM `tankmonitor` ORDER BY id DESC"
+        data = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,min,max,actual,volume
+    except:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
+
 
 def read_debug_log():
     """Read debug log data from json file."""
+    data = []
 
     try:
         with open(os.path.join(plugin_data_dir(), 'debug_log.json')) as logf:
-            return json.load(logf)
-    except IOError:
-        return []        
+            data = json.load(logf)
+    except:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data        
 
 
 def read_graph_log():
     """Read graph data from json file."""
+    data = []
 
     try:
         with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
-            return json.load(logf)
-    except IOError:
-        return []
+            data = json.load(logf)
+    except:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
+
+
+def read_graph_sql_log():
+    """Read graph data from database file and convert it to json balance file."""
+    data = []
+
+    try:
+        sql_data = read_sql_log()
+
+        minimum = _('Minimum')
+        maximum = _('Maximum')
+        level  = _('Level')
+        volume  = _('Volume')
+ 
+        graph_data = [
+            {"station": minimum, "balances": {}},
+            {"station": maximum, "balances": {}}, 
+            {"station": level,  "balances": {}},
+            {"station": volume,  "balances": {}}
+        ]   
+
+        if sql_data is not None:
+            for row in sql_data:
+                # row[0] is ID, row[1] is datetime, row[2] is min, ... max,actual,volume ...
+                epoch = int(datetime.datetime.timestamp(row[1]))
+            
+                tmp0 = graph_data[0]['balances']
+                min_val = {'total': float(row[2])}
+                tmp0.update({epoch: min_val})
+            
+                tmp1 = graph_data[1]['balances']
+                max_val = {'total': float(row[3])}
+                tmp1.update({epoch: max_val})
+            
+                tmp2 = graph_data[2]['balances']
+                lvl_val = {'total': float(row[4])}
+                tmp2.update({epoch: lvl_val})
+            
+                tmp3 = graph_data[3]['balances']
+                vol_val = {'total': float(row[5])}
+                tmp3.update({epoch: vol_val})
+
+        data = graph_data
+
+    except:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
 
 
 def write_log(json_data):
     """Write data to log json file."""
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
 
-    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
 
 def write_debug_log(json_data):
     """Write data to debug log json file."""
-
-    with open(os.path.join(plugin_data_dir(), 'debug_log.json'), 'w') as outfile:
-        json.dump(json_data, outfile)        
+    try:
+        with open(os.path.join(plugin_data_dir(), 'debug_log.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass                   
 
 
 def write_graph_log(json_data):
     """Write data to graph json file."""
-
-    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass            
 
 
 def update_log():
@@ -598,13 +676,15 @@ def update_log():
 
         from datetime import datetime
 
+        read_all = get_all_values()
+
         data = {'datetime': datetime_string()}
         data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
         data['time'] = str(datetime.now().strftime('%H:%M:%S'))
         data['minimum'] = str(status['minlevel'])
         data['maximum'] = str(status['maxlevel'])
-        data['actual']  = str(get_all_values()[0])
-        data['volume']  = str(get_all_values()[3])
+        data['actual']  = str(read_all[0])
+        data['volume']  = str(read_all[3])
       
         log_data.insert(0, data)
         if tank_options['log_records'] > 0:
@@ -621,6 +701,7 @@ def update_log():
         except:
             create_default_graph()
             graph_data = read_graph_log()
+            log.debug(NAME, _('Creating default graph log files OK'))
 
         timestamp = int(time.time())
 
@@ -650,7 +731,7 @@ def update_log():
         try:
             from plugins.database_connector import execute_db
             # first create table tankmonitor if not exists
-            sql = "CREATE TABLE IF NOT EXISTS tankmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, min VARCHAR(7), max VARCHAR(7), actual VARCHAR(7), volume VARCHAR(10))"
+            sql = "CREATE TABLE IF NOT EXISTS `tankmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, min VARCHAR(7), max VARCHAR(7), actual VARCHAR(7), volume VARCHAR(10))"
             execute_db(sql, test=False, commit=False) # not commit
             # next insert data to table tankmonitor
             sql = "INSERT INTO `tankmonitor` (`min`, `max`, `actual`, `volume`) VALUES ('%s','%s','%s','%s')" % (status['minlevel'],status['maxlevel'],get_all_values()[0],get_all_values()[3])
@@ -658,7 +739,8 @@ def update_log():
             log.info(NAME, _('Saving to SQL database.'))
         except:
             log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
-            pass                
+            pass
+
 
 def update_debug_log(byte_0 = 0, byte_1 = 0, val = 0, byte_2 = 0, byte_3 = 0):
     """Update data in debug json files."""
@@ -674,10 +756,10 @@ def update_debug_log(byte_0 = 0, byte_1 = 0, val = 0, byte_2 = 0, byte_3 = 0):
 
     data = {'datetime': datetime_string()}
     data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
-    data['b0']  = str(byte_0)
-    data['b1']  = str(byte_1)
-    data['b2']  = str(byte_2)
-    data['b3']  = str(byte_3)
+    data['b0']   = str(byte_0)
+    data['b1']   = str(byte_1)
+    data['b2']   = str(byte_2)
+    data['b3']   = str(byte_3)
     data['val']  = str(val)
       
     log_data.insert(0, data)
@@ -687,22 +769,23 @@ def update_debug_log(byte_0 = 0, byte_1 = 0, val = 0, byte_2 = 0, byte_3 = 0):
     except:
         write_debug_log([])
 
+
 def create_default_graph():
     """Create default graph json file."""
 
     minimum = _('Minimum')
     maximum = _('Maximum')
-    actual  = _('Actual')
+    level   = _('Level')
     volume  = _('Volume')
  
     graph_data = [
        {"station": minimum, "balances": {}},
        {"station": maximum, "balances": {}}, 
-       {"station": actual,  "balances": {}},
+       {"station": level,  "balances": {}},
        {"station": volume,  "balances": {}}
     ]
     write_graph_log(graph_data)
-    log.info(NAME, _(u'Deleted all log files OK'))
+    log.info(NAME, _('Deleted all log files OK'))
 
 
 def set_stations_in_scheduler_off():
@@ -749,6 +832,7 @@ class settings_page(ProtectedPage):
         del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
         log_now = helpers.get_input(qdict, 'log_now', False, lambda x: True)
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
         if sender is not None and reset:
             status['minlevel'] = status['level']
@@ -759,6 +843,18 @@ class settings_page(ProtectedPage):
             status['maxlevel_datetime'] = datetime_string()
             log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
             raise web.seeother(plugin_url(settings_page), True)
+
+        if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+            dt_from = qdict['dt_from']
+            dt_to = qdict['dt_to']
+            tank_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
+            tank_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
+
+        if sender is not None and delfilter:
+            from datetime import datetime, timedelta
+            dt_now = (datetime.today() + timedelta(days=1)).date()
+            tank_options.__setitem__('dt_from', "2020-01-01T00:00")
+            tank_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
         if sender is not None and log_now:
             update_log()
@@ -825,6 +921,7 @@ class log_page(ProtectedPage):
         global sender, avg_lst, avg_cnt, avg_rdy
         qdict  = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
         if sender is not None and delete:
             write_log([])
@@ -836,7 +933,16 @@ class log_page(ProtectedPage):
             tank_options.__setitem__('saved_min', status['level']) 
             raise web.seeother(plugin_url(log_page), True)
 
-        return self.plugin_render.tank_monitor_log(read_log(), tank_options)
+        if sender is not None and delSQL and tank_options['en_sql_log']:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `tankmonitor`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the tankmonitor table from the database.'))
+            except:
+                log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+                pass 
+        return self.plugin_render.tank_monitor_log(read_log(), read_sql_log(), tank_options)
 
 
 class log_debug_page(ProtectedPage):
@@ -867,132 +973,222 @@ class data_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
+        read_all = get_all_values()
         data =  {
-          'level': get_all_values()[0],
-          'percent':get_all_values()[1],
-          'ping': get_all_values()[2],
-          'volume': get_all_values()[3],
-          'label': tank_options['emlsubject'],
-          'unit': get_all_values()[4]
+            'level': read_all[0],
+            'percent': read_all[1],
+            'ping': read_all[2],
+            'volume': read_all[3],
+            'minlevel': read_all[4],
+            'maxlevel': read_all[5],
+            'minlevel_datetime': read_all[6],
+            'maxlevel_datetime': read_all[7],
+            'unit': _('L') if read_all[8] else  _('m3'),
+            'label': tank_options['emlsubject']
         }
-
         return json.dumps(data)
+
 
 class log_json(ProtectedPage):
     """Returns data in JSON format."""
 
     def GET(self):
+        data = []
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_log())
+        try:
+            data = json.dumps(read_log())
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+        return data
+
+
+class log_sql_json(ProtectedPage):
+    """Returns data in JSON format from database file log."""
+
+    def GET(self):
+        data = []
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            data = json.dumps(read_sql_log())
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+        return data
 
 
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
     def GET(self):
-        #import datetime
         data = []
-
-        epoch = datetime.date(1970, 1, 1)                                      # first date
-        current_time  = datetime.date.today()                                  # actual date
-
-        if tank_options['history'] == 0:                                       # without filtering
-            web.header('Access-Control-Allow-Origin', '*')
-            web.header('Content-Type', 'application/json')
-            return json.dumps(read_graph_log())
-
-        if tank_options['history'] == 1:
-            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
-        if tank_options['history'] == 2:
-            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
-        if tank_options['history'] == 3:
-            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
-        if tank_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
-
-        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-
         try:
-            json_data = read_graph_log()
-        except:
-            json_data = []
-            pass
+            from datetime import datetime
 
-        if len(json_data) > 0:
-            for i in range(0, 4):                                              # 0 = minimum, 1 = maximum, 2 = actual, 3 = volume
-                temp_balances = {}
-                for key in json_data[i]['balances']:
-                    find_key =  int(key.encode('utf8'))                        # key is in unicode ex: u'1601347000' -> find_key is int number
-                    if find_key >= log_start:                                  # timestamp interval 
-                        temp_balances[key] = json_data[i]['balances'][key]
-                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+            dt_from = datetime.strptime(tank_options['dt_from'], '%Y-%m-%dT%H:%M') # from
+            dt_to   = datetime.strptime(tank_options['dt_to'], '%Y-%m-%dT%H:%M')   # to
+
+            epoch_time = datetime(1970, 1, 1)
+
+            log_start = int((dt_from - epoch_time).total_seconds())
+            log_end = int((dt_to - epoch_time).total_seconds())
+
+            json_data = [{}]
+
+            try:
+                if tank_options['type_log'] == 0:
+                    json_data = read_graph_log()
+                if tank_options['type_log'] == 1:
+                    json_data = read_graph_sql_log()
+            except:
+                log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+                pass
+
+            if len(json_data) > 0:  
+                for i in range(0, 4):                                              # 0 = min, max, actual
+                    temp_balances = {}
+                    for key in json_data[i]['balances']:
+                        try:
+                            find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
+                        except:
+                            find_key = key      
+                        if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
+                            temp_balances[key] = json_data[i]['balances'][key]    
+                    data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(data)
 
+
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
     def GET(self):
-        log_file = read_log()
-        minimum = _('Minimum')
-        maximum = _('Maximum')
-        actual  = _('Actual')
-        volume  = _('Volume')
-        data  = "Date/Time"
-        data += "; Date"
-        data += "; Time"
-        data += "; %s cm" % minimum
-        data += "; %s cm" % maximum
-        data += "; %s cm" % actual
-        if tank_options['check_liters']:
-            data += "; %s liters" % volume
-        else:    
-            data += "; %s m3" % volume
-        data += '\n'
+        data = []
+        try:
+            log_file = read_log()
+            minimum = _('Minimum')
+            maximum = _('Maximum')
+            actual  = _('Actual')
+            volume  = _('Volume')
+            data  = "Date/Time"
+            data += "; Date"
+            data += "; Time"
+            data += "; %s cm" % minimum
+            data += "; %s cm" % maximum
+            data += "; %s cm" % actual
+            if tank_options['check_liters']:
+                data += "; %s liters" % volume
+            else:    
+                data += "; %s m3" % volume
+            data += '\n'
 
-        for interval in log_file:
-            data += '; '.join([
-                interval['datetime'],
-                interval['date'],
-                interval['time'],
-                '{}'.format(interval['minimum']),
-                '{}'.format(interval['maximum']),
-                '{}'.format(interval['actual']),
-                '{}'.format(interval['volume']),
-            ]) + '\n'
+            for interval in log_file:
+                data += '; '.join([
+                    interval['datetime'],
+                    interval['date'],
+                    interval['time'],
+                    '{}'.format(interval['minimum']),
+                    '{}'.format(interval['maximum']),
+                    '{}'.format(interval['actual']),
+                    '{}'.format(interval['volume']),
+                ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'local_log_{}_.csv'.format(filestamp)
         web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="log.csv"')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types 
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
         return data
+
+
+class log_sql_csv(ProtectedPage):  # save log file from database as csv file type from web
+    """Simple Log API"""
+    def GET(self):
+        data = []
+        try:
+            from plugins.database_connector import execute_db
+            sql = "SELECT * FROM `tankmonitor`"
+            log_file = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,ds1,ds2,ds3,ds4,ds5,ds6,dhttemp,dhthumi,dhtstate
+            
+            minimum = _('Minimum')
+            maximum = _('Maximum')
+            actual  = _('Actual')
+            volume  = _('Volume')
+            data  = "Id"
+            data += "; Date/Time"
+            data += "; %s cm" % minimum
+            data += "; %s cm" % maximum
+            data += "; %s cm" % actual
+            if tank_options['check_liters']:
+                data += "; %s liters" % volume
+            else:    
+                data += "; %s m3" % volume
+            data += '\n'
+
+            for interval in log_file:
+                data += '; '.join([
+                    '{}'.format(interval[0]),
+                    '{}'.format(interval[1]),
+                    '{}'.format(interval[2]),
+                    '{}'.format(interval[3]),
+                    '{}'.format(interval[4]),
+                    '{}'.format(interval[5]),
+                ]) + '\n'
+
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+        
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'sql_log_{}_.csv'.format(filestamp)
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
+        return data
+
 
 class debug_log_csv(ProtectedPage):  # save debug log file from web as csv file type
     """Simple Log API"""
     def GET(self):
-        log_file = read_debug_log()
-        data  = "Date/Time"
-        data += "; Byte 0"
-        data += "; Byte 1"
-        data += "; Value"
-        data += "; Byte 2 FW"
-        data += "; Byte 3 CRC"
-        data += '\n'
+        data = []
+        try:
+            log_file = read_debug_log()
+            data  = "Date/Time"
+            data += "; Byte 0"
+            data += "; Byte 1"
+            data += "; Value"
+            data += "; Byte 2 FW"
+            data += "; Byte 3 CRC"
+            data += '\n'
 
-        for interval in log_file:
-            data += '; '.join([
-                interval['datetime'],
-                '{}'.format(interval['b0']),
-                '{}'.format(interval['b1']),
-                '{}'.format(interval['val']),
-                '{}'.format(interval['b2']),
-                '{}'.format(interval['b3']),
-            ]) + '\n'
+            for interval in log_file:
+                data += '; '.join([
+                    interval['datetime'],
+                    '{}'.format(interval['b0']),
+                    '{}'.format(interval['b1']),
+                    '{}'.format(interval['val']),
+                    '{}'.format(interval['b2']),
+                    '{}'.format(interval['b3']),
+                ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'debug_log.json')[0])
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'debug_log_{}_.csv'.format(filestamp)
         web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="tank_i2c_debug_log.csv"')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types 
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
         return data

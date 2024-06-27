@@ -148,11 +148,33 @@ function create_graph(result) {
         jQuery.getJSON("/plugins/tank_monitor/graph_json", create_graph)
     });
 
+    jQuery('#filterSelection').on('click', function(){
+        check_history();
+    }); 
+
 }
 
 function check_history() {
-    let select_type = jQuery("#history").val();
+    let dt_from = jQuery("#dt_from").val();
+    let dt_to = jQuery("#dt_to").val();
+    let check_err = jQuery("#show_err").val();
     jQuery("#historyForm").submit();
+}
+
+function updateValues(){
+    jQuery.getJSON("/plugins/tank_monitor/data_json", function(_data) {
+        jQuery("#level").text(_data.level);
+        jQuery("#percent").text(_data.percent);
+        jQuery("#ping").text(_data.ping);
+        jQuery("#volume").text(_data.volume);
+        jQuery("#minlevel").text(_data.minlevel);
+        jQuery("#maxlevel").text(_data.maxlevel);
+        jQuery("#minlevel_datetime").text(_data.minlevel_datetime);
+        jQuery("#maxlevel_datetime").text(_data.maxlevel_datetime);
+        jQuery("#unit").text(_data.unit);
+
+    })
+    setTimeout(updateValues, 3000); // 3 seconds
 }
 
     // Initialize behaviors
@@ -169,7 +191,7 @@ function check_history() {
         setTimeout(function() {jQuery.getJSON("/plugins/tank_monitor/graph_json", create_graph)}, 500); 
     }
 
-    jQuery("#history").change(check_history);
+    updateValues();
 
 });
 </script>
@@ -178,7 +200,7 @@ function check_history() {
     <div class="title">$_('Water tank monitor settings')</div>
     <p><a href=$plugins.plugin_url('tank_monitor.help_page') class="button upload">$_('Help')</a></p><br/>
     <p> 
-    $if plugin_options['enable_log']:
+    $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
         <a href="?show" class="button backup">$_('Show logs')</a>
         <a href="?log_now"  class="button submit">$_('Log sample now')</a>
     $if plugin_options['input_byte_debug_log']:
@@ -362,7 +384,16 @@ function check_history() {
                     <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))  
                     <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>    
                 </td>
-            </tr>            
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show data from'):</td>
+                <td>
+                <select id="type_log" name="type_log" style="width: 200px" title=$:{json.dumps(_('Choose from where the displayed data in the log and graph will be loaded.'), ensure_ascii=False)}>
+                <option value="0" ${"selected" if plugin_options['type_log']==0 else ""}>$_('Local file')</option>
+                <option value="1" ${"selected" if plugin_options['type_log']==1 else ""}>$_('Database file')</option>
+                </select>
+                </td>
+            </tr>           
             <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
                 <td title=$:{json.dumps(_('0 = unlimited. The maximum number of records sets the number of saved records, i.e. after exceeding the set limit, older data is overwritten.'), ensure_ascii=False)}>
@@ -397,11 +428,58 @@ function check_history() {
                 <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
                     <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
                 </td>
-            </tr>                          
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Level'):
+                </td>
+                <td>
+                <b><span id="level">-</span>$_('cm')</b>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Level min'):
+                </td>
+                <td>
+                <b><span id="minlevel">-</span>$_('cm')</b> (<span id="minlevel_datetime">-</span>)
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Level max'):
+                </td>
+                <td>
+                <b><span id="maxlevel">-</span>$_('cm')</b> (<span id="maxlevel_datetime">-</span>)
+                </td>
+            </tr>            
+            <tr>    
+                <td style='text-transform: none;'>$_('Percent'):
+                </td>
+                <td>
+                <b><span id="percent">-</span>$_('%')</b>
+                </td>
+            </tr>
+            <tr>    
+                <td style='text-transform: none;'>$_('Ping'):
+                </td>
+                <td>
+                <b><span id="ping">-</span>$_('cm')</b>
+                </td>
+            </tr>
+            <tr>    
+                <td style='text-transform: none;'>$_('Volume'):
+                </td>
+                <td>
+                <b><span id="volume">-</span><span id="unit">-</span></b>
+                </td>                 
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>                                      
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="50" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="1" cols="50" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
@@ -412,21 +490,21 @@ function check_history() {
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
 
-$if plugin_options['enable_log']:
+$if plugin_options['enable_log'] or plugin_options['en_sql_log']:
+    $if plugin_options['type_log'] == 0:
+        $_('The chart from local file')
+    $if plugin_options['type_log'] == 1:
+        $_('The chart from database')
     <div id="graph-container" class="graph-container">
     <div id="legend-placeholder" style="display:none;"></div>
     <div id="legend-visible" style="float: right; width: auto;"></div>
     <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
     <form name="historyForm" id="historyForm" action="" method="get">
-        $_(u'Select filter for graph history'):
-        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_('Select a filter for the interval of read data.'), ensure_ascii=False)}>
-        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
-        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
-        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
-        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_(u'Month filter')</option>
-        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_(u'Year filter')</option>
-        </select>
-    </form>    
+        $_('From') <input name='dt_from' id="dt_from" input type="datetime-local" value='$plugin_options['dt_from']' />
+        $_('To') <input name='dt_to' id="dt_to" input type="datetime-local" value='$plugin_options['dt_to']' />
+        <button id="filterSelection">$_('Filtering')</button>
+        <button id="clearSelection"  class="button backup">$_('Reload chart')</button>
+        <a href="?delfilter" class="button cancel danger">$_('Delete range')</a></br>
+    </form>
     <div style="clear: both;"></div>
-    <button id="clearSelection">$_('Clear selection')</button>
     </div>

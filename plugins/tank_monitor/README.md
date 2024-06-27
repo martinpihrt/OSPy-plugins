@@ -78,10 +78,7 @@ Plugin setup
   Logging of data only when this data changes, otherwise still logging.    
 
 * Select filter for graph history  
-  Without limits
-  Day filter
-  Month filter
-  Year filter
+  From - To selector (date time)
 
 * Status:  
   Status window from the plugin.  
