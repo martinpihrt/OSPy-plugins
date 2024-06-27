@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 # this plugins print system info os on web 
 
 import platform
@@ -16,7 +16,7 @@ import web
 
 
 NAME = 'System Information'
-MENU =  _(u'Package: System Information')
+MENU =  _('Package: System Information')
 LINK = 'status_page'
 
 
@@ -35,7 +35,13 @@ def get_overview():
     try:
         meminfo = helpers.get_meminfo()
         netdevs = helpers.get_netdevs()
-
+        about_hw = None
+        try:
+            about_hw = helpers.get_rpi_revision_codes()
+            result.append(_('Hardware') + ': {}'.format(about_hw[4]))
+        except:
+            pass
+        
         result.append(_('System release') + ': {}'.format(platform.release()))
         result.append(_('System name') + ': {}'.format(platform.system()))
         result.append(_('Node') + ': {}'.format(platform.node()))
