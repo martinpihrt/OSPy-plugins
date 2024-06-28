@@ -192,6 +192,10 @@ class Sender(Thread):
 
                         ### printing information
                         log.clear(NAME)
+                        if tank_options['check_liters']: # display in liters
+                            tempText =  str(status['volume']) + ' ' + _('liters') + ', ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%)')
+                        else:
+                            tempText =  str(status['volume']) + ' ' + _('m3') + ', ' + str(status['level']) + ' ' + _('cm') + ' (' + str(status['percent']) + ' ' + ('%)')                        
                         log.info(NAME, regulation_text)
 
                         ### regulation water level (automation)
