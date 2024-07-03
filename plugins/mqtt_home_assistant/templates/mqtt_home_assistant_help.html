@@ -1,0 +1,108 @@
+$def with()
+
+$var title: $_('MQTT Home Assistant Plugin - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('MQTT Home Assistant Plugin - help')</div>
+<h2>$_('About the MQTT HASS Plugin')</h2>
+
+<p>$_('The MQTT HASS plugin implement MQTT Discovery for Home Assistant (HASS), including report and control of some OSPy system settings and valves (stations) over MQTT. MQTT Discovery enables automatic devices and entities enrolment from HASS user interface configuration panel, including plug-and-play availability detection, status and control.')</p>
+
+<h2>$_('Using MQTT HASS plugin')</h2>
+<p>$_('This plugin is disabled by default. If you are reading this, the mqtt_hass plugin is probably enabled on your system. Otherwise, you can enable it using the plugin manager.')</p>
+
+<h2>$_('Requirements')</h2>
+<ul>
+    <li>$_('An MQTT broker such as Mosquitto is required to be accessible by OSPy device and HASS. This broker can be on different parts of the local network, on a remote network, or installed on either OSPy or HASS system.')</li>
+    <li>$_('A working HASS system with an MQTT Integration such as Mosquitto broker')</li>
+    <li>$_('A OSPy system with the base mqtt plugin installed and configured (see below).')</li>
+    <li>$_('This plugin installed and configured on the same OSPy system as the base mqtt plugin (see below).')</li>
+</ul>
+
+<h2>$_('Setup')</h2>
+
+<h3>$_('On OSPy - base MQTT plugin setup')</h3>
+<ul>
+    <li>$_('Install eclipse paho if not already on the Pi')</li>
+    <li>$_('Install the base MQTT plugin')</li>
+    <li>$_('Configure base MQTT plugin')</li>
+    <ul>
+        <li>$_('MQTT Broker Host: This will be the URL of the MQTT broker or localhost if the broker is running on OSPy')</li>
+        <li>$_('MQTT Broker Port: Default is 1883 but may be different depending on your MQTT broker')</li>
+        <li>$_('MQTT Broker Username: Default is mosquitto but depends on your setup.')</li>
+        <li>$_('MQTT Broker Password: Depends on your setup. Use pass as default')</li>
+        <li>$_('MQTT Publish up/down topic: It needs to be set for proper OSPy availability detection by HASS. We suggest to use the OSPy System name as set on Options webpage')</li>
+        <li>$_('MQTT Client ID: A unique name for OSPy system. Default is OSPy System name but can be changed on Options webpage.')</li>
+    </ul>
+</ul>
+
+<h3>$_('On OSPy - MQTT HASS plugin setup')</h3>
+<ul>
+    <li>$_('Install Python python-slugify package if not already on the pi.')</li>
+    <li><i>sudo apt install python3 slugify</i></li>
+    <li>$_('Configure MQTT HASS plugin.')</li>
+    <ul>
+        <li>$_('Topic prefix: This prefix is used for OSPy system parameters and zones published to the MQTT broker. Leave this option empty to use a slugified OSPy System name. This setting will be slugified when saved. (Default: System name or "OSPy" if System name is empty).')</li>
+        <li>$_('Name prefix: Used as prefix for all HASS devices and entities names. Leave this option empty to use a OSPy System name as prefix. For entities, this setting will be slugified. (Default: System name or "OSPy" if System name is empty).')</li>
+        <li>$_('OSPy FQDN: OSPy network name or IP address. Used to compose the URL link to OSPy web interface displayed in HASS devices settings. Leave this option empty to use OSPy hostname or IP address used to connect with the MQTT broker. (Default: OSPy hostname).')</li>
+        <li>$_('Device is Station name: if checked, use station name as part of HASS Device name. Changes to OSPy station name will update HASS Device name. (Default: unchecked)')</li>
+        <li>$_('Publish disabled zone: if checked, disabled stations will also be published to the MQTT broker and discovered by HASS. NOTE: For safety, disabled stations can\'t be controlled from MQTT nor HASS. (Default: unchecked)')</li>
+    </ul>
+</ul>
+
+<h3>$_('On Home Assistant - MQTT setup')</h3>
+<ul>
+    <li>$_('Follow Home Assistant instructions to add MQTT integration via the user interface. MQTT discovery feature is enabled by default. MQTT integration will detect OSPy settings parameters and zones as devices and entities.')</li>
+    <li>$_('Follow Home Assistant instructions to configure and use the newly added devices and entities.')</li>
+</ul>
+
+<h3>$_('Multiple OSPy systems connected to the same MQTT broker or Home Assistant instance')</h3>
+<ul>
+    $_('To integrate multiple OSPy systems, on each OSPy:')
+    <li>$_('Use different "System name" as set on OSPy Options webpage. Default OSPy System name is "OSPy"')</li>
+    <li>$_('For each base MQTT plugin settings use different MQTT Publish up/down topic and MQTT Client ID.')</li>
+    <li>$_('For each MQTT HASS plugin use different Topic prefix and Name prefix.')</li>
+</ul>
+
+<h2>$_('Home Assistant - available OSPy Devices and Entities')</h2>
+$_('Devices and associated Entities made available with this plugin are:')
+<ul>
+    <li>$_('Device: OSPy (name: NamePrefix) MQTT HASS plugin creates a single device per OSPy system. This device regroups the supported OSPy system parameters and sensors. NamePrefix is MQTT HASS "Name prefix" option. Unless specified the associated entities have the same behavior as on OSPy home webpage. Entities name prefix uses a slugified version of the device name (nameprefix). Entities:')</li>
+    <ul>
+        <li>$_('Control Entity: OSPy System Enable (ID: select.nameprefix_enable) HASS "Select entity" showing and controlling OSPy System Enable (Values: "on", "off"). Setting it to "off" will disable all other system parameters and zone control from HASS.')</li>
+        <li>$_('Configuration Entity: OSPy Mode (ID: select.nameprefix_mode) HASS "Select entity" showing and controlling OSPy Mode (Values: "Automatic", "Manual").')</li>
+        <li>$_('Configuration Entity: Rain sensor enable (ID: select.nameprefix_rain_sensor_enable) HASS "Select entity" showing and controlling OSPy Rain sensor enable (Values: "on", "off"). Same behavior as "Use rain sensor" in OSPy Options webpage.')</li>
+        <li>$_('Configuration Entity: Rain delay timer (ID: number.nameprefix_rain_delay_timer) HASS "Number entity" showing and controlling OSPy Rain delay timer (Range: 0 to 24 hours, Default 0). This entity has the following JSON attributes and default values when the timer is active / inactive (default):')</li>
+        <ul>
+            <li>$_('Attribute: state The number of hours as set from OSPy user interface or MQTT (Default 0).')</li>
+            <li>$_('Attribute: start_time Unix time when the delay timer started (Default "None").')</li>
+            <li>$_('Attribute: duration Total number of seconds of the delay timer (Default 0).')</li>
+        </ul>
+        <li>$_('Configuration Entity: Water level adjust (ID: number.nameprefix.water_level_adjust) HASS "Number entity" showing and controlling OSPy Water level adjust (Range: 0 to 100 %, Default 100).')</li>
+        <li>$_('Diagnostic Entity: Rain detect sensor (ID: binary_sensor.nameprefix.rain_detect) HASS "Binary sensor entity" reporting OSPy Rain sensor state (Values: "on","off").')</li>
+        <li>$_('Diagnostic Entity: Running program (ID: sensor.nameprefix.running_program) HASS "Sensor entity" showing OSPy Running program (Values: "Manual", "Run Once, or program number). Zones controlled from HASS are shown as "Run Once" program.')</li>
+    </ul>
+    <li>$_('Devices: Zone (name: nameprefix - Zxx or nameprefix - station name) MQTT HASS plugin creates one device per OSPy station (zone). Device name is nameprefix - Zxx unless option "Device is Station name" is checked. The number of devices will track the number of OSPy "Stations Extensions" set on the Options webpage. Each zone device has a single "switch" entity. Entity:')</li>
+    <ul>
+        <li>$_('ID is switch.nameprefix.zxx where xx is a double digit from 01 to the number of OSPy stations. Entity name and availability will track changes made on OSPy Stations webpage. This entity has the following JSON attributes and values:')</li>
+        <ul>
+            <li>$_('Attribute: state The actual zone state. Value is "on" when active and "off" when inactive.')</li>
+            <li>$_('Attribute: start_time Unix time when the zone turned "on". If state is "off": Value is "None".')</li>
+            <li>$_('Attribute: duration Total number of seconds the zone state will be "on". If state is "on": Value is the duration as set from a running program or run once or "Inf" if zone is activated from manual mode or from MQTT HASS switch. If state is "off": Value is "Inf".')</li>
+            <li>$_('Attribute: program The program number that turned the zone state to "on". If state is "on": Value is program number, "Run Once" or "Manual". If state is "off": Value is "None".')</li>
+        </ul>
+    </ul>
+</ul>
+
+<h2>$_('Test your setup')</h2>
+$_('From HASS and OSPy user interface:')
+<ul>
+    <li>$_('Compare the state of select.nameprefix.enable with OSPy web interface System Enable. Change the system enable from HASS and OSPy to verify that the state is changed on the other end. When disabled, observe that all the other HASS system parameters and zone entities are not available in HASS user interface (grayed).')</li>
+    <li>$_('With System enable, change one enabled zone state from HASS and verify the zone state on OSPy webpage. Observe the active program is set to "Run Once" when setting a zone "on" from HASS.')</li>
+</ul>
+
+
+<div id="controls">
+    <a href=$plugins.plugin_url('mqtt_home_assistant.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

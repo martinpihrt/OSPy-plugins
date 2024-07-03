@@ -70,3 +70,4 @@ Available plugins:
 * IP Scanner
 * Database Connector
 * OSPy Backup
+* MQTT Home Assistant
