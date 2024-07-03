@@ -27,7 +27,7 @@ from ospy.options import options
 ################################################################################
 # Plugin name, translated name, link for web page in init, plugin options      #
 ################################################################################
-NAME = 'MQTT Home Assistant'                                     # The unique name of the plugin listed in the plugin manager
+NAME = 'Home Assistant'                                          # The unique name of the plugin listed in the plugin manager
 MENU =  _('Package: MQTT Home Assistant')                        # The name of the plugin that will be visible in the running plugins tab and will be translated
 LINK = 'settings_page'                                           # The default webpage when loading the plugin will be the settings page class
 
