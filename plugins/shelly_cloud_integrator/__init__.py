@@ -16,6 +16,8 @@ from ospy.webpages import ProtectedPage                          # For check use
 
 from ospy.webpages import showInFooter                           # Enable plugin to display readings in UI footer
 
+from requests import get
+from json.decoder import JSONDecodeError
 
 ################################################################################
 # Plugin name, translated name, link for web page in init, plugin options      #
@@ -28,6 +30,9 @@ plugin_options = PluginOptions(
     NAME,
     {
         'use_footer': True,                                      # Show data from plugin in footer on home page
+        'auth_key': '',                                          # Account verification key
+        'server_uri': '',                                        # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key
+
     }
 )
 
@@ -67,12 +72,27 @@ class Sender(Thread):
 
         while not self._stop_event.is_set():                      # Plugin repeating loop
             try:                                                  # It is a good idea to use try and except because it is possible to debug any errors encountered in the plugin.
-                if plugin_options['use_footer']:                  # Notice: footer refreshing is 3 seconds...
-                    msg = _('test')
-                    if in_footer is not None:
-                        in_footer.val = msg.encode('utf8').decode('utf8')
+#test               
+                    id = 'b0b21c136864'
+                    url = 'https://{}/device/status?auth_key={}&id={}'.format(plugin_options['server_uri'], plugin_options['auth_key'], id)
+                    response = get(url, timeout=5)
+                    if response.status_code == 401:
+                        raise BadLogin()
+                    elif response.status_code == 404:
+                        raise NotFound("Not Found")
+                    try:
+                        response_data = response.json()
+                    except JSONDecodeError:
+                        raise BadResponse("Bad JSON")
+#                   gen = response_data.get("gen", 1)
+                    print(response_data)
 
-                self._sleep(1)                                    # The loop is executed every second
+                    if plugin_options['use_footer']:
+                        msg = _('test')
+                        if in_footer is not None:
+                        in_footer.val = msg.encode('utf8').decode('utf8')                               
+
+                    self._sleep(10)                                   # The loop is executed every second
 
             except Exception:                                     # In the event of an error (the try did not turn out correctly), a callback is used to write where the error is
                 log.clear(NAME)
@@ -129,3 +149,18 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
+
+
+class BadLogin(Exception):
+    """Exception for bad login details"""
+    pass
+
+
+class BadResponse(Exception):
+    """Exception for bad responses from the target"""
+    pass
+
+
+class NotFound(Exception):
+    """Exception for 404 Not Found"""
+    pass        

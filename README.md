@@ -71,3 +71,4 @@ Available plugins:
 * Database Connector
 * OSPy Backup
 * MQTT Home Assistant
+* Shelly Cloud Integration
