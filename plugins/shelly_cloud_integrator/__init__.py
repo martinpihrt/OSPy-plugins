@@ -36,7 +36,8 @@ plugin_options = PluginOptions(
         'use_sensor': [False, False],
         'sensor_label': ['label', 'label'],                      # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.
         'sensor_id': ['', ''],                                   # Shelly ID. This can be obtained from Shelly > User Settings > Cloud Authorization Key
-        'sensor_type': [0, 1],                                   # 0=Shelly Plus HT, 1=Shelly Plus Plug S, 2=Shelly Pro 2PM
+        'sensor_type': [0, 1],                                   # 0=Shelly Plus HT, 1=Shelly Plus Plug S, 2=Shelly Pro 2PM, 3=Shelly 1PM Mini
+        'gen_type': [0, 1],                                      # 0=Gen1, 1=Gen2
         'number_sensors': 2,                                     # default 2 sensors for example
     }
 )
@@ -93,86 +94,111 @@ class Sender(Thread):
                                     raise NotFound("Not Found")
                                 try:
                                     response_data = response.json()
-                                    # type: 0 = Shelly Plus HT GEN 2, GEN 3
+                                    # typ: 0 = Shelly Plus HT, 
+                                    # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 0:
-                                        name = plugin_options['sensor_label'][i]
-                                        temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
-                                        humidity = response_data["data"]["device_status"]["humidity:0"]["rh"]
-                                        updated = response_data["data"]["device_status"]["_updated"]
-                                        isok = response_data["isok"]
-                                        battery = response_data["data"]["device_status"]["devicepower:0"]["battery"]
-                                        online = response_data["data"]["online"]
-                                        wifi = response_data["data"]["device_status"]["wifi"]
-                                        sta_ip = wifi["sta_ip"]
-                                        rssi = wifi["rssi"]
-                                        batt_V = battery["V"]
-                                        batt_perc = battery["percent"]
-                                        if online:
-                                            msg += _('[{}: OK {}°C {}RV BAT{}%] ').format(name, temperature, humidity, batt_perc)
-                                            msg_info += _('{}: OK {}°C {}RV BAT{}% IP:{} RSSI:{}dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
-                                        else:
-                                            msg += _('[{}: OFFLINE] ').format(name)
-                                            msg_info += _('[{}: OFFLINE] ').format(name)                                            
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN1 not available ').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
+                                            humidity = response_data["data"]["device_status"]["humidity:0"]["rh"]
+                                            updated = response_data["data"]["device_status"]["_updated"]
+                                            isok = response_data["isok"]
+                                            battery = response_data["data"]["device_status"]["devicepower:0"]["battery"]
+                                            online = response_data["data"]["online"]
+                                            wifi = response_data["data"]["device_status"]["wifi"]
+                                            sta_ip = wifi["sta_ip"]
+                                            rssi = wifi["rssi"]
+                                            batt_V = battery["V"]
+                                            batt_perc = battery["percent"]
+                                            if online:
+                                                msg += _('[{}: OK {}°C {}RV BAT{}%] ').format(name, temperature, humidity, batt_perc)
+                                                msg_info += _('{}: OK {}°C {}RV BAT{}% IP:{} RSSI:{}dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                            else:
+                                                msg += _('[{}: OFFLINE] ').format(name)
+                                                msg_info += _('{}: OFFLINE ').format(name)                                            
 
-                                    # type: 1=Shelly Plus Plug S ver 1
+                                    # typ: 1=Shelly Plus Plug S ver 1
+                                    # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 1:
-                                        print(response_data)
-                                        name = plugin_options['sensor_label'][i]
-                                        updated = response_data["data"]["device_status"]["_updated"]
-                                        isok = response_data["isok"]
-                                        online = response_data["data"]["online"]
-                                        wifi = response_data["data"]["device_status"]["wifi_sta"]
-                                        sta_ip = wifi["ip"]
-                                        rssi = wifi["rssi"]
-                                        power = response_data["data"]["device_status"]["meters"][0]["power"]
-                                        total = response_data["data"]["device_status"]["meters"][0]["total"]
-                                        output = response_data["data"]["device_status"]["relays"]["ison"]
-                                        if online:
-                                            if a_output:
-                                                msg += _('[{}: OK OUT ON ACT {}W SUM {}kW/h ').format(name, power, round(total/1000.0, 1))
-                                                msg_info += _('{}: OK OUT ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, power, round(total/1000.0, 1), sta_ip, rssi)
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            updated = response_data["data"]["device_status"]["_updated"]
+                                            isok = response_data["isok"]
+                                            online = response_data["data"]["online"]
+                                            wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                            sta_ip = wifi["ip"]
+                                            rssi = wifi["rssi"]
+                                            power = response_data["data"]["device_status"]["meters"][0]["power"]
+                                            total = response_data["data"]["device_status"]["meters"][0]["total"]
+                                            output = response_data["data"]["device_status"]["relays"][0]["ison"]
+                                            if online:
+                                                if a_output:
+                                                    msg += _('[{}: OK OUT ON ACT {}W SUM {}kW/h ').format(name, power, round(total/1000.0, 1))
+                                                    msg_info += _('{}: OK OUT ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, power, round(total/1000.0, 1), sta_ip, rssi)
+                                                else:
+                                                    msg += _('[{}: OK OUT OFF ACT {}W SUM {}kW/h ').format(name, power, round(total/1000.0, 1))
+                                                    msg_info += _('{}: OK OUT OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, power, round(total/1000.0, 1), sta_ip, rssi)
                                             else:
-                                                msg += _('[{}: OK OUT OFF ACT {}W SUM {}kW/h ').format(name, power, round(total/1000.0, 1))
-                                                msg_info += _('{}: OK OUT OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, power, round(total/1000.0, 1), sta_ip, rssi)
-                                        else:
-                                            msg += _('[{}: OFFLINE] ').format(name)
-                                            msg_info += _('[{}: OFFLINE] ').format(name)
+                                                msg += _('[{}: OFFLINE] ').format(name)
+                                                msg_info += _('{}: OFFLINE ').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN2 not available yet ').format(name)                                                
 
-                                    # type: 2=Shelly Pro 2PM
+                                    # typ: 2=Shelly Pro 2PM
+                                    # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 2:
-                                        name = plugin_options['sensor_label'][i]
-                                        a_energy = response_data["data"]["device_status"]["switch:0"]["aenergy"]
-                                        b_energy = response_data["data"]["device_status"]["switch:1"]["aenergy"]
-                                        a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                        b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                        a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                        b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                        a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                        b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                        a_voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                        b_voltage = response_data["data"]["device_status"]["switch:1"]["voltage"]
-                                        updated = response_data["data"]["device_status"]["_updated"]
-                                        isok = response_data["isok"]
-                                        online = response_data["data"]["online"]
-                                        wifi = response_data["data"]["device_status"]["wifi"]
-                                        sta_ip = wifi["sta_ip"]
-                                        rssi = wifi["rssi"]
-                                        if online:
-                                            if a_output:
-                                                msg += _('[{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 1), a_voltage)
-                                                msg_info += _('{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 1), a_voltage, sta_ip, rssi)
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN1 not available yet ').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            a_energy = response_data["data"]["device_status"]["switch:0"]["aenergy"]
+                                            b_energy = response_data["data"]["device_status"]["switch:1"]["aenergy"]
+                                            a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                            b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                            a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                            b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                            a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                            b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                            a_voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                            b_voltage = response_data["data"]["device_status"]["switch:1"]["voltage"]
+                                            updated = response_data["data"]["device_status"]["_updated"]
+                                            isok = response_data["isok"]
+                                            online = response_data["data"]["online"]
+                                            wifi = response_data["data"]["device_status"]["wifi"]
+                                            sta_ip = wifi["sta_ip"]
+                                            rssi = wifi["rssi"]
+                                            if online:
+                                                if a_output:
+                                                    msg += _('[{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 1), a_voltage)
+                                                    msg_info += _('{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 1), a_voltage, sta_ip, rssi)
+                                                else:
+                                                    msg += _('[{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 1), a_voltage)
+                                                    msg_info += _('{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 1), a_voltage, sta_ip, rssi)    
+                                                if b_output:
+                                                    msg += _('OUT2 ON ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 1), b_voltage)
+                                                    msg_info += _('OUT2 ON ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 1), b_voltage, updated)
+                                                else:
+                                                    msg += _('OUT2 OFF ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 1), b_voltage)
+                                                    msg_info += _('OUT2 OFF ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 1), b_voltage, updated)
                                             else:
-                                                msg += _('[{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 1), a_voltage)
-                                                msg_info += _('{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 1), a_voltage, sta_ip, rssi)    
-                                            if b_output:
-                                                msg += _('OUT2 ON ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 1), b_voltage)
-                                                msg_info += _('OUT2 ON ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 1), b_voltage, updated)
-                                            else:
-                                                msg += _('OUT2 OFF ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 1), b_voltage)
-                                                msg_info += _('OUT2 OFF ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 1), b_voltage, updated)
-                                        else:
-                                            msg += _('[{}: OFFLINE] ').format(name)
-                                            msg_info += _('[{}: OFFLINE] ').format(name)                                            
+                                                msg += _('[{}: OFFLINE] ').format(name)
+                                                msg_info += _('{}: OFFLINE ').format(name)
+
+                                    # typ: 3=Shelly 1PM Mini
+                                    # gen: 0 = GEN1, 1 = GEN 2+
+                                    if plugin_options['sensor_type'][i] == 3:
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN1 not available yet ').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            print(response_data)                                                
+
                                 except JSONDecodeError:
                                     raise BadResponse("Bad JSON")
                             except:
@@ -249,13 +275,18 @@ class sensors_page(ProtectedPage):
                     plugin_options.__setitem__('use_footer', False)
 
 
-            commands = {'sensor_type': [], 'use_sensor': [], 'sensor_label': [], 'sensor_id': []}
+            commands = {'sensor_type': [], 'gen_type': [], 'use_sensor': [], 'sensor_label': [], 'sensor_id': []}
 
             for i in range(0, plugin_options['number_sensors']):
                 if 'sensor_type'+str(i) in qdict:
                     commands['sensor_type'].append(int(qdict['sensor_type'+str(i)]))
                 else:
                     commands['sensor_type'].append(int(0))
+
+                if 'gen_type'+str(i) in qdict:
+                    commands['gen_type'].append(int(qdict['gen_type'+str(i)]))
+                else:
+                    commands['gen_type'].append(int(0))
 
                 if 'use_sensor'+str(i) in qdict:
                     if qdict['use_sensor'+str(i)]=='on':
@@ -274,6 +305,7 @@ class sensors_page(ProtectedPage):
                     commands['sensor_id'].append('')
 
             plugin_options.__setitem__('sensor_type', commands['sensor_type'])
+            plugin_options.__setitem__('gen_type', commands['gen_type'])
             plugin_options.__setitem__('use_sensor', commands['use_sensor'])
             plugin_options.__setitem__('sensor_label', commands['sensor_label'])
             plugin_options.__setitem__('sensor_id', commands['sensor_id'])

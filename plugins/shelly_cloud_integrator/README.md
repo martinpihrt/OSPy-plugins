@@ -34,9 +34,13 @@ Plugin setup
   Unique ID number to identify Shelly devices. It can be found in the Shelly device settings or on the Shelly manufacturer's cloud site: https://control.shelly.cloud after logging in, click on the desired device and the "device information" section.
 
 * Shelly sensor type:
-  Shelly Plus HT, Shelly Plus Plug S, Shelly Pro 2PM
+  Shelly Plus HT, Shelly Plus Plug S, Shelly Pro 2PM...
 
 * Status:  
   Status window from the plugin.
+
+Shelly API:
+* https://shelly-api-docs.shelly.cloud/gen1/
+* https://shelly-api-docs.shelly.cloud/gen2/
 
 
