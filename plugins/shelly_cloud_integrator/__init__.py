@@ -114,8 +114,8 @@ class Sender(Thread):
                                             batt_V = battery["V"]
                                             batt_perc = battery["percent"]
                                             if online:
-                                                msg += _('[{}: OK {}°C {}RV BAT{}%] ').format(name, temperature, humidity, batt_perc)
-                                                msg_info += _('{}: OK {}°C {}RV BAT{}% IP:{} RSSI:{}dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                                msg += _('[{}: {}°C {}RV BAT{}%] ').format(name, temperature, humidity, batt_perc)
+                                                msg_info += _('{}: {}°C {}RV BAT{}% IP:{} RSSI:{}dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)                                            
@@ -136,11 +136,11 @@ class Sender(Thread):
                                             output = response_data["data"]["device_status"]["relays"][0]["ison"]
                                             if online:
                                                 if output:
-                                                    msg += _('[{}: OK OUT ON ACT {}W] ').format(name, power)
-                                                    msg_info += _('{}: OK OUT ON ACT {}W IP:{} RSSI:{}dbm\n').format(name, power, sta_ip, rssi)
+                                                    msg += _('[{}: OUT ON ACT {}W] ').format(name, power)
+                                                    msg_info += _('{}: OUT ON ACT {}W IP:{} RSSI:{}dbm\n').format(name, power, sta_ip, rssi)
                                                 else:
-                                                    msg += _('[{}: OK OUT OFF ACT {}W] ').format(name, power)
-                                                    msg_info += _('{}: OK OUT OFF ACT {}W IP:{} RSSI:{}dbm\n').format(name, power, sta_ip, rssi)
+                                                    msg += _('[{}: OUT OFF ACT {}W] ').format(name, power)
+                                                    msg_info += _('{}: OUT OFF ACT {}W IP:{} RSSI:{}dbm\n').format(name, power, sta_ip, rssi)
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
@@ -174,8 +174,8 @@ class Sender(Thread):
                                             rssi = wifi["rssi"]
                                             if online:
                                                 if a_output:
-                                                    msg += _('[{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), a_voltage)
-                                                    msg_info += _('{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
+                                                    msg += _('[{}: OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), a_voltage)
+                                                    msg_info += _('{}: OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
                                                 else:
                                                     msg += _('[{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), a_voltage)
                                                     msg_info += _('{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
@@ -209,11 +209,11 @@ class Sender(Thread):
                                             rssi = wifi["rssi"]
                                             if online:
                                                 if output:
-                                                    msg += _('[{}: OK OUT ON ACT {}W SUM {}kW/h {}V] ').format(name, power, round(total/1000.0, 2), voltage)
-                                                    msg_info += _('{}: OK OUT ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                    msg += _('[{}: OUT ON ACT {}W SUM {}kW/h {}V] ').format(name, power, round(total/1000.0, 2), voltage)
+                                                    msg_info += _('{}: OUT ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
                                                 else:
-                                                    msg += _('[{}: OK OUT OFF ACT {}W SUM {}kW/h {}V] ').format(name, power, round(total/1000.0, 2), voltage)
-                                                    msg_info += _('{}: OK OUT OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                    msg += _('[{}: OUT OFF ACT {}W SUM {}kW/h {}V] ').format(name, power, round(total/1000.0, 2), voltage)
+                                                    msg_info += _('{}: OUT OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
@@ -244,10 +244,10 @@ class Sender(Thread):
                                             if online:
                                                 if roller is None:
                                                     if a_output:
-                                                        msg += _('[{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), voltage)
+                                                        msg += _('[{}: OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), voltage)
                                                         msg_info += _('{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
                                                     else:
-                                                        msg += _('[{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), voltage)
+                                                        msg += _('[{}: OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), voltage)
                                                         msg_info += _('{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
                                                     if b_output:
                                                         msg += _('OUT2 ON ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 2), b_voltage)
@@ -256,8 +256,8 @@ class Sender(Thread):
                                                         msg += _('OUT2 OFF ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 2), b_voltage)
                                                         msg_info += _('OUT2 OFF ACT {}W SUM {}kW/h {}\n').format(b_power, round(b_total/1000.0, 2), updated)
                                                 else:
-                                                    msg += _('[{}: OK ROLLER {} ACT A{}W B{}W SUM A{}kW/h B{}kW/h {}V ').format(name, roller, a_power, b_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), voltage)
-                                                    msg_info += _('{}: OK ROLLER {} ACT A{}W B{}W SUM A{}kW/h B{}kW/h {}V IP:{} RSSI:{}dbm ').format(name, roller, a_power, b_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), a_voltage, sta_ip, rssi)       
+                                                    msg += _('[{}: ROLLER {} ACT A{}W B{}W SUM A{}kW/h B{}kW/h {}V] ').format(name, roller, a_power, b_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), voltage)
+                                                    msg_info += _('{}: ROLLER {} ACT A{}W B{}W SUM A{}kW/h B{}kW/h {}V IP:{} RSSI:{}dbm\n').format(name, roller, a_power, b_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), a_voltage, sta_ip, rssi)       
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
