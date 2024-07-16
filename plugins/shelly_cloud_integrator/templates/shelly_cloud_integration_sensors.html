@@ -16,9 +16,6 @@ $var page: plugins
         jQuery("#number_sensors").click(function() {
             jQuery("#pluginForm").submit();
         });
-        jQuery("#sensor_type")..change(function() {
-            jQuery("#pluginForm").submit();
-        });
         jQuery('#msgHint').fadeIn(10);
         switch (msg) {
             case "none":
@@ -104,6 +101,7 @@ $var page: plugins
             <option value="1" ${"selected" if plugin_options["sensor_type"][c]==1 else ""}>$_('Shelly Plus Plug S')</option>
             <option value="2" ${"selected" if plugin_options["sensor_type"][c]==2 else ""}>$_('Shelly Pro 2PM')</option>
             <option value="3" ${"selected" if plugin_options["sensor_type"][c]==3 else ""}>$_('Shelly 1PM Mini')</option>
+            <option value="4" ${"selected" if plugin_options["sensor_type"][c]==4 else ""}>$_('Shelly 2.5')</option>            
             </select>
             $if plugin_options["sensor_type"][c]==0:
                 <img src="/plugins/shelly_cloud_integrator/static/images/HT.webp" width="100" height="100"></img>
@@ -112,8 +110,12 @@ $var page: plugins
             $if plugin_options["sensor_type"][c]==2:
                 <img src="/plugins/shelly_cloud_integrator/static/images/pro2pm.webp" width="100" height="100"></img>
             $if plugin_options["sensor_type"][c]==3:
-                <img src="/plugins/shelly_cloud_integrator/static/images/mini.webp" width="100" height="100"></img>                
+                <img src="/plugins/shelly_cloud_integrator/static/images/mini.webp" width="100" height="100"></img>
+            $if plugin_options["sensor_type"][c]==4:
+                <img src="/plugins/shelly_cloud_integrator/static/images/25.webp" width="100" height="100"></img>                                
             </td>
+            </tr>
+            <tr>
             <td style='text-transform: none;'>$_('Shelly Gen'):</td>
             <td title=$:{json.dumps(_('Generation of Shelly devices.'), ensure_ascii=False)}>
             <select name="gen_type${c}" id='gen_type'>

@@ -36,7 +36,7 @@ plugin_options = PluginOptions(
         'use_sensor': [False, False],
         'sensor_label': ['label', 'label'],                      # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.
         'sensor_id': ['', ''],                                   # Shelly ID. This can be obtained from Shelly > User Settings > Cloud Authorization Key
-        'sensor_type': [0, 1],                                   # 0=Shelly Plus HT, 1=Shelly Plus Plug S, 2=Shelly Pro 2PM, 3=Shelly 1PM Mini
+        'sensor_type': [0, 1],                                   # 0=Shelly Plus HT, 1=Shelly Plus Plug S, 2=Shelly Pro 2PM, 3=Shelly 1PM Mini,4=Shelly 2.5
         'gen_type': [0, 1],                                      # 0=Gen1, 1=Gen2
         'number_sensors': 2,                                     # default 2 sensors for example
     }
@@ -118,7 +118,7 @@ class Sender(Thread):
                                                 msg_info += _('{}: OK {}°C {}RV BAT{}% IP:{} RSSI:{}dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
-                                                msg_info += _('{}: OFFLINE ').format(name)                                            
+                                                msg_info += _('{}: OFFLINE\n').format(name)                                            
 
                                     # typ: 1=Shelly Plus Plug S ver 1
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -135,18 +135,18 @@ class Sender(Thread):
                                             total = response_data["data"]["device_status"]["meters"][0]["total"]
                                             output = response_data["data"]["device_status"]["relays"][0]["ison"]
                                             if online:
-                                                if a_output:
-                                                    msg += _('[{}: OK OUT ON ACT {}W SUM {}kW/h ').format(name, power, round(total/1000.0, 1))
-                                                    msg_info += _('{}: OK OUT ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, power, round(total/1000.0, 1), sta_ip, rssi)
+                                                if output:
+                                                    msg += _('[{}: OK OUT ON ACT {}W] ').format(name, power)
+                                                    msg_info += _('{}: OK OUT ON ACT {}W IP:{} RSSI:{}dbm\n').format(name, power, sta_ip, rssi)
                                                 else:
-                                                    msg += _('[{}: OK OUT OFF ACT {}W SUM {}kW/h ').format(name, power, round(total/1000.0, 1))
-                                                    msg_info += _('{}: OK OUT OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, power, round(total/1000.0, 1), sta_ip, rssi)
+                                                    msg += _('[{}: OK OUT OFF ACT {}W] ').format(name, power)
+                                                    msg_info += _('{}: OK OUT OFF ACT {}W IP:{} RSSI:{}dbm\n').format(name, power, sta_ip, rssi)
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
-                                                msg_info += _('{}: OFFLINE ').format(name)
+                                                msg_info += _('{}: OFFLINE\n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            msg_info += _('{}: GEN2 not available yet ').format(name)                                                
+                                            msg_info += _('{}: GEN2 not available yet\n').format(name)                                                
 
                                     # typ: 2=Shelly Pro 2PM
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -174,20 +174,20 @@ class Sender(Thread):
                                             rssi = wifi["rssi"]
                                             if online:
                                                 if a_output:
-                                                    msg += _('[{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 1), a_voltage)
-                                                    msg_info += _('{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 1), a_voltage, sta_ip, rssi)
+                                                    msg += _('[{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), a_voltage)
+                                                    msg_info += _('{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
                                                 else:
-                                                    msg += _('[{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 1), a_voltage)
-                                                    msg_info += _('{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 1), a_voltage, sta_ip, rssi)    
+                                                    msg += _('[{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), a_voltage)
+                                                    msg_info += _('{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
                                                 if b_output:
-                                                    msg += _('OUT2 ON ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 1), b_voltage)
-                                                    msg_info += _('OUT2 ON ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 1), b_voltage, updated)
+                                                    msg += _('OUT2 ON ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 2), b_voltage)
+                                                    msg_info += _('OUT2 ON ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, updated)
                                                 else:
-                                                    msg += _('OUT2 OFF ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 1), b_voltage)
-                                                    msg_info += _('OUT2 OFF ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 1), b_voltage, updated)
+                                                    msg += _('OUT2 OFF ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 2), b_voltage)
+                                                    msg_info += _('OUT2 OFF ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, updated)
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
-                                                msg_info += _('{}: OFFLINE ').format(name)
+                                                msg_info += _('{}: OFFLINE\n').format(name)
 
                                     # typ: 3=Shelly 1PM Mini
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -197,7 +197,73 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet ').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            print(response_data)                                                
+                                            total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                            output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                            power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                            voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                            updated = response_data["data"]["device_status"]["_updated"]
+                                            isok = response_data["isok"]
+                                            online = response_data["data"]["online"]
+                                            wifi = response_data["data"]["device_status"]["wifi"]
+                                            sta_ip = wifi["sta_ip"]
+                                            rssi = wifi["rssi"]
+                                            if online:
+                                                if output:
+                                                    msg += _('[{}: OK OUT ON ACT {}W SUM {}kW/h {}V] ').format(name, power, round(total/1000.0, 2), voltage)
+                                                    msg_info += _('{}: OK OUT ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                else:
+                                                    msg += _('[{}: OK OUT OFF ACT {}W SUM {}kW/h {}V] ').format(name, power, round(total/1000.0, 2), voltage)
+                                                    msg_info += _('{}: OK OUT OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                            else:
+                                                msg += _('[{}: OFFLINE] ').format(name)
+                                                msg_info += _('{}: OFFLINE\n').format(name)
+
+                                    # typ: 4=Shelly 2.5
+                                    # gen: 0 = GEN1, 1 = GEN 2+
+                                    if plugin_options['sensor_type'][i] == 4:
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            a_total = response_data["data"]["device_status"]["meters"][0]["total"]
+                                            b_total = response_data["data"]["device_status"]["meters"][1]["total"]
+                                            try:
+                                                roller = response_data["data"]["device_status"]["rollers"][0]["state"]
+                                            except:
+                                                roller = None
+                                                # TODO switch   
+                                                a_output = 0
+                                                b_output = 0
+                                            a_power = response_data["data"]["device_status"]["meters"][0]["power"]
+                                            b_power = response_data["data"]["device_status"]["meters"][1]["power"]
+                                            voltage = response_data["data"]["device_status"]["voltage"]
+                                            updated = response_data["data"]["device_status"]["_updated"]
+                                            isok = response_data["isok"]
+                                            online = response_data["data"]["online"]
+                                            wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                            sta_ip = wifi["ip"]
+                                            rssi = wifi["rssi"]
+                                            if online:
+                                                if roller is None:
+                                                    if a_output:
+                                                        msg += _('[{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), voltage)
+                                                        msg_info += _('{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
+                                                    else:
+                                                        msg += _('[{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 2), voltage)
+                                                        msg_info += _('{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
+                                                    if b_output:
+                                                        msg += _('OUT2 ON ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 2), b_voltage)
+                                                        msg_info += _('OUT2 ON ACT {}W SUM {}kW/h {}\n').format(b_power, round(b_total/1000.0, 2), updated)
+                                                    else:
+                                                        msg += _('OUT2 OFF ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 2), b_voltage)
+                                                        msg_info += _('OUT2 OFF ACT {}W SUM {}kW/h {}\n').format(b_power, round(b_total/1000.0, 2), updated)
+                                                else:
+                                                    msg += _('[{}: OK ROLLER {} ACT A{}W B{}W SUM A{}kW/h B{}kW/h {}V ').format(name, roller, a_power, b_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), voltage)
+                                                    msg_info += _('{}: OK ROLLER {} ACT A{}W B{}W SUM A{}kW/h B{}kW/h {}V IP:{} RSSI:{}dbm ').format(name, roller, a_power, b_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), a_voltage, sta_ip, rssi)       
+                                            else:
+                                                msg += _('[{}: OFFLINE] ').format(name)
+                                                msg_info += _('{}: OFFLINE\n').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN2 not available yet ').format(name)                                                                                                                                          
 
                                 except JSONDecodeError:
                                     raise BadResponse("Bad JSON")
