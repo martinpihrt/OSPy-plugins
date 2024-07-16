@@ -24,15 +24,20 @@ from json.decoder import JSONDecodeError
 ################################################################################
 NAME = 'Shelly Cloud Integration'                                # The unique name of the plugin listed in the plugin manager
 MENU =  _('Package: Shelly Cloud Integration')                   # The name of the plugin that will be visible in the running plugins tab and will be translated
-LINK = 'settings_page'                                           # The default webpage when loading the plugin will be the settings page class
+LINK = 'status_page'                                             # The default webpage when loading the plugin
 
 plugin_options = PluginOptions(
     NAME,
     {
         'use_footer': True,                                      # Show data from plugin in footer on home page
         'auth_key': '',                                          # Account verification key
-        'server_uri': '',                                        # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key
-
+        'server_uri': 'shelly-59-eu.shelly.cloud',               # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key
+        'request_interval': 5,                                   # The refresh interval for request from Shelly server
+        'use_sensor': [False, False],
+        'sensor_label': ['label', 'label'],                      # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.
+        'sensor_id': ['', ''],                                   # Shelly ID. This can be obtained from Shelly > User Settings > Cloud Authorization Key
+        'sensor_type': [0, 1],                                   # 0=Shelly Plus HT, 1=Shelly Plus Plug S, 2=Shelly Pro 2PM
+        'number_sensors': 2,                                     # default 2 sensors for example
     }
 )
 
@@ -64,7 +69,7 @@ class Sender(Thread):
         in_footer = None
         if plugin_options['use_footer']:
             in_footer = showInFooter()                            # Instantiate class to enable data in footer
-            in_footer.button = 'shelly_cloud_integration/settings'# Button redirect on footer
+            in_footer.button = 'shelly_cloud_integrator/status'   # Button redirect on footer
             in_footer.label =  _('Shelly Cloud Integration')      # Label on footer
         
         log.clear(NAME)                                           # Clear events window on webpage
@@ -72,27 +77,115 @@ class Sender(Thread):
 
         while not self._stop_event.is_set():                      # Plugin repeating loop
             try:                                                  # It is a good idea to use try and except because it is possible to debug any errors encountered in the plugin.
-#test               
-                    id = 'b0b21c136864'
-                    url = 'https://{}/device/status?auth_key={}&id={}'.format(plugin_options['server_uri'], plugin_options['auth_key'], id)
-                    response = get(url, timeout=5)
-                    if response.status_code == 401:
-                        raise BadLogin()
-                    elif response.status_code == 404:
-                        raise NotFound("Not Found")
-                    try:
-                        response_data = response.json()
-                    except JSONDecodeError:
-                        raise BadResponse("Bad JSON")
-#                   gen = response_data.get("gen", 1)
-                    print(response_data)
+                log.clear(NAME)
+                msg = ''
+                msg_info = ''
+                if len(plugin_options['auth_key']) > 10 and len(plugin_options['server_uri']) > 10:
+                    for i in range(0, plugin_options['number_sensors']):
+                        id = plugin_options['sensor_id'][i]
+                        if len(id) > 5 and plugin_options['use_sensor'][i]:
+                            url = 'https://{}/device/status?auth_key={}&id={}'.format(plugin_options['server_uri'], plugin_options['auth_key'], id)
+                            try:
+                                response = get(url, timeout=5)
+                                if response.status_code == 401:
+                                    raise BadLogin()
+                                elif response.status_code == 404:
+                                    raise NotFound("Not Found")
+                                try:
+                                    response_data = response.json()
+                                    # type: 0 = Shelly Plus HT GEN 2, GEN 3
+                                    if plugin_options['sensor_type'][i] == 0:
+                                        name = plugin_options['sensor_label'][i]
+                                        temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
+                                        humidity = response_data["data"]["device_status"]["humidity:0"]["rh"]
+                                        updated = response_data["data"]["device_status"]["_updated"]
+                                        isok = response_data["isok"]
+                                        battery = response_data["data"]["device_status"]["devicepower:0"]["battery"]
+                                        online = response_data["data"]["online"]
+                                        wifi = response_data["data"]["device_status"]["wifi"]
+                                        sta_ip = wifi["sta_ip"]
+                                        rssi = wifi["rssi"]
+                                        batt_V = battery["V"]
+                                        batt_perc = battery["percent"]
+                                        if online:
+                                            msg += _('[{}: OK {}°C {}RV BAT{}%] ').format(name, temperature, humidity, batt_perc)
+                                            msg_info += _('{}: OK {}°C {}RV BAT{}% IP:{} RSSI:{}dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                        else:
+                                            msg += _('[{}: OFFLINE] ').format(name)
+                                            msg_info += _('[{}: OFFLINE] ').format(name)                                            
 
+                                    # type: 1=Shelly Plus Plug S ver 1
+                                    if plugin_options['sensor_type'][i] == 1:
+                                        print(response_data)
+                                        name = plugin_options['sensor_label'][i]
+                                        updated = response_data["data"]["device_status"]["_updated"]
+                                        isok = response_data["isok"]
+                                        online = response_data["data"]["online"]
+                                        wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                        sta_ip = wifi["ip"]
+                                        rssi = wifi["rssi"]
+                                        power = response_data["data"]["device_status"]["meters"][0]["power"]
+                                        total = response_data["data"]["device_status"]["meters"][0]["total"]
+                                        output = response_data["data"]["device_status"]["relays"]["ison"]
+                                        if online:
+                                            if a_output:
+                                                msg += _('[{}: OK OUT ON ACT {}W SUM {}kW/h ').format(name, power, round(total/1000.0, 1))
+                                                msg_info += _('{}: OK OUT ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, power, round(total/1000.0, 1), sta_ip, rssi)
+                                            else:
+                                                msg += _('[{}: OK OUT OFF ACT {}W SUM {}kW/h ').format(name, power, round(total/1000.0, 1))
+                                                msg_info += _('{}: OK OUT OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, power, round(total/1000.0, 1), sta_ip, rssi)
+                                        else:
+                                            msg += _('[{}: OFFLINE] ').format(name)
+                                            msg_info += _('[{}: OFFLINE] ').format(name)
+
+                                    # type: 2=Shelly Pro 2PM
+                                    if plugin_options['sensor_type'][i] == 2:
+                                        name = plugin_options['sensor_label'][i]
+                                        a_energy = response_data["data"]["device_status"]["switch:0"]["aenergy"]
+                                        b_energy = response_data["data"]["device_status"]["switch:1"]["aenergy"]
+                                        a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                        b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                        a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                        b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                        a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                        b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                        a_voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                        b_voltage = response_data["data"]["device_status"]["switch:1"]["voltage"]
+                                        updated = response_data["data"]["device_status"]["_updated"]
+                                        isok = response_data["isok"]
+                                        online = response_data["data"]["online"]
+                                        wifi = response_data["data"]["device_status"]["wifi"]
+                                        sta_ip = wifi["sta_ip"]
+                                        rssi = wifi["rssi"]
+                                        if online:
+                                            if a_output:
+                                                msg += _('[{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 1), a_voltage)
+                                                msg_info += _('{}: OK OUT1 ON ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 1), a_voltage, sta_ip, rssi)
+                                            else:
+                                                msg += _('[{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V ').format(name, a_power, round(a_total/1000.0, 1), a_voltage)
+                                                msg_info += _('{}: OK OUT1 OFF ACT {}W SUM {}kW/h {}V IP:{} RSSI:{}dbm ').format(name, a_power, round(a_total/1000.0, 1), a_voltage, sta_ip, rssi)    
+                                            if b_output:
+                                                msg += _('OUT2 ON ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 1), b_voltage)
+                                                msg_info += _('OUT2 ON ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 1), b_voltage, updated)
+                                            else:
+                                                msg += _('OUT2 OFF ACT {}W SUM {}kW/h {}V] ').format(b_power, round(b_total/1000.0, 1), b_voltage)
+                                                msg_info += _('OUT2 OFF ACT {}W SUM {}kW/h {}V {}\n').format(b_power, round(b_total/1000.0, 1), b_voltage, updated)
+                                        else:
+                                            msg += _('[{}: OFFLINE] ').format(name)
+                                            msg_info += _('[{}: OFFLINE] ').format(name)                                            
+                                except JSONDecodeError:
+                                    raise BadResponse("Bad JSON")
+                            except:
+                                response = None
+                                log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
+                                pass
+
+                    log.info(NAME, datetime_string() + '\n{}'.format(msg_info))
                     if plugin_options['use_footer']:
-                        msg = _('test')
                         if in_footer is not None:
-                        in_footer.val = msg.encode('utf8').decode('utf8')                               
+                            in_footer.val = msg.encode('utf8').decode('utf8')
 
-                    self._sleep(10)                                   # The loop is executed every second
+                self._sleep(plugin_options['request_interval'])   # The loop is executed every second
 
             except Exception:                                     # In the event of an error (the try did not turn out correctly), a callback is used to write where the error is
                 log.clear(NAME)
@@ -122,16 +215,81 @@ def stop():                                                       # This functio
 # Web pages:                                                                   #
 ################################################################################
 
-class settings_page(ProtectedPage):
+class status_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        return self.plugin_render.shelly_cloud_integration(plugin_options, log.events(NAME))
+        return self.plugin_render.shelly_cloud_integration(log.events(NAME))
+
+
+class sensors_page(ProtectedPage):
+    """Load an html page for entering adjustments."""
+
+    def GET(self):
+        msg = 'none'
+        return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
 
     def POST(self):
-        
-        plugin_options.web_update(web.input()) 
-        raise web.seeother(plugin_url(settings_page), True)
+        try:
+            qdict = web.input()
+
+            if 'number_sensors' in qdict:
+                plugin_options.__setitem__('number_sensors', int(qdict['number_sensors']))
+            if 'request_interval' in qdict:
+                plugin_options.__setitem__('request_interval', int(qdict['request_interval']))
+            if 'auth_key' in qdict:
+                plugin_options.__setitem__('auth_key', qdict['auth_key'])
+            if 'server_uri' in qdict:
+                plugin_options.__setitem__('server_uri', qdict['server_uri'])
+
+            if 'use_footer' in qdict:
+                if qdict['use_footer']=='on':
+                    plugin_options.__setitem__('use_footer', True)
+                else:
+                    plugin_options.__setitem__('use_footer', False)
+
+
+            commands = {'sensor_type': [], 'use_sensor': [], 'sensor_label': [], 'sensor_id': []}
+
+            for i in range(0, plugin_options['number_sensors']):
+                if 'sensor_type'+str(i) in qdict:
+                    commands['sensor_type'].append(int(qdict['sensor_type'+str(i)]))
+                else:
+                    commands['sensor_type'].append(int(0))
+
+                if 'use_sensor'+str(i) in qdict:
+                    if qdict['use_sensor'+str(i)]=='on':
+                        commands['use_sensor'].append(True)
+                else:
+                    commands['use_sensor'].append(False)
+
+                if 'sensor_label'+str(i) in qdict:
+                    commands['sensor_label'].append(qdict['sensor_label'+str(i)])
+                else:
+                    commands['sensor_label'].append('')
+
+                if 'sensor_id'+str(i) in qdict:
+                    commands['sensor_id'].append(qdict['sensor_id'+str(i)])
+                else:
+                    commands['sensor_id'].append('')
+
+            plugin_options.__setitem__('sensor_type', commands['sensor_type'])
+            plugin_options.__setitem__('use_sensor', commands['use_sensor'])
+            plugin_options.__setitem__('sensor_label', commands['sensor_label'])
+            plugin_options.__setitem__('sensor_id', commands['sensor_id'])
+
+            if sender is not None:
+                sender.update()
+
+            msg = 'saved'
+            return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
+
+        except Exception:
+            log.debug(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
+            pass
+
+        msg = 'error'
+        return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
 
 
 class help_page(ProtectedPage):
@@ -163,4 +321,4 @@ class BadResponse(Exception):
 
 class NotFound(Exception):
     """Exception for 404 Not Found"""
-    pass        
+    pass
