@@ -256,8 +256,8 @@ class Sender(Thread):
                                                         msg += _('2 OFF {}W ({}kW/h)] ').format(b_power, round(b_total/1000.0, 2))
                                                         msg_info += _('2 OFF {}W ({}kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), updated)
                                                 else:
-                                                    msg += _('[{}: {} 1: {}W ({}kW/h) 2: {}W ({}kW/h)] ').format(name, roller, a_power, b_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2))
-                                                    msg_info += _('{}: {} 1: {}W ({}kW/h) 2: {}W ({}kW/h) {}V IP:{} RSSI:{}dbm {}\n').format(name, roller, a_power, b_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, updated)       
+                                                    msg += _('[{}: {} 1: {}W ({}kW/h) 2: {}W ({}kW/h)] ').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2))
+                                                    msg_info += _('{}: {} 1: {}W ({}kW/h) 2: {}W ({}kW/h) {}V IP:{} RSSI:{}dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, updated)       
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
