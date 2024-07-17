@@ -57,6 +57,7 @@ plugin_options = PluginOptions(
         'hass_ospy_fqdn': '',                                    # Default: auto detect
         'hass_device_is_station_name': False,                    # Default: uncheck
         'hass_pub_disabled': False,                              # Default: uncheck
+        'base_mqtt_state_topic': ''
     }
 )
 
@@ -292,7 +293,8 @@ class mqtt_hass_base:
         MQTT publish helper function.
         Publish dictionary as JSON
         """
-        client = mqtt.get_client()
+        client = None 
+#        client = mqtt.get_client()
         if client:
             if isinstance(payload, dict):
                 payload = json.dumps(payload, sort_keys=True)
@@ -506,7 +508,7 @@ class mqtt_hass_base:
         Publish system value if updated
         force = True will republish the value
         """
-        value = self.get_sip_value()
+        value = self.get_ospy_value()
 
         # Don't publish the same value
         if value == self._value and not force_update:
@@ -552,13 +554,13 @@ class mqtt_hass_base:
         """Start listening to MQTT messages"""
         if self._component in ["sensor", "binary_sensor"]:
             return
-        mqtt.subscribe(self.set_topic, self.set_incoming_message)
+#        mqtt.subscribe(self.set_topic, self.set_incoming_message)
 
     def set_unsubscribe(self, force_enable=False):
         """Stop listening to MQTT messages"""
         if self._component in ["sensor", "binary_sensor"]:
             return
-        mqtt.unsubscribe(self.set_topic)
+#        mqtt.unsubscribe(self.set_topic)
         self._publish(self.set_topic)  # Clear set topic
 
     def set_incoming_message(self, client, msg):
@@ -617,16 +619,16 @@ class mqtt_hass_system_param(mqtt_hass_base):
 
     def get_ospy_value(self):
 #TODO        """According to OSPy setting, return direct value or corresponding option key name"""
-"""
-        if self._gv_sd == None:
-            return None
-        s = gv.sd[self._gv_sd]
-        if self._component in ["select", "binary_sensor"]:
-            for option, state in self._options.items():
-                if state == s:
-                    return option
-        return s
-"""
+
+#        if self._gv_sd == None:
+#            return None
+#        s = gv.sd[self._gv_sd]
+#        if self._component in ["select", "binary_sensor"]:
+#            for option, state in self._options.items():
+#                if state == s:
+#                    return option
+#        return s
+
         return
 
     def entity_name(self):
@@ -692,12 +694,11 @@ class mqtt_hass_rain_delay_timer(mqtt_hass_system_param):
 
     def set_ospy_value(self, value):
         """Set OSPy settings for rain delay timer according to direct value"""
-"""
-        if value.isdigit():
-            gv.sd[self._sd_param] = int(value)
-            gv.sd[u"rdst"] = int(gv.now + gv.sd[self._sd_param] * 3600)
-            stop_onrain()
-"""
+#        if value.isdigit():
+#            gv.sd[self._sd_param] = int(value)
+#            gv.sd[u"rdst"] = int(gv.now + gv.sd[self._sd_param] * 3600)
+#            stop_onrain()
+
         print("stop_onrain()", 697)
 
     def state_publish(self, force_update=False):
@@ -706,24 +707,24 @@ class mqtt_hass_rain_delay_timer(mqtt_hass_system_param):
         force = True will republish the value
         """
         value = self.get_ospy_value()
-"""
-        # Don't publish the same value
-        if value == self._value and not force_update:
-            return
-        self._value = value
-        duration = gv.sd[self._sd_param] * 3600
-        if duration:
-            start_time = gv.sd[u"rdst"]
-        else:
-            start_time = "None"
 
-        payload = {
-            "state": value,
-            "start_time": start_time,
-            "duration": duration,
-        }
-        self._publish(self.state_topic, payload)
-"""
+        # Don't publish the same value
+#        if value == self._value and not force_update:
+#            return
+#        self._value = value
+#        duration = gv.sd[self._sd_param] * 3600
+#        if duration:
+#            start_time = gv.sd[u"rdst"]
+#        else:
+#            start_time = "None"
+
+#        payload = {
+#            "state": value,
+#            "start_time": start_time,
+#            "duration": duration,
+#        }
+#        self._publish(self.state_topic, payload)
+
 
 class mqtt_hass_running_program(mqtt_hass_system_param):
     """MQTT HASS system sensor for running program number"""
@@ -778,11 +779,11 @@ class mqtt_hass_zone(mqtt_hass_base):
 
     def _get_enable_option(self):
         """Return zone enable state"""
-"""
-        bid = int(self._index / 8)
-        s = self._index % 8
-        return (gv.sd["show"][bid] >> s) & 1
-"""
+
+#        bid = int(self._index / 8)
+#        s = self._index % 8
+#        return (gv.sd["show"][bid] >> s) & 1
+
         return
 
     def _get_name_option(self):
@@ -812,20 +813,20 @@ class mqtt_hass_zone(mqtt_hass_base):
 
     def set_ospy_value(self, value):
         """Set OSPy zone state according to options name"""
-"""
-        if value in self._options:
-            gv.srvals[self._index] = self._options[value]
-"""
+
+#        if value in self._options:
+#            gv.srvals[self._index] = self._options[value]
+
         return
 
     def get_ospy_value(self):
         """Return OSPy zone state name according to options"""
-"""
-        sip_state = gv.srvals[self._index]
-        for value, state in self._options.items():
-            if state == sip_state:
-                return value
-"""                
+
+#        sip_state = gv.srvals[self._index]
+#        for value, state in self._options.items():
+#            if state == sip_state:
+#                return value
+                
         return None
 
     def device_name(self):
@@ -883,32 +884,32 @@ class mqtt_hass_zone(mqtt_hass_base):
         Attributes includes state, start time, total duration in seconds and the program that trigered the state "ON" """
         if self._publish_disabled(force_enable):
             return
-"""
-        value = self.get_ospy_value()
+
+#        value = self.get_ospy_value()
 
         if value == self._value and not force_update:
             return
 
         self._value = value
-        if value == "On":
-            start_time = gv.rs[self._index][0]
-            duration = gv.rs[self._index][2]
-            if duration == float("inf") or duration == 0:
-                duration = "inf"
-            program = ospy_program_to_name(gv.rs[self._index][3])
-        else:
-            start_time = "None"
-            duration = "inf"
-            program = "None"
+#        if value == "On":
+#            start_time = gv.rs[self._index][0]
+#            duration = gv.rs[self._index][2]
+#            if duration == float("inf") or duration == 0:
+#                duration = "inf"
+#            program = ospy_program_to_name(gv.rs[self._index][3])
+#        else:
+#            start_time = "None"
+#            duration = "inf"
+#            program = "None"
 
-        payload = {
-            "state": value,
-            "start_time": start_time,
-            "duration": duration,
-            "program": program,
-        }
-        self._publish(self.state_topic, payload)
-"""
+#        payload = {
+#            "state": value,
+#            "start_time": start_time,
+#            "duration": duration,
+#            "program": program,
+#        }
+#        self._publish(self.state_topic, payload)
+
     def state_unpublish(self, force_enable=False):
         """Remove zone state from MQTT broker"""
         if self._publish_disabled(force_enable):
@@ -949,47 +950,47 @@ class mqtt_hass_zone(mqtt_hass_base):
         """Process MQTT received zone set messages."""
         # Don't execute if system is disabled
         return
-"""        
-        if gv.sd["en"] == 0:
-            return
+        
+#        if gv.sd["en"] == 0:
+#            return
 
-        duration = 0
-        try:
-            cmd = json.loads(msg.payload)
-        except ValueError as e:
+#        duration = 0
+#        try:
+#            cmd = json.loads(msg.payload)
+#        except ValueError as e:
             # decode direct command
-            state = msg.payload.decode("utf-8")
-        else:
+#            state = msg.payload.decode("utf-8")
+#        else:
             # decode command as json
-            if "state" in cmd:
-                state = str(cmd["state"])
-            if "duration" in cmd:
-                duration = int(cmd["duration"])
+#            if "state" in cmd:
+#                state = str(cmd["state"])
+#            if "duration" in cmd:
+#                duration = int(cmd["duration"])
 
-        state = state.strip().capitalize()
-        index = self._index
+#        state = state.strip().capitalize()
+#        index = self._index
         # set station to run
-        if state != self.get_sip_value():
-            if state == "On":
+#        if state != self.get_sip_value():
+#            if state == "On":
                 # Start station
-                gv.rs[index][0] = gv.now
-                if duration:
-                    gv.rs[index][1] = gv.now + duration
-                    gv.rs[index][2] = duration
-                    gv.rs[index][3] = 98  # Run Once
-                else:
+#                gv.rs[index][0] = gv.now
+#                if duration:
+#                    gv.rs[index][1] = gv.now + duration
+#                    gv.rs[index][2] = duration
+#                    gv.rs[index][3] = 98  # Run Once
+#                else:
 
-                    gv.rs[index][1] = float("inf")
-                    gv.rs[index][2] = float("inf")
-                    gv.rs[index][3] = 98  # Run Once
-            elif state == "Off":
+#                    gv.rs[index][1] = float("inf")
+#                    gv.rs[index][2] = float("inf")
+#                    gv.rs[index][3] = 98  # Run Once
+#            elif state == "Off":
                 # Stop station
-                gv.rs[index][1] = gv.now
+#                gv.rs[index][1] = gv.now
 
         # Execute
-        if any(gv.rs):
-            gv.sd["bsy"] = 1
-"""
+#        if any(gv.rs):
+#            gv.sd["bsy"] = 1
+
 
 # MQTT HASS OSPy integration class
 class mqtt_hass_to_ospy:
@@ -1013,7 +1014,7 @@ class mqtt_hass_to_ospy:
         """Initialize MQTT HASS plugin options from saved setting in mqtt_hass.json"""
         global _settings_base_mqtt
 
-        _settings_base_mqtt = mqtt.get_settings()
+#        _settings_base_mqtt = mqtt.get_settings()
         base_topic = plugin_options['base_mqtt_state_topic']
         if base_topic != plugin_options['base_mqtt_state_topic']:
             plugin_options['base_mqtt_state_topic'] = base_topic
@@ -1212,6 +1213,7 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         global slugify_is_installed
+        error_msg = ''
         if not slugify_is_installed:
             error_msg = _('Error: slugify not installed. Install it to system. sudo apt install python3 slugify.')
         elif not mqtt_is_installed:
