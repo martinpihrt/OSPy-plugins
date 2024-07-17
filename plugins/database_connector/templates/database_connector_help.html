@@ -23,61 +23,7 @@ $var page: plugins
     <p>CREATE TABLE IF NOT EXISTS windmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, max VARCHAR(7), actual VARCHAR(7))</p>
     <p>$_('The data is incremented and has this structure:')</p>
     <p>$_('max speed, actual speed')</p></br>
-    <p><b>$_('Code example of how to retrieve data from a database in Python3 (for further personal use)')</b></p>
-    <p><code>
-    # sudo apt-get install -y libmariadb-dev
-    # sudo apt-get install libmariadb3
-    # https://help.wedos.cz/otazka/mysql-databaze-neni-pristupna-zvenku/23078/
-    import mariadb
-    try:
-        conn = mariadb.connect(
-            user='user',
-            password='pass',
-            host='192.168.88.248',
-            port=3306,
-            database="ospy"
-        )
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}")
-    cur = conn.cursor()
-    try:
-        cur.execute("SELECT * FROM airtemp")
-        rows = cur.fetchall() 
-        print("Total rows in airtemp are: ", len(rows))
-        for row in rows:
-            print("id:{} date:{} ds1:{} ds2:{} ds3:{} ds4:{} ds5:{} ds6:{} dht1:{} dht2:{} dht3:{}".format(row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7],row[8],row[9],row[10]))
-    except:
-        print("Table airtemp not found")
-    try:
-        cur.execute("SELECT * FROM tankmonitor")
-        rows = cur.fetchall() 
-        print("Total rows in tankmonitor are: ", len(rows))
-        for row in rows: 
-            print("id:{} date:{} min:{} max:{} actual:{} volume:{}".format(row[0],row[1],row[2],row[3],row[4],row[5])) 
-    except:
-        print("Table tankmonitor not found")
-    try:
-        cur.execute("SELECT * FROM windmonitor")
-        rows = cur.fetchall()
-        print("Total rows in windmonitor are: ", len(rows))
-        for row in rows:
-            print("id:{} date:{} max:{} actual:{}".format(row[0],row[1],row[2],row[3]))
-    except:
-        print("Table windmonitor not found")
-    cur.close()
-    </code></p></br>
-    <p><b>$_('Code output')</b></p>
-    <p><code>
-    Total rows in airtemp are: 1
-    id:1 date:2024-02-22 11:07:55 ds1:7.0 ds2:5.0 ds3:7.3 ds4:6.8 ds5:7.0 ds6:8.3 dht1:0 dht2:0 dht3:0
-    Total rows in tankmonitor are: 2
-    id:1 date:2024-02-22 11:07:56 min:400 max:245 actual:245.0 volume:1848.03
-    id:2 date:2024-02-22 11:07:57 min:245 max:245 actual:245.0 volume:1848.03
-    Total rows in windmonitor are: 3
-    id:1 date:2024-02-22 11:06:19 max:5.15 actual:5.15
-    id:2 date:2024-02-22 11:06:39 max:5.4 actual:5.4
-    id:3 date:2024-02-22 11:08:13 max:5.4 actual:5.4
-    </code></p>
+    <p>https://dev.mysql.com/doc/connector-python/en/connector-python-installation.html</p>
 </div>
 
 <div id="controls">

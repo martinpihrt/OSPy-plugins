@@ -2,6 +2,9 @@ Database Connector Readme
 ====
 
 Tested in Python 3+
+This extension uses a database connection via the interface: mysql-connector-python to install use: sudo pip install mysql-connector-python.
+https://dev.mysql.com/doc/connector-python/en/connector-python-installation.html
+
 
 Plugin setup
 -----------

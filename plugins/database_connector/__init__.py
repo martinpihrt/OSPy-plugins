@@ -40,8 +40,16 @@ plugin_options = PluginOptions(
     }
 )
 
+config = {
+  'user': plugin_options['user'],
+  'password': plugin_options['pass'],
+  'host': plugin_options['host'],
+  #'database': plugin_options['database'],
+  'port': plugin_options['port'],
+  'raise_on_warnings': True
+}
 
-maria_installed_ok = False
+is_installed_ok = False
 
 ################################################################################
 # Main function loop:                                                          #
@@ -67,18 +75,19 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        global maria_installed_ok
+        global is_installed_ok
         log.clear(NAME)
         if not self._stop_event.is_set():
             try:
                 if plugin_options['use']:
                     try:
-                        import mariadb
-                        log.info(NAME, _('Version: ') + '{}\n'.format(test_maria()))
-                        maria_installed_ok = True
+                        import mysql.connector
+                        version = mysql.connector.__version_info__
+                        log.info(NAME, _('Installed version mysql-connector-python:') + ' {}.{}.{}'.format(version[0], version[1], version[2]))
+                        is_installed_ok = True
                     except ImportError:
-                        log.info(NAME, _('Mariadb is not installed or you have a newer version.'))
-                        log.info(NAME, _('If you do not have Maria installed, try installing it using the button below...'))
+                        log.info(NAME, _('Mysql-connector-python is not installed or any error.'))
+                        log.info(NAME, _('Error') + ':\n' + traceback.format_exc())
 
             except Exception:
                 log.clear(NAME)
@@ -104,19 +113,10 @@ def stop():
         sender = None
 
 
-def test_maria():
-    cmd = "mysql -V | grep -oP 'Distrib \K[^,]+'"
-    return run_command(cmd, return_text = True)
-    
-
-def install_maria():
-    cmd = "sudo apt-get install -y libmariadb-dev"
-    run_command(cmd)
-    cmd = "sudo apt-get install libmariadb3"
-    run_command(cmd)
-    log.info(NAME, _('Mariadb is now installed.'))
-    log.info(NAME, _('Please wait installing mariadb-client-10.0...'))
-    cmd = "sudo apt-get install mariadb-client-10.0"
+def install_db():
+    cmd = "sudo pip install mysql-connector-python"
+    log.info(NAME, _('Installing mysql connector python'))
+    log.info(NAME, _('In error: externally-managed-environment use sudo rm /usr/lib/python3.11/EXTERNALLY-MANAGED and next install connector.') + '\n')
     run_command(cmd)
 
 
@@ -131,62 +131,72 @@ def run_command(cmd, return_text = None):
         if return_text is not None:
             return output
         else:
-            log.info(NAME, output)    
+            log.info(NAME, output)
 
     except Exception:
         log.error(NAME, _('Database Connector plug-in') + ':\n' + traceback.format_exc())
 
 
 def execute_db(sql = "", commit = False, test = False, fetch = False):
-    global maria_installed_ok
-    if maria_installed_ok:
-        import mariadb
-        msg = None
-        try:
-            conn = mariadb.connect(
-                user=plugin_options['user'],
-                password=plugin_options['pass'],
-                host=plugin_options['host'],
-                port=plugin_options['port'],
-                #database=plugin_options['database']
-            )
-            cur = conn.cursor()
-            if not test:
-                cur.execute("USE {}".format(plugin_options['database']))
-            
-            rows = cur.execute(sql)
-            if rows is not None:
-                msg = cur.fetchall()
-            
-            log.clear(NAME)
-            log.info(NAME, datetime_string() + '\n' + _('Command being executed') + ': {}'.format(sql))
-            
-            if commit:
-                conn.commit()
-                log.info(NAME, _('Committed data in db') + '.') 
-            
-            if test:
-                msg = cur.fetchall()
-                msg_len = len(msg)
-                if msg_len > 1:
-                    import re
-                    dbtype = re.sub("[()',]","", str(msg[1]))  # remove char ()', in string. Database server type (etc: mysql...)
-                    dbname = ''
-                    for c in range(2, msg_len):
-                        dbname += re.sub("[()',]","", str(msg[c])) + '\n'
-                    log.info(NAME, _('Database type') + ': {}'.format(dbtype) + '\n' + _('Found databases') + ': \n{}'.format(dbname))
-                else:
-                    log.info(NAME, _('Not found') + '.')
+    global is_installed_ok
+    if is_installed_ok:
+        import mysql.connector
+        from mysql.connector import errorcode
 
-            if fetch and not test:
-                msg = cur.fetchall()        
+        msg = None
+        result = None
+        try:
+            cnx = mysql.connector.connect(**config)
+            if cnx and cnx.is_connected():
+                cur = cnx.cursor()
+                if not test:
+                    cur.execute("USE {}".format(plugin_options['database']))
             
-            cur.close()
+                rows = cur.execute(sql)
+                if rows is not None:
+                    msg = cur.fetchall()
+                log.clear(NAME)
+                log.info(NAME, datetime_string() + '\n' + _('Command being executed') + ': {}'.format(sql))
+            
+                if commit:
+                    cnx.commit()
+                    log.info(NAME, _('Committed data in db') + '.') 
+            
+                if test:
+                    msg = cur.fetchall()
+                    msg_len = len(msg)
+                    if msg_len > 1:
+                        import re
+                        dbtype = re.sub("[()',]","", str(msg[1]))  # remove char ()', in string. Database server type (etc: mysql...)
+                        dbname = ''
+                        for c in range(2, msg_len):
+                            dbname += re.sub("[()',]","", str(msg[c])) + '\n'
+                        log.info(NAME, _('Database type') + ': {}'.format(dbtype) + '\n' + _('Found databases') + ': \n{}'.format(dbname))
+                    else:
+                        log.info(NAME, _('Not found') + '.')
+
+                if fetch and not test:
+                    msg = cur.fetchall()
+            
+                cur.close()
             return -1 if msg is None else msg
 
-        except mariadb.Error as e:
-            log.error(NAME, datetime_string() + '\n' + _('Error connecting to MariaDB Platform') + ':\n{}'.format(e))
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                log.error(NAME, _('Something is wrong with your user name or password'))
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                log.error(NAME, _('Database does not exist'))
+            elif err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                log.error(NAME, _('Table already exists'))
+            else:
+                log.error(NAME, err)
             return None
+
+        else:
+            cnx.close()
+
+        return None
+
 
 def get_dump():
     try:
@@ -257,7 +267,7 @@ class settings_page(ProtectedPage):
             execute_db(sql, test=True, commit=False)
 
         if sender is not None and install:
-            install_maria()
+            install_db()
 
         return self.plugin_render.database_connector(plugin_options, log.events(NAME))
     
@@ -289,7 +299,7 @@ class backup_page(ProtectedPage):
                     os.remove(del_file)
                     log.debug(NAME, datetime_string() + ': ' + _('Deleting file has sucesfully.'))
                 else:
-                    log.error(NAME, datetime_string() + ': ' + _('File for deleting not found!'))                    
+                    log.error(NAME, datetime_string() + ': ' + _('File for deleting not found!'))
 
         if 'download' in qdict and sender is not None:
             download = qdict['download']
@@ -298,14 +308,14 @@ class backup_page(ProtectedPage):
                 down_path = os.path.join(plugin_data_dir(), down_name)
                 if os.path.isfile(down_path):
                     _file = os.path.join(plugin_data_dir(), down_name)
-                    _content = mimetypes.guess_type(down_path)[0]                                     
+                    _content = mimetypes.guess_type(down_path)[0]
                     log.debug(NAME, _('Download file: {} type: {}.').format(_file, _content))
-                    web.header('Access-Control-Allow-Origin', '*')                                    
+                    web.header('Access-Control-Allow-Origin', '*')
                     web.header('Content-type', _content)
                     web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))
                     with open(down_path, 'rb') as f:
                         return f.read()
-        
+
         read_sql_folder()
 
         return self.plugin_render.database_connector_backup(plugin_options, log.events(NAME))
