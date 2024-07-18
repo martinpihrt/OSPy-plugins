@@ -192,9 +192,7 @@ function check_history() {
     <a href=$plugins.plugin_url('wind_monitor.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log']:
         <p>
-        <a href=$plugins.plugin_url('wind_monitor.log_csv') class="button download">$_('Download log')</a>
         <a href="?show" class="button backup">$_('Show logs')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
         <a href="?reset"  class="button cancel danger">$_('Reset max speed')</a>
         </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('wind_monitor.settings_page')" method="post">
@@ -211,6 +209,15 @@ function check_history() {
                     <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
                 </td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Show data from'):</td>
+                <td>
+                <select id="type_log" name="type_log" style="width: 200px" title=$:{json.dumps(_('Choose from where the displayed data in the log and graph will be loaded.'), ensure_ascii=False)}>
+                <option value="0" ${"selected" if plugin_options['type_log']==0 else ""}>$_('Local file')</option>
+                <option value="1" ${"selected" if plugin_options['type_log']==1 else ""}>$_('Database file')</option>
+                </select>
+                </td>
+            </tr>            
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the windmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
@@ -409,26 +416,27 @@ function check_history() {
         </table>
     </form>
 </div>
+
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
 
-$if plugin_options['enable_log']:
+$if plugin_options['enable_log'] or plugin_options['en_sql_log']:
+    $if plugin_options['type_log'] == 0:
+        $_('The chart from local file')
+    $if plugin_options['type_log'] == 1:
+        $_('The chart from database')
     <div id="graph-container" class="graph-container">
     <div id="legend-placeholder" style="display:none;"></div>
     <div id="legend-visible" style="float: right; width: auto;"></div>
     <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
     <form name="historyForm" id="historyForm" action="" method="get">
-        $_(u'Select filter for graph history'):
-        <select id="history" name="history" style="width: 200px" title=$:{json.dumps(_('Select a filter for the interval of read data.'), ensure_ascii=False)}>
-        <option value="0" ${"selected" if plugin_options['history']==0 else ""}>$_(u'Without limits')</option>
-        <option value="1" ${"selected" if plugin_options['history']==1 else ""}>$_(u'Day filter')</option>
-        <option value="2" ${"selected" if plugin_options['history']==2 else ""}>$_(u'Week filter')</option>
-        <option value="3" ${"selected" if plugin_options['history']==3 else ""}>$_(u'Month filter')</option>
-        <option value="4" ${"selected" if plugin_options['history']==4 else ""}>$_(u'Year filter')</option>
-        </select>
-    </form>
+        $_('From') <input name='dt_from' id="dt_from" input type="datetime-local" value='$plugin_options['dt_from']' />
+        $_('To') <input name='dt_to' id="dt_to" input type="datetime-local" value='$plugin_options['dt_to']' />
+        <button id="filterSelection">$_('Filtering')</button>
+        <button id="clearSelection"  class="button backup">$_('Reload chart')</button>
+        <a href="?delfilter" class="button cancel danger">$_('Delete range')</a></br>
+    </form>    
     <div style="clear: both;"></div>
-    <button id="clearSelection">$_('Clear selection')</button>
     </div>

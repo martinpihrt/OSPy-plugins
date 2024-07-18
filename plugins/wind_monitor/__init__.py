@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 # This plugins check wind speed in meter per second. 
 # This plugin read data from I2C counter PCF8583 on I2C address 0x50. Max count PCF8583 is 1 milion pulses per seconds
 
@@ -48,8 +48,7 @@ wind_options = PluginOptions(
         'use_kmh': False,            # measure in km/h or m/s
         'enable_log_change': False,  # enable save log max speed if max wind > last max wind
         'delete_max_24h': False,     # deleting max speed after xx hours or minutes
-        'delete_max': '24h',         # 24 hours is default interval for deleting maximal speed 
-        'history': 0,                # selector for graph history
+        'delete_max': '24h',         # 24 hours is default interval for deleting maximal speed
         'stoperr': False,            # True = stoping is enabled
         'used_stations': [],         # use this stations for stoping scheduler if stations is activated in scheduler
         'use_footer': True,          # show data from plugin in footer on home page
@@ -60,7 +59,10 @@ wind_options = PluginOptions(
         'event_interval': 1,         # repeatedly exceeded in these interval (minutes)
         'ignore_interval': 24,       # ignore other events for a while (24 hours)
         'used_program': [],          # selector for running program (-1 is none)
-        'en_sql_log': False,         # logging temperature to sql database        
+        'en_sql_log': False,         # logging temperature to sql database
+        'type_log': 0,               # 0 = show log and graph from local log file, 1 = from database
+        'dt_from' : '',              # for graph history (from date time ex: 2024-02-01T6:00)
+        'dt_to' : '',                # for graph history (to date time ex: 2024-03-17T12:00)        
     }
 )
 
@@ -119,7 +121,7 @@ class WindSender(Thread):
 
         if wind_options['use_footer']:
             wind_mon = showInFooter() #  instantiate class to enable data in footer
-            wind_mon.label = _(u'Wind Speed')           # label on footer
+            wind_mon.label = _('Wind Speed')           # label on footer
             wind_mon.val = '---'                        # value on footer
             wind_mon.button = "wind_monitor/settings"   # button redirect on footer
 
@@ -132,7 +134,7 @@ class WindSender(Thread):
                         self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
 
                     except ImportError:
-                        log.warning(NAME, _(u'Could not import smbus.'))
+                        log.warning(NAME, _('Could not import smbus.'))
 
                     if self.bus is not None:
                         set_counter(self.bus)     # set pcf8583 as counter
@@ -379,6 +381,7 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         time_.sleep(10)
         return None
 
+
 def set_stations_in_scheduler_off():
     """Stoping selected station in scheduler."""
     
@@ -405,6 +408,7 @@ def set_stations_in_scheduler_off():
     if ending:
         log.info(NAME, _('Stoping stations in scheduler'))
 
+
 def get_all_values():
     """Return all posible values for others use."""
     status = wind_sender.status
@@ -416,6 +420,7 @@ def get_all_values():
     except:
         return -1, -1, datetime_string()
 
+
 def read_log():
     """Read log data from json file."""
     try:
@@ -423,6 +428,7 @@ def read_log():
             return json.load(logf)
     except IOError:
         return []
+
 
 def read_graph_log():
     """Read graph data from json file."""
@@ -433,17 +439,20 @@ def read_graph_log():
     except IOError:
         return []
 
+
 def write_log(json_data):
     """Write data to log json file."""
 
     with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
         json.dump(json_data, outfile)
 
+
 def write_graph_log(json_data):
     """Write data to graph json file."""
 
     with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
         json.dump(json_data, outfile)
+
 
 def update_log():
     """Update data in json files."""
@@ -507,6 +516,7 @@ def update_log():
             log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + traceback.format_exc())
             pass             
 
+
 def create_default_graph():
     """Create default graph json file."""
 
@@ -534,9 +544,15 @@ class settings_page(ProtectedPage):
 
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
-        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)        
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
+
+        if wind_sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+            dt_from = qdict['dt_from']
+            dt_to = qdict['dt_to']
+            wind_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
+            wind_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)        
 
         if wind_sender is not None and reset:
             wind_sender.status['max_meter'] = 0
@@ -545,15 +561,11 @@ class settings_page(ProtectedPage):
             log.info(NAME, datetime_string() + ' ' + _('Maximal speed has reseted.'))
             raise web.seeother(plugin_url(settings_page), True)
 
-        if wind_sender is not None and delete:
-            write_log([])
-            create_default_graph()
-            log.info(NAME, datetime_string() + ' ' + _('Deleted all log files OK'))
-            raise web.seeother(plugin_url(settings_page), True)
-
-        if wind_sender is not None and 'history' in qdict:
-            history = qdict['history']
-            wind_options.__setitem__('history', int(history))
+        if wind_sender is not None and delfilter:
+            from datetime import datetime, timedelta
+            dt_now = (datetime.today() + timedelta(days=1)).date()
+            wind_options.__setitem__('dt_from', "2020-01-01T00:00")
+            wind_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
         if wind_sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
@@ -587,17 +599,40 @@ class settings_page(ProtectedPage):
 
         raise web.seeother(plugin_url(settings_page), True)
 
+
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
         return self.plugin_render.wind_monitor_help()
 
+
 class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.wind_monitor_log(read_log(), wind_options)
+        global wind_sender
+        qdict = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        
+        if wind_sender is not None and delete and wind_options['enable_log']:
+           write_log([])
+           create_default_graph()
+           log.info(NAME, _('Deleted all log files OK'))
+
+        if wind_sender is not None and delSQL and wind_options['en_sql_log']:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `windmonitor`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the windmonitor table from the database.'))
+            except:
+                log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + traceback.format_exc())
+                pass          
+
+        return self.plugin_render.wind_monitor_log(read_log(), read_sql_log(), wind_options)
+
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -606,6 +641,7 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(wind_options)
+
 
 class data_json(ProtectedPage):
     """Returns plugin data in JSON format."""
@@ -623,6 +659,7 @@ class data_json(ProtectedPage):
 
         return json.dumps(data)
 
+
 class log_json(ProtectedPage):
     """Returns data in JSON format."""
 
@@ -631,49 +668,105 @@ class log_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(read_log())
 
+
+def read_sql_log():
+    """Read log data from database file."""
+    data = None
+
+    try:
+        from plugins.database_connector import execute_db
+        sql = "SELECT * FROM windmonitor ORDER BY id DESC"
+        data = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,ds1,ds2,ds3,ds4,ds5,ds6,dhttemp,dhthumi,dhtstate
+    except:
+        log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
+
+
+def read_graph_sql_log():
+    """Read graph data from database file and convert it to json balance file."""
+    data = []
+
+    try:
+        sql_data = read_sql_log()
+        maximum = _('Maximum')
+        actual  = _('Actual')
+ 
+        graph_data = [
+            {"station": maximum, "balances": {}}, 
+            {"station": actual, "balances": {}}
+        ]
+
+        if sql_data is not None:
+            for row in sql_data:
+                # row[0] is ID, row[1] is datetime, row[2] is maximal
+                epoch = int(datetime.datetime.timestamp(row[1]))
+            
+                temp0 = graph_data[0]['balances']
+                max = {'total': float(row[2])}
+                temp0.update({epoch: max})
+            
+                temp1 = graph_data[1]['balances']
+                actual = {'total': float(row[3])}
+                temp1.update({epoch: actual})
+
+        data = graph_data
+
+    except:
+        log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
+
+
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
     def GET(self):
         data = []
-
-        epoch = datetime.date(1970, 1, 1)                                      # first date
-        current_time  = datetime.date.today()                                  # actual date
-
-        if wind_options['history'] == 0:                                       # without filtering
-            web.header('Access-Control-Allow-Origin', '*')
-            web.header('Content-Type', 'application/json')
-            return json.dumps(read_graph_log())
-
-        if wind_options['history'] == 1:
-            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
-        if wind_options['history'] == 2:
-            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
-        if wind_options['history'] == 3:
-            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
-        if wind_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
-
-        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-
         try:
-            json_data = read_graph_log()
-        except:
-            json_data = []
-            pass
+            from datetime import datetime
 
-        if len(json_data) > 0:
-            for i in range(0, 2):                                              # 0 = maximum, 2 = actual
-                temp_balances = {}
-                for key in json_data[i]['balances']:
-                    find_key =  int(key.encode('utf8'))                        # key is in unicode ex: u'1601347000' -> find_key is int number
-                    if find_key >= log_start:                                  # timestamp interval 
-                        temp_balances[key] = json_data[i]['balances'][key]
-                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+            dt_from = datetime.strptime(wind_options['dt_from'], '%Y-%m-%dT%H:%M') # from
+            dt_to   = datetime.strptime(wind_options['dt_to'], '%Y-%m-%dT%H:%M')   # to
+
+            epoch_time = datetime(1970, 1, 1)
+
+            log_start = int((dt_from - epoch_time).total_seconds())
+            log_end = int((dt_to - epoch_time).total_seconds())
+ 
+            try:
+                if wind_options['type_log'] == 0:
+                    json_data = read_graph_log()
+                if wind_options['type_log'] == 1:
+                    json_data = read_graph_sql_log()
+            except:
+                json_data = []
+                pass
+
+            if len(json_data) > 0:
+                for i in range(0, 2):
+                    temp_balances = {}
+                    for key in json_data[i]['balances']:
+                        try:
+                            find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
+                        except:
+                            find_key = key   
+                        if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
+                            find_data = json_data[i]['balances'][key] 
+                            temp_balances[key] = json_data[i]['balances'][key]
+
+                    data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+
+        except:
+            log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(data)
+
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
@@ -695,15 +788,70 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 interval['datetime'],
                 interval['date'],
                 interval['time'],
-                u'{}'.format(interval['maximum']),
-                u'{}'.format(interval['actual']),
+                '{}'.format(interval['maximum']),
+                '{}'.format(interval['actual']),
             ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'log_{}_.csv'.format(filestamp)
         web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="log.csv"')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
         return data
+
+
+class log_sql_csv(ProtectedPage):  # save log file from database as csv file type from web
+    """Simple Log API"""
+    def GET(self):
+        data = []
+        try:
+            from plugins.database_connector import execute_db
+            sql = "SELECT * FROM windmonitor"
+            log_file = execute_db(sql, test=False, commit=False, fetch=True)
+            maximum = _('Maximum')
+            actual  = _('Actual')
+            data = "ID; Date/Time"
+            if wind_options['use_kmh']: 
+                data += "; %s km/h" % maximum
+                data += "; %s km/h" % actual
+            else:
+                data += "; %s m/sec" % maximum
+                data += "; %s m/sec" % actual
+            data += '\n'
+            for interval in log_file:
+                data += '; '.join([
+                    '{}'.format(str(interval[0])),
+                    '{}'.format(str(interval[1])),
+                    '{}'.format(str(interval[2])),
+                    '{}'.format(str(interval[3])),                    
+                ]) + '\n'
+
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+        
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'log_{}_.csv'.format(filestamp)
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
+        return data
+
+
+class log_sql_json(ProtectedPage):
+    """Returns data in JSON format from database file log."""
+
+    def GET(self):
+        data = []
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            data = json.dumps(read_sql_log())
+        except:
+            log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+        return data
+
 
 class wind_json(ProtectedPage):
     """Returns seconds water in JSON format."""
