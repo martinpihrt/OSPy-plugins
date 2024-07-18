@@ -190,7 +190,7 @@ function check_history() {
 <div id="plugin">
     <div class="title">$_('Wind Speed Monitor settings')</div>
     <a href=$plugins.plugin_url('wind_monitor.help_page') class="button upload">$_('Help')</a><br/>
-    $if plugin_options['enable_log']:
+    $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
         <p>
         <a href="?show" class="button backup">$_('Show logs')</a>
         <a href="?reset"  class="button cancel danger">$_('Reset max speed')</a>

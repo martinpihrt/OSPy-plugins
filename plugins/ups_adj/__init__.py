@@ -37,10 +37,12 @@ ups_options = PluginOptions(
         'emlsubject': _('Report from OSPy UPS plugin'),
         'enable_log': False,
         'log_records': 0,                             # 0 = unlimited
-        'history': 0,                                 # selector for graph history
         'use_footer': True,                           # show data from plugin in footer on home page
         'eplug': 0,                                   # email plugin type (email notifications or email notifications SSL)
         'en_sql_log': False,                          # logging temperature to sql database
+        'type_log': 0,                                # 0 = show log and graph from local log file, 1 = from database
+        'dt_from' : '',                               # for graph history (from date time ex: 2024-02-01T6:00)
+        'dt_to' : '',                                 # for graph history (to date time ex: 2024-03-17T12:00)
     }
 )
 
@@ -375,15 +377,13 @@ class settings_page(ProtectedPage):
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
-        if ups_sender is not None and delete:
-           write_log([])
-           create_default_graph()
+        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
-           raise web.seeother(plugin_url(settings_page), True)
-
-        if ups_sender is not None and 'history' in qdict:
-           history = qdict['history']
-           ups_options.__setitem__('history', int(history))
+        if ups_sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+            dt_from = qdict['dt_from']
+            dt_to = qdict['dt_to']
+            ups_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
+            ups_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
 
         if ups_sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
@@ -419,7 +419,27 @@ class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ups_adj_log(read_log(), ups_options)
+        global ups_sender
+        qdict = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        
+        if ups_sender is not None and delete and ups_options['enable_log']:
+           write_log([])
+           create_default_graph()
+           log.info(NAME, _('Deleted all log files OK'))
+
+        if ups_sender is not None and delSQL and ups_options['en_sql_log']:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `upsmonitor`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the upsmonitor table from the database.'))
+            except:
+                log.error(NAME, _('UPS plugin') + ':\n' + traceback.format_exc())
+                pass          
+
+        return self.plugin_render.ups_adj_log(read_log(), read_sql_log(), ups_options)
 
 
 class settings_json(ProtectedPage):
@@ -430,6 +450,7 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         return json.dumps(ups_options)
 
+
 class data_json(ProtectedPage):
     """Returns plugin data in JSON format."""
 
@@ -438,9 +459,9 @@ class data_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         test = get_check_power()
         if not test:
-           text = _(u'OK')
+           text = _('OK')
         else:
-           text = _(u'FAULT')
+           text = _('FAULT')
 
         data =  {
           'label': ups_options['emlsubject'],
@@ -448,6 +469,22 @@ class data_json(ProtectedPage):
         }
 
         return json.dumps(data)
+
+
+def read_sql_log():
+    """Read log data from database file."""
+    data = None
+
+    try:
+        from plugins.database_connector import execute_db
+        sql = "SELECT * FROM upsmonitor ORDER BY id DESC"
+        data = execute_db(sql, test=False, commit=False, fetch=True)
+    except:
+        log.error(NAME, _('UPS plugin') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
+
 
 class log_json(ProtectedPage):
     """Returns data in JSON format."""
@@ -458,45 +495,78 @@ class log_json(ProtectedPage):
         return json.dumps(read_log())
 
 
+def read_graph_sql_log():
+    """Read graph data from database file and convert it to json balance file."""
+    data = []
+
+    try:
+        sql_data = read_sql_log()
+        state = _('State')
+ 
+        graph_data = [
+            {"station": state, "balances": {}}
+        ]
+
+        if sql_data is not None:
+            for row in sql_data:
+                # row[0] is ID, row[1] is datetime, row[2] is state
+                epoch = int(datetime.datetime.timestamp(row[1]))
+            
+                temp0 = graph_data[0]['balances']
+                state = {'total': float(row[2])}
+                temp0.update({epoch: state})
+
+        data = graph_data
+
+    except:
+        log.error(NAME, _('UPS plugin') + ':\n' + traceback.format_exc())
+        pass
+
+    return data
+
+
 class graph_json(ProtectedPage):
     """Returns graph data in JSON format."""
 
     def GET(self):
         data = []
-
-        epoch = datetime.date(1970, 1, 1)                                      # first date
-        current_time  = datetime.date.today()                                  # actual date
-
-        if ups_options['history'] == 0:                                        # without filtering
-            web.header('Access-Control-Allow-Origin', '*')
-            web.header('Content-Type', 'application/json')
-            return json.dumps(read_graph_log())
-
-        if ups_options['history'] == 1:
-            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
-        if ups_options['history'] == 2:
-            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
-        if ups_options['history'] == 3:
-            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
-        if ups_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
-
-        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-
         try:
-            json_data = read_graph_log()
+            from datetime import datetime
+
+            dt_from = datetime.strptime(ups_options['dt_from'], '%Y-%m-%dT%H:%M') # from
+            dt_to   = datetime.strptime(ups_options['dt_to'], '%Y-%m-%dT%H:%M')   # to
+
+            epoch_time = datetime(1970, 1, 1)
+
+            log_start = int((dt_from - epoch_time).total_seconds())
+            log_end = int((dt_to - epoch_time).total_seconds())
+ 
+            try:
+                if ups_options['type_log'] == 0:
+                    json_data = read_graph_log()
+                if ups_options['type_log'] == 1:
+                    json_data = read_graph_sql_log()
+            except:
+                json_data = []
+                pass
+
+            if len(json_data) > 0:
+                for i in range(0, 1):
+                    temp_balances = {}
+                    for key in json_data[i]['balances']:
+                        try:
+                            find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
+                        except:
+                            find_key = key   
+                        if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
+                            find_data = json_data[i]['balances'][key] 
+                            temp_balances[key] = json_data[i]['balances'][key]
+
+                    data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+
         except:
-            json_data = []
+            log.error(NAME, _('UPS plugin') + ':\n' + traceback.format_exc())
             pass
-
-        temp_balances = {}
-
-        if len(json_data) > 0:
-            for key in json_data[0]['balances']:
-                find_key =  int(key.encode('utf8'))                                # key is in unicode ex: u'1601347000' -> find_key is int number
-                if find_key >= log_start:                                          # timestamp interval 
-                    temp_balances[key] = json_data[0]['balances'][key]
-            data.append({ 'station': json_data[0]['station'], 'balances': temp_balances })
 
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
@@ -518,10 +588,55 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                 '{}'.format(interval['state']),
             ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'log_{}_.csv'.format(filestamp)
         web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="log.csv"')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
+        return data
+
+
+class log_sql_csv(ProtectedPage):  # save log file from database as csv file type from web
+    """Simple Log API"""
+    def GET(self):
+        data = []
+        try:
+            from plugins.database_connector import execute_db
+            sql = "SELECT * FROM upsmonitor"
+            log_file = execute_db(sql, test=False, commit=False, fetch=True)
+            state = _('State')
+            data = "ID; Date/Time; " + state + "\n"
+            for interval in log_file:
+                data += '; '.join([
+                    '{}'.format(str(interval[0])),
+                    '{}'.format(str(interval[1])),
+                    '{}'.format(str(interval[2])),                   
+                ]) + '\n'
+
+        except:
+            log.error(NAME, _('UPS plugin') + ':\n' + traceback.format_exc())
+            pass
+        
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'log_{}_.csv'.format(filestamp)
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
+        return data
+
+
+class log_sql_json(ProtectedPage):
+    """Returns data in JSON format from database file log."""
+
+    def GET(self):
+        data = []
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            data = json.dumps(read_sql_log())
+        except:
+            log.error(NAME, _('UPS plugin') + ':\n' + traceback.format_exc())
+            pass
         return data
 
 
