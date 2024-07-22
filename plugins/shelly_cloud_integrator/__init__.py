@@ -36,7 +36,11 @@ plugin_options = PluginOptions(
         'use_sensor': [False, False],                            # Enable or disable shelly in OSPy system
         'sensor_label': ['label', 'label'],                      # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.
         'sensor_id': ['', ''],                                   # Shelly ID. This can be obtained from Shelly > User Settings > Cloud Authorization Key
-        'sensor_type': [0, 1],                                   # 0=Shelly Plus HT, 1=Shelly Plus Plug S, 2=Shelly Pro 2PM, 3=Shelly 1PM Mini, 4=Shelly 2.5, 5=Shelly Pro 4PM
+        'sensor_type': [0, 1],                                   
+         # 0=Shelly Plus HT, 1=Shelly Plus Plug S,
+         # 2=Shelly Pro 2PM, 3=Shelly 1PM Mini,
+         # 4=Shelly 2.5, 5=Shelly Pro 4PM,
+         # 6=Shelly 1 Mini
         'gen_type': [0, 1],                                      # 0=Gen1, 1=Gen2
         'number_sensors': 2,                                     # default 2 sensors for example
     }
@@ -213,7 +217,7 @@ class Sender(Thread):
                                                     msg_info += _('{}: ON {}W ({}kW/h) {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
                                                 else:
                                                     msg += _('[{}: OFF {}W ({}kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                    msg_info += _('{}: OUT OFF {}W ({}kW/h) {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                    msg_info += _('{}: OFF {}W ({}kW/h) {}V IP:{} RSSI:{}dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
@@ -317,6 +321,32 @@ class Sender(Thread):
                                                 else:
                                                     msg += _('2 OFF {}W ({}kW/h)] ').format(d_power, round(d_total/1000.0, 2))
                                                     msg_info += _('2 OFF {}W ({}kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), updated)
+                                            else:
+                                                msg += _('[{}: OFFLINE] ').format(name)
+                                                msg_info += _('{}: OFFLINE\n').format(name)
+
+                                    # typ: 6=Shelly 1 Mini
+                                    # gen: 0 = GEN1, 1 = GEN 2+
+                                    if plugin_options['sensor_type'][i] == 3:
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN1 not available yet \n').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                            updated = response_data["data"]["device_status"]["_updated"]
+                                            isok = response_data["isok"]
+                                            online = response_data["data"]["online"]
+                                            wifi = response_data["data"]["device_status"]["wifi"]
+                                            sta_ip = wifi["sta_ip"]
+                                            rssi = wifi["rssi"]
+                                            if online:
+                                                if output:
+                                                    msg += _('[{}: ON] ').format(name)
+                                                    msg_info += _('{}: ON IP:{} RSSI:{}dbm {}\n').format(name, sta_ip, rssi, updated)
+                                                else:
+                                                    msg += _('[{}: OFF] ').format(name)
+                                                    msg_info += _('{}: OFF IP:{} RSSI:{}dbm {}\n').format(name, sta_ip, rssi, updated)
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
