@@ -34,11 +34,11 @@ $code:
             <th>$_('Date')</th>
             <th>$_('Time')</th>
             $if plugin_options['address_1']:
-                <th>${plugin_options['address_1']}</th>
+                <th>${plugin_options['address_1']}($plugin_options["label_1"])</th>
             $if plugin_options['address_2']:                
-                <th>${plugin_options['address_2']}</th>
+                <th>${plugin_options['address_2']}($plugin_options["label_2"])</th>
             $if plugin_options['address_3']:           
-                <th>${plugin_options['address_3']}</th>
+                <th>${plugin_options['address_3']}($plugin_options["label_3"])</th>
             <th>$_('State')</th>
         </tr>
         $for interval in records:

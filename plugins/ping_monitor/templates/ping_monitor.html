@@ -197,18 +197,24 @@ function check_history() {
             </tr>            
             <tr>
                 <td style='text-transform: none;'>$_('Ping address 1'):</td>
-                <td title=$:{json.dumps(_(u'First address for testing.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('First address for testing.'), ensure_ascii=False)}>
                 <input name='address_1' type='text' value='$plugin_options["address_1"]'></td>
+                <td title=$:{json.dumps(_('Label for address.'), ensure_ascii=False)}>
+                <input name='label_1' type='text' value='$plugin_options["label_1"]'></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Ping address 2'):</td>
                 <td title=$:{json.dumps(_(u'Second address for testing.'), ensure_ascii=False)}>
                 <input name='address_2' type='text' value='$plugin_options["address_2"]'></td>
+                <td title=$:{json.dumps(_('Label for address.'), ensure_ascii=False)}>
+                <input name='label_2' type='text' value='$plugin_options["label_2"]'></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Ping address 3'):</td>
                 <td title=$:{json.dumps(_(u'Third address for testing.'), ensure_ascii=False)}>
                 <input name='address_3' type='text' value='$plugin_options["address_3"]'></td>
+                <td title=$:{json.dumps(_('Label for address.'), ensure_ascii=False)}>
+                <input name='label_3' type='text' value='$plugin_options["label_3"]'></td>                
             </tr>                        
             <tr>
                 <td style='text-transform: none;'>$_('Ping interval'):</td>

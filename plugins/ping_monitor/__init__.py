@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # this plugin send ping to 1-3 address.
 
-__author__ = u'Martin Pihrt' # www.pihrt.com
+__author__ = 'Martin Pihrt' # www.pihrt.com
 
 #todo restart
 #todo log
@@ -32,17 +32,20 @@ from ospy.helpers import datetime_string
 
 
 NAME = 'Ping Monitor'
-MENU =  _(u'Package: Ping Monitor')
+MENU =  _('Package: Ping Monitor')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
     NAME,
     {  'use_ping': False,
-       'address_1': '8.8.8.8',      # Google.com
-       'address_2': '8.8.4.4',      # Google.com
-       'address_3': '77.75.75.176', # Seznam.cz
-       'ping_interval': 5,          # ping interval in second
-       'ping_count': 3,             # for reboot (fault counter)
+       'address_1': '8.8.8.8',         # Google.com
+       'address_2': '217.31.204.130',  # CZ.NIC
+       'address_3': '1.1.1.1',         # Cloudflare
+       'label_1': 'google.com',        # label for address 1
+       'label_2': 'cz.nic',            # label for address 2
+       'label_3': 'cloudflare',        # label for address 3
+       'ping_interval': 5,             # ping interval in second
+       'ping_count': 3,                # for reboot (fault counter)
        'use_restart': False,
        'use_send_email': False,
        'send_interval': 24,
