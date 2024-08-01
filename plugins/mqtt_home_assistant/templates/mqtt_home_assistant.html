@@ -61,24 +61,6 @@ $var page: plugins
                 <td><input type="text" name="mqtt_user_password" value="${plugin_options['mqtt_user_password']}"></td>
             </tr>
             <tr>
-                <td style="text-transform: none;">$_('Up/down topic'):</td>
-                <td title=$:{json.dumps(_('It needs to be set for proper OSPy availability detection by HASS. We suggest to use the OSPy System name as set on Options webpage.'), ensure_ascii=False)}>
-                <input type='text' name='mqtt_publish_up_down' value="${plugin_options['mqtt_publish_up_down']}">
-                </td>
-            </tr>
-            <tr>
-                <td style="text-transform: none;">$_('State for UP'):</td>
-                <td>
-                <input type='text' name='mqtt_state_on' value="${plugin_options['mqtt_state_on']}">
-                </td>
-            </tr>
-            <tr>
-                <td style="text-transform: none;">$_('State for DOWN'):</td>
-                <td>
-                <input type='text' name='mqtt_state_off' value="${plugin_options['mqtt_state_off']}">
-                </td>
-            </tr>
-            <tr>
                 <td style="text-transform: none;">$_('Topic prefix'):</td>
                 <td title=$:{json.dumps(_('MQTT base topic for system parameters and zones (Default: System name)'), ensure_ascii=False)}>
                 <input type='text' name='mqtt_hass_topic' value="${plugin_options['mqtt_hass_topic']}">
@@ -106,12 +88,6 @@ $var page: plugins
                 <td style="text-transform: none;">$_('Device name is Station name'):</td>
                 <td title=$:{json.dumps(_('Use station name for HASS zone device name (Default: uncheck)'), ensure_ascii=False)}>
                 <input name='hass_device_is_station_name' type='checkbox' ${" checked" if plugin_options['hass_device_is_station_name'] else ""}>
-                </td>
-            </tr>
-            <tr>
-                <td style="text-transform: none;">$_('Publish disabled zones'):</td>
-                <td title=$:{json.dumps(_('MQTT publish all zones states (Default: uncheck)'), ensure_ascii=False)}>
-                <input name='hass_pub_disabled' type='checkbox' ${" checked" if plugin_options['hass_pub_disabled'] else ""}>
                 </td>
             </tr>
             <tr>
