@@ -114,17 +114,22 @@ class Sender(Thread):
       
         if not self._stop_event.is_set():
             try:
-                if plugin_options['use_footer']:
-                    msg = _('Ready')
-                    if in_footer is not None:
-                        in_footer.val = msg.encode('utf8').decode('utf8')
-
                 log.clear(NAME)
                 if mqtt_is_installed:
                     self.client = get_client()
                     log.info(NAME, _('Plugin is started.'))
                     atexit.register(on_restart)
                     discovery_publish()
+
+                if self.client:
+                    msg = _('Client OK')
+                elif self.client is None:
+                    msg = _('Client not ready!')
+                else:
+                    msg = ''
+                if plugin_options['use_footer']:
+                    if in_footer is not None:
+                        in_footer.val = msg.encode('utf8').decode('utf8')
 
             except Exception:
                 log.error(NAME, _('MQTT Home Assistant') + ':\n' + traceback.format_exc())
@@ -568,13 +573,14 @@ def discovery_publish():
 
 def set_devices_online(device): # set inital values to HASS after plugin start
     topic = '{}/{}/{}/availability'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-    publish(topic, "online")
     if device._property == "scheduler_enabled" and options.manual_mode:
         publish(topic, "offline")
-    if device._property == "rain_sensed" and not options.rain_sensor_enabled:
+    elif device._property == "rain_sensed" and not options.rain_sensor_enabled:
         publish(topic, "offline")
-    if device._type == "stations" and not stations.get(int(device._id)).enabled:
+    elif device._type == "stations" and not stations.get(int(device._id)).enabled:
         publish(topic, "offline")
+    else:
+        publish(topic, "online")
 
 def set_devices_default_values(devices):
     for device in devices:
@@ -687,7 +693,7 @@ class settings_page(ProtectedPage):
         elif not mqtt_is_installed:
             msg += ' ' + _('Error: paho-mqtt is not installed. Install it to system. sudo pip3 install paho-mqtt.')
         else:
-            client = get_client()
+            client = sender.client
             if client:
                 msg = _('Client OK')
             elif client is None:
