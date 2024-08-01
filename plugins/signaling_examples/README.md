@@ -57,3 +57,9 @@ Example signals from: webpages.py, scheduler.py, stations.py, plugins:
 * signal('internet_available')<br>
 
 * signal('internet_not_available')<br>
+
+* signal('rain_delay_set')<br>
+
+* signal('rain_delay_remove')<br>
+
+* signal('hass_plugin_update')<br>

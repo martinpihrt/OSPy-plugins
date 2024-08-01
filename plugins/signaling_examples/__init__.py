@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 import json
 import time
@@ -16,7 +16,7 @@ from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 
 NAME = 'Signaling Examples'  ### name for plugin in plugin manager ###
-MENU =  _(u'Package: Signaling Examples')
+MENU =  _('Package: Signaling Examples')
 LINK = 'settings_page'       ### link for page in plugin manager ###
  
 plugin_options = PluginOptions(
@@ -113,7 +113,9 @@ class Sender(Thread):
            rain_delay_set = signal('rain_delay_set')
            rain_delay_set.connect(notify_rain_delay_setuped) 
            rain_delay_remove = signal('rain_delay_remove')
-           rain_delay_remove.connect(notify_rain_delay_expired)          
+           rain_delay_remove.connect(notify_rain_delay_expired)
+           hass_plugin_update = signal('hass_plugin_update')
+           hass_plugin_update.connect(notify_hass_update)         
 
 sender = None
 
@@ -137,117 +139,121 @@ def stop():
 
 ### login ###
 def notify_login(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Someone logged in'))
+    log.info(NAME, datetime_string() + ': ' + _('Someone logged in'))
     
 ### System settings ###
 def notify_value_change(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Value_change'))
+    log.info(NAME, datetime_string() + ': ' + _('Value_change'))
 
 ### Option settings ###
 def notify_option_change(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Options settings changed'))
+    log.info(NAME, datetime_string() + ': ' + _('Options settings changed'))
 
 ### Reboot ###
 def notify_rebooted(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'System rebooted'))
+    log.info(NAME, datetime_string() + ': ' + _('System rebooted'))
 
 ### Restarted ###
 def notify_restarted(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'System restarted'))
+    log.info(NAME, datetime_string() + ': ' + _('System restarted'))
 
 ### station names ###
 def notify_station_names(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Station names changed'))
+    log.info(NAME, datetime_string() + ': ' + _('Station names changed'))
 
 ### program change ##
 def notify_program_change(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Programs changed'))
+    log.info(NAME, datetime_string() + ': ' + _('Programs changed'))
 
 ### program deleted ###
 def notify_program_deleted(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Program deleted'))
+    log.info(NAME, datetime_string() + ': ' + _('Program deleted'))
 
 ### program toggled ###
 def notify_program_toggled(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Program toggled on or off'))
+    log.info(NAME, datetime_string() + ': ' + _('Program toggled on or off'))
 
 ### program runnow ###
 def notify_program_runnow(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Program runnow'))
+    log.info(NAME, datetime_string() + ': ' + _('Program runnow'))
 
 ### zone change ###
 def notify_zone_change(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Zone change'))
+    log.info(NAME, datetime_string() + ': ' + _('Zone change'))
 
 ### rain ###
 def notify_rain_active(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Rain active'))
+    log.info(NAME, datetime_string() + ': ' + _('Rain active'))
 
 ### not rain ###
 def notify_rain_not_active(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Rain not active'))    
+    log.info(NAME, datetime_string() + ': ' + _('Rain not active'))    
 
 ### master 1 on ###
 def notify_master_one_on(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Master one on'))    
+    log.info(NAME, datetime_string() + ': ' + _('Master one on'))    
 
 ### master 1 off ###
 def notify_master_one_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Master one off'))    
+    log.info(NAME, datetime_string() + ': ' + _('Master one off'))    
 
 ### master 2 on ###
 def notify_master_two_on(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Master two on'))    
+    log.info(NAME, datetime_string() + ': ' + _('Master two on'))    
 
 ### master 2 off ###
 def notify_master_two_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Master two off'))  
+    log.info(NAME, datetime_string() + ': ' + _('Master two off'))  
 
 ### pressurizer plugin master relay on ###
 def notify_pressurizer_master_relay_on(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Pressurizer plugin master relay on')) 
+    log.info(NAME, datetime_string() + ': ' + _('Pressurizer plugin master relay on')) 
 
 ### pressurizer plugin master relay off ###
 def notify_pressurizer_master_relay_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Pressurizer plugin master relay off')) 
+    log.info(NAME, datetime_string() + ': ' + _('Pressurizer plugin master relay off')) 
 
 ### Linux system power off ###
 def notify_poweroff(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Linux system now powering off')) 
+    log.info(NAME, datetime_string() + ': ' + _('Linux system now powering off')) 
 
 ### OSPy system update available ###
 def notify_ospyupdate(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'OSPy system update available'))
+    log.info(NAME, datetime_string() + ': ' + _('OSPy system update available'))
 
 ### Stations ON ###
 def notify_station_on(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'OSPy stations ON, index: {}').format(kw[u"txt"]))
+    log.info(NAME, datetime_string() + ': ' + _('OSPy stations ON, index: {}').format(kw[u"txt"]))
     #print(u"Messge from {}!: {}".format(name, kw[u"txt"]))
 
 ### Stations OFF ###
 def notify_station_off(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'OSPy stations OFF, index: {}').format(kw[u"txt"]))
+    log.info(NAME, datetime_string() + ': ' + _('OSPy stations OFF, index: {}').format(kw[u"txt"]))
     #print(u"Messge from {}!: {}".format(name, kw[u"txt"]))
 
 ### All stations set to OFF ###
 def notify_station_clear(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'OSPy all stations OFF'))
+    log.info(NAME, datetime_string() + ': ' + _('OSPy all stations OFF'))
 
 ### Internet available ###
 def notify_internet_available(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Internet is available (external IP)'))
+    log.info(NAME, datetime_string() + ': ' + _('Internet is available (external IP)'))
 
 ### Internet not available ###
 def notify_internet_not_available(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Internet is not available (external IP)'))
+    log.info(NAME, datetime_string() + ': ' + _('Internet is not available (external IP)'))
 
 ### Rain delay has setuped ###
 def notify_rain_delay_setuped(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Rain delay is now set a delay {} hours').format(kw[u"txt"]))
+    log.info(NAME, datetime_string() + ': ' + _('Rain delay is now set a delay {} hours').format(kw[u"txt"]))
 
 ### Rain delay has expired ###
 def notify_rain_delay_expired(name, **kw):
-    log.info(NAME, datetime_string() + ': ' + _(u'Rain delay has now been removed'))
+    log.info(NAME, datetime_string() + ': ' + _('Rain delay has now been removed'))
+
+### HASS plugin update ###
+def notify_hass_update(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Home Assistant update'))
   
 
 
