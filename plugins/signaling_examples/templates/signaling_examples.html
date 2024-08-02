@@ -1,19 +1,31 @@
-$def with(plugin_options, events)
+$def with()
 
 $var title: $_('Signaling Examples settings')
 $var page: plugins
 
 <script>
+    function updateLog(){
+        jQuery.getJSON("/plugins/signaling_examples/signal_json", function(_data) {
+            // replace ' to " for valid JSON
+            var jsonString = _data.loginfo.replace(/'/g, '"');
+            // convert to true array
+            var loginfoArray = JSON.parse(jsonString);
+            // reverse array
+            loginfoArray.reverse();
+            jQuery("#Textarea").val(loginfoArray.join("\n"));
+        })      
+        setTimeout(updateLog, 1000); // 1 second
+    }
+
     // Initialize behaviors
     jQuery(document).ready(function(){
-
         jQuery("#cSubmit").click(function() {
             jQuery("#pluginForm").submit();
         });
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
-
+        updateLog();
     });
 </script>
 
@@ -25,7 +37,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+                    <textarea id="Textarea" style="font-family: monospace;" rows="10" cols="55" readonly></textarea>
                 </td>
             </tr>
         </table>

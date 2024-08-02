@@ -63,3 +63,5 @@ Example signals from: webpages.py, scheduler.py, stations.py, plugins:
 * signal('rain_delay_remove')<br>
 
 * signal('hass_plugin_update')<br>
+
+* signal('core_30_sec_tick')<br>

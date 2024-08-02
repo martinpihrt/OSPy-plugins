@@ -12,19 +12,12 @@ from blinker import signal ### for this example ###
 from ospy.helpers import datetime_string 
 from ospy.log import log
 from threading import Thread, Event
-from plugins import PluginOptions, plugin_url
+from plugins import plugin_url
 from ospy.webpages import ProtectedPage
 
-NAME = 'Signaling Examples'  ### name for plugin in plugin manager ###
+NAME = 'Signaling Examples'
 MENU =  _('Package: Signaling Examples')
-LINK = 'settings_page'       ### link for page in plugin manager ###
- 
-plugin_options = PluginOptions(
-    NAME,
-    {#'use_signaling': False        ### for example ###
-    ### here is your plugin options ### 
-    }
-)
+LINK = 'settings_page'
 
 
 ################################################################################
@@ -56,66 +49,67 @@ class Sender(Thread):
 
     def run(self):   
         #while not self._stop_event.is_set(): ### delete hashtag for loop ###
-
-           ### here is main loop for this plugin ###
-           loggedin = signal('loggedin') ### associations with signal ###
-           loggedin.connect(notify_login)### define which subroutine will be triggered in helper ###
-           value_change = signal('value_change')
-           value_change.connect(notify_value_change)
-           option_change = signal('option_change')
-           option_change.connect(notify_option_change)
-           rebooted = signal('rebooted')
-           rebooted.connect(notify_rebooted)
-           restarted = signal('restarted')
-           restarted.connect(notify_restarted)
-           station_names = signal('station_names')
-           station_names.connect(notify_station_names)
-           program_change = signal('program_change')
-           program_change.connect(notify_program_change)
-           program_deleted = signal('program_deleted')
-           program_deleted.connect(notify_program_deleted)
-           program_toggled = signal('program_toggled')
-           program_toggled.connect(notify_program_toggled)
-           program_runnow = signal('program_runnow')
-           program_runnow.connect(notify_program_runnow)
-           zone_change = signal('zone_change')
-           zone_change.connect(notify_zone_change)
-           rain_active = signal('rain_active')
-           rain_active.connect(notify_rain_active)
-           rain_not_active = signal('rain_not_active')
-           rain_not_active.connect(notify_rain_not_active)
-           master_one_on = signal('master_one_on')
-           master_one_on.connect(notify_master_one_on)
-           master_one_off = signal('master_one_off')
-           master_one_off.connect(notify_master_one_off)
-           master_two_on = signal('master_two_on')
-           master_two_on.connect(notify_master_two_on)
-           master_two_off = signal('master_two_off')
-           master_two_off.connect(notify_master_two_off)
-           pressurizer_master_relay_on = signal('pressurizer_master_relay_on')
-           pressurizer_master_relay_on.connect(notify_pressurizer_master_relay_on)
-           pressurizer_master_relay_off = signal('pressurizer_master_relay_off')
-           pressurizer_master_relay_off.connect(notify_pressurizer_master_relay_off)
-           poweroff = signal('poweroff')
-           poweroff.connect(notify_poweroff)
-           ospyupdate = signal('ospyupdate')
-           ospyupdate.connect(notify_ospyupdate)
-           station_on = signal('station_on')
-           station_on.connect(notify_station_on)
-           station_off = signal('station_off')
-           station_off.connect(notify_station_off)
-           station_clear = signal('station_clear')
-           station_clear.connect(notify_station_clear)
-           internet_available = signal('internet_available')
-           internet_available.connect(notify_internet_available)
-           internet_not_available = signal('internet_not_available')
-           internet_not_available.connect(notify_internet_not_available)
-           rain_delay_set = signal('rain_delay_set')
-           rain_delay_set.connect(notify_rain_delay_setuped) 
-           rain_delay_remove = signal('rain_delay_remove')
-           rain_delay_remove.connect(notify_rain_delay_expired)
-           hass_plugin_update = signal('hass_plugin_update')
-           hass_plugin_update.connect(notify_hass_update)         
+            ### here is main loop for this plugin ###
+            loggedin = signal('loggedin') ### associations with signal ###
+            loggedin.connect(notify_login)### define which subroutine will be triggered in helper ###
+            value_change = signal('value_change')
+            value_change.connect(notify_value_change)
+            option_change = signal('option_change')
+            option_change.connect(notify_option_change)
+            rebooted = signal('rebooted')
+            rebooted.connect(notify_rebooted)
+            restarted = signal('restarted')
+            restarted.connect(notify_restarted)
+            station_names = signal('station_names')
+            station_names.connect(notify_station_names)
+            program_change = signal('program_change')
+            program_change.connect(notify_program_change)
+            program_deleted = signal('program_deleted')
+            program_deleted.connect(notify_program_deleted)
+            program_toggled = signal('program_toggled')
+            program_toggled.connect(notify_program_toggled)
+            program_runnow = signal('program_runnow')
+            program_runnow.connect(notify_program_runnow)
+            zone_change = signal('zone_change')
+            zone_change.connect(notify_zone_change)
+            rain_active = signal('rain_active')
+            rain_active.connect(notify_rain_active)
+            rain_not_active = signal('rain_not_active')
+            rain_not_active.connect(notify_rain_not_active)
+            master_one_on = signal('master_one_on')
+            master_one_on.connect(notify_master_one_on)
+            master_one_off = signal('master_one_off')
+            master_one_off.connect(notify_master_one_off)
+            master_two_on = signal('master_two_on')
+            master_two_on.connect(notify_master_two_on)
+            master_two_off = signal('master_two_off')
+            master_two_off.connect(notify_master_two_off)
+            pressurizer_master_relay_on = signal('pressurizer_master_relay_on')
+            pressurizer_master_relay_on.connect(notify_pressurizer_master_relay_on)
+            pressurizer_master_relay_off = signal('pressurizer_master_relay_off')
+            pressurizer_master_relay_off.connect(notify_pressurizer_master_relay_off)
+            poweroff = signal('poweroff')
+            poweroff.connect(notify_poweroff)
+            ospyupdate = signal('ospyupdate')
+            ospyupdate.connect(notify_ospyupdate)
+            station_on = signal('station_on')
+            station_on.connect(notify_station_on)
+            station_off = signal('station_off')
+            station_off.connect(notify_station_off)
+            station_clear = signal('station_clear')
+            station_clear.connect(notify_station_clear)
+            internet_available = signal('internet_available')
+            internet_available.connect(notify_internet_available)
+            internet_not_available = signal('internet_not_available')
+            internet_not_available.connect(notify_internet_not_available)
+            rain_delay_set = signal('rain_delay_set')
+            rain_delay_set.connect(notify_rain_delay_setuped) 
+            rain_delay_remove = signal('rain_delay_remove')
+            rain_delay_remove.connect(notify_rain_delay_expired)
+            hass_plugin_update = signal('hass_plugin_update')
+            hass_plugin_update.connect(notify_hass_update)
+            core_30_sec_tick = signal('core_30_sec_tick')
+            core_30_sec_tick.connect(notify_core_30_sec_tick)
 
 sender = None
 
@@ -254,7 +248,11 @@ def notify_rain_delay_expired(name, **kw):
 ### HASS plugin update ###
 def notify_hass_update(name, **kw):
     log.info(NAME, datetime_string() + ': ' + _('Home Assistant update'))
-  
+
+### OSPy core tick in loop 30 second ###
+def notify_core_30_sec_tick(name, **kw):
+    log.clear(NAME)
+    log.info(NAME, datetime_string() + ': ' + _('Core tick interval 30 second'))
 
 
 ################################################################################
@@ -265,11 +263,9 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        return self.plugin_render.signaling_examples(plugin_options, log.events(NAME))
+        return self.plugin_render.signaling_examples()
 
     def POST(self):
-        plugin_options.web_update(web.input()) ### update options from web ###
-
         if sender is not None:
             sender.update()                
         raise web.seeother(plugin_url(settings_page), True)
@@ -289,3 +285,15 @@ class settings_json(ProtectedPage):            ### return plugin_options as JSON
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
+
+
+class signal_json(ProtectedPage):
+    """Returns log info state in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data = {}
+        data['loginfo'] = '{}'.format(log.events(NAME))
+        return json.dumps(data)
+
