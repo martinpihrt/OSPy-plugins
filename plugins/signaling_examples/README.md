@@ -65,3 +65,5 @@ Example signals from: webpages.py, scheduler.py, stations.py, plugins:
 * signal('hass_plugin_update')<br>
 
 * signal('core_30_sec_tick')<br>
+
+* signal('air_temp_humi_plugin_update')<br>

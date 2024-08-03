@@ -110,6 +110,8 @@ class Sender(Thread):
             hass_plugin_update.connect(notify_hass_update)
             core_30_sec_tick = signal('core_30_sec_tick')
             core_30_sec_tick.connect(notify_core_30_sec_tick)
+            air_temp_humi_plugin_update = signal('air_temp_humi_plugin_update')
+            air_temp_humi_plugin_update.connect(notify_air_temp_humi_plugin_update)
 
 sender = None
 
@@ -254,6 +256,9 @@ def notify_core_30_sec_tick(name, **kw):
     log.clear(NAME)
     log.info(NAME, datetime_string() + ': ' + _('Core tick interval 30 second'))
 
+### Airtemp humi plugin update ###
+def notify_air_temp_humi_plugin_update(name, **kw):
+    log.info(NAME, datetime_string() + ': ' + _('Air Temperature and Humidity Monitor update'))
 
 ################################################################################
 # Web pages:                                                                   #
