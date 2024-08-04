@@ -431,7 +431,7 @@ def add_to_body_local_ospy_name():
             ahref = 'http://{}:{}'.format(ospy_local_name, options.web_port)
         return '<br><p style="color:black;">' + _('OSPy is in the network under the name') + ': <a href="' + ahref + '">' + ahref + '</a></p>'
     except:
-        pass
+        return ""
 
 ### login ###
 def notify_login(name, **kw):
