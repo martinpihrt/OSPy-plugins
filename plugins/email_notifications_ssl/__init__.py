@@ -425,7 +425,7 @@ def add_to_body_local_ospy_name():
     try:
         from ospy.helpers import ospy_web_url
         ospy_local_name = ospy_web_url()
-        if options.use_ssl:
+        if options.use_ssl or options.use_own_ssl:
             ahref = 'https://{}:{}'.format(ospy_local_name, options.web_port)
         else:
             ahref = 'http://{}:{}'.format(ospy_local_name, options.web_port)
