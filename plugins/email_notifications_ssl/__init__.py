@@ -97,13 +97,14 @@ class EmailSender(Thread):
 
         send_interval = 10000 # default time for sending between e-mails (ms)
         last_millis   = 0     # timer for repeating sending e-mails (ms)
-        body    = u''
-        logtext = u''
+        body    = ''
+        logtext = ''
         finished_count = len([run for run in log.finished_runs() if not run['blocked']])
 
         if email_options["emlpwron"]:  # if eml_power_on send email is enable (on)
-            body += '<b>' + _('System') + '</b> ' + datetime_string()
-            body += '<br><p style="color:red;">' + _('System was powered on.') + u'</p>'
+            body += '<b>' + datetime_string() + '</b>'
+            body += '<br><p style="color:red;">' + _('System was powered on.') + '</p>'
+            body += add_to_body_local_ospy_name()
             logtext = _('System was powered on.')
 
             if email_options["emllog"]:
@@ -111,14 +112,14 @@ class EmailSender(Thread):
                 if file_exists:
                    try_mail(body, logtext, EVENT_FILE)
                 else:
-                   body += '<br>' + _('Error -  events.log file not exists!')
+                   body += '<br>' + _('Error - events.log file not exists!')
                    try_mail(body, logtext)
             else:
                 try_mail(body, logtext)
 
         while not self._stop_event.is_set():
-            body    = u''
-            logtext = u''
+            body    = ''
+            logtext = ''
             try:
                 # Send E-mail if a new finished run is found
                 if email_options["emlrun"]:
@@ -130,12 +131,13 @@ class EmailSender(Thread):
                             pname = run['program_name']
                             sname = stations.get(run['station']).name
                             body += '<br>'
-                            body += '<b>' + _('System') + '</b> ' + datetime_string()
+                            body += '<b>' + datetime_string() + '</b>' 
                             body += '<br><b>'  + _('Finished run') + '</b>'
                             body += '<ul><li>' + _('Program') + ': %s \n' % pname + '</li>'
                             body += '<li>' + _('Station') + ': %s \n' % sname + '</li>'
                             body += '<li>' + _('Start time') + ': %s \n' % datetime_string(run['start']) + '</li>'
                             body += '<li>' + _('Duration') + ': %02d:%02d\n' % (minutes, seconds) + '</li></ul>'
+                            body += add_to_body_local_ospy_name()
                             logtext  =  _('Finished run') + '-> \n' + _('Program') + ': %s\n' % pname 
                             logtext +=  _('Station') + ': %s\n' % sname
                             logtext +=  _('Start time') + ': %s \n' % datetime_string(run['start'])
@@ -419,43 +421,60 @@ def stop():
         email_sender.join()
         email_sender = None
 
+def add_to_body_local_ospy_name():
+    try:
+        from ospy.helpers import ospy_web_url
+        ospy_local_name = ospy_web_url()
+        if options.use_ssl:
+            ahref = 'https://{}:{}'.format(ospy_local_name, options.web_port)
+        else:
+            ahref = 'http://{}:{}'.format(ospy_local_name, options.web_port)
+        return '<br><p style="color:black;">' + _('OSPy is in the network under the name') + ': <a href="' + ahref + '">' + ahref + '</a></p>'
+    except:
+        pass
+
 ### login ###
 def notify_login(name, **kw):
     if email_options['emlusrin']:
-        body = '<b>' + _('System') + '</b> ' + datetime_string() 
+        body = '<b>' + datetime_string() + '</b>'
         body += '<br><p style="color:blue;">' + _('Someone logged in.') + '</p><br>'
+        body += add_to_body_local_ospy_name()
         logtext = _('Someone logged in.')
         try_mail(body, logtext)
 
 ### rain ###
 def notify_rain_active(name, **kw):
     if email_options['emlrain']:    
-        body = '<b>' + _('System') + '</b> ' + datetime_string() 
+        body = '<b>' + datetime_string() + '</b>'
         body += '<br><p style="color:red;">' + _('Rain sensor has activated.') + '</p><br>'
+        body += add_to_body_local_ospy_name()
         logtext = _('Rain sensor has activated.')
         try_mail(body, logtext)
 
 ### no rain ###
 def notify_rain_deactive(name, **kw):
     if email_options['emlrainde']:
-        body = '<b>' + _('System') + '</b> ' + datetime_string() 
+        body = '<b>' + datetime_string() + '</b>'
         body += '<br><p style="color:green;">' + _('Rain sensor has deactivated.') + '</p><br>'
+        body += add_to_body_local_ospy_name()
         logtext = _('Rain sensor has deactivated.')
         try_mail(body, logtext)
 
 ### rain delay has setuped ###
 def notify_rain_delay_setuped(name, **kw):
     if email_options['emlrds']:    
-        body = '<b>' + _('System') + '</b> ' + datetime_string() 
+        body = '<b>' + datetime_string() + '</b>'
         body += '<br><p style="color:red;">' + _('Rain delay is now set a delay {} (h: m: s).').format(kw["txt"]) + '</p><br>'
+        body += add_to_body_local_ospy_name()
         logtext = _('Rain delay is now set a delay {} hours.').format(kw["txt"])
         try_mail(body, logtext)
 
 ### rain delay has expired ###
 def notify_rain_delay_expired(name, **kw):
     if email_options['emlrdr']:    
-        body = '<b>' + _('System') + '</b> ' + datetime_string() 
+        body = '<b>' + datetime_string() + '</b>'
         body += '<br><p style="color:green;">' + _('Rain delay has now been removed.') + '</p><br>'
+        body += add_to_body_local_ospy_name()
         logtext = _('Rain delay has now been removed.')
         try_mail(body, logtext)
 
@@ -476,7 +495,7 @@ def safeStr(obj):
     try: 
        return str(obj)
     except:
-       return "u'" + ' '.join(obj).encode('utf-8').strip() + "'"
+       return "'" + ' '.join(obj).encode('utf-8').strip() + "'"
 
 def email(text, subject=None, attach=None):
     ### Send email with with attachments. If subject is None, the default will be used ###
