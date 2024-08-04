@@ -108,7 +108,10 @@ $var page: plugins
             $if plugin_options["sensor_type"][c]==0:
                 <img src="/plugins/shelly_cloud_integrator/static/images/HT.webp" width="100" height="100"></img>
             $if plugin_options["sensor_type"][c]==1:
-                <img src="/plugins/shelly_cloud_integrator/static/images/plugS.webp" width="100" height="100"></img>
+                $if plugin_options["gen_type"][c]==0:
+                    <img src="/plugins/shelly_cloud_integrator/static/images/plugSgen1.webp" width="100" height="100"></img>
+                $else:
+                    <img src="/plugins/shelly_cloud_integrator/static/images/plugSgen2.webp" width="100" height="100"></img>
             $if plugin_options["sensor_type"][c]==2:
                 <img src="/plugins/shelly_cloud_integrator/static/images/pro2pm.webp" width="100" height="100"></img>
             $if plugin_options["sensor_type"][c]==3:
