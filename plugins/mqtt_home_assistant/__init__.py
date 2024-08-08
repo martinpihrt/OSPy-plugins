@@ -56,6 +56,8 @@ plugin_options = PluginOptions(
         'hass_uuid': hex(uuid.getnode()),                        # Unique identifier used as prefix for MQTT Discovery by HASS. UUID based on the network adapter MAC address
         'hass_ospy_fqdn': '',                                    # Default: auto detect
         'hass_device_is_station_name': True,                     # Default: uncheck
+        'hass_tested': '2024.8',                                 # Tested in these hass version
+        'measurement_refresh_interval': 30,                      # Default: 30 seconds (refresh measuring data. Ex: from air temp humi plugin)
     }
 )
 
@@ -135,11 +137,11 @@ class Sender(Thread):
             except Exception:
                 log.error(NAME, _('MQTT Home Assistant') + ':\n' + traceback.format_exc())
                 
-        while not self._stop_event.is_set(): # main data update loop, with addition to signals
+        while not self._stop_event.is_set():                                                    # main data update loop, with addition to signals
             try:
                 if self.sensors_temp_humi_ds is not None:
-                    update_temp_humi_ds(self.sensors_temp_humi_ds) #update only if devices exist
-                self._sleep(30) #FIXME change to options setting or something like this
+                    update_temp_humi_ds(self.sensors_temp_humi_ds)                              # update only if devices exist
+                self._sleep(plugin_options['measurement_refresh_interval'])
             except Exception:
                 log.error(NAME, _('MQTT Home Assistant') + ':\n' + traceback.format_exc())
 
@@ -160,8 +162,6 @@ def on_message(client, userdata, msg):
 
 def on_log(client, userdata, level, buf):
     log.debug(NAME, datetime_string() + ' log: {}'.format(buf))
-
-
 
 def get_client():
         try:
@@ -482,12 +482,25 @@ def station_set(client, msg, device):
                 log.finish_run(interval)
     
 
+def program_set(client, msg, device):
+    payload = msg.payload.decode("utf-8")
+    publish('{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property), payload)
+    if payload == "True":
+        # first stop stations
+        # log.finish_run(None)
+        # stations.clear()
+        # next run program id: xx
+        print(device._id)
+        #programs.run_now(int(device._id))
+    else:
+        pass
+
+
 def discovery_payload(device):
     """ Compose HASS discovery payload """
     payload = {}
     
     if device._type == "stations":
-        # Device attributes
         payload["device"] = {
         "identifiers": ["ospy_{}_s{}".format(system_UID(), device._id)],
         "manufacturer": "www.pihrt.com",
@@ -509,8 +522,18 @@ def discovery_payload(device):
         "configuration_url": system_web_url(),
         "via_device": "ospy_{}".format(system_UID())
         }
+    elif device._type == "programs":
+        payload["device"] = {
+        "identifiers": ["ospy_{}_p{}".format(system_UID(), device._id)],
+        "manufacturer": "www.pihrt.com",
+        "model": _('Program'),
+        "name": device._name,
+        "sw_version": system_version(),
+        "serial_number": system_UID(),
+        "configuration_url": system_web_url(),
+        "via_device": "ospy_{}".format(system_UID())
+        }
     else:
-        # Device attributes
         payload["device"] = {
         "identifiers": ["ospy_{}".format(system_UID())],
         "manufacturer": "www.pihrt.com",
@@ -540,8 +563,9 @@ def discovery_payload(device):
             payload["name"] = ""
         if device._type == "sensor_THDS":
             payload["name"] = ""
+        if device._type == "programs":
+            payload["name"] = ""
     
-
     if device._deviceclass == "sensor":
         payload["value_template"] = "{{ value_json.state }}"
     elif device._deviceclass == "binary_sensor":
@@ -598,19 +622,24 @@ def discovery_publish():
     baseDevices = []
     sensorTHDSDevices = []
 
-    baseDevices.append(hass_device().createNumber("duration", "system", "rain_delay",  _('Rain delay'), "mdi:timer-cog-outline", "h", 0, 24, rain_delay_set)) #TODO add max value based on settings
-    baseDevices.append(hass_device().createNumber( None, "system", "water_level",  _('Water level'), "mdi:car-coolant-level", "%", 0, 100, water_level_set))
-    baseDevices.append(hass_device().createSwitch( "switch", "system", "scheduler_enabled",  _('Scheduler'), "mdi:calendar", scheduler_enable_set))
-    baseDevices.append(hass_device().createSwitch( "switch", "system", "manual_mode",  _('Manual operation'), None, manual_mode_set))
-    baseDevices.append(hass_device().createBinarySensor( "moisture", "system", "rain_sensed",  _('Rain sensor'), None))
+    baseDevices.append(hass_device().createNumber("duration", "system", "rain_delay",  _('Rain delay'), "mdi:timer-cog-outline", "h", 0, 100, rain_delay_set)) #TODO add max value based on settings
+    baseDevices.append(hass_device().createNumber(None, "system", "water_level",  _('Water level'), "mdi:car-coolant-level", "%", 0, 500, water_level_set))
+    baseDevices.append(hass_device().createSwitch("switch", "system", "scheduler_enabled",  _('Scheduler'), "mdi:calendar", scheduler_enable_set))
+    baseDevices.append(hass_device().createSwitch("switch", "system", "manual_mode",  _('Manual operation'), None, manual_mode_set))
+    baseDevices.append(hass_device().createBinarySensor("moisture", "system", "rain_sensed",  _('Rain sensor'), None))
 
     for i in range(0, options.output_count): # create stations
-        device = hass_device().createSwitch( None, "stations", "station_{}".format(i),  stations.get(int(i)).name if plugin_options['hass_device_is_station_name'] else _("Station") + " {0:02d}".format(i + 1), "mdi:sprinkler-variant", station_set)
+        device = hass_device().createSwitch(None, "stations", "station_{}".format(i),  stations.get(int(i)).name if plugin_options['hass_device_is_station_name'] else _("Station") + " {0:02d}".format(i + 1), "mdi:sprinkler-variant", station_set)
         device._id = i
         if stations.get(int(device._id)).enabled:
             baseDevices.append(device)
         else:
             remove_device(device)
+
+    for program in programs.get():           # create programs
+        device = hass_device().createSwitch(None, "programs", "program_{}".format(i),  _('PGM') + ": {0:02d}".format(program.index + 1) + " " + program.name, "mdi:timer-play-outline", program_set)
+        device._id = program.index
+        baseDevices.append(device)
 
     try:
         from plugins import air_temp_humi
@@ -637,7 +666,6 @@ def discovery_publish():
                     sensor._id = ds
                     sensorTHDSDevices.append(sensor)
                     pass
-                
 
             body = '<br><b>' + _('Temperature DS1-DS6') + '</b><ul>'
             logtext = _('Temperature DS1-DS6') + '-> \n'
@@ -650,7 +678,6 @@ def discovery_publish():
     except ImportError:
         log.debug(NAME, _('Cannot import plugin: air temp humi.'))
         pass
-    
 
     for component in baseDevices:
         payload = discovery_payload(component)
@@ -664,7 +691,6 @@ def discovery_publish():
         publish(topic, payload)
         set_devices_online(sensor)
     
-    
     if sender.sensors_temp_humi_ds is not None:
         missingDevices = find_missing_elements(sensorTHDSDevices, sender.sensors_temp_humi_ds)
         for device in missingDevices:
@@ -676,8 +702,7 @@ def discovery_publish():
         for device in missingDevices:
             remove_device(device)
             # print(device._name)
-
-    
+  
     sender.devices = baseDevices
     sender.sensors_temp_humi_ds = sensorTHDSDevices
     
@@ -704,6 +729,8 @@ def set_devices_online(device): # set inital values to HASS after plugin start
                 publish(topic, "online")
         except AttributeError:
             pass
+    elif device._type == "programs":
+        publish(topic, "online")
     else:
         publish(topic, "online")
         
@@ -734,7 +761,10 @@ def set_devices_default_values(devices):
         elif device._type == "stations":
             topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
             payload["state"] = str(stations.get(device._id).active)
-        
+        elif device._type == "programs":
+            topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+            payload["state"] = "False"
+
         publish(topic, payload)
 
 def update_device_values(name, **kw):
@@ -833,8 +863,6 @@ def set_devices_signal():
     hass_plugin_update.connect(update_device_plugin_settings) ## completely reinitialize on plugin settings change
     air_temp_humi_plugin_update = signal('air_temp_humi_plugin_update')
     air_temp_humi_plugin_update.connect(update_device_plugin_settings) ## completely reinitialize on temp plugin settings change
-    
-    
 
 
 ################################################################################

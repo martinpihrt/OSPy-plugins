@@ -97,6 +97,18 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Verified in hass'):</td>
+                <td title=$:{json.dumps(_('Tested reliably in this version of home assistant.'), ensure_ascii=False)}>
+                ${plugin_options['hass_tested']}
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Measurement refresh interval'):</td>
+                <td title=$:{json.dumps(_('The refresh interval is used for loading data from other plugins (for example airtemp humi). Range is 10 to 1000 seconds.'), ensure_ascii=False)}>
+                    <input type="number" name="measurement_refresh_interval" max="1000" min="10" value="${plugin_options['measurement_refresh_interval']}">
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
                 <input id='use_footer' name='use_footer' type='checkbox' ${" checked" if plugin_options['use_footer'] else ""}>
