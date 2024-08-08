@@ -429,7 +429,7 @@ def add_to_body_local_ospy_name():
             ahref = 'https://{}:{}'.format(ospy_local_name, options.web_port)
         else:
             ahref = 'http://{}:{}'.format(ospy_local_name, options.web_port)
-        return '<br><p style="color:black;">' + _('OSPy is in the network under the name') + ': <a href="' + ahref + '">' + ahref + '</a></p>'
+        return '<br><p style="color:black;">' + _('OSPy is in the network under the name') + ': <a href="' + ahref + '">' + ahref + '</a></p><br>'
     except:
         return ""
 
