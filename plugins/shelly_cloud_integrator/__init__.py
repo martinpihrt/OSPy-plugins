@@ -54,6 +54,7 @@ class Sender(Thread):
         Thread.__init__(self)
         self.daemon = True
         self._stop_event = Event()
+        self.devices = []
         self._sleep_time = 0
         self.start()
 
@@ -123,6 +124,21 @@ class Sender(Thread):
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
+                                            
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': batt_V,
+                                                'battery': batt_perc,
+                                                'temperature': [temperature],
+                                                'humidity': [humidity],
+                                                'rssi': rssi,
+                                                'output': [],
+                                                'power': [],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 1=Shelly Plus Plug S ver 1
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -148,6 +164,20 @@ class Sender(Thread):
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': 0,
+                                                'battery': 0,
+                                                'temperature': [],
+                                                'humidity': [],
+                                                'rssi': rssi,
+                                                'output': [output],
+                                                'power': [power],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
                                             updated = response_data["data"]["device_status"]["_updated"]
@@ -170,6 +200,20 @@ class Sender(Thread):
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': voltage,
+                                                'battery': 0,
+                                                'temperature': [],
+                                                'humidity': [],
+                                                'rssi': rssi,
+                                                'output': [output],
+                                                'power': [power],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 2=Shelly Pro 2PM
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -212,6 +256,21 @@ class Sender(Thread):
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
 
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': b_voltage,
+                                                'battery': 0,
+                                                'temperature': [],
+                                                'humidity': [],
+                                                'rssi': rssi,
+                                                'output': [a_output, b_output],
+                                                'power': [a_power, b_power],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
+
                                     # typ: 3=Shelly 1PM Mini
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 3:
@@ -240,6 +299,20 @@ class Sender(Thread):
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': voltage,
+                                                'battery': 0,
+                                                'temperature': [],
+                                                'humidity': [],
+                                                'rssi': rssi,
+                                                'output': [output],
+                                                'power': [power],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 4=Shelly 2.5
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -280,10 +353,24 @@ class Sender(Thread):
                                                         msg_info += _('2 OFF {}W ({}kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), updated)
                                                 else:
                                                     msg += _('[{}: {} 1: {}W ({}kW/h) 2: {}W ({}kW/h)] ').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2))
-                                                    msg_info += _('{}: {} 1: {}W ({}kW/h) 2: {}W ({}kW/h) {}V IP:{} RSSI:{}dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, updated)       
+                                                    msg_info += _('{}: {} 1: {}W ({}kW/h) 2: {}W ({}kW/h) {}V IP:{} RSSI:{}dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, updated)
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': voltage,
+                                                'battery': 0,
+                                                'temperature': [],
+                                                'humidity': [],
+                                                'rssi': rssi,
+                                                'output': [a_output, b_output],
+                                                'power': [a_power, b_power],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
                                             msg_info += _('{}: GEN2 not available yet \n').format(name)
@@ -343,6 +430,20 @@ class Sender(Thread):
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': voltage,
+                                                'battery': 0,
+                                                'temperature': [],
+                                                'humidity': [],
+                                                'rssi': rssi,
+                                                'output': [a_output, b_output, c_output, d_output],
+                                                'power': [a_power, b_power, c_power, d_power],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 6=Shelly 1 Mini
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -369,6 +470,20 @@ class Sender(Thread):
                                             else:
                                                 msg += _('[{}: OFFLINE] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': 0,
+                                                'battery': 0,
+                                                'temperature': [],
+                                                'humidity': [],
+                                                'rssi': rssi,
+                                                'output': [output],
+                                                'power': [],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
 
                                 except JSONDecodeError:
                                     raise BadResponse("Bad JSON")

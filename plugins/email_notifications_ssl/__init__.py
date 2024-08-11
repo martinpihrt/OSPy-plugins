@@ -359,6 +359,57 @@ class EmailSender(Thread):
                                 log.debug(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
                                 pass
 
+                            try:
+                                from plugins import shelly_cloud_integrator
+
+                                body += '<b>' + _('Shelly cloud') + '</b><ul>'
+                                logtext += _('Shelly cloud') + '-> \n'
+                                for i in range(0, shelly_cloud_integrator.plugin_options['number_sensors']):
+                                    body += '<li>'
+                                    body += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
+                                    if shelly_cloud_integrator.sender.devices[i]['temperature']:
+                                        body += '{}\u2103 '.format(shelly_cloud_integrator.sender.devices[i]['temperature'][0])
+                                    if shelly_cloud_integrator.sender.devices[i]['humidity']:
+                                        body += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
+                                    if shelly_cloud_integrator.sender.devices[i]['output']:
+                                        body += ' ' + _('OUT1:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
+                                        try:
+                                            body += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
+                                        except:
+                                            pass
+                                        try:
+                                            body += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
+                                        except:
+                                            pass
+                                        try:
+                                            body += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')
+                                        except:
+                                            pass
+                                    if shelly_cloud_integrator.sender.devices[i]['power']:
+                                        body += ' ' + _('PWR1:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
+                                        try:
+                                            body += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
+                                        except:
+                                            pass
+                                        try:
+                                            body += ' ' + _('PWR3:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][2]) + _('W')
+                                        except:
+                                            pass
+                                        try:
+                                            body += ' ' + _('PWR4:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][3]) + _('W')
+                                        except:
+                                            pass
+                                    body += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
+                                    body += ' ' + _('IP:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['ip'])
+                                    body += ' ' + _('RSSI:') + ' {}% '.format(shelly_cloud_integrator.sender.devices[i]['rssi'])
+                                    if shelly_cloud_integrator.sender.devices[i]['online']:
+                                        body += ' ' + _('Online OK')
+                                    else:
+                                        body += ' ' + _('NOT Online!')
+                                    body += '\n</li>'  
+                            except:
+                                pass 
+
                         try_mail(body, logtext)
 
                     finished_count = len(finished)
