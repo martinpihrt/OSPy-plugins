@@ -81,7 +81,6 @@ except ImportError:
     pass
 
 
-
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -93,6 +92,7 @@ class Sender(Thread):
         self.client = None
         self.devices = None
         self.sensors_temp_humi_ds = None
+        self.sensors_tanks = None
         self._sleep_time = 0
         self.start()
 
@@ -140,7 +140,9 @@ class Sender(Thread):
         while not self._stop_event.is_set():                                                    # main data update loop, with addition to signals
             try:
                 if self.sensors_temp_humi_ds is not None:
-                    update_temp_humi_ds(self.sensors_temp_humi_ds)                              # update only if devices exist
+                    update_temp_humi_ds(self.sensors_temp_humi_ds)                              # update air temp plugin only if devices exist
+                if self.sensors_tanks is not None:
+                    update_tank_level(self.sensors_tanks)                                       # update water tank plugin only if devices exist
                 self._sleep(plugin_options['measurement_refresh_interval'])
             except Exception:
                 log.error(NAME, _('MQTT Home Assistant') + ':\n' + traceback.format_exc())
@@ -522,6 +524,17 @@ def discovery_payload(device):
         "configuration_url": system_web_url(),
         "via_device": "ospy_{}".format(system_UID())
         }
+    elif device._type == "sensor_WTL":
+        payload["device"] = {
+        "identifiers": ["ospy_{}_sensor_WTL{}".format(system_UID(), device._id)],
+        "manufacturer": "www.pihrt.com",
+        "model": _('WTL Sensor'),
+        "name": device._name,
+        "sw_version": system_version(),
+        "serial_number": system_UID(),
+        "configuration_url": system_web_url(),
+        "via_device": "ospy_{}".format(system_UID())
+        }
     elif device._type == "programs":
         payload["device"] = {
         "identifiers": ["ospy_{}_p{}".format(system_UID(), device._id)],
@@ -559,11 +572,13 @@ def discovery_payload(device):
         payload["max"] = device._max
     if device._name is not None:
         payload["name"] = device._name
-        if device._type == "stations":
+        if device._type == "stations":     # stations
             payload["name"] = ""
-        if device._type == "sensor_THDS":
+        if device._type == "sensor_THDS":  # air temp humi plugin
             payload["name"] = ""
-        if device._type == "programs":
+        if device._type == "sensor_WTL":   # tank monitor plugin
+            payload["name"] = ""
+        if device._type == "programs":     # programs
             payload["name"] = ""
     
     if device._deviceclass == "sensor":
@@ -604,14 +619,19 @@ def compare_hass_devices(device1, device2):
     
 def find_missing_elements(array1, array2):
     missing_devices = []
-    for device2 in array2:
-        found = False
-        for device1 in array1:
-            if compare_hass_devices(device1, device2):
-                found = True
-                break
-        if not found:
-            missing_devices.append(device2)
+    try:
+        for device2 in array2:
+            found = False
+            for device1 in array1:
+                if compare_hass_devices(device1, device2):
+                    found = True
+                    break
+            if not found:
+                missing_devices.append(device2)
+    except:
+        log.error(NAME, _('Cannot find missing elements.'))
+        pass
+
     return missing_devices
 
 def discovery_publish():
@@ -621,6 +641,7 @@ def discovery_publish():
     
     baseDevices = []
     sensorTHDSDevices = []
+    sensorWTLDevices = []
 
     baseDevices.append(hass_device().createNumber("duration", "system", "rain_delay",  _('Rain delay'), "mdi:timer-cog-outline", "h", 0, 100, rain_delay_set)) #TODO add max value based on settings
     baseDevices.append(hass_device().createNumber(None, "system", "water_level",  _('Water level'), "mdi:car-coolant-level", "%", 0, 500, water_level_set))
@@ -640,6 +661,30 @@ def discovery_publish():
         device = hass_device().createSwitch(None, "programs", "program_{}".format(i),  _('PGM') + ": {0:02d}".format(program.index + 1) + " " + program.name, "mdi:timer-play-outline", program_set)
         device._id = program.index
         baseDevices.append(device)
+
+    try:
+        from plugins import tank_monitor
+        sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
+        sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m3")
+        sensor_water_tank_percent._id = 400 # mqtt unique ID placeholder, 400 for water level percent, 401 for volume
+        sensor_water_tank_volume._id = 401
+        sensorWTLDevices.append(sensor_water_tank_percent)
+        sensorWTLDevices.append(sensor_water_tank_volume)
+        body = '<br><b>' + _('Tank monitor') + '</b><ul>'
+        logtext = _('Tank monitor') + '-> \n'
+        percent = tank_monitor.get_all_values()[1]
+        volume = tank_monitor.get_all_values()[3]
+        #cm = tank_monitor.get_all_values()[0]
+        #ping = tank_monitor.get_all_values()[2]
+        #units = tank_monitor.get_all_values()[4] 
+        body += '<li>' + _('Percent {}%').format(percent) + '\n</li>'
+        body += '<li>' + _('Volume {}m3').format(volume) + '\n</li>'  
+        logtext += _('Percent {}%, volume {}m3').format(percent, volume)
+        body += '</ul>'   
+        log.info(NAME, logtext)
+    except ImportError:
+        log.debug(NAME, _('Cannot import plugin: tank_monitor.'))
+        pass 
 
     try:
         from plugins import air_temp_humi
@@ -695,83 +740,107 @@ def discovery_publish():
         missingDevices = find_missing_elements(sensorTHDSDevices, sender.sensors_temp_humi_ds)
         for device in missingDevices:
             remove_device(device)
-            # print(device._name)
             
     if sender.devices is not None:
         missingDevices = find_missing_elements(baseDevices, sender.devices)
         for device in missingDevices:
             remove_device(device)
-            # print(device._name)
+
+    for sensor in sensorWTLDevices:
+        payload = discovery_payload(sensor)
+        topic = discovery_topic_get(sensor._deviceclass, sensor._property)
+        publish(topic, payload)
+        set_devices_online(sensor)
   
     sender.devices = baseDevices
     sender.sensors_temp_humi_ds = sensorTHDSDevices
+    sender.sensors_tanks = sensorWTLDevices
     
     set_devices_default_values(baseDevices)
+
     update_temp_humi_ds(sensorTHDSDevices)
+    update_tank_level(sensorWTLDevices)
     
     set_devices_signal()
 
 # https://prod.liveshare.vsengsaas.visualstudio.com/join?85CA0FB5E1E238A97A5231EA9806CF8807C0
 
 def set_devices_online(device): # set inital values to HASS after plugin start
-    topic = '{}/{}/{}/availability'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-    if device._property == "scheduler_enabled" and options.manual_mode:
-        publish(topic, "offline")
-    elif device._property == "rain_sensed" and not options.rain_sensor_enabled:
-        publish(topic, "offline")
-    elif device._type == "stations" and not stations.get(int(device._id)).enabled:
-        publish(topic, "offline")
-    elif device._type == "sensor_THDS" and device._isDS: #error with DS sensor, set to offline
-        try:
-            if not device._isOK:
-                publish(topic, "offline")
-            else:
-                publish(topic, "online")
-        except AttributeError:
-            pass
-    elif device._type == "programs":
-        publish(topic, "online")
-    else:
-        publish(topic, "online")
-        
+    try:
+        topic = '{}/{}/{}/availability'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+        if device._property == "scheduler_enabled" and options.manual_mode:
+            publish(topic, "offline")
+        elif device._property == "rain_sensed" and not options.rain_sensor_enabled:
+            publish(topic, "offline")
+        elif device._type == "stations" and not stations.get(int(device._id)).enabled:
+            publish(topic, "offline")
+        elif device._type == "sensor_THDS" and device._isDS: #error with DS sensor, set to offline
+            try:
+                if not device._isOK:
+                    publish(topic, "offline")
+                else:
+                    publish(topic, "online")
+            except AttributeError:
+                pass
+        elif device._type == "sensor_WTL":
+            publish(topic, "online")
+        elif device._type == "programs":
+            publish(topic, "online")
+        else:
+            publish(topic, "online")
+    except:
+        log.error(NAME, _('Cannot set devices online.'))
+        pass
+
 def remove_device(device):
-    topic = discovery_topic_get(device._deviceclass, device._property)
-    removeTopic(topic)
-    
+    try:
+        topic = discovery_topic_get(device._deviceclass, device._property)
+        removeTopic(topic)
+    except:
+        log.error(NAME, _('Cannot remove device.'))
+        pass
 
 def set_devices_default_values(devices):
-    for device in devices:
-        payload = {}
-        topic = {}
-        if device._property == "rain_delay":
-            topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-            payload["number"] = int(int(round(rain_blocks.seconds_left())) / 3600)
-        elif device._property == "water_level":
-            topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-            payload["number"] = int(options.level_adjustment * 100)
-        elif device._property == "scheduler_enabled":
-            topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-            payload["state"] = str(options.scheduler_enabled)
-        elif device._property == "manual_mode":
-            topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-            payload["state"] = str(options.manual_mode)
-        elif device._property == "rain_sensed":
-            topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-            payload["state"] = str(inputs.rain_sensed())
-        elif device._type == "stations":
-            topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-            payload["state"] = str(stations.get(device._id).active)
-        elif device._type == "programs":
-            topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-            payload["state"] = "False"
+    try:
+        for device in devices:
+            payload = {}
+            topic = {}
+            if device._property == "rain_delay":
+                topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                payload["number"] = int(int(round(rain_blocks.seconds_left())) / 3600)
+            elif device._property == "water_level":
+                topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                payload["number"] = int(options.level_adjustment * 100)
+            elif device._property == "scheduler_enabled":
+                topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                payload["state"] = str(options.scheduler_enabled)
+            elif device._property == "manual_mode":
+                topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                payload["state"] = str(options.manual_mode)
+            elif device._property == "rain_sensed":
+                topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                payload["state"] = str(inputs.rain_sensed())
+            elif device._type == "stations":
+                topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                payload["state"] = str(stations.get(device._id).active)
+            elif device._type == "programs":
+                topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                payload["state"] = "False"
 
-        publish(topic, payload)
+            publish(topic, payload)
+    except:
+        log.error(NAME, _('Cannot set devices default values.'))
+        pass
 
 def update_device_values(name, **kw):
-    for device in sender.devices:
-        set_devices_online(device)
-    set_devices_default_values(sender.devices)
-    
+    try:
+        for device in sender.devices:
+            set_devices_online(device)
+        set_devices_default_values(sender.devices)
+    except:
+        log.error(NAME, _('Cannot update data from plugins.'))
+        pass
+
 def update_temp_humi_ds(sensors):
     for device in sensors:
         if device._type == "sensor_THDS":
@@ -795,9 +864,59 @@ def update_temp_humi_ds(sensors):
                     set_devices_online(device)
                 publish(topic, payload)
             except ImportError:
-                log.debug(NAME, _('Cannot import plugin: air temp humi.'))
+                log.error(NAME, _('Cannot import plugin: air temp humi.'))
                 pass
-        
+
+def update_temp_humi_ds(sensors):
+    for device in sensors:
+        if device._type == "sensor_THDS":
+            try:
+                from plugins import air_temp_humi
+                
+                payload = {}
+                topic = {}
+                if device._isDHT is not None and device._isDHT:
+                    if device._property == "HDT_humidity":
+                        topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                        payload["state"] = air_temp_humi.sender.status['humi']
+                    if device._property == "HDT_temperature":
+                        topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                        payload["state"] = air_temp_humi.sender.status['temp']
+                    set_devices_online(device)
+                if device._isDS is not None and device._isDS:                        
+                    topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                    payload["state"] = air_temp_humi.sender.status['DS{}'.format(device._id)]
+                    device._isOK = False if payload["state"] == -127 else True
+                    set_devices_online(device)
+                publish(topic, payload)
+            except ImportError:
+                log.error(NAME, _('Cannot import plugin: air temp humi.'))
+                pass
+
+def update_tank_level(sensors):
+    for device in sensors:
+        if device._type == "sensor_WTL":
+            try:
+                from plugins import tank_monitor
+                
+                payload = {}
+                topic = {}
+                if device._property == "tank_percent":
+                    percent = tank_monitor.get_all_values()[1]
+                    topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                    payload["state"] = percent
+                    set_devices_online(device)
+                    publish(topic, payload)
+                if device._property == "tank_volume":
+                    volume = tank_monitor.get_all_values()[3]
+                    topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                    payload["state"] = volume
+                    set_devices_online(device)
+                    publish(topic, payload)
+            except ImportError:
+                log.error(NAME, _('Cannot import plugin: tank_monitor.'))
+                pass
+
 def update_device_plugin_settings(name, **kw):
     discovery_publish()
 
