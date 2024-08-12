@@ -371,9 +371,10 @@ def read_log():
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             data = json.load(logf)
     except:
+        log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
         pass
     
-    return []
+    return data
 
 
 def read_sql_log():
