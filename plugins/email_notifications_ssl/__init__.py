@@ -372,7 +372,7 @@ class EmailSender(Thread):
                                     if shelly_cloud_integrator.sender.devices[i]['humidity']:
                                         body += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
                                     if shelly_cloud_integrator.sender.devices[i]['output']:
-                                        body += ' ' + _('OUT1:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
+                                        body += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
                                         try:
                                             body += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
                                         except:
@@ -386,7 +386,7 @@ class EmailSender(Thread):
                                         except:
                                             pass
                                     if shelly_cloud_integrator.sender.devices[i]['power']:
-                                        body += ' ' + _('PWR1:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
+                                        body += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
                                         try:
                                             body += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
                                         except:
@@ -399,7 +399,10 @@ class EmailSender(Thread):
                                             body += ' ' + _('PWR4:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][3]) + _('W')
                                         except:
                                             pass
-                                    body += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
+                                    if shelly_cloud_integrator.sender.devices[i]['voltage'] > 0:
+                                        body += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
+                                    if shelly_cloud_integrator.sender.devices[i]['battery'] > 0:
+                                        body += ' ' + _('BATTERY:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['battery']) + _('%')
                                     body += ' ' + _('IP:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['ip'])
                                     body += ' ' + _('RSSI:') + ' {}% '.format(shelly_cloud_integrator.sender.devices[i]['rssi'])
                                     if shelly_cloud_integrator.sender.devices[i]['online']:

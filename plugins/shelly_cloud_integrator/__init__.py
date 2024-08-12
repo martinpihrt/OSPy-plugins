@@ -259,7 +259,7 @@ class Sender(Thread):
                                             payload = {
                                                 'id': id,
                                                 'ip': sta_ip,
-                                                'voltage': b_voltage,
+                                                'voltage': a_voltage,
                                                 'battery': 0,
                                                 'temperature': [],
                                                 'humidity': [],
@@ -365,7 +365,7 @@ class Sender(Thread):
                                                 'temperature': [],
                                                 'humidity': [],
                                                 'rssi': rssi,
-                                                'output': [a_output, b_output],
+                                                'output': [a_output, b_output] if roller is None else [roller],
                                                 'power': [a_power, b_power],
                                                 'label': name,
                                                 'online': online,
