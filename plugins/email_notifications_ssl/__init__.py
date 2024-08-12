@@ -372,19 +372,26 @@ class EmailSender(Thread):
                                     if shelly_cloud_integrator.sender.devices[i]['humidity']:
                                         body += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
                                     if shelly_cloud_integrator.sender.devices[i]['output']:
-                                        body += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
-                                        try:
-                                            body += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
-                                        except:
-                                            pass
-                                        try:
-                                            body += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
-                                        except:
-                                            pass
-                                        try:
-                                            body += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')
-                                        except:
-                                            pass
+                                        if shelly_cloud_integrator.sender.devices[i]['output'][0] == 'stop':    # roller mode
+                                            body += ' ' + _('STOP')
+                                        elif shelly_cloud_integrator.sender.devices[i]['output'][0] == 'up':    # roller mode
+                                            body += ' ' + _('UP')
+                                        elif shelly_cloud_integrator.sender.devices[i]['output'][0] == 'down':  # roller mode
+                                            body += ' ' + _('DOWN')
+                                        else:                                                                   # switch mode
+                                            body += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
+                                            try:
+                                                body += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
+                                            except:
+                                                pass
+                                            try:
+                                                body += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
+                                            except:
+                                                pass
+                                            try:
+                                                body += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')
+                                            except:
+                                                pass
                                     if shelly_cloud_integrator.sender.devices[i]['power']:
                                         body += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
                                         try:
@@ -409,7 +416,8 @@ class EmailSender(Thread):
                                         body += ' ' + _('Online OK')
                                     else:
                                         body += ' ' + _('NOT Online!')
-                                    body += '\n</li>'  
+                                    body += '\n</li>'
+                                    logtext += body
                             except:
                                 pass 
 
