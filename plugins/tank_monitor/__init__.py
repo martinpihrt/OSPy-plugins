@@ -71,8 +71,8 @@ tank_options = PluginOptions(
        'saved_max': 0,         # logging max water level
        'en_sql_log': False,    # logging temperature to sql database
        'type_log': 0,          # 0 = show log and graph from local log file, 1 = from database
-       'dt_from' : '',         # for graph history (from date time ex: 2024-02-01T6:00)
-       'dt_to' : '',           # for graph history (to date time ex: 2024-03-17T12:00)
+       'dt_from' : '2024-01-01T00:00',         # for graph history (from date time ex: 2024-02-01T6:00)
+       'dt_to' : '2024-01-01T00:00',           # for graph history (to date time ex: 2024-03-17T12:00)
 
     }
 )
