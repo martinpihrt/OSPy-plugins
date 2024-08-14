@@ -67,7 +67,7 @@ tank_options = PluginOptions(
        'avg_samples': 20,      # number of samples for average
        'input_byte_debug_log': False, # logging for advanced user (save debug data from I2C bus)
        'byte_changed': True,   # logging of data only when this data changes, otherwise still logging.
-       'saved_min': 0,         # logging min water level
+       'saved_min': 400,       # logging min water level
        'saved_max': 0,         # logging max water level
        'en_sql_log': False,    # logging temperature to sql database
        'type_log': 0,          # 0 = show log and graph from local log file, 1 = from database
@@ -83,8 +83,8 @@ status['level']    = -1
 status['percent']  = -1
 status['ping']     = -1
 status['volume']   = -1
-status['maxlevel'] = 0
-status['minlevel'] = 400
+status['minlevel'] = tank_options['saved_min']
+status['maxlevel'] = tank_options['saved_max']
 status['maxlevel_datetime'] = datetime_string()
 status['minlevel_datetime'] = datetime_string()
 
@@ -493,13 +493,15 @@ def get_sonic_tank_cm(level):
 
 def get_tank(level): # return water tank level 0-100%, -1 is error i2c not found
     tank_lvl = level
-    if tank_lvl >= 0:
-       tank_proc = float(tank_lvl)/float(tank_options['distance_bottom']-tank_options['distance_top'])
-       tank_proc = float(tank_proc)*100.0
-       return int(tank_proc)
-    else:
-       return -1
-
+    try:
+        if tank_lvl >= 0:
+            tank_proc = float(tank_lvl)/float(tank_options['distance_bottom']-tank_options['distance_top'])
+            tank_proc = float(tank_proc)*100.0
+            return int(tank_proc)
+        else:
+            return -1
+    except:
+        return -1
 
 def get_volume(level): # return volume calculation from cylinder diameter and water column height in m3
     tank_lvl = level
@@ -827,140 +829,169 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global sender, status, avg_lst, avg_cnt, avg_rdy
+        try:
+            global sender, status, avg_lst, avg_cnt, avg_rdy
 
-        qdict  = web.input()
-        reset  = helpers.get_input(qdict, 'reset', False, lambda x: True)
-        show = helpers.get_input(qdict, 'show', False, lambda x: True)
-        debug = helpers.get_input(qdict, 'debug', False, lambda x: True)
-        del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
-        log_now = helpers.get_input(qdict, 'log_now', False, lambda x: True)
-        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
-        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
+            qdict  = web.input()
+            reset  = helpers.get_input(qdict, 'reset', False, lambda x: True)
+            show = helpers.get_input(qdict, 'show', False, lambda x: True)
+            debug = helpers.get_input(qdict, 'debug', False, lambda x: True)
+            del_rain = helpers.get_input(qdict, 'del_rain', False, lambda x: True)
+            log_now = helpers.get_input(qdict, 'log_now', False, lambda x: True)
+            delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+            delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
-        if sender is not None and reset:
-            status['minlevel'] = status['level']
-            status['maxlevel'] = status['level']
-            tank_options['saved_max'] = status['level']
-            tank_options['saved_min'] = status['level']
-            status['minlevel_datetime'] = datetime_string()
-            status['maxlevel_datetime'] = datetime_string()
-            log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
-            raise web.seeother(plugin_url(settings_page), True)
+            if sender is not None and reset:
+                status['minlevel'] = status['level']
+                status['maxlevel'] = status['level']
+                tank_options['saved_max'] = status['level']
+                tank_options['saved_min'] = status['level']
+                status['minlevel_datetime'] = datetime_string()
+                status['maxlevel_datetime'] = datetime_string()
+                log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
+                raise web.seeother(plugin_url(settings_page), True)
 
-        if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
-            dt_from = qdict['dt_from']
-            dt_to = qdict['dt_to']
-            tank_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
-            tank_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
+            if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+                dt_from = qdict['dt_from']
+                dt_to = qdict['dt_to']
+                tank_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
+                tank_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
 
-        if sender is not None and delfilter:
-            from datetime import datetime, timedelta
-            dt_now = (datetime.today() + timedelta(days=1)).date()
-            tank_options.__setitem__('dt_from', "2020-01-01T00:00")
-            tank_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
+            if sender is not None and delfilter:
+                from datetime import datetime, timedelta
+                dt_now = (datetime.today() + timedelta(days=1)).date()
+                tank_options.__setitem__('dt_from', "2020-01-01T00:00")
+                tank_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
-        if sender is not None and log_now:
-            update_log()
+            if sender is not None and log_now:
+                update_log()
 
-        if sender is not None and 'history' in qdict:
-            history = qdict['history']
-            tank_options.__setitem__('history', int(history))
+            if sender is not None and 'history' in qdict:
+                history = qdict['history']
+                tank_options.__setitem__('history', int(history))
 
-        if sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)
+            if sender is not None and show:
+                raise web.seeother(plugin_url(log_page), True)
 
-        if sender is not None and debug:
-            raise web.seeother(plugin_url(log_debug_page), True)
+            if sender is not None and debug:
+                raise web.seeother(plugin_url(log_debug_page), True)
 
-        if sender is not None and del_rain:
-            if NAME in rain_blocks:
-                del rain_blocks[NAME]
-                log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
-            raise web.seeother(plugin_url(settings_page), True)
+            if sender is not None and del_rain:
+                if NAME in rain_blocks:
+                    del rain_blocks[NAME]
+                    log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
+                raise web.seeother(plugin_url(settings_page), True)
 
-        if sender is not None and delSQL:
-            try:
-                from plugins.database_connector import execute_db
-                sql = "DROP TABLE IF EXISTS `tankmonitor`"
-                execute_db(sql, test=False, commit=False)  
-                log.info(NAME, _('Deleting the tankmonitor table from the database.'))
-            except:
-                log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
-                pass
+            if sender is not None and delSQL:
+                try:
+                    from plugins.database_connector import execute_db
+                    sql = "DROP TABLE IF EXISTS `tankmonitor`"
+                    execute_db(sql, test=False, commit=False)  
+                    log.info(NAME, _('Deleting the tankmonitor table from the database.'))
+                except:
+                    log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+                    pass
 
-        return self.plugin_render.tank_monitor(tank_options, log.events(NAME))
+            return self.plugin_render.tank_monitor(tank_options, log.events(NAME))
 
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('tank_monitor -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        global sender, avg_lst, avg_cnt, avg_rdy
-        tank_options.web_update(web.input(**tank_options)) #for save multiple select
+        try:
+            global sender, avg_lst, avg_cnt, avg_rdy
+            tank_options.web_update(web.input(**tank_options)) #for save multiple select
 
-        if tank_options['use_sonic']:
-            avg_lst = [0]*tank_options['avg_samples']
-            avg_cnt = 0
-            avg_rdy = False 
-            log.clear(NAME)
-            log.info(NAME, _('Options has updated.'))
-            if sender is not None:
-                sender.update()
-        else:
-            log.clear(NAME)
-            log.info(NAME, _('Water tank monitor is disabled.'))
+            if tank_options['use_sonic']:
+                avg_lst = [0]*tank_options['avg_samples']
+                avg_cnt = 0
+                avg_rdy = False 
+                log.clear(NAME)
+                log.info(NAME, _('Options has updated.'))
+                if sender is not None:
+                    sender.update()
+            else:
+                log.clear(NAME)
+                log.info(NAME, _('Water tank monitor is disabled.'))
         
-        raise web.seeother(plugin_url(settings_page), True)
+            raise web.seeother(plugin_url(settings_page), True)
 
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('tank_monitor -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.tank_monitor_help()
-
+        try:
+            return self.plugin_render.tank_monitor_help()
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('tank_monitor -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class log_page(ProtectedPage):
     """Load an html page for log"""
 
     def GET(self):
-        global sender, avg_lst, avg_cnt, avg_rdy
-        qdict  = web.input()
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
-        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        try:
+            global sender, avg_lst, avg_cnt, avg_rdy
+            qdict  = web.input()
+            delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+            delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
-        if sender is not None and delete:
-            write_log([])
-            create_default_graph()
-            avg_lst = [0]*tank_options['avg_samples']
-            avg_cnt = 0
-            avg_rdy = False
-            tank_options.__setitem__('saved_max', status['level'])
-            tank_options.__setitem__('saved_min', status['level']) 
-            raise web.seeother(plugin_url(log_page), True)
+            if sender is not None and delete:
+                write_log([])
+                create_default_graph()
+                avg_lst = [0]*tank_options['avg_samples']
+                avg_cnt = 0
+                avg_rdy = False
+                tank_options.__setitem__('saved_max', status['level'])
+                tank_options.__setitem__('saved_min', status['level']) 
+                raise web.seeother(plugin_url(log_page), True)
 
-        if sender is not None and delSQL and tank_options['en_sql_log']:
-            try:
-                from plugins.database_connector import execute_db
-                sql = "DROP TABLE IF EXISTS `tankmonitor`"
-                execute_db(sql, test=False, commit=False)  
-                log.info(NAME, _('Deleting the tankmonitor table from the database.'))
-            except:
-                log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
-                pass 
-        return self.plugin_render.tank_monitor_log(read_log(), read_sql_log(), tank_options)
+            if sender is not None and delSQL and tank_options['en_sql_log']:
+                try:
+                    from plugins.database_connector import execute_db
+                    sql = "DROP TABLE IF EXISTS `tankmonitor`"
+                    execute_db(sql, test=False, commit=False)  
+                    log.info(NAME, _('Deleting the tankmonitor table from the database.'))
+                except:
+                    log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+                    pass 
+            return self.plugin_render.tank_monitor_log(read_log(), read_sql_log(), tank_options)
 
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('tank_monitor -> log_page GET')
+            return self.core_render.notice('/', msg)
 
 class log_debug_page(ProtectedPage):
     """Load an html page for debug log"""
 
     def GET(self):
-        global sender
-        qdict  = web.input()
-        delete_debug = helpers.get_input(qdict, 'delete_debug', False, lambda x: True)
-        if sender is not None and delete_debug:
-           write_debug_log([])
+        try:
+            global sender
+            qdict  = web.input()
+            delete_debug = helpers.get_input(qdict, 'delete_debug', False, lambda x: True)
+            if sender is not None and delete_debug:
+                write_debug_log([])
 
-        return self.plugin_render.tank_monitor_debug_log(read_debug_log(), tank_options)        
+            return self.plugin_render.tank_monitor_debug_log(read_debug_log(), tank_options)        
 
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('tank_monitor -> log_debug_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -968,8 +999,10 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(tank_options)
-
+        try:
+            return json.dumps(tank_options)
+        except:
+            return {}
 
 class data_json(ProtectedPage):
     """Returns plugin data in JSON format."""
@@ -977,8 +1010,10 @@ class data_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        read_all = get_all_values()
-        data =  {
+        data = {}
+        try:
+            read_all = get_all_values()
+            data =  {
             'level': read_all[0],
             'percent': read_all[1],
             'ping': read_all[2],
@@ -989,9 +1024,11 @@ class data_json(ProtectedPage):
             'maxlevel_datetime': read_all[7],
             'unit': _('L') if read_all[8] else  _('m3'),
             'label': tank_options['emlsubject']
-        }
-        return json.dumps(data)
-
+            }
+            return json.dumps(data)
+        except:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            return data
 
 class log_json(ProtectedPage):
     """Returns data in JSON format."""
