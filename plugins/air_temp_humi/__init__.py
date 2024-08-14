@@ -688,82 +688,106 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments and deleting logs"""
 
     def GET(self):
-        global sender
-        qdict = web.input()
-        show = helpers.get_input(qdict, 'show', False, lambda x: True)
-        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
-        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
+        try:
+            global sender
+            qdict = web.input()
+            show = helpers.get_input(qdict, 'show', False, lambda x: True)
+            delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+            delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
-        if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
-            dt_from = qdict['dt_from']
-            dt_to = qdict['dt_to']
-            plugin_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
-            plugin_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
-            if 'show_err' in qdict:
-                plugin_options.__setitem__('show_err', True)
-            else:
-                plugin_options.__setitem__('show_err', False)
+            if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+                dt_from = qdict['dt_from']
+                dt_to = qdict['dt_to']
+                plugin_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
+                plugin_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
+                if 'show_err' in qdict:
+                    plugin_options.__setitem__('show_err', True)
+                else:
+                    plugin_options.__setitem__('show_err', False)
 
-        if sender is not None and delfilter:
-            from datetime import datetime, timedelta
-            dt_now = (datetime.today() + timedelta(days=1)).date()
-            plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
-            plugin_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
+            if sender is not None and delfilter:
+                from datetime import datetime, timedelta
+                dt_now = (datetime.today() + timedelta(days=1)).date()
+                plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
+                plugin_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
-        if sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)
+            if sender is not None and show:
+                raise web.seeother(plugin_url(log_page), True)
 
-        if sender is not None and delSQL:
-            try:
-                from plugins.database_connector import execute_db
-                sql = "DROP TABLE IF EXISTS `airtemp`"
-                execute_db(sql, test=False, commit=False)  
-                log.info(NAME, _('Deleting the airtemp table from the database.'))
-            except:
-                log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
-                pass
+            if sender is not None and delSQL:
+                try:
+                    from plugins.database_connector import execute_db
+                    sql = "DROP TABLE IF EXISTS `airtemp`"
+                    execute_db(sql, test=False, commit=False)  
+                    log.info(NAME, _('Deleting the airtemp table from the database.'))
+                except:
+                    log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+                    pass
 
-        return self.plugin_render.air_temp_humi(plugin_options, log.events(NAME))
+            return self.plugin_render.air_temp_humi(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('air_temp_humi -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        plugin_options.web_update(web.input())
+        try:
+            plugin_options.web_update(web.input())
 
-        if sender is not None:
-            sender.update()
-        raise web.seeother(plugin_url(settings_page), True)
-
+            if sender is not None:
+                sender.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('air_temp_humi -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.air_temp_humi_help()
+        try:
+            return self.plugin_render.air_temp_humi_help()
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('air_temp_humi -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        global sender
-        qdict = web.input()
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
-        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        try:
+            global sender
+            qdict = web.input()
+            delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+            delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
         
-        if sender is not None and delete and plugin_options['enable_log']:
-           write_log([])
-           create_default_graph()
-           log.info(NAME, _('Deleted all log files OK'))
+            if sender is not None and delete and plugin_options['enable_log']:
+                write_log([])
+                create_default_graph()
+                log.info(NAME, _('Deleted all log files OK'))
 
-        if sender is not None and delSQL and plugin_options['en_sql_log']:
-            try:
-                from plugins.database_connector import execute_db
-                sql = "DROP TABLE IF EXISTS `airtemp`"
-                execute_db(sql, test=False, commit=False)  
-                log.info(NAME, _('Deleting the airtemp table from the database.'))
-            except:
-                log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
-                pass          
+            if sender is not None and delSQL and plugin_options['en_sql_log']:
+                try:
+                    from plugins.database_connector import execute_db
+                    sql = "DROP TABLE IF EXISTS `airtemp`"
+                    execute_db(sql, test=False, commit=False)  
+                    log.info(NAME, _('Deleting the airtemp table from the database.'))
+                except:
+                    log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+                    pass          
 
-        return self.plugin_render.air_temp_humi_log(read_log(), read_sql_log(), plugin_options)
+            return self.plugin_render.air_temp_humi_log(read_log(), read_sql_log(), plugin_options)
+
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('air_temp_humi -> log_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -771,7 +795,10 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
 
 
 class data_json(ProtectedPage):
@@ -780,23 +807,28 @@ class data_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        data =  {
-          'label': plugin_options['label'],
-          'label_ds0': plugin_options['label_ds0'],
-          'label_ds1': plugin_options['label_ds1'],
-          'label_ds2': plugin_options['label_ds2'],
-          'label_ds3': plugin_options['label_ds3'],
-          'label_ds4': plugin_options['label_ds4'],
-          'label_ds5': plugin_options['label_ds5'],
-          'temp_ds0':  DS18B20_read_probe(0),
-          'temp_ds1':  DS18B20_read_probe(1),
-          'temp_ds2':  DS18B20_read_probe(2),
-          'temp_ds3':  DS18B20_read_probe(3),
-          'temp_ds4':  DS18B20_read_probe(4),
-          'temp_ds5':  DS18B20_read_probe(5),
-          'temp_dht':  DHT_read_temp_value(),
-          'humi_dht':  DHT_read_humi_value()
-        }
+        data = {}
+        try:
+            data =  {
+            'label': plugin_options['label'],
+            'label_ds0': plugin_options['label_ds0'],
+            'label_ds1': plugin_options['label_ds1'],
+            'label_ds2': plugin_options['label_ds2'],
+            'label_ds3': plugin_options['label_ds3'],
+            'label_ds4': plugin_options['label_ds4'],
+            'label_ds5': plugin_options['label_ds5'],
+            'temp_ds0':  DS18B20_read_probe(0),
+            'temp_ds1':  DS18B20_read_probe(1),
+            'temp_ds2':  DS18B20_read_probe(2),
+            'temp_ds3':  DS18B20_read_probe(3),
+            'temp_ds4':  DS18B20_read_probe(4),
+            'temp_ds5':  DS18B20_read_probe(5),
+            'temp_dht':  DHT_read_temp_value(),
+            'humi_dht':  DHT_read_humi_value()
+            }
+        except:
+            log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
 
         return json.dumps(data)
 
