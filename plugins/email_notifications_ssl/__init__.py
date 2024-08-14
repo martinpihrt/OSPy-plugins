@@ -159,7 +159,7 @@ class EmailSender(Thread):
                                     volume = tank_monitor.get_all_values()[3]
                                     units = tank_monitor.get_all_values()[4]
                                 except:
-                                    pass    
+                                    pass
 
                                 msg = ' '
                                 if cm > 0:
@@ -173,7 +173,7 @@ class EmailSender(Thread):
 
                                     body += '<b>'  + _('Water') + '</b>'
                                     body += '<br><ul><li>' + _('Water level in tank') + ': %s \n</li></ul>' % (msg)
-                                    logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)                                        
+                                    logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)
                                 else: 
                                     msg = _('Error - I2C device not found!')
                                     body += '<b>'  + _('Water') + '</b>'
@@ -345,7 +345,7 @@ class EmailSender(Thread):
                                         logtext += '\n'
                                     body += '</ul>'
                                     body += '<br>'
-                                        
+
                                 else:
                                     sensor_result += _('No sensors available')
                                     body += '<ul><li>'
@@ -367,59 +367,79 @@ class EmailSender(Thread):
                                 for i in range(0, shelly_cloud_integrator.plugin_options['number_sensors']):
                                     body += '<li>'
                                     body += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
+                                    logtext += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
                                     if shelly_cloud_integrator.sender.devices[i]['temperature']:
                                         body += '{}\u2103 '.format(shelly_cloud_integrator.sender.devices[i]['temperature'][0])
+                                        logtext += '{}\u2103 '.format(shelly_cloud_integrator.sender.devices[i]['temperature'][0])
                                     if shelly_cloud_integrator.sender.devices[i]['humidity']:
                                         body += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
+                                        logtext += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
                                     if shelly_cloud_integrator.sender.devices[i]['output']:
                                         if shelly_cloud_integrator.sender.devices[i]['output'][0] == 'stop':    # roller mode
                                             body += ' ' + _('STOP')
+                                            logtext += ' ' + _('STOP')
                                         elif shelly_cloud_integrator.sender.devices[i]['output'][0] == 'up':    # roller mode
                                             body += ' ' + _('UP')
+                                            logtext += ' ' + _('UP')
                                         elif shelly_cloud_integrator.sender.devices[i]['output'][0] == 'down':  # roller mode
                                             body += ' ' + _('DOWN')
+                                            logtext += ' ' + _('DOWN')
                                         else:                                                                   # switch mode
                                             body += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
+                                            logtext += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
                                             try:
                                                 body += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
+                                                logtext += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
                                             except:
                                                 pass
                                             try:
                                                 body += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
+                                                logtext += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
                                             except:
                                                 pass
                                             try:
                                                 body += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')
+                                                logtext += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')                                
                                             except:
                                                 pass
                                     if shelly_cloud_integrator.sender.devices[i]['power']:
                                         body += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
+                                        logtext += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
                                         try:
                                             body += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
+                                            logtext += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
                                         except:
                                             pass
                                         try:
                                             body += ' ' + _('PWR3:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][2]) + _('W')
+                                            logtext += ' ' + _('PWR3:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][2]) + _('W')
                                         except:
                                             pass
                                         try:
                                             body += ' ' + _('PWR4:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][3]) + _('W')
+                                            logtext += ' ' + _('PWR4:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][3]) + _('W')
                                         except:
                                             pass
                                     if shelly_cloud_integrator.sender.devices[i]['voltage'] > 0:
                                         body += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
+                                        logtext += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
                                     if shelly_cloud_integrator.sender.devices[i]['battery'] > 0:
                                         body += ' ' + _('BATTERY:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['battery']) + _('%')
+                                        logtext += ' ' + _('BATTERY:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['battery']) + _('%')
                                     body += ' ' + _('IP:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['ip'])
-                                    body += ' ' + _('RSSI:') + ' {}% '.format(shelly_cloud_integrator.sender.devices[i]['rssi'])
+                                    logtext += ' ' + _('IP:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['ip'])
+                                    body += ' ' + _('RSSI:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['rssi']) + _('dbm') + ' '
+                                    logtext += ' ' + _('RSSI:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['rssi']) + _('dbm') + ' '
                                     if shelly_cloud_integrator.sender.devices[i]['online']:
-                                        body += ' ' + _('Online OK')
+                                        body += ' ' + _('Online')
+                                        logtext += ' ' + _('Online')
                                     else:
-                                        body += ' ' + _('NOT Online!')
+                                        body += ' ' + _('Offline')
+                                        logtext += ' ' + _('Offline')
                                     body += '\n</li>'
-                                    logtext += body
+                                    logtext += '\n'
                             except:
-                                pass 
+                                pass
 
                         try_mail(body, logtext)
 
@@ -432,7 +452,7 @@ class EmailSender(Thread):
                         if(millis - last_millis) > send_interval:       # sending timer
                             last_millis = millis                        # save actual time ms
                             try:                                        # exists file: saved_emails.json?
-                                saved_emails = read_saved_emails()      # read from file                  
+                                saved_emails = read_saved_emails()      # read from file
                             except:                                     # no! create empty file
                                 write_email([])                         # create file
                                 saved_emails = read_saved_emails()      # read from file 
@@ -455,9 +475,9 @@ class EmailSender(Thread):
 
                                 except Exception:
                                     #print traceback.format_exc()
-                                    send_interval = 60000               # repetition of 60 seconds   
+                                    send_interval = 60000               # repetition of 60 seconds
                     except:
-                        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())  
+                        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
 
                 self._sleep(2)
 
@@ -524,7 +544,7 @@ def notify_rain_deactive(name, **kw):
 
 ### rain delay has setuped ###
 def notify_rain_delay_setuped(name, **kw):
-    if email_options['emlrds']:    
+    if email_options['emlrds']:
         body = '<b>' + datetime_string() + '</b>'
         body += '<br><p style="color:red;">' + _('Rain delay is now set a delay {} (h: m: s).').format(kw["txt"]) + '</p><br>'
         body += add_to_body_local_ospy_name()
@@ -533,7 +553,7 @@ def notify_rain_delay_setuped(name, **kw):
 
 ### rain delay has expired ###
 def notify_rain_delay_expired(name, **kw):
-    if email_options['emlrdr']:    
+    if email_options['emlrdr']:
         body = '<b>' + datetime_string() + '</b>'
         body += '<br><p style="color:green;">' + _('Rain delay has now been removed.') + '</p><br>'
         body += add_to_body_local_ospy_name()
@@ -550,7 +570,7 @@ rain_not_active.connect(notify_rain_deactive)
 rain_delay_set = signal('rain_delay_set')
 rain_delay_set.connect(notify_rain_delay_setuped) 
 rain_delay_remove = signal('rain_delay_remove')
-rain_delay_remove.connect(notify_rain_delay_expired)                       
+rain_delay_remove.connect(notify_rain_delay_expired)
 
 
 def safeStr(obj):
@@ -604,7 +624,7 @@ def email(text, subject=None, attach=None):
                 encode_base64(part)
                 part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(attach))
                 msg.attach(part)
-            # Create a secure SSL context      
+            # Create a secure SSL context
             context = ssl.create_default_context()
             with smtplib.SMTP_SSL(SMTP_server, SMTP_port, context=context) as server:
                 server.login(mail_from, SMTP_pwd)
@@ -619,27 +639,27 @@ def read_saved_emails():
         with open(os.path.join(plugin_data_dir(), 'saved_emails.json')) as saved_emails:
             return json.load(saved_emails)
     except IOError:
-        return []     
+        return []
 
 def write_email(json_data):
     ###Write e-mail data to json file ###
     with open(os.path.join(plugin_data_dir(), 'saved_emails.json'), 'w') as saved_emails:
-        json.dump(json_data, saved_emails)  
+        json.dump(json_data, saved_emails)
 
 def update_saved_emails(data):
-    ### Update data in json files ### 
+    ### Update data in json files ###
     try:                                                              # exists file: saved_emails.json?
-        saved_emails = read_saved_emails()                       
+        saved_emails = read_saved_emails()
     except:                                                           # no! create empty file
         write_email([])
         saved_emails = read_saved_emails()
-        
+
     saved_emails.insert(0, data)
     write_email(saved_emails)
 
-                   
+
 def try_mail(text, logtext, attachment=None, subject=None):
-    ### Try send e-mail ###   
+    ### Try send e-mail ###
     log.clear(NAME)
     try:
         email(text, subject, attachment)  # send email with attachment from
@@ -715,44 +735,62 @@ class settings_page(ProtectedPage):
     ### Load an html page for entering email adjustments ###
 
     def GET(self):
-        return self.plugin_render.email_notifications_ssl(email_options, log.events(NAME))
+        try:
+            return self.plugin_render.email_notifications_ssl(email_options, log.events(NAME))
+        except:
+            log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('email_notifications_ssl -> settings_page GET')
+            return self.core_render.notice('/', msg)
+
 
     def POST(self):
         global saved_emails
         
-        email_options.web_update(web.input())
-        qdict = web.input()
-        test = get_input(qdict, 'test', False, lambda x: True)
-        delete = get_input(qdict, 'del', False, lambda x: True)
+        try:
+            email_options.web_update(web.input())
+            qdict = web.input()
+            test = get_input(qdict, 'test', False, lambda x: True)
+            delete = get_input(qdict, 'del', False, lambda x: True)
 
-        if email_sender is not None:
-            email_sender.update()
+            if email_sender is not None:
+                email_sender.update()
 
-            if test:
-                regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')      # SMTP username
-                if not re.fullmatch(regex, email_options['emlusr']):
-                    log.clear(NAME)
-                    log.info(NAME,datetime_string() + ': ' + _('Sender e-mail address appears to be invalid!'))
-                    raise web.seeother(plugin_url(settings_page), True)  
+                if test:
+                    regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')      # SMTP username
+                    if not re.fullmatch(regex, email_options['emlusr']):
+                        log.clear(NAME)
+                        log.info(NAME,datetime_string() + ': ' + _('Sender e-mail address appears to be invalid!'))
+                        raise web.seeother(plugin_url(settings_page), True)  
 
-                body = datetime_string() + ': ' + _('This is test e-mail from OSPy. You can ignore it.')
-                logtext = _('This is test e-mail from OSPy. You can ignore it.')
-                try_mail(body, logtext)
+                    body = datetime_string() + ': ' + _('This is test e-mail from OSPy. You can ignore it.')
+                    logtext = _('This is test e-mail from OSPy. You can ignore it.')
+                    try_mail(body, logtext)
             
-            if delete:
-                log.info(NAME, datetime_string() + ': ' + _('Email Queue was deleted.'))         
-                write_email([])
-                saved_emails = 0
+                if delete:
+                    log.info(NAME, datetime_string() + ': ' + _('Email Queue was deleted.'))
+                    write_email([])
+                    saved_emails = 0
 
-        raise web.seeother(plugin_url(settings_page), True)
+            raise web.seeother(plugin_url(settings_page), True)
 
+        except:
+            log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('email_notifications_ssl -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     ### Load an html page for help ###
 
     def GET(self):
-        return self.plugin_render.email_notifications_ssl_help()
-
+        try:
+            return self.plugin_render.email_notifications_ssl_help()
+        except:
+            log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('email_notifications_ssl -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     ### Returns plugin settings in JSON format ###
@@ -760,4 +798,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(email_options)
+        try:
+            return json.dumps(email_options)
+        except:
+            return []
