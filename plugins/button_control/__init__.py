@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 # This plugin controls OpenSprinkler OSPy via 8 defined buttons. I2C controller MCP23017 on range 0x20 to 0x27 address.
 
 import json
@@ -27,20 +27,20 @@ from blinker import signal
 
 
 NAME = 'Button Control'
-MENU =  _(u'Package: Button Control')
+MENU =  _('Package: Button Control')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
     NAME,
     {'use_button': False,
-     'button0': u'reboot',
-     'button1': u'pwrOff',
-     'button2': u'stopAll',
-     'button3': u'schedEn',
-     'button4': u'runP1',
-     'button5': u'runP2',
-     'button6': u'runP3',
-     'button7': u'runP4',
+     'button0': 'reboot',
+     'button1': 'pwrOff',
+     'button2': 'stopAll',
+     'button3': 'schedEn',
+     'button4': 'runP1',
+     'button5': 'runP2',
+     'button6': 'runP3',
+     'button7': 'runP4',
      'used_stations': [],    # use this stations for stoping scheduler if stations is activated in scheduler
      'i2c_addr': 39,         # 32 decimal to 37 decimal (is 0x20 to 0x27)
      'first_stop': False,    # First stop everything running and then start the program. If we want to start a new program and add it to the running ones, we will leave this option off.
@@ -97,36 +97,36 @@ class PluginSender(Thread):
                     for i in range(8):
                        tb = "button" + str(i)    
                        if actual_buttons == i and plugin_options[tb]== "reboot":
-                          log.info(NAME, datetime_string() + ': ' + _(u'System reboot')) 
+                          log.info(NAME, datetime_string() + ': ' + _('System reboot')) 
                           stations.clear()
                           report_rebooted()
                           reboot(block=True) # Linux HW software
                           self._sleep(1)
                        
                        if actual_buttons == i and plugin_options[tb]== "pwrOff":
-                          log.info(NAME, datetime_string() + ': ' + _(u'System shutdown')) 
+                          log.info(NAME, datetime_string() + ': ' + _('System shutdown')) 
                           stations.clear()
                           report_poweroff()
                           poweroff(wait=10, block=True)   # shutdown HW system
                           self._sleep(1)
                          
                        if actual_buttons == i and plugin_options[tb]== "stopAll":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Selected stations now stopped'))
+                          log.info(NAME, datetime_string() + ': ' + _('Selected stations now stopped'))
                           set_stations_in_scheduler_off()
                           self._sleep(1) 
 
                        if actual_buttons == i and plugin_options[tb]== "schedEn":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Scheduler is now enabled')) 
+                          log.info(NAME, datetime_string() + ': ' + _('Scheduler is now enabled')) 
                           options.scheduler_enabled = True
                           self._sleep(1)
 
                        if actual_buttons == i and plugin_options[tb]== "schedDis":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Scheduler is now disabled')) 
+                          log.info(NAME, datetime_string() + ': ' + _('Scheduler is now disabled')) 
                           options.scheduler_enabled = False
                           self._sleep(1)
 
                        if actual_buttons == i and plugin_options[tb]== "RunP1":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Run now program 1')) 
+                          log.info(NAME, datetime_string() + ': ' + _('Run now program 1')) 
                           for program in programs.get():
                              if (program.index == 0):   # Run-now program 1
                                 options.manual_mode = False
@@ -138,7 +138,7 @@ class PluginSender(Thread):
                           self._sleep(1)
 
                        if actual_buttons == i and plugin_options[tb]== "RunP2":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Run now program 2')) 
+                          log.info(NAME, datetime_string() + ': ' + _('Run now program 2')) 
                           for program in programs.get():
                              if (program.index == 1):   # Run-now program 2  
                                 options.manual_mode = False
@@ -150,7 +150,7 @@ class PluginSender(Thread):
                           self._sleep(1)
 
                        if actual_buttons == i and plugin_options[tb]== "RunP3":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Run now program 3')) 
+                          log.info(NAME, datetime_string() + ': ' + _('Run now program 3')) 
                           for program in programs.get():
                              if (program.index == 2):   # Run-now program 3  
                                 options.manual_mode = False
@@ -162,7 +162,7 @@ class PluginSender(Thread):
                           self._sleep(1)
                             
                        if actual_buttons == i and plugin_options[tb]== "RunP4":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Run now program 4')) 
+                          log.info(NAME, datetime_string() + ': ' + _('Run now program 4')) 
                           for program in programs.get():
                              if (program.index == 3):   # Run-now program 4  
                                 options.manual_mode = False 
@@ -186,7 +186,7 @@ class PluginSender(Thread):
                           self._sleep(1)
 
                        if actual_buttons == i and plugin_options[tb]== "RunP6":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Run now program 6'))
+                          log.info(NAME, datetime_string() + ': ' + _('Run now program 6'))
                           for program in programs.get():
                              if (program.index == 5):   # Run-now program 6
                                 options.manual_mode = False
@@ -198,7 +198,7 @@ class PluginSender(Thread):
                           self._sleep(1)
 
                        if actual_buttons == i and plugin_options[tb]== "RunP7":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Run now program 7'))
+                          log.info(NAME, datetime_string() + ': ' + _('Run now program 7'))
                           for program in programs.get():
                              if (program.index == 6):   # Run-now program 7
                                 options.manual_mode = False
@@ -210,7 +210,7 @@ class PluginSender(Thread):
                           self._sleep(1)
 
                        if actual_buttons == i and plugin_options[tb]== "RunP8":
-                          log.info(NAME, datetime_string() + ': ' + _(u'Run now program 8'))
+                          log.info(NAME, datetime_string() + ': ' + _('Run now program 8'))
                           for program in programs.get():
                              if (program.index == 7):   # Run-now program 8
                                 options.manual_mode = False
@@ -227,13 +227,13 @@ class PluginSender(Thread):
                     # text on the web if plugin is disabled
                     if disable_text:  
                        log.clear(NAME)
-                       log.info(NAME, _(u'Button plug-in is disabled.'))
+                       log.info(NAME, _('Button plug-in is disabled.'))
                        disable_text = False  
                     self._sleep(1)
 
             except Exception:
                 log.clear(NAME)
-                log.error(NAME, _(u'Button plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _('Button plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
                 pass
                 
@@ -281,7 +281,7 @@ def set_stations_in_scheduler_off():
                 ending = True   
 
     if ending:
-        log.info(NAME, _(u'Stoping stations in scheduler'))        
+        log.info(NAME, _('Stoping stations in scheduler'))        
 
         
 def try_io(call, tries=10):
@@ -325,35 +325,35 @@ def read_buttons():
         button_number = -1
         if inBut == 128:
             button_number = 7
-            log.debug(NAME, _(u'Switch 8 pressed'))
+            log.debug(NAME, _('Switch 8 pressed'))
         if inBut == 64:
             button_number = 6
-            log.debug(NAME, _(u'Switch 7 pressed'))
+            log.debug(NAME, _('Switch 7 pressed'))
         if inBut == 32:
             button_number = 5
-            log.debug(NAME, _(u'Switch 6 pressed'))
+            log.debug(NAME, _('Switch 6 pressed'))
         if inBut == 16:
             button_number = 4
-            log.debug(NAME, _(u'Switch 5 pressed'))
+            log.debug(NAME, _('Switch 5 pressed'))
         if inBut == 8:
             button_number = 3
-            log.debug(NAME, _(u'Switch 4 pressed'))
+            log.debug(NAME, _('Switch 4 pressed'))
         if inBut == 4:
             button_number = 2
-            log.debug(NAME, _(u'Switch 3 pressed'))
+            log.debug(NAME, _('Switch 3 pressed'))
         if inBut == 2:
             button_number = 1
-            log.debug(NAME, _(u'Switch 2 pressed'))
+            log.debug(NAME, _('Switch 2 pressed'))
         if inBut == 1:
             button_number = 0
-            log.debug(NAME, _(u'Switch 1 pressed'))
+            log.debug(NAME, _('Switch 1 pressed'))
         return button_number #if button is not pressed return -1
 
     except Exception:
         log.clear(NAME)
-        log.error(NAME, datetime_string() + ': ' + _(u'Read button - FAULT'))
-        log.error(NAME, _(u'Is hardware connected? Is bus address corectly setuped?'))
-        #log.error(NAME, '\n' + traceback.format_exc())
+        log.debug(NAME, datetime_string() + ': ' + _('Read button - FAULT'))
+        log.debug(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
+        log.error(NAME, '\n' + traceback.format_exc())
         pass
         return -1
 
@@ -371,8 +371,8 @@ def led_outputs(led):
         try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x13,led))  # bus.write_byte_data(0x27,0x13,led)
               
     except Exception:
-        log.error(NAME, datetime_string() + ': ' + _(u'Set LED - FAULT'))
-        log.error(NAME, _(u'Is hardware connected? Is bus address corectly setuped?'))
+        log.error(NAME, datetime_string() + ': ' + _('Set LED - FAULT'))
+        log.error(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
         #log.error(NAME, '\n' + traceback.format_exc())
         pass
 
@@ -384,21 +384,37 @@ class settings_page(ProtectedPage):
     """Load an html page for entering plugin settings."""
 
     def GET(self):
-        return self.plugin_render.button_control(plugin_options, log.events(NAME))
+        try:
+            return self.plugin_render.button_control(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Button plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('button_control -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
-    def POST(self): 
-        plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
-        if plugin_sender is not None:
-            plugin_sender.update()
-        raise web.seeother(plugin_url(settings_page), True)
-
+    def POST(self):
+        try:
+            plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
+            if plugin_sender is not None:
+                plugin_sender.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Button plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('button_control -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.button_control_help()        
-
+        try:
+            return self.plugin_render.button_control_help()        
+        except:
+            log.error(NAME, _('Button plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('button_control -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -406,4 +422,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)        
+        try:
+            return json.dumps(plugin_options)        
+        except:
+            return {}
