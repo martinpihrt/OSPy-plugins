@@ -117,6 +117,7 @@ def install_db():
     cmd = "sudo pip install mysql-connector-python"
     log.info(NAME, _('Installing mysql connector python'))
     log.info(NAME, _('In error: externally-managed-environment use sudo rm /usr/lib/python3.11/EXTERNALLY-MANAGED and next install connector.') + '\n')
+    log.info(NAME, _('If the installation is not successful, run the installation script to install the sql package "sudo bash ospy_setup.sh" in OSPy dir.') + '\n')
     run_command(cmd)
 
 
@@ -257,76 +258,98 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global sender
-        qdict  = web.input()
-        test = get_input(qdict, 'test', False, lambda x: True)
-        install = get_input(qdict, 'install', False, lambda x: True)
+        try:
+            global sender
+            qdict  = web.input()
+            test = get_input(qdict, 'test', False, lambda x: True)
+            install = get_input(qdict, 'install', False, lambda x: True)
 
-        if sender is not None and test:
-            sql = "SHOW DATABASES"
-            execute_db(sql, test=True, commit=False)
+            if sender is not None and test:
+                sql = "SHOW DATABASES"
+                execute_db(sql, test=True, commit=False)
 
-        if sender is not None and install:
-            install_db()
+            if sender is not None and install:
+                install_db()
 
-        return self.plugin_render.database_connector(plugin_options, log.events(NAME))
-    
+            return self.plugin_render.database_connector(plugin_options, log.events(NAME))
+
+        except:
+            log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('database_connector -> settings_page GET')
+            return self.core_render.notice('/', msg)
+
     def POST(self):
-        plugin_options.web_update(web.input())
-        raise web.seeother(plugin_url(settings_page), True)
-
+        try:
+            plugin_options.web_update(web.input())
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('database_connector -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class backup_page(ProtectedPage):
     """Load an html page for backup"""
 
     def GET(self):
-        global sender
-        qdict  = web.input()
-        backup = get_input(qdict, 'backup', False, lambda x: True)
+        try:
+            global sender
+            qdict  = web.input()
+            backup = get_input(qdict, 'backup', False, lambda x: True)
 
-        log.clear(NAME)
-        if sender is not None and backup:
-            if get_dump():
-                log.info(NAME, datetime_string() + ': ' + _('Created database backup.'))
-            else:
-                log.error(NAME, datetime_string() + ': ' + _('Error in database backup.'))
-
-        if 'delete' in qdict and sender is not None:
-            delete = qdict['delete']
-            if len(plugin_options['sql_name']) > 0:
-                del_file = os.path.join(plugin_data_dir(), plugin_options['sql_name'][int(delete)] )
-                if os.path.isfile(del_file):
-                    os.remove(del_file)
-                    log.debug(NAME, datetime_string() + ': ' + _('Deleting file has sucesfully.'))
+            log.clear(NAME)
+            if sender is not None and backup:
+                if get_dump():
+                    log.info(NAME, datetime_string() + ': ' + _('Created database backup.'))
                 else:
-                    log.error(NAME, datetime_string() + ': ' + _('File for deleting not found!'))
+                    log.error(NAME, datetime_string() + ': ' + _('Error in database backup.'))
 
-        if 'download' in qdict and sender is not None:
-            download = qdict['download']
-            if len(plugin_options['sql_name']) > 0:
-                down_name = plugin_options['sql_name'][int(download)]
-                down_path = os.path.join(plugin_data_dir(), down_name)
-                if os.path.isfile(down_path):
-                    _file = os.path.join(plugin_data_dir(), down_name)
-                    _content = mimetypes.guess_type(down_path)[0]
-                    log.debug(NAME, _('Download file: {} type: {}.').format(_file, _content))
-                    web.header('Access-Control-Allow-Origin', '*')
-                    web.header('Content-type', _content)
-                    web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))
-                    with open(down_path, 'rb') as f:
-                        return f.read()
+            if 'delete' in qdict and sender is not None:
+                delete = qdict['delete']
+                if len(plugin_options['sql_name']) > 0:
+                    del_file = os.path.join(plugin_data_dir(), plugin_options['sql_name'][int(delete)] )
+                    if os.path.isfile(del_file):
+                        os.remove(del_file)
+                        log.debug(NAME, datetime_string() + ': ' + _('Deleting file has sucesfully.'))
+                    else:
+                        log.error(NAME, datetime_string() + ': ' + _('File for deleting not found!'))
 
-        read_sql_folder()
+            if 'download' in qdict and sender is not None:
+                download = qdict['download']
+                if len(plugin_options['sql_name']) > 0:
+                    down_name = plugin_options['sql_name'][int(download)]
+                    down_path = os.path.join(plugin_data_dir(), down_name)
+                    if os.path.isfile(down_path):
+                        _file = os.path.join(plugin_data_dir(), down_name)
+                        _content = mimetypes.guess_type(down_path)[0]
+                        log.debug(NAME, _('Download file: {} type: {}.').format(_file, _content))
+                        web.header('Access-Control-Allow-Origin', '*')
+                        web.header('Content-type', _content)
+                        web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))
+                        with open(down_path, 'rb') as f:
+                            return f.read()
 
-        return self.plugin_render.database_connector_backup(plugin_options, log.events(NAME))
+            read_sql_folder()
+            return self.plugin_render.database_connector_backup(plugin_options, log.events(NAME))
 
+        except:
+            log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('database_connector -> backup_page GET')
+            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.database_connector_help()
-
+        try:
+            return self.plugin_render.database_connector_help()
+        except:
+            log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('database_connector -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -335,4 +358,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
