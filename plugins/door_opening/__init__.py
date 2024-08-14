@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 import json
 import time
@@ -21,7 +21,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Door Opening'
-MENU =  _(u'Package: Door Opening')
+MENU =  _('Package: Door Opening')
 LINK = 'start_page'
 
 plugin_options = PluginOptions(
@@ -46,7 +46,7 @@ class PluginSender(Thread):
 
     def run(self):
         log.clear(NAME)
-        log.info(NAME, datetime_string() + ' ' + _(u'Started for {} seconds.').format(plugin_options['open_time']))
+        log.info(NAME, datetime_string() + ' ' + _('Started for {} seconds.').format(plugin_options['open_time']))
 
         start = datetime.datetime.now()
         sid = int(plugin_options['open_output'])
@@ -55,7 +55,7 @@ class PluginSender(Thread):
             'active': True,
             'program': -1,
             'station': sid,
-            'program_name': _(u'Door Opening'),
+            'program_name': _('Door Opening'),
             'fixed': True,
             'cut_off': 0,
             'manual': True,
@@ -78,8 +78,8 @@ def start():
     if plugin_options['use_footer']:
         door_footer = showInFooter()                        # instantiate class to enable data in footer
         door_footer.button = "door_opening/start"           # button redirect on footer
-        door_footer.label = _(u'Opening Door')              # label on footer
-        msg = _(u'Time {} seconds').format(plugin_options['open_time'])
+        door_footer.label = _('Opening Door')              # label on footer
+        msg = _('Time {} seconds').format(plugin_options['open_time'])
         door_footer.val = msg.encode('utf8').decode('utf8') # value on footer
     pass
 
@@ -92,26 +92,42 @@ class start_page(ProtectedPage):
     """Load an html start page"""
 
     def GET(self):
-        return self.plugin_render.door_opening(plugin_options, log.events(NAME))
+        try:
+            return self.plugin_render.door_opening(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Door Opening plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('door_opening -> start_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        global sender
+        try:
+            global sender
 
-        plugin_options.web_update(web.input())
-        if sender is not None:
-            sender.join(5)
+            plugin_options.web_update(web.input())
+            if sender is not None:
+                sender.join(5)
 
-        sender = PluginSender()
+            sender = PluginSender()
+            raise web.seeother(plugin_url(start_page), True)
 
-        raise web.seeother(plugin_url(start_page), True)
-
+        except:
+            log.error(NAME, _('Door Opening plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('door_opening -> start_page POST')
+            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.door_opening_help()        
-
+        try:
+            return self.plugin_render.door_opening_help()        
+        except:
+            log.error(NAME, _('Door Opening plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('door_opening -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -119,6 +135,8 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
-
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
 
