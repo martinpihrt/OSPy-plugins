@@ -517,49 +517,63 @@ def add_to_body_local_ospy_name():
 
 ### login ###
 def notify_login(name, **kw):
-    if email_options['emlusrin']:
-        body = '<b>' + datetime_string() + '</b>'
-        body += '<br><p style="color:blue;">' + _('Someone logged in.') + '</p><br>'
-        body += add_to_body_local_ospy_name()
-        logtext = _('Someone logged in.')
-        try_mail(body, logtext)
+    try:
+        if email_options['emlusrin']:
+            body = '<b>' + datetime_string() + '</b>'
+            body += '<br><p style="color:blue;">' + _('Someone logged in.') + '</p><br>'
+            body += add_to_body_local_ospy_name()
+            logtext = _('Someone logged in.')
+            try_mail(body, logtext)
+    except:
+        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
 
 ### rain ###
 def notify_rain_active(name, **kw):
-    if email_options['emlrain']:    
-        body = '<b>' + datetime_string() + '</b>'
-        body += '<br><p style="color:red;">' + _('Rain sensor has activated.') + '</p><br>'
-        body += add_to_body_local_ospy_name()
-        logtext = _('Rain sensor has activated.')
-        try_mail(body, logtext)
+    try:
+        if email_options['emlrain']:    
+            body = '<b>' + datetime_string() + '</b>'
+            body += '<br><p style="color:red;">' + _('Rain sensor has activated.') + '</p><br>'
+            body += add_to_body_local_ospy_name()
+            logtext = _('Rain sensor has activated.')
+            try_mail(body, logtext)
+    except:
+        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
 
 ### no rain ###
 def notify_rain_deactive(name, **kw):
-    if email_options['emlrainde']:
-        body = '<b>' + datetime_string() + '</b>'
-        body += '<br><p style="color:green;">' + _('Rain sensor has deactivated.') + '</p><br>'
-        body += add_to_body_local_ospy_name()
-        logtext = _('Rain sensor has deactivated.')
-        try_mail(body, logtext)
+    try:
+        if email_options['emlrainde']:
+            body = '<b>' + datetime_string() + '</b>'
+            body += '<br><p style="color:green;">' + _('Rain sensor has deactivated.') + '</p><br>'
+            body += add_to_body_local_ospy_name()
+            logtext = _('Rain sensor has deactivated.')
+            try_mail(body, logtext)
+    except:
+        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
 
 ### rain delay has setuped ###
 def notify_rain_delay_setuped(name, **kw):
-    if email_options['emlrds']:
-        body = '<b>' + datetime_string() + '</b>'
-        body += '<br><p style="color:red;">' + _('Rain delay is now set a delay {} (h: m: s).').format(kw["txt"]) + '</p><br>'
-        body += add_to_body_local_ospy_name()
-        logtext = _('Rain delay is now set a delay {} hours.').format(kw["txt"])
-        try_mail(body, logtext)
+    try:
+        if email_options['emlrds']:
+            body = '<b>' + datetime_string() + '</b>'
+            body += '<br><p style="color:red;">' + _('Rain delay is now set a delay {} (h: m: s).').format(kw["txt"]) + '</p><br>'
+            body += add_to_body_local_ospy_name()
+            logtext = _('Rain delay is now set a delay {} hours.').format(kw["txt"])
+            try_mail(body, logtext)
+    except:
+        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
 
 ### rain delay has expired ###
 def notify_rain_delay_expired(name, **kw):
-    if email_options['emlrdr']:
-        body = '<b>' + datetime_string() + '</b>'
-        body += '<br><p style="color:green;">' + _('Rain delay has now been removed.') + '</p><br>'
-        body += add_to_body_local_ospy_name()
-        logtext = _('Rain delay has now been removed.')
-        try_mail(body, logtext)
-
+    try:
+        if email_options['emlrdr']:
+            body = '<b>' + datetime_string() + '</b>'
+            body += '<br><p style="color:green;">' + _('Rain delay has now been removed.') + '</p><br>'
+            body += add_to_body_local_ospy_name()
+            logtext = _('Rain delay has now been removed.')
+            try_mail(body, logtext)
+    except:
+        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
 
 loggedin = signal('loggedin')  # associations with signal
 loggedin.connect(notify_login) # define which subroutine will be triggered
@@ -643,8 +657,11 @@ def read_saved_emails():
 
 def write_email(json_data):
     ###Write e-mail data to json file ###
-    with open(os.path.join(plugin_data_dir(), 'saved_emails.json'), 'w') as saved_emails:
-        json.dump(json_data, saved_emails)
+    try:
+        with open(os.path.join(plugin_data_dir(), 'saved_emails.json'), 'w') as saved_emails:
+            json.dump(json_data, saved_emails)
+    except:
+        log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
 
 def update_saved_emails(data):
     ### Update data in json files ###
@@ -801,4 +818,4 @@ class settings_json(ProtectedPage):
         try:
             return json.dumps(email_options)
         except:
-            return []
+            return {}
