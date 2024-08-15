@@ -192,16 +192,24 @@ class settings_page(ProtectedPage):
                             return f.read()
 
             read_bkp_folder()
+            return self.plugin_render.ospy_backup(plugin_options, log.events(NAME))
 
-        except:            
+        except:
             log.error(NAME, _('OSPy package Backup') + ':\n' + traceback.format_exc())
-            pass
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ospy_backup -> settings_page GET')
+            return self.core_render.notice('/', msg)           
 
-        return self.plugin_render.ospy_backup(plugin_options, log.events(NAME))
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ospy_backup_help()
+        try:
+            return self.plugin_render.ospy_backup_help()
+        except:
+            log.error(NAME, _('OSPy package Backup') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ospy_backup -> help_page GET')
+            return self.core_render.notice('/', msg)
