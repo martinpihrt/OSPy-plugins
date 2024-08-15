@@ -151,6 +151,8 @@ class Sender(Thread):
 
 sender = None
 
+update_publish_counter = 0
+
 ################################################################################
 # MQTT Client                                                                  #
 ################################################################################
@@ -243,6 +245,7 @@ def start():
 def stop():
     global sender
     global _client
+    remove_hass_ospy()
     if sender is not None:
         sender.stop()
         sender.join()
@@ -653,7 +656,6 @@ def discovery_payload(device):
             raise ValueError(_('Callback cannot be Null for device_class = number'))
     elif device._deviceclass == "switch":
         if device._callback is not None:
-            payload["value_template"] = "{{ value_json.state }}"
             payload["command_topic"] = '{}/{}/{}/set'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
             payload["payload_off"] = "False"
             payload["payload_on"] = "True"
@@ -737,7 +739,7 @@ def discovery_publish():
         from plugins import tank_monitor
         if (tank_monitor.tank_options['use_sonic']):
             sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
-            sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m3")
+            sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
             sensor_water_tank_percent._id = 400 # mqtt unique ID placeholder, 400 for water level percent, 401 for volume
             sensor_water_tank_volume._id = 401
             sensorWTLDevices.append(sensor_water_tank_percent)
@@ -755,8 +757,8 @@ def discovery_publish():
             body += '</ul>'   
             log.info(NAME, logtext)
         else:
-            sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
-            sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m3")
+            sensor_water_tank_percent = hass_device().createSensor("moisture", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
+            sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
             remove_device(sensor_water_tank_percent)
             remove_device(sensor_water_tank_volume)
             
@@ -774,7 +776,7 @@ def discovery_publish():
                 sensorH._isDHT = True
                 sensorH._isDS = False 
                 sensorH._id = 500 #mqtt unique ID placeholder, 500 for humidity, 501 for temperature
-                sensorT = hass_device().createSensor( "temperature", "sensor_THDS", "HDT_temperature", dhtName + " " + _('Temperature'), None, "℃")
+                sensorT = hass_device().createSensor( "temperature", "sensor_THDS", "HDT_temperature", dhtName + " " + _('Temperature'), None, "°C")
                 sensorT._isDHT = True
                 sensorT._isDS = False
                 sensorT._id = 501
@@ -899,11 +901,10 @@ def set_devices_default_values(devices):
                 payload["state"] = str(inputs.rain_sensed())
             elif device._type == "stations":
                 topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-                payload["state"] = str(stations.get(device._id).active)
-            elif device._type == "programs":
-                topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-                payload["state"] = "False"
+                payload = str(stations.get(device._id).active)
             elif device._type == "program" or device._type == "station":
+                return
+            else:
                 return
 
             publish(topic, payload)
@@ -972,6 +973,10 @@ def update_tank_level(sensors):
 
 def update_device_plugin_settings(name, **kw):
     discovery_publish()
+    
+def remove_hass_ospy():
+    for device in sender.devices:
+        remove_device(device)
         
 
 def set_devices_signal():
