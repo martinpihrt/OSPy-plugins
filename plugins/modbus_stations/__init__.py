@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 import json
 import time
@@ -126,38 +126,48 @@ def Compute_address_and_out(station_nr):
         adr = adr+1
     return adr, out
 
+
 def on_station_on(name, **kw):
     """ Send CMD to ON when core program signals in station state."""
-    index = int(kw["txt"])
-    log.clear(NAME)
-    log.info(NAME, _('Station {} change to ON').format(index+1))
-    if plugin_options['nr_boards'] == 1: # relay 1-8, adr 1
-        Send_data(address=0x01, command=0x05, relay_nr=int(index), state='on')
-    else:
-        adr, out = Compute_address_and_out(index)
-        Send_data(address=adr, command=0x05, relay_nr=int(out), state='on')
-    
+    try:
+        index = int(kw["txt"])
+        log.clear(NAME)
+        log.info(NAME, _('Station {} change to ON').format(index+1))
+        if plugin_options['nr_boards'] == 1: # relay 1-8, adr 1
+            Send_data(address=0x01, command=0x05, relay_nr=int(index), state='on')
+        else:
+            adr, out = Compute_address_and_out(index)
+            Send_data(address=adr, command=0x05, relay_nr=int(out), state='on')
+    except:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+
 
 def on_station_off(name, **kw):
     """ Send CMD to OFF when core program signals in station state."""
-    index = int(kw["txt"])    
-    log.clear(NAME)
-    log.info(NAME, _('Station {} change to OFF').format(index+1))
-    if plugin_options['nr_boards'] == 1: # relay 1-8, adr 1
-        Send_data(address=0x01, command=0x05, relay_nr=int(index), state='off')
-    else:
-        adr, out = Compute_address_and_out(index)
-        Send_data(address=adr, command=0x05, relay_nr=int(out), state='off')
-    
+    try:
+        index = int(kw["txt"])
+        log.clear(NAME)
+        log.info(NAME, _('Station {} change to OFF').format(index+1))
+        if plugin_options['nr_boards'] == 1: # relay 1-8, adr 1
+            Send_data(address=0x01, command=0x05, relay_nr=int(index), state='off')
+        else:
+            adr, out = Compute_address_and_out(index)
+            Send_data(address=adr, command=0x05, relay_nr=int(out), state='off')
+    except:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+
 
 def on_station_clear(name, **kw):
     """ Send all CMD to OFF when core program signals in station state."""
-    log.clear(NAME)
-    log.info(NAME, _('All station change to OFF'))
-    for i in range(plugin_options['nr_boards']*8):
-        adr, out = Compute_address_and_out(i)
-        Send_data(address=adr, command=0x05, relay_nr=int(out), state='off')
-        time.sleep(0.1)
+    try:
+        log.clear(NAME)
+        log.info(NAME, _('All station change to OFF'))
+        for i in range(plugin_options['nr_boards']*8):
+            adr, out = Compute_address_and_out(i)
+            Send_data(address=adr, command=0x05, relay_nr=int(out), state='off')
+            time.sleep(0.1)
+    except:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
 
 
 def read_log():
@@ -166,30 +176,39 @@ def read_log():
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             return json.load(logf)
     except IOError:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
         return []
+
 
 def write_log(json_data):
     """Write data to log json file."""
-    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+
 
 def update_log(cmd, status):
     """Update data in json files."""
     try:
-        log_data = read_log()
-    except:   
-        write_log([])
-        log_data = read_log()
+        try:
+            log_data = read_log()
+        except:   
+            write_log([])
+            log_data = read_log()
 
-    from datetime import datetime 
+        from datetime import datetime 
 
-    data = {}
-    data['cmd'] = cmd
-    data['status'] = status
-    data['datetime'] = datetime_string()
+        data = {}
+        data['cmd'] = cmd
+        data['status'] = status
+        data['datetime'] = datetime_string()
 
-    log_data.insert(0, data)
-    write_log(log_data)
+        log_data.insert(0, data)
+        write_log(log_data)
+    except:
+        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
 
 
 """ Table of CRC values for high–order byte """
@@ -249,8 +268,8 @@ def ModbusCRC(data):
             crcLow  = crcHigh ^ CRCTableHigh[index]
             crcHigh = CRCTableLow[index]
         else:
-            return 0    
-    
+            return 0
+
     return (crcHigh << 8 | crcLow)
 
 
@@ -464,84 +483,118 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global sender
-        qdict = web.input()
-        show = helpers.get_input(qdict, 'show', False, lambda x: True)
-        program = helpers.get_input(qdict, 'program', False, lambda x: True)
- 
-        if sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)
+        try:
+            global sender
+            qdict = web.input()
+            show = helpers.get_input(qdict, 'show', False, lambda x: True)
+            program = helpers.get_input(qdict, 'program', False, lambda x: True)
 
-        if sender is not None and program:
-            raise web.seeother(plugin_url(address_page), True)            
+            if sender is not None and show:
+                raise web.seeother(plugin_url(log_page), True)
 
-        return self.plugin_render.modbus_stations(plugin_options, log.events(NAME))
+            if sender is not None and program:
+                raise web.seeother(plugin_url(address_page), True)
+
+            return self.plugin_render.modbus_stations(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('modbus_stations -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
         try:
             plugin_options.web_update(web.input())
             if sender is not None:
                 sender.update()
-
-        except Exception:
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
             log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-            pass
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('modbus_stations -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
-        raise web.seeother(plugin_url(settings_page), True)
 
 class address_page(ProtectedPage):
     """html page for programming address."""
 
     def GET(self):
-        global sender
-        qdict = web.input()
-        adr_btn = helpers.get_input(qdict, 'adr', False, lambda x: True)
-        find_btn = helpers.get_input(qdict, 'find', False, lambda x: True)
+        try:
+            global sender
+            qdict = web.input()
+            adr_btn = helpers.get_input(qdict, 'adr', False, lambda x: True)
+            find_btn = helpers.get_input(qdict, 'find', False, lambda x: True)
 
-        log.clear(NAME)
+            log.clear(NAME)
 
-        if sender is not None and adr_btn:
-            adr = int(qdict['adr'])
-            Write_address(adr)
-            log.info(NAME, _('The address that should have been set on the device') + ': {}.'.format(adr))
-            log.info(NAME, _('Now I will try to load the address after programming...'))
-            find_btn = True
+            if sender is not None and adr_btn:
+                adr = int(qdict['adr'])
+                Write_address(adr)
+                log.info(NAME, _('The address that should have been set on the device') + ': {}.'.format(adr))
+                log.info(NAME, _('Now I will try to load the address after programming...'))
+                find_btn = True
 
-        if sender is not None and find_btn:
-            find_adr = int(Read_address())
-            if find_adr > 0:
-                log.info(NAME, _('Found device on address') + ': {}.'.format(find_adr))
-                fw = Read_firmware_version(int(find_adr))
-                if fw > 0:
-                    log.info(NAME, _('Firmware is') + ': {}.'.format(fw))
+            if sender is not None and find_btn:
+                find_adr = int(Read_address())
+                if find_adr > 0:
+                    log.info(NAME, _('Found device on address') + ': {}.'.format(find_adr))
+                    fw = Read_firmware_version(int(find_adr))
+                    if fw > 0:
+                        log.info(NAME, _('Firmware is') + ': {}.'.format(fw))
+                    else:
+                        log.info(NAME, _('Not Read firmware from device.'))
                 else:
-                    log.info(NAME, _('Not Read firmware from device.'))
-            else:
-                log.info(NAME, _('Not Found any address or device.'))            
-        
-        return self.plugin_render.modbus_stations_address(plugin_options, log.events(NAME))
+                    log.info(NAME, _('Not Found any address or device.'))
+
+            return self.plugin_render.modbus_stations_address(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('modbus_stations -> address_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        raise web.seeother(plugin_url(address_page), True)        
+        try:
+            raise web.seeother(plugin_url(address_page), True)
+        except:
+            log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('modbus_stations -> address_page POST')
+            return self.core_render.notice('/', msg)
+
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.modbus_stations_help()
+        try:
+            return self.plugin_render.modbus_stations_help()
+        except:
+            log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('modbus_stations -> help_page GET')
+            return self.core_render.notice('/', msg)
+
 
 class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        qdict = web.input()
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
-        if sender is not None and delete:
-            write_log([])
-            log.info(NAME, _('Deleted all log files OK'))
-            raise web.seeother(plugin_url(settings_page), True)
+        try:
+            qdict = web.input()
+            delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+            if sender is not None and delete:
+                write_log([])
+                log.info(NAME, _('Deleted all log files OK'))
+                raise web.seeother(plugin_url(settings_page), True)
 
-        return self.plugin_render.modbus_stations_log(read_log())
+            return self.plugin_render.modbus_stations_log(read_log())
+        except:
+            log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('modbus_stations -> log_page GET')
+            return self.core_render.notice('/', msg)
+
 
 class settings_json(ProtectedPage): 
     """Returns plugin settings in JSON format."""
@@ -549,7 +602,12 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+            return {}
+
 
 class log_json(ProtectedPage):
     """Returns data in JSON format."""
@@ -557,23 +615,34 @@ class log_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_log())
+        try:
+            return json.dumps(read_log())
+        except:
+            log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+            return {}
+
 
 class log_csv(ProtectedPage):
     """Simple Log API"""
 
     def GET(self):
-        data = "Date/Time; Command; State \n"
-        log_file = read_log()
-        for interval in log_file:
-            data += '; '.join([
-                interval['datetime'],
-                u'{}'.format(interval['cmd']),
-                u'{}'.format(interval['status']),
-            ]) + '\n'
+        try:
+            data = "Date/Time; Command; State \n"
+            log_file = read_log()
+            for interval in log_file:
+                data += '; '.join([
+                    interval['datetime'],
+                    '{}'.format(interval['cmd']),
+                    '{}'.format(interval['status']),
+                ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="modbus_stations_log.csv"')
-        return data
+            content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-type', content) 
+            web.header('Content-Disposition', 'attachment; filename="modbus_stations_log.csv"')
+            return data
+        except:
+            log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('modbus_stations -> log_csv GET')
+            return self.core_render.notice('/', msg)
