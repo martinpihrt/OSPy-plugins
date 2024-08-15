@@ -325,7 +325,7 @@ class Sender(Thread):
                                                 roller = response_data["data"]["device_status"]["rollers"][0]["state"]
                                             except:
                                                 roller = None
-                                                # TODO switch   
+                                                # TODO switch
                                                 a_output = 0
                                                 b_output = 0
                                             a_power = response_data["data"]["device_status"]["meters"][0]["power"]
@@ -531,15 +531,28 @@ class status_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        return self.plugin_render.shelly_cloud_integration(log.events(NAME))
+        try:
+            return self.plugin_render.shelly_cloud_integration(log.events(NAME))
 
+        except:
+            log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('shelly_cloud -> status_page GET')
+            return self.core_render.notice('/', msg)
 
 class sensors_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        msg = 'none'
-        return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
+        try:
+            msg = 'none'
+            return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
+
+        except:
+            log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('shelly_cloud -> sensors_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
         try:
@@ -602,19 +615,25 @@ class sensors_page(ProtectedPage):
             msg = 'saved'
             return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
 
-        except Exception:
-            log.debug(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
-            pass
-
-        msg = 'error'
-        return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
+        except:
+            log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('shelly_cloud -> sensors_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.shelly_cloud_integration_help()
+        try:
+            return self.plugin_render.shelly_cloud_integration_help()
+
+        except:
+            log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('shelly_cloud -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -624,4 +643,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
