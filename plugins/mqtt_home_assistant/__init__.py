@@ -151,7 +151,6 @@ class Sender(Thread):
 
 sender = None
 
-update_publish_counter = 0
 
 ################################################################################
 # MQTT Client                                                                  #
@@ -224,11 +223,12 @@ def unsubscribe(topic):
 
 
 def on_restart():
-    global _client
-    if _client is not None:
-        _client.disconnect()
-        _client.loop_stop()
-        _client = None
+    global sender
+    if sender is not None:
+        if sender.client is not None:
+            sender.client.disconnect()
+            sender.client.loop_stop()
+            sender.client = None
 
 
 
@@ -247,6 +247,10 @@ def stop():
     global _client
     remove_hass_ospy()
     if sender is not None:
+        if sender.client is not None:
+            sender.client.disconnect()
+            sender.client.loop_stop()
+            sender.client = None
         sender.stop()
         sender.join()
         sender = None
@@ -525,10 +529,17 @@ def program_set(client, msg, device):
         # log.finish_run(None)
         # stations.clear()
         # next run program id: xx
-        print(device._id)
+        # print(device._id)
         programs.run_now(int(device._id))
         Timer(0.1, programs.calculate_balances).start()
         report_program_runnow()
+        time.sleep(0.2)
+        stationsList = [] 
+        for device in sender.devices:
+            if device._type == "stations":
+                stationsList.append(device)
+        set_devices_default_values(stationsList)
+        
     else:
         pass
 
@@ -880,8 +891,9 @@ def remove_device(device):
         pass
 
 def set_devices_default_values(devices):
-    try:
-        for device in devices:
+    
+    for device in devices:
+        try:
             payload = {}
             topic = {}
             if device._property == "rain_delay":
@@ -902,15 +914,13 @@ def set_devices_default_values(devices):
             elif device._type == "stations":
                 topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
                 payload = str(stations.get(device._id).active)
-            elif device._type == "program" or device._type == "station":
-                return
             else:
-                return
+                raise Exception
 
             publish(topic, payload)
-    except:
-        log.error(NAME, _('Cannot set devices default values.'))
-        pass
+        except:
+            log.error(NAME, _('Cannot set devices default values.'))
+            pass
 
 def update_device_values(name, **kw):
     try:
