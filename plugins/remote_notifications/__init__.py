@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 # this plugins send GET data to remote web server
 
 import json
 import time
 import os
 import os.path
-import traceback      
+import traceback
 import re
 from threading import Thread, Event
 
@@ -21,15 +21,15 @@ from ospy.helpers import datetime_string, get_input
 
 
 NAME = 'Remote Notifications'
-MENU =  _(u'Package: Remote Notifications')
+MENU =  _('Package: Remote Notifications')
 LINK = 'settings_page'
 
 remote_options = PluginOptions(
     NAME,
     {
-        u'use': False,
-        u'rem_adr': u"your web server",
-        u'api': u"123456789"
+        'use': False,
+        'rem_adr': 'your web server',
+        'api': '123456789'
     }
 )
 
@@ -62,9 +62,9 @@ class RemoteSender(Thread):
         log.clear(NAME)
         try:
             send_data(text)  # send get data
-            log.info(NAME, _(u'Remote was sent') + ':\n' + text)
+            log.info(NAME, _('Remote was sent') + ':\n' + text)
         except Exception:
-            log.error(NAME, _(u'Remote was not sent') + '!\n' + traceback.format_exc())
+            log.error(NAME, _('Remote was not sent') + '!\n' + traceback.format_exc())
 
     def run(self):
         send_msg = False  # send get data if change (rain, end program ....
@@ -106,7 +106,7 @@ class RemoteSender(Thread):
                         percent = tank_monitor.get_all_values()[1]
                         ping = tank_monitor.get_all_values()[2]
                         volume = tank_monitor.get_all_values()[3]
-         
+
                     except Exception:
                         tank = ""
                         percent = ""
@@ -130,7 +130,7 @@ class RemoteSender(Thread):
                              en_line2 = False
                              en_line = True
                           line = 1 # power ok on web
-       
+
                     except Exception:
                        line = ""
 
@@ -149,9 +149,9 @@ class RemoteSender(Thread):
 
                     if not options.rain_sensor_enabled: # if rain sensor not used
                         rain = ""
-                                        
+
                     ### program and station ###
-                    finished = [run for run in log.finished_runs() if not run['blocked']]                    
+                    finished = [run for run in log.finished_runs() if not run['blocked']]
                     if len(finished) > finished_count:
                         las = datetime_string()
                         lastrun = re.sub(" ", "_", las) # eliminate gap in the title to _
@@ -162,7 +162,7 @@ class RemoteSender(Thread):
                             humi = int(humi_monitor.get_humidity((stations.get(run['station']).index)+1)) # 0-7 to 1-8 humidity  
                             if humi < 0:
                                humi = "" 
-                                
+
                         except Exception:
                             humi = ""
 
@@ -172,9 +172,9 @@ class RemoteSender(Thread):
                             temp1   = air_temp_humi.DS18B20_read_probe(0)
                             temp2   = air_temp_humi.DS18B20_read_probe(1)
                             temp3   = air_temp_humi.DS18B20_read_probe(2)
-                            temp4   = air_temp_humi.DS18B20_read_probe(3) 
-                            temp5   = air_temp_humi.DS18B20_read_probe(4) 
-                            temp6   = air_temp_humi.DS18B20_read_probe(5) 
+                            temp4   = air_temp_humi.DS18B20_read_probe(3)
+                            temp5   = air_temp_humi.DS18B20_read_probe(4)
+                            temp6   = air_temp_humi.DS18B20_read_probe(5)
                             tempDHT = air_temp_humi.DHT_read_temp_value()
                             humiDHT = air_temp_humi.DHT_read_humi_value()
                         except Exception:
@@ -192,7 +192,7 @@ class RemoteSender(Thread):
                             minutes, seconds = divmod(dur, 60)
                             sta = "%s" % stations.get(run['station']).name 
                             station = re.sub(" ", "_", sta)  # eliminate gap in the title to _
-                            duration = "%02d:%02d" % (minutes, seconds)                       
+                            duration = "%02d:%02d" % (minutes, seconds)
 
                     finished_count = len(finished)
 
@@ -217,14 +217,14 @@ class RemoteSender(Thread):
                     body += ('&humiDHT=' + str(humiDHT))
                     body += ('&api=' + remote_options['api'])  # API password
                     log.clear(NAME)
-                    log.info(NAME, _(u'Test data...'))
+                    log.info(NAME, _('Test data...'))
                     self.try_send(body)                        # Send GET data to remote server 
                     send_msg = False                           # Disable send data    
                     
                 self._sleep(2)
 
             except Exception:
-                log.error(NAME, _(u'Remote plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _('Remote plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -261,9 +261,9 @@ def send_data(text):
 
         url = remote_options['rem_adr'] + 'save.php/?' + text 
         data = urlopen(url)
-        log.info(NAME, _(u'Remote server reply') + ':\n' + data.read().decode('utf-8'))
+        log.info(NAME, _('Remote server reply') + ':\n' + data.read().decode('utf-8'))
     else:
-        raise Exception(_(u'Remote plug-in is not properly configured') + '!')
+        raise Exception(_('Remote plug-in is not properly configured') + '!')
 
 
 ################################################################################
@@ -273,48 +273,69 @@ class settings_page(ProtectedPage):
     """Load an html page for entering remote adjustments."""
 
     def GET(self):
-        return self.plugin_render.remote_notifications(remote_options, log.events(NAME))
+        try:
+            return self.plugin_render.remote_notifications(remote_options, log.events(NAME))
+
+        except:
+            log.error(NAME, _('Remote plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('remote_notifications -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        remote_options.web_update(web.input())
-        qdict = web.input()
-        test = get_input(qdict, 'test', False, lambda x: True)
+        try:
+            remote_options.web_update(web.input())
+            qdict = web.input()
+            test = get_input(qdict, 'test', False, lambda x: True)
 
-        if remote_sender is not None:
-            remote_sender.update()
+            if remote_sender is not None:
+                remote_sender.update()
 
-            if test:
-                body  = ('tank=256')
-                body += ('&percent=100')
-                body += ('&ping=25')
-                body += ('&volume=10.2')
-                body += ('&rain=0')
-                body += ('&humi=25')
-                body += ('&line=1')
-                body += ('&lastrun=2019-09-06_08:00:00')
-                body += ('&station=test')
-                body += ('&duration=00:59')
-                body += ('&program=test_data')
-                body += ('&temp1=28.5')
-                body += ('&temp2=12')
-                body += ('&temp3=-51')
-                body += ('&temp4=23.5')
-                body += ('&temp5=45')
-                body += ('&temp6=-127')
-                body += ('&tempDHT=27')
-                body += ('&humiDHT=50')
-                body += ('&api=' + remote_options['api'])  # API password
+                if test:
+                    body  = ('tank=256')
+                    body += ('&percent=100')
+                    body += ('&ping=25')
+                    body += ('&volume=10.2')
+                    body += ('&rain=0')
+                    body += ('&humi=25')
+                    body += ('&line=1')
+                    body += ('&lastrun=2019-09-06_08:00:00')
+                    body += ('&station=test')
+                    body += ('&duration=00:59')
+                    body += ('&program=test_data')
+                    body += ('&temp1=28.5')
+                    body += ('&temp2=12')
+                    body += ('&temp3=-51')
+                    body += ('&temp4=23.5')
+                    body += ('&temp5=45')
+                    body += ('&temp6=-127')
+                    body += ('&tempDHT=27')
+                    body += ('&humiDHT=50')
+                    body += ('&api=' + remote_options['api'])  # API password
 
-                remote_sender.try_send(body)
+                    remote_sender.try_send(body)
 
-        raise web.seeother(plugin_url(settings_page), True)
+            raise web.seeother(plugin_url(settings_page), True)
+
+        except:
+            log.error(NAME, _('Remote plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('remote_notifications -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help page."""
 
     def GET(self):
-        return self.plugin_render.remote_notifications_help()        
+        try:
+            return self.plugin_render.remote_notifications_help()
+
+        except:
+            log.error(NAME, _('Remote plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('remote_notifications -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -323,4 +344,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(remote_options)
+        try:
+            return json.dumps(remote_options)
+        except:
+            return {}
