@@ -3,6 +3,7 @@
 import time
 from threading import Thread, Event
 import datetime
+import traceback
 
 import web
 from ospy.log import log
@@ -12,7 +13,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Monthly Water Level'
-MENU =  _(u'Package: Monthly Water Level')
+MENU =  _('Package: Monthly Water Level')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -51,12 +52,14 @@ class MonthChecker(Thread):
 
     def run(self):
         while not self._stop_event.is_set():
-            month = time.localtime().tm_mon - 1  # Current month.
-            level_adjustments[NAME] = plugin_options[month] / 100.0  # Set the water level% (levels list is zero based).
-            log.debug(NAME, _(u'Monthly Adjust: Setting water level to') + '%d%%' % plugin_options[month])
+            try:
+                month = time.localtime().tm_mon - 1  # Current month.
+                level_adjustments[NAME] = plugin_options[month] / 100.0  # Set the water level% (levels list is zero based).
+                log.debug(NAME, _('Monthly Adjust: Setting water level to') + '%d%%' % plugin_options[month])
 
-            self._sleep(_sleep_time())
-
+                self._sleep(_sleep_time())
+            except:
+                log.error(NAME, _('Monthly water level plug-in') + ':\n' + traceback.format_exc())
 
 checker = None
 
@@ -81,22 +84,40 @@ class settings_page(ProtectedPage):
     """Load an html page for entering monthly irrigation time adjustments"""
 
     def GET(self):
-        return self.plugin_render.monthly_water_level(plugin_options)
+        try:
+            return self.plugin_render.monthly_water_level(plugin_options)
+        except:
+            log.error(NAME, _('Monthly water level plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('monthly_water_level -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        qdict = web.input()
-        months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-        vals = {}
-        for index, month in enumerate(months):
-            vals[index] = max(0, min(10000, int(float(qdict[month]))))
-        plugin_options.web_update(vals)
-        if checker is not None:
-            checker.update()
-        raise web.seeother(plugin_url(settings_page), True)
+        try:
+            qdict = web.input()
+            months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+            vals = {}
+            for index, month in enumerate(months):
+                vals[index] = max(0, min(10000, int(float(qdict[month]))))
+            plugin_options.web_update(vals)
+            if checker is not None:
+                checker.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Monthly water level plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('monthly_water_level -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.monthly_water_level_help()        
+        try:
+            return self.plugin_render.monthly_water_level_help()
+        except:
+            log.error(NAME, _('Monthly water level plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('monthly_water_level -> help_page GET')
+            return self.core_render.notice('/', msg)
