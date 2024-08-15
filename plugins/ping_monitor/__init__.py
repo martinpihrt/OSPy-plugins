@@ -123,30 +123,30 @@ class Sender(Thread):
                         log.clear(NAME)
                         if plugin_options['address_1'] != '':
                             if ping_ip(plugin_options['address_1']):
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _(u'is available.'))
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is available.'))
                                 status['ping1'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _(u'is not available.'))
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is not available.'))
                                 status['ping1'] = 0
                         else:
                             status['ping1'] = 0
 
                         if plugin_options['address_2'] != '':
                             if ping_ip(plugin_options['address_2']):
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _(u'is available.'))
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is available.'))
                                 status['ping2'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _(u'is not available.'))
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is not available.'))
                                 status['ping2'] = 0
                         else:
                             status['ping2'] = 0
 
                         if plugin_options['address_3'] != '':
                             if ping_ip(plugin_options['address_3']) and plugin_options['address_3']!='':
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _(u'is available.'))
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is available.'))
                                 status['ping3'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _(u'is not available.'))
+                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is not available.'))
                                 status['ping3'] = 0
                         else:
                             status['ping3'] = 0
@@ -181,8 +181,8 @@ class Sender(Thread):
                             if plugin_options['use_restart']:   # is enabled restarting?
                                 if fault_counter >= plugin_options['ping_count']:  # is fault counter ready to restart?
                                     fault_counter = 0
-                                    log.error(NAME, _(u'Ping has fault. Restarting system!'))
-                                    reboot(True)                # Linux HW software reboot         
+                                    log.error(NAME, _('Ping has fault. Restarting system!'))
+                                    reboot(True)                # Linux HW software reboot
 
 
                     if plugin_options['use_send_email']: 
@@ -198,7 +198,7 @@ class Sender(Thread):
                                 try:
                                     from plugins.email_notifications import try_mail
                                     Subject = plugin_options['emlsubject']
-                                    Message =  _(u'Ping Monitor send statistics at the day and time') + ': ' + datetime_string()
+                                    Message =  _('Ping Monitor send statistics at the day and time') + ': ' + datetime_string()
                                     try_mail = None
                                     if plugin_options['eplug']==0: # email_notifications
                                         from plugins.email_notifications import try_mail
@@ -212,14 +212,14 @@ class Sender(Thread):
                                         create_default_graph()
                                         os.remove(log_csv_file)
 
-                                except Exception:     
-                                    log.error(NAME, _(u'Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+                                except Exception:
+                                    log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
 
                 self._sleep(1)
 
             except Exception:
                 log.clear(NAME)
-                log.error(NAME, _(u'Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -252,7 +252,6 @@ def ping_ip(current_ip_address):
     except Exception:
         return False
 
-
 def read_log():
     """Read log data from json file."""
     try:
@@ -260,7 +259,6 @@ def read_log():
             return json.load(logf)
     except IOError:
         return []
-
 
 def read_graph_log():
     """Read graph data from json file."""
@@ -270,17 +268,21 @@ def read_graph_log():
     except IOError:
         return []
 
-
 def write_log(json_data):
     """Write data to log json file."""
-    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
-
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
 
 def write_graph_log(json_data):
     """Write data to graph json file."""
-    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
 
 def two_digits(n):
     return '%02d' % int(n)
@@ -360,7 +362,7 @@ def update_log():
             ping3.update({timestamp: ping3val})
 
         write_graph_log(graph_data)
-        log.info(NAME, _(u'Saving to log files OK.'))
+        log.info(NAME, _('Saving to log files OK.'))
     except:
         create_default_graph()
 
@@ -386,7 +388,7 @@ def create_default_graph():
        {"station": ping3, "balances": {}}
     ]
     write_graph_log(graph_data)
-    log.info(NAME, _(u'Deleted all log files OK'))
+    log.info(NAME, _('Deleted all log files OK'))
 
 
 def create_csv_file():
@@ -420,7 +422,7 @@ def create_csv_file():
 
     except Exception:
         log.clear(NAME)
-        log.error(NAME, _(u'Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+        log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
 
 
 ################################################################################
@@ -431,58 +433,83 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global sender, status
+        try:
+            global sender, status
 
-        qdict  = web.input()
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
-        show = helpers.get_input(qdict, 'show', False, lambda x: True)
+            qdict  = web.input()
+            delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+            show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
-        if sender is not None and delete:
-            write_log([])
-            create_default_graph()
-            log_csv_file = os.path.join(plugin_data_dir(), 'log.csv')
-            log_csv_exists = os.path.exists(log_csv_file)
-            if log_csv_exists:
-                os.remove(log_csv_file)   
+            if sender is not None and delete:
+                write_log([])
+                create_default_graph()
+                log_csv_file = os.path.join(plugin_data_dir(), 'log.csv')
+                log_csv_exists = os.path.exists(log_csv_file)
+                if log_csv_exists:
+                    os.remove(log_csv_file)
 
-            raise web.seeother(plugin_url(settings_page), True)
+                raise web.seeother(plugin_url(settings_page), True)
 
-        if sender is not None and 'history' in qdict:
-           history = qdict['history']
-           plugin_options.__setitem__('history', int(history))
+            if sender is not None and 'history' in qdict:
+                history = qdict['history']
+                plugin_options.__setitem__('history', int(history))
 
-        if sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)
+            if sender is not None and show:
+                raise web.seeother(plugin_url(log_page), True)
 
-        return self.plugin_render.ping_monitor(plugin_options, log.events(NAME))
+            return self.plugin_render.ping_monitor(plugin_options, log.events(NAME))
 
+        except:
+            log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ping_monitor -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        plugin_options.web_update(web.input())
+        try:
+            plugin_options.web_update(web.input())
 
-        if sender is not None:
-            sender.update()
+            if sender is not None:
+                sender.update()
 
-        if not plugin_options['use_ping']:
-            log.clear(NAME)
-            log.info(NAME, _(u'Ping monitor is disabled.'))
+            if not plugin_options['use_ping']:
+                log.clear(NAME)
+                log.info(NAME, _('Ping monitor is disabled.'))
 
-        log.info(NAME, _(u'Options has updated.'))
-        raise web.seeother(plugin_url(settings_page), True)
+            log.info(NAME, _('Options has updated.'))
+            raise web.seeother(plugin_url(settings_page), True)
+
+        except:
+            log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ping_monitor -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ping_monitor_help()
+        try:
+            return self.plugin_render.ping_monitor_help()
+        except:
+            log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ping_monitor -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.ping_monitor_log(read_log(), plugin_options)
+        try:
+            return self.plugin_render.ping_monitor_log(read_log(), plugin_options)
+        except:
+            log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ping_monitor -> log_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -491,7 +518,10 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
 
 
 class data_json(ProtectedPage):
@@ -499,27 +529,31 @@ class data_json(ProtectedPage):
 
     def GET(self):
         global status
+        data = {}
 
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-Type', 'application/json')
-        ping1 = "IP1: " + plugin_options['address_1']
-        ping2 = "IP2: " + plugin_options['address_2']
-        ping3 = "IP3: " + plugin_options['address_3']
-        ping1_state = status['last_ping1']
-        ping2_state = status['last_ping2']
-        ping3_state = status['last_ping3']
+        try:
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-Type', 'application/json')
+            ping1 = "IP1: " + plugin_options['address_1']
+            ping2 = "IP2: " + plugin_options['address_2']
+            ping3 = "IP3: " + plugin_options['address_3']
+            ping1_state = status['last_ping1']
+            ping2_state = status['last_ping2']
+            ping3_state = status['last_ping3']
 
-        data =  {
-          'ping1': ping1,
-          'ping2': ping2,
-          'ping3': ping3,
-          'ping1_state': ping1_state,
-          'ping2_state': ping2_state,
-          'ping3_state': ping3_state,
-          'label': plugin_options['emlsubject'],
-        }
+            data =  {
+                'ping1': ping1,
+                'ping2': ping2,
+                'ping3': ping3,
+                'ping1_state': ping1_state,
+                'ping2_state': ping2_state,
+                'ping3_state': ping3_state,
+                'label': plugin_options['emlsubject'],
+            }
 
-        return json.dumps(data)
+            return json.dumps(data)
+        except:
+            return data
 
 class log_json(ProtectedPage):
     """Returns data in JSON format."""
@@ -527,7 +561,10 @@ class log_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_log())
+        try:
+            return json.dumps(read_log())
+        except:
+            return {}
 
 
 class graph_json(ProtectedPage):
@@ -535,61 +572,72 @@ class graph_json(ProtectedPage):
 
     def GET(self):
         data = []
+        try:
+            epoch = datetime.date(1970, 1, 1)                                      # first date
+            current_time  = datetime.date.today()                                  # actual date
 
-        epoch = datetime.date(1970, 1, 1)                                      # first date
-        current_time  = datetime.date.today()                                  # actual date
+            if plugin_options['history'] == 0:                                     # without filtering
+                web.header('Access-Control-Allow-Origin', '*')
+                web.header('Content-Type', 'application/json')
+                return json.dumps(read_graph_log())
 
-        if plugin_options['history'] == 0:                                     # without filtering
+            if plugin_options['history'] == 1:
+                check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
+            if plugin_options['history'] == 2:
+                check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
+            if plugin_options['history'] == 3:
+                check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
+            if plugin_options['history'] == 4:
+                check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
+
+            log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
+
+            json_data = read_graph_log()
+
+            if len(json_data) > 0:
+                for i in range(0, 3):                                              # 0 = ping 1, 1 = ping 2, 2 = ping 3
+                    temp_balances = {}
+                    for key in json_data[i]['balances']:
+                        find_key =  int(key.encode('utf8'))                        # key is in unicode ex: '1601347000' -> find_key is int number
+                        if find_key >= log_start:                                  # timestamp interval 
+                            temp_balances[key] = json_data[i]['balances'][key]
+                    data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+
             web.header('Access-Control-Allow-Origin', '*')
             web.header('Content-Type', 'application/json')
-            return json.dumps(read_graph_log())
+            return json.dumps(data)
 
-        if plugin_options['history'] == 1:
-            check_start  = current_time - datetime.timedelta(days=1)           # actual date - 1 day
-        if plugin_options['history'] == 2:
-            check_start  = current_time - datetime.timedelta(days=7)           # actual date - 7 day (week)
-        if plugin_options['history'] == 3:
-            check_start  = current_time - datetime.timedelta(days=30)          # actual date - 30 day (month)
-        if plugin_options['history'] == 4:
-            check_start  = current_time - datetime.timedelta(days=365)         # actual date - 365 day (year)
-
-        log_start = int((check_start - epoch).total_seconds())                 # start date for log in second (timestamp)
-
-        json_data = read_graph_log()
-
-        if len(json_data) > 0:
-            for i in range(0, 3):                                              # 0 = ping 1, 1 = ping 2, 2 = ping 3
-                temp_balances = {}
-                for key in json_data[i]['balances']:
-                    find_key =  int(key.encode('utf8'))                        # key is in unicode ex: u'1601347000' -> find_key is int number
-                    if find_key >= log_start:                                  # timestamp interval 
-                        temp_balances[key] = json_data[i]['balances'][key]
-                data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
-
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-Type', 'application/json')
-        return json.dumps(data)
+        except:
+            log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+            return data
 
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
 
     def GET(self):
-        data = "Date; Time; IP1 ({}); IP2 ({}); IP3 ({}); State; Outage \n".format(plugin_options['address_1'], plugin_options['address_2'], plugin_options['address_3'])
-        log_file = read_log()
-        for interval in log_file:
-            data += '; '.join([
-                interval['date'],
-                interval['time'],
-                u'{}'.format(interval['ping1']),
-                u'{}'.format(interval['ping2']),
-                u'{}'.format(interval['ping3']),
-                u'{}'.format(interval['state']),
-                u'{}'.format(convertMillis(interval['time_dif']) if interval['time_dif'] > 1 else ''),
-            ]) + '\n'
+        try:
+            data = "Date; Time; IP1 ({}); IP2 ({}); IP3 ({}); State; Outage \n".format(plugin_options['address_1'], plugin_options['address_2'], plugin_options['address_3'])
+            log_file = read_log()
+            for interval in log_file:
+                data += '; '.join([
+                    interval['date'],
+                    interval['time'],
+                    '{}'.format(interval['ping1']),
+                    '{}'.format(interval['ping2']),
+                    '{}'.format(interval['ping3']),
+                    '{}'.format(interval['state']),
+                    '{}'.format(convertMillis(interval['time_dif']) if interval['time_dif'] > 1 else ''),
+                ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="log.csv"')
-        return data
+            content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-type', content) 
+            web.header('Content-Disposition', 'attachment; filename="log.csv"')
+            return data
+
+        except:
+            log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ping_monitor -> log_csv GET')
+            return self.core_render.notice('/', msg)
