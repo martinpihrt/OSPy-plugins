@@ -29,6 +29,8 @@ from ospy.scheduler import predicted_schedule, combined_schedule
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
+from blinker import signal
+
 
 NAME = 'Water Tank Monitor'
 MENU =  _('Package: Water Tank Monitor')
@@ -904,7 +906,7 @@ class settings_page(ProtectedPage):
         try:
             global sender, avg_lst, avg_cnt, avg_rdy
             tank_options.web_update(web.input(**tank_options)) #for save multiple select
-
+            
             if tank_options['use_sonic']:
                 avg_lst = [0]*tank_options['avg_samples']
                 avg_cnt = 0
@@ -916,7 +918,10 @@ class settings_page(ProtectedPage):
             else:
                 log.clear(NAME)
                 log.info(NAME, _('Water tank monitor is disabled.'))
-        
+            
+            updateSignal = signal('hass_plugin_update')
+            updateSignal.send()
+            
             raise web.seeother(plugin_url(settings_page), True)
 
         except:

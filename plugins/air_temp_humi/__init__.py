@@ -23,6 +23,8 @@ from ospy.stations import stations
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
+from blinker import signal
+
 import RPi.GPIO as GPIO
 
 # Thank's: https://github.com/szazo/DHT11_Python
@@ -735,6 +737,8 @@ class settings_page(ProtectedPage):
         try:
             plugin_options.web_update(web.input())
 
+            updateSignal = signal('hass_plugin_update')
+            updateSignal.send()
             if sender is not None:
                 sender.update()
             raise web.seeother(plugin_url(settings_page), True)
