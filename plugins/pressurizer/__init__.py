@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt' # www.pihrt.com
+__author__ = 'Martin Pihrt' # www.pihrt.com
 
 # System imports
 import datetime
@@ -72,7 +72,6 @@ class Checker(Thread):
 
     def run(self):
         log.clear(NAME)
-      
         if not plugin_options['enabled']:
             log.info(NAME, _('Pressurizer is disabled.'))
         else:
@@ -80,7 +79,6 @@ class Checker(Thread):
 
         start_master = False                      # for master station ON/OFF  
         pressurizer_master_relay_off.send()       # send signal relay off from this plugin
-     
         while not self._stop_event.is_set():
             try: 
                 if plugin_options['enabled'] and options.scheduler_enabled:     # plugin is enabled and scheduler is enabled
@@ -97,14 +95,14 @@ class Checker(Thread):
                         manu = options.manual_mode
                     if plugin_options['ignore_rain']:
                         rblock = False
-                    else:    
+                    else:
                         rblock = rain_blocks.block_end() > datetime.datetime.now()
                     if plugin_options['ignore_rain_delay']:
                         rsensed = False
-                    else:    
+                    else:
                         rsensed = inputs.rain_sensed()
-                    
-                    start_master = False      
+
+                    start_master = False
                     if stations.master is None:
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('This plugin requires setting master station to enabled. Setup this in options! And also enable the relay as master station in options!'))
@@ -125,7 +123,7 @@ class Checker(Thread):
                         program_name = "%s " % pname.encode("utf-8", errors="ignore").decode("utf-8") # program name
 
                         sname = 0 
-                        
+
                         for station in stations.get():
                             if station.is_master:
                                 sname = station.index                                 # master pump index
@@ -214,7 +212,7 @@ def stop():
     if checker is not None:
         checker.stop()
         checker.join()
-        checker = None       
+        checker = None
 
 
 ################################################################################
@@ -224,30 +222,48 @@ class settings_page(ProtectedPage):
     """Load an html page for entering voice notification adjustments"""
 
     def GET(self):
-        return self.plugin_render.pressurizer(plugin_options, log.events(NAME))
+        try:
+            return self.plugin_render.pressurizer(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Pressurizer plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('Pressurizer -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
+        try:
+            plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
 
-        if checker is not None:
-            checker.update()
+            if checker is not None:
+                checker.update()
 
-        if plugin_options['enabled']:
-            log.clear(NAME) 
-            log.info(NAME, _('Pressurizer is enabled.'))
-        else:
-            log.clear(NAME)
-            log.info(NAME, _('Pressurizer is disabled.'))
+            if plugin_options['enabled']:
+                log.clear(NAME) 
+                log.info(NAME, _('Pressurizer is enabled.'))
+            else:
+                log.clear(NAME)
+                log.info(NAME, _('Pressurizer is disabled.'))
 
-        log.info(NAME, _('Options has updated.'))
-        raise web.seeother(plugin_url(settings_page), True)
+            log.info(NAME, _('Options has updated.'))
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Pressurizer plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('Pressurizer -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.pressurizer_help()         
+        try:
+            return self.plugin_render.pressurizer_help()
+        except:
+            log.error(NAME, _('Pressurizer plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('Pressurizer -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -256,4 +272,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
