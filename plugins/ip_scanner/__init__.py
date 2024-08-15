@@ -100,26 +100,32 @@ class status_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        global find_now
+        try:
+            global find_now
 
-        qdict = web.input()
-        find = helpers.get_input(qdict, 'find', False, lambda x: True)
-        if find:        
-            find_now = True
+            qdict = web.input()
+            find = helpers.get_input(qdict, 'find', False, lambda x: True)
+            if find:        
+                find_now = True
+            return self.plugin_render.ip_scanner()
 
-        return self.plugin_render.ip_scanner()
+        except:
+            log.error(NAME, _('IP Scanner plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ip_scanner -> status_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class msg_json(ProtectedPage):
     """Returns plugin data in JSON format."""
 
     def GET(self):
-        global msg
-
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-Type', 'application/json')
-        
         data = {}
-        data['msg'] = msg
-
-        return json.dumps(data)
+        try:
+            global msg
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-Type', 'application/json')
+            data['msg'] = msg
+            return json.dumps(data)
+        except:
+            return data
