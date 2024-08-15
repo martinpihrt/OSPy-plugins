@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 import json
 import time
@@ -26,7 +26,7 @@ import glob
 
 
 NAME = 'IP Cam'
-MENU =  _(u'Package: IP Cam')
+MENU =  _('Package: IP Cam')
 LINK = 'settings_page'
 
 
@@ -91,20 +91,20 @@ class Sender(Thread):
                                         shutil.copyfileobj(res.raw, f)
                                     img_down_state.append('{}.jpg'.format(c+1))
                             except:
-                                log.error(NAME, _(u'IP Cam plug-in') + ':\n' + traceback.format_exc())
+                                log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
                                 pass
 
                     log.clear(NAME)
-                    log.info(NAME, _(u'Downloaded images') + ': ' + datetime_string())
+                    log.info(NAME, _('Downloaded images') + ': ' + datetime_string())
                     log.info(NAME, str(img_down_state)[1:-1])
-                
+
                 self._sleep(2)
 
-                if plugin_options['use_gif']:                
+                if plugin_options['use_gif']:
                     for c in range(0, options.output_count):
                         if plugin_options['jpg_ip'][c] and plugin_options['jpg_que'][c] and plugin_options['jpg_user'][c] and plugin_options['jpg_pass'][c]:
                             IMG_FILE = os.path.join(plugin_data_dir(), str(c+1), '{}.jpg'.format(img_counter))
-                            SOURCE_FILE = os.path.join(plugin_data_dir(), '{}.jpg'.format(c+1))                            
+                            SOURCE_FILE = os.path.join(plugin_data_dir(), '{}.jpg'.format(c+1))
                             if not os.path.isdir(os.path.dirname(IMG_FILE)):
                                 helpers.mkdir_p(os.path.dirname(IMG_FILE))
                             if os.path.isfile(SOURCE_FILE):
@@ -127,14 +127,14 @@ class Sender(Thread):
                                         gif[0].save('plugins/ip_cam/data/{}.gif'.format(c+1), save_all=True, optimize=False, append_images=gif[1:], loop=0)
                                     #frame_one = frames[0]
                                     #frame_one.save('plugins/ip_cam/data/{}.gif'.format(c+1), format='GIF', append_images=frames, save_all=True, duration=100, loop=0)
-                                    log.info(NAME, _(u'Creating {}.gif').format(c+1))      
+                                    log.info(NAME, _('Creating {}.gif').format(c+1))
 
                 self._sleep(3)
 
             except Exception:
-                log.error(NAME, _(u'IP Cam plug-in') + ':\n' + traceback.format_exc())
+                log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
-          
+
 sender = None
 
 ################################################################################
@@ -144,7 +144,6 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
-       
 
 def stop():
     global sender
@@ -162,73 +161,89 @@ class settings_page(ProtectedPage):
     """Main html page"""
 
     def GET(self):
-        global sender
-        qdict = web.input()
+        try:
+            global sender
+            qdict = web.input()
 
-        cam = get_input(qdict, 'cam', False, lambda x: True)
-        cam_foto = get_input(qdict, 'cam_foto', False, lambda x: True)
-        cam_gif = get_input(qdict, 'cam_gif', False, lambda x: True)
-        cam_stream = get_input(qdict, 'cam_stream', False, lambda x: True)
+            cam = get_input(qdict, 'cam', False, lambda x: True)
+            cam_foto = get_input(qdict, 'cam_foto', False, lambda x: True)
+            cam_gif = get_input(qdict, 'cam_gif', False, lambda x: True)
+            cam_stream = get_input(qdict, 'cam_stream', False, lambda x: True)
 
-        if sender is not None and cam:
-            cam_nr = int(qdict['cam'])
-            return self.plugin_render.ip_cam_gif(plugin_options, cam_nr)
+            if sender is not None and cam:
+                cam_nr = int(qdict['cam'])
+                return self.plugin_render.ip_cam_gif(plugin_options, cam_nr)
 
-        if sender is not None:
-            if cam_foto:
-                cam_nr = qdict['cam_foto']
-                download_name = plugin_data_dir() + '/' + '{}.jpg'.format(cam_nr)
-            elif cam_gif:
-                cam_nr = qdict['cam_gif']
-                download_name = plugin_data_dir() + '/' + '{}.gif'.format(cam_nr)
-            elif cam_stream:
-                cam_nr = int(qdict['cam_stream'])
-                url_ip_port = '{}'.format(plugin_options['jpg_ip'][cam_nr-1])
-                url_query = '{}'.format(plugin_options['mjpeg_que'][cam_nr-1])
-                url_user = '{}'.format(plugin_options['jpg_user'][cam_nr-1])
-                url_pass = '{}'.format(plugin_options['jpg_pass'][cam_nr-1])                
-                http_head = url_ip_port.split("//")[0] + '//'    # example -> "http://" or "https://"
-                http_ip_port = url_ip_port.split("//")[1]        # example -> "12.34.56.78:80"
-                stream = '{}{}:{}@{}/{}'.format(http_head, url_user, url_pass, http_ip_port, url_query)
-                # example: http://user:pass@ip_port/cgi-bin/guest/Video.cgi?media=MJPEG&channel=1
-                return self.plugin_render.ip_cam_mjpeg(plugin_options, cam_nr, stream)                
-            else:
-                return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
+            if sender is not None:
+                if cam_foto:
+                    cam_nr = qdict['cam_foto']
+                    download_name = plugin_data_dir() + '/' + '{}.jpg'.format(cam_nr)
+                elif cam_gif:
+                    cam_nr = qdict['cam_gif']
+                    download_name = plugin_data_dir() + '/' + '{}.gif'.format(cam_nr)
+                elif cam_stream:
+                    cam_nr = int(qdict['cam_stream'])
+                    url_ip_port = '{}'.format(plugin_options['jpg_ip'][cam_nr-1])
+                    url_query = '{}'.format(plugin_options['mjpeg_que'][cam_nr-1])
+                    url_user = '{}'.format(plugin_options['jpg_user'][cam_nr-1])
+                    url_pass = '{}'.format(plugin_options['jpg_pass'][cam_nr-1])
+                    http_head = url_ip_port.split("//")[0] + '//'    # example -> "http://" or "https://"
+                    http_ip_port = url_ip_port.split("//")[1]        # example -> "12.34.56.78:80"
+                    stream = '{}{}:{}@{}/{}'.format(http_head, url_user, url_pass, http_ip_port, url_query)
+                    # example: http://user:pass@ip_port/cgi-bin/guest/Video.cgi?media=MJPEG&channel=1
+                    return self.plugin_render.ip_cam_mjpeg(plugin_options, cam_nr, stream)
+                else:
+                    return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
 
-            if os.path.isfile(download_name):     # exists image? 
-                content = mimetypes.guess_type(download_name)[0]
-                web.header('Content-type', content)
-                web.header('Content-Length', os.path.getsize(download_name))
-                web.header('Content-Disposition', 'attachment; filename=%s' % str(id))
-                img = open(download_name,'rb')
-                return img.read()
-            else:
-                return None
+                if os.path.isfile(download_name):     # exists image? 
+                    content = mimetypes.guess_type(download_name)[0]
+                    web.header('Content-type', content)
+                    web.header('Content-Length', os.path.getsize(download_name))
+                    web.header('Content-Disposition', 'attachment; filename=%s' % str(id))
+                    img = open(download_name,'rb')
+                    return img.read()
+                else:
+                    return None
+        except:
+            log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ip_cam -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
-                
+        try:
+            return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ip_cam -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class setup_page(ProtectedPage):
     """Load an html setup page."""
 
     def GET(self):
-        qdict = web.input()
-        msg = 'none'
-  
         try:
-            return self.plugin_render.ip_cam_setup(plugin_options, msg)   
-        except:           
-            plugin_options.__setitem__('jpg_ip', ['']*options.output_count)
-            plugin_options.__setitem__('jpg_que', ['']*options.output_count)
-            plugin_options.__setitem__('mjpeg_que', ['']*options.output_count)
-            plugin_options.__setitem__('jpg_user', ['']*options.output_count)
-            plugin_options.__setitem__('jpg_pass', ['']*options.output_count)
-            plugin_options.__setitem__('gif_frames', 20)
-            plugin_options.__setitem__('use_jpg', True)
-            plugin_options.__setitem__('use_gif', True)
-
-            return self.plugin_render.ip_cam_setup(plugin_options, msg)
+            qdict = web.input()
+            msg = 'none'
+  
+            try:
+                return self.plugin_render.ip_cam_setup(plugin_options, msg)
+            except:
+                plugin_options.__setitem__('jpg_ip', ['']*options.output_count)
+                plugin_options.__setitem__('jpg_que', ['']*options.output_count)
+                plugin_options.__setitem__('mjpeg_que', ['']*options.output_count)
+                plugin_options.__setitem__('jpg_user', ['']*options.output_count)
+                plugin_options.__setitem__('jpg_pass', ['']*options.output_count)
+                plugin_options.__setitem__('gif_frames', 20)
+                plugin_options.__setitem__('use_jpg', True)
+                plugin_options.__setitem__('use_gif', True)
+                return self.plugin_render.ip_cam_setup(plugin_options, msg)
+        except:
+            log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ip_cam -> setup_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
         global sender
@@ -259,7 +274,7 @@ class setup_page(ProtectedPage):
                 if 'jpg_pass'+str(i) in qdict:
                     commands['jpg_pass'].append(qdict['jpg_pass'+str(i)])
                 else:
-                    commands['jpg_pass'].append('')                                                                                
+                    commands['jpg_pass'].append('')
 
             if 'use_jpg' in qdict:
                 if qdict['use_jpg']=='on':
@@ -274,7 +289,7 @@ class setup_page(ProtectedPage):
                     plugin_options.__setitem__('use_gif', False)
 
             if 'gif_frames' in qdict:
-                plugin_options.__setitem__('gif_frames', int(qdict['gif_frames']))                                       
+                plugin_options.__setitem__('gif_frames', int(qdict['gif_frames']))
 
             plugin_options.__setitem__('mjpeg_que', commands['mjpeg_que'])
             plugin_options.__setitem__('jpg_ip', commands['jpg_ip'])
@@ -285,20 +300,27 @@ class setup_page(ProtectedPage):
             if sender is not None:
                 sender.update()
 
-        except Exception:
-            log.debug(NAME, _('IP cam plug-in') + ':\n' + traceback.format_exc())
-            pass
+            msg = 'saved'
+            return self.plugin_render.ip_cam_setup(plugin_options, msg)
 
-        msg = 'saved'
-        return self.plugin_render.ip_cam_setup(plugin_options, msg)
+        except:
+            log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ip_cam -> setup_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help page."""
 
     def GET(self):
-        return self.plugin_render.ip_cam_help()         
-
+        try:
+            return self.plugin_render.ip_cam_help()
+        except:
+            log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ip_cam -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -306,4 +328,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
