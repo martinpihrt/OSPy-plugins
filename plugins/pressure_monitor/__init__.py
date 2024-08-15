@@ -116,7 +116,7 @@ class PressureSender(Thread):
         last_msg = ""
         now_msg = ""
         tempText = ""
- 
+
         press_mon = None
 
         if pressure_options['use_footer']: 
@@ -152,7 +152,7 @@ class PressureSender(Thread):
                                         if now_msg != last_msg:
                                             update_log(0)
                                             last_msg = 0
-                        
+
                         if not get_check_pressure():
                             last_time = int(time.time())
                     else:
@@ -241,44 +241,54 @@ def get_check_pressure():
 
 ### master 1 on ###
 def notify_master_on(name, **kw):
-    global master
-    log.clear(NAME)
-    log.info(NAME, datetime_string() + ' ' + _('Master station 1 is ON.'))
-    if pressure_options['enable_log'] or pressure_options['en_sql_log']:
-        update_log(2)
-    master = True
-
+    try:
+        global master
+        log.clear(NAME)
+        log.info(NAME, datetime_string() + ' ' + _('Master station 1 is ON.'))
+        if pressure_options['enable_log'] or pressure_options['en_sql_log']:
+            update_log(2)
+        master = True
+    except:
+        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
 ### master 1 off ###
 def notify_master_off(name, **kw):
-    global master
-    master = False
-    log.info(NAME, datetime_string() + ' ' + _('Master station 1 is OFF.'))
-
+    try:
+        global master
+        master = False
+        log.info(NAME, datetime_string() + ' ' + _('Master station 1 is OFF.'))
+    except:
+        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
 ### master 2 on ###
 def notify_master_two_on(name, **kw):
-    global master
-    log.clear(NAME)
-    log.info(NAME, datetime_string() + ' ' + _('Master station 2 is ON.'))
-    if pressure_options['enable_log'] or pressure_options['en_sql_log']:
-        update_log(2)
-    master = True
-
+    try:
+        global master
+        log.clear(NAME)
+        log.info(NAME, datetime_string() + ' ' + _('Master station 2 is ON.'))
+        if pressure_options['enable_log'] or pressure_options['en_sql_log']:
+            update_log(2)
+        master = True
+    except:
+        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
 ### master 2 off ###
 def notify_master_two_off(name, **kw):
-    global master
-    master = False
-    log.info(NAME, datetime_string() + ' ' + _('Master station 2 is OFF.'))
-
+    try:
+        global master
+        master = False
+        log.info(NAME, datetime_string() + ' ' + _('Master station 2 is OFF.'))
+    except:
+        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
 ### all stations off ###
 def notify_station_clear(name, **kw):
-    global master
-    master = False
-    log.info(NAME, datetime_string() + ' ' + _('All stations set to OFF.'))
-
+    try:
+        global master
+        master = False
+        log.info(NAME, datetime_string() + ' ' + _('All stations set to OFF.'))
+    except:
+        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
 def set_stations_in_scheduler_off():
     """Stoping selected station in scheduler."""
@@ -355,7 +365,6 @@ def read_graph_sql_log():
             for row in sql_data:
                 # row[0] is ID, row[1] is datetime, row[2] is state
                 epoch = int(datetime.datetime.timestamp(row[1]))
-            
                 temp1 = graph_data[0]['balances']
                 state = {'total': float(row[2])}
                 temp1.update({epoch: state})
@@ -371,15 +380,19 @@ def read_graph_sql_log():
 
 def write_log(json_data):
     """Write data to log json file."""
-    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
-
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
 def write_graph_log(json_data):
     """Write data to graph json file."""
-    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
-
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
 def update_log(status):
     """Update data in json files."""
@@ -443,7 +456,7 @@ def create_default_graph():
     graph_data = [
        {"station": state, "balances": {}}
     ]
-    write_graph_log(graph_data)  
+    write_graph_log(graph_data)
     log.debug(NAME, _('Creating default graph log files OK'))
 
 ################################################################################
@@ -454,81 +467,104 @@ class settings_page(ProtectedPage):
     """Load an html page for entering wind speed monitor settings."""
 
     def GET(self):
-        global pressure_sender
+        try:
+            global pressure_sender
 
-        qdict = web.input()
-        show = helpers.get_input(qdict, 'show', False, lambda x: True)
-        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
-        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
+            qdict = web.input()
+            show = helpers.get_input(qdict, 'show', False, lambda x: True)
+            delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+            delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
-        if pressure_sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
-            dt_from = qdict['dt_from']
-            dt_to = qdict['dt_to']
-            pressure_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
-            pressure_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
+            if pressure_sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+                dt_from = qdict['dt_from']
+                dt_to = qdict['dt_to']
+                pressure_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
+                pressure_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
 
-        if pressure_sender is not None and delfilter:
-            from datetime import datetime, timedelta
-            dt_now = (datetime.today() + timedelta(days=1)).date()
-            pressure_options.__setitem__('dt_from', "2020-01-01T00:00")
-            pressure_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
+            if pressure_sender is not None and delfilter:
+                from datetime import datetime, timedelta
+                dt_now = (datetime.today() + timedelta(days=1)).date()
+                pressure_options.__setitem__('dt_from', "2020-01-01T00:00")
+                pressure_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
-        if pressure_sender is not None and show:
-            raise web.seeother(plugin_url(log_page), True)
+            if pressure_sender is not None and show:
+                raise web.seeother(plugin_url(log_page), True)
 
-        if pressure_sender is not None and delSQL:
-            try:
-                from plugins.database_connector import execute_db
-                sql = "DROP TABLE IF EXISTS `pressmonitor`"
-                execute_db(sql, test=False, commit=False)  
-                log.info(NAME, _('Deleting the pressmonitor table from the database.'))
-            except:
-                log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
-                pass            
+            if pressure_sender is not None and delSQL:
+                try:
+                    from plugins.database_connector import execute_db
+                    sql = "DROP TABLE IF EXISTS `pressmonitor`"
+                    execute_db(sql, test=False, commit=False)  
+                    log.info(NAME, _('Deleting the pressmonitor table from the database.'))
+                except:
+                    log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
-        return self.plugin_render.pressure_monitor(pressure_options, pressure_sender.status, log.events(NAME))
+            return self.plugin_render.pressure_monitor(pressure_options, pressure_sender.status, log.events(NAME))
+
+        except:
+            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pressure_monitor -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        pressure_options.web_update(web.input(**pressure_options)) #for save multiple select
-
-        if pressure_sender is not None:
-            pressure_sender.update()
-        raise web.seeother(plugin_url(settings_page), True)
+        try:
+            pressure_options.web_update(web.input(**pressure_options)) #for save multiple select
+            if pressure_sender is not None:
+                pressure_sender.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pressure_monitor -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.pressure_monitor_help()
+        try:
+            return self.plugin_render.pressure_monitor_help()
+        except:
+            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pressure_monitor -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        global pressure_sender
-        qdict = web.input()
-        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
-        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
-        
-        if pressure_sender is not None and delete and pressure_options['enable_log']:
-           write_log([])
-           create_default_graph()
-           log.info(NAME, _('Deleted all log files OK'))
+        try:
+            global pressure_sender
+            qdict = web.input()
+            delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+            delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
-        if pressure_sender is not None and delSQL and pressure_options['en_sql_log']:
-            try:
-                from plugins.database_connector import execute_db
-                sql = "DROP TABLE IF EXISTS `pressmonitor`"
-                execute_db(sql, test=False, commit=False)  
-                log.info(NAME, _('Deleting the pressmonitor table from the database.'))
-            except:
-                log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
-                pass          
+            if pressure_sender is not None and delete and pressure_options['enable_log']:
+                write_log([])
+                create_default_graph()
+                log.info(NAME, _('Deleted all log files OK'))
 
-        return self.plugin_render.pressure_monitor_log(read_log(), read_sql_log(), pressure_options)
+            if pressure_sender is not None and delSQL and pressure_options['en_sql_log']:
+                try:
+                    from plugins.database_connector import execute_db
+                    sql = "DROP TABLE IF EXISTS `pressmonitor`"
+                    execute_db(sql, test=False, commit=False)  
+                    log.info(NAME, _('Deleting the pressmonitor table from the database.'))
+                except:
+                    log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+                    pass
 
+            return self.plugin_render.pressure_monitor_log(read_log(), read_sql_log(), pressure_options)
+
+        except:
+            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pressure_monitor -> log_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -537,7 +573,10 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(pressure_options)
+        try:
+            return json.dumps(pressure_options)
+        except:
+            return {}
 
 
 class data_json(ProtectedPage):
@@ -546,18 +585,22 @@ class data_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-  
-        if get_check_pressure():
-           text = _('INACTIVE')
-        else:
-           text = _('ACTIVE')
-  
-        data =  {
-          'label': pressure_options['emlsubject'],
-          'pres_state':  text
-        }
+        data = {}
+        try:
+            if get_check_pressure():
+                text = _('INACTIVE')
+            else:
+                text = _('ACTIVE')
 
-        return json.dumps(data)
+            data =  {
+                'label': pressure_options['emlsubject'],
+                'pres_state':  text
+            }
+
+            return json.dumps(data)
+
+        except:
+            return data
 
 
 class log_json(ProtectedPage):
@@ -566,8 +609,10 @@ class log_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_log())
-
+        try:
+            return json.dumps(read_log())
+        except:
+            return {}
 
 class log_sql_json(ProtectedPage):
     """Returns data in JSON format from database file log."""
@@ -635,23 +680,31 @@ class graph_json(ProtectedPage):
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
     def GET(self):
-        log_file = read_log()
-        state = _('State')
-        data = "Date/Time; Date; Time; " + state + "\n"
+        data = ""
+        try:
+            log_file = read_log()
+            state = _('State')
+            data = "Date/Time; Date; Time; " + state + "\n"
 
-        for interval in log_file:
-            data += '; '.join([
-                interval['datetime'],
-                interval['date'],
-                interval['time'],
-                '{}'.format(interval['state']),
-            ]) + '\n'
+            for interval in log_file:
+                data += '; '.join([
+                    interval['datetime'],
+                    interval['date'],
+                    interval['time'],
+                    '{}'.format(interval['state']),
+                ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="log.csv"')
-        return data
+            content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-type', content) 
+            web.header('Content-Disposition', 'attachment; filename="log.csv"')
+            return data
+
+        except:
+            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pressure_monitor -> log_csv GET')
+            return self.core_render.notice('/', msg)
 
 
 class log_sql_csv(ProtectedPage):  # save log file from database as csv file type from web
@@ -670,17 +723,18 @@ class log_sql_csv(ProtectedPage):  # save log file from database as csv file typ
                     '{}'.format(str(interval[1])),
                     '{}'.format(str(interval[2])),
                 ]) + '\n'
+            filestamp = time.strftime('%Y%m%d-%H%M%S')
+            filename = 'log_{}_.csv'.format(filestamp)
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+            web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
+            return data
 
         except:
             log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
-            pass
-        
-        filestamp = time.strftime('%Y%m%d-%H%M%S')
-        filename = 'log_{}_.csv'.format(filestamp)
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
-        return data
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pressure_monitor -> log_sql_csv GET')
+            return self.core_render.notice('/', msg)
 
 
 class press_json(ProtectedPage):
@@ -690,9 +744,12 @@ class press_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data = {}
-        test = get_check_pressure()
-        if not test:
-           data['press'] = _('ACTIVE')
-        else:
-           data['press'] = _('INACTIVE')
-        return json.dumps(data)
+        try:
+            test = get_check_pressure()
+            if not test:
+                data['press'] = _('ACTIVE')
+            else:
+                data['press'] = _('INACTIVE')
+            return json.dumps(data)
+        except:
+            return data
