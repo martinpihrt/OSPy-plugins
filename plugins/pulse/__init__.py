@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 # This plugin pulses a selected circuit with a 1 Hz signal with adjusted time. (For discover the location of a valve).
 
 import json
 import time
 import web
+import traceback
 
 from threading import Thread, Event
 
@@ -16,7 +17,7 @@ from ospy.log import log
 
 
 NAME = 'Pulse Output Test'
-MENU =  _(u'Package: Pulse Output Test')
+MENU =  _('Package: Pulse Output Test')
 LINK = 'start_page'
 
 pulse_options = PluginOptions(
@@ -44,25 +45,28 @@ class PulseSender(Thread):
         self._sleep_time = 0
 
     def run(self):
-        log.clear(NAME)
-        log.info(NAME, _(u'Test started for {} second.').format(pulse_options['test_time']))
-        station = stations.get(pulse_options['test_output'])
+        try:
+            log.clear(NAME)
+            log.info(NAME, _('Test started for {} second.').format(pulse_options['test_time']))
+            station = stations.get(pulse_options['test_output'])
 
-        for x in range(0, pulse_options['test_time']):
-            station.active = True
-            time.sleep(0.5)
-            station.active = False
-            time.sleep(0.5)
+            for x in range(0, pulse_options['test_time']):
+                station.active = True
+                time.sleep(0.5)
+                station.active = False
+                time.sleep(0.5)
 
-            if self._stop_event.is_set():
-                break
+                if self._stop_event.is_set():
+                    break
 
-        log.info(NAME, _(u'Test stopped.'))
+            log.info(NAME, _('Test stopped.'))
 
-        # Activate again if needed:
-        if station.remaining_seconds != 0:
-            station.active = True
+            # Activate again if needed:
+            if station.remaining_seconds != 0:
+                station.active = True
 
+        except:
+            log.error(NAME, _('Pulse plugin') + ':\n' + traceback.format_exc())
 
 sender = None
 
@@ -84,36 +88,55 @@ class start_page(ProtectedPage):
     """Load an html start page"""
 
     def GET(self):
-        global sender
+        try:
+            global sender
 
-        qdict = web.input()
-        stop = helpers.get_input(qdict, 'stop', False, lambda x: True)
-        if sender is not None and stop:
-            sender.stop()
-            sender.join(5)
-            sender = None
-            raise web.seeother(plugin_url(start_page), True)
+            qdict = web.input()
+            stop = helpers.get_input(qdict, 'stop', False, lambda x: True)
+            if sender is not None and stop:
+                sender.stop()
+                sender.join(5)
+                sender = None
+                raise web.seeother(plugin_url(start_page), True)
 
-        return self.plugin_render.pulse(pulse_options, log.events(NAME))
+            return self.plugin_render.pulse(pulse_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Pulse plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pulse -> start_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        global sender
+        try:
+            global sender
 
-        pulse_options.web_update(web.input())
-        if sender is not None:
-            sender.stop()
-            sender.join(5)
+            pulse_options.web_update(web.input())
+            if sender is not None:
+                sender.stop()
+                sender.join(5)
 
-        sender = PulseSender()
+            sender = PulseSender()
 
-        raise web.seeother(plugin_url(start_page), True)
+            raise web.seeother(plugin_url(start_page), True)
+
+        except:
+            log.error(NAME, _('Pulse plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pulse -> start_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.pulse_help()        
+        try:
+            return self.plugin_render.pulse_help()
+        except:
+            log.error(NAME, _('Pulse plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pulse -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -122,6 +145,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(pulse_options)
-
-
+        try:
+            return json.dumps(pulse_options)
+        except:
+            return {}
