@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt' 
+__author__ = 'Martin Pihrt' 
 
 import datetime
 import time
@@ -18,7 +18,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Direct 16 Relay Outputs'
-MENU =  _(u'Package: Direct 16 Relay Outputs')
+MENU =  _('Package: Direct 16 Relay Outputs')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -147,7 +147,7 @@ class Relay16Checker(Thread):
 
                 time.sleep(0.5)
 
-                time_cleaner += 1                 
+                time_cleaner += 1
 
                 if time_cleaner >= 120: # 60 sec timer (ex: 120 * time.sleep(0.5) is 60 sec)
                    time_cleaner = 0
@@ -155,8 +155,6 @@ class Relay16Checker(Thread):
                    msg_debug_err = True
                    msg_debug_on = [True,True,True,True,True,True,True,True,True,True,True,True,True,True,True,True]
                    msg_debug_off = [True,True,True,True,True,True,True,True,True,True,True,True,True,True,True,True]
-
-              
 
             except Exception:
                 log.error(NAME, _('Relay 16 plug-in') + ':\n' + traceback.format_exc())
@@ -191,20 +189,39 @@ class settings_page(ProtectedPage):
     """Load an html page for entering relay 16 adjustments"""
 
     def GET(self):
-        return self.plugin_render.relay_16(plugin_options, log.events(NAME))
+        try:
+            return self.plugin_render.relay_16(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Relay 16 plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('relay_16 -> settings_page GET')
+            return self.core_render.notice('/', msg)
+
 
     def POST(self):
-        plugin_options.web_update(web.input())
-        if checker is not None:
-            checker.update()
-        raise web.seeother(plugin_url(settings_page), True)
+        try:
+            plugin_options.web_update(web.input())
+            if checker is not None:
+                checker.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Relay 16 plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('relay_16 -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.relay_16_help()        
+        try:
+            return self.plugin_render.relay_16_help()
+        except:
+            log.error(NAME, _('Relay 16 plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('relay_16 -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -213,4 +230,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
