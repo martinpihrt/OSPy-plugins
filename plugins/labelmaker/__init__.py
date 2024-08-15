@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 
 import datetime
@@ -177,10 +177,12 @@ def stop():
 
 
 def install(cmd):
-    proc = subprocess.Popen(cmd,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,shell=True)
-    output = proc.communicate()[0].decode('utf8')
-    log.info(NAME, '{}'.format(output))
-
+    try:
+        proc = subprocess.Popen(cmd,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,shell=True)
+        output = proc.communicate()[0].decode('utf8')
+        log.info(NAME, '{}'.format(output))
+    except:
+        log.error(NAME, datetime_string() + ' ' + _('Label Maker plug-in') + ':\n' + traceback.format_exc())
 
 ################################################################################
 # Web pages:                                                                   #
@@ -189,21 +191,32 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments"""
 
     def GET(self):
-        return self.plugin_render.labelmaker(plugin_options, log.events(NAME))
+        try:
+            return self.plugin_render.labelmaker(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Label Maker plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('labelmaker -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        plugin_options.web_update(web.input())
-        if checker is not None:
-            checker.update()
-        raise web.seeother(plugin_url(settings_page), True)
-
+        try:
+            plugin_options.web_update(web.input())
+            if checker is not None:
+                checker.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Label Maker plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('labelmaker -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class download_page(ProtectedPage):
     """Returns plugin settings in JSON format."""
 
     def GET(self):
         try:
-            download_name = plugin_data_dir() + '/' + 'yourcode.png'          
+            download_name = plugin_data_dir() + '/' + 'yourcode.png'
             if os.path.isfile(download_name):     # exists image? 
                 content = mimetypes.guess_type(download_name)[0]
                 web.header('Content-type', content)
@@ -220,17 +233,23 @@ class download_page(ProtectedPage):
                 img = open(download_name,'rb')
                 return img.read()
         except:
-            pass
             log.error(NAME, _('Label Maker plug-in') + ':\n' + traceback.format_exc())
-            return self.plugin_render.labelmaker(plugin_options, log.events(NAME))
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('labelmaker -> download_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.labelmaker_help()
-
+        try:
+            return self.plugin_render.labelmaker_help()
+        except:
+            log.error(NAME, _('Label Maker plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('labelmaker -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format"""
@@ -238,4 +257,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
