@@ -435,12 +435,12 @@ def get_report(index):
         else:
             result = None
     elif index == 26:
-        if lcd_options['d_sched_man']:
+        if lcd_options['d_sched_manu']:
             result = ASCI_convert(_('Control:'))
         else: 
             result = None
     elif index == 27:
-        if lcd_options['d_sched_man']:
+        if lcd_options['d_sched_manu']:
             if options.manual_mode:
                 result = ASCI_convert(_('Manual mode'))
             else:
