@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 # This plugin use library rtc_DS1307
 
 import subprocess
@@ -27,7 +27,7 @@ from plugins import PluginOptions, plugin_url
 
 
 NAME = 'Real Time and NTP time'
-MENU =  _(u'Package: Real Time and NTP time')
+MENU =  _('Package: Real Time and NTP time')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -126,7 +126,7 @@ class RealTimeChecker(Thread):
                              # date -s hh:mm:ss
                              # date 021415232015 (Sun Feb 14 15:23:31 PST 2015)
                              # date --set='20150125 09:17:00'
-                                            
+
                              set_time = rtc_time.strftime('"%Y%m%d ') + rtc_time.strftime('%H:%M:%S"')
                              os.system('sudo date --set=' + set_time)  
 
@@ -212,21 +212,37 @@ class settings_page(ProtectedPage):
     """Load an html page for entering real time adjustments"""
 
     def GET(self):
-        return self.plugin_render.real_time(plugin_options, log.events(NAME))
+        try:
+            return self.plugin_render.real_time(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('real_time -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        plugin_options.web_update(web.input())
-        if checker is not None:
-            checker.update()
-        raise web.seeother(plugin_url(settings_page), True)
-
+        try:
+            plugin_options.web_update(web.input())
+            if checker is not None:
+                checker.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('real_time -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.real_time_help()
-
+        try:
+            return self.plugin_render.real_time_help()
+        except:
+            log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('real_time -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format"""
@@ -234,4 +250,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
