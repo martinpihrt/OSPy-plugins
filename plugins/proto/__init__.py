@@ -82,7 +82,7 @@ class Sender(Thread):
         flow2.unit = 'rpm'
         flow2.val = 2300
         # flow2.clear
-        
+
         log.clear(NAME)                                           # Clear events window on webpage
         log.info(NAME, _('Plugin is started.'))                   # Save to log (to OSPy log if logging is enabled) and events window on webpage
         # Available is: log.info, debug, error
@@ -139,19 +139,37 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        return self.plugin_render.proto(plugin_options, log.events(NAME)) # Return proto.html web page in OSPy/plugin_name/templates with plugin options and log events. Change the proto name to your own according to the name of the new plugin.
+        try:
+            return self.plugin_render.proto(plugin_options, log.events(NAME)) # Return proto.html web page in OSPy/plugin_name/templates with plugin options and log events. Change the proto name to your own according to the name of the new plugin.
+        except:
+            log.error(NAME, _('Proto plugin') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('proto -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        #plugin_options.web_update(web.input(**proto))        # For save multiple elements (example selector with more selected elements)
-        plugin_options.web_update(web.input())                # For save only one element (example selector with one selected element, checkbox, fieldname...)
-        raise web.seeother(plugin_url(settings_page), True)   # Redirect to settings_page after saving filds from form
+        try:
+            #plugin_options.web_update(web.input(**proto))        # For save multiple elements (example selector with more selected elements)
+            plugin_options.web_update(web.input())                # For save only one element (example selector with one selected element, checkbox, fieldname...)
+            raise web.seeother(plugin_url(settings_page), True)   # Redirect to settings_page after saving filds from form
+        except:
+            log.error(NAME, _('Proto plugin') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('proto -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.proto_help()                # Return help page in OSPy/plugin_name/templates. Change the proto_help name to your own according to the name of the new plugin.
+        try:
+            return self.plugin_render.proto_help()                # Return help page in OSPy/plugin_name/templates. Change the proto_help name to your own according to the name of the new plugin.
+        except:
+            log.error(NAME, _('Proto plugin') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('proto -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -161,4 +179,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)                     # Return plugin_options as json file
+        try:
+            return json.dumps(plugin_options)                 # Return plugin_options as json file
+        except:
+            return {}
