@@ -56,7 +56,7 @@ plugin_options = PluginOptions(
     'runonce_topic': 'ospy/control/run-once',
     ### get values ###
     'use_get_val': False,
-    'get_val_topic': 'ospy/values',    
+    'get_val_topic': 'ospy/values',
 
      }
 )
@@ -311,7 +311,7 @@ def on_message(client, userdata, message):
                                 if interval['station'] == sid:
                                     log.finish_run(interval)
                     status = "Run-once command was processed OK"
-                    client.publish(plugin_options['runonce_topic'], status)          
+                    client.publish(plugin_options['runonce_topic'], status)
  
     except Exception:
         log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
@@ -521,20 +521,38 @@ class settings_page(ProtectedPage):
     """Load an html page for entering plugin settings."""
 
     def GET(self):
-        return self.plugin_render.mqtt(plugin_options, log.events(NAME), options.name)
+        try:
+            return self.plugin_render.mqtt(plugin_options, log.events(NAME), options.name)
+        except:
+            log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('mqtt -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        global sender
-        plugin_options.web_update(web.input())
-        if sender is not None:
-            sender.update()
-        raise web.seeother(plugin_url(settings_page), True)
+        try:
+            global sender
+            plugin_options.web_update(web.input())
+            if sender is not None:
+                sender.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('mqtt -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.mqtt_help()
+        try:
+            return self.plugin_render.mqtt_help()
+        except:
+            log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('mqtt -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -542,4 +560,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
