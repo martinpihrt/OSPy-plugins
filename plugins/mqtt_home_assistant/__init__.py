@@ -15,7 +15,7 @@ import ssl
 import datetime
 from datetime import timedelta
 
-from threading import Thread, Event                              # For use a separate thread in which the plugin is running
+from threading import Thread, Event, Timer                              # For use a separate thread in which the plugin is running
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
@@ -79,6 +79,8 @@ try:
     mqtt_is_installed = True
 except ImportError:
     pass
+
+
 
 
 ################################################################################
@@ -351,7 +353,7 @@ def publish(topic, payload=''):
         if isinstance(payload, dict):
             payload = json.dumps(payload, sort_keys=True)
         log.debug(NAME, datetime_string() + ' ' + _('Publish to topic') + ': {}, '.format(topic) + _('payload') + ': {}'.format(payload))
-        client.publish(topic, payload, qos=0, retain=False)
+        client.publish(topic, payload, qos=0, retain=True)
 
 
 def removeTopic(topic):
@@ -398,6 +400,32 @@ class hass_device:
         self._min = None
         self._max = None
         self._callback = _callback
+        return self
+    
+    def createButton(self, _devicetype, _type, _property, _name, _icon, _callback):
+        self._deviceclass = "button"
+        self._devicetype = _devicetype
+        self._type = _type
+        self._property = _property
+        self._name = _name
+        self._icon = _icon
+        self._unit = None
+        self._min = None
+        self._max = None
+        self._callback = _callback
+        return self
+    
+    def createCategory(self, _devicetype, _type, _property, _name, _icon):
+        self._deviceclass = "sensor"
+        self._devicetype = _devicetype
+        self._type = _type
+        self._property = _property
+        self._name = _name
+        self._icon = _icon
+        self._unit = None
+        self._min = None
+        self._max = None
+        self._callback = None
         return self
     
     def createBinarySensor(self, _devicetype, _type, _property, _name, _icon):
@@ -483,19 +511,36 @@ def station_set(client, msg, device):
             if interval['station'] == device._id:
                 log.finish_run(interval)
     
+program_runnow = signal('program_runnow')
+def report_program_runnow():
+    program_runnow.send()
 
 def program_set(client, msg, device):
     payload = msg.payload.decode("utf-8")
-    publish('{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property), payload)
-    if payload == "True":
+    if payload == device._type:
         # first stop stations
         # log.finish_run(None)
         # stations.clear()
         # next run program id: xx
         print(device._id)
-        #programs.run_now(int(device._id))
+        programs.run_now(int(device._id))
+        Timer(0.1, programs.calculate_balances).start()
+        report_program_runnow()
     else:
         pass
+
+def stop_all(client, msg, device):
+    if not options.manual_mode:
+        options.scheduler_enabled = False
+        programs.run_now_program = None
+        run_once.clear()
+        log.finish_run(None)
+        stations.clear()
+        stationsList = []
+        for device in sender.devices:
+            if device._type == "stations":
+                stationsList.append(device)
+        set_devices_default_values(stationsList)
 
 
 def discovery_payload(device):
@@ -511,7 +556,7 @@ def discovery_payload(device):
         "sw_version": system_version(),
         "serial_number": system_UID(),
         "configuration_url": system_web_url(),
-        "via_device": "ospy_{}".format(system_UID())
+        "via_device": "ospy_{}_{}".format(system_UID(), "station")
         }
     elif device._type == "sensor_THDS":
         payload["device"] = {
@@ -544,6 +589,17 @@ def discovery_payload(device):
         "sw_version": system_version(),
         "serial_number": system_UID(),
         "configuration_url": system_web_url(),
+        "via_device": "ospy_{}_{}".format(system_UID(), "program")
+        }
+    elif device._type == "program" or device._type == "station":
+        payload["device"] = {
+        "identifiers": ["ospy_{}_{}".format(system_UID(), device._type)],
+        "manufacturer": "www.pihrt.com",
+        "model": _('Component'),
+        "name":  _('Programs') if device._type == "program"  else _('Stations') if device._type == "station" else _('Undefined'),
+        "sw_version": system_version(),
+        "serial_number": system_UID(),
+        "configuration_url": system_web_url(),
         "via_device": "ospy_{}".format(system_UID())
         }
     else:
@@ -558,7 +614,8 @@ def discovery_payload(device):
         }
 
     payload["unique_id"] = 'ospy_{}{}{}_{}'.format(device._deviceclass, device._type, device._property, system_UID())
-    payload["device_class"] = device._devicetype
+    if device._devicetype is not None:
+        payload["device_class"] = device._devicetype
     payload["state_topic"] = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
     payload["availability_topic"] = '{}/{}/{}/availability'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
     
@@ -603,6 +660,15 @@ def discovery_payload(device):
             subscribe(payload["command_topic"], device._callback, device)
         else:
             raise ValueError(_('Callback cannot be Null for device_class = switch'))
+    elif device._deviceclass == "button":
+        if device._callback is not None:
+            payload["value_template"] = "{{ value_json.state }}"
+            payload["command_topic"] = '{}/{}/{}/set'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+            payload["payload_press"] = device._type
+            subscribe(payload["command_topic"], device._callback, device)
+        else:
+            raise ValueError(_('Callback cannot be Null for device_class = button'))
+        
 
     return payload
 
@@ -649,6 +715,11 @@ def discovery_publish():
     baseDevices.append(hass_device().createSwitch("switch", "system", "manual_mode",  _('Manual operation'), None, manual_mode_set))
     baseDevices.append(hass_device().createBinarySensor("moisture", "system", "rain_sensed",  _('Rain sensor'), None))
 
+    #create subcategories
+    baseDevices.append(hass_device().createButton(None, "station", "station",  _("Stop All Stations"), "mdi:sprinkler-variant", stop_all))
+    baseDevices.append(hass_device().createButton(None, "program", "program",  _("Stop All Stations"), "mdi:timer-play-outline", stop_all))
+    
+    
     for i in range(0, options.output_count): # create stations
         device = hass_device().createSwitch(None, "stations", "station_{}".format(i),  stations.get(int(i)).name if plugin_options['hass_device_is_station_name'] else _("Station") + " {0:02d}".format(i + 1), "mdi:sprinkler-variant", station_set)
         device._id = i
@@ -658,30 +729,37 @@ def discovery_publish():
             remove_device(device)
 
     for program in programs.get():           # create programs
-        device = hass_device().createSwitch(None, "programs", "program_{}".format(i),  _('PGM') + ": {0:02d}".format(program.index + 1) + " " + program.name, "mdi:timer-play-outline", program_set)
+        device = hass_device().createButton(None, "programs", "program_{}".format(program.index),  _('Run') + ": {0:02d}".format(program.index + 1) + " " + program.name, "mdi:timer-play-outline", program_set)
         device._id = program.index
         baseDevices.append(device)
 
     try:
         from plugins import tank_monitor
-        sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
-        sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m3")
-        sensor_water_tank_percent._id = 400 # mqtt unique ID placeholder, 400 for water level percent, 401 for volume
-        sensor_water_tank_volume._id = 401
-        sensorWTLDevices.append(sensor_water_tank_percent)
-        sensorWTLDevices.append(sensor_water_tank_volume)
-        body = '<br><b>' + _('Tank monitor') + '</b><ul>'
-        logtext = _('Tank monitor') + '-> \n'
-        percent = tank_monitor.get_all_values()[1]
-        volume = tank_monitor.get_all_values()[3]
-        #cm = tank_monitor.get_all_values()[0]
-        #ping = tank_monitor.get_all_values()[2]
-        #units = tank_monitor.get_all_values()[4] 
-        body += '<li>' + _('Percent {}%').format(percent) + '\n</li>'
-        body += '<li>' + _('Volume {}m3').format(volume) + '\n</li>'  
-        logtext += _('Percent {}%, volume {}m3').format(percent, volume)
-        body += '</ul>'   
-        log.info(NAME, logtext)
+        if (tank_monitor.tank_options['use_sonic']):
+            sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
+            sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m3")
+            sensor_water_tank_percent._id = 400 # mqtt unique ID placeholder, 400 for water level percent, 401 for volume
+            sensor_water_tank_volume._id = 401
+            sensorWTLDevices.append(sensor_water_tank_percent)
+            sensorWTLDevices.append(sensor_water_tank_volume)
+            body = '<br><b>' + _('Tank monitor') + '</b><ul>'
+            logtext = _('Tank monitor') + '-> \n'
+            percent = tank_monitor.get_all_values()[1]
+            volume = tank_monitor.get_all_values()[3]
+            #cm = tank_monitor.get_all_values()[0]
+            #ping = tank_monitor.get_all_values()[2]
+            #units = tank_monitor.get_all_values()[4] 
+            body += '<li>' + _('Percent {}%').format(percent) + '\n</li>'
+            body += '<li>' + _('Volume {}m3').format(volume) + '\n</li>'  
+            logtext += _('Percent {}%, volume {}m3').format(percent, volume)
+            body += '</ul>'   
+            log.info(NAME, logtext)
+        else:
+            sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
+            sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m3")
+            remove_device(sensor_water_tank_percent)
+            remove_device(sensor_water_tank_volume)
+            
     except ImportError:
         log.debug(NAME, _('Cannot import plugin: tank_monitor.'))
         pass 
@@ -763,7 +841,6 @@ def discovery_publish():
     
     set_devices_signal()
 
-# https://prod.liveshare.vsengsaas.visualstudio.com/join?85CA0FB5E1E238A97A5231EA9806CF8807C0
 
 def set_devices_online(device): # set inital values to HASS after plugin start
     try:
@@ -788,8 +865,8 @@ def set_devices_online(device): # set inital values to HASS after plugin start
             publish(topic, "online")
         else:
             publish(topic, "online")
-    except:
-        log.error(NAME, _('Cannot set devices online.'))
+    except Exception as e:
+        log.error(NAME, _('Cannot set devices online.') )
         pass
 
 def remove_device(device):
@@ -826,6 +903,8 @@ def set_devices_default_values(devices):
             elif device._type == "programs":
                 topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
                 payload["state"] = "False"
+            elif device._type == "program" or device._type == "station":
+                return
 
             publish(topic, payload)
     except:
@@ -840,32 +919,6 @@ def update_device_values(name, **kw):
     except:
         log.error(NAME, _('Cannot update data from plugins.'))
         pass
-
-def update_temp_humi_ds(sensors):
-    for device in sensors:
-        if device._type == "sensor_THDS":
-            try:
-                from plugins import air_temp_humi
-                
-                payload = {}
-                topic = {}
-                if device._isDHT is not None and device._isDHT:
-                    if device._property == "HDT_humidity":
-                        topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-                        payload["state"] = air_temp_humi.sender.status['humi']
-                    if device._property == "HDT_temperature":
-                        topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-                        payload["state"] = air_temp_humi.sender.status['temp']
-                    set_devices_online(device)
-                if device._isDS is not None and device._isDS:                        
-                    topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-                    payload["state"] = air_temp_humi.sender.status['DS{}'.format(device._id)]
-                    device._isOK = False if payload["state"] == -127 else True
-                    set_devices_online(device)
-                publish(topic, payload)
-            except ImportError:
-                log.error(NAME, _('Cannot import plugin: air temp humi.'))
-                pass
 
 def update_temp_humi_ds(sensors):
     for device in sensors:
@@ -919,6 +972,7 @@ def update_tank_level(sensors):
 
 def update_device_plugin_settings(name, **kw):
     discovery_publish()
+        
 
 def set_devices_signal():
     # print("setting the signals")
@@ -935,9 +989,9 @@ def set_devices_signal():
     station_names = signal('station_names')
     station_names.connect(update_device_values)
     program_change = signal('program_change')
-    program_change.connect(update_device_values)
+    program_change.connect(update_device_plugin_settings)
     program_deleted = signal('program_deleted')
-    program_deleted.connect(update_device_values)
+    program_deleted.connect(update_device_plugin_settings)
     program_toggled = signal('program_toggled')
     program_toggled.connect(update_device_values)
     program_runnow = signal('program_runnow')
@@ -982,6 +1036,7 @@ def set_devices_signal():
     hass_plugin_update.connect(update_device_plugin_settings) ## completely reinitialize on plugin settings change
     air_temp_humi_plugin_update = signal('air_temp_humi_plugin_update')
     air_temp_humi_plugin_update.connect(update_device_plugin_settings) ## completely reinitialize on temp plugin settings change
+    
 
 
 ################################################################################
@@ -992,35 +1047,53 @@ class settings_page(ProtectedPage):
     """ Load an html page for entering adjustments. """
 
     def GET(self):
-        global slugify_is_installed
-        global mqtt_is_installed
-        msg = ''
-        if not slugify_is_installed:
-            msg = _('Error: slugify not installed. Install it to system. sudo apt install python3 slugify.')
-        elif not mqtt_is_installed:
-            msg += ' ' + _('Error: paho-mqtt is not installed. Install it to system. sudo pip3 install paho-mqtt.')
-        else:
-            client = sender.client
-            if client:
-                msg = _('Client OK')
-            elif client is None:
-                msg = _('Client not ready!')
+        try:
+            global slugify_is_installed
+            global mqtt_is_installed
+            msg = ''
+            if not slugify_is_installed:
+                msg = _('Error: slugify not installed. Install it to system. sudo apt install python3 slugify.')
+            elif not mqtt_is_installed:
+                msg += ' ' + _('Error: paho-mqtt is not installed. Install it to system. sudo pip3 install paho-mqtt.')
             else:
-                msg = ''
-        return self.plugin_render.mqtt_home_assistant(plugin_options, log.events(NAME), msg)
+                client = sender.client
+                if client:
+                    msg = _('Client OK')
+                elif client is None:
+                    msg = _('Client not ready!')
+                else:
+                    msg = ''
+            return self.plugin_render.mqtt_home_assistant(plugin_options, log.events(NAME), msg)
+        except:
+            log.error(NAME, _('MQTT Home Assistant plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('mqtt_home_assistant -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        plugin_options.web_update(web.input())
-        updateSignal = signal('hass_plugin_update')
-        updateSignal.send()
-        raise web.seeother(plugin_url(settings_page), True)
+        try:
+            plugin_options.web_update(web.input())
+            updateSignal = signal('hass_plugin_update')
+            updateSignal.send()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('mqtt_home_assistant -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """ Load an html page for help """
 
     def GET(self):
-        return self.plugin_render.mqtt_home_assistant_help()
+        try:
+            return self.plugin_render.mqtt_home_assistant_help()
+        except:
+            log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('mqtt_home_assistant -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -1029,4 +1102,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}

@@ -37,7 +37,7 @@ LINK = 'settings_page'
 tank_options = PluginOptions(
     NAME,
     {
-       'use_sonic': True,      # use sonic sensor
+       'use_sonic': False,      # use sonic sensor
        'distance_bottom': 213, # sensor <-> bottom tank
        'distance_top': 52,     # sensor <-> top tank
        'water_minimum': 60,    # water level <-> bottom tank
