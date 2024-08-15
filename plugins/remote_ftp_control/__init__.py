@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'  
+__author__ = 'Martin Pihrt'  
 
 import time
 import traceback
@@ -25,17 +25,17 @@ from ospy.inputs import inputs
 
 
 NAME = 'Remote FTP Control'
-MENU =  _(u'Package: Remote FTP Control')
+MENU =  _('Package: Remote FTP Control')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
     NAME,
     {
-     u'use': False,
-     u'ftpaddress': u'server@example.cz',
-     u'ftpname':    u'user',
-     u'ftppass':    u'password',
-     u'loc':        u'/',
+     'use': False,
+     'ftpaddress': 'server@example.cz',
+     'ftpname':    'user',
+     'ftppass':    'password',
+     'loc':        '/',
      }
 )       
 
@@ -70,30 +70,30 @@ class PluginSender(Thread):
     def run(self):
         log.clear(NAME)    
         try:
-            ramdiskpatch = u'/home/pi/ramdisk'
+            ramdiskpatch = '/home/pi/ramdisk'
 
             if not os.path.exists(ramdiskpatch): # checking whether there ramdisk
               os.mkdir(ramdiskpatch)
-              log.info(NAME, _(u'Creating ramdisk into') + ': ' + str(ramdiskpatch))
+              log.info(NAME, _('Creating ramdisk into') + ': ' + str(ramdiskpatch))
        
         except Exception:
-           log.info(NAME, _(u'Remote FTP control settings') + ':\n' + traceback.format_exc())
+           log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
                   
         try:
             fstabdata = 'tmpfs       /home/pi/ramdisk    tmpfs    defaults,size=4m    0    0'
             fstabpatch = '/etc/fstab'
 
             if not fstabdata in open(fstabpatch).read():  # checking and adding a ramdisk to fstab
-              log.info(NAME, _(u'Adding into fstab') + ': ' + str(fstabdata))
-              log.info(NAME, _(u'Saving config to') + ': ' + str(fstabpatch))
+              log.info(NAME, _('Adding into fstab') + ': ' + str(fstabdata))
+              log.info(NAME, _('Saving config to') + ': ' + str(fstabpatch))
               f = open(fstabpatch,"a")  
               f.write(fstabdata)
               f.close()
               # reboot os system
-              log.info(NAME, _(u'Now please restart your operating system!'))
+              log.info(NAME, _('Now please restart your operating system!'))
 
         except Exception:
-            log.info(NAME, _(u'Remote FTP control settings') + ':\n' + traceback.format_exc())
+            log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
                 
         smyckyFTP = 30  
         while not self._stop_event.is_set():
@@ -104,14 +104,14 @@ class PluginSender(Thread):
                     log.clear(NAME)
                     try:
                         self.ftp = FTP(plugin_options['ftpaddress'], plugin_options['ftpname'], plugin_options['ftppass'])    
-                        log.info(NAME, _(u'FTP connection established.')) 
+                        log.info(NAME, _('FTP connection established.')) 
 
                         FTP_download(self)  # downloaded from server data.txt and save to ramdisk
                         FTP_upload(self)    # uploaded to the server data stavy.php from the ramdisk
 
                     except Exception:
                         log.clear(NAME)
-                        log.info(NAME, _(u'Remote FTP control settings') + ':\n' + traceback.format_exc())
+                        log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
                        
                   smyckyFTP += 1 # counter for FTP transmit and reiceive                           
                   
@@ -119,7 +119,7 @@ class PluginSender(Thread):
 
             except Exception:
                 log.clear(NAME)
-                log.info(NAME, _(u'Remote FTP control settings') + ':\n' + traceback.format_exc())
+                log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
                 self._sleep(60)
                 
 plugin_sender = None
@@ -148,44 +148,44 @@ def FTP_download(self):
         obsahaut = fs.readline() 
         fs.close()     
 
-        log.debug(NAME, _(u'FTP received data from file data.txt') + ': ' + str(obsahaut))
+        log.debug(NAME, _('FTP received data from file data.txt') + ': ' + str(obsahaut))
 
         change = False
 
         if (obsahaut == "AU"):   # scheduller
           options.manual_mode = False        
-          log.info(NAME, _(u'Scheduler mode is activated.'))
+          log.info(NAME, _('Scheduler mode is activated.'))
           change = True
          
         if (obsahaut == "MA"):   # manual
           options.manual_mode = True       
-          log.info(NAME, _(u'Manual mode is activated.'))
+          log.info(NAME, _('Manual mode is activated.'))
           change = True
 
         for num_output in range(0,options.output_count):
           s = 'Z' + str(num_output)
           if (obsahaut == s):   # stations xx ON 
              options.manual_mode = True       
-             log.info(NAME, _(u'Manual mode is activated.'))
+             log.info(NAME, _('Manual mode is activated.'))
              stations.activate(num_output)
-             log.info(NAME, _(u'Activated stations') + ': ' + str(num_output + 1))
+             log.info(NAME, _('Activated stations') + ': ' + str(num_output + 1))
              change = True
  
           s = 'V' + str(num_output)
           if (obsahaut == s):   # stations xx OFF 
              options.manual_mode = True       
-             log.info(NAME, _(u'Manual mode is activated.'))
+             log.info(NAME, _('Manual mode is activated.'))
              stations.deactivate(num_output)
-             log.info(NAME, _(u'Deactivated stations') + ': ' + str(num_output + 1))
+             log.info(NAME, _('Deactivated stations') + ': ' + str(num_output + 1))
              change = True
 
         for program in programs.get():
           s = 'P' + str(program.index+1)
           if (obsahaut == s):   # Run-now program xx  
              options.manual_mode = False       
-             log.info(NAME, _(u'Scheduler mode is activated.'))
+             log.info(NAME, _('Scheduler mode is activated.'))
              programs.run_now(program.index)
-             log.info(NAME, _(u'Activated program') + ': ' + str(program.name))
+             log.info(NAME, _('Activated program') + ': ' + str(program.name))
              self._sleep(2)
              change = True
           program.index+1
@@ -196,12 +196,12 @@ def FTP_download(self):
             run_once.clear()
             log.finish_run(None)
             stations.clear()
-            log.info(NAME, _(u'Stop all stations and disable system.'))
+            log.info(NAME, _('Stop all stations and disable system.'))
             change = True
 
         if (obsahaut == "START"):   # enable scheduler
             options.scheduler_enabled = True
-            log.info(NAME, _(u'Enable system.'))
+            log.info(NAME, _('Enable system.'))
             change = True
 
         if (change): # delete data.txt command now is OK
@@ -216,7 +216,7 @@ def FTP_download(self):
                                                        
     except Exception: 
       log.clear(NAME)
-      log.info(NAME, _(u'Remote FTP control settings') + ':\n' + traceback.format_exc())
+      log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
       pass
 
 def FTP_upload(self):   
@@ -372,19 +372,19 @@ def FTP_upload(self):
         fs.close()
 
       except:
-        log.error(NAME, _(u'Could not save stavy.php to ramdisk!'))
+        log.error(NAME, _('Could not save stavy.php to ramdisk!'))
         pass     
 
       self.ftp.storbinary("STOR " + plugin_options['loc'] + 'stavy.php'  , open("/home/pi/ramdisk/stavy.php", 'rb'))   
-      log.info(NAME, _(u'Data file stavy.php has send on to FTP server') + ': ' + str(cas))
+      log.info(NAME, _('Data file stavy.php has send on to FTP server') + ': ' + str(cas))
       
       self.ftp.storbinary("STOR " + plugin_options['loc'] + 'data.txt'  , open("/home/pi/ramdisk/data.txt", 'rb'))   
-      log.info(NAME, _(u'Data file data.txt has send on to FTP server') + ': ' + str(cas))
+      log.info(NAME, _('Data file data.txt has send on to FTP server') + ': ' + str(cas))
 
       self.ftp.close       # FTP end
          
     except Exception:
-      log.info(NAME, _(u'Remote FTP control settings') + ':\n' + traceback.format_exc())
+      log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
 
 
     
@@ -397,20 +397,38 @@ class settings_page(ProtectedPage):
     """Load an html page for entering plugin settings."""
 
     def GET(self):
-        return self.plugin_render.remote_ftp_control(plugin_options, log.events(NAME))
+        try:
+            return self.plugin_render.remote_ftp_control(plugin_options, log.events(NAME))
+        except:
+            log.error(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('remote_ftp_control -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
-    def POST(self): 
-        plugin_options.web_update(web.input())
-        if plugin_sender is not None:
-          plugin_sender.update()
-        raise web.seeother(plugin_url(settings_page), True)
+    def POST(self):
+        try: 
+            plugin_options.web_update(web.input())
+            if plugin_sender is not None:
+                plugin_sender.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('remote_ftp_control -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help page."""
 
     def GET(self):
-        return self.plugin_render.remote_ftp_control_help()        
+        try:
+            return self.plugin_render.remote_ftp_control_help()        
+        except:
+            log.error(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('remote_ftp_control -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -419,4 +437,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)        
+        try:
+            return json.dumps(plugin_options)        
+        except:
+            return {}
