@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 import json
 import time
@@ -25,7 +25,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Photovoltaic Boiler'
-MENU =  _(u'Package: Photovoltaic Boiler')
+MENU =  _('Package: Photovoltaic Boiler')
 LINK = 'settings_page'
 
 
@@ -104,10 +104,10 @@ class Sender(Thread):
 
         millis = 0                                 # timer for clearing status on the web pages after 5 sec
         last_millis = int(round(time.time() * 1000))
-        
+
         a_state = -3                               # for state in footer "Waiting."
-        regulation_text = _(u'Waiting to turned on or off.')
-        
+        regulation_text = _('Waiting to turned on or off.')
+
         if not plugin_options['enabled_a']:
             a_state = -1                           # for state in footer "Waiting (not enabled regulation in options)."
 
@@ -129,7 +129,7 @@ class Sender(Thread):
 
                         from plugins.air_temp_humi import DS18B20_read_probe           # value with temperature from probe DS1-DS6
                         temperature_ds = [DS18B20_read_probe(0), DS18B20_read_probe(1), DS18B20_read_probe(2), DS18B20_read_probe(3), DS18B20_read_probe(4), DS18B20_read_probe(5)]
-                    
+
                     except:
                         log.error(NAME, _('Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
                         self.status['ds_count'] = 0
@@ -178,7 +178,7 @@ class Sender(Thread):
                         #        log.clear(NAME)
                         #        log.info(NAME, regulation_text)
                         #msg_a_on = True
-                    
+
                     current_time  = datetime.datetime.now()
 
                     ### first time
@@ -225,12 +225,12 @@ class Sender(Thread):
                                     if start_2_ok:
                                         end = datetime.datetime.now() + datetime.timedelta(hours=dif_h_2, minutes=dif_m_2)
                                 else:
-                                    end = datetime.datetime.now() + datetime.timedelta(hours=dif_h, minutes=dif_m)                                    
+                                    end = datetime.datetime.now() + datetime.timedelta(hours=dif_h, minutes=dif_m)
                                 new_schedule = {
                                     'active': True,
                                     'program': -1,
                                     'station': sid,
-                                    'program_name': _(u'Photovoltaic Boiler'),
+                                    'program_name': _('Photovoltaic Boiler'),
                                     'fixed': True,
                                     'cut_off': 0,
                                     'manual': True,
@@ -245,7 +245,7 @@ class Sender(Thread):
                                 stations.activate(new_schedule['station'])
                     else:
                         msg_a_on = True
-       
+
                     ### if "boiler" end in schedule release msg_a_on to true in regulation for next scheduling ###
                     if current_time > end:
                         if probes_ok:
@@ -256,8 +256,8 @@ class Sender(Thread):
                             active = log.active_runs()
                             for interval in active:
                                 if interval['station'] == sid:
-                                    log.finish_run(interval)        
-                        msg_a_on = True                                
+                                    log.finish_run(interval)
+                        msg_a_on = True
 
                 else:
                     a_state = -1
@@ -293,15 +293,15 @@ class Sender(Thread):
                         except:
                             pass
                     elif plugin_options["sensor_probe"] == 2:
-                        log.info(NAME, datetime_string() + '\n' + _('Boiler') + u' %.1f \u2103 \n' % ds_a_on)
+                        log.info(NAME, datetime_string() + '\n' + _('Boiler') + ' %.1f \u2103 \n' % ds_a_on)
                     log.info(NAME, tempText)
-                
+
                 self._sleep(1)
 
             except Exception:
                 log.error(NAME, _('Photovoltaic Boiler plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
-          
+
 sender = None
 
 ################################################################################
@@ -336,29 +336,42 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments and deleting logs"""
 
     def GET(self):
-        global sender
-        
-        if sender is not None:
-            sender.update()
-
-        return self.plugin_render.photovoltaic_boiler(plugin_options, log.events(NAME), sender.status)
+        try:
+            global sender
+            if sender is not None:
+                sender.update()
+            return self.plugin_render.photovoltaic_boiler(plugin_options, log.events(NAME), sender.status)
+        except:
+            log.error(NAME, _('Photovoltaic Boiler plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('photovoltaic_boiler -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        global sender
-        plugin_options.web_update(web.input())
-
-        if sender is not None:
-            sender.update()
-
-        raise web.seeother(plugin_url(settings_page), True)
-        #return self.plugin_render.photovoltaic_boiler(plugin_options, log.events(NAME))
+        try:
+            global sender
+            plugin_options.web_update(web.input())
+            if sender is not None:
+                sender.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Photovoltaic Boiler plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('photovoltaic_boiler -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.photovoltaic_boiler_help()
+        try:
+            return self.plugin_render.photovoltaic_boiler_help()
+        except:
+            log.error(NAME, _('Photovoltaic Boiler plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('photovoltaic_boiler -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -367,4 +380,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
