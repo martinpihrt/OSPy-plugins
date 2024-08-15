@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 # LaskaKit map https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/
 
@@ -30,7 +30,7 @@ from io import BytesIO
 
 
 NAME = 'CHMI'
-MENU =  _(u'Package: CHMI radar')
+MENU =  _('Package: CHMI radar')
 LINK = 'settings_page'
 
 plugin_options = PluginOptions(
@@ -95,7 +95,7 @@ class CHMI_Checker(Thread):
                 chmi_mon = showInFooter()                               # instantiate class to enable data in footer
                 chmi_mon.label = _('CHMI meteoradar')                   # label on footer
                 chmi_mon.button = "chmi/settings"                       # button redirect on footer
-                chmi_mon.val = '---'                                    # value on footer        
+                chmi_mon.val = '---'                                    # value on footer
         while not self._stop_event.is_set():
             self._sleep(1)
             try:
@@ -254,7 +254,7 @@ class CHMI_Checker(Thread):
                                             delaytime = int(plugin_options['RAIN_DELAY'])
                                             rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
                                             stop_onrain()
-                                            tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours')
+                                            tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours')
                                         else:
                                             tempText += _('Probably raining right now')
                                     else:
@@ -398,9 +398,12 @@ def read_log():
 
 def write_log(json_data):
     """Write data to log json file."""
-    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
-        json.dump(json_data, outfile)
-
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, datetime_string() + ' ' + _('CHMI plug-in') + ':\n' + traceback.format_exc())
+        pass
 
 def update_log(status):
     """Update data in json files.""" 
@@ -431,44 +434,56 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments"""
 
     def GET(self):
-        global checker
-        qdict  = web.input()
+        try:
+            global checker
+            qdict  = web.input()
 
-        del_rain = get_input(qdict, 'del_rain', False, lambda x: True)
-        refresh = get_input(qdict, 'refresh', False, lambda x: True)
-        delete = get_input(qdict, 'delete', False, lambda x: True)
-        show = get_input(qdict, 'show', False, lambda x: True)        
+            del_rain = get_input(qdict, 'del_rain', False, lambda x: True)
+            refresh = get_input(qdict, 'refresh', False, lambda x: True)
+            delete = get_input(qdict, 'delete', False, lambda x: True)
+            show = get_input(qdict, 'show', False, lambda x: True)
 
-        if checker is not None and del_rain:
-            if NAME in rain_blocks:
-                del rain_blocks[NAME]
-                log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
+            if checker is not None and del_rain:
+                if NAME in rain_blocks:
+                    del rain_blocks[NAME]
+                    log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
 
-        if checker is not None and refresh:
-            checker.update()
+            if checker is not None and refresh:
+                checker.update()
 
-        if checker is not None and delete:            
-           write_log([])
-           log.info(NAME, datetime_string() + ': ' + _('Deleted all log files OK'))
+            if checker is not None and delete:
+                write_log([])
+                log.info(NAME, datetime_string() + ': ' + _('Deleted all log files OK'))
 
-        if checker is not None and show:
-            raise web.seeother(plugin_url(log_page), True)   
+            if checker is not None and show:
+                raise web.seeother(plugin_url(log_page), True)
 
-        return self.plugin_render.chmi(plugin_options, log.events(NAME))
+            return self.plugin_render.chmi(plugin_options, log.events(NAME))
+
+        except:
+            log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('chmi -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        plugin_options.web_update(web.input())
-        if checker is not None:
-            checker.update()
-        raise web.seeother(plugin_url(settings_page), True)
-
+        try:
+            plugin_options.web_update(web.input())
+            if checker is not None:
+                checker.update()
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('chmi -> settings_page POST')
+            return self.core_render.notice('/', msg)
 
 class download_page(ProtectedPage):
     """Returns plugin settings in JSON format."""
 
     def GET(self):
         try:
-            download_name = plugin_data_dir() + '/' + 'corner.png'          
+            download_name = plugin_data_dir() + '/' + 'corner.png'
             if os.path.isfile(download_name):     # exists image? 
                 content = mimetypes.guess_type(download_name)[0]
                 web.header('Content-type', content)
@@ -485,24 +500,35 @@ class download_page(ProtectedPage):
                 img = open(download_name,'rb')
                 return img.read()
         except:
-            pass
             log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
-            return self.plugin_render.chmi(plugin_options, log.events(NAME))
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('chmi -> download_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.chmi_help()
-
+        try:
+            return self.plugin_render.chmi_help()
+        except:
+            log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('chmi -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 class log_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.chmi_log(read_log(), plugin_options)
-
+        try:
+            return self.plugin_render.chmi_log(read_log(), plugin_options)
+        except:
+            log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('chmi -> log_page GET')
+            return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format"""
@@ -510,37 +536,49 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
-
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
 
 class log_json(ProtectedPage):
     """Returns data in JSON format."""
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(read_log())
-
+        try:
+            return json.dumps(read_log())
+        except:
+            return {}
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""
     def GET(self):
-        log_file = read_log()
-        data = "Date/Time; Date; Time; Red; Green; Blue\n"
-        for interval in log_file:
-            data += '; '.join([
-                interval['datetime'],
-                interval['date'],
-                interval['time'],
-                '{}'.format(interval['red']),
-                '{}'.format(interval['green']),
-                '{}'.format(interval['blue']),
-            ]) + '\n'
+        data = {}
+        try:
+            log_file = read_log()
+            data = "Date/Time; Date; Time; Red; Green; Blue\n"
+            for interval in log_file:
+                data += '; '.join([
+                    interval['datetime'],
+                    interval['date'],
+                    interval['time'],
+                    '{}'.format(interval['red']),
+                    '{}'.format(interval['green']),
+                    '{}'.format(interval['blue']),
+                ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Content-type', content) 
-        web.header('Content-Disposition', 'attachment; filename="meteo_log.csv"')
-        return data
+            content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-type', content) 
+            web.header('Content-Disposition', 'attachment; filename="meteo_log.csv"')
+            return data
+
+        except:
+            log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('chmi -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class state_json(ProtectedPage):
@@ -550,12 +588,14 @@ class state_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data = {}
-
-        if checker.status['state']:
-           data['state'] = _('RAIN IN LOCATION')
-        else:
-           if options.weather_lat and options.weather_lon:
-              data['state'] = _('NOT RAIN IN LOCATION')
-           else:
-              data['state'] = _('MY LOCATION IS NOT SET')
-        return json.dumps(data)            
+        try:
+            if checker.status['state']:
+               data['state'] = _('RAIN IN LOCATION')
+            else:
+                if options.weather_lat and options.weather_lon:
+                    data['state'] = _('NOT RAIN IN LOCATION')
+                else:
+                    data['state'] = _('MY LOCATION IS NOT SET')
+            return json.dumps(data)
+        except:
+            return {}
