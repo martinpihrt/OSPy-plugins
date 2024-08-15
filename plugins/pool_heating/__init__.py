@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 import json
 import time
@@ -25,7 +25,7 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 
 
 NAME = 'Pool Heating'
-MENU =  _(u'Package: Pool Heating')
+MENU =  _('Package: Pool Heating')
 LINK = 'settings_page'
 
 
@@ -61,7 +61,7 @@ global status
 
 
 class Sender(Thread):
-    
+
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
@@ -111,13 +111,13 @@ class Sender(Thread):
 
         millis = 0                                 # timer for clearing status on the web pages after 5 sec
         last_millis = int(round(time.time() * 1000))
-        
+
         safety_start = datetime.datetime.now()
         safety_end = datetime.datetime.now() + datetime.timedelta(minutes=plugin_options['safety_mm'])
 
         a_state = -3                               # for state in footer "Waiting."
-        regulation_text = _(u'Waiting to turned on or off.')
-        
+        regulation_text = _('Waiting to turned on or off.')
+
         if not plugin_options['enabled_a']:
             a_state = -1                           # for state in footer "Waiting (not enabled regulation in options)."
 
@@ -139,7 +139,7 @@ class Sender(Thread):
 
                         from plugins.air_temp_humi import DS18B20_read_probe                    # value with temperature from probe DS1-DS6
                         temperature_ds = [DS18B20_read_probe(0), DS18B20_read_probe(1), DS18B20_read_probe(2), DS18B20_read_probe(3), DS18B20_read_probe(4), DS18B20_read_probe(5)]
-                    
+
                     except:
                         log.error(NAME, _('Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
                         pass
@@ -218,7 +218,7 @@ class Sender(Thread):
                                 'active': True,
                                 'program': -1,
                                 'station': sid,
-                                'program_name': _(u'Pool Heating'),
+                                'program_name': _('Pool Heating'),
                                 'fixed': True,
                                 'cut_off': 0,
                                 'manual': True,
@@ -252,7 +252,7 @@ class Sender(Thread):
                                     log.finish_run(interval)
 
                             if plugin_options['enabled_safety']:                              # safety check
-                                safety_end = datetime.datetime.now() + datetime.timedelta(minutes=plugin_options['safety_mm'])        
+                                safety_end = datetime.datetime.now() + datetime.timedelta(minutes=plugin_options['safety_mm'])
 
                     ### if "pool" end in schedule release msg_a_on to true in regulation for next scheduling ###
                     now = datetime.datetime.now()
@@ -299,7 +299,7 @@ class Sender(Thread):
                 if a_state == -3:
                     tempText = _('Waiting.')
                 if a_state == -4:
-                    tempText = _('Safety shutdown!')                    
+                    tempText = _('Safety shutdown!')
 
                 if plugin_options['use_footer']:
                     if temp_sw is not None:
@@ -320,7 +320,7 @@ class Sender(Thread):
                         except:
                             pass
                     elif plugin_options["sensor_probe"] == 2:
-                        log.info(NAME, datetime_string() + '\n' + _('Pool') + u' %.1f \u2103 \n' % ds_a_on + _('Solar') + ' %.1f \u2103' % ds_a_off)
+                        log.info(NAME, datetime_string() + '\n' + _('Pool') + ' %.1f \u2103 \n' % ds_a_on + _('Solar') + ' %.1f \u2103' % ds_a_off)
                         
                     if last_text != tempText:
                         log.info(NAME, tempText)
@@ -335,13 +335,13 @@ class Sender(Thread):
                         if plugin_options['eplug']==0: # email_notifications
                             from plugins.email_notifications import try_mail
                         if plugin_options['eplug']==1: # email_notifications SSL
-                            from plugins.email_notifications_ssl import try_mail    
-                        if try_mail is not None:                        
+                            from plugins.email_notifications_ssl import try_mail
+                        if try_mail is not None:
                             try_mail(msg, msglog, attachment=None, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                     except Exception:
                         log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
-                        self._sleep(2)                         
+                        self._sleep(2)
  
             except Exception:
                 log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
@@ -374,30 +374,44 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments and deleting logs"""
 
     def GET(self):
-        global sender
-        
-        if sender is not None:
-            sender.update()
-
-        return self.plugin_render.pool_heating(plugin_options, log.events(NAME), sender.status)
+        try:
+            global sender
+            if sender is not None:
+                sender.update()
+            return self.plugin_render.pool_heating(plugin_options, log.events(NAME), sender.status)
+        except:
+            log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pool_heating -> settings_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
-        global sender
-        plugin_options.web_update(web.input())
+        try:
+            global sender
+            plugin_options.web_update(web.input())
 
-        if sender is not None:
-            sender.update()
-            log.clear(NAME)
-
-        raise web.seeother(plugin_url(settings_page), True)
-        #return self.plugin_render.pool_heating(plugin_options, log.events(NAME))  
+            if sender is not None:
+                sender.update()
+                log.clear(NAME)
+            raise web.seeother(plugin_url(settings_page), True)
+        except:
+            log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pool_heating -> settings_page POST')
+            return self.core_render.notice('/', msg) 
 
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.pool_heating_help()
+        try:
+            return self.plugin_render.pool_heating_help()
+        except:
+            log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('pool_heating -> help_page GET')
+            return self.core_render.notice('/', msg)
 
 
 class settings_json(ProtectedPage):
@@ -406,4 +420,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
