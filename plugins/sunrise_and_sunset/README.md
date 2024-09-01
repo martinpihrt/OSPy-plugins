@@ -52,3 +52,9 @@ Note: custom location and custom region can be anything you like.
 
 * Status:  
   Status window from the plugin.
+
+
+Script injection
+-----------
+Plugin adds display of sunrise and sunset times in the homepage schedule (javascript injection).
+https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/sunrise_and_sunset/static/images/sun_home.png

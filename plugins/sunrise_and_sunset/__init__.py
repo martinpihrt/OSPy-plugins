@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-__author__ = u'Martin Pihrt'
+__author__ = 'Martin Pihrt'
 
 from threading import Thread, Event, Condition
 import time
 import subprocess
 import sys
 import traceback
+import json
 
 import web
+from datetime import datetime
 from ospy.webpages import ProtectedPage
 from ospy.log import log, logEM, logEV
 from plugins import PluginOptions, plugin_url
@@ -17,9 +19,11 @@ from ospy.programs import programs
 from ospy.runonce import run_once
 from ospy.inputs import inputs
 
-from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+from ospy.webpages import pluginScripts # Inject javascript to call our API for data and modify the display (in base.html)
+from ospy.webpages import showInFooter  # Enable plugin to display readings in UI footer
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
+pluginScripts.append("sunrise_and_sunset/script/sunrise_sunset.js")
 
 NAME = 'Astro Sunrise and Sunset'
 MENU =  _('Package: Astro Sunrise and Sunset')
@@ -431,6 +435,9 @@ class StatusChecker(Thread):
         self._stop_event = Event()
 
         self.status = {}
+        self.sunrise = None
+        self.sunset = None
+        self.mycity = None
 
         self._sleep_time = 0
         self.start()
@@ -504,6 +511,7 @@ class StatusChecker(Thread):
                                 found_timezone = city.timezone
                                 found_latitude = city.latitude
                                 found_longitude = city.longitude
+                                self.mycity = city
                             else:
                                 if plugin_options['custom_location'] and plugin_options['custom_region'] and plugin_options['custom_timezone'] and plugin_options['custom_lati_longit']:
                                     ### manual location
@@ -517,6 +525,7 @@ class StatusChecker(Thread):
                                     found_timezone = city.timezone
                                     found_latitude = city.latitude
                                     found_longitude = city.longitude
+                                    self.mycity = city
                                 else:
                                     log.info(NAME, _('You must fill in all required fields (location, region, timezone/name, latitude and longitude!'))
                                     city = None
@@ -529,17 +538,14 @@ class StatusChecker(Thread):
                                 log.info(NAME, _('Latitude') + ': {}'.format(round(found_latitude, 2)))
                                 log.info(NAME, _('Longitude') + ': {}'.format(round(found_longitude, 2)))
 
-                                ### compute sun
                                 import datetime
-                                from astral.sun import sun
-
                                 today =  datetime.date.today()
                                 _day = int(today.strftime("%d"))
                                 _month = int(today.strftime("%m"))
                                 _year = int(today.strftime("%Y"))
                                 
-                                s = None
-                                s = sun(city.observer, date=datetime.date(_year, _month, _day), tzinfo=found_timezone)
+                                s = compute_sunrise_sunset()
+
                                 log.info(NAME, '_______________ ' + '{}'.format(today) + ' _______________')
                                 log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"].strftime("%H:%M:%S")))
                                 log.info(NAME, _('Sunrise') + ': {}'.format(s["sunrise"].strftime("%H:%M:%S")))
@@ -622,7 +628,7 @@ class StatusChecker(Thread):
                                     log.info(NAME, _('I run the program "{}" in time {}.').format(pgm_name, datetime_string()))
 
                 else:
-                    msg =_(u'Plugin is not enabled')
+                    msg =_('Plugin is not enabled')
 
                 
                 if plugin_options['use_footer']:
@@ -670,6 +676,75 @@ def run_command(cmd):
         log.error(NAME, _('Astral plug-in') + ':\n' + traceback.format_exc())        
 
 
+def compute_sunrise_sunset(_year = None, _month = None, _day = None):
+    from astral.sun import sun
+    import datetime
+    
+    if _year is None and _month is None and _day is None:
+        today =  datetime.date.today()
+        day = int(today.strftime("%d"))
+        month = int(today.strftime("%m"))
+        year = int(today.strftime("%Y"))
+    else:
+        day = int(_day)
+        month = int(_month)
+        year = int(_year)
+
+    city = checker.mycity
+    
+    try:
+        s = sun(city.observer, date=datetime.date(year, month, day), tzinfo=city.timezone)
+        return s
+    except:
+        return None
+
+
+def time_to_minutes(time):
+    hours, minutes, seconds = map(int, time.split(':'))
+    sum_minutes = hours * 60 + minutes
+    return sum_minutes
+
+
+def plugin_data(params):
+    # load date param from url to establish date to test
+    # ex: params date=2024-08-29
+    # not used yet
+    s = None
+
+    if hasattr(params,"date"):
+        parts = params.date.split("-")
+        if len(parts) == 3:  # are there really 3 parts? (year, month, day)
+            year = int(parts[0])
+            month = int(parts[1])
+            day = int(parts[2])
+            s = compute_sunrise_sunset(year, month, day)
+        else:
+            s = compute_sunrise_sunset()
+
+    if s is not None:
+        checker.sunrise = s["sunrise"]
+        checker.sunset = s["sunset"]
+
+        # convert to minutes-since-midnight format to return    
+        sunrise_minutes = time_to_minutes(checker.sunrise.strftime("%H:%M:%S"))
+        sunset_minutes = time_to_minutes(checker.sunset.strftime("%H:%M:%S"))
+
+        if (sunrise_minutes < 0):
+            sunrise_minutes += 24*60
+        if (sunset_minutes < 0):
+            sunset_minutes += 24*60
+
+        return {
+            "sunrise" : sunrise_minutes,
+            "sunset" : sunset_minutes
+        }
+    else:
+        return {
+            "sunrise" : 0,
+            "sunset" : 0
+        }
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -678,19 +753,31 @@ class status_page(ProtectedPage):
 
     def GET(self):
         global last_millis
-        last_millis = 0
-        checker.started.wait(4)    # Make sure we are initialized
-        return self.plugin_render.sunrise_and_sunset(plugin_options, log.events(NAME), checker.status, city_table)
+        try:
+            last_millis = 0
+            checker.started.wait(4)    # Make sure we are initialized 
+            return self.plugin_render.sunrise_and_sunset(plugin_options, log.events(NAME), checker.status, city_table)
+        except:
+            log.error(NAME, _('Astro plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('sunrise_and_sunset -> status_page GET')
+            return self.core_render.notice('/', msg)
 
     def POST(self):
         global last_millis
-        last_millis = 0
-        plugin_options.web_update(web.input())
-        if checker is not None:
-            checker.update()
-            checker.update_wait()
+        try:
+            last_millis = 0
+            plugin_options.web_update(web.input())
+            if checker is not None:
+                checker.update()
+                checker.update_wait()
+            raise web.seeother(plugin_url(status_page), True)
+        except:
+            log.error(NAME, _('Astro plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('sunrise_and_sunset -> status_page POST')
+            return self.core_render.notice('/', msg)
 
-        raise web.seeother(plugin_url(status_page), True)
 
 class setup_page(ProtectedPage):
     """Load an html setup page."""
@@ -803,4 +890,17 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.sunrise_and_sunset_help()
+        try:
+            return self.plugin_render.sunrise_and_sunset_help()
+        except:
+            log.error(NAME, _('Sunrise and sunset plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('sunrise_and_sunset -> help_page')
+            return self.core_render.notice('/', msg)
+
+class fetch_data(ProtectedPage):
+    """Provide fresh data as json to the plugin javascript through an API"""
+
+    def GET(self):
+        web.header("Content-Type", "application/json")
+        return json.dumps(plugin_data(web.input())) # ex: http://ip:port/plugins/sunrise_and_sunset/fetch_data?date=2024-08-29
