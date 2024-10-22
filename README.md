@@ -14,6 +14,7 @@ Theses I2C addresses is used in available plugins:
 * volt_temp_da 	0x48<br>
 * water_meter 	0x50, 0x51<br>
 * wind_monitor 	0x50, 0x51<br>
+* current_loop_tanks_monitor 0x48, 0x49, 0x4A, 0x4B<br> 
 
 Available plugins:
 * Usage Statistics  
@@ -72,3 +73,4 @@ Available plugins:
 * OSPy Backup
 * MQTT Home Assistant
 * Shelly Cloud Integration
+* Current Loop Tanks Monitor

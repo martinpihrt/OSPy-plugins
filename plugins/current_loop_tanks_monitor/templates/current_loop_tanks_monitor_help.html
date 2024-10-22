@@ -1,0 +1,23 @@
+$def with()
+
+$var title: $_('Current Loop Tanks Monitor - Help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Current Loop Tanks Monitor - Help')</div>
+    <p>$_('This plug-in module measures the water level in 4 tanks. A differential pressure sensor with a 4-20mA/24V current loop (e.g. TL-136) is used for the measurement. If the water level is low, this plug-in stops the irrigation system (stops the running stations in the scheduler) and sends an error e-mail.') I&sup2;C $_('default address 0x48').</p>
+    <p>$_('Address of the converter on the bus:')</p>
+    <p>$_('Adr pin connecting to:')</p>
+    <p>$_('GND = 0x48')</p>  
+    <p>$_('VDD = 0x49')</p>  
+    <p>$_('SDA = 0x4A')</p>
+    <p>$_('SCL = 0x4B')</p>
+    <p>$_('If logging is enabled, a graph with measured data will be displayed at the bottom of the screen').</p>
+    <p>$_('Visit') <a href="https://pihrt.com/elektronika/482-mereni-vysky-tl136">Martin Pihrt blog</a> $_('for more information').</p><br>
+    <p><b>$_('How to installing in tank')</b></p>
+    <a href="/plugins/current_loop_tanks_monitor/static/images/tank.png"><img src="/plugins/current_loop_tanks_monitor/static/images/tank.png" width="40%"></a></br>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('current_loop_tanks_monitor.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
