@@ -133,7 +133,7 @@ function displayMessage(message) {
 function updateWell(wellId, levelCm, maxHeightCm, maxVolume) {
     var wellElement = jQuery('#water'+wellId);
     if(wellElement.length === 0) {
-        console.error('Element nebyl nalezen.');
+        console.error('Element not found.');
         return;
     }
 
@@ -159,7 +159,7 @@ function updateWell(wellId, levelCm, maxHeightCm, maxVolume) {
 
 // Function to check the status of the switch
 function toggleWell(wellId) {
-    var toggleElement = jQuery('#toggle'+wellId);
+    var toggleElement = jQuery('#en_tank'+wellId);
     var wellElement = jQuery('#water'+wellId).parent();
 
     if(toggleElement.length === 0 || wellElement.length === 0){
@@ -167,7 +167,7 @@ function toggleWell(wellId) {
         return;
     }
 
-    var isChecked = jQuery('#toggle'+wellId).is(':checked');
+    var isChecked = jQuery('#en_tank'+wellId).is(':checked');
     if(isChecked){
         wellElement.removeClass('disabled');                            // tank is on
     } else {
@@ -175,18 +175,24 @@ function toggleWell(wellId) {
     }
 }
 
-// Measurements for all 4 tanks
 function updateAllWells(){
-    for(var i = 1; i < 5; i++){
-        var isChecked = jQuery('#toggle'+i).is(':checked');
-        if(isChecked){
-            const maxHeightCm = 400;                                    // Max water height in cm
-            const maxVolume = 1000;                                     // Max volume in the well (in liters)
-            var randomLevel = Math.floor(Math.random() * maxHeightCm);
-            updateWell(i, randomLevel, maxHeightCm, maxVolume);         // Here i = wellId
+    jQuery.getJSON("/plugins/current_loop_tanks_monitor/data_json", function(data) {
+        for(var i = 1; i < 5; i++){
+            var isChecked = jQuery('#en_tank'+i).is(':checked');
+            if(isChecked){
+                var tank = data['tank' + i];  // Dynamicky přístup k tank1, tank2, atd.
+                var name = tank.label;
+                var maxHeightCm = tank.maxHeightCm;
+                var maxVolume = tank.maxVolume;
+                var level = tank.level;
+                console.log(name, maxHeightCm, maxVolume, level);
+                updateWell(i, level, maxHeightCm, maxVolume);           // Here i = wellId
+            } else {
+                updateWell(i, 0, 0, 0); 
+            }
+            toggleWell(i);                                              // Here i = wellId
         }
-        toggleWell(i);                                                  // Here i = wellId
-    }
+    })
     displayMessage('Tank 1 is now turned off.');
 }
 
@@ -204,11 +210,12 @@ jQuery(document).ready(function(){
         <a href=$plugins.plugin_url('current_loop_tanks_monitor.help_page') class="button upload">$_('Help')</a>
         <a href=$plugins.plugin_url('current_loop_tanks_monitor.graph_page') class="button submit">$_('Graph')</a>
         <a href=$plugins.plugin_url('current_loop_tanks_monitor.log_page') class="button submit">$_('Log')</a>
+        <a href=$plugins.plugin_url('current_loop_tanks_monitor.setup_page') class="button download">$_('Setup')</a>
     </p></br>
     <div id="graph-container" class="graph-container">
     <div class="well-container">
         <div class="well-wrapper">
-        <h3>$plugin_options["label_1"]</h3>
+        <h3>$plugin_options["label1"]</h3>
         <div class="well">
             <div class="water" id="water1"></div>
             <div class="label" id="label1">
@@ -217,13 +224,13 @@ jQuery(document).ready(function(){
                 <p>$_('Volume'): <span id="volume1">0</span> $_('l')</p>
             </div>
             <label class="switch">
-                <input type="checkbox" id="toggle1" checked>
+                <input type="checkbox" id="en_tank1" checked>
                 <span class="slider"></span>
             </label>
         </div>
         </div>
         <div class="well-wrapper">
-        <h3>$plugin_options["label_2"]</h3>
+        <h3>$plugin_options["label2"]</h3>
         <div class="well">
             <div class="water" id="water2"></div>
             <div class="label" id="label2">
@@ -232,13 +239,13 @@ jQuery(document).ready(function(){
                 <p>$_('Volume'): <span id="volume2">0</span> $_('l')</p>
             </div>
             <label class="switch">
-                <input type="checkbox" id="toggle2" checked>
+                <input type="checkbox" id="en_tank2" checked>
                 <span class="slider"></span>
             </label>
         </div>
         </div>
         <div class="well-wrapper">
-        <h3>$plugin_options["label_3"]</h3>
+        <h3>$plugin_options["label3"]</h3>
         <div class="well">
             <div class="water" id="water3"></div>
             <div class="label" id="label3">
@@ -247,13 +254,13 @@ jQuery(document).ready(function(){
                 <p>$_('Volume'): <span id="volume3">0</span> $_('l')</p>
             </div>
             <label class="switch">
-                <input type="checkbox" id="toggle3" checked>
+                <input type="checkbox" id="en_tank3" checked>
                 <span class="slider"></span>
             </label>
         </div>
         </div>
         <div class="well-wrapper">
-        <h3>$plugin_options["label_4"]</h3>
+        <h3>$plugin_options["label4"]</h3>
         <div class="well">
             <div class="water" id="water4"></div>
             <div class="label" id="label4">
@@ -262,7 +269,7 @@ jQuery(document).ready(function(){
                 <p>$_('Volume'): <span id="volume4">0</span> $_('l')</p>
             </div>
             <label class="switch">
-                <input type="checkbox" id="toggle4" checked>
+                <input type="checkbox" id="en_tank4" checked>
                 <span class="slider"></span>
             </label>
         </div>

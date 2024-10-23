@@ -33,17 +33,30 @@ NAME = 'Current Loop Tanks Monitor'
 MENU =  _('Package: Current Loop Tanks Monitor')
 LINK = 'settings_page'
 
-tank_options = PluginOptions(
+plugin_options = PluginOptions(
     NAME,
     {  
-       'label_1':  _('Tank 1'),                 # label for tank 1 - 4
-       'label_2':  _('Tank 2'),
-       'label_3':  _('Tank 3'),
-       'label_4':  _('Tank 4'),
-       'en_sql_log': False,                     # logging to sql database
-       'type_log': 0,                           # 0 = show log and graph from local log file, 1 = from database
-       'dt_from' : '2024-01-01T00:00',          # for graph history (from date time ex: 2024-02-01T6:00)
-       'dt_to' : '2024-01-01T00:00',            # for graph history (to date time ex: 2024-03-17T12:00)
+        'label1':  _('Tank 1'),                  # label for tank 1 - 4
+        'label2':  _('Tank 2'),
+        'label3':  _('Tank 3'),
+        'label4':  _('Tank 4'),
+        'en_tank1': True,                        # enabling or disabling tank 1 - 4
+        'en_tank2':False,
+        'en_tank3': False,
+        'en_tank4': False,
+        'maxHeightCm1': 400,                     # maximal water height for measuring tank 1 - 4 (in cm)
+        'maxHeightCm2': 400,
+        'maxHeightCm3': 400,
+        'maxHeightCm4': 400,
+        'maxVolume1': 3000,                      # max volume in the tank 1 -4 (in liters)
+        'maxVolume2': 3000,
+        'maxVolume3': 3000,
+        'maxVolume4': 3000,
+
+        'en_sql_log': False,                     # logging to sql database
+        'type_log': 0,                           # 0 = show log and graph from local log file, 1 = from database
+        'dt_from' : '2024-01-01T00:00',          # for graph history (from date time ex: 2024-02-01T6:00)
+        'dt_to' : '2024-01-01T00:00',            # for graph history (to date time ex: 2024-03-17T12:00)
     }
 )
 
@@ -76,7 +89,7 @@ class Sender(Thread):
         tank_mon = None
 
         if tank_options['use_footer']:
-            tank_mon = showInFooter()                                       #  instantiate class to enable data in footer
+            tank_mon = showInFooter()                                       # instantiate class to enable data in footer
             tank_mon.button = "current_loop_tanks_monitor/settings"         # button redirect on footer
             tank_mon.label =  _('Tanks')                                    # label on footer
 
@@ -114,10 +127,10 @@ def stop():
 ################################################################################
 
 class settings_page(ProtectedPage):
-    """Load an html page for entering adjustments."""
+    """Load an html page for tank."""
 
     def GET(self):
-        return self.plugin_render.current_loop_tanks_monitor(tank_options)
+        return self.plugin_render.current_loop_tanks_monitor(plugin_options)
 
 
 class help_page(ProtectedPage):
@@ -126,3 +139,38 @@ class help_page(ProtectedPage):
     def GET(self):
         return self.plugin_render.current_loop_tanks_monitor_help()
 
+
+class graph_page(ProtectedPage):
+    """Load an html page for graph"""
+
+    def GET(self):
+        return self.plugin_render.current_loop_tanks_monitor_graph(plugin_options)
+
+
+class log_page(ProtectedPage):
+    """Load an html page for log"""
+
+    def GET(self):
+        return self.plugin_render.current_loop_tanks_monitor_log(plugin_options)
+
+
+class setup_page(ProtectedPage):
+    """Load an html page for setup"""
+
+    def GET(self):
+        return self.plugin_render.current_loop_tanks_monitor_setup(plugin_options)
+
+class data_json(ProtectedPage):
+    """Returns tank data in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data =  {
+            'tank1': { 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': 200 },
+            'tank2': { 'label': plugin_options['label2'], 'maxHeightCm': plugin_options['maxHeightCm2'], 'maxVolume':  plugin_options['maxVolume2'], 'level': 300 },
+            'tank3': { 'label': plugin_options['label3'], 'maxHeightCm': plugin_options['maxHeightCm3'], 'maxVolume':  plugin_options['maxVolume3'], 'level': 400 },
+            'tank4': { 'label': plugin_options['label4'], 'maxHeightCm': plugin_options['maxHeightCm4'], 'maxVolume':  plugin_options['maxVolume4'], 'level': 500 }
+            }
+
+        return json.dumps(data)
