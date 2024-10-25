@@ -149,7 +149,7 @@ function updateWell(wellId, levelCm, maxHeightCm, maxVolume) {
     var volumeElement = jQuery('#volume'+wellId);
 
     if (levelCmElement.length && levelPercentElement.length && volumeElement.length) {
-        levelCmElement.text(levelCm);
+        levelCmElement.text(Math.round(levelCm));
         levelPercentElement.text(Math.round(levelPercent));
         volumeElement.text(Math.round(volume));
     } else {
@@ -180,7 +180,7 @@ function updateAllWells(){
         for(var i = 1; i < 5; i++){
             var isChecked = jQuery('#en_tank'+i).is(':checked');
             if(isChecked){
-                var tank = data['tank' + i];  // Dynamicky přístup k tank1, tank2, atd.
+                var tank = data['tank' + i];
                 var name = tank.label;
                 var maxHeightCm = tank.maxHeightCm;
                 var maxVolume = tank.maxVolume;
@@ -192,8 +192,8 @@ function updateAllWells(){
             }
             toggleWell(i);                                              // Here i = wellId
         }
+        displayMessage(data['msg']);
     })
-    displayMessage('Tank 1 is now turned off.');
 }
 
 jQuery(document).ready(function(){

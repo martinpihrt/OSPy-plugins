@@ -45,7 +45,7 @@ plugin_options = PluginOptions(
         'maxHeightCm2': 400,
         'maxHeightCm3': 400,
         'maxHeightCm4': 400,
-        'maxVolume1': 3000,                      # max volume in the tank 1 -4 (in liters)
+        'maxVolume1': 3000,                      # max volume in the tank 1 - 4 (in liters)
         'maxVolume2': 3000,
         'maxVolume3': 3000,
         'maxVolume4': 3000,
@@ -59,13 +59,13 @@ plugin_options = PluginOptions(
         'maxVolt4': 4.096,                       # AIN3 max input value
         'i2c': 0x48,                             # I2C for ADC converter ADS1115
 
+        'use_footer': False,
         'en_sql_log': False,                     # logging to sql database
         'type_log': 0,                           # 0 = show log and graph from local log file, 1 = from database
         'dt_from' : '2024-01-01T00:00',          # for graph history (from date time ex: 2024-02-01T6:00)
         'dt_to' : '2024-01-01T00:00',            # for graph history (to date time ex: 2024-03-17T12:00)
     }
 )
-
 
 # Registers and cmd for ADS1115
 ADS1115_CONVERSION_REG = 0x00
@@ -74,6 +74,12 @@ ADS1115_CONFIG_REG = 0x01
 # Mode setting for independent channels (single-ended) AIN0 to AIN3
 CONFIG_GAIN = 0x0200  # Gain 1 (range ±4.096V)
 CONFIG_MODE = 0x0100  # Mode: single-shot
+
+tanks = {}
+tanks['levelCm']        = [0, 0, 0, 0]
+tanks['volumeLiter']    = [0, 0, 0, 0]
+tanks['levelPercent']   = [0, 0, 0, 0]
+tanks['voltage']        = [0.0, 0.0, 0.0, 0.0]
 
 
 ################################################################################
@@ -103,14 +109,15 @@ class Sender(Thread):
     def run(self):
         tank_mon = None
 
-        if tank_options['use_footer']:
+        if plugin_options['use_footer']:
             tank_mon = showInFooter()                                       # instantiate class to enable data in footer
             tank_mon.button = "current_loop_tanks_monitor/settings"         # button redirect on footer
             tank_mon.label =  _('Tanks')                                    # label on footer
 
         while not self._stop_event.is_set():
             try:
-                scan_i2c()
+                log.clear(NAME)
+                #scan_i2c() TODO to button
                 get_data()
                 self._sleep(5)
 
@@ -202,6 +209,8 @@ def read_adc(bus, channel):
 
 
 def get_data():
+    global tanks
+
     try:
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
     except FileNotFoundError:
@@ -226,14 +235,22 @@ def get_data():
             # Voltage conversion to tank level for the current channel
             min_voltage = LEVEL_DEFINITIONS[channel]["min"]
             max_voltage = LEVEL_DEFINITIONS[channel]["max"]
-            level_percentage = voltage_to_level(adc_value, min_voltage, max_voltage)
-            
-            print(f"Channel {channel}: {adc_value:.3f} V, level: {level_percentage:.1f}%")
-        except ValueError as ve:
-            print(f"Error for channel {channel}: {ve}")
-        except IOError as ioe:
-            print(f"I/O error for channel {channel}: {ioe}")
 
+            level_percentage = voltage_to_level(adc_value, min_voltage, max_voltage)
+            tanks['voltage'][channel] = adc_value
+            tanks['levelPercent'][channel] = level_percentage
+            tanks['levelCm'][channel] = level_percentage # TODO
+            
+            # TODO
+            #levelPercent = (levelCm / maxHeightCm) * 100;
+            #volume = (levelCm / maxHeightCm) * maxVolume;
+
+        except ValueError as ve:
+            log.error(NAME, _('Error for channel {}: {}').format(channel, ve))
+        except IOError as ioe:
+            log.error(NAME, _('I/O error for channel {}: {}').format(channel, ioe))
+    #log.info(NAME, _('ADC {}: {}V, level: {}%').format(channel, round(adc_value, 3), round(level_percentage, 1)))
+    log.info(NAME, '{}V {}V {}V {}V'.format(tanks['voltage'][0], tanks['voltage'][1], tanks['voltage'][2], tanks['voltage'][3]))
 
 def scan_i2c():
     bus = None
@@ -241,7 +258,7 @@ def scan_i2c():
         bus = smbus.SMBus(1)
     except FileNotFoundError:
        log.error(NAME, _('Error: the I2C bus is not available.'))
-        return
+       return
 
     devices = []
     for address in range(128):
@@ -251,7 +268,7 @@ def scan_i2c():
         except OSError:
             pass
     if devices:
-        log.error(NAME, _('I2C devices found at the following addresses:'), devices)
+        log.error(NAME, _('I2C devices found at the following addresses: {}').format(devices))
     else:
         log.error(NAME, _('No I2C device was found.'))
 
@@ -304,16 +321,21 @@ class setup_page(ProtectedPage):
 
 class data_json(ProtectedPage):
     """Returns tank data in JSON format."""
+    global tanks
 
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        data =  {
-            'tank1': { 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': 200 }, # TODO level
-            'tank2': { 'label': plugin_options['label2'], 'maxHeightCm': plugin_options['maxHeightCm2'], 'maxVolume':  plugin_options['maxVolume2'], 'level': 300 }, # TODO level
-            'tank3': { 'label': plugin_options['label3'], 'maxHeightCm': plugin_options['maxHeightCm3'], 'maxVolume':  plugin_options['maxVolume3'], 'level': 400 }, # TODO level
-            'tank4': { 'label': plugin_options['label4'], 'maxHeightCm': plugin_options['maxHeightCm4'], 'maxVolume':  plugin_options['maxVolume4'], 'level': 500 }, # TODO level
-            'msg': _('Starting') # TODO msg 
+        try:
+            data =  {
+                'tank1': { 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': tanks['levelCm'][0] },
+                'tank2': { 'label': plugin_options['label2'], 'maxHeightCm': plugin_options['maxHeightCm2'], 'maxVolume':  plugin_options['maxVolume2'], 'level': tanks['levelCm'][1] },
+                'tank3': { 'label': plugin_options['label3'], 'maxHeightCm': plugin_options['maxHeightCm3'], 'maxVolume':  plugin_options['maxVolume3'], 'level': tanks['levelCm'][2] },
+                'tank4': { 'label': plugin_options['label4'], 'maxHeightCm': plugin_options['maxHeightCm4'], 'maxVolume':  plugin_options['maxVolume4'], 'level': tanks['levelCm'][3] },
+                'msg': log.events(NAME)
             }
+        except:
+            log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+            data = {}    
 
         return json.dumps(data)
