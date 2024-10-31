@@ -49,18 +49,18 @@ plugin_options = PluginOptions(
         'maxVolume2': 3000,
         'maxVolume3': 3000,
         'maxVolume4': 3000,
-        'minVolt1': 0.0,                         # AIN0 min input value
+        'minVolt1': 0.0,                         # AIN0 min input value for 4mA
         'minVolt2': 0.0,                         # AIN0 min input value
         'minVolt3': 0.0,                         # AIN0 min input value
         'minVolt4': 0.0,                         # AIN0 min input value
-        'maxVolt1': 0.552,                       # AIN0 max input value
+        'maxVolt1': 0.552,                       # AIN0 max input value for 20mA
         'maxVolt2': 4.096,                       # AIN1 max input value
         'maxVolt3': 4.096,                       # AIN2 max input value
         'maxVolt4': 4.096,                       # AIN3 max input value
-        'i2c': 0x48,                             # I2C for ADC converter ADS1115
-
+        'i2c': 0,                                # I2C for ADC converter ADS1115 (0x48 default)
         'use_footer': False,
         'en_sql_log': False,                     # logging to sql database
+        'en_log': False,                         # logging to local json file
         'type_log': 0,                           # 0 = show log and graph from local log file, 1 = from database
         'dt_from' : '2024-01-01T00:00',          # for graph history (from date time ex: 2024-02-01T6:00)
         'dt_to' : '2024-01-01T00:00',            # for graph history (to date time ex: 2024-03-17T12:00)
@@ -80,6 +80,7 @@ tanks['levelCm']        = [0, 0, 0, 0]
 tanks['volumeLiter']    = [0, 0, 0, 0]
 tanks['levelPercent']   = [0, 0, 0, 0]
 tanks['voltage']        = [0.0, 0.0, 0.0, 0.0]
+tanks['label']          = [plugin_options['label1'], plugin_options['label2'], plugin_options['label3'], plugin_options['label4']]
 
 
 ################################################################################
@@ -87,6 +88,8 @@ tanks['voltage']        = [0.0, 0.0, 0.0, 0.0]
 ################################################################################
 
 class Sender(Thread):
+    global tanks
+
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
@@ -99,6 +102,7 @@ class Sender(Thread):
 
     def update(self):
         self._sleep_time = 0
+        tanks['label']   = [plugin_options['label1'], plugin_options['label2'], plugin_options['label3'], plugin_options['label4']]
 
     def _sleep(self, secs):
         self._sleep_time = secs
@@ -108,17 +112,33 @@ class Sender(Thread):
 
     def run(self):
         tank_mon = None
+        tempText = ""
 
         if plugin_options['use_footer']:
-            tank_mon = showInFooter()                                       # instantiate class to enable data in footer
-            tank_mon.button = "current_loop_tanks_monitor/settings"         # button redirect on footer
-            tank_mon.label =  _('Tanks')                                    # label on footer
+            tank_mon = showInFooter()                                           # instantiate class to enable data in footer
+            tank_mon.button = "current_loop_tanks_monitor/settings"             # button redirect on footer
+            tank_mon.label =  _('Tanks')                                        # label on footer
 
         while not self._stop_event.is_set():
             try:
                 log.clear(NAME)
-                #scan_i2c() TODO to button
+                
+#                scan_i2c()
                 get_data()
+
+                if plugin_options['use_footer']:
+                    if tank_mon is not None:  
+                        tempText = '{} {} %, {} {} %, {} {} %, {} {} %,'.format(
+                            tanks['label'][0],
+                            tanks['levelPercent'][0],
+                            tanks['label'][1],
+                            tanks['levelPercent'][1],
+                            tanks['label'][2],
+                            tanks['levelPercent'][2],
+                            tanks['label'][3],
+                            tanks['levelPercent'][3]
+                            )
+                        tank_mon.val = tempText.encode('utf8').decode('utf8')   # value on footer
                 self._sleep(5)
 
             except Exception:
@@ -177,24 +197,28 @@ def read_adc(bus, channel):
     elif channel == 3:
         config = 0x7000  # AIN3 single-ended
     else:
-        raise ValueError("Invalid channel")
+        raise ValueError(_('Error: Invalid channel.'))
 
     config |= CONFIG_GAIN | CONFIG_MODE | 0x8000  # Start single-conversion
     
+    
+    i2c_adr_list = [0x48, 0x49, 0x4A, 0x4B]
+    i2c_adr = i2c_adr_list[plugin_options["i2c"]]
+
     # Write config to ADS1115
     try:
-        bus.write_i2c_block_data(plugin_options["i2c"], ADS1115_CONFIG_REG, [(config >> 8) & 0xFF, config & 0xFF])
+        bus.write_i2c_block_data(i2c_adr, ADS1115_CONFIG_REG, [(config >> 8) & 0xFF, config & 0xFF])
     except IOError:
-        raise IOError("No I2C bus or ADC available.")
+        raise IOError(_('Error: No I2C bus or ADC available on address 0x48, 0x49, 0x4A, 0x4B.'))
 
     # Waiting for the conversion to complete
     time.sleep(0.2)
     
     # Reading the result from the conversion register
     try:
-        result = bus.read_i2c_block_data(plugin_options["i2c"], ADS1115_CONVERSION_REG, 2)
+        result = bus.read_i2c_block_data(i2c_adr, ADS1115_CONVERSION_REG, 2)
     except IOError:
-        raise IOError("It is not possible to read data from the AD converter.")
+        raise IOError(_('Error: It is not possible to read data from the AD converter.'))
 
     raw_adc = (result[0] << 8) | result[1]
     
@@ -226,8 +250,14 @@ def get_data():
     }
 
     # Reading all four channels
+    IO_error = False
+    VAL_error = False
     adc_values = []
+
     for channel in range(4):
+        tanks['voltage'][channel] = 0.0
+        tanks['levelPercent'][channel] = 0
+        tanks['levelCm'][channel] = 0         
         try:
             adc_value = try_io(lambda: read_adc(bus, channel))
             adc_values.append(adc_value)
@@ -237,20 +267,26 @@ def get_data():
             max_voltage = LEVEL_DEFINITIONS[channel]["max"]
 
             level_percentage = voltage_to_level(adc_value, min_voltage, max_voltage)
+            level_cm = level_to_cm(level_percentage)
+
             tanks['voltage'][channel] = adc_value
             tanks['levelPercent'][channel] = level_percentage
-            tanks['levelCm'][channel] = level_percentage # TODO
-            
-            # TODO
-            #levelPercent = (levelCm / maxHeightCm) * 100;
-            #volume = (levelCm / maxHeightCm) * maxVolume;
+            tanks['levelCm'][channel] = level_cm
 
         except ValueError as ve:
-            log.error(NAME, _('Error for channel {}: {}').format(channel, ve))
+            VAL_error = True
+            #log.error(NAME, _('Error for channel {}: {}.').format(channel, ve))
+
         except IOError as ioe:
-            log.error(NAME, _('I/O error for channel {}: {}').format(channel, ioe))
-    #log.info(NAME, _('ADC {}: {}V, level: {}%').format(channel, round(adc_value, 3), round(level_percentage, 1)))
-    log.info(NAME, '{}V {}V {}V {}V'.format(tanks['voltage'][0], tanks['voltage'][1], tanks['voltage'][2], tanks['voltage'][3]))
+            IO_error = True
+            #log.error(NAME, _('I/O error for channel {}: {}.').format(channel, ioe))
+
+    if IO_error:    
+            log.error(NAME, _('I/O error.'))
+
+    if VAL_error:
+            log.error(NAME, _('Any Error on ADC channel.'))
+           
 
 def scan_i2c():
     bus = None
@@ -258,7 +294,7 @@ def scan_i2c():
         bus = smbus.SMBus(1)
     except FileNotFoundError:
        log.error(NAME, _('Error: the I2C bus is not available.'))
-       return
+       return []
 
     devices = []
     for address in range(128):
@@ -268,9 +304,11 @@ def scan_i2c():
         except OSError:
             pass
     if devices:
-        log.error(NAME, _('I2C devices found at the following addresses: {}').format(devices))
+        log.info(NAME, _('I2C devices found at the following addresses: {}.').format(devices))
+        return devices
     else:
         log.error(NAME, _('No I2C device was found.'))
+        return []
 
 
 def voltage_to_level(voltage, min_voltage, max_voltage):
@@ -279,7 +317,14 @@ def voltage_to_level(voltage, min_voltage, max_voltage):
     elif voltage > max_voltage:
         return 100.0
     else:
-        return (voltage - min_voltage) / (max_voltage - min_voltage) * 100.0    
+        return (voltage - min_voltage) / (max_voltage - min_voltage) * 100.0
+
+
+def level_to_cm(level, maxHeightCm):
+    # Makes sure the level is in the range 0-100
+    level = max(0, min(level, 100))
+    # Calculation of the level in centimeters from the percentage
+    return (level / 100) * maxHeightCm         
 
 ################################################################################
 # Web pages:                                                                   #
@@ -290,6 +335,18 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         return self.plugin_render.current_loop_tanks_monitor(plugin_options)
+
+    def POST(self):
+        global sender
+
+        #plugin_options.web_update(web.input())
+        #if sender is not None:
+        #    sender.update()
+
+        log.clear(NAME)
+        log.info(NAME, _('Options has updated.'))
+        return 'OK'           
+#        raise web.seeother(plugin_url(settings_page), True)
 
 
 class help_page(ProtectedPage):
@@ -319,6 +376,19 @@ class setup_page(ProtectedPage):
     def GET(self):
         return self.plugin_render.current_loop_tanks_monitor_setup(plugin_options)
 
+    def POST(self):
+        global sender
+
+        plugin_options.web_update(web.input())
+        if sender is not None:
+            sender.update()
+
+        log.clear(NAME)
+        log.debug(NAME, _('Options has updated.'))
+            
+        raise web.seeother(plugin_url(setup_page), True)
+
+
 class data_json(ProtectedPage):
     """Returns tank data in JSON format."""
     global tanks
@@ -326,6 +396,8 @@ class data_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
+        data = {}
+        
         try:
             data =  {
                 'tank1': { 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': tanks['levelCm'][0] },
@@ -336,6 +408,5 @@ class data_json(ProtectedPage):
             }
         except:
             log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
-            data = {}    
 
         return json.dumps(data)

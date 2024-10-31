@@ -126,7 +126,37 @@ input:not(:checked) + .slider {
 
 <script>
 function displayMessage(message) {
-    jQuery('#messageBox').text(message);
+    // Validates that message is a string, if not, casts to a string
+    message = typeof message === 'string' ? message : String(message);
+    // Dividing the message into individual parts by dots
+    var messages = message.split('.');
+    // Converting individual parts of the message to HTML with a new line, removing empty parts
+    var formattedMessage = messages.map(function(msg) {
+        return msg.trim() ? '<p>' + msg.trim() + '.</p>' : '';
+    }).join('');
+    // Insert formatted content into #messageBox
+    jQuery('#messageBox').html(formattedMessage);
+}
+
+// Function to send switch data on toggle
+function sendSwitchData(wellId) {
+    // Get the status of the toggle switch
+    var isChecked = jQuery('#en_tank' + wellId).is(':checked');
+    var data = {};
+    data['en_tank' + wellId] = isChecked ? 'checked' : '';
+
+    // Send POST request with the data
+    jQuery.ajax({
+        url: "/plugins/current_loop_tanks_monitor/settings_page",
+        type: "POST",
+        data: data,
+        success: function(response) {
+            console.log('Switch status updated successfully:', response);
+        },
+        error: function(error) {
+            console.error('Error updating switch status:', error);
+        }
+    });
 }
 
 // Function for updating tanks
@@ -157,23 +187,6 @@ function updateWell(wellId, levelCm, maxHeightCm, maxVolume) {
     }
 }
 
-// Function to check the status of the switch
-function toggleWell(wellId) {
-    var toggleElement = jQuery('#en_tank'+wellId);
-    var wellElement = jQuery('#water'+wellId).parent();
-
-    if(toggleElement.length === 0 || wellElement.length === 0){
-        console.error('Elements for switch or tank were not found.');
-        return;
-    }
-
-    var isChecked = jQuery('#en_tank'+wellId).is(':checked');
-    if(isChecked){
-        wellElement.removeClass('disabled');                            // tank is on
-    } else {
-        wellElement.addClass('disabled');                               // tank is off
-    }
-}
 
 function updateAllWells(){
     jQuery.getJSON("/plugins/current_loop_tanks_monitor/data_json", function(data) {
@@ -188,15 +201,20 @@ function updateAllWells(){
                 console.log(name, maxHeightCm, maxVolume, level);
                 updateWell(i, level, maxHeightCm, maxVolume);           // Here i = wellId
             } else {
-                updateWell(i, 0, 0, 0); 
+                updateWell(i, 0, maxHeightCm, maxVolume); 
             }
-            toggleWell(i);                                              // Here i = wellId
         }
         displayMessage(data['msg']);
     })
 }
 
 jQuery(document).ready(function(){
+    for (var i = 1; i < 5; i++) {
+        jQuery('#en_tank' + i).change(function() {
+            var wellId = jQuery(this).attr('id').replace('en_tank', '');
+            sendSwitchData(wellId);
+        });
+    }    
     jQuery("button#cCancel").click(function(){
         window.location="/";
     });
@@ -209,8 +227,10 @@ jQuery(document).ready(function(){
     <p>
         <a href=$plugins.plugin_url('current_loop_tanks_monitor.help_page') class="button upload">$_('Help')</a>
         <a href=$plugins.plugin_url('current_loop_tanks_monitor.graph_page') class="button submit">$_('Graph')</a>
-        <a href=$plugins.plugin_url('current_loop_tanks_monitor.log_page') class="button submit">$_('Log')</a>
-        <a href=$plugins.plugin_url('current_loop_tanks_monitor.setup_page') class="button download">$_('Setup')</a>
+        $if plugin_options['en_log'] or plugin_options['en_sql_log']:
+            <a href="?show" class="button backup">$_('Show logs')</a>
+            <a href="?log_now"  class="button submit">$_('Log sample now')</a>
+        <a href=$plugins.plugin_url('current_loop_tanks_monitor.setup_page') class="button danger">$_('Setup')</a>
     </p></br>
     <div id="graph-container" class="graph-container">
     <div class="well-container">
@@ -224,7 +244,7 @@ jQuery(document).ready(function(){
                 <p>$_('Volume'): <span id="volume1">0</span> $_('l')</p>
             </div>
             <label class="switch">
-                <input type="checkbox" id="en_tank1" checked>
+                <input type="checkbox" id="en_tank1" ${'checked' if plugin_options['en_tank1'] else ''}>
                 <span class="slider"></span>
             </label>
         </div>
@@ -239,7 +259,7 @@ jQuery(document).ready(function(){
                 <p>$_('Volume'): <span id="volume2">0</span> $_('l')</p>
             </div>
             <label class="switch">
-                <input type="checkbox" id="en_tank2" checked>
+                <input type="checkbox" id="en_tank2" ${'checked' if plugin_options['en_tank2'] else ''}>
                 <span class="slider"></span>
             </label>
         </div>
@@ -254,7 +274,7 @@ jQuery(document).ready(function(){
                 <p>$_('Volume'): <span id="volume3">0</span> $_('l')</p>
             </div>
             <label class="switch">
-                <input type="checkbox" id="en_tank3" checked>
+                <input type="checkbox" id="en_tank3" ${'checked' if plugin_options['en_tank3'] else ''}>
                 <span class="slider"></span>
             </label>
         </div>
@@ -269,7 +289,7 @@ jQuery(document).ready(function(){
                 <p>$_('Volume'): <span id="volume4">0</span> $_('l')</p>
             </div>
             <label class="switch">
-                <input type="checkbox" id="en_tank4" checked>
+                <input type="checkbox" id="en_tank4" ${'checked' if plugin_options['en_tank4'] else ''}>
                 <span class="slider"></span>
             </label>
         </div>

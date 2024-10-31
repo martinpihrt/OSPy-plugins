@@ -3,19 +3,204 @@ $def with(plugin_options)
 $var title: $_('Current Loop Tanks - Setup')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
 
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d; /* Default red for 'off' */
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+/* Green color when switch is 'on' */
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
 
 <script>
-
+jQuery(document).ready(function(){
+    jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+});
 </script>
 
 <div id="plugin">
     <div class="title">$_('Current Loop Tanks - Setup')</div>
-    <div id="graph-container" class="graph-container">
-    
-    </div>
+        <form id="pluginForm" action="$plugins.plugin_url('current_loop_tanks_monitor.setup_page')" method="post">
+            <table class="optionList">
+                <tr>
+                    <th>$_('Tank Name')</th>
+                    <th>$_('Enabled')</th>
+                    <th>$_('Max Height (cm)')</th>
+                    <th>$_('Max Volume (l)')</th>
+                    <th>$_('Min Voltage')</th>
+                    <th>$_('Max Voltage')</th>
+                </tr>
+                
+                <!-- Tank 1 -->
+                <tr>
+                    <td><input name="label1" type="text" value="$plugin_options['label1']"></td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" name="en_tank1" ${'checked' if plugin_options['en_tank1'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td><input name="maxHeightCm1" type="number" value="$plugin_options['maxHeightCm1']"></td>
+                    <td><input name="maxVolume1" type="number" value="$plugin_options['maxVolume1']"></td>
+                    <td><input name="minVolt1" type="number" step="0.001" value="$plugin_options['minVolt1']"></td>
+                    <td><input name="maxVolt1" type="number" step="0.001" value="$plugin_options['maxVolt1']"></td>
+                </tr>
+
+                <!-- Tank 2 -->
+                <tr>
+                    <td><input name="label2" type="text" value="$plugin_options['label2']"></td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" name="en_tank2" ${'checked' if plugin_options['en_tank2'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td><input name="maxHeightCm2" type="number" value="$plugin_options['maxHeightCm2']"></td>
+                    <td><input name="maxVolume2" type="number" value="$plugin_options['maxVolume2']"></td>
+                    <td><input name="minVolt2" type="number" step="0.001" value="$plugin_options['minVolt2']"></td>
+                    <td><input name="maxVolt2" type="number" step="0.001" value="$plugin_options['maxVolt2']"></td>
+                </tr>
+
+                <!-- Tank 3 -->
+                <tr>
+                    <td><input name="label3" type="text" value="$plugin_options['label3']"></td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" name="en_tank3" ${'checked' if plugin_options['en_tank3'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td><input name="maxHeightCm3" type="number" value="$plugin_options['maxHeightCm3']"></td>
+                    <td><input name="maxVolume3" type="number" value="$plugin_options['maxVolume3']"></td>
+                    <td><input name="minVolt3" type="number" step="0.001" value="$plugin_options['minVolt3']"></td>
+                    <td><input name="maxVolt3" type="number" step="0.001" value="$plugin_options['maxVolt3']"></td>
+                </tr>
+
+                <!-- Tank 4 -->
+                <tr>
+                    <td><input name="label4" type="text" value="$plugin_options['label4']"></td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" name="en_tank4" ${'checked' if plugin_options['en_tank4'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td><input name="maxHeightCm4" type="number" value="$plugin_options['maxHeightCm4']"></td>
+                    <td><input name="maxVolume4" type="number" value="$plugin_options['maxVolume4']"></td>
+                    <td><input name="minVolt4" type="number" step="0.001" value="$plugin_options['minVolt4']"></td>
+                    <td><input name="maxVolt4" type="number" step="0.001" value="$plugin_options['maxVolt4']"></td>
+                </tr>
+
+                <!-- Additional Settings -->
+                <tr>
+                    <td colspan="6"><hr></td>
+                </tr>      
+                <tr>
+                    <td>$_('I2C Address')</td>
+                    <td colspan="5">
+                        <select name="i2c">
+                            <option value="0" ${'selected' if plugin_options['i2c'] == 0 else ''}>0x48</option>
+                            <option value="1" ${'selected' if plugin_options['i2c'] == 1 else ''}>0x49</option>
+                            <option value="2" ${'selected' if plugin_options['i2c'] == 2 else ''}>0x4A</option>
+                            <option value="3" ${'selected' if plugin_options['i2c'] == 3 else ''}>0x4B</option>
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>$_('Use Footer')</td>
+                    <td colspan="5">
+                        <label class="switch">
+                            <input type="checkbox" name="use_footer" ${'checked' if plugin_options['use_footer'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>$_('Show data in graph and log from')</td>
+                    <td colspan="5">
+                        <select name="type_log">
+                            <option value="0" ${'selected' if plugin_options['type_log'] == 0 else ''}>$_('Local File')</option>
+                            <option value="1" ${'selected' if plugin_options['type_log'] == 1 else ''}>$_('Database File')</option>
+                        </select>
+                    </td>
+                
+                </tr>
+
+                <tr>
+                    <td>$_('Enable SQL Logging')</td>
+                    <td colspan="5">
+                        <label class="switch">
+                            <input type="checkbox" name="en_sql_log" ${'checked' if plugin_options['en_sql_log'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>$_('Enable local logging')</td>
+                    <td colspan="5" title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_log" ${'checked' if plugin_options['en_log'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>$_('Show data in graph from')</td>
+                    <td colspan="5" title=$:{json.dumps(_('todo'), ensure_ascii=False)}><input name="dt_from" type="datetime-local" value="$plugin_options['dt_from']"></td>
+                </tr>
+
+                <tr>
+                    <td>$_('Show data in graph to')</td>
+                    <td colspan="5" title=$:{json.dumps(_('todo'), ensure_ascii=False)}><input name="dt_to" type="datetime-local" value="$plugin_options['dt_to']"></td>
+                </tr>
+            </table>
+        </form>
 </div>
 
 <div id="controls">
-    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <a href="/plugins/current_loop_tanks_monitor/settings" class="button danger">$_('Cancel')</a>
 </div>
