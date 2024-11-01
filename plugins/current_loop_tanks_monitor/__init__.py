@@ -53,7 +53,7 @@ plugin_options = PluginOptions(
         'minVolt2': 0.0,                         # AIN0 min input value
         'minVolt3': 0.0,                         # AIN0 min input value
         'minVolt4': 0.0,                         # AIN0 min input value
-        'maxVolt1': 0.552,                       # AIN0 max input value for 20mA
+        'maxVolt1': 4.096,                       # AIN0 max input value for 20mA
         'maxVolt2': 4.096,                       # AIN1 max input value
         'maxVolt3': 4.096,                       # AIN2 max input value
         'maxVolt4': 4.096,                       # AIN3 max input value
@@ -62,6 +62,8 @@ plugin_options = PluginOptions(
         'en_sql_log': False,                     # logging to sql database
         'en_log': False,                         # logging to local json file
         'type_log': 0,                           # 0 = show log and graph from local log file, 1 = from database
+        'log_interval': 1,                       # interval for log in minutes
+        'log_records': 0,                        # the number of records (0 = unlimited)
         'dt_from' : '2024-01-01T00:00',          # for graph history (from date time ex: 2024-02-01T6:00)
         'dt_to' : '2024-01-01T00:00',            # for graph history (to date time ex: 2024-03-17T12:00)
     }
@@ -326,6 +328,201 @@ def level_to_cm(level, maxHeightCm):
     # Calculation of the level in centimeters from the percentage
     return (level / 100) * maxHeightCm         
 
+
+def write_graph_log(json_data):
+    """Write data to graph json file."""
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+
+def create_default_graph():
+    """Create default graph json file."""
+
+    graph_data = [
+       {"station": _('Tank 1'), "balances": {}},
+       {"station": _('Tank 2'), "balances": {}}, 
+       {"station": _('Tank 3'), "balances": {}},
+       {"station": _('Tank 4'), "balances": {}}
+    ]
+    write_graph_log(graph_data)
+    log.info(NAME, _('Create default graph json file.'))
+
+
+def write_log(json_data):
+    """Write data to log json file."""
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+            json.dump(json_data, outfile)
+    except:
+        log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+
+
+def read_graph_log():
+    """Read graph data from json file."""
+    data = []
+
+    try:
+        with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
+            data = json.load(logf)
+    except:
+        log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+    return data
+
+
+def read_graph_sql_log():
+    """Read graph data from database file and convert it to json balance file."""
+    data = []
+
+    try:
+        sql_data = read_sql_log()
+ 
+        graph_data = [
+            {"station": _('Tank 1'), "balances": {}},
+            {"station": _('Tank 2'), "balances": {}}, 
+            {"station": _('Tank 3'), "balances": {}},
+            {"station": _('Tank 4'), "balances": {}}
+        ]   
+
+        if sql_data is not None:
+            for row in sql_data:
+                # row[0] is ID, row[1] is datetime, row[2] is tank 1, tank 2 ...
+                epoch = int(datetime.datetime.timestamp(row[1]))
+            
+                tmp0 = graph_data[0]['balances']
+                tank1 = {'total': float(row[2])}
+                tmp0.update({epoch: tank1})
+            
+                tmp1 = graph_data[1]['balances']
+                tank2 = {'total': float(row[3])}
+                tmp1.update({epoch: tank2})
+            
+                tmp2 = graph_data[2]['balances']
+                tank3 = {'total': float(row[4])}
+                tmp2.update({epoch: tank3})
+            
+                tmp3 = graph_data[3]['balances']
+                tank4 = {'total': float(row[5])}
+                tmp3.update({epoch: tank4})
+
+        data = graph_data
+
+    except:
+        log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+    return data
+
+
+def read_log():
+    """Read log data from json file."""
+    data = []
+    try:
+        with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
+            data = json.load(logf)
+    except:
+        log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+    return data
+
+
+def read_sql_log():
+    """Read log data from database file."""
+    data = None
+
+    try:
+        from plugins.database_connector import execute_db
+        sql = "SELECT * FROM `currentmonitor` ORDER BY id DESC"
+        data = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,tank1,tank2,tank3,tank4
+    except:
+        log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+        pass
+    return data
+
+
+def update_log():
+    """Update data in json files."""
+    global tanks
+
+    if plugin_options['en_log']:
+        ### Data for log ###
+        try:
+            log_data = read_log()
+        except:
+            write_log([])
+            log_data = read_log()
+
+        from datetime import datetime
+
+        read_all = get_all_values()
+
+        data = {'datetime': datetime_string()}
+        data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
+        data['time'] = str(datetime.now().strftime('%H:%M:%S'))
+        data['tank1'] = str(tanks['levelPercent'][0])
+        data['tank2'] = str(tanks['levelPercent'][1])
+        data['tank3']  = str(tanks['levelPercent'][2])
+        data['tank4']  = str(tanks['levelPercent'][3])
+      
+        log_data.insert(0, data)
+        if plugin_options['log_records'] > 0:
+            log_data = log_data[:plugin_options['log_records']]
+
+        try:
+            write_log(log_data)
+        except:
+            write_log([])
+
+        ### Data for graph log ###
+        try:
+            graph_data = read_graph_log()
+        except:
+            create_default_graph()
+            graph_data = read_graph_log()
+            log.debug(NAME, _('Create default graph json file.'))
+
+        timestamp = int(time.time())
+
+        try:
+            tmp0 = graph_data[0]['balances']
+            tank1 = {'total': float(row[2])}
+            tmp0.update({epoch: tank1})
+            
+            tmp1 = graph_data[1]['balances']
+            tank2 = {'total': float(row[3])}
+            tmp1.update({epoch: tank2})
+            
+            tmp2 = graph_data[2]['balances']
+            tank3 = {'total': float(row[4])}
+            tmp2.update({epoch: tank3})
+            
+            tmp3 = graph_data[3]['balances']
+            tank4 = {'total': float(row[5])}
+            tmp3.update({epoch: tank4})
+
+            write_graph_log(graph_data)
+            log.info(NAME, _('Saving to graph log files.'))
+        except:
+            create_default_graph()
+
+    if plugin_options['en_sql_log']:
+        try:
+            from plugins.database_connector import execute_db
+            # first create table tankmonitor if not exists
+            sql = "CREATE TABLE IF NOT EXISTS `currentmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tank1 VARCHAR(4), tank2 VARCHAR(4), tank3 VARCHAR(4), tank4 VARCHAR(4))"
+            execute_db(sql, test=False, commit=False) # not commit
+            # next insert data to table tankmonitor
+            sql = "INSERT INTO `currentmonitor` (`tank1`, `tank2`, `tank3`, `tank4`) VALUES ('%s','%s','%s','%s')" % (tanks['levelPercent'][0],tanks['levelPercent'][1],tanks['levelPercent'][2],tanks['levelPercent'][3])
+            execute_db(sql, test=False, commit=True)  # yes commit inserted data
+            log.info(NAME, _('Saving to SQL database.'))
+        except:
+            log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -338,15 +535,18 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         global sender
+        qdict  = web.input()
 
-        #plugin_options.web_update(web.input())
-        #if sender is not None:
-        #    sender.update()
+        # switch 1-4 on plugin homepage in tank (on-off for tanks)
+        for i in range(1, 4):
+            if sender is not None:
+                if 'en_tank{}'.format(i) in qdict:
+                    plugin_options.__setitem__('en_tank{}'.format(i), True)
+                else:
+                    plugin_options.__setitem__('en_tank{}'.format(i), False)
 
-        log.clear(NAME)
-        log.info(NAME, _('Options has updated.'))
+        log.debug(NAME, _('Options has updated.'))
         return 'OK'           
-#        raise web.seeother(plugin_url(settings_page), True)
 
 
 class help_page(ProtectedPage):
@@ -367,25 +567,58 @@ class log_page(ProtectedPage):
     """Load an html page for log"""
 
     def GET(self):
-        return self.plugin_render.current_loop_tanks_monitor_log(plugin_options)
+        global sender
+        qdict  = web.input()
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+
+        if sender is not None and delSQL:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `currentmonitor`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the currentmonitor table from the database.'))
+            except:
+                log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+                pass
+
+        if sender is not None and delete:
+            write_log([])
+            create_default_graph()
+            raise web.seeother(plugin_url(log_page), True)
+                
+        return self.plugin_render.current_loop_tanks_monitor_log(read_log(), read_sql_log(), plugin_options)
 
 
 class setup_page(ProtectedPage):
     """Load an html page for setup"""
 
     def GET(self):
-        return self.plugin_render.current_loop_tanks_monitor_setup(plugin_options)
+        global sender
+        qdict  = web.input()
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        
+        if sender is not None and delSQL:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `currentmonitor`"
+                execute_db(sql, test=False, commit=False)  
+                log.info(NAME, _('Deleting the currentmonitor table from the database.'))
+            except:
+                log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+                pass
+
+        return self.plugin_render.current_loop_tanks_monitor_setup(plugin_options, log.events(NAME))
 
     def POST(self):
         global sender
 
         plugin_options.web_update(web.input())
+
         if sender is not None:
             sender.update()
 
-        log.clear(NAME)
         log.debug(NAME, _('Options has updated.'))
-            
         raise web.seeother(plugin_url(setup_page), True)
 
 

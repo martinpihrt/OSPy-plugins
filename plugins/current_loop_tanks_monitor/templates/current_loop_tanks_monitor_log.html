@@ -1,11 +1,61 @@
-$def with(plugin_options)
+$def with(records, records_sql, plugin_options)
 
 $var title: $_('Current Loop Tanks Monitor - Log')
 $var page: plugins
 
 <div class="title">$_('Current Loop Tanks Monitor - Log')</div>
 <div id="plugin">
-
+    <div id="graph-container" class="graph-container">
+    <p>
+    $if plugin_options['type_log'] == 0:
+        $_('Log from local file')
+    $else:
+        $_('Log from database')
+    </p>
+    <p>
+    $if plugin_options['type_log'] == 0:
+        $_('Total number of records'): ${len(records)}
+    $if plugin_options['type_log'] == 1:
+        $if records_sql is not None:
+            $_('Total number of records'): ${len(records_sql)}
+    </p>
+    <p>
+    $if plugin_options['type_log'] == 0:
+        <a href=$plugins.plugin_url('current_loop_tanks_monitor.log_csv') class="button download">$_('Download local log')</a>
+        <a href="?delete" class="button cancel danger">$_('Delete all local logs')</a></br>
+    $if plugin_options['type_log'] == 1:
+        <a href=$plugins.plugin_url('current_loop_tanks_monitor.log_sql_csv') class="button download">$_('Download database log')</a>
+        <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a></br>
+    <a href="" class="button refresh">$_('Refresh')</a>
+    <a href=$plugins.plugin_url('current_loop_tanks_monitor.settings_page') class="button danger">$_('Cancel')</a>
+    </p></br>
+    <table class="logList">
+        <tr class="log_rec">
+            <th>$_('Date Time')</th>
+            <th>$_('Tank 1')</th>
+            <th>$_('Tank 2')</th>
+            <th>$_('Tank 3')</th>
+            <th>$_('Tank 4')</th>            
+        </tr>
+        $if plugin_options['type_log'] == 0:
+            $for interval in records:
+                <tr class="log_rec ${loop.parity}">
+                    <td align='left'>${interval["datetime"]}</td>
+                    <td align='left'>${interval["tank1"]}$_('%')</td>
+                    <td align='left'>${interval["tank2"]}$_('%')</td>
+                    <td align='left'>${interval["tank3"]}$_('%')</td>
+                    <td align='left'>${interval["tank4"]}$_('%')</td>
+                </tr>
+        $if plugin_options['type_log'] == 1 and records_sql is not None:
+            $for interval in records_sql:
+                <tr class="log_rec ${loop.parity}">
+                    <td align='left'>${interval[1]}</td>
+                    <td align='left'>${interval[2]}$_('%')</td>
+                    <td align='left'>${interval[3]}$_('%')</td>
+                    <td align='left'>${interval[4]}$_('%')</td>
+                    <td align='left'>${interval[5]}$_('%')</td>              
+    </table>
+    </div>
 </div>
 
 <div id="controls">

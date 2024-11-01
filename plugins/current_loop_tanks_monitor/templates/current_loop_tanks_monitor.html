@@ -119,7 +119,9 @@ input:not(:checked) + .slider {
     background-color: #f9f9f9;
     line-height: 30px;
     overflow: hidden;
-
+    font-size: 14px;
+    width: 90%;  
+    max-width: 800px;
 }
 </style>
 
@@ -226,11 +228,11 @@ jQuery(document).ready(function(){
     <div class="title">$_('Current Loop Tanks Monitor')</div>
     <p>
         <a href=$plugins.plugin_url('current_loop_tanks_monitor.help_page') class="button upload">$_('Help')</a>
-        <a href=$plugins.plugin_url('current_loop_tanks_monitor.graph_page') class="button submit">$_('Graph')</a>
+        <a href=$plugins.plugin_url('current_loop_tanks_monitor.graph_page') class="button submit">$_('Show graph')</a>
         $if plugin_options['en_log'] or plugin_options['en_sql_log']:
-            <a href="?show" class="button backup">$_('Show logs')</a>
+            <a href=$plugins.plugin_url('current_loop_tanks_monitor.log_page') class="button submit">$_('Show logs')</a>
             <a href="?log_now"  class="button submit">$_('Log sample now')</a>
-        <a href=$plugins.plugin_url('current_loop_tanks_monitor.setup_page') class="button danger">$_('Setup')</a>
+        <a href=$plugins.plugin_url('current_loop_tanks_monitor.settings_page') class="button danger">$_('Setup')</a>
     </p></br>
     <div id="graph-container" class="graph-container">
     <div class="well-container">
@@ -295,7 +297,7 @@ jQuery(document).ready(function(){
         </div>
         </div>
     </div>
-    <div class="message-box" id="messageBox">$_('No messages.')</div>
+    <div class="message-box" id="messageBox">$_('Please wait for loading.')</div>
     </div>
 </div>
 

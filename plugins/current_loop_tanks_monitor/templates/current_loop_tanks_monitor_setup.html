@@ -1,4 +1,4 @@
-$def with(plugin_options)
+$def with(plugin_options, events)
 
 $var title: $_('Current Loop Tanks - Setup')
 $var page: plugins
@@ -79,10 +79,10 @@ jQuery(document).ready(function(){
                             <span class="slider"></span>
                         </label>
                     </td>
-                    <td><input name="maxHeightCm1" type="number" value="$plugin_options['maxHeightCm1']"></td>
-                    <td><input name="maxVolume1" type="number" value="$plugin_options['maxVolume1']"></td>
-                    <td><input name="minVolt1" type="number" step="0.001" value="$plugin_options['minVolt1']"></td>
-                    <td><input name="maxVolt1" type="number" step="0.001" value="$plugin_options['maxVolt1']"></td>
+                    <td title=$:{json.dumps(_('Here, enter the distance from the sensor to the maximum level in centimeters.'), ensure_ascii=False)}><input name="maxHeightCm1" type="number" value="$plugin_options['maxHeightCm1']"></td>
+                    <td title=$:{json.dumps(_('Here, enter the volume of the tank at 100% volume (regardless of the shape of the tank).'), ensure_ascii=False)}><input name="maxVolume1" type="number" value="$plugin_options['maxVolume1']"></td>
+                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt1" type="number" step="0.001" value="$plugin_options['minVolt1']"></td>
+                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt1" type="number" step="0.001" value="$plugin_options['maxVolt1']"></td>
                 </tr>
 
                 <!-- Tank 2 -->
@@ -94,10 +94,10 @@ jQuery(document).ready(function(){
                             <span class="slider"></span>
                         </label>
                     </td>
-                    <td><input name="maxHeightCm2" type="number" value="$plugin_options['maxHeightCm2']"></td>
-                    <td><input name="maxVolume2" type="number" value="$plugin_options['maxVolume2']"></td>
-                    <td><input name="minVolt2" type="number" step="0.001" value="$plugin_options['minVolt2']"></td>
-                    <td><input name="maxVolt2" type="number" step="0.001" value="$plugin_options['maxVolt2']"></td>
+                    <td title=$:{json.dumps(_('Here, enter the distance from the sensor to the maximum level in centimeters.'), ensure_ascii=False)}><input name="maxHeightCm2" type="number" value="$plugin_options['maxHeightCm2']"></td>
+                    <td title=$:{json.dumps(_('Here, enter the volume of the tank at 100% volume (regardless of the shape of the tank).'), ensure_ascii=False)}><input name="maxVolume2" type="number" value="$plugin_options['maxVolume2']"></td>
+                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt2" type="number" step="0.001" value="$plugin_options['minVolt2']"></td>
+                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt2" type="number" step="0.001" value="$plugin_options['maxVolt2']"></td>
                 </tr>
 
                 <!-- Tank 3 -->
@@ -109,10 +109,10 @@ jQuery(document).ready(function(){
                             <span class="slider"></span>
                         </label>
                     </td>
-                    <td><input name="maxHeightCm3" type="number" value="$plugin_options['maxHeightCm3']"></td>
-                    <td><input name="maxVolume3" type="number" value="$plugin_options['maxVolume3']"></td>
-                    <td><input name="minVolt3" type="number" step="0.001" value="$plugin_options['minVolt3']"></td>
-                    <td><input name="maxVolt3" type="number" step="0.001" value="$plugin_options['maxVolt3']"></td>
+                    <td title=$:{json.dumps(_('Here, enter the distance from the sensor to the maximum level in centimeters.'), ensure_ascii=False)}><input name="maxHeightCm3" type="number" value="$plugin_options['maxHeightCm3']"></td>
+                    <td title=$:{json.dumps(_('Here, enter the volume of the tank at 100% volume (regardless of the shape of the tank).'), ensure_ascii=False)}><input name="maxVolume3" type="number" value="$plugin_options['maxVolume3']"></td>
+                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt3" type="number" step="0.001" value="$plugin_options['minVolt3']"></td>
+                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt3" type="number" step="0.001" value="$plugin_options['maxVolt3']"></td>
                 </tr>
 
                 <!-- Tank 4 -->
@@ -124,10 +124,10 @@ jQuery(document).ready(function(){
                             <span class="slider"></span>
                         </label>
                     </td>
-                    <td><input name="maxHeightCm4" type="number" value="$plugin_options['maxHeightCm4']"></td>
-                    <td><input name="maxVolume4" type="number" value="$plugin_options['maxVolume4']"></td>
-                    <td><input name="minVolt4" type="number" step="0.001" value="$plugin_options['minVolt4']"></td>
-                    <td><input name="maxVolt4" type="number" step="0.001" value="$plugin_options['maxVolt4']"></td>
+                    <td title=$:{json.dumps(_('Here, enter the distance from the sensor to the maximum level in centimeters.'), ensure_ascii=False)}><input name="maxHeightCm4" type="number" value="$plugin_options['maxHeightCm4']"></td>
+                    <td title=$:{json.dumps(_('Here, enter the volume of the tank at 100% volume (regardless of the shape of the tank).'), ensure_ascii=False)}><input name="maxVolume4" type="number" value="$plugin_options['maxVolume4']"></td>
+                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt4" type="number" step="0.001" value="$plugin_options['minVolt4']"></td>
+                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt4" type="number" step="0.001" value="$plugin_options['maxVolt4']"></td>
                 </tr>
 
                 <!-- Additional Settings -->
@@ -136,7 +136,7 @@ jQuery(document).ready(function(){
                 </tr>      
                 <tr>
                     <td>$_('I2C Address')</td>
-                    <td colspan="5">
+                    <td colspan="5" title=$:{json.dumps(_('Default address is 0x48.'), ensure_ascii=False)}>
                         <select name="i2c">
                             <option value="0" ${'selected' if plugin_options['i2c'] == 0 else ''}>0x48</option>
                             <option value="1" ${'selected' if plugin_options['i2c'] == 1 else ''}>0x49</option>
@@ -148,7 +148,7 @@ jQuery(document).ready(function(){
 
                 <tr>
                     <td>$_('Use Footer')</td>
-                    <td colspan="5">
+                    <td colspan="5" title=$:{json.dumps(_('Show data from plugin in footer on home page.'), ensure_ascii=False)}>
                         <label class="switch">
                             <input type="checkbox" name="use_footer" ${'checked' if plugin_options['use_footer'] else ''}>
                             <span class="slider"></span>
@@ -158,21 +158,21 @@ jQuery(document).ready(function(){
 
                 <tr>
                     <td>$_('Show data in graph and log from')</td>
-                    <td colspan="5">
+                    <td colspan="5" title=$:{json.dumps(_('Choose from where the displayed data in the log and graph will be loaded.'), ensure_ascii=False)}>
                         <select name="type_log">
                             <option value="0" ${'selected' if plugin_options['type_log'] == 0 else ''}>$_('Local File')</option>
                             <option value="1" ${'selected' if plugin_options['type_log'] == 1 else ''}>$_('Database File')</option>
                         </select>
                     </td>
-                
                 </tr>
 
                 <tr>
                     <td>$_('Enable SQL Logging')</td>
-                    <td colspan="5">
+                    <td colspan="5" title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the tankmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
                         <label class="switch">
                             <input type="checkbox" name="en_sql_log" ${'checked' if plugin_options['en_sql_log'] else ''}>
                             <span class="slider"></span>
+                            <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>
                         </label>
                     </td>
                 </tr>
@@ -188,14 +188,35 @@ jQuery(document).ready(function(){
                 </tr>
 
                 <tr>
+                    <td>$_('Maximum number of log records'):</td>
+                    <td title=$:{json.dumps(_('0 = unlimited. The maximum number of records sets the number of saved records, i.e. after exceeding the set limit, older data is overwritten.'), ensure_ascii=False)}>
+                        <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>$_('Interval for logging'):</td>
+                    <td title=$:{json.dumps(_('In minutes (Minimum is 1). The logging interval is common for both local storage and sql storage of measured data.'), ensure_ascii=False)}>
+                        <input name='log_interval' type='number' min='1' step="1" value='$plugin_options["log_interval"]'> 
+                    </td>
+                </tr>                
+
+                <tr>
                     <td>$_('Show data in graph from')</td>
-                    <td colspan="5" title=$:{json.dumps(_('todo'), ensure_ascii=False)}><input name="dt_from" type="datetime-local" value="$plugin_options['dt_from']"></td>
+                    <td colspan="5" title=$:{json.dumps(_('Datetime FROM for Filtering.'), ensure_ascii=False)}><input name="dt_from" type="datetime-local" value="$plugin_options['dt_from']"></td>
                 </tr>
 
                 <tr>
                     <td>$_('Show data in graph to')</td>
-                    <td colspan="5" title=$:{json.dumps(_('todo'), ensure_ascii=False)}><input name="dt_to" type="datetime-local" value="$plugin_options['dt_to']"></td>
+                    <td colspan="5" title=$:{json.dumps(_('Datetime TO for Filtering.'), ensure_ascii=False)}><input name="dt_to" type="datetime-local" value="$plugin_options['dt_to']"></td>
                 </tr>
+
+                <tr>
+                    <td style='text-transform: none;'>$_('Status'):</td>
+                    <td>
+                        <textarea style="font-family: monospace;" rows="1" cols="50" readonly>$'\n'.join(events)</textarea>
+                    </td>
+                </tr>                
             </table>
         </form>
 </div>
