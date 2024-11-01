@@ -3,6 +3,52 @@ $def with(plugin_options, msg)
 $var title: $_('Shelly Cloud Integration - Setup')
 $var page: plugins
 
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: red;
+        transition: .4s;
+        border-radius: 20px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: green;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(20px);
+    }
+</style>
 
 <script>
     var msg = "${msg}";
@@ -10,23 +56,22 @@ $var page: plugins
         jQuery("#cSubmit").click(function() {
             jQuery("#pluginForm").submit();
         });
-        jQuery("button#cCancel").click(function(){
-            window.location="/";
-        });
-        jQuery("#number_sensors").click(function() {
+        // Automatic sending form after change
+        jQuery("#number_sensors, select[id^='sensor_type'], select[id^='gen_type'], input[id^='use_sensor']").change(function() {
             jQuery("#pluginForm").submit();
         });
+
         jQuery('#msgHint').fadeIn(10);
         switch (msg) {
             case "none":
                 jQuery("#msgHint").text($:{json.dumps(' ', ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
-            break;
+                break;
             case "saved":
                 jQuery("#msgHint").text($:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
-            break;
+                break;
             case "error":
                 jQuery("#msgHint").text($:{json.dumps(_('Error when saving, more in debug print!'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'red');
-            break;
+                break;
         }
         jQuery('#msgHint').fadeOut(4000);
     });
@@ -34,25 +79,28 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Shelly Cloud Integration - Setup')
-    </br>
-    <span id="msgHint"></span></div>
-    <a href=$plugins.plugin_url('shelly_cloud_integrator.help_page') class="button upload">$_('Help')</a><br/>
+        </br>
+        <span id="msgHint"></span>
+    </div>
+    <a href=$plugins.plugin_url('shelly_cloud_integrator.help_page') class="button upload">$_('Help')</a>
+    <p><button id="cSubmit" class="submitButton">$_('Submit')</button>
+    <a href=$plugins.plugin_url('shelly_cloud_integrator.status_page') class="button cancel">$_('Cancel')</a></p><br/>
     <form id="pluginForm" action="$plugins.plugin_url('shelly_cloud_integrator.sensors_page')" method="post">
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Server uri'):</td>
                 <td title=$:{json.dumps(_('The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.'), ensure_ascii=False)}>
-                <input name='server_uri' type='text' size='50' value='$plugin_options["server_uri"]'>
+                    <input name='server_uri' type='text' size='50' value='$plugin_options["server_uri"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Auth key'):</td>
                 <td title=$:{json.dumps(_('This can be obtained from Shelly > User Settings > Cloud Authorization Key.'), ensure_ascii=False)}>
-                <input name='auth_key' type='text' size='50' value='$plugin_options["auth_key"]'>
+                    <input name='auth_key' type='text' size='50' value='$plugin_options["auth_key"]'>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Request intervalg'):</td>
+                <td style='text-transform: none;'>$_('Request interval'):</td>
                 <td title=$:{json.dumps(_('Shelly cloud data download recovery interval.'), ensure_ascii=False)}>
                     <input name='request_interval' type='number' min='5' value='$plugin_options["request_interval"]'>
                 </td>
@@ -60,86 +108,108 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_('Show data from plugin in footer on home page.'), ensure_ascii=False)}>
-                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input id="use_footer" name='use_footer' type='checkbox' ${"checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
         </table>
         <table>
             <tr>
                 <td style='text-transform: none;'>$_('Number of sensors'):</td>
-                <td title=$:{json.dumps(_('The number of used sensors in these plugin.'), ensure_ascii=False)}>
-                <input name='number_sensors' id='number_sensors' type='number' min="1" max="500" value='$plugin_options["number_sensors"]'></td>
+                <td title=$:{json.dumps(_('The number of used sensors in this plugin.'), ensure_ascii=False)}>
+                    <input name='number_sensors' id='number_sensors' type='number' min="1" max="500" value='$plugin_options["number_sensors"]'>
+                </td>
             </tr>
-        $for c in range(0, plugin_options['number_sensors']):
-            <table class="optionList">
-            <tr>
-            <td class="PgmNumber"><b><small>${c+1})</small></b></td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Use sensor'):</td>
-            <td title=$:{json.dumps(_('If you do not want to use the sensor but do not want to delete it in the list, uncheck the box.'), ensure_ascii=False)}>
-            <input id='use_sensor${c}' name='use_sensor${c}' type='checkbox'${" checked" if plugin_options['use_sensor'][c] else ""}>
-            </td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Label for Shelly sensor'):</td>
-            <td title=$:{json.dumps(_('Your own Shelly device name (under this name the device will be available in OSPy).'), ensure_ascii=False)}>
-            <input name='sensor_label${c}' type='text' size='50' value='$plugin_options["sensor_label"][c]'>
-            </td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Shelly sensor ID'):</td>
-            <td title=$:{json.dumps(_('This can be obtained from Shelly. Example: b0b21c1368aa'), ensure_ascii=False)}>
-            <input name='sensor_id${c}' type='text' size='50' value='$plugin_options["sensor_id"][c]'>
-            </td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Shelly sensor type'):</td>
-            <td title=$:{json.dumps(_('Depending on the type of device, data will be read (e.g. temperature and humidity, output states, etc.)'), ensure_ascii=False)}>
-            <select name="sensor_type${c}" id='sensor_type'>
-            <option value="0" ${"selected" if plugin_options["sensor_type"][c]==0 else ""}>$_('Shelly Plus HT')</option>
-            <option value="1" ${"selected" if plugin_options["sensor_type"][c]==1 else ""}>$_('Shelly Plus Plug S')</option>
-            <option value="2" ${"selected" if plugin_options["sensor_type"][c]==2 else ""}>$_('Shelly Pro 2PM')</option>
-            <option value="3" ${"selected" if plugin_options["sensor_type"][c]==3 else ""}>$_('Shelly 1PM Mini')</option>
-            <option value="4" ${"selected" if plugin_options["sensor_type"][c]==4 else ""}>$_('Shelly 2.5')</option>
-            <option value="5" ${"selected" if plugin_options["sensor_type"][c]==5 else ""}>$_('Shelly Pro 4PM')</option>
-            <option value="6" ${"selected" if plugin_options["sensor_type"][c]==6 else ""}>$_('Shelly 1 Mini')</option>
-            </select>
-            $if plugin_options["sensor_type"][c]==0:
-                <img src="/plugins/shelly_cloud_integrator/static/images/HT.webp" width="100" height="100"></img>
-            $if plugin_options["sensor_type"][c]==1:
-                $if plugin_options["gen_type"][c]==0:
-                    <img src="/plugins/shelly_cloud_integrator/static/images/plugSgen1.webp" width="100" height="100"></img>
-                $else:
-                    <img src="/plugins/shelly_cloud_integrator/static/images/plugSgen2.webp" width="100" height="100"></img>
-            $if plugin_options["sensor_type"][c]==2:
-                <img src="/plugins/shelly_cloud_integrator/static/images/pro2pm.webp" width="100" height="100"></img>
-            $if plugin_options["sensor_type"][c]==3:
-                <img src="/plugins/shelly_cloud_integrator/static/images/mini.webp" width="100" height="100"></img>
-            $if plugin_options["sensor_type"][c]==4:
-                <img src="/plugins/shelly_cloud_integrator/static/images/25.webp" width="100" height="100"></img>
-            $if plugin_options["sensor_type"][c]==5:
-                <img src="/plugins/shelly_cloud_integrator/static/images/pro4pm.webp" width="100" height="100"></img>
-            $if plugin_options["sensor_type"][c]==6:
-                <img src="/plugins/shelly_cloud_integrator/static/images/1Mini.webp" width="100" height="100"></img>
-            </td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Shelly Gen'):</td>
-            <td title=$:{json.dumps(_('Generation of Shelly devices.'), ensure_ascii=False)}>
-            <select name="gen_type${c}" id='gen_type'>
-            <option value="0" ${"selected" if plugin_options["gen_type"][c]==0 else ""}>$_('Gen 1')</option>
-            <option value="1" ${"selected" if plugin_options["gen_type"][c]==1 else ""}>$_('Gen 2+')</option>
-            </select>
-            </tr>
-            </table>
-            <p>
-            </br>
-            </p>
+            $for c in range(0, plugin_options['number_sensors']):
+                <table class="optionList">
+                    <tr>
+                        <td class="PgmNumber"><b><small>${c+1})</small></b></td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Use sensor'):</td>
+                        <td title=$:{json.dumps(_('If you do not want to use the sensor but do not want to delete it in the list, uncheck the box.'), ensure_ascii=False)}>
+                            <label class="switch">
+                                <input id='use_sensor${c}' name='use_sensor${c}' type='checkbox' ${"checked" if plugin_options['use_sensor'][c] else ""}>
+                                <span class="slider"></span>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Label for Shelly sensor'):</td>
+                        <td title=$:{json.dumps(_('Your own Shelly device name (under this name the device will be available in OSPy).'), ensure_ascii=False)}>
+                            <input name='sensor_label${c}' type='text' size='50' value='$plugin_options["sensor_label"][c]'>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Shelly sensor ID'):</td>
+                        <td title=$:{json.dumps(_('This can be obtained from Shelly. Example: b0b21c1368aa'), ensure_ascii=False)}>
+                            <input name='sensor_id${c}' type='text' size='50' value='$plugin_options["sensor_id"][c]'>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Shelly sensor type'):</td>
+                        <td title=$:{json.dumps(_('Depending on the type of device, data will be read (e.g. temperature and humidity, output states, etc.)'), ensure_ascii=False)}>
+                            <select name="sensor_type${c}" id='sensor_type${c}'>
+                                <option value="0" ${"selected" if plugin_options["sensor_type"][c]==0 else ""}>$_('Shelly Plus HT')</option>
+                                <option value="1" ${"selected" if plugin_options["sensor_type"][c]==1 else ""}>$_('Shelly Plus Plug S')</option>
+                                <option value="2" ${"selected" if plugin_options["sensor_type"][c]==2 else ""}>$_('Shelly Pro 2PM')</option>
+                                <option value="3" ${"selected" if plugin_options["sensor_type"][c]==3 else ""}>$_('Shelly 1PM Mini')</option>
+                                <option value="4" ${"selected" if plugin_options["sensor_type"][c]==4 else ""}>$_('Shelly 2.5')</option>
+                                <option value="5" ${"selected" if plugin_options["sensor_type"][c]==5 else ""}>$_('Shelly Pro 4PM')</option>
+                                <option value="6" ${"selected" if plugin_options["sensor_type"][c]==6 else ""}>$_('Shelly 1 Mini')</option>
+                                <option value="7" ${"selected" if plugin_options["sensor_type"][c]==7 else ""}>$_('Shelly 2PM Addon')</option>
+                            </select>
+                            $if plugin_options["sensor_type"][c]==0:
+                                <img src="/plugins/shelly_cloud_integrator/static/images/HT.webp" width="100" height="100"></img>
+                            $if plugin_options["sensor_type"][c]==1:
+                                $if plugin_options["gen_type"][c]==0:
+                                    <img src="/plugins/shelly_cloud_integrator/static/images/plugSgen1.webp" width="100" height="100"></img>
+                                $else:
+                                    <img src="/plugins/shelly_cloud_integrator/static/images/plugSgen2.webp" width="100" height="100"></img>
+                            $if plugin_options["sensor_type"][c]==2:
+                                <img src="/plugins/shelly_cloud_integrator/static/images/pro2pm.webp" width="100" height="100"></img>
+                            $if plugin_options["sensor_type"][c]==3:
+                                <img src="/plugins/shelly_cloud_integrator/static/images/mini.webp" width="100" height="100"></img>
+                            $if plugin_options["sensor_type"][c]==4:
+                                <img src="/plugins/shelly_cloud_integrator/static/images/25.webp" width="100" height="100"></img>
+                            $if plugin_options["sensor_type"][c]==5:
+                                <img src="/plugins/shelly_cloud_integrator/static/images/pro4pm.webp" width="100" height="100"></img>
+                            $if plugin_options["sensor_type"][c]==6:
+                                <img src="/plugins/shelly_cloud_integrator/static/images/1Mini.webp" width="100" height="100"></img>
+                            $if plugin_options["sensor_type"][c]==7:
+                                <img src="/plugins/shelly_cloud_integrator/static/images/2pmaddon.webp" width="100" height="100"></img>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Shelly Gen'):</td>
+                        <td title=$:{json.dumps(_('Generation of Shelly devices.'), ensure_ascii=False)}>
+                            <select name="gen_type${c}" id='gen_type${c}'>
+                                <option value="0" ${"selected" if plugin_options["gen_type"][c]==0 else ""}>$_('Generation 1')</option>
+                                <option value="1" ${"selected" if plugin_options["gen_type"][c]==1 else ""}>$_('Generation 2+')</option>
+                            </select>
+                        </td>
+                    </tr>
+                    $if plugin_options["sensor_type"][c]==7:
+                        <tr>
+                            <td style='text-transform: none;'>$_('Label temperature100'):</td>
+                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with ID 100.'), ensure_ascii=False)}>
+                            <input name='addons_labels_1${c}' type='text' size='30' value='${plugin_options["addons_labels_1"][c] if c < len(plugin_options["addons_labels_1"]) else ""}'>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style='text-transform: none;'>$_('Label temperature101'):</td>
+                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with ID 101.'), ensure_ascii=False)}>
+                            <input name='addons_labels_2${c}' type='text' size='30' value='${plugin_options["addons_labels_2"][c] if c < len(plugin_options["addons_labels_2"]) else ""}'>
+                            </td>
+                        </tr>
+                    $else:
+                        <input type='hidden' name='addons_labels_1${c}' value='${plugin_options["addons_labels_1"][c] if c < len(plugin_options["addons_labels_1"]) else ""}'>
+                        <input type='hidden' name='addons_labels_2${c}' value='${plugin_options["addons_labels_2"][c] if c < len(plugin_options["addons_labels_2"]) else ""}'>
+                </table>
+        </table>
+        <button id="cSubmit" class="submitButton">$_('Submit')</button>
+        <a href=$plugins.plugin_url('shelly_cloud_integrator.status_page') class="button cancel">$_('Cancel')</a>
     </form>
-</div>
-
-<div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
-    <a href=$plugins.plugin_url('shelly_cloud_integrator.status_page') class="button danger">$_('Cancel')</a><br/>
 </div>
