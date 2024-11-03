@@ -62,8 +62,8 @@ jQuery(document).ready(function(){
         <form id="pluginForm" action="$plugins.plugin_url('current_loop_tanks_monitor.setup_page')" method="post">
             <table class="optionList">
                 <tr>
-                    <td><small>$_('Tanks')</small></td>
-                    <td colspan="5"><hr></td>
+                    <td colspan="5"></td>
+                    <td><b><small>$_('Tanks')</small></b></td>
                 </tr>
 
                 <tr>
@@ -137,8 +137,8 @@ jQuery(document).ready(function(){
 
                 <!-- logging and graphing -->
                 <tr>
-                    <td><small>$_('Logs and graphs')</small></td>
                     <td colspan="5"><hr></td>
+                    <td><b><small>$_('Logs and graphs')</small></b></td>
                 </tr>      
 
                 <tr>
@@ -200,8 +200,8 @@ jQuery(document).ready(function(){
 
                 <!-- Additional Settings -->
                 <tr>
-                    <td><small>$_('Additional Settings')</small></td>
                     <td colspan="5"><hr></td>
+                    <td><b><small>$_('Additional Settings')</small></b></td>
                 </tr>
 
                 <tr>
@@ -234,15 +234,10 @@ jQuery(document).ready(function(){
 
                 <!-- events -->
                 <tr>
-                    <td><small>$_('Events')</small></td>
                     <td colspan="5"><hr></td>
+                    <td><b><small>$_('Events')</small></b></td>
                 </tr>
-
-                <tr>
-                    <td>$_('TODO')</td>
-                    <td colspan="5" title=$:{json.dumps(_('TODO'), ensure_ascii=False)}>
-                    </td>
-                </tr>                                                
+                                                
             </table>
         </form>
 </div>
