@@ -62,6 +62,11 @@ jQuery(document).ready(function(){
         <form id="pluginForm" action="$plugins.plugin_url('current_loop_tanks_monitor.setup_page')" method="post">
             <table class="optionList">
                 <tr>
+                    <td><small>$_('Tanks')</small></td>
+                    <td colspan="5"><hr></td>
+                </tr>
+
+                <tr>
                     <th>$_('Tank Name')</th>
                     <th>$_('Enabled')</th>
                     <th>$_('Max Height (cm)')</th>
@@ -130,31 +135,11 @@ jQuery(document).ready(function(){
                     <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt4" type="number" step="0.001" value="$plugin_options['maxVolt4']"></td>
                 </tr>
 
-                <!-- Additional Settings -->
+                <!-- logging and graphing -->
                 <tr>
-                    <td colspan="6"><hr></td>
+                    <td><small>$_('Logs and graphs')</small></td>
+                    <td colspan="5"><hr></td>
                 </tr>      
-                <tr>
-                    <td>$_('I2C Address')</td>
-                    <td colspan="5" title=$:{json.dumps(_('Default address is 0x48.'), ensure_ascii=False)}>
-                        <select name="i2c">
-                            <option value="0" ${'selected' if plugin_options['i2c'] == 0 else ''}>0x48</option>
-                            <option value="1" ${'selected' if plugin_options['i2c'] == 1 else ''}>0x49</option>
-                            <option value="2" ${'selected' if plugin_options['i2c'] == 2 else ''}>0x4A</option>
-                            <option value="3" ${'selected' if plugin_options['i2c'] == 3 else ''}>0x4B</option>
-                        </select>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>$_('Use Footer')</td>
-                    <td colspan="5" title=$:{json.dumps(_('Show data from plugin in footer on home page.'), ensure_ascii=False)}>
-                        <label class="switch">
-                            <input type="checkbox" name="use_footer" ${'checked' if plugin_options['use_footer'] else ''}>
-                            <span class="slider"></span>
-                        </label>
-                    </td>
-                </tr>
 
                 <tr>
                     <td>$_('Show data in graph and log from')</td>
@@ -213,12 +198,51 @@ jQuery(document).ready(function(){
                     <td colspan="5" title=$:{json.dumps(_('Datetime TO for Filtering.'), ensure_ascii=False)}><input name="dt_to" type="datetime-local" value="$plugin_options['dt_to']"></td>
                 </tr>
 
+                <!-- Additional Settings -->
+                <tr>
+                    <td><small>$_('Additional Settings')</small></td>
+                    <td colspan="5"><hr></td>
+                </tr>
+
+                <tr>
+                    <td>$_('I2C Address')</td>
+                    <td colspan="5" title=$:{json.dumps(_('Default address is 0x48.'), ensure_ascii=False)}>
+                        <select name="i2c">
+                            <option value="0" ${'selected' if plugin_options['i2c'] == 0 else ''}>0x48</option>
+                            <option value="1" ${'selected' if plugin_options['i2c'] == 1 else ''}>0x49</option>
+                            <option value="2" ${'selected' if plugin_options['i2c'] == 2 else ''}>0x4A</option>
+                            <option value="3" ${'selected' if plugin_options['i2c'] == 3 else ''}>0x4B</option>
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>$_('Use Footer')</td>
+                    <td colspan="5" title=$:{json.dumps(_('Show data from plugin in footer on home page.'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="use_footer" ${'checked' if plugin_options['use_footer'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                </tr>
                 <tr>
                     <td style='text-transform: none;'>$_('Status'):</td>
-                    <td>
-                        <textarea style="font-family: monospace;" rows="1" cols="50" readonly>$'\n'.join(events)</textarea>
+                    <td colspan="5">
+                        <textarea style="font-family: monospace;" rows="10" cols="50" readonly>$'\n'.join(events)</textarea>
                     </td>
-                </tr>                
+                </tr>
+
+                <!-- events -->
+                <tr>
+                    <td><small>$_('Events')</small></td>
+                    <td colspan="5"><hr></td>
+                </tr>
+
+                <tr>
+                    <td>$_('TODO')</td>
+                    <td colspan="5" title=$:{json.dumps(_('TODO'), ensure_ascii=False)}>
+                    </td>
+                </tr>                                                
             </table>
         </form>
 </div>
