@@ -43,8 +43,11 @@ plugin_options = PluginOptions(
          # 6=Shelly 1 Mini, 7=Shelly 2PM Addon
         'gen_type': [0, 1],                                      # 0=Gen1, 1=Gen2
         'number_sensors': 2,                                     # default 2 sensors for example
-        'addons_labels_1': [_('Label'), _('Label')],             # label for addons temperature:100
-        'addons_labels_2': [_('Label'), _('Label')],             # label for addons temperature:101
+        'addons_labels_1': [_('A')],                             # label for addons temperature:100 (DS18B20 nr1)
+        'addons_labels_2': [_('B')],                             # label for addons temperature:101
+        'addons_labels_3': [_('C')],                             # label for addons temperature:101
+        'addons_labels_4': [_('D')],                             # label for addons temperature:101
+        'addons_labels_5': [_('E')],                             # label for addons temperature:101 (DS18B20 nr5)
     }
 )
 
@@ -504,8 +507,14 @@ class Sender(Thread):
                                             name = plugin_options['sensor_label'][i]
                                             temperature100 = None
                                             temperature101 = None
+                                            temperature102 = None
+                                            temperature103 = None
+                                            temperature104 = None
                                             temp100name = ''
                                             temp101name = ''
+                                            temp102name = ''
+                                            temp103name = ''
+                                            temp104name = ''
                                             a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
                                             b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
                                             a_output = response_data["data"]["device_status"]["switch:0"]["output"]
@@ -522,6 +531,21 @@ class Sender(Thread):
                                                 temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
                                             except:
                                                 pass
+                                            try:                                                    
+                                                temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
+                                                temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
+                                            except:
+                                                pass
+                                            try:                                                    
+                                                temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
+                                                temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
+                                            except:
+                                                pass
+                                            try:                                                    
+                                                temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
+                                                temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
+                                            except:
+                                                pass                                                                                                                                                
                                             voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
                                             updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
@@ -545,12 +569,20 @@ class Sender(Thread):
                                                 if temperature100 is not None:
                                                     msg += _('{} {} °C ').format(temp100name, temperature100)
                                                     msg_info += _('{} {} °C ').format(temp100name, temperature100)
-                                                elif temperature101 is not None:
+                                                if temperature101 is not None:
                                                     msg += _('{} {} °C ').format(temp101name, temperature101)
                                                     msg_info += _('{} {} °C ').format(temp101name, temperature101)
-                                                else:
-                                                    msg += '] '
-                                                    msg_info += '] '                                                                                                      
+                                                if temperature102 is not None:
+                                                    msg += _('{} {} °C ').format(temp102name, temperature102)
+                                                    msg_info += _('{} {} °C ').format(temp102name, temperature102)
+                                                if temperature103 is not None:
+                                                    msg += _('{} {} °C ').format(temp103name, temperature103)
+                                                    msg_info += _('{} {} °C ').format(temp103name, temperature103)
+                                                if temperature104 is not None:
+                                                    msg += _('{} {} °C ').format(temp104name, temperature104)
+                                                    msg_info += _('{} {} °C ').format(temp104name, temperature104)                                                                                                        
+                                                msg += '] '
+                                                msg_info += '] '                                                                                                      
                                             else:
                                                 msg += _('[{}: -] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
@@ -559,7 +591,7 @@ class Sender(Thread):
                                                 'ip': sta_ip,
                                                 'voltage': voltage,
                                                 'battery': 0,
-                                                'temperature': [temperature100, temperature101],
+                                                'temperature': [temperature100, temperature101, temperature102, temperature103, temperature104],
                                                 'humidity': [],
                                                 'rssi': rssi,
                                                 'output': [a_output, b_output],
@@ -658,7 +690,18 @@ class sensors_page(ProtectedPage):
                     plugin_options.__setitem__('use_footer', False)
 
 
-            commands = {'sensor_type': [], 'gen_type': [], 'use_sensor': [], 'sensor_label': [], 'sensor_id': [], 'addons_labels_1': [], 'addons_labels_2': []}
+            commands = {
+                'sensor_type': [],
+                'gen_type': [],
+                'use_sensor': [],
+                'sensor_label': [],
+                'sensor_id': [],
+                'addons_labels_1': [],
+                'addons_labels_2': [],
+                'addons_labels_3': [],
+                'addons_labels_4': [],
+                'addons_labels_5': [],
+                }
 
             for i in range(0, plugin_options['number_sensors']):
                 if 'sensor_type'+str(i) in qdict:
@@ -697,6 +740,21 @@ class sensors_page(ProtectedPage):
                 else:
                     commands['addons_labels_2'].append('')
 
+                if 'addons_labels_3'+str(i) in qdict:
+                    commands['addons_labels_3'].append(qdict['addons_labels_3'+str(i)])
+                else:
+                    commands['addons_labels_3'].append('')
+
+                if 'addons_labels_4'+str(i) in qdict:
+                    commands['addons_labels_4'].append(qdict['addons_labels_4'+str(i)])
+                else:
+                    commands['addons_labels_4'].append('')
+
+                if 'addons_labels_5'+str(i) in qdict:
+                    commands['addons_labels_5'].append(qdict['addons_labels_5'+str(i)])
+                else:
+                    commands['addons_labels_5'].append('')
+
             plugin_options.__setitem__('sensor_type', commands['sensor_type'])
             plugin_options.__setitem__('gen_type', commands['gen_type'])
             plugin_options.__setitem__('use_sensor', commands['use_sensor'])
@@ -704,6 +762,9 @@ class sensors_page(ProtectedPage):
             plugin_options.__setitem__('sensor_id', commands['sensor_id'])
             plugin_options.__setitem__('addons_labels_1', commands['addons_labels_1'])
             plugin_options.__setitem__('addons_labels_2', commands['addons_labels_2'])
+            plugin_options.__setitem__('addons_labels_3', commands['addons_labels_3'])
+            plugin_options.__setitem__('addons_labels_4', commands['addons_labels_4'])
+            plugin_options.__setitem__('addons_labels_5', commands['addons_labels_5'])
 
             if sender is not None:
                 sender.update()

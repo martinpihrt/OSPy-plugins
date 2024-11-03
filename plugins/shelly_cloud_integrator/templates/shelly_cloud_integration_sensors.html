@@ -48,6 +48,24 @@ $var page: plugins
     input:checked + .slider:before {
         transform: translateX(20px);
     }
+
+    .image-link {
+        position: relative;
+        display: inline-block;
+    }
+
+    .image-link:hover::after {
+        content: _('Click for more information.');
+        position: absolute;
+        top: -10px;
+        left: 110px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        padding: 5px;
+        border-radius: 5px;
+        white-space: nowrap;
+        font-size: 12px;
+    }    
 </style>
 
 <script>
@@ -162,24 +180,42 @@ $var page: plugins
                                 <option value="7" ${"selected" if plugin_options["sensor_type"][c]==7 else ""}>$_('Shelly 2PM Addon')</option>
                             </select>
                             $if plugin_options["sensor_type"][c]==0:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-plus-h-t" class="image-link">
                                 <img src="/plugins/shelly_cloud_integrator/static/images/HT.webp" width="100" height="100"></img>
+                                </a>
                             $if plugin_options["sensor_type"][c]==1:
                                 $if plugin_options["gen_type"][c]==0:
+                                    <a href="https://kb.shelly.cloud/knowledge-base/shelly-plug-s" class="image-link">
                                     <img src="/plugins/shelly_cloud_integrator/static/images/plugSgen1.webp" width="100" height="100"></img>
+                                    </a>
                                 $else:
+                                    <a href="https://kb.shelly.cloud/knowledge-base/shelly-plus-plug-s-v2" class="image-link">
                                     <img src="/plugins/shelly_cloud_integrator/static/images/plugSgen2.webp" width="100" height="100"></img>
+                                    </a>
                             $if plugin_options["sensor_type"][c]==2:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-pro-2pm-v1" class="image-link">
                                 <img src="/plugins/shelly_cloud_integrator/static/images/pro2pm.webp" width="100" height="100"></img>
+                                </a>
                             $if plugin_options["sensor_type"][c]==3:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-1pm-mini-gen3" class="image-link">
                                 <img src="/plugins/shelly_cloud_integrator/static/images/mini.webp" width="100" height="100"></img>
+                                </a>
                             $if plugin_options["sensor_type"][c]==4:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-plus-2pm" class="image-link">
                                 <img src="/plugins/shelly_cloud_integrator/static/images/25.webp" width="100" height="100"></img>
+                                </a>
                             $if plugin_options["sensor_type"][c]==5:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-pro-4pm-v2" class="image-link">
                                 <img src="/plugins/shelly_cloud_integrator/static/images/pro4pm.webp" width="100" height="100"></img>
+                                </a>
                             $if plugin_options["sensor_type"][c]==6:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-1pm-mini-gen3" class="image-link">
                                 <img src="/plugins/shelly_cloud_integrator/static/images/1Mini.webp" width="100" height="100"></img>
+                                </a>
                             $if plugin_options["sensor_type"][c]==7:
-                                <img src="/plugins/shelly_cloud_integrator/static/images/2pmaddon.webp" width="100" height="100"></img>
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-plus-add-on" class="image-link">
+                                <img src="/plugins/shelly_cloud_integrator/static/images/2pmaddon.webp" width="100" height="100">
+                                </a>
                         </td>
                     </tr>
                     <tr>
@@ -193,20 +229,41 @@ $var page: plugins
                     </tr>
                     $if plugin_options["sensor_type"][c]==7:
                         <tr>
-                            <td style='text-transform: none;'>$_('Label temperature100'):</td>
-                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with ID 100.'), ensure_ascii=False)}>
+                            <td style='text-transform: none;'>$_('Label DS18B20 ID100'):</td>
+                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature100 ID100.'), ensure_ascii=False)}>
                             <input name='addons_labels_1${c}' type='text' size='30' value='${plugin_options["addons_labels_1"][c] if c < len(plugin_options["addons_labels_1"]) else ""}'>
                             </td>
                         </tr>
                         <tr>
-                            <td style='text-transform: none;'>$_('Label temperature101'):</td>
-                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with ID 101.'), ensure_ascii=False)}>
+                            <td style='text-transform: none;'>$_('Label DS18B20 ID101'):</td>
+                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature101 ID101.'), ensure_ascii=False)}>
                             <input name='addons_labels_2${c}' type='text' size='30' value='${plugin_options["addons_labels_2"][c] if c < len(plugin_options["addons_labels_2"]) else ""}'>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style='text-transform: none;'>$_('Label DS18B20 ID102'):</td>
+                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature102 ID102.'), ensure_ascii=False)}>
+                            <input name='addons_labels_3${c}' type='text' size='30' value='${plugin_options["addons_labels_3"][c] if c < len(plugin_options["addons_labels_3"]) else ""}'>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style='text-transform: none;'>$_('Label DS18B20 ID103'):</td>
+                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature103 ID103.'), ensure_ascii=False)}>
+                            <input name='addons_labels_4${c}' type='text' size='30' value='${plugin_options["addons_labels_4"][c] if c < len(plugin_options["addons_labels_4"]) else ""}'>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style='text-transform: none;'>$_('Label DS18B20 ID104'):</td>
+                            <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature104 ID104.'), ensure_ascii=False)}>
+                            <input name='addons_labels_5${c}' type='text' size='30' value='${plugin_options["addons_labels_5"][c] if c < len(plugin_options["addons_labels_5"]) else ""}'>
                             </td>
                         </tr>
                     $else:
                         <input type='hidden' name='addons_labels_1${c}' value='${plugin_options["addons_labels_1"][c] if c < len(plugin_options["addons_labels_1"]) else ""}'>
                         <input type='hidden' name='addons_labels_2${c}' value='${plugin_options["addons_labels_2"][c] if c < len(plugin_options["addons_labels_2"]) else ""}'>
+                        <input type='hidden' name='addons_labels_3${c}' value='${plugin_options["addons_labels_3"][c] if c < len(plugin_options["addons_labels_3"]) else ""}'>
+                        <input type='hidden' name='addons_labels_4${c}' value='${plugin_options["addons_labels_4"][c] if c < len(plugin_options["addons_labels_4"]) else ""}'>
+                        <input type='hidden' name='addons_labels_5${c}' value='${plugin_options["addons_labels_5"][c] if c < len(plugin_options["addons_labels_5"]) else ""}'>
                 </table>
         </table>
         <button id="cSubmit" class="submitButton">$_('Submit')</button>
