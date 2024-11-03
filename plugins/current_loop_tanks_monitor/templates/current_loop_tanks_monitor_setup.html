@@ -168,12 +168,14 @@ jQuery(document).ready(function(){
 
                 <tr>
                     <td>$_('Enable SQL Logging')</td>
-                    <td colspan="5" title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the tankmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
+                    <td colspan="3" title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured.'), ensure_ascii=False)}>
                         <label class="switch">
                             <input type="checkbox" name="en_sql_log" ${'checked' if plugin_options['en_sql_log'] else ''}>
                             <span class="slider"></span>
-                            <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>
                         </label>
+                    </td>
+                    <td colspan="2" title=$:{json.dumps(_('The button will delete the currentmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
+                        <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>
                     </td>
                 </tr>
 
