@@ -602,7 +602,7 @@ class graph_page(ProtectedPage):
             plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
             plugin_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
-        return self.plugin_render.current_loop_tanks_monitor_graph()
+        return self.plugin_render.current_loop_tanks_monitor_graph(plugin_options)
 
 
 class graph_json(ProtectedPage):
