@@ -246,9 +246,16 @@ def get_data():
     # Definition for the tank level for each channel (minimum and maximum voltage)
     LEVEL_DEFINITIONS = {
         0: {"min": plugin_options['minVolt1'], "max": plugin_options['maxVolt1']},  # AIN0
-        1: {"min": plugin_options['minVolt2'], "max": plugin_options['maxVolt1']},  # AIN1
-        2: {"min": plugin_options['minVolt3'], "max": plugin_options['maxVolt1']},  # AIN2
-        3: {"min": plugin_options['minVolt4'], "max": plugin_options['maxVolt1']}   # AIN3
+        1: {"min": plugin_options['minVolt2'], "max": plugin_options['maxVolt2']},  # AIN1
+        2: {"min": plugin_options['minVolt3'], "max": plugin_options['maxVolt3']},  # AIN2
+        3: {"min": plugin_options['minVolt4'], "max": plugin_options['maxVolt4']}   # AIN3
+    }
+
+    MAXHEIGHTCM_DEFINITION = {
+        0: {"max": plugin_options['maxHeightCm1']},
+        1: {"max": plugin_options['maxHeightCm2']},
+        2: {"max": plugin_options['maxHeightCm3']},
+        3: {"max": plugin_options['maxHeightCm4']},
     }
 
     # Reading all four channels
@@ -269,7 +276,7 @@ def get_data():
             max_voltage = LEVEL_DEFINITIONS[channel]["max"]
 
             level_percentage = voltage_to_level(adc_value, min_voltage, max_voltage)
-            level_cm = level_to_cm(level_percentage)
+            level_cm = level_to_cm(level_percentage, MAXHEIGHTCM_DEFINITION[channel]["max"])
 
             tanks['voltage'][channel] = adc_value
             tanks['levelPercent'][channel] = level_percentage
