@@ -145,7 +145,7 @@ function sendSwitchData(wellId) {
     // Get the status of the toggle switch
     var isChecked = jQuery('#en_tank' + wellId).is(':checked');
     var data = {};
-    data['en_tank' + wellId] = isChecked ? 'checked' : '';
+    data['en_tank' + wellId] = isChecked ? 'on' : 'off';
 
     // Send POST request with the data
     jQuery.ajax({

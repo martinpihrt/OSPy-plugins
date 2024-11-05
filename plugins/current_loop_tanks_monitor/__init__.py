@@ -560,14 +560,14 @@ class settings_page(ProtectedPage):
         if sender is not None and log_now:
             update_log()
 
-        print("___________________________", qdict)
         # switch 1-4 on plugin homepage in tank (on-off for tanks)
         for i in range(1, 4):
             if sender is not None:
                 if 'en_tank{}'.format(i) in qdict:
-                    plugin_options.__setitem__('en_tank{}'.format(i), True)
-                else:
-                    plugin_options.__setitem__('en_tank{}'.format(i), False)
+                    if qdict['en_tank{}'.format(i)] == 'on':
+                        plugin_options.__setitem__('en_tank{}'.format(i), True)
+                    if qdict['en_tank{}'.format(i)] == 'off':
+                        plugin_options.__setitem__('en_tank{}'.format(i), False)
 
         return self.plugin_render.current_loop_tanks_monitor(plugin_options)
 
