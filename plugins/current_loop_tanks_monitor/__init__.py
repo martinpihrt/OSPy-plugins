@@ -405,10 +405,10 @@ def read_graph_sql_log():
         sql_data = read_sql_log()
  
         graph_data = [
-            {"station": _('Tank 1'), "balances": {}},
-            {"station": _('Tank 2'), "balances": {}}, 
-            {"station": _('Tank 3'), "balances": {}},
-            {"station": _('Tank 4'), "balances": {}}
+            {"station": plugin_options['label1'], "balances": {}},
+            {"station": plugin_options['label2'], "balances": {}}, 
+            {"station": plugin_options['label3'], "balances": {}},
+            {"station": plugin_options['label4'], "balances": {}}
         ]   
 
         if sql_data is not None:
@@ -417,19 +417,19 @@ def read_graph_sql_log():
                 epoch = int(datetime.datetime.timestamp(row[1]))
             
                 tmp0 = graph_data[0]['balances']
-                tank1 = {'total': float(row[2])}
+                tank1 = {'total': row[2]}
                 tmp0.update({epoch: tank1})
             
                 tmp1 = graph_data[1]['balances']
-                tank2 = {'total': float(row[3])}
+                tank2 = {'total': row[3]}
                 tmp1.update({epoch: tank2})
             
                 tmp2 = graph_data[2]['balances']
-                tank3 = {'total': float(row[4])}
+                tank3 = {'total': row[4]}
                 tmp2.update({epoch: tank3})
             
                 tmp3 = graph_data[3]['balances']
-                tank4 = {'total': float(row[5])}
+                tank4 = {'total': row[5]}
                 tmp3.update({epoch: tank4})
 
         data = graph_data
@@ -485,8 +485,8 @@ def update_log():
         data['time'] = str(datetime.now().strftime('%H:%M:%S'))
         data['tank1'] = str(tanks['levelPercent'][0])
         data['tank2'] = str(tanks['levelPercent'][1])
-        data['tank3']  = str(tanks['levelPercent'][2])
-        data['tank4']  = str(tanks['levelPercent'][3])
+        data['tank3'] = str(tanks['levelPercent'][2])
+        data['tank4'] = str(tanks['levelPercent'][3])
       
         log_data.insert(0, data)
         if plugin_options['log_records'] > 0:
@@ -558,11 +558,6 @@ class settings_page(ProtectedPage):
         if sender is not None and log_now:
             update_log()
 
-        return self.plugin_render.current_loop_tanks_monitor(plugin_options)
-
-    def POST(self):
-        global sender
-        qdict  = web.input()
         print(qdict)
         # switch 1-4 on plugin homepage in tank (on-off for tanks)
         for i in range(1, 4):
@@ -572,6 +567,9 @@ class settings_page(ProtectedPage):
                 else:
                     plugin_options.__setitem__('en_tank{}'.format(i), False)
 
+        return self.plugin_render.current_loop_tanks_monitor(plugin_options)
+
+    def POST(self):
         return self.plugin_render.current_loop_tanks_monitor(plugin_options)
 
 

@@ -150,7 +150,7 @@ function sendSwitchData(wellId) {
     // Send POST request with the data
     jQuery.ajax({
         url: "/plugins/current_loop_tanks_monitor/settings_page",
-        type: "POST",
+        type: "GET",
         data: data,
         success: function(response) {
             console.log('Switch status updated successfully:', response);
