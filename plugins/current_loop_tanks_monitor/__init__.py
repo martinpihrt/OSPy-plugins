@@ -138,7 +138,7 @@ class Sender(Thread):
                     interval = (plugin_options['log_interval'] * 60000)
                     if (millis - last_millis) >= interval:
                        last_millis = millis
-                       update_log()                
+                       update_log()
 
                 if plugin_options['use_footer']:
                     if tank_mon is not None:
@@ -150,9 +150,11 @@ class Sender(Thread):
                         if plugin_options['en_tank3']: 
                             tempText += '{} {} % '.format(tanks['label'][2], tanks['levelPercent'][2])
                         if plugin_options['en_tank4']: 
-                            tempText += '{} {} % '.format(tanks['label'][3], tanks['levelPercent'][3])                        
+                            tempText += '{} {} % '.format(tanks['label'][3], tanks['levelPercent'][3])
+                        if not plugin_options['en_tank1'] and not plugin_options['en_tank2'] and not plugin_options['en_tank3'] and not plugin_options['en_tank4']:
+                            tempText = _('All tanks disabled.')
                         tank_mon.val = tempText.encode('utf8').decode('utf8')
-                
+
                 self._sleep(1)
 
             except Exception:
@@ -276,9 +278,9 @@ def get_data():
     adc_values = []
 
     for channel in range(4):
-        tanks['voltage'][channel] = 0.0
+        tanks['voltage'][channel] = 0
         tanks['levelPercent'][channel] = 0
-        tanks['levelCm'][channel] = 0         
+        tanks['levelCm'][channel] = 0
         try:
             adc_value = try_io(lambda: read_adc(bus, channel))
             adc_values.append(adc_value)
@@ -348,7 +350,7 @@ def level_to_cm(level, maxHeightCm):
     # Makes sure the level is in the range 0-100
     level = max(0, min(level, 100))
     # Calculation of the level in centimeters from the percentage
-    return (level / 100) * maxHeightCm         
+    return (level / 100) * maxHeightCm
 
 
 def write_graph_log(json_data):
@@ -365,10 +367,10 @@ def create_default_graph():
     """Create default graph json file."""
 
     graph_data = [
-       {"station": _('Tank 1'), "balances": {}},
-       {"station": _('Tank 2'), "balances": {}}, 
-       {"station": _('Tank 3'), "balances": {}},
-       {"station": _('Tank 4'), "balances": {}}
+       {"station": plugin_options['label1'], "balances": {}},
+       {"station": plugin_options['label2'], "balances": {}}, 
+       {"station": plugin_options['label3'], "balances": {}},
+       {"station": plugin_options['label4'], "balances": {}}
     ]
     write_graph_log(graph_data)
 #    log.debug(NAME, _('Create default graph json file.'))
@@ -409,7 +411,7 @@ def read_graph_sql_log():
             {"station": plugin_options['label2'], "balances": {}}, 
             {"station": plugin_options['label3'], "balances": {}},
             {"station": plugin_options['label4'], "balances": {}}
-        ]   
+        ]
 
         if sql_data is not None:
             for row in sql_data:
@@ -509,19 +511,19 @@ def update_log():
 
         try:
             tmp0 = graph_data[0]['balances']
-            tank1 = {'total': float(row[2])}
+            tank1 = {'total': row[2]}
             tmp0.update({epoch: tank1})
             
             tmp1 = graph_data[1]['balances']
-            tank2 = {'total': float(row[3])}
+            tank2 = {'total': row[3]}
             tmp1.update({epoch: tank2})
             
             tmp2 = graph_data[2]['balances']
-            tank3 = {'total': float(row[4])}
+            tank3 = {'total': row[4]}
             tmp2.update({epoch: tank3})
             
             tmp3 = graph_data[3]['balances']
-            tank4 = {'total': float(row[5])}
+            tank4 = {'total': row[5]}
             tmp3.update({epoch: tank4})
 
             write_graph_log(graph_data)
@@ -685,7 +687,7 @@ class setup_page(ProtectedPage):
         global sender
         qdict  = web.input()
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
-        
+
         if sender is not None and delSQL:
             try:
                 from plugins.database_connector import execute_db
@@ -696,7 +698,7 @@ class setup_page(ProtectedPage):
                 log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
                 pass
 
-        return self.plugin_render.current_loop_tanks_monitor_setup(plugin_options, log.events(NAME))
+        return self.plugin_render.current_loop_tanks_monitor_setup(plugin_options, log.events(NAME)) 
 
     def POST(self):
         global sender
@@ -707,7 +709,7 @@ class setup_page(ProtectedPage):
             sender.update()
 
 #        log.debug(NAME, _('Options has updated.'))
-        raise web.seeother(plugin_url(setup_page), True)
+        raise web.seeother(plugin_url(settings_page), True)
 
 
 class data_json(ProtectedPage):
@@ -718,7 +720,7 @@ class data_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data = {}
-        
+
         try:
             data =  {
                 'tank1': { 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': tanks['levelCm'][0], 'voltage': tanks['voltage'][0] },
