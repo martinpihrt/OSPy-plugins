@@ -86,8 +86,8 @@ jQuery(document).ready(function(){
                     </td>
                     <td title=$:{json.dumps(_('Here, enter the distance from the sensor to the maximum level in centimeters.'), ensure_ascii=False)}><input name="maxHeightCm1" type="number" value="$plugin_options['maxHeightCm1']"></td>
                     <td title=$:{json.dumps(_('Here, enter the volume of the tank at 100% volume (regardless of the shape of the tank).'), ensure_ascii=False)}><input name="maxVolume1" type="number" value="$plugin_options['maxVolume1']"></td>
-                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt1" type="number" step="0.001" value="$plugin_options['minVolt1']"></td>
-                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt1" type="number" step="0.001" value="$plugin_options['maxVolt1']"></td>
+                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt1" type="number" step="0.001" min="0" value="$plugin_options['minVolt1']"></td>
+                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank). 4.096V is max range for 16bit convert.'), ensure_ascii=False)}><input name="maxVolt1" type="number" step="0.001" min="0" max="4.096" value="$plugin_options['maxVolt1']"></td>
                 </tr>
 
                 <!-- Tank 2 -->
@@ -101,8 +101,8 @@ jQuery(document).ready(function(){
                     </td>
                     <td title=$:{json.dumps(_('Here, enter the distance from the sensor to the maximum level in centimeters.'), ensure_ascii=False)}><input name="maxHeightCm2" type="number" value="$plugin_options['maxHeightCm2']"></td>
                     <td title=$:{json.dumps(_('Here, enter the volume of the tank at 100% volume (regardless of the shape of the tank).'), ensure_ascii=False)}><input name="maxVolume2" type="number" value="$plugin_options['maxVolume2']"></td>
-                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt2" type="number" step="0.001" value="$plugin_options['minVolt2']"></td>
-                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt2" type="number" step="0.001" value="$plugin_options['maxVolt2']"></td>
+                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt2" type="number" step="0.001" min="0" value="$plugin_options['minVolt2']"></td>
+                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank). 4.096V is max range for 16bit convert.'), ensure_ascii=False)}><input name="maxVolt2" type="number" step="0.001" min="0" max="4.096" value="$plugin_options['maxVolt2']"></td>
                 </tr>
 
                 <!-- Tank 3 -->
@@ -116,8 +116,8 @@ jQuery(document).ready(function(){
                     </td>
                     <td title=$:{json.dumps(_('Here, enter the distance from the sensor to the maximum level in centimeters.'), ensure_ascii=False)}><input name="maxHeightCm3" type="number" value="$plugin_options['maxHeightCm3']"></td>
                     <td title=$:{json.dumps(_('Here, enter the volume of the tank at 100% volume (regardless of the shape of the tank).'), ensure_ascii=False)}><input name="maxVolume3" type="number" value="$plugin_options['maxVolume3']"></td>
-                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt3" type="number" step="0.001" value="$plugin_options['minVolt3']"></td>
-                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt3" type="number" step="0.001" value="$plugin_options['maxVolt3']"></td>
+                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt3" type="number" step="0.001" min="0" value="$plugin_options['minVolt3']"></td>
+                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank). 4.096V is max range for 16bit convert.'), ensure_ascii=False)}><input name="maxVolt3" type="number" step="0.001" min="0" max="4.096" value="$plugin_options['maxVolt3']"></td>
                 </tr>
 
                 <!-- Tank 4 -->
@@ -131,8 +131,8 @@ jQuery(document).ready(function(){
                     </td>
                     <td title=$:{json.dumps(_('Here, enter the distance from the sensor to the maximum level in centimeters.'), ensure_ascii=False)}><input name="maxHeightCm4" type="number" value="$plugin_options['maxHeightCm4']"></td>
                     <td title=$:{json.dumps(_('Here, enter the volume of the tank at 100% volume (regardless of the shape of the tank).'), ensure_ascii=False)}><input name="maxVolume4" type="number" value="$plugin_options['maxVolume4']"></td>
-                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt4" type="number" step="0.001" value="$plugin_options['minVolt4']"></td>
-                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank).'), ensure_ascii=False)}><input name="maxVolt4" type="number" step="0.001" value="$plugin_options['maxVolt4']"></td>
+                    <td title=$:{json.dumps(_('Minimum voltage from the probe on the AD converter (for 4mA ie empty tank).'), ensure_ascii=False)}><input name="minVolt4" type="number" step="0.001" min="0" value="$plugin_options['minVolt4']"></td>
+                    <td title=$:{json.dumps(_('Maximum voltage from the probe on the AD converter (for 20mA ie full tank). 4.096V is max range for 16bit convert.'), ensure_ascii=False)}><input name="maxVolt4" type="number" step="0.001" min="0" max="4.096" value="$plugin_options['maxVolt4']"></td>
                 </tr>
 
                 <!-- logging and graphing -->

@@ -162,7 +162,7 @@ function sendSwitchData(wellId) {
 }
 
 // Function for updating tanks
-function updateWell(wellId, levelCm, maxHeightCm, maxVolume) {
+function updateWell(wellId, levelCm, maxHeightCm, maxVolume, voltage){
     var wellElement = jQuery('#water'+wellId);
     if(wellElement.length === 0) {
         console.error('Element not found.');
@@ -179,11 +179,13 @@ function updateWell(wellId, levelCm, maxHeightCm, maxVolume) {
     var levelCmElement = jQuery('#levelCm'+wellId);
     var levelPercentElement = jQuery('#levelPercent'+wellId);
     var volumeElement = jQuery('#volume'+wellId);
+    var voltageElement = jQuery('#voltage'+wellId);
 
-    if (levelCmElement.length && levelPercentElement.length && volumeElement.length) {
+    if (levelCmElement.length && levelPercentElement.length && volumeElement.length && voltageElement.length){
         levelCmElement.text(Math.round(levelCm));
         levelPercentElement.text(Math.round(levelPercent));
         volumeElement.text(Math.round(volume));
+        voltageElement.text(Math.round(voltage));
     } else {
         console.error('Elements for level and volume were not found.');
     }
@@ -200,10 +202,11 @@ function updateAllWells(){
                 var maxHeightCm = tank.maxHeightCm;
                 var maxVolume = tank.maxVolume;
                 var level = tank.level;
-                console.log(name, maxHeightCm, maxVolume, level);
-                updateWell(i, level, maxHeightCm, maxVolume);           // Here i = wellId
+                var voltage = tank.voltage;
+                console.log(name, maxHeightCm, maxVolume, level, voltage);
+                updateWell(i, level, maxHeightCm, maxVolume, voltage);           // Here i = wellId
             } else {
-                updateWell(i, 0, maxHeightCm, maxVolume); 
+                updateWell(i, 0, maxHeightCm, maxVolume, 0); 
             }
         }
         displayMessage(data['msg']);
@@ -244,6 +247,7 @@ jQuery(document).ready(function(){
                 <p>$_('Level'): <span id="levelCm1">0</span> $_('cm')</p>
                 <p>$_('Level'): <span id="levelPercent1">0</span> $_('%')</p>
                 <p>$_('Volume'): <span id="volume1">0</span> $_('l')</p>
+                <p>$_('Voltage'): <span id="voltage1">0</span> $_('V')</p>
             </div>
             <label class="switch">
                 <input type="checkbox" id="en_tank1" ${'checked' if plugin_options['en_tank1'] else ''}>
@@ -259,6 +263,7 @@ jQuery(document).ready(function(){
                 <p>$_('Level'): <span id="levelCm2">0</span> $_('cm')</p>
                 <p>$_('Level'): <span id="levelPercent2">0</span> $_('%')</p>
                 <p>$_('Volume'): <span id="volume2">0</span> $_('l')</p>
+                <p>$_('Voltage'): <span id="voltage2">0</span> $_('V')</p>
             </div>
             <label class="switch">
                 <input type="checkbox" id="en_tank2" ${'checked' if plugin_options['en_tank2'] else ''}>
@@ -274,6 +279,7 @@ jQuery(document).ready(function(){
                 <p>$_('Level'): <span id="levelCm3">0</span> $_('cm')</p>
                 <p>$_('Level'): <span id="levelPercent3">0</span> $_('%')</p>
                 <p>$_('Volume'): <span id="volume3">0</span> $_('l')</p>
+                <p>$_('Voltage'): <span id="voltage3">0</span> $_('V')</p>
             </div>
             <label class="switch">
                 <input type="checkbox" id="en_tank3" ${'checked' if plugin_options['en_tank3'] else ''}>
@@ -289,6 +295,7 @@ jQuery(document).ready(function(){
                 <p>$_('Level'): <span id="levelCm4">0</span> $_('cm')</p>
                 <p>$_('Level'): <span id="levelPercent4">0</span> $_('%')</p>
                 <p>$_('Volume'): <span id="volume4">0</span> $_('l')</p>
+                <p>$_('Voltage'): <span id="voltage4">0</span> $_('V')</p>
             </div>
             <label class="switch">
                 <input type="checkbox" id="en_tank4" ${'checked' if plugin_options['en_tank4'] else ''}>
