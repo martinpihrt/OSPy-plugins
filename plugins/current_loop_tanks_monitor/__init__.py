@@ -552,24 +552,11 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         global sender
-        qdict  = web.input()                
+        qdict  = web.input()
         log_now = helpers.get_input(qdict, 'log_now', False, lambda x: True)
-        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)        
         
         if sender is not None and log_now:
             update_log()
-
-        if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
-            dt_from = qdict['dt_from']
-            dt_to = qdict['dt_to']
-            plugin_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
-            plugin_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
-
-        if sender is not None and delfilter:
-            from datetime import datetime, timedelta
-            dt_now = (datetime.today() + timedelta(days=1)).date()
-            plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
-            plugin_options.__setitem__('dt_to', "{}T00:00".format(dt_now))                    
 
         return self.plugin_render.current_loop_tanks_monitor(plugin_options)
 
@@ -585,7 +572,7 @@ class settings_page(ProtectedPage):
                 else:
                     plugin_options.__setitem__('en_tank{}'.format(i), False)
 
-        return self.plugin_render.current_loop_tanks_monitor(plugin_options)           
+        return self.plugin_render.current_loop_tanks_monitor(plugin_options)
 
 
 class help_page(ProtectedPage):
@@ -596,7 +583,30 @@ class help_page(ProtectedPage):
 
 
 class graph_page(ProtectedPage):
-    """Load an html page for graph"""
+    """Load an html page for help"""
+
+    def GET(self):
+        global sender
+        qdict  = web.input()
+        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
+        
+        if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+            dt_from = qdict['dt_from']
+            dt_to = qdict['dt_to']
+            plugin_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
+            plugin_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
+
+        if sender is not None and delfilter:
+            from datetime import datetime, timedelta
+            dt_now = (datetime.today() + timedelta(days=1)).date()
+            plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
+            plugin_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
+
+        return self.plugin_render.current_loop_tanks_monitor_graph()
+
+
+class graph_json(ProtectedPage):
+    """Load an json data for graph"""
 
     def GET(self):
         data = []
