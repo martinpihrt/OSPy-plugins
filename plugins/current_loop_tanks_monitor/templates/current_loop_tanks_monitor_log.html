@@ -32,10 +32,10 @@ $var page: plugins
     <table class="logList">
         <tr class="log_rec">
             <th>$_('Date Time')</th>
-            <th>$_('Tank 1')</th>
-            <th>$_('Tank 2')</th>
-            <th>$_('Tank 3')</th>
-            <th>$_('Tank 4')</th>            
+            <th>$plugin_options['label1']</th>
+            <th>$plugin_options['label2']</th>
+            <th>$plugin_options['label3']</th>
+            <th>$plugin_options['label4']</th>            
         </tr>
         $if plugin_options['type_log'] == 0:
             $for interval in records:
