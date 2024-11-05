@@ -713,10 +713,10 @@ class data_json(ProtectedPage):
         
         try:
             data =  {
-                'tank1': { 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': tanks['levelCm'][0] },
-                'tank2': { 'label': plugin_options['label2'], 'maxHeightCm': plugin_options['maxHeightCm2'], 'maxVolume':  plugin_options['maxVolume2'], 'level': tanks['levelCm'][1] },
-                'tank3': { 'label': plugin_options['label3'], 'maxHeightCm': plugin_options['maxHeightCm3'], 'maxVolume':  plugin_options['maxVolume3'], 'level': tanks['levelCm'][2] },
-                'tank4': { 'label': plugin_options['label4'], 'maxHeightCm': plugin_options['maxHeightCm4'], 'maxVolume':  plugin_options['maxVolume4'], 'level': tanks['levelCm'][3] },
+                'tank1': { 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': tanks['levelCm'][0], 'voltage': tanks['voltage'][0] },
+                'tank2': { 'label': plugin_options['label2'], 'maxHeightCm': plugin_options['maxHeightCm2'], 'maxVolume':  plugin_options['maxVolume2'], 'level': tanks['levelCm'][1], 'voltage': tanks['voltage'][1] },
+                'tank3': { 'label': plugin_options['label3'], 'maxHeightCm': plugin_options['maxHeightCm3'], 'maxVolume':  plugin_options['maxVolume3'], 'level': tanks['levelCm'][2], 'voltage': tanks['voltage'][2] },
+                'tank4': { 'label': plugin_options['label4'], 'maxHeightCm': plugin_options['maxHeightCm4'], 'maxVolume':  plugin_options['maxVolume4'], 'level': tanks['levelCm'][3], 'voltage': tanks['voltage'][3] },
                 'msg': log.events(NAME)
             }
         except:
