@@ -81,7 +81,7 @@ tanks = {}
 tanks['levelCm']        = [0, 0, 0, 0]
 tanks['volumeLiter']    = [0, 0, 0, 0]
 tanks['levelPercent']   = [0, 0, 0, 0]
-tanks['voltage']        = [0.0, 0.0, 0.0, 0.0]
+tanks['voltage']        = [0, 0, 0, 0]
 tanks['label']          = [plugin_options['label1'], plugin_options['label2'], plugin_options['label3'], plugin_options['label4']]
 
 
@@ -480,8 +480,6 @@ def update_log():
 
         from datetime import datetime
 
-        read_all = get_all_values()
-
         data = {'datetime': datetime_string()}
         data['date'] = str(datetime.now().strftime('%d.%m.%Y'))
         data['time'] = str(datetime.now().strftime('%H:%M:%S'))
@@ -725,3 +723,79 @@ class data_json(ProtectedPage):
             log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
 
         return json.dumps(data)
+
+
+class log_csv(ProtectedPage):  # save log file from web as csv file type
+    """Simple Log API"""
+    def GET(self):
+        data = []
+        try:
+            log_file = read_log()
+            data  = "Date/Time"
+            data += "; Date"
+            data += "; Time"
+            data += "; {} %".format(plugin_options['label1'])
+            data += "; {} %".format(plugin_options['label2'])
+            data += "; {} %".format(plugin_options['label3'])
+            data += "; {} %".format(plugin_options['label4'])
+            data += '\n'
+
+            for interval in log_file:
+                data += '; '.join([
+                    interval['datetime'],
+                    interval['date'],
+                    interval['time'],
+                    '{}'.format(interval['tank1']),
+                    '{}'.format(interval['tank2']),
+                    '{}'.format(interval['tank3']),
+                    '{}'.format(interval['tank4']),
+                ]) + '\n'
+
+        except:
+            log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'local_log_{}_.csv'.format(filestamp)
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types 
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
+        return data
+
+
+class log_sql_csv(ProtectedPage):  # save log file from database as csv file type from web
+    """Simple Log API"""
+    def GET(self):
+        data = []
+        try:
+            from plugins.database_connector import execute_db
+            sql = "SELECT * FROM `currentmonitor`"
+            log_file = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,tank1,2,3,4
+            data  = "Id"
+            data += "; Date/Time"
+            data += "; {} %".format(plugin_options['label1'])
+            data += "; {} %".format(plugin_options['label2'])
+            data += "; {} %".format(plugin_options['label3'])
+            data += "; {} %".format(plugin_options['label4'])
+            data += '\n'
+
+            for interval in log_file:
+                data += '; '.join([
+                    '{}'.format(interval[0]),
+                    '{}'.format(interval[1]),
+                    '{}'.format(interval[2]),
+                    '{}'.format(interval[3]),
+                    '{}'.format(interval[4]),
+                    '{}'.format(interval[5]),
+                ]) + '\n'
+
+        except:
+            log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+            pass
+
+        filestamp = time.strftime('%Y%m%d-%H%M%S')
+        filename = 'sql_log_{}_.csv'.format(filestamp)
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-type', 'text/csv') # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+        web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
+        return data
