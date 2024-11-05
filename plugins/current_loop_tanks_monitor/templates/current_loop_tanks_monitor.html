@@ -149,7 +149,7 @@ function sendSwitchData(wellId) {
 
     // Send POST request with the data
     jQuery.ajax({
-        url: "/plugins/current_loop_tanks_monitor/settings_page",
+        url: "/plugins/current_loop_tanks_monitor/settings",
         type: "GET",
         data: data,
         success: function(response) {
@@ -191,23 +191,17 @@ function updateWell(wellId, levelCm, maxHeightCm, maxVolume, voltage){
     }
 }
 
-
 function updateAllWells(){
     jQuery.getJSON("/plugins/current_loop_tanks_monitor/data_json", function(data) {
         for(var i = 1; i < 5; i++){
-            var isChecked = jQuery('#en_tank'+i).is(':checked');
-            if(isChecked){
-                var tank = data['tank' + i];
-                var name = tank.label;
-                var maxHeightCm = tank.maxHeightCm;
-                var maxVolume = tank.maxVolume;
-                var level = tank.level;
-                var voltage = tank.voltage;
-                console.log(name, maxHeightCm, maxVolume, level, voltage);
-                updateWell(i, level, maxHeightCm, maxVolume, voltage);           // Here i = wellId
-            } else {
-                updateWell(i, 0, maxHeightCm, maxVolume, 0); 
-            }
+            var tank = data['tank' + i];
+            var name = tank.label;
+            var maxHeightCm = tank.maxHeightCm;
+            var maxVolume = tank.maxVolume;
+            var level = tank.level;
+            var voltage = tank.voltage;
+            console.log(name, maxHeightCm, maxVolume, level, voltage);
+            updateWell(i, level, maxHeightCm, maxVolume, voltage);
         }
         displayMessage(data['msg']);
     })
@@ -223,7 +217,7 @@ jQuery(document).ready(function(){
     jQuery("button#cCancel").click(function(){
         window.location="/";
     });
-    setInterval(updateAllWells, 2000);
+    setInterval(updateAllWells, 1500);
 });
 </script>
 
