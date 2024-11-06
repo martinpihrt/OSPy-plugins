@@ -185,7 +185,7 @@ function updateWell(wellId, levelCm, maxHeightCm, maxVolume, voltage){
         levelCmElement.text(Math.round(levelCm));
         levelPercentElement.text(Math.round(levelPercent));
         volumeElement.text(Math.round(volume));
-        voltageElement.text(Math.round(voltage));
+        voltageElement.text(voltage.toFixed(3));
     } else {
         console.error('Elements for level and volume were not found.');
     }

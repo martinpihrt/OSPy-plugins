@@ -52,8 +52,11 @@ input:checked + .slider:before {
 <script>
 jQuery(document).ready(function(){
     jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
-        });
+        jQuery("#pluginForm").submit();
+    });
+    jQuery("#cSubmit2").click(function() {
+        jQuery("#pluginForm").submit();
+    });    
 });
 </script>
 
@@ -247,6 +250,6 @@ jQuery(document).ready(function(){
 </div>
 
 <div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cSubmit2" class="submit"><b>$_('Submit')</b></button>
     <a href="/plugins/current_loop_tanks_monitor/settings" class="button danger">$_('Cancel')</a>
 </div>
