@@ -191,20 +191,32 @@ function updateWell(wellId, levelCm, maxHeightCm, maxVolume, voltage){
     }
 }
 
-function updateAllWells(){
+function updateAllWells() {
     jQuery.getJSON("/plugins/current_loop_tanks_monitor/data_json", function(data) {
-        for(var i = 1; i < 5; i++){
+        for (var i = 1; i < 5; i++) {
             var tank = data['tank' + i];
-            var name = tank.label;
-            var maxHeightCm = tank.maxHeightCm;
-            var maxVolume = tank.maxVolume;
-            var level = tank.level;
-            var voltage = tank.voltage;
+
+            if (!tank) {
+                console.error('Data for tank' + i + ' are missing.');
+                continue;
+            }
+
+            var name = tank.label || 'Unknown';
+            var maxHeightCm = tank.maxHeightCm || 1;  // We set it to 1 to avoid division by zero
+            var maxVolume = tank.maxVolume || 0;
+            var level = tank.level !== undefined ? tank.level : 0;
+            var voltage = tank.voltage !== undefined ? tank.voltage : 0;
+
             console.log(name, maxHeightCm, maxVolume, level, voltage);
             updateWell(i, level, maxHeightCm, maxVolume, voltage);
         }
-        displayMessage(data['msg']);
-    })
+
+        if (data['msg']) {
+            displayMessage(data['msg']);
+        }
+    }).fail(function() {
+        console.error('Failed to load JSON data.');
+    });
 }
 
 jQuery(document).ready(function(){
@@ -217,7 +229,8 @@ jQuery(document).ready(function(){
     jQuery("button#cCancel").click(function(){
         window.location="/";
     });
-    setInterval(updateAllWells, 1500);
+    updateAllWells();
+    setInterval(updateAllWells, 3000);
 });
 </script>
 

@@ -23,8 +23,10 @@ from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 
+from ospy.webpages import pluginScripts # Inject javascript to call our API for data and modify the display (in base.html)
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
+pluginScripts.append("current_loop_tanks_monitor/script/tank.js")
 
 NAME = 'Current Loop Tanks Monitor'
 MENU =  _('Package: Current Loop Tanks Monitor')
@@ -511,24 +513,25 @@ def update_log():
 
         try:
             tmp0 = graph_data[0]['balances']
-            tank1 = {'total': row[2]}
-            tmp0.update({epoch: tank1})
+            tank1 = {'total': round(tanks['levelPercent'][0])}
+            tmp0.update({timestamp: tank1})
             
             tmp1 = graph_data[1]['balances']
-            tank2 = {'total': row[3]}
-            tmp1.update({epoch: tank2})
+            tank2 = {'total': round(tanks['levelPercent'][1])}
+            tmp1.update({timestamp: tank2})
             
             tmp2 = graph_data[2]['balances']
-            tank3 = {'total': row[4]}
-            tmp2.update({epoch: tank3})
+            tank3 = {'total': round(tanks['levelPercent'][2])}
+            tmp2.update({timestamp: tank3})
             
             tmp3 = graph_data[3]['balances']
-            tank4 = {'total': row[5]}
-            tmp3.update({epoch: tank4})
+            tank4 = {'total': round(tanks['levelPercent'][3])}
+            tmp3.update({timestamp: tank4})
 
             write_graph_log(graph_data)
 #            log.info(NAME, _('Saving to graph log files.'))
         except:
+            log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
             create_default_graph()
 
     if plugin_options['en_sql_log']:
@@ -538,7 +541,7 @@ def update_log():
             sql = "CREATE TABLE IF NOT EXISTS `currentmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tank1 VARCHAR(4), tank2 VARCHAR(4), tank3 VARCHAR(4), tank4 VARCHAR(4))"
             execute_db(sql, test=False, commit=False) # not commit
             # next insert data to table tankmonitor
-            sql = "INSERT INTO `currentmonitor` (`tank1`, `tank2`, `tank3`, `tank4`) VALUES ('%s','%s','%s','%s')" % (tanks['levelPercent'][0],tanks['levelPercent'][1],tanks['levelPercent'][2],tanks['levelPercent'][3])
+            sql = "INSERT INTO `currentmonitor` (`tank1`, `tank2`, `tank3`, `tank4`) VALUES ('%s','%s','%s','%s')" % (round(tanks['levelPercent'][0]),round(tanks['levelPercent'][1]),round(tanks['levelPercent'][2]),round(tanks['levelPercent'][3]))
             execute_db(sql, test=False, commit=True)  # yes commit inserted data
 #            log.debug(NAME, _('Saving to SQL database.'))
         except:
