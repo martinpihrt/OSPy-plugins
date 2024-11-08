@@ -295,11 +295,11 @@ def get_data():
         3: {"min": plugin_options['minVolt4'], "max": plugin_options['maxVolt4']}   # AIN3
     }
 
-    MAXHEIGHTCM_DEFINITION = {
-        0: {"max": plugin_options['maxHeightCm1']},
-        1: {"max": plugin_options['maxHeightCm2']},
-        2: {"max": plugin_options['maxHeightCm3']},
-        3: {"max": plugin_options['maxHeightCm4']},
+    MAX_DEFINITION = {
+        0: {"max": plugin_options['maxHeightCm1'], "maxVol": plugin_options['maxVolume1']},
+        1: {"max": plugin_options['maxHeightCm2'], "maxVol": plugin_options['maxVolume2']},
+        2: {"max": plugin_options['maxHeightCm3'], "maxVol": plugin_options['maxVolume3']},
+        3: {"max": plugin_options['maxHeightCm4'], "maxVol": plugin_options['maxVolume4']},
     }
 
     # Reading all four channels
@@ -308,9 +308,10 @@ def get_data():
     adc_values = []
 
     for channel in range(4):
-        tanks['voltage'][channel] = 0
-        tanks['levelPercent'][channel] = 0
-        tanks['levelCm'][channel] = 0
+#        tanks['voltage'][channel] = 0
+#        tanks['levelPercent'][channel] = 0
+#        tanks['levelCm'][channel] = 0
+#        tanks['volumeLiter'][channel] = 0
         try:
             adc_value = try_io(lambda: read_adc(bus, channel))
             adc_values.append(adc_value)
@@ -320,11 +321,13 @@ def get_data():
             max_voltage = LEVEL_DEFINITIONS[channel]["max"]
 
             level_percentage = voltage_to_level(adc_value, min_voltage, max_voltage)
-            level_cm = level_to_cm(level_percentage, MAXHEIGHTCM_DEFINITION[channel]["max"])
+            level_cm = level_to_cm(level_percentage, MAX_DEFINITION[channel]["max"])
+            volume_liter = (levelCm / MAX_DEFINITION[channel]["max"]) * MAX_DEFINITION[channel]["maxVol"];
 
             tanks['voltage'][channel] = adc_value
             tanks['levelPercent'][channel] = level_percentage
             tanks['levelCm'][channel] = level_cm
+            tanks['volumeLiter'][channel] = volume_liter
 
         except ValueError as ve:
             VAL_error = True
