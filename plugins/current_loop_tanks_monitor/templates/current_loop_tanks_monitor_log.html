@@ -35,25 +35,37 @@ $var page: plugins
             <th>$plugin_options['label1']</th>
             <th>$plugin_options['label2']</th>
             <th>$plugin_options['label3']</th>
-            <th>$plugin_options['label4']</th>            
+            <th>$plugin_options['label4']</th>
+            <th>$plugin_options['label1']</th>
+            <th>$plugin_options['label2']</th>
+            <th>$plugin_options['label3']</th>
+            <th>$plugin_options['label4']</th>                        
         </tr>
         $if plugin_options['type_log'] == 0:
             $for interval in records:
                 <tr class="log_rec ${loop.parity}">
                     <td align='left'>${interval["datetime"]}</td>
-                    <td align='left'>${interval["tank1"]}$_('%')</td>
-                    <td align='left'>${interval["tank2"]}$_('%')</td>
-                    <td align='left'>${interval["tank3"]}$_('%')</td>
-                    <td align='left'>${interval["tank4"]}$_('%')</td>
+                    <td align='left'>${interval["tank1"]} $_('%')</td>
+                    <td align='left'>${interval["tank2"]} $_('%')</td>
+                    <td align='left'>${interval["tank3"]} $_('%')</td>
+                    <td align='left'>${interval["tank4"]} $_('%')</td>
+                    <td align='left'>${interval["tank1"]} $_('l')</td>
+                    <td align='left'>${interval["tank2"]} $_('l')</td>
+                    <td align='left'>${interval["tank3"]} $_('l')</td>
+                    <td align='left'>${interval["tank4"]} $_('l')</td>                    
                 </tr>
         $if plugin_options['type_log'] == 1 and records_sql is not None:
             $for interval in records_sql:
                 <tr class="log_rec ${loop.parity}">
                     <td align='left'>${interval[1]}</td>
-                    <td align='left'>${interval[2]}$_('%')</td>
-                    <td align='left'>${interval[3]}$_('%')</td>
-                    <td align='left'>${interval[4]}$_('%')</td>
-                    <td align='left'>${interval[5]}$_('%')</td>              
+                    <td align='left'>${interval[2]} $_('%')</td>
+                    <td align='left'>${interval[3]} $_('%')</td>
+                    <td align='left'>${interval[4]} $_('%')</td>
+                    <td align='left'>${interval[5]} $_('%')</td>
+                    <td align='left'>${interval[6]} $_('l')</td>
+                    <td align='left'>${interval[7]} $_('l')</td>
+                    <td align='left'>${interval[8]} $_('l')</td>
+                    <td align='left'>${interval[9]} $_('l')</td>                                  
     </table>
     </div>
 </div>

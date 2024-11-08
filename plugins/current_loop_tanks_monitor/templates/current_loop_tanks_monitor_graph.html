@@ -21,7 +21,7 @@ function draw_graph(result) {
 
     for (var i = 0; i < result.length; i++) {
         var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th><th>" + $:{json.dumps(_('Tank 1-4 in %'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th></tr>";
+        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th><th>" + $:{json.dumps(_('Tank 1-4 % or liter'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th></tr>";
         var texts = [];
         var txt_body = "";
         var txt_footer = "</table>";
@@ -48,7 +48,7 @@ function draw_graph(result) {
             graph_text.push(texts);
         }
     }
-    var yLabels = $:{json.dumps(_('Tank 1-4 (%)'), ensure_ascii=False).encode('utf8').decode('utf8')};
+    var yLabels = $:{json.dumps(_('Tank 1-4 % or liter'), ensure_ascii=False).encode('utf8').decode('utf8')};
     return jQuery.plot("#graph-placeholder", data, {
         series: {
             lines: {

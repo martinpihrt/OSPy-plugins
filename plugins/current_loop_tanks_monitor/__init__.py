@@ -34,7 +34,7 @@ LINK = 'settings_page'
 
 plugin_options = PluginOptions(
     NAME,
-    {  
+    {   # tanks 
         'label1':  _('Tank 1'),                  # label for tank 1 - 4
         'label2':  _('Tank 2'),
         'label3':  _('Tank 3'),
@@ -61,6 +61,7 @@ plugin_options = PluginOptions(
         'maxVolt4': 4.096,                       # AIN3 max input value
         'i2c': 0,                                # I2C for ADC converter ADS1115 (0x48 default)
         'use_footer': False,
+        # logs
         'en_sql_log': False,                     # logging to sql database
         'en_log': False,                         # logging to local json file
         'type_log': 0,                           # 0 = show log and graph from local log file, 1 = from database
@@ -68,6 +69,17 @@ plugin_options = PluginOptions(
         'log_records': 0,                        # the number of records (0 = unlimited)
         'dt_from' : '2024-01-01T00:00',          # for graph history (from date time ex: 2024-02-01T6:00)
         'dt_to' : '2024-01-01T00:00',            # for graph history (to date time ex: 2024-03-17T12:00)
+        # e-mail notifications
+        'en_eml_tank1_low': False,               # send e-mail if water in tank 1 is LOW
+        'en_eml_tank2_low': False,               # send e-mail if water in tank 2 is LOW
+        'en_eml_tank3_low': False,               # send e-mail if water in tank 3 is LOW
+        'en_eml_tank4_low': False,               # send e-mail if water in tank 4 is LOW
+        'eml_tank1_low_lvl': 20,                 # min level in % tank 1 for threshold and send e-mail
+        'eml_tank2_low_lvl': 20,                 # min level in % tank 2 for threshold and send e-mail
+        'eml_tank3_low_lvl': 20,                 # min level in % tank 3 for threshold and send e-mail
+        'eml_tank4_low_lvl': 20,                 # min level in % tank 4 for threshold and send e-mail
+        'eml_hysteresis': 20,                    # hysteresis for unblocking sending e-mail
+        'eml_subject': _('Report from OSPy Current Loop Tanks Monitor plugin'),
     }
 )
 
@@ -118,6 +130,8 @@ class Sender(Thread):
         tank_mon = None
         last_millis = int(round(time.time() * 1000))                            # timer for saving log
         last_millis_2 = int(round(time.time() * 1000))                          # timer for periodic measuring
+        send_eml = [0,0,0,0]                                                    # status for sending e-mails from tank 1-4
+        eml_refresh = [1,1,1,1]                                                 # if level > eml_tank1_low_lvl + hysteresis refresh
 
         if plugin_options['use_footer']:
             tank_mon = showInFooter()                                           # instantiate class to enable data in footer
@@ -142,17 +156,31 @@ class Sender(Thread):
                        last_millis = millis
                        update_log()
 
+                ### check water level is lower than the set minimum
+                for i in range(0, 4):
+                    if plugin_options['en_eml_tank{}_low'.format(i+1)] and not send_eml[i] and eml_refresh[i]:  # is enabled sendig e-mail and refresh is true and not sending
+                        if tanks['levelPercent'][i] <= int(plugin_options['eml_tank{}_low_lvl'.format(i+1)]):   # level in tank xx < eml_tankXX_low_lvl
+                            send_eml[i] = True
+                            eml_refresh[i] = False
+
+                ### check water level is higher than the set minimum and hysteresis
+                for i in range(0, 4):
+                    if plugin_options['en_eml_tank{}_low'.format(i+1)] and not eml_refresh[i]:                                                    # is enabled sendig e-mail and not refresh
+                        if tanks['levelPercent'][i] > int(plugin_options['eml_tank{}_low_lvl'.format(i+1)] + plugin_options['eml_hysteresis']):   # level in tank xx > eml_tankXX_low_lvl + eml_hysteresis
+                            eml_refresh[i] = True                            
+
+                ### footer on homepage
                 if plugin_options['use_footer']:
                     if tank_mon is not None:
                         tempText = ""
                         if plugin_options['en_tank1']: 
-                            tempText += '{} {} % '.format(tanks['label'][0], round(tanks['levelPercent'][0]))
+                            tempText += '{} {} % {} l '.format(tanks['label'][0], round(tanks['levelPercent'][0]), round(tanks['volumeLiter'][0]))
                         if plugin_options['en_tank2']: 
-                            tempText += '{} {} % '.format(tanks['label'][1], round(tanks['levelPercent'][1]))
+                            tempText += '{} {} % {} l '.format(tanks['label'][1], round(tanks['levelPercent'][1]), round(tanks['volumeLiter'][1]))
                         if plugin_options['en_tank3']: 
-                            tempText += '{} {} % '.format(tanks['label'][2], round(tanks['levelPercent'][2]))
+                            tempText += '{} {} % {} l '.format(tanks['label'][2], round(tanks['levelPercent'][2]), round(tanks['volumeLiter'][2]))
                         if plugin_options['en_tank4']: 
-                            tempText += '{} {} % '.format(tanks['label'][3], round(tanks['levelPercent'][3]))
+                            tempText += '{} {} % {} l '.format(tanks['label'][3], round(tanks['levelPercent'][3]), round(tanks['volumeLiter'][3]))
                         if not plugin_options['en_tank1'] and not plugin_options['en_tank2'] and not plugin_options['en_tank3'] and not plugin_options['en_tank4']:
                             tempText = _('The measurement of all tanks is switched off.')
                         tank_mon.val = tempText.encode('utf8').decode('utf8')
@@ -369,10 +397,14 @@ def create_default_graph():
     """Create default graph json file."""
 
     graph_data = [
-       {"station": plugin_options['label1'], "balances": {}},
-       {"station": plugin_options['label2'], "balances": {}}, 
-       {"station": plugin_options['label3'], "balances": {}},
-       {"station": plugin_options['label4'], "balances": {}}
+        {"station": '{} %'.format(plugin_options['label1']), "balances": {}},
+        {"station": '{} %'.format(plugin_options['label2']), "balances": {}}, 
+        {"station": '{} %'.format(plugin_options['label3']), "balances": {}},
+        {"station": '{} %'.format(plugin_options['label4']), "balances": {}},
+        {"station": '{} l'.format(plugin_options['label1']), "balances": {}},
+        {"station": '{} l'.format(plugin_options['label2']), "balances": {}},
+        {"station": '{} l'.format(plugin_options['label3']), "balances": {}},
+        {"station": '{} l'.format(plugin_options['label4']), "balances": {}},                        
     ]
     write_graph_log(graph_data)
 #    log.debug(NAME, _('Create default graph json file.'))
@@ -409,31 +441,51 @@ def read_graph_sql_log():
         sql_data = read_sql_log()
  
         graph_data = [
-            {"station": plugin_options['label1'], "balances": {}},
-            {"station": plugin_options['label2'], "balances": {}}, 
-            {"station": plugin_options['label3'], "balances": {}},
-            {"station": plugin_options['label4'], "balances": {}}
+            {"station": '{} %'.format(plugin_options['label1']), "balances": {}},
+            {"station": '{} %'.format(plugin_options['label2']), "balances": {}}, 
+            {"station": '{} %'.format(plugin_options['label3']), "balances": {}},
+            {"station": '{} %'.format(plugin_options['label4']), "balances": {}},
+            {"station": '{} l'.format(plugin_options['label1']), "balances": {}},
+            {"station": '{} l'.format(plugin_options['label2']), "balances": {}},
+            {"station": '{} l'.format(plugin_options['label3']), "balances": {}},
+            {"station": '{} l'.format(plugin_options['label4']), "balances": {}},                        
         ]
 
         if sql_data is not None:
             for row in sql_data:
                 # row[0] is ID, row[1] is datetime, row[2] is tank 1, tank 2 ...
                 epoch = int(datetime.datetime.timestamp(row[1]))
-            
+
                 tmp0 = graph_data[0]['balances']
                 tank1 = {'total': row[2]}
                 tmp0.update({epoch: tank1})
-            
+
                 tmp1 = graph_data[1]['balances']
                 tank2 = {'total': row[3]}
                 tmp1.update({epoch: tank2})
-            
+
                 tmp2 = graph_data[2]['balances']
                 tank3 = {'total': row[4]}
                 tmp2.update({epoch: tank3})
-            
+
                 tmp3 = graph_data[3]['balances']
                 tank4 = {'total': row[5]}
+                tmp3.update({epoch: tank4})
+
+                tmp0 = graph_data[4]['balances']
+                tank1 = {'total': row[6]}
+                tmp0.update({epoch: tank1})
+
+                tmp1 = graph_data[5]['balances']
+                tank2 = {'total': row[7]}
+                tmp1.update({epoch: tank2})
+
+                tmp2 = graph_data[6]['balances']
+                tank3 = {'total': row[8]}
+                tmp2.update({epoch: tank3})
+
+                tmp3 = graph_data[7]['balances']
+                tank4 = {'total': row[9]}
                 tmp3.update({epoch: tank4})
 
         data = graph_data
@@ -491,7 +543,11 @@ def update_log():
         data['tank2'] = str(round(tanks['levelPercent'][1]))
         data['tank3'] = str(round(tanks['levelPercent'][2]))
         data['tank4'] = str(round(tanks['levelPercent'][3]))
-      
+        data['tank1vol'] = str(round(tanks['volumeLiter'][0]))
+        data['tank2vol'] = str(round(tanks['volumeLiter'][1]))
+        data['tank3vol'] = str(round(tanks['volumeLiter'][2]))
+        data['tank4vol'] = str(round(tanks['volumeLiter'][3]))
+
         log_data.insert(0, data)
         if plugin_options['log_records'] > 0:
             log_data = log_data[:plugin_options['log_records']]
@@ -513,19 +569,35 @@ def update_log():
 
         try:
             tmp0 = graph_data[0]['balances']
-            tank1 = {'total': round(tanks['levelPercent'][0])}
+            tank1 = {'total': round(tanks['levelPercent'][0])} # percent tank 1
             tmp0.update({timestamp: tank1})
-            
+
             tmp1 = graph_data[1]['balances']
             tank2 = {'total': round(tanks['levelPercent'][1])}
             tmp1.update({timestamp: tank2})
-            
+
             tmp2 = graph_data[2]['balances']
             tank3 = {'total': round(tanks['levelPercent'][2])}
             tmp2.update({timestamp: tank3})
-            
+
             tmp3 = graph_data[3]['balances']
-            tank4 = {'total': round(tanks['levelPercent'][3])}
+            tank4 = {'total': round(tanks['levelPercent'][3])} # percent tank 4
+            tmp3.update({timestamp: tank4})
+
+            tmp0 = graph_data[4]['balances']
+            tank1 = {'total': round(tanks['volumeLiter'][0])}  # volume tank 1
+            tmp0.update({timestamp: tank1})
+
+            tmp1 = graph_data[5]['balances']
+            tank2 = {'total': round(tanks['volumeLiter'][1])}
+            tmp1.update({timestamp: tank2})
+
+            tmp2 = graph_data[6]['balances']
+            tank3 = {'total': round(tanks['volumeLiter'][2])}
+            tmp2.update({timestamp: tank3})
+
+            tmp3 = graph_data[7]['balances']
+            tank4 = {'total': round(tanks['volumeLiter'][3])}  # volume tank 4
             tmp3.update({timestamp: tank4})
 
             write_graph_log(graph_data)
@@ -538,10 +610,10 @@ def update_log():
         try:
             from plugins.database_connector import execute_db
             # first create table tankmonitor if not exists
-            sql = "CREATE TABLE IF NOT EXISTS `currentmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tank1 VARCHAR(4), tank2 VARCHAR(4), tank3 VARCHAR(4), tank4 VARCHAR(4))"
+            sql = "CREATE TABLE IF NOT EXISTS `currentmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tank1 VARCHAR(4), tank2 VARCHAR(4), tank3 VARCHAR(4), tank4 VARCHAR(4), tank1vol VARCHAR(4), tank2vol VARCHAR(4), tank3vol VARCHAR(4), tank4vol VARCHAR(4))"
             execute_db(sql, test=False, commit=False) # not commit
             # next insert data to table tankmonitor
-            sql = "INSERT INTO `currentmonitor` (`tank1`, `tank2`, `tank3`, `tank4`) VALUES ('%s','%s','%s','%s')" % (round(tanks['levelPercent'][0]),round(tanks['levelPercent'][1]),round(tanks['levelPercent'][2]),round(tanks['levelPercent'][3]))
+            sql = "INSERT INTO `currentmonitor` (`tank1`, `tank2`, `tank3`, `tank4`, `tank1vol`, `tank2vol`, `tank3vol`, `tank4vol`) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s')" % (round(tanks['levelPercent'][0]),round(tanks['levelPercent'][1]),round(tanks['levelPercent'][2]),round(tanks['levelPercent'][3]),round(tanks['volumeLiter'][0]),round(tanks['volumeLiter'][1]),round(tanks['volumeLiter'][2]),round(tanks['volumeLiter'][3]))
             execute_db(sql, test=False, commit=True)  # yes commit inserted data
 #            log.debug(NAME, _('Saving to SQL database.'))
         except:
@@ -636,7 +708,7 @@ class graph_json(ProtectedPage):
                 pass
 
             if len(json_data) > 0:  
-                for i in range(0, 4):                                              # 0=tank1, 1=tank2, 2=tank3, 3=tank4
+                for i in range(0, 9):                                              # 0=tank1 %, 1=tank2 %, 2=tank3 %, 3=tank4 %, 5=tank1 liter, 6=tank2 l, 7=tank3 l, 8=tank4 l
                     temp_balances = {}
                     for key in json_data[i]['balances']:
                         try:
@@ -751,6 +823,10 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
             data += "; {} %".format(plugin_options['label2'])
             data += "; {} %".format(plugin_options['label3'])
             data += "; {} %".format(plugin_options['label4'])
+            data += "; {} l".format(plugin_options['label1'])
+            data += "; {} l".format(plugin_options['label2'])
+            data += "; {} l".format(plugin_options['label3'])
+            data += "; {} l".format(plugin_options['label4'])
             data += '\n'
 
             for interval in log_file:
@@ -762,6 +838,10 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
                     '{}'.format(interval['tank2']),
                     '{}'.format(interval['tank3']),
                     '{}'.format(interval['tank4']),
+                    '{}'.format(interval['tank1vol']),
+                    '{}'.format(interval['tank2vol']),
+                    '{}'.format(interval['tank3vol']),
+                    '{}'.format(interval['tank4vol']),
                 ]) + '\n'
 
         except:
@@ -783,13 +863,17 @@ class log_sql_csv(ProtectedPage):  # save log file from database as csv file typ
         try:
             from plugins.database_connector import execute_db
             sql = "SELECT * FROM `currentmonitor`"
-            log_file = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,tank1,2,3,4
+            log_file = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,tank1,2,3,4 in % and liter
             data  = "Id"
             data += "; Date/Time"
             data += "; {} %".format(plugin_options['label1'])
             data += "; {} %".format(plugin_options['label2'])
             data += "; {} %".format(plugin_options['label3'])
             data += "; {} %".format(plugin_options['label4'])
+            data += "; {} l".format(plugin_options['label1'])
+            data += "; {} l".format(plugin_options['label2'])
+            data += "; {} l".format(plugin_options['label3'])
+            data += "; {} l".format(plugin_options['label4'])
             data += '\n'
 
             for interval in log_file:
@@ -800,6 +884,10 @@ class log_sql_csv(ProtectedPage):  # save log file from database as csv file typ
                     '{}'.format(interval[3]),
                     '{}'.format(interval[4]),
                     '{}'.format(interval[5]),
+                    '{}'.format(interval[6]),
+                    '{}'.format(interval[7]),
+                    '{}'.format(interval[8]),
+                    '{}'.format(interval[9]),
                 ]) + '\n'
 
         except:
