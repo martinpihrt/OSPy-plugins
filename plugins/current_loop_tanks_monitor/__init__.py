@@ -171,7 +171,7 @@ class Sender(Thread):
 
                     ### check water level is higher than the set minimum and release for e-mails
                     if plugin_options['en_eml_tank{}_low'.format(i+1)] and not eml_refresh[i]:                  # is enabled sendig e-mail and not refresh
-                        if tanks['levelPercent'][i] >= plugin_options['en_eml_tank{}_high'.format(i+1)]:        # level in tank xx > eml_tankXX_high_lvl for release
+                        if tanks['levelPercent'][i] >= plugin_options['eml_tank{}_high'.format(i+1)]:        # level in tank xx > eml_tankXX_high_lvl for release
                             eml_refresh[i] = True
 
                     ### send e-mail
