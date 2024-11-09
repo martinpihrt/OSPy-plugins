@@ -137,7 +137,7 @@ class Sender(Thread):
         last_millis = int(round(time.time() * 1000))                            # timer for saving log
         last_millis_2 = int(round(time.time() * 1000))                          # timer for periodic measuring
         send_eml = [0,0,0,0]                                                    # status for sending e-mails from tank 1-4
-        eml_refresh = [1,1,1,1]                                                 # if level > eml_tank1_low_lvl + hysteresis refresh
+        eml_refresh = [1,1,1,1]                                                 # status for release sending e-mails from tank 1-4
 
         if plugin_options['use_footer']:
             tank_mon = showInFooter()                                           # instantiate class to enable data in footer
@@ -162,18 +162,32 @@ class Sender(Thread):
                        last_millis = millis
                        update_log()
 
-                ### check water level is lower than the set minimum
                 for i in range(0, 4):
+                    ### check water level is lower than the set minimum for e-mails
                     if plugin_options['en_eml_tank{}_low'.format(i+1)] and not send_eml[i] and eml_refresh[i]:  # is enabled sendig e-mail and refresh is true and not sending
-                        if tanks['levelPercent'][i] <= int(plugin_options['eml_tank{}_low_lvl'.format(i+1)]):   # level in tank xx < eml_tankXX_low_lvl
+                        if tanks['levelPercent'][i] <= plugin_options['eml_tank{}_low_lvl'.format(i+1)]:        # level in tank xx < eml_tankXX_low_lvl
                             send_eml[i] = True
                             eml_refresh[i] = False
 
-                ### check water level is higher than the set minimum and release
-                for i in range(0, 4):
+                    ### check water level is higher than the set minimum and release for e-mails
                     if plugin_options['en_eml_tank{}_low'.format(i+1)] and not eml_refresh[i]:                  # is enabled sendig e-mail and not refresh
                         if tanks['levelPercent'][i] >= plugin_options['en_eml_tank{}_high'.format(i+1)]:        # level in tank xx > eml_tankXX_high_lvl for release
-                            eml_refresh[i] = True                            
+                            eml_refresh[i] = True
+
+                    ### send e-mail
+                    if send_eml[i]:
+                        try:
+                            try_mail = None
+                            from plugins.email_notifications_ssl import try_mail
+                            if try_mail is not None:
+                                msg = '<b>' + _('Current Loop Tanks Monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: Water Tank has minimum Water Level') +  ': ' + str(plugin_options['eml_tank{}_low_lvl'.format(i+1)]) + _('%') + '.\n' + '</p>'
+                                msglog = _('Current Loop Tanks Monitor plug-in') + ': ' + _('System detected error: Water Tank has minimum Water Level') +  ': {}'.format(plugin_options['eml_tank{}_low_lvl'.format(i+1)]) + _('%') + '. '  
+                                try_mail(msg, msglog, attachment=None, subject=plugin_options['eml_subject_{}'.format(i+1)]) # try_mail(text, logtext, attachment=None, subject=None)
+                        except Exception:
+                            log.info(NAME, _('E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))
+                            log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
+
+                        send_eml[i] = False
 
                 ### footer on homepage
                 if plugin_options['use_footer']:
