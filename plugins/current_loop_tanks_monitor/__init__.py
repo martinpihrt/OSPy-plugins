@@ -342,7 +342,7 @@ def get_data():
 
             level_percentage = voltage_to_level(adc_value, min_voltage, max_voltage)
             level_cm = level_to_cm(level_percentage, MAX_DEFINITION[channel]["max"])
-            volume_liter = (levelCm / MAX_DEFINITION[channel]["max"]) * MAX_DEFINITION[channel]["maxVol"];
+            volume_liter = (levelCm / MAX_DEFINITION[channel]["max"]) * MAX_DEFINITION[channel]["maxVol"]
 
             tanks['voltage'][channel] = adc_value
             tanks['levelPercent'][channel] = level_percentage
