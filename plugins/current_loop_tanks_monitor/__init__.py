@@ -153,7 +153,6 @@ class Sender(Thread):
                     last_millis_2 = millis
                     log.clear(NAME)
                     get_data()
-#                   scan_i2c()
 
                 ### periodically logging (minute interval)
                 if plugin_options['en_log'] or plugin_options['en_sql_log']:
@@ -171,7 +170,7 @@ class Sender(Thread):
 
                     ### check water level is higher than the set minimum and release for e-mails
                     if plugin_options['en_eml_tank{}_low'.format(i+1)] and not eml_refresh[i]:                  # is enabled sendig e-mail and not refresh
-                        if tanks['levelPercent'][i] >= plugin_options['eml_tank{}_high'.format(i+1)]:        # level in tank xx > eml_tankXX_high_lvl for release
+                        if tanks['levelPercent'][i] >= plugin_options['eml_tank{}_high'.format(i+1)]:           # level in tank xx > eml_tankXX_high_lvl for release
                             eml_refresh[i] = True
 
                     ### send e-mail
@@ -328,10 +327,6 @@ def get_data():
     adc_values = []
 
     for channel in range(4):
-#        tanks['voltage'][channel] = 0
-#        tanks['levelPercent'][channel] = 0
-#        tanks['levelCm'][channel] = 0
-#        tanks['volumeLiter'][channel] = 0
         try:
             adc_value = try_io(lambda: read_adc(bus, channel))
             adc_values.append(adc_value)
@@ -383,7 +378,7 @@ def scan_i2c():
         except OSError:
             pass
     if devices:
-        log.info(NAME, _('I2C devices found at the following addresses: {}.').format(devices))
+        #log.info(NAME, _('I2C devices found at the following addresses: {}.').format(devices))
         return devices
     else:
         log.error(NAME, _('No I2C device was found.'))
@@ -652,11 +647,22 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         global sender
+        i2c = None
         qdict = web.input()
         log_now = helpers.get_input(qdict, 'log_now', False, lambda x: True)
-        
+        find_i2c = helpers.get_input(qdict, 'find_i2c', False, lambda x: True)
+
         if sender is not None and log_now:
             update_log()
+            return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
+
+        if sender is not None and find_i2c:
+            found = scan_i2c()
+            i2c_adr_list = [0x48, 0x49, 0x4A, 0x4B]
+            matching_addresses = [address for address in found if address in i2c_adr_list]
+            if matching_addresses:
+                i2c = matching_addresses
+            return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 
         # switch 1-4 on plugin homepage in tank (on-off for tanks)
         for i in range(1, 4):
@@ -667,10 +673,11 @@ class settings_page(ProtectedPage):
                     if qdict['en_tank{}'.format(i)] == 'off':
                         plugin_options.__setitem__('en_tank{}'.format(i), False)
 
-        return self.plugin_render.current_loop_tanks_monitor(plugin_options)
+        return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 
     def POST(self):
-        return self.plugin_render.current_loop_tanks_monitor(plugin_options)
+        i2c = None
+        return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 
 
 class help_page(ProtectedPage):

@@ -1,4 +1,4 @@
-$def with(plugin_options)
+$def with(plugin_options, i2c)
 
 $var title: $_('Current Loop Tanks Monitor')
 $var page: plugins
@@ -153,7 +153,7 @@ function sendSwitchData(wellId) {
         type: "GET",
         data: data,
         success: function(response) {
-            console.log('Switch status updated successfully:', response);
+            console.log('Switch status updated successfully:');
         },
         error: function(error) {
             console.error('Error updating switch status:', error);
@@ -317,4 +317,8 @@ jQuery(document).ready(function(){
 
 <div id="controls">
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+    $if i2c is None:
+        <a href="?find_i2c"  class="button submit">$_('Search for I2C AD converter')</a>
+    $else:
+        <a href="?find_i2c"  class="button submit">$_('Found on') $i2c</a>
 </div>
