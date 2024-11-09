@@ -170,7 +170,7 @@ class Sender(Thread):
 
                     ### check water level is higher than the set minimum and release for e-mails
                     if plugin_options['en_eml_tank{}_low'.format(i+1)] and not eml_refresh[i]:                  # is enabled sendig e-mail and not refresh
-                        if tanks['levelPercent'][i] >= plugin_options['eml_tank{}_high'.format(i+1)]:           # level in tank xx > eml_tankXX_high_lvl for release
+                        if tanks['levelPercent'][i] >= plugin_options['eml_tank{}_high_lvl'.format(i+1)]:       # level in tank xx > eml_tankXX_high_lvl for release
                             eml_refresh[i] = True
 
                     ### send e-mail
@@ -662,6 +662,8 @@ class settings_page(ProtectedPage):
             matching_addresses = [address for address in found if address in i2c_adr_list]
             if matching_addresses:
                 i2c = matching_addresses
+            else:
+                i2c = _('Converter not found at any of the addresses 0x48, 0x49, 0x4A, 0x4B')                
             return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 
         # switch 1-4 on plugin homepage in tank (on-off for tanks)
