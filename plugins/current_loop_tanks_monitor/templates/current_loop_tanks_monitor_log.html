@@ -39,7 +39,7 @@ $var page: plugins
             <th>$plugin_options['label1']</th>
             <th>$plugin_options['label2']</th>
             <th>$plugin_options['label3']</th>
-            <th>$plugin_options['label4']</th>                        
+            <th>$plugin_options['label4']</th>
         </tr>
         $if plugin_options['type_log'] == 0:
             $for interval in records:
@@ -49,10 +49,10 @@ $var page: plugins
                     <td align='left'>${interval["tank2"]} $_('%')</td>
                     <td align='left'>${interval["tank3"]} $_('%')</td>
                     <td align='left'>${interval["tank4"]} $_('%')</td>
-                    <td align='left'>${interval["tank1"]} $_('l')</td>
-                    <td align='left'>${interval["tank2"]} $_('l')</td>
-                    <td align='left'>${interval["tank3"]} $_('l')</td>
-                    <td align='left'>${interval["tank4"]} $_('l')</td>                    
+                    <td align='left'>${interval["tank1vol"]} $_('l')</td>
+                    <td align='left'>${interval["tank2vol"]} $_('l')</td>
+                    <td align='left'>${interval["tank3vol"]} $_('l')</td>
+                    <td align='left'>${interval["tank4vol"]} $_('l')</td>
                 </tr>
         $if plugin_options['type_log'] == 1 and records_sql is not None:
             $for interval in records_sql:
@@ -65,7 +65,7 @@ $var page: plugins
                     <td align='left'>${interval[6]} $_('l')</td>
                     <td align='left'>${interval[7]} $_('l')</td>
                     <td align='left'>${interval[8]} $_('l')</td>
-                    <td align='left'>${interval[9]} $_('l')</td>                                  
+                    <td align='left'>${interval[9]} $_('l')</td>
     </table>
     </div>
 </div>

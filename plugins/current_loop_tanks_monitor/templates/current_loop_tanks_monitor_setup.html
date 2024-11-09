@@ -193,7 +193,7 @@ jQuery(document).ready(function(){
                     <td title=$:{json.dumps(_('In minutes (Minimum is 1). The logging interval is common for both local storage and sql storage of measured data.'), ensure_ascii=False)}>
                         <input name='log_interval' type='number' min='1' step="1" value='$plugin_options["log_interval"]'> 
                     </td>
-                </tr>                
+                </tr>
 
                 <tr>
                     <td>$_('Show data in graph from')</td>
@@ -233,10 +233,80 @@ jQuery(document).ready(function(){
                     </td>
                 </tr>
                 <tr>
-                    <td style='text-transform: none;'>$_('Status'):</td>
+                    <td style='text-transform: none;'>$_('Status')</td>
                     <td colspan="5">
                         <textarea style="font-family: monospace;" rows="10" cols="50" readonly>$'\n'.join(events)</textarea>
                     </td>
+                </tr>
+
+                <!-- e-mail -->
+                <tr>
+                    <td colspan="5"><hr></td>
+                    <td><b><small>$_('Notifications')</small></b></td>
+                </tr>
+
+                <tr>
+                    <th>$_('Tank')</th>
+                    <th>$_('Send E-mail')</th>
+                    <th>$_('Level activation (%)')</th>
+                    <th>$_('Level release (%)')</th>
+                    <th>$_('Subject')</th>
+                </tr>
+
+                <!-- Tank 1 -->
+                <tr>
+                    <td>$plugin_options['label1']></td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" name="en_eml_tank1_low" ${'checked' if plugin_options['en_eml_tank1_low'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the level drops below this value, sending an email is activated.'), ensure_ascii=False)}><input name="eml_tank1_low_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank1_low_lvl']"></td>
+                    <td title=$:{json.dumps(_('As long as the level does not rise above this level, it will not allow sending an email when the level drops to the minimum. This is used to block the constant sending of emails when the level is at a minimum.'), ensure_ascii=False)}><input name="eml_tank1_high_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank1_high_lvl']"></td>
+                    <td><input name="eml_subject_1" type="text" value="$plugin_options['eml_subject_1']"></td>
+                </tr>
+
+                <!-- Tank 2 -->
+                <tr>
+                    <td>$plugin_options['label2']></td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" name="en_eml_tank2_low" ${'checked' if plugin_options['en_eml_tank2_low'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the level drops below this value, sending an email is activated.'), ensure_ascii=False)}><input name="eml_tank2_low_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank2_low_lvl']"></td>
+                    <td title=$:{json.dumps(_('As long as the level does not rise above this level, it will not allow sending an email when the level drops to the minimum. This is used to block the constant sending of emails when the level is at a minimum.'), ensure_ascii=False)}><input name="eml_tank2_high_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank2_high_lvl']"></td>
+                    <td><input name="eml_subject_2" type="text" value="$plugin_options['eml_subject_2']"></td>
+                </tr>
+
+                <!-- Tank 3 -->
+                <tr>
+                    <td>$plugin_options['label3']></td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" name="en_eml_tank3_low" ${'checked' if plugin_options['en_eml_tank3_low'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the level drops below this value, sending an email is activated.'), ensure_ascii=False)}><input name="eml_tank3_low_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank3_low_lvl']"></td>
+                    <td title=$:{json.dumps(_('As long as the level does not rise above this level, it will not allow sending an email when the level drops to the minimum. This is used to block the constant sending of emails when the level is at a minimum.'), ensure_ascii=False)}><input name="eml_tank3_high_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank3_high_lvl']"></td>
+                    <td><input name="eml_subject_3" type="text" value="$plugin_options['eml_subject_3']"></td>
+                </tr>
+
+                <!-- Tank 4 -->
+                <tr>
+                    <td>$plugin_options['label4']></td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" name="en_eml_tank4_low" ${'checked' if plugin_options['en_eml_tank4_low'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the level drops below this value, sending an email is activated.'), ensure_ascii=False)}><input name="eml_tank4_low_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank4_low_lvl']"></td>
+                    <td title=$:{json.dumps(_('As long as the level does not rise above this level, it will not allow sending an email when the level drops to the minimum. This is used to block the constant sending of emails when the level is at a minimum.'), ensure_ascii=False)}><input name="eml_tank4_high_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank4_high_lvl']"></td>
+                    <td><input name="eml_subject_4" type="text" value="$plugin_options['eml_subject_4']"></td>
                 </tr>
 
                 <!-- events -->
@@ -244,7 +314,7 @@ jQuery(document).ready(function(){
                     <td colspan="5"><hr></td>
                     <td><b><small>$_('Events')</small></b></td>
                 </tr>
-                                                
+
             </table>
         </form>
 </div>

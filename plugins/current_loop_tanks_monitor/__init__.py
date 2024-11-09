@@ -78,8 +78,14 @@ plugin_options = PluginOptions(
         'eml_tank2_low_lvl': 20,                 # min level in % tank 2 for threshold and send e-mail
         'eml_tank3_low_lvl': 20,                 # min level in % tank 3 for threshold and send e-mail
         'eml_tank4_low_lvl': 20,                 # min level in % tank 4 for threshold and send e-mail
-        'eml_hysteresis': 20,                    # hysteresis for unblocking sending e-mail
-        'eml_subject': _('Report from OSPy Current Loop Tanks Monitor plugin'),
+        'eml_tank1_high_lvl': 40,                # level in % tank 1 for release threshold and send e-mail
+        'eml_tank2_high_lvl': 40,                # level in % tank 2 for release threshold and send e-mail
+        'eml_tank3_high_lvl': 40,                # level in % tank 3 for release threshold and send e-mail
+        'eml_tank4_high_lvl': 40,                # level in % tank 4 for release threshold and send e-mail
+        'eml_subject_1': _('Report from OSPy: Tank 1 has minimal level!'),
+        'eml_subject_2': _('Report from OSPy: Tank 2 has minimal level!'),
+        'eml_subject_3': _('Report from OSPy: Tank 3 has minimal level!'),
+        'eml_subject_4': _('Report from OSPy: Tank 4 has minimal level!'),
     }
 )
 
@@ -163,10 +169,10 @@ class Sender(Thread):
                             send_eml[i] = True
                             eml_refresh[i] = False
 
-                ### check water level is higher than the set minimum and hysteresis
+                ### check water level is higher than the set minimum and release
                 for i in range(0, 4):
-                    if plugin_options['en_eml_tank{}_low'.format(i+1)] and not eml_refresh[i]:                                                    # is enabled sendig e-mail and not refresh
-                        if tanks['levelPercent'][i] > int(plugin_options['eml_tank{}_low_lvl'.format(i+1)] + plugin_options['eml_hysteresis']):   # level in tank xx > eml_tankXX_low_lvl + eml_hysteresis
+                    if plugin_options['en_eml_tank{}_low'.format(i+1)] and not eml_refresh[i]:                  # is enabled sendig e-mail and not refresh
+                        if tanks['levelPercent'][i] >= plugin_options['en_eml_tank{}_high'.format(i+1)]:        # level in tank xx > eml_tankXX_high_lvl for release
                             eml_refresh[i] = True                            
 
                 ### footer on homepage
