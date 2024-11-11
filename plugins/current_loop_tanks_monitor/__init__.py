@@ -658,12 +658,12 @@ class settings_page(ProtectedPage):
 
         if sender is not None and find_i2c:
             found = scan_i2c()
-            i2c_adr_list = [0x48, 0x49, 0x4A, 0x4B]
+            i2c_adr_list = ['0x48', '0x49', '0x4A', '0x4B']
             matching_addresses = [address for address in found if address in i2c_adr_list]
             if matching_addresses:
-                i2c = matching_addresses
+                i2c = " ".join(matching_addresses)
             else:
-                i2c = _('Converter not found at any of the addresses 0x48, 0x49, 0x4A, 0x4B')                
+                i2c = _('Not found at any known addresses: 0x48, 0x49, 0x4A, 0x4B')                
             return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 
         # switch 1-4 on plugin homepage in tank (on-off for tanks)
