@@ -178,6 +178,7 @@ $var page: plugins
                                 <option value="5" ${"selected" if plugin_options["sensor_type"][c]==5 else ""}>$_('Shelly Pro 4PM')</option>
                                 <option value="6" ${"selected" if plugin_options["sensor_type"][c]==6 else ""}>$_('Shelly 1 Mini')</option>
                                 <option value="7" ${"selected" if plugin_options["sensor_type"][c]==7 else ""}>$_('Shelly 2PM Addon')</option>
+                                <option value="8" ${"selected" if plugin_options["sensor_type"][c]==8 else ""}>$_('Shelly 1PM Addon')</option>
                             </select>
                             $if plugin_options["sensor_type"][c]==0:
                                 <a href="https://kb.shelly.cloud/knowledge-base/shelly-plus-h-t" class="image-link">
@@ -216,6 +217,10 @@ $var page: plugins
                                 <a href="https://kb.shelly.cloud/knowledge-base/shelly-plus-add-on" class="image-link">
                                 <img src="/plugins/shelly_cloud_integrator/static/images/2pmaddon.webp" width="100" height="100">
                                 </a>
+                            $if plugin_options["sensor_type"][c]==8:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-plus-add-on" class="image-link">
+                                <img src="/plugins/shelly_cloud_integrator/static/images/2pmaddon.webp" width="100" height="100">
+                                </a>                                
                         </td>
                     </tr>
                     <tr>

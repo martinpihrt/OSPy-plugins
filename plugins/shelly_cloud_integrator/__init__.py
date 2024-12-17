@@ -526,26 +526,26 @@ class Sender(Thread):
                                                 temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
                                             except:
                                                 pass
-                                            try:                                                    
+                                            try:
                                                 temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
                                                 temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
                                             except:
                                                 pass
-                                            try:                                                    
+                                            try:
                                                 temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
                                                 temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
                                             except:
                                                 pass
-                                            try:                                                    
+                                            try:
                                                 temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
                                                 temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
                                             except:
                                                 pass
-                                            try:                                                    
+                                            try:
                                                 temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
                                                 temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
                                             except:
-                                                pass                                                                                                                                                
+                                                pass
                                             voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
                                             updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
@@ -580,9 +580,9 @@ class Sender(Thread):
                                                     msg_info += _('{} {} °C ').format(temp103name, temperature103)
                                                 if temperature104 is not None:
                                                     msg += _('{} {} °C ').format(temp104name, temperature104)
-                                                    msg_info += _('{} {} °C ').format(temp104name, temperature104)                                                                                                        
+                                                    msg_info += _('{} {} °C ').format(temp104name, temperature104)
                                                 msg += '] '
-                                                msg_info += '] '                                                                                                      
+                                                msg_info += '] '
                                             else:
                                                 msg += _('[{}: -] ').format(name)
                                                 msg_info += _('{}: OFFLINE\n').format(name)
@@ -596,6 +596,101 @@ class Sender(Thread):
                                                 'rssi': rssi,
                                                 'output': [a_output, b_output],
                                                 'power': [a_power, b_power],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
+
+                                    # typ: 8=Shelly 1PM Addon
+                                    # gen: 0 = GEN1, 1 = GEN 2+
+                                    if plugin_options['sensor_type'][i] == 8:
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN1 not available yet \n').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            temperature100 = None
+                                            temperature101 = None
+                                            temperature102 = None
+                                            temperature103 = None
+                                            temperature104 = None
+                                            temp100name = ''
+                                            temp101name = ''
+                                            temp102name = ''
+                                            temp103name = ''
+                                            temp104name = ''
+                                            a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                            a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                            a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                            try:
+                                                temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
+                                                temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
+                                            except:
+                                                pass
+                                            try:
+                                                temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
+                                                temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
+                                            except:
+                                                pass
+                                            try:
+                                                temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
+                                                temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
+                                            except:
+                                                pass
+                                            try:
+                                                temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
+                                                temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
+                                            except:
+                                                pass
+                                            try:
+                                                temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
+                                                temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
+                                            except:
+                                                pass
+                                            voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                            updated = response_data["data"]["device_status"]["_updated"]
+                                            isok = response_data["isok"]
+                                            online = response_data["data"]["online"]
+                                            wifi = response_data["data"]["device_status"]["wifi"]
+                                            sta_ip = wifi["sta_ip"]
+                                            rssi = wifi["rssi"]
+                                            if online:
+                                                if a_output:
+                                                    msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                    msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                else:
+                                                    msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                    msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                if temperature100 is not None:
+                                                    msg += _('{} {} °C ').format(temp100name, temperature100)
+                                                    msg_info += _('{} {} °C ').format(temp100name, temperature100)
+                                                if temperature101 is not None:
+                                                    msg += _('{} {} °C ').format(temp101name, temperature101)
+                                                    msg_info += _('{} {} °C ').format(temp101name, temperature101)
+                                                if temperature102 is not None:
+                                                    msg += _('{} {} °C ').format(temp102name, temperature102)
+                                                    msg_info += _('{} {} °C ').format(temp102name, temperature102)
+                                                if temperature103 is not None:
+                                                    msg += _('{} {} °C ').format(temp103name, temperature103)
+                                                    msg_info += _('{} {} °C ').format(temp103name, temperature103)
+                                                if temperature104 is not None:
+                                                    msg += _('{} {} °C ').format(temp104name, temperature104)
+                                                    msg_info += _('{} {} °C ').format(temp104name, temperature104)
+                                                msg += '] '
+                                                msg_info += '] '
+                                            else:
+                                                msg += _('[{}: -] ').format(name)
+                                                msg_info += _('{}: OFFLINE\n').format(name)
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': voltage,
+                                                'battery': 0,
+                                                'temperature': [temperature100, temperature101, temperature102, temperature103, temperature104],
+                                                'humidity': [],
+                                                'rssi': rssi,
+                                                'output': [a_output],
+                                                'power': [a_power],
                                                 'label': name,
                                                 'online': online,
                                             }
