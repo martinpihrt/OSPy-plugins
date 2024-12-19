@@ -232,7 +232,7 @@ $var page: plugins
                             </select>
                         </td>
                     </tr>
-                    $if plugin_options["sensor_type"][c]==7:
+                    $if plugin_options["sensor_type"][c]==7 or plugin_options["sensor_type"][c]==8:
                         <tr>
                             <td style='text-transform: none;'>$_('Label DS18B20 ID100'):</td>
                             <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature100 ID100.'), ensure_ascii=False)}>
