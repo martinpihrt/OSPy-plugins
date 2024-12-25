@@ -698,7 +698,7 @@ class Sender(Thread):
 
                                     # typ: 9 = Shelly H&T, 
                                     # gen: 0 = GEN1, 1 = GEN 2+
-                                    if plugin_options['sensor_type'][i] == 0:
+                                    if plugin_options['sensor_type'][i] == 9:
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
                                             msg_info += _('{}: GEN2+ not available \n').format(name)
