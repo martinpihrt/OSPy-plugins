@@ -696,6 +696,47 @@ class Sender(Thread):
                                             }
                                             self.devices.append(payload) if payload not in self.devices else self.devices
 
+                                    # typ: 9 = Shelly H&T, 
+                                    # gen: 0 = GEN1, 1 = GEN 2+
+                                    if plugin_options['sensor_type'][i] == 0:
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN2+ not available \n').format(name)
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            temperature = response_data["data"]["device_status"]["tmp"]["value"]
+                                            humidity = response_data["data"]["device_status"]["hum"]["value"]
+                                            updated = response_data["data"]["device_status"]["_updated"]
+                                            isok = response_data["isok"]
+                                            battery = response_data["data"]["device_status"]["bat"]
+                                            online = response_data["data"]["online"]
+                                            wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                            sta_ip = wifi["ip"]
+                                            rssi = wifi["rssi"]
+                                            batt_V = battery["voltage"]
+                                            batt_perc = battery["value"]
+                                            if online:
+                                                msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
+                                                msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                            else:
+                                                msg += _('[{}: -] ').format(name)
+                                                msg_info += _('{}: OFFLINE\n').format(name)
+                                            
+                                            payload = {
+                                                'id': id,
+                                                'ip': sta_ip,
+                                                'voltage': batt_V,
+                                                'battery': batt_perc,
+                                                'temperature': [temperature],
+                                                'humidity': [humidity],
+                                                'rssi': rssi,
+                                                'output': [],
+                                                'power': [],
+                                                'label': name,
+                                                'online': online,
+                                            }
+                                            self.devices.append(payload) if payload not in self.devices else self.devices
+
                                 except JSONDecodeError:
                                     raise BadResponse(_('Bad JSON'))
                             except:
