@@ -112,113 +112,149 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
-                                            humidity = response_data["data"]["device_status"]["humidity:0"]["rh"]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            battery = response_data["data"]["device_status"]["devicepower:0"]["battery"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi"]
-                                            sta_ip = wifi["sta_ip"]
-                                            rssi = wifi["rssi"]
-                                            batt_V = battery["V"]
-                                            batt_perc = battery["percent"]
-                                            if online:
-                                                msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
-                                                msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
+                                                temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
+                                                humidity = response_data["data"]["device_status"]["humidity:0"]["rh"]
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                battery = response_data["data"]["device_status"]["devicepower:0"]["battery"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi"]
+                                                sta_ip = wifi["sta_ip"]
+                                                rssi = wifi["rssi"]
+                                                batt_V = battery["V"]
+                                                batt_perc = battery["percent"]
+                                                if online:
+                                                    msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
+                                                    msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
                                             
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': batt_V,
-                                                'battery': batt_perc,
-                                                'temperature': [temperature],
-                                                'humidity': [humidity],
-                                                'rssi': rssi,
-                                                'output': [],
-                                                'power': [],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': batt_V,
+                                                    'battery': batt_perc,
+                                                    'temperature': [temperature],
+                                                    'humidity': [humidity],
+                                                    'rssi': rssi,
+                                                    'output': [],
+                                                    'power': [],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 1=Shelly Plus Plug S ver 1
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 1:
                                         if plugin_options['gen_type'][i] == 0:
                                             name = plugin_options['sensor_label'][i]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi_sta"]
-                                            sta_ip = wifi["ip"]
-                                            rssi = wifi["rssi"]
-                                            power = response_data["data"]["device_status"]["meters"][0]["power"]
-                                            total = response_data["data"]["device_status"]["meters"][0]["total"]
-                                            output = response_data["data"]["device_status"]["relays"][0]["ison"]
-                                            if online:
-                                                if output:
-                                                    msg += _('[{}: ON {} W] ').format(name, power)
-                                                    msg_info += _('{}: ON {} W IP:{} RSSI:{} dbm {}\n').format(name, power, sta_ip, rssi, updated)
-                                                else:
-                                                    msg += _('[{}: OFF {} W] ').format(name, power)
-                                                    msg_info += _('{}: OFF {} W IP:{} RSSI:{} dbm {}\n').format(name, power, sta_ip, rssi, updated)
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': 0,
-                                                'battery': 0,
-                                                'temperature': [],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [output],
-                                                'power': [power],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                                sta_ip = wifi["ip"]
+                                                rssi = wifi["rssi"]
+                                                power = response_data["data"]["device_status"]["meters"][0]["power"]
+                                                total = response_data["data"]["device_status"]["meters"][0]["total"]
+                                                output = response_data["data"]["device_status"]["relays"][0]["ison"]
+                                                if online:
+                                                    if output:
+                                                        msg += _('[{}: ON {} W] ').format(name, power)
+                                                        msg_info += _('{}: ON {} W IP:{} RSSI:{} dbm {}\n').format(name, power, sta_ip, rssi, updated)
+                                                    else:
+                                                        msg += _('[{}: OFF {} W] ').format(name, power)
+                                                        msg_info += _('{}: OFF {} W IP:{} RSSI:{} dbm {}\n').format(name, power, sta_ip, rssi, updated)
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': 0,
+                                                    'battery': 0,
+                                                    'temperature': [],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [output],
+                                                    'power': [power],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi"]
-                                            sta_ip = wifi["sta_ip"]
-                                            rssi = wifi["rssi"]
-                                            power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                            total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                            output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                            voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                            if online:
-                                                if output:
-                                                    msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                    msg_info += _('{}: ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
-                                                else:
-                                                    msg += _('[{}: OFF {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                    msg_info += _('{}: OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': voltage,
-                                                'battery': 0,
-                                                'temperature': [],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [output],
-                                                'power': [power],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi"]
+                                                sta_ip = wifi["sta_ip"]
+                                                rssi = wifi["rssi"]
+                                                power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                if online:
+                                                    if output:
+                                                        msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
+                                                        msg_info += _('{}: ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                    else:
+                                                        msg += _('[{}: OFF {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
+                                                        msg_info += _('{}: OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': voltage,
+                                                    'battery': 0,
+                                                    'temperature': [],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [output],
+                                                    'power': [power],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 2=Shelly Pro 2PM
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -228,53 +264,65 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            a_energy = response_data["data"]["device_status"]["switch:0"]["aenergy"]
-                                            b_energy = response_data["data"]["device_status"]["switch:1"]["aenergy"]
-                                            a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                            b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                            a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                            b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                            a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                            b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                            a_voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                            b_voltage = response_data["data"]["device_status"]["switch:1"]["voltage"]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi"]
-                                            sta_ip = wifi["sta_ip"]
-                                            rssi = wifi["rssi"]
-                                            if online:
-                                                if a_output:
-                                                    msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                    msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
-                                                else:
-                                                    msg += _('[{}: 1 OFF {}W ({}kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                    msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
-                                                if b_output:
-                                                    msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                    msg_info += _('2 ON {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, updated)
-                                                else:
-                                                    msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                    msg_info += _('2 OFF {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, updated)
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
+                                                a_energy = response_data["data"]["device_status"]["switch:0"]["aenergy"]
+                                                b_energy = response_data["data"]["device_status"]["switch:1"]["aenergy"]
+                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                                a_voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                b_voltage = response_data["data"]["device_status"]["switch:1"]["voltage"]
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi"]
+                                                sta_ip = wifi["sta_ip"]
+                                                rssi = wifi["rssi"]
+                                                if online:
+                                                    if a_output:
+                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
+                                                    else:
+                                                        msg += _('[{}: 1 OFF {}W ({}kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
+                                                    if b_output:
+                                                        msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2 ON {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, updated)
+                                                    else:
+                                                        msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2 OFF {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, updated)
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
 
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': a_voltage,
-                                                'battery': 0,
-                                                'temperature': [],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [a_output, b_output],
-                                                'power': [a_power, b_power],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': a_voltage,
+                                                    'battery': 0,
+                                                    'temperature': [],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [a_output, b_output],
+                                                    'power': [a_power, b_power],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 3=Shelly 1PM Mini
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -284,108 +332,132 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                            output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                            power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                            voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi"]
-                                            sta_ip = wifi["sta_ip"]
-                                            rssi = wifi["rssi"]
-                                            if online:
-                                                if output:
-                                                    msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                    msg_info += _('{}: ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
-                                                else:
-                                                    msg += _('[{}: OFF {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                    msg_info += _('{}: OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': voltage,
-                                                'battery': 0,
-                                                'temperature': [],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [output],
-                                                'power': [power],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi"]
+                                                sta_ip = wifi["sta_ip"]
+                                                rssi = wifi["rssi"]
+                                                if online:
+                                                    if output:
+                                                        msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
+                                                        msg_info += _('{}: ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                    else:
+                                                        msg += _('[{}: OFF {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
+                                                        msg_info += _('{}: OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': voltage,
+                                                    'battery': 0,
+                                                    'temperature': [],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [output],
+                                                    'power': [power],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 4=Shelly 2.5
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 4:
                                         if plugin_options['gen_type'][i] == 0:
                                             name = plugin_options['sensor_label'][i]
-                                            roller = None
-                                            try: # roller mode
-                                                roller = response_data["data"]["device_status"]["rollers"][0]["state"]
-                                                a_power = response_data["data"]["device_status"]["meters"][0]["power"]
-                                                b_power = response_data["data"]["device_status"]["meters"][1]["power"]
-                                                a_total = response_data["data"]["device_status"]["meters"][0]["total"]
-                                                b_total = response_data["data"]["device_status"]["meters"][1]["total"]
-                                                voltage = response_data["data"]["device_status"]["voltage"]
-                                                wifi = response_data["data"]["device_status"]["wifi_sta"]
-                                                sta_ip = wifi["ip"]
-                                            except: # switch mode
-                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                                b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                                b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                                wifi = response_data["data"]["device_status"]["wifi"]
-                                                sta_ip = wifi["sta_ip"]
-                                                pass  
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            rssi = wifi["rssi"]
-                                            if online:
-                                                if roller is None:
-                                                    if a_output:
-                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
-                                                    else:
-                                                        msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
-                                                    if b_output:
-                                                        msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 ON {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), updated)
-                                                    else:
-                                                        msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), updated)
-                                                else:
-                                                    msg += _('[{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h)] ').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2))
-                                                    msg_info += _('{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, updated)
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': voltage,
-                                                'battery': 0,
-                                                'temperature': [],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [a_output, b_output] if roller is None else [roller],
-                                                'power': [a_power, b_power],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
-                                        if plugin_options['gen_type'][i] == 1:
-                                            name = plugin_options['sensor_label'][i]
-                                            msg_info += _('{}: GEN2 not available yet \n').format(name)
+                                                roller = None
+                                                try: # roller mode
+                                                    roller = response_data["data"]["device_status"]["rollers"][0]["state"]
+                                                    a_power = response_data["data"]["device_status"]["meters"][0]["power"]
+                                                    b_power = response_data["data"]["device_status"]["meters"][1]["power"]
+                                                    a_total = response_data["data"]["device_status"]["meters"][0]["total"]
+                                                    b_total = response_data["data"]["device_status"]["meters"][1]["total"]
+                                                    voltage = response_data["data"]["device_status"]["voltage"]
+                                                    wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                                    sta_ip = wifi["ip"]
+                                                except: # switch mode
+                                                    a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                    b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                                    a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                    b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                                    voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                    a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                    b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    pass  
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                rssi = wifi["rssi"]
+                                                if online:
+                                                    if roller is None:
+                                                        if a_output:
+                                                            msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                            msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
+                                                        else:
+                                                            msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                            msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
+                                                        if b_output:
+                                                            msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                            msg_info += _('2 ON {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), updated)
+                                                        else:
+                                                            msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                            msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), updated)
+                                                    else:
+                                                        msg += _('[{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h)] ').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, updated)
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': voltage,
+                                                    'battery': 0,
+                                                    'temperature': [],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [a_output, b_output] if roller is None else [roller],
+                                                    'power': [a_power, b_power],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                            if plugin_options['gen_type'][i] == 1:
+                                                name = plugin_options['sensor_label'][i]
+                                                msg_info += _('{}: GEN2 not available yet \n').format(name)
 
                                     # typ: 5=Shelly Pro 4PM
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -395,67 +467,79 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                            b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                            c_total = response_data["data"]["device_status"]["switch:2"]["aenergy"]["total"]
-                                            d_total = response_data["data"]["device_status"]["switch:3"]["aenergy"]["total"]
-                                            a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                            b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                            c_output = response_data["data"]["device_status"]["switch:2"]["output"]
-                                            d_output = response_data["data"]["device_status"]["switch:3"]["output"]
-                                            a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                            b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                            c_power = response_data["data"]["device_status"]["switch:2"]["apower"]
-                                            d_power = response_data["data"]["device_status"]["switch:3"]["apower"]
-                                            voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi"]
-                                            sta_ip = wifi["sta_ip"]
-                                            rssi = wifi["rssi"]
-                                            if online:
-                                                if a_output:
-                                                    msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                    msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
-                                                else:
-                                                    msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                    msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
-                                                if b_output:
-                                                    msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                    msg_info += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
-                                                else:
-                                                    msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                    msg_info += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
-                                                if c_output:
-                                                    msg += _('2 ON {} W ({} kW/h)] ').format(c_power, round(c_total/1000.0, 2))
-                                                    msg_info += _('2 ON {} W ({} kW/h) ').format(c_power, round(c_total/1000.0, 2))
-                                                else:
-                                                    msg += _('2 OFF {}W ({}kW/h)] ').format(c_power, round(c_total/1000.0, 2))
-                                                    msg_info += _('2 OFF {}W ({}kW/h) ').format(c_power, round(c_total/1000.0, 2))
-                                                if d_output:
-                                                    msg += _('2 ON {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
-                                                    msg_info += _('2 ON {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), updated)
-                                                else:
-                                                    msg += _('2 OFF {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
-                                                    msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), updated)
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': voltage,
-                                                'battery': 0,
-                                                'temperature': [],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [a_output, b_output, c_output, d_output],
-                                                'power': [a_power, b_power, c_power, d_power],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                                c_total = response_data["data"]["device_status"]["switch:2"]["aenergy"]["total"]
+                                                d_total = response_data["data"]["device_status"]["switch:3"]["aenergy"]["total"]
+                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                                c_output = response_data["data"]["device_status"]["switch:2"]["output"]
+                                                d_output = response_data["data"]["device_status"]["switch:3"]["output"]
+                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                                c_power = response_data["data"]["device_status"]["switch:2"]["apower"]
+                                                d_power = response_data["data"]["device_status"]["switch:3"]["apower"]
+                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi"]
+                                                sta_ip = wifi["sta_ip"]
+                                                rssi = wifi["rssi"]
+                                                if online:
+                                                    if a_output:
+                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                    else:
+                                                        msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                    if b_output:
+                                                        msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                    else:
+                                                        msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                    if c_output:
+                                                        msg += _('2 ON {} W ({} kW/h)] ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg_info += _('2 ON {} W ({} kW/h) ').format(c_power, round(c_total/1000.0, 2))
+                                                    else:
+                                                        msg += _('2 OFF {}W ({}kW/h)] ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg_info += _('2 OFF {}W ({}kW/h) ').format(c_power, round(c_total/1000.0, 2))
+                                                    if d_output:
+                                                        msg += _('2 ON {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
+                                                        msg_info += _('2 ON {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), updated)
+                                                    else:
+                                                        msg += _('2 OFF {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
+                                                        msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), updated)
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': voltage,
+                                                    'battery': 0,
+                                                    'temperature': [],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [a_output, b_output, c_output, d_output],
+                                                    'power': [a_power, b_power, c_power, d_power],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 6=Shelly 1 Mini
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -465,37 +549,49 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi"]
-                                            sta_ip = wifi["sta_ip"]
-                                            rssi = wifi["rssi"]
-                                            if online:
-                                                if output:
-                                                    msg += _('[{}: ON] ').format(name)
-                                                    msg_info += _('{}: ON IP:{} RSSI:{} dbm {}\n').format(name, sta_ip, rssi, updated)
-                                                else:
-                                                    msg += _('[{}: OFF] ').format(name)
-                                                    msg_info += _('{}: OFF IP:{} RSSI:{} dbm {}\n').format(name, sta_ip, rssi, updated)
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': 0,
-                                                'battery': 0,
-                                                'temperature': [],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [output],
-                                                'power': [],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi"]
+                                                sta_ip = wifi["sta_ip"]
+                                                rssi = wifi["rssi"]
+                                                if online:
+                                                    if output:
+                                                        msg += _('[{}: ON] ').format(name)
+                                                        msg_info += _('{}: ON IP:{} RSSI:{} dbm {}\n').format(name, sta_ip, rssi, updated)
+                                                    else:
+                                                        msg += _('[{}: OFF] ').format(name)
+                                                        msg_info += _('{}: OFF IP:{} RSSI:{} dbm {}\n').format(name, sta_ip, rssi, updated)
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': 0,
+                                                    'battery': 0,
+                                                    'temperature': [],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [output],
+                                                    'power': [],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 7=Shelly 2PM Addon
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -505,101 +601,113 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            temperature100 = None
-                                            temperature101 = None
-                                            temperature102 = None
-                                            temperature103 = None
-                                            temperature104 = None
-                                            temp100name = ''
-                                            temp101name = ''
-                                            temp102name = ''
-                                            temp103name = ''
-                                            temp104name = ''
-                                            a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                            b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                            a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                            b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                            a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                            b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                            try:
-                                                temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
-                                                temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
-                                            except:
-                                                pass
-                                            try:
-                                                temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
-                                                temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
-                                            except:
-                                                pass
-                                            try:
-                                                temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
-                                                temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
-                                            except:
-                                                pass
-                                            try:
-                                                temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
-                                                temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
-                                            except:
-                                                pass
-                                            try:
-                                                temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
-                                                temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
-                                            except:
-                                                pass
-                                            voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi"]
-                                            sta_ip = wifi["sta_ip"]
-                                            rssi = wifi["rssi"]
-                                            if online:
-                                                if a_output:
-                                                    msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                    msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
-                                                else:
-                                                    msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                    msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
-                                                if b_output:
-                                                    msg += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
-                                                    msg_info += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
-                                                else:
-                                                    msg += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
-                                                    msg_info += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
-                                                if temperature100 is not None:
-                                                    msg += _('{} {} °C ').format(temp100name, temperature100)
-                                                    msg_info += _('{} {} °C ').format(temp100name, temperature100)
-                                                if temperature101 is not None:
-                                                    msg += _('{} {} °C ').format(temp101name, temperature101)
-                                                    msg_info += _('{} {} °C ').format(temp101name, temperature101)
-                                                if temperature102 is not None:
-                                                    msg += _('{} {} °C ').format(temp102name, temperature102)
-                                                    msg_info += _('{} {} °C ').format(temp102name, temperature102)
-                                                if temperature103 is not None:
-                                                    msg += _('{} {} °C ').format(temp103name, temperature103)
-                                                    msg_info += _('{} {} °C ').format(temp103name, temperature103)
-                                                if temperature104 is not None:
-                                                    msg += _('{} {} °C ').format(temp104name, temperature104)
-                                                    msg_info += _('{} {} °C ').format(temp104name, temperature104)
-                                                msg += '] '
-                                                msg_info += '] '
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': voltage,
-                                                'battery': 0,
-                                                'temperature': [temperature100, temperature101, temperature102, temperature103, temperature104],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [a_output, b_output],
-                                                'power': [a_power, b_power],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                temperature100 = None
+                                                temperature101 = None
+                                                temperature102 = None
+                                                temperature103 = None
+                                                temperature104 = None
+                                                temp100name = ''
+                                                temp101name = ''
+                                                temp102name = ''
+                                                temp103name = ''
+                                                temp104name = ''
+                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                                try:
+                                                    temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
+                                                    temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
+                                                except:
+                                                    pass
+                                                try:
+                                                    temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
+                                                    temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
+                                                except:
+                                                    pass
+                                                try:
+                                                    temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
+                                                    temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
+                                                except:
+                                                    pass
+                                                try:
+                                                    temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
+                                                    temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
+                                                except:
+                                                    pass
+                                                try:
+                                                    temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
+                                                    temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
+                                                except:
+                                                    pass
+                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi"]
+                                                sta_ip = wifi["sta_ip"]
+                                                rssi = wifi["rssi"]
+                                                if online:
+                                                    if a_output:
+                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                    else:
+                                                        msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                    if b_output:
+                                                        msg += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                    else:
+                                                        msg += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                    if temperature100 is not None:
+                                                        msg += _('{} {} °C ').format(temp100name, temperature100)
+                                                        msg_info += _('{} {} °C ').format(temp100name, temperature100)
+                                                    if temperature101 is not None:
+                                                        msg += _('{} {} °C ').format(temp101name, temperature101)
+                                                        msg_info += _('{} {} °C ').format(temp101name, temperature101)
+                                                    if temperature102 is not None:
+                                                        msg += _('{} {} °C ').format(temp102name, temperature102)
+                                                        msg_info += _('{} {} °C ').format(temp102name, temperature102)
+                                                    if temperature103 is not None:
+                                                        msg += _('{} {} °C ').format(temp103name, temperature103)
+                                                        msg_info += _('{} {} °C ').format(temp103name, temperature103)
+                                                    if temperature104 is not None:
+                                                        msg += _('{} {} °C ').format(temp104name, temperature104)
+                                                        msg_info += _('{} {} °C ').format(temp104name, temperature104)
+                                                    msg += '] '
+                                                    msg_info += '] '
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': voltage,
+                                                    'battery': 0,
+                                                    'temperature': [temperature100, temperature101, temperature102, temperature103, temperature104],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [a_output, b_output],
+                                                    'power': [a_power, b_power],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 8=Shelly 1PM Addon
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -609,92 +717,104 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            temperature100 = None
-                                            temperature101 = None
-                                            temperature102 = None
-                                            temperature103 = None
-                                            temperature104 = None
-                                            temp100name = ''
-                                            temp101name = ''
-                                            temp102name = ''
-                                            temp103name = ''
-                                            temp104name = ''
-                                            a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                            a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                            a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                            try:
-                                                temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
-                                                temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
-                                            except:
-                                                pass
-                                            try:
-                                                temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
-                                                temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
-                                            except:
-                                                pass
-                                            try:
-                                                temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
-                                                temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
-                                            except:
-                                                pass
-                                            try:
-                                                temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
-                                                temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
-                                            except:
-                                                pass
-                                            try:
-                                                temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
-                                                temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
-                                            except:
-                                                pass
-                                            voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi"]
-                                            sta_ip = wifi["sta_ip"]
-                                            rssi = wifi["rssi"]
-                                            if online:
-                                                if a_output:
-                                                    msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                    msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
-                                                else:
-                                                    msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                    msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
-                                                if temperature100 is not None:
-                                                    msg += _('{} {} °C ').format(temp100name, temperature100)
-                                                    msg_info += _('{} {} °C ').format(temp100name, temperature100)
-                                                if temperature101 is not None:
-                                                    msg += _('{} {} °C ').format(temp101name, temperature101)
-                                                    msg_info += _('{} {} °C ').format(temp101name, temperature101)
-                                                if temperature102 is not None:
-                                                    msg += _('{} {} °C ').format(temp102name, temperature102)
-                                                    msg_info += _('{} {} °C ').format(temp102name, temperature102)
-                                                if temperature103 is not None:
-                                                    msg += _('{} {} °C ').format(temp103name, temperature103)
-                                                    msg_info += _('{} {} °C ').format(temp103name, temperature103)
-                                                if temperature104 is not None:
-                                                    msg += _('{} {} °C ').format(temp104name, temperature104)
-                                                    msg_info += _('{} {} °C ').format(temp104name, temperature104)
-                                                msg += '] '
-                                                msg_info += '] '
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': voltage,
-                                                'battery': 0,
-                                                'temperature': [temperature100, temperature101, temperature102, temperature103, temperature104],
-                                                'humidity': [],
-                                                'rssi': rssi,
-                                                'output': [a_output],
-                                                'power': [a_power],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                temperature100 = None
+                                                temperature101 = None
+                                                temperature102 = None
+                                                temperature103 = None
+                                                temperature104 = None
+                                                temp100name = ''
+                                                temp101name = ''
+                                                temp102name = ''
+                                                temp103name = ''
+                                                temp104name = ''
+                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                try:
+                                                    temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
+                                                    temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
+                                                except:
+                                                    pass
+                                                try:
+                                                    temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
+                                                    temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
+                                                except:
+                                                    pass
+                                                try:
+                                                    temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
+                                                    temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
+                                                except:
+                                                    pass
+                                                try:
+                                                    temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
+                                                    temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
+                                                except:
+                                                    pass
+                                                try:
+                                                    temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
+                                                    temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
+                                                except:
+                                                    pass
+                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi"]
+                                                sta_ip = wifi["sta_ip"]
+                                                rssi = wifi["rssi"]
+                                                if online:
+                                                    if a_output:
+                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                    else:
+                                                        msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                    if temperature100 is not None:
+                                                        msg += _('{} {} °C ').format(temp100name, temperature100)
+                                                        msg_info += _('{} {} °C ').format(temp100name, temperature100)
+                                                    if temperature101 is not None:
+                                                        msg += _('{} {} °C ').format(temp101name, temperature101)
+                                                        msg_info += _('{} {} °C ').format(temp101name, temperature101)
+                                                    if temperature102 is not None:
+                                                        msg += _('{} {} °C ').format(temp102name, temperature102)
+                                                        msg_info += _('{} {} °C ').format(temp102name, temperature102)
+                                                    if temperature103 is not None:
+                                                        msg += _('{} {} °C ').format(temp103name, temperature103)
+                                                        msg_info += _('{} {} °C ').format(temp103name, temperature103)
+                                                    if temperature104 is not None:
+                                                        msg += _('{} {} °C ').format(temp104name, temperature104)
+                                                        msg_info += _('{} {} °C ').format(temp104name, temperature104)
+                                                    msg += '] '
+                                                    msg_info += '] '
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': voltage,
+                                                    'battery': 0,
+                                                    'temperature': [temperature100, temperature101, temperature102, temperature103, temperature104],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [a_output],
+                                                    'power': [a_power],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                     # typ: 9 = Shelly H&T, 
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -704,38 +824,50 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN2+ not available \n').format(name)
                                         if plugin_options['gen_type'][i] == 0:
                                             name = plugin_options['sensor_label'][i]
-                                            temperature = response_data["data"]["device_status"]["tmp"]["value"]
-                                            humidity = response_data["data"]["device_status"]["hum"]["value"]
-                                            updated = response_data["data"]["device_status"]["_updated"]
                                             isok = response_data["isok"]
-                                            battery = response_data["data"]["device_status"]["bat"]
-                                            online = response_data["data"]["online"]
-                                            wifi = response_data["data"]["device_status"]["wifi_sta"]
-                                            sta_ip = wifi["ip"]
-                                            rssi = wifi["rssi"]
-                                            batt_V = battery["voltage"]
-                                            batt_perc = battery["value"]
-                                            if online:
-                                                msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
-                                                msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                msg += _('[{}: -] ').format(name)
-                                                msg_info += _('{}: OFFLINE\n').format(name)
-                                            
-                                            payload = {
-                                                'id': id,
-                                                'ip': sta_ip,
-                                                'voltage': batt_V,
-                                                'battery': batt_perc,
-                                                'temperature': [temperature],
-                                                'humidity': [humidity],
-                                                'rssi': rssi,
-                                                'output': [],
-                                                'power': [],
-                                                'label': name,
-                                                'online': online,
-                                            }
-                                            self.devices.append(payload) if payload not in self.devices else self.devices
+                                                temperature = response_data["data"]["device_status"]["tmp"]["value"]
+                                                humidity = response_data["data"]["device_status"]["hum"]["value"]
+                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                battery = response_data["data"]["device_status"]["bat"]
+                                                online = response_data["data"]["online"]
+                                                wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                                sta_ip = wifi["ip"]
+                                                rssi = wifi["rssi"]
+                                                batt_V = battery["voltage"]
+                                                batt_perc = battery["value"]
+                                                if online:
+                                                    msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
+                                                    msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': batt_V,
+                                                    'battery': batt_perc,
+                                                    'temperature': [temperature],
+                                                    'humidity': [humidity],
+                                                    'rssi': rssi,
+                                                    'output': [],
+                                                    'power': [],
+                                                    'label': name,
+                                                    'online': online,
+                                                }
+                                                self.devices.append(payload) if payload not in self.devices else self.devices
 
                                 except JSONDecodeError:
                                     raise BadResponse(_('Bad JSON'))
