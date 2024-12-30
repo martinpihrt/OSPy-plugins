@@ -48,6 +48,8 @@ plugin_options = PluginOptions(
         'addons_labels_3': [_('C')],                             # label for addons temperature:101
         'addons_labels_4': [_('D')],                             # label for addons temperature:101
         'addons_labels_5': [_('E')],                             # label for addons temperature:101 (DS18B20 nr5)
+        'reading_type': [1, 1],                                  # 0=Locally via IP, 1=Shelly cloud API
+        'sensor_ip': ['192.168.88.109', '192.168.88.169'],
     }
 )
 
@@ -95,13 +97,26 @@ class Sender(Thread):
                     for i in range(0, plugin_options['number_sensors']):
                         id = plugin_options['sensor_id'][i]
                         if len(id) > 5 and plugin_options['use_sensor'][i]:
-                            url = 'https://{}/device/status?auth_key={}&id={}'.format(plugin_options['server_uri'], plugin_options['auth_key'], id)
+                            if plugin_options['reading_type'][i] == 1:      # 0=Locally via IP, 1=Shelly cloud API
+                                url = 'https://{}/device/status?auth_key={}&id={}'.format(plugin_options['server_uri'], plugin_options['auth_key'], id)
+                            else:
+                                if plugin_options['gen_type'][i] == 0:      # gen1 device. url=http://IP/status
+                                    url = 'http://{}/status'.format(plugin_options['sensor_ip'][i])
+                                else:                                       # gen2+ device. url=http://IP/rpc/Shelly.GetStatus
+                                    url = 'http://{}/rpc/Shelly.GetStatus'.format(plugin_options['sensor_ip'][i])
                             try:
                                 response = get(url, timeout=5)
                                 if response.status_code == 401:
-                                    log.error(NAME, _('Shelly Cloud Bad Login'))
+                                    if plugin_options['reading_type'][i] == 1:
+                                        log.error(NAME, _('Shelly Cloud Bad Login'))
+                                    else:
+                                        log.error(NAME, _('Locally Bad Login to device'))
                                 elif response.status_code == 404:
-                                    log.error(NAME, _('Shelly Cloud Not Found'))
+                                    if plugin_options['reading_type'][i] == 1:
+                                        log.error(NAME, _('Shelly Cloud Not Found'))
+                                    else:
+                                        log.error(NAME, _('Device Not Found'))
+
                                 try:
                                     response_data = response.json()
                                     # typ: 0 = Shelly Plus HT, 
@@ -160,9 +175,12 @@ class Sender(Thread):
                                     # typ: 1=Shelly Plus Plug S ver 1
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 1:
-                                        if plugin_options['gen_type'][i] == 0:
+                                        if plugin_options['gen_type'][i] == 0:              # GEN 1 device
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:      # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -175,14 +193,24 @@ class Sender(Thread):
                                                 msg += _('[{}: Error] ').format(name)
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                wifi = response_data["data"]["device_status"]["wifi_sta"]
-                                                sta_ip = wifi["ip"]
-                                                rssi = wifi["rssi"]
-                                                power = response_data["data"]["device_status"]["meters"][0]["power"]
-                                                total = response_data["data"]["device_status"]["meters"][0]["total"]
-                                                output = response_data["data"]["device_status"]["relays"][0]["ison"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                                    sta_ip = wifi["ip"]
+                                                    rssi = wifi["rssi"]
+                                                    power = response_data["data"]["device_status"]["meters"][0]["power"]
+                                                    total = response_data["data"]["device_status"]["meters"][0]["total"]
+                                                    output = response_data["data"]["device_status"]["relays"][0]["ison"]
+                                                else:                                       # via local IP data
+                                                    updated = response_data["time"]
+                                                    online = True
+                                                    wifi = response_data["wifi_sta"]
+                                                    sta_ip = wifi["ip"]
+                                                    rssi = wifi["rssi"]
+                                                    power = response_data["meters"][0]["power"]
+                                                    total = response_data["meters"][0]["total"]
+                                                    output = response_data["relays"][0]["ison"]
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON {} W] ').format(name, power)
@@ -207,9 +235,12 @@ class Sender(Thread):
                                                     'online': online,
                                                 }
                                                 self.devices.append(payload) if payload not in self.devices else self.devices
-                                        if plugin_options['gen_type'][i] == 1:
+                                        if plugin_options['gen_type'][i] == 1:          # GEN 2+ device
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -222,15 +253,26 @@ class Sender(Thread):
                                                 msg += _('[{}: Error] ').format(name)
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                wifi = response_data["data"]["device_status"]["wifi"]
-                                                sta_ip = wifi["sta_ip"]
-                                                rssi = wifi["rssi"]
-                                                power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                                total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                                output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                    power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                    total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                    output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                    voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                else:                                       # via local IP data
+                                                    updated = response_data["sys"]["time"]
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                    power = response_data["switch:0"]["apower"]
+                                                    total = response_data["switch:0"]["aenergy"]["total"]
+                                                    output = response_data["switch:0"]["output"]
+                                                    voltage = response_data["switch:0"]["voltage"]
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
@@ -259,12 +301,15 @@ class Sender(Thread):
                                     # typ: 2=Shelly Pro 2PM
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 2:
-                                        if plugin_options['gen_type'][i] == 0:
+                                        if plugin_options['gen_type'][i] == 0:          # GEN 1 device
                                             name = plugin_options['sensor_label'][i]
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
-                                        if plugin_options['gen_type'][i] == 1:
+                                        if plugin_options['gen_type'][i] == 1:          # GEN 2+ device
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -277,21 +322,38 @@ class Sender(Thread):
                                                 msg += _('[{}: Error] ').format(name)
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                a_energy = response_data["data"]["device_status"]["switch:0"]["aenergy"]
-                                                b_energy = response_data["data"]["device_status"]["switch:1"]["aenergy"]
-                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                                b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                                b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                                a_voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                b_voltage = response_data["data"]["device_status"]["switch:1"]["voltage"]
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                wifi = response_data["data"]["device_status"]["wifi"]
-                                                sta_ip = wifi["sta_ip"]
-                                                rssi = wifi["rssi"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    a_energy = response_data["data"]["device_status"]["switch:0"]["aenergy"]
+                                                    b_energy = response_data["data"]["device_status"]["switch:1"]["aenergy"]
+                                                    a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                    b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                                    a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                    b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                                    a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                    b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                                    a_voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                    b_voltage = response_data["data"]["device_status"]["switch:1"]["voltage"]
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+                                                    a_energy = response_data["switch:0"]["aenergy"]
+                                                    b_energy = response_data["switch:1"]["aenergy"]
+                                                    a_total = response_data["switch:0"]["aenergy"]["total"]
+                                                    b_total = response_data["switch:1"]["aenergy"]["total"]
+                                                    a_output = response_data["switch:0"]["output"]
+                                                    b_output = response_data["switch:1"]["output"]
+                                                    a_power = response_data["switch:0"]["apower"]
+                                                    b_power = response_data["switch:1"]["apower"]
+                                                    a_voltage = response_data["switch:0"]["voltage"]
+                                                    b_voltage = response_data["switch:1"]["voltage"]
+                                                    updated = response_data["sys"]["time"]
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]                                                    
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
@@ -327,12 +389,15 @@ class Sender(Thread):
                                     # typ: 3=Shelly 1PM Mini
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 3:
-                                        if plugin_options['gen_type'][i] == 0:
+                                        if plugin_options['gen_type'][i] == 0:          # GEN 1 device
                                             name = plugin_options['sensor_label'][i]
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
-                                        if plugin_options['gen_type'][i] == 1:
+                                        if plugin_options['gen_type'][i] == 1:          # GEN 2+ device
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -345,15 +410,26 @@ class Sender(Thread):
                                                 msg += _('[{}: Error] ').format(name)
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                                output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                wifi = response_data["data"]["device_status"]["wifi"]
-                                                sta_ip = wifi["sta_ip"]
-                                                rssi = wifi["rssi"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                    output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                    power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                    voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+                                                    total = response_data["switch:0"]["aenergy"]["total"]
+                                                    output = response_data["switch:0"]["output"]
+                                                    power = response_data["switch:0"]["apower"]
+                                                    voltage = response_data["switch:0"]["voltage"]
+                                                    updated = response_data["sys"]["time"]
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]                                                    
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
@@ -382,9 +458,12 @@ class Sender(Thread):
                                     # typ: 4=Shelly 2.5
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 4:
-                                        if plugin_options['gen_type'][i] == 0:
+                                        if plugin_options['gen_type'][i] == 0:          # GEN 1 device
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -398,29 +477,54 @@ class Sender(Thread):
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
                                                 roller = None
-                                                try: # roller mode
-                                                    roller = response_data["data"]["device_status"]["rollers"][0]["state"]
-                                                    a_power = response_data["data"]["device_status"]["meters"][0]["power"]
-                                                    b_power = response_data["data"]["device_status"]["meters"][1]["power"]
-                                                    a_total = response_data["data"]["device_status"]["meters"][0]["total"]
-                                                    b_total = response_data["data"]["device_status"]["meters"][1]["total"]
-                                                    voltage = response_data["data"]["device_status"]["voltage"]
-                                                    wifi = response_data["data"]["device_status"]["wifi_sta"]
-                                                    sta_ip = wifi["ip"]
-                                                except: # switch mode
-                                                    a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                                    b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                                    a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                                    b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                                    voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                    a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                    b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                                    wifi = response_data["data"]["device_status"]["wifi"]
-                                                    sta_ip = wifi["sta_ip"]
-                                                    pass  
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                rssi = wifi["rssi"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    try: # roller mode
+                                                        roller = response_data["data"]["device_status"]["rollers"][0]["state"]
+                                                        a_power = response_data["data"]["device_status"]["meters"][0]["power"]
+                                                        b_power = response_data["data"]["device_status"]["meters"][1]["power"]
+                                                        a_total = response_data["data"]["device_status"]["meters"][0]["total"]
+                                                        b_total = response_data["data"]["device_status"]["meters"][1]["total"]
+                                                        voltage = response_data["data"]["device_status"]["voltage"]
+                                                        wifi = response_data["data"]["device_status"]["wifi_sta"]
+                                                        sta_ip = wifi["ip"]
+                                                    except: # switch mode
+                                                        a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                        b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                                        a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                        b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                                        voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                        a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                        b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                                        wifi = response_data["data"]["device_status"]["wifi"]
+                                                        sta_ip = wifi["sta_ip"]
+                                                        pass  
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+                                                    try: # roller mode
+                                                        roller = response_data["rollers"][0]["state"]
+                                                        a_power = response_data["meters"][0]["power"]
+                                                        b_power = response_data["meters"][1]["power"]
+                                                        a_total = response_data["meters"][0]["total"]
+                                                        b_total = response_data["meters"][1]["total"]
+                                                        voltage = response_data["voltage"]
+                                                        wifi = response_data["wifi_sta"]
+                                                        sta_ip = wifi["ip"]
+                                                    except: # switch mode
+                                                        a_power = response_data["switch:0"]["apower"]
+                                                        b_power = response_data["switch:1"]["apower"]
+                                                        a_total = response_data["switch:0"]["aenergy"]["total"]
+                                                        b_total = response_data["switch:1"]["aenergy"]["total"]
+                                                        voltage = response_data["switch:0"]["voltage"]
+                                                        a_output = response_data["switch:0"]["output"]
+                                                        b_output = response_data["switch:1"]["output"]
+                                                        wifi = response_data["sta_ip"]
+                                                        sta_ip = wifi["ip"]
+                                                        pass  
+                                                    updated = response_data["time"]
+                                                    online = True
+                                                    rssi = wifi["rssi"]                                                    
                                                 if online:
                                                     if roller is None:
                                                         if a_output:
@@ -467,7 +571,10 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -480,24 +587,44 @@ class Sender(Thread):
                                                 msg += _('[{}: Error] ').format(name)
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                                b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                                c_total = response_data["data"]["device_status"]["switch:2"]["aenergy"]["total"]
-                                                d_total = response_data["data"]["device_status"]["switch:3"]["aenergy"]["total"]
-                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                                c_output = response_data["data"]["device_status"]["switch:2"]["output"]
-                                                d_output = response_data["data"]["device_status"]["switch:3"]["output"]
-                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                                b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                                c_power = response_data["data"]["device_status"]["switch:2"]["apower"]
-                                                d_power = response_data["data"]["device_status"]["switch:3"]["apower"]
-                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                wifi = response_data["data"]["device_status"]["wifi"]
-                                                sta_ip = wifi["sta_ip"]
-                                                rssi = wifi["rssi"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                    b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                                    c_total = response_data["data"]["device_status"]["switch:2"]["aenergy"]["total"]
+                                                    d_total = response_data["data"]["device_status"]["switch:3"]["aenergy"]["total"]
+                                                    a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                    b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                                    c_output = response_data["data"]["device_status"]["switch:2"]["output"]
+                                                    d_output = response_data["data"]["device_status"]["switch:3"]["output"]
+                                                    a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                    b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                                    c_power = response_data["data"]["device_status"]["switch:2"]["apower"]
+                                                    d_power = response_data["data"]["device_status"]["switch:3"]["apower"]
+                                                    voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+                                                    a_total = response_data["switch:0"]["aenergy"]["total"]
+                                                    b_total = response_data["switch:1"]["aenergy"]["total"]
+                                                    c_total = response_data["switch:2"]["aenergy"]["total"]
+                                                    d_total = response_data["switch:3"]["aenergy"]["total"]
+                                                    a_output = response_data["switch:0"]["output"]
+                                                    b_output = response_data["switch:1"]["output"]
+                                                    c_output = response_data["switch:2"]["output"]
+                                                    d_output = response_data["switch:3"]["output"]
+                                                    a_power = response_data["switch:0"]["apower"]
+                                                    b_power = response_data["switch:1"]["apower"]
+                                                    c_power = response_data["switch:2"]["apower"]
+                                                    d_power = response_data["switch:3"]["apower"]
+                                                    voltage = response_data["switch:0"]["voltage"]
+                                                    updated = response_data["sys"]["time"]
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]                                                   
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
@@ -549,7 +676,10 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -562,12 +692,20 @@ class Sender(Thread):
                                                 msg += _('[{}: Error] ').format(name)
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                wifi = response_data["data"]["device_status"]["wifi"]
-                                                sta_ip = wifi["sta_ip"]
-                                                rssi = wifi["rssi"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+                                                    output = response_data["switch:0"]["output"]
+                                                    updated = response_data["sys"]["time"]
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]                                                    
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON] ').format(name)
@@ -601,7 +739,10 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -624,43 +765,82 @@ class Sender(Thread):
                                                 temp102name = ''
                                                 temp103name = ''
                                                 temp104name = ''
-                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                                b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
-                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                b_output = response_data["data"]["device_status"]["switch:1"]["output"]
-                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                                b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
-                                                try:
-                                                    temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
-                                                    temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
-                                                except:
-                                                    pass
-                                                try:
-                                                    temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
-                                                    temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
-                                                except:
-                                                    pass
-                                                try:
-                                                    temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
-                                                    temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
-                                                except:
-                                                    pass
-                                                try:
-                                                    temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
-                                                    temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
-                                                except:
-                                                    pass
-                                                try:
-                                                    temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
-                                                    temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
-                                                except:
-                                                    pass
-                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                wifi = response_data["data"]["device_status"]["wifi"]
-                                                sta_ip = wifi["sta_ip"]
-                                                rssi = wifi["rssi"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                    b_total = response_data["data"]["device_status"]["switch:1"]["aenergy"]["total"]
+                                                    a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                    b_output = response_data["data"]["device_status"]["switch:1"]["output"]
+                                                    a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                    b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
+                                                    try:
+                                                        temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
+                                                        temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
+                                                        temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
+                                                        temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
+                                                        temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
+                                                        temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
+                                                    except:
+                                                        pass
+                                                    voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+                                                    a_total = response_data["switch:0"]["aenergy"]["total"]
+                                                    b_total = response_data["switch:1"]["aenergy"]["total"]
+                                                    a_output = response_data["switch:0"]["output"]
+                                                    b_output = response_data["switch:1"]["output"]
+                                                    a_power = response_data["switch:0"]["apower"]
+                                                    b_power = response_data["switch:1"]["apower"]
+                                                    try:
+                                                        temperature100 = response_data["temperature:100"]["tC"]
+                                                        temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature101 = response_data["temperature:101"]["tC"]
+                                                        temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature102 = response_data["temperature:102"]["tC"]
+                                                        temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature103 = response_data["temperature:103"]["tC"]
+                                                        temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature104 = response_data["temperature:104"]["tC"]
+                                                        temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
+                                                    except:
+                                                        pass
+                                                    voltage = response_data["switch:0"]["voltage"]
+                                                    updated = response_data["sys"]["time"]
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]                                                    
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
@@ -717,7 +897,10 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available yet \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
                                             err = ""
                                             if not isok:
                                                 errors = response_data["errors"]
@@ -740,40 +923,76 @@ class Sender(Thread):
                                                 temp102name = ''
                                                 temp103name = ''
                                                 temp104name = ''
-                                                a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
-                                                a_output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
-                                                try:
-                                                    temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
-                                                    temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
-                                                except:
-                                                    pass
-                                                try:
-                                                    temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
-                                                    temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
-                                                except:
-                                                    pass
-                                                try:
-                                                    temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
-                                                    temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
-                                                except:
-                                                    pass
-                                                try:
-                                                    temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
-                                                    temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
-                                                except:
-                                                    pass
-                                                try:
-                                                    temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
-                                                    temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
-                                                except:
-                                                    pass
-                                                voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                updated = response_data["data"]["device_status"]["_updated"]
-                                                online = response_data["data"]["online"]
-                                                wifi = response_data["data"]["device_status"]["wifi"]
-                                                sta_ip = wifi["sta_ip"]
-                                                rssi = wifi["rssi"]
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    a_total = response_data["data"]["device_status"]["switch:0"]["aenergy"]["total"]
+                                                    a_output = response_data["data"]["device_status"]["switch:0"]["output"]
+                                                    a_power = response_data["data"]["device_status"]["switch:0"]["apower"]
+                                                    try:
+                                                        temperature100 = response_data["data"]["device_status"]["temperature:100"]["tC"]
+                                                        temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature101 = response_data["data"]["device_status"]["temperature:101"]["tC"]
+                                                        temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature102 = response_data["data"]["device_status"]["temperature:102"]["tC"]
+                                                        temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature103 = response_data["data"]["device_status"]["temperature:103"]["tC"]
+                                                        temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature104 = response_data["data"]["device_status"]["temperature:104"]["tC"]
+                                                        temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
+                                                    except:
+                                                        pass
+                                                    voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
+                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+                                                    a_total = response_data["switch:0"]["aenergy"]["total"]
+                                                    a_output = response_data["switch:0"]["output"]
+                                                    a_power = response_data["switch:0"]["apower"]
+                                                    try:
+                                                        temperature100 = response_data["temperature:100"]["tC"]
+                                                        temp100name = plugin_options['addons_labels_1'][i] # response_data["data"]["device_status"]["addons"][0]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature101 = response_data["temperature:101"]["tC"]
+                                                        temp101name = plugin_options['addons_labels_2'][i] # response_data["data"]["device_status"]["addons"][1]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature102 = response_data["temperature:102"]["tC"]
+                                                        temp102name = plugin_options['addons_labels_3'][i] # response_data["data"]["device_status"]["addons"][2]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature103 = response_data["temperature:103"]["tC"]
+                                                        temp103name = plugin_options['addons_labels_4'][i] # response_data["data"]["device_status"]["addons"][3]
+                                                    except:
+                                                        pass
+                                                    try:
+                                                        temperature104 = response_data["temperature:104"]["tC"]
+                                                        temp104name = plugin_options['addons_labels_5'][i] # response_data["data"]["device_status"]["addons"][4]
+                                                    except:
+                                                        pass
+                                                    voltage = response_data["switch:0"]["voltage"]
+                                                    updated = response_data["sys"]["time"]
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]                                                    
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
@@ -969,6 +1188,8 @@ class sensors_page(ProtectedPage):
                 'addons_labels_3': [],
                 'addons_labels_4': [],
                 'addons_labels_5': [],
+                'reading_type': [],
+                'sensor_ip': [],
                 }
 
             for i in range(0, plugin_options['number_sensors']):
@@ -1023,6 +1244,16 @@ class sensors_page(ProtectedPage):
                 else:
                     commands['addons_labels_5'].append('')
 
+                if 'reading_type'+str(i) in qdict:
+                    commands['reading_type'].append(int(qdict['reading_type'+str(i)]))
+                else:
+                    commands['reading_type'].append(int(1))
+
+                if 'sensor_ip'+str(i) in qdict:
+                    commands['sensor_ip'].append(qdict['sensor_ip'+str(i)])
+                else:
+                    commands['sensor_ip'].append('')                    
+
             plugin_options.__setitem__('sensor_type', commands['sensor_type'])
             plugin_options.__setitem__('gen_type', commands['gen_type'])
             plugin_options.__setitem__('use_sensor', commands['use_sensor'])
@@ -1033,6 +1264,8 @@ class sensors_page(ProtectedPage):
             plugin_options.__setitem__('addons_labels_3', commands['addons_labels_3'])
             plugin_options.__setitem__('addons_labels_4', commands['addons_labels_4'])
             plugin_options.__setitem__('addons_labels_5', commands['addons_labels_5'])
+            plugin_options.__setitem__('reading_type', commands['reading_type'])
+            plugin_options.__setitem__('sensor_ip', commands['sensor_ip'])
 
             if sender is not None:
                 sender.update()

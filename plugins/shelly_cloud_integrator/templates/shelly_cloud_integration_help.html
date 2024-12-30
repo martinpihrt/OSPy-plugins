@@ -5,6 +5,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Shelly Cloud Integration - help')</div>
+    <p>$_('This extension adds integration of Shelly devices into the OSPy ecosystem. After setting up this extension and adding devices, these devices will appear in OSPy sensors and you will be able to work with them further.')</p><br>
     <p>$_('How to get the latest device status via Shelly Cloud API and curl.')</p><br>
     <p>$_('Path: https:// <***server_uri > /device/status.')</p>
     <p>$_('Supported methods: GET and POST.')</p>
@@ -16,8 +17,12 @@ $var page: plugins
     <p>$_('The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.')</p>
     <b>$_('Shelly API')</b><br>
     <p>https://shelly-api-docs.shelly.cloud/gen1/</p>
-    <p>https://shelly-api-docs.shelly.cloud/gen2/</p>
-</b>
+    <p>https://shelly-api-docs.shelly.cloud/gen2/</p><br>
+    <b>$_('Reading data over the local network')</b>
+    <p>$_('From devices that are permanently connected to the local network (Wi-Fi or LAN), data can be read directly outside the Shelly cloud. The advantage is that data can be read regardless of the cloud provider, i.e. Shelly cloud API. This method cannot be used for devices that sleep and wake up (for example shelly H&T, etc.) and are not permanently connected to the network.')</p>
+    <p>$_('In the device settings (for devices that support it) there is an option to select reading: cloud or locally.')</p>
+    <p>$_('Example of reading data over the local network for a gen1 device. http://IP/status')</p>
+    <p>$_('Example of reading data over the local network for a gen2+ device. http://IP/rpc/Shelly.GetStatus')</p>
 </div>
 
 <div id="controls">

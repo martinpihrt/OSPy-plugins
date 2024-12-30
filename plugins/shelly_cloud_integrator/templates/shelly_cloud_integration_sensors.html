@@ -65,21 +65,27 @@ $var page: plugins
         border-radius: 5px;
         white-space: nowrap;
         font-size: 12px;
-    }    
+    }
+    .valid {
+    border-color: green;
+    }
+    .invalid {
+    border-color: red;
+    }
 </style>
 
 <script>
     var msg = "${msg}";
+
     jQuery(document).ready(function(){
         jQuery("#cSubmit").click(function() {
             jQuery("#pluginForm").submit();
         });
-        // Automatic sending form after change
-        jQuery("#number_sensors, select[id^='sensor_type'], select[id^='gen_type'], input[id^='use_sensor']").change(function() {
+
+        jQuery("#number_sensors, select[id^='sensor_type'], select[id^='gen_type'], input[id^='use_sensor'], select[id^='reading_type']").change(function() {
             jQuery("#pluginForm").submit();
         });
 
-        jQuery('#msgHint').fadeIn(10);
         switch (msg) {
             case "none":
                 jQuery("#msgHint").text($:{json.dumps(' ', ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
@@ -91,9 +97,19 @@ $var page: plugins
                 jQuery("#msgHint").text($:{json.dumps(_('Error when saving, more in debug print!'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'red');
                 break;
         }
-        jQuery('#msgHint').fadeOut(4000);
+        jQuery('#msgHint').fadeIn(10).fadeOut(4000);
     });
+
+    jQuery(document).on("keyup", ".IPnumbersOnly", function() {
+        const newValue = this.value.replace(/[^0-9\.]/g, '');
+        this.value = newValue;
+        let IPAddress = newValue;
+        let IPRegex=new RegExp("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
+        let test = IPRegex.test(IPAddress);
+        jQuery(this).toggleClass("valid", test).toggleClass("invalid", !test);
+    });    
 </script>
+
 
 <div id="plugin">
     <div class="title">$_('Shelly Cloud Integration - Setup')
@@ -102,7 +118,7 @@ $var page: plugins
     </div>
     <a href=$plugins.plugin_url('shelly_cloud_integrator.help_page') class="button upload">$_('Help')</a>
     <p><button id="cSubmit" class="submitButton">$_('Submit')</button>
-    <a href=$plugins.plugin_url('shelly_cloud_integrator.status_page') class="button cancel">$_('Cancel')</a></p><br/>
+    <a href=$plugins.plugin_url('shelly_cloud_integrator.status_page') class="button cancel danger">$_('Cancel')</a></p><br/>
     <form id="pluginForm" action="$plugins.plugin_url('shelly_cloud_integrator.sensors_page')" method="post">
         <table class="optionList">
             <tr>
@@ -154,16 +170,50 @@ $var page: plugins
                             </label>
                         </td>
                     </tr>
+                    $if plugin_options["sensor_type"][c]==0 or plugin_options["sensor_type"][c]==9:
+                        <tr>
+                            <td style='text-transform: none;'>$_('Reading data from'):</td>
+                            <td title=$:{json.dumps(_('Data from the device can be read locally (on the local network) or remotely (via the Shelly API cloud).)'), ensure_ascii=False)}>
+                                <p>$_('Only cloud')</p>
+                            </td>
+                        </tr>                    
+                    $else:
+                        <tr>
+                            <td style='text-transform: none;'>$_('Reading data from'):</td>
+                            <td title=$:{json.dumps(_('Data from the device can be read locally (on the local network) or remotely (via the Shelly API cloud).)'), ensure_ascii=False)}>
+                                <select name="reading_type${c}" id='reading_type${c}'>
+                                    <option value="0" ${"selected" if plugin_options["reading_type"][c]==0 else ""}>$_('Locally via IP')</option>
+                                    <option value="1" ${"selected" if plugin_options["reading_type"][c]==1 else ""}>$_('Shelly cloud API')</option>
+                                </select>
+                            </td>
+                        </tr>
                     <tr>
                         <td style='text-transform: none;'>$_('Label for Shelly sensor'):</td>
                         <td title=$:{json.dumps(_('Your own Shelly device name (under this name the device will be available in OSPy).'), ensure_ascii=False)}>
-                            <input name='sensor_label${c}' type='text' size='50' value='$plugin_options["sensor_label"][c]'>
+                            <input name='sensor_label${c}' type='text' size='15' value='$plugin_options["sensor_label"][c]'>
                         </td>
                     </tr>
+                    $if plugin_options["reading_type"][c]==0:
+                        $if plugin_options["sensor_type"][c]==0 or plugin_options["sensor_type"][c]==9:
+                            <tr>
+                                <td style='text-transform: none;'>$_('Local IP'):</td>
+                                <td title=$:{json.dumps(_('IP address of Shelly device on local network.'), ensure_ascii=False)}>
+                                    <p>$_('Not using for this device!')</p>
+                                </td> 
+                            </tr>                        
+                        $else:
+                            <tr>
+                                <td style='text-transform: none;'>$_('Local IP'):</td>
+                                <td title=$:{json.dumps(_('IP address of Shelly device on local network.'), ensure_ascii=False)}>
+                                    <input name='sensor_ip${c}' class="IPnumbersOnly" type='text' size='15' maxlength="15" id='sensor_ip${c}' value='$plugin_options["sensor_ip"][c]'>
+                                </td> 
+                            </tr>
+                    $else:
+                        <input type='hidden' name='sensor_ip${c}' value='${plugin_options["sensor_ip"][c] if c < len(plugin_options["sensor_ip"]) else ""}'>
                     <tr>
                         <td style='text-transform: none;'>$_('Shelly sensor ID'):</td>
                         <td title=$:{json.dumps(_('This can be obtained from Shelly. Example: b0b21c1368aa'), ensure_ascii=False)}>
-                            <input name='sensor_id${c}' type='text' size='50' value='$plugin_options["sensor_id"][c]'>
+                            <input name='sensor_id${c}' type='text' size='15' value='$plugin_options["sensor_id"][c]'>
                         </td>
                     </tr>
                     <tr>
@@ -241,31 +291,31 @@ $var page: plugins
                         <tr>
                             <td style='text-transform: none;'>$_('Label DS18B20 ID100'):</td>
                             <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature100 ID100.'), ensure_ascii=False)}>
-                            <input name='addons_labels_1${c}' type='text' size='30' value='${plugin_options["addons_labels_1"][c] if c < len(plugin_options["addons_labels_1"]) else ""}'>
+                            <input name='addons_labels_1${c}' type='text' size='15' value='${plugin_options["addons_labels_1"][c] if c < len(plugin_options["addons_labels_1"]) else ""}'>
                             </td>
                         </tr>
                         <tr>
                             <td style='text-transform: none;'>$_('Label DS18B20 ID101'):</td>
                             <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature101 ID101.'), ensure_ascii=False)}>
-                            <input name='addons_labels_2${c}' type='text' size='30' value='${plugin_options["addons_labels_2"][c] if c < len(plugin_options["addons_labels_2"]) else ""}'>
+                            <input name='addons_labels_2${c}' type='text' size='15' value='${plugin_options["addons_labels_2"][c] if c < len(plugin_options["addons_labels_2"]) else ""}'>
                             </td>
                         </tr>
                         <tr>
                             <td style='text-transform: none;'>$_('Label DS18B20 ID102'):</td>
                             <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature102 ID102.'), ensure_ascii=False)}>
-                            <input name='addons_labels_3${c}' type='text' size='30' value='${plugin_options["addons_labels_3"][c] if c < len(plugin_options["addons_labels_3"]) else ""}'>
+                            <input name='addons_labels_3${c}' type='text' size='15' value='${plugin_options["addons_labels_3"][c] if c < len(plugin_options["addons_labels_3"]) else ""}'>
                             </td>
                         </tr>
                         <tr>
                             <td style='text-transform: none;'>$_('Label DS18B20 ID103'):</td>
                             <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature103 ID103.'), ensure_ascii=False)}>
-                            <input name='addons_labels_4${c}' type='text' size='30' value='${plugin_options["addons_labels_4"][c] if c < len(plugin_options["addons_labels_4"]) else ""}'>
+                            <input name='addons_labels_4${c}' type='text' size='15' value='${plugin_options["addons_labels_4"][c] if c < len(plugin_options["addons_labels_4"]) else ""}'>
                             </td>
                         </tr>
                         <tr>
                             <td style='text-transform: none;'>$_('Label DS18B20 ID104'):</td>
                             <td title=$:{json.dumps(_('Label for Shelly Addons ex: temperature probe with temperature104 ID104.'), ensure_ascii=False)}>
-                            <input name='addons_labels_5${c}' type='text' size='30' value='${plugin_options["addons_labels_5"][c] if c < len(plugin_options["addons_labels_5"]) else ""}'>
+                            <input name='addons_labels_5${c}' type='text' size='15' value='${plugin_options["addons_labels_5"][c] if c < len(plugin_options["addons_labels_5"]) else ""}'>
                             </td>
                         </tr>
                     $else:
@@ -277,6 +327,6 @@ $var page: plugins
                 </table>
         </table>
         <button id="cSubmit" class="submitButton">$_('Submit')</button>
-        <a href=$plugins.plugin_url('shelly_cloud_integrator.status_page') class="button cancel">$_('Cancel')</a>
+        <a href=$plugins.plugin_url('shelly_cloud_integrator.status_page') class="button cancel danger">$_('Cancel')</a>
     </form>
 </div>
