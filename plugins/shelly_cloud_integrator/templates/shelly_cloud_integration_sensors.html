@@ -107,7 +107,7 @@ $var page: plugins
         let IPRegex=new RegExp("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
         let test = IPRegex.test(IPAddress);
         jQuery(this).toggleClass("valid", test).toggleClass("invalid", !test);
-    });    
+    });
 </script>
 
 
@@ -176,7 +176,7 @@ $var page: plugins
                             <td title=$:{json.dumps(_('Data from the device can be read locally (on the local network) or remotely (via the Shelly API cloud).)'), ensure_ascii=False)}>
                                 <p>$_('Only cloud')</p>
                             </td>
-                        </tr>                    
+                        </tr>
                     $else:
                         <tr>
                             <td style='text-transform: none;'>$_('Reading data from'):</td>
@@ -200,12 +200,12 @@ $var page: plugins
                                 <td title=$:{json.dumps(_('IP address of Shelly device on local network.'), ensure_ascii=False)}>
                                     <p>$_('Not using for this device!')</p>
                                 </td> 
-                            </tr>                        
+                            </tr>
                         $else:
                             <tr>
                                 <td style='text-transform: none;'>$_('Local IP'):</td>
                                 <td title=$:{json.dumps(_('IP address of Shelly device on local network.'), ensure_ascii=False)}>
-                                    <input name='sensor_ip${c}' class="IPnumbersOnly" type='text' size='15' maxlength="15" id='sensor_ip${c}' value='$plugin_options["sensor_ip"][c]'>
+                                    <input name='sensor_ip${c}' class="IPnumbersOnly" type='text' size='15' maxlength="15" id='sensor_ip${c}' value='${plugin_options["sensor_ip"][c] if c < len(plugin_options["sensor_ip"]) else ""}'>
                                 </td> 
                             </tr>
                     $else:
