@@ -48,8 +48,8 @@ plugin_options = PluginOptions(
         'addons_labels_3': [_('C')],                             # label for addons temperature:101
         'addons_labels_4': [_('D')],                             # label for addons temperature:101
         'addons_labels_5': [_('E')],                             # label for addons temperature:101 (DS18B20 nr5)
-        'reading_type': [1, 1],                                  # 0=Locally via IP, 1=Shelly cloud API
-        'sensor_ip': ['192.168.88.109', '192.168.88.169'],
+        'reading_type': [1]*20,                                  # 0=Locally via IP, 1=Shelly cloud API
+        'sensor_ip': ['']*20,
     }
 )
 
