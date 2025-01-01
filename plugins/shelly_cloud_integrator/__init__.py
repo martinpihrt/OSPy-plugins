@@ -11,13 +11,16 @@ from threading import Thread, Event                              # For use a sep
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
-from ospy.helpers import datetime_string                         # For using date time in events logs
+from ospy.helpers import datetime_string, now                    # For using date time in events logs
 from ospy.webpages import ProtectedPage                          # For check user login permissions
 
 from ospy.webpages import showInFooter                           # Enable plugin to display readings in UI footer
 
-from requests import get
+from requests import get, exceptions
 from json.decoder import JSONDecodeError
+
+import datetime
+
 
 ################################################################################
 # Plugin name, translated name, link for web page in init, plugin options      #
@@ -40,7 +43,8 @@ plugin_options = PluginOptions(
          # 0=Shelly Plus HT, 1=Shelly Plus Plug S,
          # 2=Shelly Pro 2PM, 3=Shelly 1PM Mini,
          # 4=Shelly 2.5, 5=Shelly Pro 4PM,
-         # 6=Shelly 1 Mini, 7=Shelly 2PM Addon
+         # 6=Shelly 1 Mini, 7=Shelly 2PM Addon,
+         # 8=Shelly 1PM Addon, 9= Shelly H&T
         'gen_type': [0, 1],                                      # 0=Gen1, 1=Gen2
         'number_sensors': 2,                                     # default 2 sensors for example
         'addons_labels_1': [_('A')],                             # label for addons temperature:100 (DS18B20 nr1)
@@ -142,7 +146,7 @@ class Sender(Thread):
                                             else:
                                                 temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
                                                 humidity = response_data["data"]["device_status"]["humidity:0"]["rh"]
-                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                updated = now()
                                                 battery = response_data["data"]["device_status"]["devicepower:0"]["battery"]
                                                 online = response_data["data"]["online"]
                                                 wifi = response_data["data"]["device_status"]["wifi"]
@@ -152,7 +156,7 @@ class Sender(Thread):
                                                 batt_perc = battery["percent"]
                                                 if online:
                                                     msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
-                                                    msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                                    msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -169,8 +173,9 @@ class Sender(Thread):
                                                     'power': [],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
                                     # typ: 1=Shelly Plus Plug S ver 1
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -194,7 +199,7 @@ class Sender(Thread):
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
                                                 if plugin_options['reading_type'][i] == 1:  # only cloud API data
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi_sta"]
                                                     sta_ip = wifi["ip"]
@@ -203,7 +208,7 @@ class Sender(Thread):
                                                     total = response_data["data"]["device_status"]["meters"][0]["total"]
                                                     output = response_data["data"]["device_status"]["relays"][0]["ison"]
                                                 else:                                       # via local IP data
-                                                    updated = response_data["time"]
+                                                    updated = now()
                                                     online = True
                                                     wifi = response_data["wifi_sta"]
                                                     sta_ip = wifi["ip"]
@@ -214,10 +219,10 @@ class Sender(Thread):
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON {} W] ').format(name, power)
-                                                        msg_info += _('{}: ON {} W IP:{} RSSI:{} dbm {}\n').format(name, power, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: ON {} W IP:{} RSSI:{} dbm {}\n').format(name, power, sta_ip, rssi, format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: OFF {} W] ').format(name, power)
-                                                        msg_info += _('{}: OFF {} W IP:{} RSSI:{} dbm {}\n').format(name, power, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: OFF {} W IP:{} RSSI:{} dbm {}\n').format(name, power, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -233,8 +238,9 @@ class Sender(Thread):
                                                     'power': [power],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated,
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
                                         if plugin_options['gen_type'][i] == 1:          # GEN 2+ device
                                             name = plugin_options['sensor_label'][i]
                                             if plugin_options['reading_type'][i] == 1:  # only cloud API data
@@ -254,7 +260,7 @@ class Sender(Thread):
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
                                                 if plugin_options['reading_type'][i] == 1:  # only cloud API data
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -264,7 +270,7 @@ class Sender(Thread):
                                                     output = response_data["data"]["device_status"]["switch:0"]["output"]
                                                     voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
                                                 else:                                       # via local IP data
-                                                    updated = response_data["sys"]["time"]
+                                                    updated = now()
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -276,10 +282,10 @@ class Sender(Thread):
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                        msg_info += _('{}: ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: OFF {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                        msg_info += _('{}: OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -295,8 +301,9 @@ class Sender(Thread):
                                                     'power': [power],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
                                     # typ: 2=Shelly Pro 2PM
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -333,7 +340,7 @@ class Sender(Thread):
                                                     b_power = response_data["data"]["device_status"]["switch:1"]["apower"]
                                                     a_voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
                                                     b_voltage = response_data["data"]["device_status"]["switch:1"]["voltage"]
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -349,7 +356,7 @@ class Sender(Thread):
                                                     b_power = response_data["switch:1"]["apower"]
                                                     a_voltage = response_data["switch:0"]["voltage"]
                                                     b_voltage = response_data["switch:1"]["voltage"]
-                                                    updated = response_data["sys"]["time"]
+                                                    updated = now()
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -363,10 +370,10 @@ class Sender(Thread):
                                                         msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
                                                     if b_output:
                                                         msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 ON {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, updated)
+                                                        msg_info += _('2 ON {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, format_timestamp(updated))
                                                     else:
                                                         msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 OFF {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, updated)
+                                                        msg_info += _('2 OFF {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -383,8 +390,9 @@ class Sender(Thread):
                                                     'power': [a_power, b_power],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
                                     # typ: 3=Shelly 1PM Mini
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -415,7 +423,7 @@ class Sender(Thread):
                                                     output = response_data["data"]["device_status"]["switch:0"]["output"]
                                                     power = response_data["data"]["device_status"]["switch:0"]["apower"]
                                                     voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -425,7 +433,7 @@ class Sender(Thread):
                                                     output = response_data["switch:0"]["output"]
                                                     power = response_data["switch:0"]["apower"]
                                                     voltage = response_data["switch:0"]["voltage"]
-                                                    updated = response_data["sys"]["time"]
+                                                    updated = now()
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -433,10 +441,10 @@ class Sender(Thread):
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                        msg_info += _('{}: ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: OFF {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
-                                                        msg_info += _('{}: OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, power, round(total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -452,8 +460,9 @@ class Sender(Thread):
                                                     'power': [power],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
                                     # typ: 4=Shelly 2.5
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -498,7 +507,7 @@ class Sender(Thread):
                                                         wifi = response_data["data"]["device_status"]["wifi"]
                                                         sta_ip = wifi["sta_ip"]
                                                         pass  
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     rssi = wifi["rssi"]
                                                 else:                                       # via local IP data
@@ -522,7 +531,7 @@ class Sender(Thread):
                                                         wifi = response_data["sta_ip"]
                                                         sta_ip = wifi["ip"]
                                                         pass  
-                                                    updated = response_data["time"]
+                                                    updated = now()
                                                     online = True
                                                     rssi = wifi["rssi"]                                                    
                                                 if online:
@@ -535,13 +544,13 @@ class Sender(Thread):
                                                             msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
                                                         if b_output:
                                                             msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                            msg_info += _('2 ON {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), updated)
+                                                            msg_info += _('2 ON {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), format_timestamp(updated))
                                                         else:
                                                             msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                            msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), updated)
+                                                            msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h)] ').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -557,8 +566,9 @@ class Sender(Thread):
                                                     'power': [a_power, b_power],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
                                             if plugin_options['gen_type'][i] == 1:
                                                 name = plugin_options['sensor_label'][i]
                                                 msg_info += _('{}: GEN2 not available yet \n').format(name)
@@ -601,7 +611,7 @@ class Sender(Thread):
                                                     c_power = response_data["data"]["device_status"]["switch:2"]["apower"]
                                                     d_power = response_data["data"]["device_status"]["switch:3"]["apower"]
                                                     voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -620,7 +630,7 @@ class Sender(Thread):
                                                     c_power = response_data["switch:2"]["apower"]
                                                     d_power = response_data["switch:3"]["apower"]
                                                     voltage = response_data["switch:0"]["voltage"]
-                                                    updated = response_data["sys"]["time"]
+                                                    updated = now()
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -646,10 +656,10 @@ class Sender(Thread):
                                                         msg_info += _('2 OFF {}W ({}kW/h) ').format(c_power, round(c_total/1000.0, 2))
                                                     if d_output:
                                                         msg += _('2 ON {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
-                                                        msg_info += _('2 ON {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), updated)
+                                                        msg_info += _('2 ON {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), format_timestamp(updated))
                                                     else:
                                                         msg += _('2 OFF {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
-                                                        msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), updated)
+                                                        msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -665,8 +675,9 @@ class Sender(Thread):
                                                     'power': [a_power, b_power, c_power, d_power],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
                                     # typ: 6=Shelly 1 Mini
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -694,14 +705,14 @@ class Sender(Thread):
                                             else:
                                                 if plugin_options['reading_type'][i] == 1:  # only cloud API data
                                                     output = response_data["data"]["device_status"]["switch:0"]["output"]
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi"]
                                                     sta_ip = wifi["sta_ip"]
                                                     rssi = wifi["rssi"]
                                                 else:                                       # via local IP data
                                                     output = response_data["switch:0"]["output"]
-                                                    updated = response_data["sys"]["time"]
+                                                    updated = now()
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -709,10 +720,10 @@ class Sender(Thread):
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON] ').format(name)
-                                                        msg_info += _('{}: ON IP:{} RSSI:{} dbm {}\n').format(name, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: ON IP:{} RSSI:{} dbm {}\n').format(name, sta_ip, rssi, format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: OFF] ').format(name)
-                                                        msg_info += _('{}: OFF IP:{} RSSI:{} dbm {}\n').format(name, sta_ip, rssi, updated)
+                                                        msg_info += _('{}: OFF IP:{} RSSI:{} dbm {}\n').format(name, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -728,8 +739,9 @@ class Sender(Thread):
                                                     'power': [],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
                                     # typ: 7=Shelly 2PM Addon
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -798,7 +810,7 @@ class Sender(Thread):
                                                     except:
                                                         pass
                                                     voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -836,7 +848,7 @@ class Sender(Thread):
                                                     except:
                                                         pass
                                                     voltage = response_data["switch:0"]["voltage"]
-                                                    updated = response_data["sys"]["time"]
+                                                    updated = now()
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -844,10 +856,10 @@ class Sender(Thread):
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     if b_output:
                                                         msg += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                         msg_info += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
@@ -886,8 +898,9 @@ class Sender(Thread):
                                                     'power': [a_power, b_power],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
                                     # typ: 8=Shelly 1PM Addon
                                     # gen: 0 = GEN1, 1 = GEN 2+
@@ -953,7 +966,7 @@ class Sender(Thread):
                                                     except:
                                                         pass
                                                     voltage = response_data["data"]["device_status"]["switch:0"]["voltage"]
-                                                    updated = response_data["data"]["device_status"]["_updated"]
+                                                    updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -988,7 +1001,7 @@ class Sender(Thread):
                                                     except:
                                                         pass
                                                     voltage = response_data["switch:0"]["voltage"]
-                                                    updated = response_data["sys"]["time"]
+                                                    updated = now()
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
@@ -996,10 +1009,10 @@ class Sender(Thread):
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     if temperature100 is not None:
                                                         msg += _('{} {} °C ').format(temp100name, temperature100)
                                                         msg_info += _('{} {} °C ').format(temp100name, temperature100)
@@ -1032,10 +1045,11 @@ class Sender(Thread):
                                                     'power': [a_power],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
-                                    # typ: 9 = Shelly H&T, 
+                                    # typ: 9= Shelly H&T
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 9:
                                         if plugin_options['gen_type'][i] == 1:
@@ -1058,7 +1072,7 @@ class Sender(Thread):
                                             else:
                                                 temperature = response_data["data"]["device_status"]["tmp"]["value"]
                                                 humidity = response_data["data"]["device_status"]["hum"]["value"]
-                                                updated = response_data["data"]["device_status"]["_updated"]
+                                                updated = now()
                                                 battery = response_data["data"]["device_status"]["bat"]
                                                 online = response_data["data"]["online"]
                                                 wifi = response_data["data"]["device_status"]["wifi_sta"]
@@ -1068,7 +1082,7 @@ class Sender(Thread):
                                                 batt_perc = battery["value"]
                                                 if online:
                                                     msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
-                                                    msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, str(updated))
+                                                    msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -1085,15 +1099,26 @@ class Sender(Thread):
                                                     'power': [],
                                                     'label': name,
                                                     'online': online,
+                                                    'updated': updated
                                                 }
-                                                self.devices.append(payload) if payload not in self.devices else self.devices
+                                                update_or_add_device(self, payload)
 
                                 except JSONDecodeError:
                                     raise BadResponse(_('Bad JSON'))
-                            except:
+
+                            except exceptions.InvalidURL as e:
+                                if "No host supplied" in str(e):
+                                    response = None
+                                    msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
+                                    msg_info += _('{}: Error: The URL entered is invalid, no host was specified\n').format(plugin_options['sensor_label'][i])
+                                else:
+                                    response = None
+                                    msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
+                                    msg_info += _('{}: Error: {}\n').format(plugin_options['sensor_label'][i], e)
+                            except exceptions.RequestException as e:
                                 response = None
-                                log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
-                                pass
+                                msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
+                                msg_info += _('{}: Error: {}\n').format(plugin_options['sensor_label'][i], e)
 
                     log.info(NAME, datetime_string() + '\n{}'.format(msg_info))
                     if plugin_options['use_footer']:
@@ -1126,6 +1151,22 @@ def stop():                                                       # This functio
         sender = None
 
 
+def format_timestamp(timestamp):                                  # Convert timestamp (ex: now() = 1735731059.4796138) to "01.01.2025 12:10"
+    dt = datetime.datetime.fromtimestamp(timestamp)
+    return dt.strftime("%d.%m.%Y %H:%M")
+
+
+def update_or_add_device(self, payload):                          # Add or update payload to devices
+    # Find exist device by ID
+    for device in self.devices:
+        if device['id'] == payload['id']:
+            # update all values device hodnoty zařízení
+            device.update(payload)
+            return
+    # If device not exist add to list
+    self.devices.append(payload)
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -1142,6 +1183,7 @@ class status_page(ProtectedPage):
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('shelly_cloud -> status_page GET')
             return self.core_render.notice('/', msg)
+
 
 class sensors_page(ProtectedPage):
     """Load an html page for entering adjustments."""
@@ -1305,3 +1347,25 @@ class settings_json(ProtectedPage):
             return json.dumps(plugin_options)
         except:
             return {}
+
+
+class ShellyDevices(ProtectedPage):
+    global sender
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            return json.dumps(sender.devices)
+        except:
+            return {}
+
+
+class _ShellyDevices():
+    global sender
+    def __init__(self):
+        super(_ShellyDevices, self).__init__()
+
+    def devices(self):
+        return sender.devices
+
+shelly_devices = _ShellyDevices()
