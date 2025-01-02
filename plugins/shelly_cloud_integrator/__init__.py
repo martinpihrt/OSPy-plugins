@@ -11,7 +11,7 @@ from threading import Thread, Event                              # For use a sep
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
-from ospy.helpers import datetime_string, now                    # For using date time in events logs
+from ospy.helpers import datetime_string, now, get_input         # For using date time in events logs
 from ospy.webpages import ProtectedPage                          # For check user login permissions
 
 from ospy.webpages import showInFooter                           # Enable plugin to display readings in UI footer
@@ -173,7 +173,9 @@ class Sender(Thread):
                                                     'power': [],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly Plus HT')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -239,6 +241,8 @@ class Sender(Thread):
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly Plus Plug S')
                                                 }
                                                 update_or_add_device(self, payload)
                                         if plugin_options['gen_type'][i] == 1:          # GEN 2+ device
@@ -301,7 +305,9 @@ class Sender(Thread):
                                                     'power': [power],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly Plus Plug S')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -360,7 +366,7 @@ class Sender(Thread):
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]                                                    
+                                                    rssi = wifi["rssi"]
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
@@ -390,7 +396,9 @@ class Sender(Thread):
                                                     'power': [a_power, b_power],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly Pro 2PM')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -437,7 +445,7 @@ class Sender(Thread):
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]                                                    
+                                                    rssi = wifi["rssi"]
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON {} W ({} kW/h)] ').format(name, power, round(total/1000.0, 2))
@@ -460,7 +468,9 @@ class Sender(Thread):
                                                     'power': [power],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly 1PM Mini')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -533,7 +543,7 @@ class Sender(Thread):
                                                         pass  
                                                     updated = now()
                                                     online = True
-                                                    rssi = wifi["rssi"]                                                    
+                                                    rssi = wifi["rssi"]
                                                 if online:
                                                     if roller is None:
                                                         if a_output:
@@ -566,7 +576,9 @@ class Sender(Thread):
                                                     'power': [a_power, b_power],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly 2.5')
                                                 }
                                                 update_or_add_device(self, payload)
                                             if plugin_options['gen_type'][i] == 1:
@@ -634,7 +646,7 @@ class Sender(Thread):
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]                                                   
+                                                    rssi = wifi["rssi"]
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
@@ -675,7 +687,9 @@ class Sender(Thread):
                                                     'power': [a_power, b_power, c_power, d_power],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly Pro 4PM')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -716,7 +730,7 @@ class Sender(Thread):
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]                                                    
+                                                    rssi = wifi["rssi"]
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON] ').format(name)
@@ -739,7 +753,9 @@ class Sender(Thread):
                                                     'power': [],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly 1 Mini')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -852,7 +868,7 @@ class Sender(Thread):
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]                                                    
+                                                    rssi = wifi["rssi"]
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
@@ -898,7 +914,9 @@ class Sender(Thread):
                                                     'power': [a_power, b_power],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly 2PM Addon')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -1005,7 +1023,7 @@ class Sender(Thread):
                                                     online = True
                                                     wifi = response_data["wifi"]
                                                     sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]                                                    
+                                                    rssi = wifi["rssi"]
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
@@ -1045,7 +1063,9 @@ class Sender(Thread):
                                                     'power': [a_power],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly 1PM Addon')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -1099,7 +1119,9 @@ class Sender(Thread):
                                                     'power': [],
                                                     'label': name,
                                                     'online': online,
-                                                    'updated': updated
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly HT')
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -1151,9 +1173,9 @@ def stop():                                                       # This functio
         sender = None
 
 
-def format_timestamp(timestamp):                                  # Convert timestamp (ex: now() = 1735731059.4796138) to "01.01.2025 12:10"
+def format_timestamp(timestamp):                                  # Convert timestamp (ex: 1735731059.4796138 to "01.01.2025 12:10:10")
     dt = datetime.datetime.fromtimestamp(timestamp)
-    return dt.strftime("%d.%m.%Y %H:%M")
+    return dt.strftime("%d.%m.%Y %H:%M:%S")
 
 
 def update_or_add_device(self, payload):                          # Add or update payload to devices
@@ -1175,14 +1197,16 @@ class status_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        try:
-            return self.plugin_render.shelly_cloud_integration(log.events(NAME))
+        global sender
+        qdict = web.input()
+        reset = get_input(qdict, 'reset', False, lambda x: True)
+        if sender is not None and reset:
+            sender.devices.clear()
+            log.debug(NAME, _('Reseting device list.'))
+            msg = _('The list of loaded devices has been cleared. Once the Shelly cloud integrator extension reloads all devices, they will appear in the list again (depending on the request interval set in the extension. For example, 20 seconds).')
+            return self.core_render.notice('/sensors?search', msg)
 
-        except:
-            log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('shelly_cloud -> status_page GET')
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.shelly_cloud_integration(log.events(NAME))
 
 
 class sensors_page(ProtectedPage):
