@@ -29,34 +29,20 @@ $var page: plugins
           <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
         </tr>
         <tr>
-            <td colspan="2">
-            <small>$_('For proper operation, it is necessary to restart the OSPy after enabling and setting up this extension')</small>
-            </td>
-        </tr>
-        <tr>
           <td style='text-transform: none;'>$_('Master volume'):</td> 
           <td title=$:{json.dumps(_('Setting the Raspberry Pi output volume (0-100%).'), ensure_ascii=False)}> 
-          <input name='volume' type='number' min="0" max="100" value="$plugin_options['volume']"> (0 - 100%)</td> 
+          <input name='volume' type='number' min="0" max="100" value="$plugin_options['volume']"> $_('0 - 100%')</td> 
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Play only from'):</td>
           <td title=$:{json.dumps(_('Play notifications only from this time (hours).'), ensure_ascii=False)}>  
-          <input name='start_hour' type='number' min="0" max="23" value="$plugin_options['start_hour']"> (0 - 23h)</td> 
+          <input name='start_hour' type='number' min="0" max="23" value="$plugin_options['start_hour']"> $_('0 - 23h')</td> 
         </tr>
         <tr>
           <td style='text-transform: none;'>$_('Play only to'):</td>  
           <td title=$:{json.dumps(_('Play notifications only to this time (hours).'), ensure_ascii=False)}> 
-          <input name='stop_hour' type='number' min="0" max="23" value="$plugin_options['stop_hour']"> (0 - 23h)</td>
-        </tr>
-        <tr>
-            <td style='text-transform: none;'>$_('Sound core'):</td>
-            <td title=$:{json.dumps(_('Selecting the audio kernel for playback (either Alsa or PulseAudio).'), ensure_ascii=False)}>
-            <select name="core">
-                <option value="0" ${"selected" if plugin_options["core"]==0 else ""}>$_('Alsa')</option>
-                <option value="1" ${"selected" if plugin_options["core"]==1 else ""}>$_('PulseAudio')</option>
-            </select>
-            </td>
-        </tr>        
+          <input name='stop_hour' type='number' min="0" max="23" value="$plugin_options['stop_hour']"> $_('0 - 23h')</td>
+        </tr>       
         <tr>
            <td colspan="3">
            <hr>
@@ -70,7 +56,7 @@ $var page: plugins
             </tr>
             $for station in stations.get():
                 <tr>
-                <td>${station.index + 1} (${station.name})</td>
+                <td>${station.index+1} (${station.name})</td>
                 <td>
                 <select name="con${station.index}">
                 <option value="-1" ${" selected" if plugin_options['on'][station.index] == -1 else ""}>$_('Not assigned')</option>
@@ -78,7 +64,6 @@ $var page: plugins
                     <option value="${i}" ${"selected" if plugin_options['on'][station.index] == i else ''} title=$:{json.dumps(_('Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>  
                 </select>
                 <a href="?test=${station.index}&state=1" class="button upload">$_('Play')</a>
-                <a href="?stop=1" class="button cancel danger">$_('Stop')</a>
                 </td>
                 <td>
                 <select name="coff${station.index}">
@@ -87,7 +72,6 @@ $var page: plugins
                     <option value="${i}" ${"selected" if plugin_options['off'][station.index] == i else ''} title=$:{json.dumps(_('Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>
                 </select>
                 <a href="?test=${station.index}&state=0" class="button upload">$_('Play')</a>
-                <a href="?stop=1" class="button cancel danger">$_('Stop')</a>
                 </td>
                 </tr>
             <tr>

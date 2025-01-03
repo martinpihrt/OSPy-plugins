@@ -31,7 +31,7 @@ plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,                 # default is OFF
-        'volume': 90,                     # master volume %
+        'volume': 95,                     # master volume %
         'start_hour': 6,                  # voice notification only from 6 
         'stop_hour': 20,                  # to 20 hours
         'on':  [-1]*options.output_count, # song name for station 1-8 if ON
@@ -39,10 +39,8 @@ plugin_options = PluginOptions(
         'sounds': [],                     # a list of all songs names in the plugin data directory
         'sounds_inserted': [],            # date time inserted songs (sorted by last upload)
         'sounds_size': [],                # songs size in bytes
-        'core': 1,                        # 0=alsa, 1=pydub
     })
 
-must_stop = False                         # stopping play from webpage
 
 ################################################################################
 # Main function loop:                                                          #
@@ -151,34 +149,6 @@ def stop():
         checker.join()
         checker = None
 
-def set_to_default():
-    plugin_options.__setitem__('enabled', False)
-    plugin_options.__setitem__('volume', 90)
-    plugin_options.__setitem__('start_hour', 6)
-    plugin_options.__setitem__('stop_hour', 20)
-    plugin_options.__setitem__('on', [-1]*options.output_count)
-    plugin_options.__setitem__('off', [-1]*options.output_count)
-    plugin_options.__setitem__('sounds', [])
-    plugin_options.__setitem__('sounds_inserted', [])
-    plugin_options.__setitem__('sounds_size', [])
-    log.clear(NAME)
-    log.info(NAME, _('Voice Station plug-in has any error, clear plugin settings to default.'))
-    read_folder()
-
-### Run any cmd ###
-def run_command(cmd):
-    try:
-        proc = subprocess.Popen(
-        cmd,
-        stderr=subprocess.STDOUT, # merge stdout and stderr
-        stdout=subprocess.PIPE,
-        shell=True)
-        output = proc.communicate()[0].decode('utf-8')
-        log.info(NAME, output)
-
-    except Exception:
-        log.error(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
-
 ### Read all songs in folder ###
 def read_folder():
     try:
@@ -243,22 +213,38 @@ def update_song_queue(data):
     song_queue.insert(0, data)
     write_song_queue(song_queue)
 
-### Convert percent to db
-def set_volume(audio, percent):
-    import math
-    dB_change = 20 * math.log10(percent / 100.0)
-    return audio.apply_gain(dB_change)
 
-### Play a song ###
+def play_audio(path):
+    read_folder()
+    if os.path.exists(path):
+        if path.endswith('.wav'):
+            log.info(NAME, datetime_string() + ': ' + _('Playing WAV file.'))
+            log.info(NAME, datetime_string() + ': ' + _('Set master volume to {}%').format(str(plugin_options['volume'])))
+            subprocess.run(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])])
+            cmd = ["aplay", path]
+            subprocess.run(cmd)
+        elif path.endswith('.mp3'):
+            wav_path = os.path.splitext(path)[0] + '.wav'
+            if not os.path.exists(wav_path):
+                log.info(NAME, datetime_string() + ': ' + _('Converting mp3 to wav.'))
+                ffmpeg_cmd = ["ffmpeg", "-i", path, wav_path]
+                subprocess.run(ffmpeg_cmd)
+            else:
+                log.info(NAME, datetime_string() + ': ' + _('WAV file already exists, skipping conversion.'))
+
+            log.info(NAME, datetime_string() + ': ' + _('Playing WAV file.'))
+            log.info(NAME, datetime_string() + ': ' + _('Set master volume to {}%').format(str(plugin_options['volume'])))
+            subprocess.run(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])])
+            cmd = ["aplay", wav_path]
+            subprocess.run(cmd)
+        else:
+            log.info(NAME, datetime_string() + ': ' + _('File {} not suported.').format(path))
+    else:
+        log.info(NAME, datetime_string() + ': ' + _('File {} not exist.').format(path))
+
+### Queue songs ###
 def play_voice():
-    global must_stop
     try:
-        if plugin_options['core'] == 0:
-            from pygame import mixer
-        if plugin_options['core'] == 1:
-            from .pydub.audio_segment import AudioSegment
-            from .pydub.playback import play
-
         try:                                    # exists file: song_queue.json?
             song_queue = read_song_queue()      # read from file
         except:                                 # no! create empty file
@@ -270,53 +256,21 @@ def play_voice():
             song = song_queue[0]['song']
             path = os.path.join(plugin_data_dir(), song)
             if os.path.isfile(path):
-                if plugin_options['core'] == 0:
-                    mixer.init()
-                    if mixer.music.get_busy() == False:
-                        log.info(NAME, datetime_string() + ': ' + _('Songs in queue {}').format(len(song_queue)))
-                        for i in range(0, len(song_queue)):
-                            log.info(NAME, _('Nr. {} -> {}').format(str(i+1), song_queue[i]['song']))
-                        log.info(NAME, datetime_string() + ': ' + _('Loading: {}').format(song))
-                        mixer.music.load(path)
-                        mixer.music.set_volume(1.0)  # 0.0 min to 1.0 max 
-                        log.info(NAME, datetime_string() + ': ' + _('Set master volume to {}%').format(str(plugin_options['volume'])))
-                        try:
-                            cmd = ["amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])]
-                            run_command(cmd)
-                        except:
-                            cmd = ["amixer", "sset", "Master", "{}%".format(plugin_options['volume'])]
-                            run_command(cmd)
-                        mixer.music.play()
-                        log.info(NAME, datetime_string() + ': ' + _('Playing.'))
-
-                if plugin_options['core'] == 1:
+                try:
                     log.info(NAME, datetime_string() + ': ' + _('Songs in queue {}').format(len(song_queue)))
                     for i in range(0, len(song_queue)):
                         log.info(NAME, _('Nr. {} -> {}').format(str(i+1), song_queue[i]['song']))
                     log.info(NAME, datetime_string() + ': ' + _('Loading: {}').format(song))
-                    log.info(NAME, datetime_string() + ': ' + _('Set master volume to {}%').format(str(plugin_options['volume'])))          
-                    try:
-                        #song = AudioSegment.from_mp3(path)
-                        song = AudioSegment.from_file(path, format="mp3")
-                    except:
-                        #song = AudioSegment.from_wav(path)
-                        song = AudioSegment.from_file(path, format="wav")
-                    song = set_volume(song, plugin_options['volume'])
-                    play(song)
-                    log.info(NAME, datetime_string() + ': ' + _('Playing.'))
+                    play_audio(path)
+                except Exception:
+                    log.error(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
             else:
                 del song_queue[0]
                 write_song_queue(song_queue)
 
-            if plugin_options['core'] == 0:
-                while mixer.music.get_busy() == True and not must_stop:
-                    continue 
-                mixer.music.stop()
-
             log.info(NAME, datetime_string() + ': ' + _('Stopping.'))
             del song_queue[0]                   # delete song queue in file
             write_song_queue(song_queue)        # save to file after deleting an item
-            must_stop = False
 
     except Exception:
         log.error(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
@@ -329,11 +283,9 @@ class settings_page(ProtectedPage):
     """Load an html page for entering voice station adjustments"""
 
     def GET(self):
-        global must_stop
         qdict = web.input()
 
         if checker is not None:
-            stop = helpers.get_input(qdict, 'stop', False, lambda x: True)
             clear = helpers.get_input(qdict, 'clear', False, lambda x: True)
 
             if 'test' in qdict:
@@ -355,12 +307,7 @@ class settings_page(ProtectedPage):
                 else:
                     log.info(NAME, datetime_string() + ': ' + _('File not exists!'))
 
-            if stop:
-                must_stop = True
-                log.info(NAME, datetime_string() + ': ' + _('Button Stop.'))
-
             if clear:
-                must_stop = True
                 song_queue = read_song_queue()
                 while len(song_queue) > 0:
                     song_queue = read_song_queue()
@@ -373,7 +320,6 @@ class settings_page(ProtectedPage):
             return self.plugin_render.voice_station(plugin_options, log.events(NAME))
         except Exception:
             log.error(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
-            set_to_default()
             return self.plugin_render.voice_station(plugin_options, log.events(NAME))
 
     def POST(self):
@@ -386,16 +332,13 @@ class settings_page(ProtectedPage):
                 plugin_options.__setitem__('enabled', False)
 
             if 'volume' in qdict:
-                plugin_options.__setitem__('volume', qdict['volume'])
-
-            if 'core' in qdict:
-                plugin_options.__setitem__('core', qdict['core'])
+                plugin_options.__setitem__('volume', int(qdict['volume']))
 
             if 'start_hour' in qdict:
-                plugin_options.__setitem__('start_hour', qdict['start_hour'])
+                plugin_options.__setitem__('start_hour', int(qdict['start_hour']))
 
             if 'stop_hour' in qdict:
-                plugin_options.__setitem__('stop_hour', qdict['stop_hour'])
+                plugin_options.__setitem__('stop_hour', int(qdict['stop_hour']))
 
             commands = {'on': [], 'off': []} 
             for i in range(0, options.output_count):
