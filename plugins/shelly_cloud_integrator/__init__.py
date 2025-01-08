@@ -175,7 +175,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly Plus HT')
+                                                    'hw': _('Shelly Plus HT'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -242,7 +243,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly Plus Plug S')
+                                                    'hw': _('Shelly Plus Plug S'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
                                         if plugin_options['gen_type'][i] == 1:          # GEN 2+ device
@@ -307,7 +309,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly Plus Plug S')
+                                                    'hw': _('Shelly Plus Plug S'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -398,7 +401,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly Pro 2PM')
+                                                    'hw': _('Shelly Pro 2PM'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -470,7 +474,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly 1PM Mini')
+                                                    'hw': _('Shelly 1PM Mini'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -578,7 +583,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly 2.5')
+                                                    'hw': _('Shelly 2.5'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
                                             if plugin_options['gen_type'][i] == 1:
@@ -689,7 +695,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly Pro 4PM')
+                                                    'hw': _('Shelly Pro 4PM'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -755,7 +762,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly 1 Mini')
+                                                    'hw': _('Shelly 1 Mini'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -916,7 +924,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly 2PM Addon')
+                                                    'hw': _('Shelly 2PM Addon'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -1065,7 +1074,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly 1PM Addon')
+                                                    'hw': _('Shelly 1PM Addon'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
@@ -1121,7 +1131,8 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly HT')
+                                                    'hw': _('Shelly HT'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)
 
