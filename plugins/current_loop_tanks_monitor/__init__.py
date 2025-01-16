@@ -138,6 +138,10 @@ class Sender(Thread):
         last_millis_2 = int(round(time.time() * 1000))                          # timer for periodic measuring
         send_eml = [0,0,0,0]                                                    # status for sending e-mails from tank 1-4
         eml_refresh = [1,1,1,1]                                                 # status for release sending e-mails from tank 1-4
+        first_wait = True                                                       # waiting on first measure (blocking send email after power on)
+        get_data()
+        self._sleep(1)
+        get_data()        
 
         if plugin_options['use_footer']:
             tank_mon = showInFooter()                                           # instantiate class to enable data in footer
@@ -154,14 +158,14 @@ class Sender(Thread):
                     log.clear(NAME)
                     get_data()
 
-                ### periodically logging (minute interval)
+                ### periodically logging (xx minute interval)
                 if plugin_options['en_log'] or plugin_options['en_sql_log']:
                     interval = (plugin_options['log_interval'] * 60000)
                     if (millis - last_millis) >= interval:
                        last_millis = millis
                        update_log()
 
-                for i in range(0, 4):
+                for i in range(4):
                     ### check water level is lower than the set minimum for e-mails
                     if plugin_options['en_eml_tank{}_low'.format(i+1)] and not send_eml[i] and eml_refresh[i]:  # is enabled sendig e-mail and refresh is true and not sending
                         if tanks['levelPercent'][i] <= plugin_options['eml_tank{}_low_lvl'.format(i+1)]:        # level in tank xx < eml_tankXX_low_lvl
@@ -174,7 +178,7 @@ class Sender(Thread):
                             eml_refresh[i] = True
 
                     ### send e-mail
-                    if send_eml[i]:
+                    if send_eml[i] and not first_wait:
                         try:
                             try_mail = None
                             from plugins.email_notifications_ssl import try_mail
@@ -205,6 +209,7 @@ class Sender(Thread):
                         tank_mon.val = tempText.encode('utf8').decode('utf8')
 
                 self._sleep(1)
+                first_wait = False
 
             except Exception:
                 log.clear(NAME)
@@ -740,7 +745,7 @@ class graph_json(ProtectedPage):
                 pass
 
             if len(json_data) > 0:  
-                for i in range(0, 9):                                              # 0=tank1 %, 1=tank2 %, 2=tank3 %, 3=tank4 %, 5=tank1 liter, 6=tank2 l, 7=tank3 l, 8=tank4 l
+                for i in range(8):                                                 # 0=tank1 %, 1=tank2 %, 2=tank3 %, 3=tank4 %, 4=tank1 liter, 5=tank2 l, 6=tank3 l, 7=tank4 l
                     temp_balances = {}
                     for key in json_data[i]['balances']:
                         try:
