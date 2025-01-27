@@ -234,6 +234,25 @@ class EmailSender(Thread):
                                 log.debug(NAME, _('Cannot import plugin: air temp humi.'))
                                 pass
 
+                            # 4-20mA Loop Tanks Monitor
+                            try:
+                                from plugins import current_loop_tanks_monitor
+                                body += '<br><b>' + _('Current Loop Tanks Monitor') + '</b><ul>'
+                                logtext += _('Current Loop Tanks Monitor') + '-> \n'
+                                for i in range(4):
+                                    label = current_loop_tanks_monitor.tanks['label'][i]
+                                    level_cm = current_loop_tanks_monitor.tanks['levelCm'][i]
+                                    level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
+                                    volt = current_loop_tanks_monitor.tanks['voltage'][i]
+                                    volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
+                                    body += '<li>' + _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume) + '\n</li>'
+                                    logtext += _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume)
+                                body += '</ul>'
+
+                            except ImportError:
+                                log.debug(NAME, _('Cannot import plugin: Current Loop Tanks Monitor.'))
+                                pass
+
                             # OSPy Sensors
                             try:
                                 body += '<br><b>' + _('Sensors') + '</b>'
@@ -244,98 +263,188 @@ class EmailSender(Thread):
                                     for sensor in sensors.get():
                                         sensor_result = ''
                                         body += '<li>'
-                                        sensor_result += '{}: '.format(sensor.name)
+                                        sensor_result += '{} ({}): '.format(sensor.name, _('by Shelly.com') if sensor.manufacturer == 1 else _('by Pihrt.com'))
                                         if sensor.enabled:
-                                            if sensor.response == 1:
-                                                if sensor.sens_type == 1:                               # dry contact
-                                                    if sensor.last_read_value[4] == 1:
-                                                        sensor_result += _('Contact Closed')
-                                                    elif sensor.last_read_value[4] == 0:
-                                                        sensor_result += _('Contact Open')
-                                                    else:
-                                                        sensor_result += _('Probe Error')
-                                                if sensor.sens_type == 2:                               # leak detector
-                                                    if sensor.last_read_value[5] != -127:
-                                                        sensor_result += str(sensor.last_read_value[5]) + ' ' + _('l/s')
-                                                    else:
-                                                        sensor_result += _('Probe Error')
-                                                if sensor.sens_type == 3:                               # moisture
-                                                    if sensor.last_read_value[6] != -127:
-                                                        sensor_result += str(sensor.last_read_value[6]) + ' ' + _('%')
-                                                    else:
-                                                        sensor_result += _('Probe Error')
-                                                if sensor.sens_type == 4:                               # motion
-                                                    if sensor.last_read_value[7] != -127:
-                                                        sensor_result += _('Motion Detected') if int(sensor.last_read_value[7]) == 1 else _('No Motion')
-                                                    else:
-                                                        sensor_result += _('Probe Error')
-                                                if sensor.sens_type == 5:                               # temperature
-                                                    if sensor.last_read_value[0] != -127:
-                                                        sensor_result += '%.1f \u2103' % sensor.last_read_value[0]
-                                                    else:
-                                                        sensor_result += _('Probe Error')
-                                                if sensor.sens_type == 6:                               # multi sensor
-                                                    if sensor.multi_type >= 0 and sensor.multi_type < 4:# multi temperature DS1-DS4
-                                                        if sensor.last_read_value[sensor.multi_type] != -127: 
-                                                            sensor_result += '%.1f \u2103' % sensor.last_read_value[sensor.multi_type]
+                                            if sensor.manufacturer == 0:                                    # pihrt.com sensor
+                                                if sensor.response == 1:
+                                                    if sensor.sens_type == 1:                               # dry contact
+                                                        if sensor.last_read_value[4] == 1:
+                                                            sensor_result += _('Contact Closed')
+                                                        elif sensor.last_read_value[4] == 0:
+                                                            sensor_result += _('Contact Open')
                                                         else:
                                                             sensor_result += _('Probe Error')
-                                                    if sensor.multi_type == 4:                          #  multi dry contact
-                                                        if sensor.last_read_value[4] != -127:
-                                                            sensor_result += _('Contact Closed') if int(sensor.last_read_value[4]) == 1 else _('Contact Open')
-                                                        else:
-                                                            sensor_result += _('Probe Error')
-                                                    if sensor.multi_type == 5:                          #  multi leak detector
+                                                    if sensor.sens_type == 2:                               # leak detector
                                                         if sensor.last_read_value[5] != -127:
                                                             sensor_result += str(sensor.last_read_value[5]) + ' ' + _('l/s')
                                                         else:
                                                             sensor_result += _('Probe Error')
-                                                    if sensor.multi_type == 6:                          #  multi moisture
+                                                    if sensor.sens_type == 3:                               # moisture
                                                         if sensor.last_read_value[6] != -127:
                                                             sensor_result += str(sensor.last_read_value[6]) + ' ' + _('%')
                                                         else:
-                                                            sensor_result += _(u'Probe Error')
-                                                    if sensor.multi_type == 7:                          #  multi motion
+                                                            sensor_result += _('Probe Error')
+                                                    if sensor.sens_type == 4:                               # motion
                                                         if sensor.last_read_value[7] != -127:
-                                                            sensor_result += _('Motion Detected') if int(sensor.last_read_value[7])==1 else _('No Motion')
+                                                            sensor_result += _('Motion Detected') if int(sensor.last_read_value[7]) == 1 else _('No Motion')
                                                         else:
                                                             sensor_result += _('Probe Error')
-                                                    if sensor.multi_type == 8:                          #  multi ultrasonic
-                                                        if sensor.last_read_value[8] != -127:
-                                                            get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
-                                                            get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
-                                                            sensor_result += '{} '.format(get_level) + _('cm') + ' ({} %)'.format(get_perc)
+                                                    if sensor.sens_type == 5:                               # temperature
+                                                        if sensor.last_read_value[0] != -127:
+                                                            sensor_result += '%.1f \u2103' % sensor.last_read_value[0]
                                                         else:
                                                             sensor_result += _('Probe Error')
-                                                    if sensor.multi_type == 9:                          #  multi soil moisture
-                                                        err_check = 0
-                                                        calculate_soil = [0.0]*16
-                                                        state = [-127]*16
-                                                        for i in range(0, 16):
-                                                            if type(sensor.soil_last_read_value[i]) == float:
-                                                                state[i] = sensor.soil_last_read_value[i]
-                                                                ### voltage from probe to humidity 0-100% with calibration range (for footer info)
-                                                                if sensor.soil_invert_probe_in[i]:                                  # probe: rotated state 0V=100%, 3V=0% humidity
-                                                                    calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
-                                                                    calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
-                                                                    calculate_soil[i] = 100.0 - calculate_soil[i]                   # ex: 90% - 90% = 10%, 10% is output in invert probe mode
-                                                                else:                                                               # probe: normal state 0V=0%, 3V=100%
-                                                                    calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
-                                                                    calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
-                                                                if state[i] > 0.1:
-                                                                    if sensor.soil_show_in_footer[i]:
-                                                                        sensor_result += '{} {}% ({}V) '.format(sensor.soil_probe_label[i], round(calculate_soil[i], 2), round(state[i], 2))
+                                                    if sensor.sens_type == 6:                               # multi sensor
+                                                        if sensor.multi_type >= 0 and sensor.multi_type < 4:# multi temperature DS1-DS4
+                                                            if sensor.last_read_value[sensor.multi_type] != -127: 
+                                                                sensor_result += '%.1f \u2103' % sensor.last_read_value[sensor.multi_type]
                                                             else:
-                                                                err_check += 1
-                                                        if err_check > 15:
-                                                            sensor_result += _('Probe Error')
+                                                                sensor_result += _('Probe Error')
+                                                        if sensor.multi_type == 4:                          #  multi dry contact
+                                                            if sensor.last_read_value[4] != -127:
+                                                                sensor_result += _('Contact Closed') if int(sensor.last_read_value[4]) == 1 else _('Contact Open')
+                                                            else:
+                                                                sensor_result += _('Probe Error')
+                                                        if sensor.multi_type == 5:                          #  multi leak detector
+                                                            if sensor.last_read_value[5] != -127:
+                                                                sensor_result += str(sensor.last_read_value[5]) + ' ' + _('l/s')
+                                                            else:
+                                                                sensor_result += _('Probe Error')
+                                                        if sensor.multi_type == 6:                          #  multi moisture
+                                                            if sensor.last_read_value[6] != -127:
+                                                                sensor_result += str(sensor.last_read_value[6]) + ' ' + _('%')
+                                                            else:
+                                                                sensor_result += _(u'Probe Error')
+                                                        if sensor.multi_type == 7:                          #  multi motion
+                                                            if sensor.last_read_value[7] != -127:
+                                                                sensor_result += _('Motion Detected') if int(sensor.last_read_value[7])==1 else _('No Motion')
+                                                            else:
+                                                                sensor_result += _('Probe Error')
+                                                        if sensor.multi_type == 8:                          #  multi ultrasonic
+                                                            if sensor.last_read_value[8] != -127:
+                                                                get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
+                                                                get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
+                                                                sensor_result += '{} '.format(get_level) + _('cm') + ' ({} %)'.format(get_perc)
+                                                            else:
+                                                                sensor_result += _('Probe Error')
+                                                        if sensor.multi_type == 9:                          #  multi soil moisture
+                                                            err_check = 0
+                                                            calculate_soil = [0.0]*16
+                                                            state = [-127]*16
+                                                            for i in range(0, 16):
+                                                                if type(sensor.soil_last_read_value[i]) == float:
+                                                                    state[i] = sensor.soil_last_read_value[i]
+                                                                    ### voltage from probe to humidity 0-100% with calibration range (for footer info)
+                                                                    if sensor.soil_invert_probe_in[i]:                                  # probe: rotated state 0V=100%, 3V=0% humidity
+                                                                        calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
+                                                                        calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
+                                                                        calculate_soil[i] = 100.0 - calculate_soil[i]                   # ex: 90% - 90% = 10%, 10% is output in invert probe mode
+                                                                    else:                                                               # probe: normal state 0V=0%, 3V=100%
+                                                                        calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
+                                                                        calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
+                                                                    if state[i] > 0.1:
+                                                                        if sensor.soil_show_in_footer[i]:
+                                                                            sensor_result += '{} {}% ({}V) '.format(sensor.soil_probe_label[i], round(calculate_soil[i], 2), round(state[i], 2))
+                                                                else:
+                                                                    err_check += 1
+                                                            if err_check > 15:
+                                                                sensor_result += _('Probe Error')
 
                                                     if sensor.com_type == 0: # Wi-Fi/LAN
                                                         sensor_result += ' ' + _('Last Wi-Fi signal: {}%, Source: {}V.').format(sensor.rssi, sensor.last_battery)
                                                     if sensor.com_type == 1: # Radio
                                                         sensor_result += ' ' + _('Last Radio signal: {}%, Source: {}V.').format(sensor.rssi, sensor.last_battery)
-                                            else:
-                                                sensor_result += _('No response!')
+                                                else:
+                                                    sensor_result += _('No response!')
+
+                                            if sensor.manufacturer == 1:                                    # shelly.com sensor
+                                                if sensor.response == 1:
+                                                    if sensor.sens_type == 0:                               ### Voltage ###
+                                                        sensor_result += _('Voltage') + ': {} '.format(sensor.last_voltage) + _('V')
+                                                    if sensor.sens_type == 1:                               ### Output 1 ###
+                                                        try:
+                                                            if sensor.last_read_value[0][0]:
+                                                                sensor_result += _('Output 1') + ': ' + _('ON')
+                                                            else:
+                                                                sensor_result += _('Output 1') + ': ' + _('OFF')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 2:                               ### Output 2 ###
+                                                        try:
+                                                            if sensor.last_read_value[0][1]:
+                                                                sensor_result += _('Output 2') + ': ' + _('ON')
+                                                            else:
+                                                                sensor_result += _('Output 2') + ': ' + _('OFF')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 3:                               ### Output 3 ###
+                                                        try:
+                                                            if sensor.last_read_value[0][2]:
+                                                                sensor_result += _('Output 3') + ': ' + _('ON')
+                                                            else:
+                                                                sensor_result += _('Output 3') + ': ' + _('OFF')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 4:                               ### Output 4 ###
+                                                        try:
+                                                            if sensor.last_read_value[0][3]:
+                                                                sensor_result += _('Output 4') + ': ' + _('ON')
+                                                            else:
+                                                                sensor_result += _('Output 4') + ': ' + _('OFF')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 5:                               ### Temperature 1 ###
+                                                        try:
+                                                            sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][0]) + _('°C')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 6:                               ### Temperature 2 ###
+                                                        try:
+                                                            sensor_result += _('Temperature 2') + ': {} '.format(sensor.last_read_value[2][1]) + _('°C')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 7:                               ### Temperature 3 ###
+                                                        try:
+                                                            sensor_result += _('Temperature 3') + ': {} '.format(sensor.last_read_value[2][2]) + _('°C')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 8:                               ### Temperature 4 ###
+                                                        try:
+                                                            sensor_result += _('Temperature 4') + ': {} '.format(sensor.last_read_value[2][3]) + _('°C')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 9:                               ### Temperature 5 ###
+                                                        try:
+                                                            sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][4]) + _('°C')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 10:                              ### Power 1 ###
+                                                        try:
+                                                            sensor_result += _('Power 1') + ': {} '.format(sensor.last_read_value[1][0]) + _('W')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 11:                              ### Power 2 ###
+                                                        try:
+                                                            sensor_result += _('Power 2') + ': {} '.format(sensor.last_read_value[1][1]) + _('W')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 12:                              ### Power 3 ###
+                                                        try:
+                                                            sensor_result += _('Power 3') + ': {} '.format(sensor.last_read_value[1][2]) + _('W')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 13:                              ### Power 4 ###
+                                                        try:
+                                                            sensor_result += _('Power 4') + ': {} '.format(sensor.last_read_value[1][3]) + _('W')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                    if sensor.sens_type == 14:
+                                                        try:
+                                                            sensor_result += _('Humidity') + ': {} '.format(sensor.last_read_value[3][0]) + _('%RV')
+                                                        except:
+                                                            sensor_result += _('Any error')
+                                                else:
+                                                    sensor_result += _('No response!')
                                         else:
                                             sensor_result += _('Disabled')
 
