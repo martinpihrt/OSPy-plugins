@@ -2,6 +2,81 @@ $def with(plugin_options, events)
 
 $var title: $_('Voice Station')
 $var page: plugins
+
+<style>
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch::before {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: red;
+  font-weight: bold;
+}
+
+.switch::after {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: green;
+  font-weight: bold;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: green;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Vytvoření přepínače */
+.switch {
+  display: inline-block;
+}
+
+.switch input {
+  display: none;
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -24,25 +99,29 @@ $var page: plugins
     <form id="pluginForm" action="$plugins.plugin_url('voice_station.settings_page')" method="post">
         <table class="optionList">
         <tr>
-          <td style='text-transform: none;'>$_('Enable voice'):</td>
-          <td title=$:{json.dumps(_('If the check box is marked, the extension will be active.'), ensure_ascii=False)}>
-          <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
+            <td style='text-transform: none;'>$_('Enable voice'):</td>
+            <td title=$:{json.dumps(_('If the check box is marked, the extension will be active.'), ensure_ascii=False)}>
+            <label class="switch">
+            <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}>
+            <span class="slider"></span>
+            </label>
+            </td>
         </tr>
         <tr>
-          <td style='text-transform: none;'>$_('Master volume'):</td> 
-          <td title=$:{json.dumps(_('Setting the Raspberry Pi output volume (0-100%).'), ensure_ascii=False)}> 
-          <input name='volume' type='number' min="0" max="100" value="$plugin_options['volume']"> $_('0 - 100%')</td> 
+            <td style='text-transform: none;'>$_('Master volume'):</td> 
+            <td title=$:{json.dumps(_('Setting the Raspberry Pi output volume (0-100%).'), ensure_ascii=False)}> 
+            <input name='volume' type='number' min="0" max="100" value="$plugin_options['volume']"> $_('0 - 100%')</td>
         </tr>
         <tr>
-          <td style='text-transform: none;'>$_('Play only from'):</td>
-          <td title=$:{json.dumps(_('Play notifications only from this time (hours).'), ensure_ascii=False)}>  
-          <input name='start_hour' type='number' min="0" max="23" value="$plugin_options['start_hour']"> $_('0 - 23h')</td> 
+            <td style='text-transform: none;'>$_('Play only from'):</td>
+            <td title=$:{json.dumps(_('Play notifications only from this time (hours).'), ensure_ascii=False)}>  
+            <input name='start_hour' type='number' min="0" max="23" value="$plugin_options['start_hour']"> $_('0 - 23h')</td>
         </tr>
         <tr>
-          <td style='text-transform: none;'>$_('Play only to'):</td>  
-          <td title=$:{json.dumps(_('Play notifications only to this time (hours).'), ensure_ascii=False)}> 
-          <input name='stop_hour' type='number' min="0" max="23" value="$plugin_options['stop_hour']"> $_('0 - 23h')</td>
-        </tr>       
+            <td style='text-transform: none;'>$_('Play only to'):</td>  
+            <td title=$:{json.dumps(_('Play notifications only to this time (hours).'), ensure_ascii=False)}> 
+            <input name='stop_hour' type='number' min="0" max="23" value="$plugin_options['stop_hour']"> $_('0 - 23h')</td>
+        </tr>
         <tr>
            <td colspan="3">
            <hr>
@@ -59,19 +138,29 @@ $var page: plugins
                 <td>${station.index+1} (${station.name})</td>
                 <td>
                 <select name="con${station.index}">
-                <option value="-1" ${" selected" if plugin_options['on'][station.index] == -1 else ""}>$_('Not assigned')</option>
-                $for i in range(0, len(plugin_options['sounds'])):
-                    <option value="${i}" ${"selected" if plugin_options['on'][station.index] == i else ''} title=$:{json.dumps(_('Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>  
+                $if station.index < len(plugin_options['on']):
+                    <option value="-1" ${" selected" if plugin_options['on'][station.index] == -1 else ""}>$_('Not assigned')</option>
+                $for i in range(len(plugin_options['sounds'])):
+                    $if station.index < len(plugin_options['on']):
+                        <option value="${i}" ${"selected" if plugin_options['on'][station.index] == i else ''} title=$:{json.dumps(_('Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>
+                    $else:
+                        <option value="-1">${str(plugin_options['sounds'][i])}</option>
                 </select>
-                <a href="?test=${station.index}&state=1" class="button upload">$_('Play')</a>
+                $if station.index < len(plugin_options['on']):
+                    <a href="?test=${station.index}&state=1" class="button upload">$_('Play')</a>
                 </td>
                 <td>
                 <select name="coff${station.index}">
-                <option value="-1" ${" selected" if plugin_options['off'][station.index] == -1 else ""}>$_('Not assigned')</option>
-                $for i in range(0, len(plugin_options['sounds'])):
-                    <option value="${i}" ${"selected" if plugin_options['off'][station.index] == i else ''} title=$:{json.dumps(_('Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>
+                $if station.index < len(plugin_options['off']):
+                    <option value="-1" ${" selected" if plugin_options['off'][station.index] == -1 else ""}>$_('Not assigned')</option>
+                $for i in range(len(plugin_options['sounds'])):
+                    $if station.index < len(plugin_options['off']):
+                        <option value="${i}" ${"selected" if plugin_options['off'][station.index] == i else ''} title=$:{json.dumps(_('Select the sound for this station.'), ensure_ascii=False)}>${str(plugin_options['sounds'][i])}</option>
+                    $else:
+                        <option value="-1">${str(plugin_options['sounds'][i])}</option>
                 </select>
-                <a href="?test=${station.index}&state=0" class="button upload">$_('Play')</a>
+                $if station.index < len(plugin_options['off']):
+                    <a href="?test=${station.index}&state=0" class="button upload">$_('Play')</a>
                 </td>
                 </tr>
             <tr>
@@ -94,5 +183,5 @@ $var page: plugins
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?clear" class="button cancel danger">$_('Clear playlist')</a>    
+    <a href="?clear" class="button cancel danger">$_('Clear playlist')</a>
 </div>
