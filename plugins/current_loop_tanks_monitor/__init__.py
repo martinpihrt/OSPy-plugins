@@ -26,8 +26,6 @@ from ospy.helpers import datetime_string
 from ospy.webpages import pluginScripts # Inject javascript to call our API for data and modify the display (in base.html)
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
-pluginScripts.append("current_loop_tanks_monitor/script/tank.js")
-
 NAME = 'Current Loop Tanks Monitor'
 MENU =  _('Package: Current Loop Tanks Monitor')
 LINK = 'settings_page'
@@ -60,7 +58,8 @@ plugin_options = PluginOptions(
         'maxVolt3': 4.096,                       # AIN2 max input value
         'maxVolt4': 4.096,                       # AIN3 max input value
         'i2c': 0,                                # I2C for ADC converter ADS1115 (0x48 default)
-        'use_footer': False,
+        'use_footer': True,                      # msg on footer on homepage
+        'use_script': True,                      # enable script injection on homepage
         # logs
         'en_sql_log': False,                     # logging to sql database
         'en_log': False,                         # logging to local json file
@@ -103,7 +102,12 @@ tanks['volumeLiter']    = [0, 0, 0, 0]
 tanks['levelPercent']   = [0, 0, 0, 0]
 tanks['voltage']        = [0, 0, 0, 0]
 tanks['label']          = [plugin_options['label1'], plugin_options['label2'], plugin_options['label3'], plugin_options['label4']]
+tanks['use']            = [plugin_options['en_tank1'], plugin_options['en_tank2'], plugin_options['en_tank3'], plugin_options['en_tank4']]
 
+if plugin_options['use_script']:
+    script_path = "current_loop_tanks_monitor/script/tank.js"
+    if script_path not in pluginScripts:
+        pluginScripts.append(script_path)
 
 ################################################################################
 # Main function loop:                                                          #
@@ -835,11 +839,10 @@ class data_json(ProtectedPage):
 
         try:
             data =  {
-                'tank1': { 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': round(tanks['levelCm'][0]), 'voltage': round(tanks['voltage'][0],3) },
-                'tank2': { 'label': plugin_options['label2'], 'maxHeightCm': plugin_options['maxHeightCm2'], 'maxVolume':  plugin_options['maxVolume2'], 'level': round(tanks['levelCm'][1]), 'voltage': round(tanks['voltage'][1],3) },
-                'tank3': { 'label': plugin_options['label3'], 'maxHeightCm': plugin_options['maxHeightCm3'], 'maxVolume':  plugin_options['maxVolume3'], 'level': round(tanks['levelCm'][2]), 'voltage': round(tanks['voltage'][2],3) },
-                'tank4': { 'label': plugin_options['label4'], 'maxHeightCm': plugin_options['maxHeightCm4'], 'maxVolume':  plugin_options['maxVolume4'], 'level': round(tanks['levelCm'][3]), 'voltage': round(tanks['voltage'][3],3) },
-                'msg': log.events(NAME)
+                'tank1': { 'use': plugin_options['en_tank1'], 'label': plugin_options['label1'], 'maxHeightCm': plugin_options['maxHeightCm1'], 'maxVolume':  plugin_options['maxVolume1'], 'level': round(tanks['levelCm'][0]), 'voltage': round(tanks['voltage'][0],3) },
+                'tank2': { 'use': plugin_options['en_tank2'], 'label': plugin_options['label2'], 'maxHeightCm': plugin_options['maxHeightCm2'], 'maxVolume':  plugin_options['maxVolume2'], 'level': round(tanks['levelCm'][1]), 'voltage': round(tanks['voltage'][1],3) },
+                'tank3': { 'use': plugin_options['en_tank3'], 'label': plugin_options['label3'], 'maxHeightCm': plugin_options['maxHeightCm3'], 'maxVolume':  plugin_options['maxVolume3'], 'level': round(tanks['levelCm'][2]), 'voltage': round(tanks['voltage'][2],3) },
+                'tank4': { 'use': plugin_options['en_tank4'], 'label': plugin_options['label4'], 'maxHeightCm': plugin_options['maxHeightCm4'], 'maxVolume':  plugin_options['maxVolume4'], 'level': round(tanks['levelCm'][3]), 'voltage': round(tanks['voltage'][3],3) },
             }
         except:
             log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())

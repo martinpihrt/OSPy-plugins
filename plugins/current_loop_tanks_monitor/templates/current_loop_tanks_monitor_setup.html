@@ -233,6 +233,15 @@ jQuery(document).ready(function(){
                     </td>
                 </tr>
                 <tr>
+                    <td>$_('Use Injection Script')</td>
+                    <td colspan="5" title=$:{json.dumps(_('Create tanks charts from a plugin on the home page. You always need to restart OSPy afterwards for this option.'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="use_script" ${'checked' if plugin_options['use_script'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                </tr>
+                <tr>
                     <td style='text-transform: none;'>$_('Status')</td>
                     <td colspan="5">
                         <textarea style="font-family: monospace;" rows="10" cols="50" readonly>$'\n'.join(events)</textarea>

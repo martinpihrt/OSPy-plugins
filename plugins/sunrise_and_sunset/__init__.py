@@ -23,7 +23,9 @@ from ospy.webpages import pluginScripts # Inject javascript to call our API for 
 from ospy.webpages import showInFooter  # Enable plugin to display readings in UI footer
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
-pluginScripts.append("sunrise_and_sunset/script/sunrise_sunset.js")
+script_path = "sunrise_and_sunset/script/sunrise_sunset.js"
+if script_path not in pluginScripts:
+    pluginScripts.append(script_path)
 
 NAME = 'Astro Sunrise and Sunset'
 MENU =  _('Package: Astro Sunrise and Sunset')
