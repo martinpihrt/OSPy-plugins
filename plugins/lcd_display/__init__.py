@@ -58,7 +58,9 @@ lcd_options = PluginOptions(
         "d_sched_manu": True,
         "d_syst_enabl": True,
         "d_sensors": True,
-        "hw_PCF8574": 1               # 0-4, default is 1 LCD1602 china I2C display
+        "hw_PCF8574": 1,              # 0-4, default is 1 LCD1602 china I2C display
+        "d_current_tanks": True,
+        "d_notify": True,
     }
 )
 
@@ -112,7 +114,7 @@ class LCDSender(Thread):
                     line1 = get_report(report_index)
                     line2 = get_report(report_index + 1)
 
-                    if report_index >= 31:
+                    if report_index >= 33:
                         report_index = 0
                     
                     skip_lines = False
@@ -472,7 +474,7 @@ def get_report(index):
                 if sensors.count() > 0:
                     sensor_result = ''
                     for sensor in sensors.get():
-                        if sensor.enabled:
+                        if sensor.enabled and sensor.manufacturer == 0:                 # pihrt.com sensor
                             if sensor.response == 1:
                                 sensor_result += sensor.name + ': '
                                 if sensor.sens_type == 1:                               # dry contact
@@ -559,6 +561,95 @@ def get_report(index):
                                             sensor_result += _('Probe Error')
                             else:
                                 sensor_result += sensor.name + ': ' + _('No response!')
+
+                        elif sensor.enabled and sensor.manufacturer == 1:                 # shelly.com sensor
+                            if sensor.response == 1:
+                                if sensor.sens_type == 0:                               ### Voltage ###
+                                    sensor_result += _('Voltage') + ': {} '.format(sensor.last_voltage) + _('V')
+                                if sensor.sens_type == 1:                               ### Output 1 ###
+                                    try:
+                                        if sensor.last_read_value[0][0]:
+                                            sensor_result += _('Output 1') + ': ' + _('ON')
+                                        else:
+                                            sensor_result += _('Output 1') + ': ' + _('OFF')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 2:                               ### Output 2 ###
+                                    try:
+                                        if sensor.last_read_value[0][1]:
+                                            sensor_result += _('Output 2') + ': ' + _('ON')
+                                        else:
+                                            sensor_result += _('Output 2') + ': ' + _('OFF')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 3:                               ### Output 3 ###
+                                    try:
+                                        if sensor.last_read_value[0][2]:
+                                            sensor_result += _('Output 3') + ': ' + _('ON')
+                                        else:
+                                            sensor_result += _('Output 3') + ': ' + _('OFF')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 4:                               ### Output 4 ###
+                                    try:
+                                        if sensor.last_read_value[0][3]:
+                                            sensor_result += _('Output 4') + ': ' + _('ON')
+                                        else:
+                                            sensor_result += _('Output 4') + ': ' + _('OFF')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 5:                               ### Temperature 1 ###
+                                    try:
+                                        sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][0]) + _('°C')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 6:                               ### Temperature 2 ###
+                                    try:
+                                        sensor_result += _('Temperature 2') + ': {} '.format(sensor.last_read_value[2][1]) + _('°C')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 7:                               ### Temperature 3 ###
+                                    try:
+                                        sensor_result += _('Temperature 3') + ': {} '.format(sensor.last_read_value[2][2]) + _('°C')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 8:                               ### Temperature 4 ###
+                                    try:
+                                        sensor_result += _('Temperature 4') + ': {} '.format(sensor.last_read_value[2][3]) + _('°C')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 9:                               ### Temperature 5 ###
+                                    try:
+                                        sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][4]) + _('°C')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 10:                              ### Power 1 ###
+                                    try:
+                                        sensor_result += _('Power 1') + ': {} '.format(sensor.last_read_value[1][0]) + _('W')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 11:                              ### Power 2 ###
+                                    try:
+                                        sensor_result += _('Power 2') + ': {} '.format(sensor.last_read_value[1][1]) + _('W')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 12:                              ### Power 3 ###
+                                    try:
+                                        sensor_result += _('Power 3') + ': {} '.format(sensor.last_read_value[1][2]) + _('W')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 13:                              ### Power 4 ###
+                                    try:
+                                        sensor_result += _('Power 4') + ': {} '.format(sensor.last_read_value[1][3]) + _('W')
+                                    except:
+                                        sensor_result += _('Any error')
+                                if sensor.sens_type == 14:
+                                    try:
+                                        sensor_result += _('Humidity') + ': {} '.format(sensor.last_read_value[3][0]) + _('%RV')
+                                    except:
+                                        sensor_result += _('Any error')
+                            else:
+                                sensor_result += _('No response!')
                         else:
                             sensor_result += sensor.name + ': ' + _('Disabled')
                         if sensors.count() > 1:
@@ -566,6 +657,33 @@ def get_report(index):
                     result = ASCI_convert(sensor_result)
                 else:
                     result = ASCI_convert(_('No sensors available'))
+            except Exception:
+                result = ASCI_convert(_('Not Available'))
+        else: 
+            result = None
+
+    ### OSPy sensors ###
+    elif index == 32:
+        if lcd_options['d_current_tanks']:
+            result = ASCI_convert(_('Current Loop Tanks'))
+        else: 
+            result = None
+    elif index == 33:
+        if lcd_options['d_current_tanks']:
+            try:
+                # 4-20mA Loop Tanks Monitor
+                from plugins import current_loop_tanks_monitor
+                tank_result = ''
+                for i in range(4):
+                    label = current_loop_tanks_monitor.tanks['label'][i]
+                    level_cm = current_loop_tanks_monitor.tanks['levelCm'][i]
+                    level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
+                    volt = current_loop_tanks_monitor.tanks['voltage'][i]
+                    volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
+                    tank_result += '{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} L'.format(label, level_cm, level_perc, volt, volume)
+                    if i < 3:
+                        tank_result += ', '
+                    result = ASCI_convert(tank_result)
             except Exception:
                 result = ASCI_convert(_('Not Available'))
         else: 
@@ -594,9 +712,11 @@ def find_lcd_address():
             except Exception:
                 pass
         else:
+            log.clear(NAME)
             log.warning(NAME, _('Could not find any PCF8574 controller.'))
 
     except:
+        log.clear(NAME)
         log.warning(NAME, _('Could not import smbus.'))
 
 
@@ -641,95 +761,99 @@ def update_lcd(line1, line2=None):
 
 def notify_rebooted(name, **kw):
     ### Reboot Linux HW software ###
-    try:
-        global blocker, L1web, L2web
-        blocker = True
-        log.info(NAME, datetime_string() + ': ' + _('System rebooting'))
-        if lcd_options['address'] == 0:
-            find_lcd_address()
-        if lcd_options['address'] != 0:
-            from . import pylcd  # Library for LCD 16x2 PCF8574
-            lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
-            # DF - alter RPi version test fallback to value that works on BBB
-        else:
-            lcd = dummy_lcd
+    if lcd_options['d_notify']:
+        try:
+            global blocker, L1web, L2web
+            blocker = True
+            log.info(NAME, datetime_string() + ': ' + _('System rebooting'))
+            if lcd_options['address'] == 0:
+                find_lcd_address()
+            if lcd_options['address'] != 0:
+                from . import pylcd  # Library for LCD 16x2 PCF8574
+                lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+                # DF - alter RPi version test fallback to value that works on BBB
+            else:
+                lcd = dummy_lcd
 
-        try_io(lambda: lcd.lcd_clear())    
-        try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System Linux')), 1))
-        try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
-        L1web = ASCI_convert(_('System Linux'))
-        L2web = ASCI_convert(_('Rebooting'))
-    except:
-        log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+            try_io(lambda: lcd.lcd_clear())    
+            try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System Linux')), 1))
+            try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
+            L1web = ASCI_convert(_('System Linux'))
+            L2web = ASCI_convert(_('Rebooting'))
+        except:
+            log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
 
 def notify_restarted(name, **kw):
     ### Restarted OSPy ###
-    try:
-        global blocker, L1web, L2web
-        blocker = True
-        log.info(NAME, datetime_string() + ': ' + _('System restarting'))
-        if lcd_options['address'] == 0:
-            find_lcd_address()
-        if lcd_options['address'] != 0:
-            from . import pylcd  # Library for LCD 16x2 PCF8574
-            lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
-            # DF - alter RPi version test fallback to value that works on BBB
-        else:
-            lcd = dummy_lcd
+    if lcd_options['d_notify']:
+        try:
+            global blocker, L1web, L2web
+            blocker = True
+            log.info(NAME, datetime_string() + ': ' + _('System restarting'))
+            if lcd_options['address'] == 0:
+                find_lcd_address()
+            if lcd_options['address'] != 0:
+                from . import pylcd  # Library for LCD 16x2 PCF8574
+                lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+                # DF - alter RPi version test fallback to value that works on BBB
+            else:
+                lcd = dummy_lcd
 
-        try_io(lambda: lcd.lcd_clear())
-        try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System OSPy')), 1))
-        try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
-        L1web = ASCI_convert(_('System OSPy'))
-        L2web = ASCI_convert(_('Rebooting'))
-    except:
-        log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+            try_io(lambda: lcd.lcd_clear())
+            try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System OSPy')), 1))
+            try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
+            L1web = ASCI_convert(_('System OSPy'))
+            L2web = ASCI_convert(_('Rebooting'))
+        except:
+            log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
 
 def notify_poweroff(name, **kw):
     ### Power off Linux HW ###
-    try:
-        global blocker, L1web, L2web
-        blocker = True
-        log.info(NAME, datetime_string() + ': ' + _('System poweroff'))
-        if lcd_options['address'] == 0:
-            find_lcd_address()
-        if lcd_options['address'] != 0:
-            from . import pylcd  # Library for LCD 16x2 PCF8574
-            lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
-            # DF - alter RPi version test fallback to value that works on BBB
-        else:
-            lcd = dummy_lcd
+    if lcd_options['d_notify']:    
+        try:
+            global blocker, L1web, L2web
+            blocker = True
+            log.info(NAME, datetime_string() + ': ' + _('System poweroff'))
+            if lcd_options['address'] == 0:
+                find_lcd_address()
+            if lcd_options['address'] != 0:
+                from . import pylcd  # Library for LCD 16x2 PCF8574
+                lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+                # DF - alter RPi version test fallback to value that works on BBB
+            else:
+                lcd = dummy_lcd
 
-        try_io(lambda: lcd.lcd_clear())
-        try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System Linux')), 1))
-        try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Power off')), 2))
-        L1web = ASCI_convert(_('System Linux'))
-        L2web = ASCI_convert(_('Power off'))
-    except:
-        log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+            try_io(lambda: lcd.lcd_clear())
+            try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System Linux')), 1))
+            try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Power off')), 2))
+            L1web = ASCI_convert(_('System Linux'))
+            L2web = ASCI_convert(_('Power off'))
+        except:
+            log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
 
 def notify_ospyupdate(name, **kw):
-    ### OSPy new version availbale ###
-    try:
-        global blocker, L1web, L2web
-        blocker = True
-        log.info(NAME, datetime_string() + ': ' + _('System OSPy Has Update'))
-        if lcd_options['address'] == 0:
-            find_lcd_address()
-        if lcd_options['address'] != 0:
-            from . import pylcd  # Library for LCD 16x2 PCF8574
-            lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
-            # DF - alter RPi version test fallback to value that works on BBB
-        else:
-            lcd = dummy_lcd
+    ### OSPy new version available ###
+    if lcd_options['d_notify']:
+        try:
+            global blocker, L1web, L2web
+            blocker = True
+            log.info(NAME, datetime_string() + ': ' + _('System OSPy Has Update'))
+            if lcd_options['address'] == 0:
+                find_lcd_address()
+            if lcd_options['address'] != 0:
+                from . import pylcd  # Library for LCD 16x2 PCF8574
+                lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+                # DF - alter RPi version test fallback to value that works on BBB
+            else:
+                lcd = dummy_lcd
 
-        try_io(lambda: lcd.lcd_clear())
-        try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System OSPy')), 1))
-        try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Has Update')), 2))
-        L1web = ASCI_convert(_('System OSPy'))
-        L2web = ASCI_convert(_('Has Update'))
-    except:
-        log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+            try_io(lambda: lcd.lcd_clear())
+            try_io(lambda: lcd.lcd_puts(ASCI_convert(_('System OSPy')), 1))
+            try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Has Update')), 2))
+            L1web = ASCI_convert(_('System OSPy'))
+            L2web = ASCI_convert(_('Has Update'))
+        except:
+            log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
 
 ################################################################################
 # Web pages:                                                                   #
@@ -738,48 +862,29 @@ class settings_page(ProtectedPage):
     ### Load an html page for entering lcd adjustments ###
 
     def GET(self):
-        try:
-            global lcd_sender
+        global lcd_sender
 
-            qdict = web.input()
-            refind = helpers.get_input(qdict, 'refind', False, lambda x: True)
-            if lcd_sender is not None and refind:
-                lcd_options['address'] = 0
-                log.clear(NAME)
-                log.info(NAME, _('I2C address has re-finded.'))
-                find_lcd_address()
-                raise web.seeother(plugin_url(settings_page), True)
+        qdict = web.input()
+        refind = helpers.get_input(qdict, 'refind', False, lambda x: True)
+        if lcd_sender is not None and refind:
+            lcd_options['address'] = 0
+            log.clear(NAME)
+            log.info(NAME, _('I2C address has re-finded.'))
+            find_lcd_address()
 
-            return self.plugin_render.lcd_display(lcd_options, log.events(NAME))
-        except:
-            log.error(NAME, _('LCD display plug-in:') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('lcd_display -> settings_page GET')
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.lcd_display(lcd_options, log.events(NAME))
  
     def POST(self):
-        try:
-            lcd_options.web_update(web.input())
-            if lcd_sender is not None:
-                lcd_sender.update()
-            raise web.seeother(plugin_url(settings_page), True)
-        except:
-            log.error(NAME, _('LCD display plug-in:') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('lcd_display -> settings_page POST')
-            return self.core_render.notice('/', msg)    
+        lcd_options.web_update(web.input())
+        if lcd_sender is not None:
+            lcd_sender.update()
+        raise web.seeother(plugin_url(settings_page), True)  
 
 class help_page(ProtectedPage):
     ### Load an html page for help ###
 
     def GET(self):
-        try:
-            return self.plugin_render.lcd_display_help()
-        except:
-            log.error(NAME, _('LCD display plug-in:') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('lcd_display -> help_page GET')
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.lcd_display_help()
 
 class settings_json(ProtectedPage):
     ### Returns plugin settings in JSON format ###
@@ -787,11 +892,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        try:
-            return json.dumps(lcd_options)
-        except:
-            log.error(NAME, _('LCD display plug-in:') + ':\n' + traceback.format_exc())
-            return {}
+        return json.dumps(lcd_options)
 
 class lcd_json(ProtectedPage):
     """Returns seconds LCD state in JSON format."""
@@ -801,10 +902,6 @@ class lcd_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         global L1web, L2web
         data = {}
-        try:
-            data['L1'] = '{}'.format(L1web.decode('utf8'))
-            data['L2'] = '{}'.format(L2web.decode('utf8'))
-            return json.dumps(data)
-        except:
-            log.error(NAME, _('LCD display plug-in:') + ':\n' + traceback.format_exc())
-            return data
+        data['L1'] = L1web.decode('utf8') if isinstance(L1web, bytes) else L1web
+        data['L2'] = L2web.decode('utf8') if isinstance(L2web, bytes) else L2web
+        return json.dumps(data)

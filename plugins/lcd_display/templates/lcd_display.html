@@ -3,26 +3,182 @@ $def with(plugin_options, events)
 $var title: $_('LCD settings')
 $var page: plugins
 
+<style>
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch::before {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: red;
+  font-weight: bold;
+}
+
+.switch::after {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: green;
+  font-weight: bold;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: green;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch {
+  display: inline-block;
+}
+
+.switch input {
+  display: none;
+}
+
+.lcd-screen {
+    width: 260px;
+    height: 60px;
+    background-color: #4CAF50;
+    border: 5px solid black;
+    border-radius: 5px;
+    padding: 5px;
+    font-family: "Courier New", monospace;
+    font-size: 20px;
+    color: black;
+    text-align: left;
+    overflow: hidden;
+}
+
+.lcd-line {
+    display: flex;
+    width: 100%;
+    height: 50%;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+
+.lcd-character {
+    width: 16px;
+    height: 24px;
+    margin-right: 2px;
+    display: inline-block;
+    background-color: black;
+    box-sizing: border-box;
+    position: relative;
+}
+</style>
+
 <script>
-    function updateLCD(){
-        jQuery.getJSON("/plugins/lcd_display/lcd_json", function(_data) {
-            jQuery("#L1 span.L1").text(_data.L1);
-            jQuery("#L2 span.L2").text(_data.L2);
-        })      
-        setTimeout(updateLCD, 1000); // 1 second
+let lcdQueue = [];                                                              // Queue for texts
+let isDisplaying = false;                                                       // State whether the text is currently displayed
+let previousText = {L1: "", L2: ""};                                            // Saved text for comparison
+
+function startScrolling(id, text) {
+    let element = document.querySelector("#" + id + " span." + id);
+    let displayLength = 16;
+
+    if (!element) return;
+
+    // If the text is shorter than 16 characters, do not scroll, just set the text
+    if (text.length <= displayLength) {
+        element.textContent = text;
+        return;
     }
 
-    // Initialize behaviors
-    jQuery(document).ready(function(){
+    let index = 0;
+    let interval = setInterval(() => {
+        if (index + displayLength > text.length) {
+            element.textContent = text.substring(index);                        // Moves the text to the very end
+            clearInterval(interval);                                            // Stops scrolling
+        } else {
+            element.textContent = text.substring(index, index + displayLength);
+            index++;
+        }
+    }, 300);                                                                    // Scrolling speed
+}
 
-        jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
-        });
-        jQuery("button#cCancel").click(function(){
-            window.location="/";
-        });
-    updateLCD();
+function processQueue() {
+     if (lcdQueue.length === 0 || isDisplaying) {
+         return;                                                                // If there is nothing to display or the text is already displayed, do nothing
+     }
+
+     isDisplaying = true;
+     const currentText = lcdQueue.shift();                                      // Remove text from queue
+
+     // Displays text on both lines
+     startScrolling("L1", currentText.L1);
+     startScrolling("L2", currentText.L2);
+
+     setTimeout(() => {
+         isDisplaying = false;                                                  // After the display is complete, we can load the next
+         processQueue();                                                        // Starts processing the next text in the queue
+     }, 2000);                                                                  // After 2 seconds (time to display text)
+}
+
+function updateLCD() {
+    console.log('Loading JSON...');
+    jQuery.getJSON("/plugins/lcd_display/lcd_json", function(_data) {
+        console.log('JSON data:', _data);                                       // Checking what the server returns
+        if (_data.L1 !== previousText.L1 || _data.L2 !== previousText.L2) {
+            lcdQueue.push(_data);
+            previousText = _data;                                               // Save the new text for comparison
+            processQueue();                                                     // Processing the queue
+        }
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.log("Error when loading JSON:", textStatus, errorThrown);
     });
+}
+
+jQuery(document).ready(function() {
+    updateLCD();
+    setInterval(updateLCD, 1000);                                               // Refresh json every seconds  
+    jQuery("#cSubmit").click(function() {
+        jQuery("#pluginForm").submit();
+    });
+    jQuery("button#cCancel").click(function(){
+        window.location="/";
+    });
+});
 </script>
 
 <div id="plugin">
@@ -32,8 +188,11 @@ $var page: plugins
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use') I&sup2;C $_('LCD'):</td>
-                <td>
-                    <input name='use_lcd' type='checkbox'${" checked" if plugin_options['use_lcd'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, this extension will be active.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='use_lcd' type='checkbox'${" checked" if plugin_options['use_lcd'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
@@ -50,118 +209,200 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use print lines to debug files'):</td>
-                <td>
-                    <input name='debug_line' type='checkbox'${" checked" if plugin_options['debug_line'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the debugging dump will be active.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='debug_line' type='checkbox'${" checked" if plugin_options['debug_line'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;' rowspan='16'>$_('Display'):</td>
+                <td> $_('System notifications'):</td>
+                <td title=$:{json.dumps(_('If the check box is selected, system notifications will be displayed in priority (other messages will be suppressed).'), ensure_ascii=False)}>
+                <small></small>
+                <label class="switch">
+                <input name='d_notify' type='checkbox'${" checked" if plugin_options['d_notify'] else ""}>
+                <span class="slider"></span>
+                </label>
+                </td>
+            </tr>            
+            <tr>
+                <th colspan="2">
+                    <hr>
+                </th>
+            </tr>
+            <tr>
+                <td style='text-transform: none;' rowspan='17'>$_('Display'):</td>
                 <td> $_('System Name'):</td>
-                <td>
-                    <input name='d_system_name' type='checkbox'${" checked" if plugin_options['d_system_name'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the system OSPy naming is displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_system_name' type='checkbox'${" checked" if plugin_options['d_system_name'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('SW Version Date'):</td>
-                <td>
-                    <input name='d_sw_version_date' type='checkbox'${" checked" if plugin_options['d_sw_version_date'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the OSPy software version will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_sw_version_date' type='checkbox'${" checked" if plugin_options['d_sw_version_date'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('IP'):</td>
-                <td>
-                    <input name='d_ip' type='checkbox'${" checked" if plugin_options['d_ip'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the IP address will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_ip' type='checkbox'${" checked" if plugin_options['d_ip'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Port'):</td>
-                <td>
-                    <input name='d_port' type='checkbox'${" checked" if plugin_options['d_port'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the port will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_port' type='checkbox'${" checked" if plugin_options['d_port'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('CPU Temp'):</td>
-                <td>
-                    <input name='d_cpu_temp' type='checkbox'${" checked" if plugin_options['d_cpu_temp'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the CPU temperature will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_cpu_temp' type='checkbox'${" checked" if plugin_options['d_cpu_temp'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Time and Date'):</td>
-                <td>
-                    <input name='d_time_date' type='checkbox'${" checked" if plugin_options['d_time_date'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the system time and date will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_time_date' type='checkbox'${" checked" if plugin_options['d_time_date'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Uptime'):</td>
-                <td>
-                    <input name='d_uptime' type='checkbox'${" checked" if plugin_options['d_uptime'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the system uptime will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_uptime' type='checkbox'${" checked" if plugin_options['d_uptime'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Rain Sensor'):</td>
-                <td>
-                    <input name='d_rain_sensor' type='checkbox'${" checked" if plugin_options['d_rain_sensor'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the rain sensor state will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_rain_sensor' type='checkbox'${" checked" if plugin_options['d_rain_sensor'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Last Run Program'):</td>
-                <td>
-                    <input name='d_last_run' type='checkbox'${" checked" if plugin_options['d_last_run'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the last running programs will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_last_run' type='checkbox'${" checked" if plugin_options['d_last_run'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Pressure Sensor'):</td>
-                <td>
-                    <input name='d_pressure_sensor' type='checkbox'${" checked" if plugin_options['d_pressure_sensor'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the pressure sensor state will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_pressure_sensor' type='checkbox'${" checked" if plugin_options['d_pressure_sensor'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Water Tank Level'):</td>
-                <td>
-                    <input name='d_water_tank_level' type='checkbox'${" checked" if plugin_options['d_water_tank_level'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the water tank level (by sonic sensor plugin) will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_water_tank_level' type='checkbox'${" checked" if plugin_options['d_water_tank_level'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('DS18B20 Temperature'):</td>
-                <td>
-                    <input name='d_temperature' type='checkbox'${" checked" if plugin_options['d_temperature'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the temperature sensor (by 6x DS18B20 plugin) will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_temperature' type='checkbox'${" checked" if plugin_options['d_temperature'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Running Stations'):</td>
-                <td>
-                    <input name='d_running_stations' type='checkbox'${" checked" if plugin_options['d_running_stations'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the actual running stations will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_running_stations' type='checkbox'${" checked" if plugin_options['d_running_stations'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Schedule - Manual'):</td>
-                <td>
-                    <input name='d_sched_manu' type='checkbox'${" checked" if plugin_options['d_sched_manu'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the OSPy control state (scheduler/manual control) will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_sched_manu' type='checkbox'${" checked" if plugin_options['d_sched_manu'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('System enabled'):</td>
-                <td>
-                    <input name='d_syst_enabl' type='checkbox'${" checked" if plugin_options['d_syst_enabl'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the OSPy control state (scheduler enabled or disabled) will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_syst_enabl' type='checkbox'${" checked" if plugin_options['d_syst_enabl'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td> $_('Sensors'):</td>
-                <td>
-                    <input name='d_sensors' type='checkbox'${" checked" if plugin_options['d_sensors'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the sensors data will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_sensors' type='checkbox'${" checked" if plugin_options['d_sensors'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('LCD line state'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                   <p id="L1"><b><span class="L1">-</span></b></p>
-                   <p id="L2"><b><span class="L2">-</span></b></p>
+                <td> $_('Current Loop Tanks Monitor'):</td>
+                <td title=$:{json.dumps(_('If the check box is selected, the data from 4 tanks (4-20mA tank plugin) will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_current_tanks' type='checkbox'${" checked" if plugin_options['d_current_tanks'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
-            </tr>            
+            </tr>
+            <tr>
+                <th colspan="2">
+                    <hr>
+                </th>
+            </tr>
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('LCD line state'):</td>
+                <td style="text-align: center;">
+                <div class="lcd-screen">
+                    <div id="L1" class="lcd-line"><span class="L1">-</span></div>
+                    <div id="L2" class="lcd-line"><span class="L2">-</span></div>
+                </div>
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="7" cols="65" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>

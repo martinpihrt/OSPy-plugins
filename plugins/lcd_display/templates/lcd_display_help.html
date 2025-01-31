@@ -7,7 +7,7 @@ $var page: plugins
     <div class="title">$_('LCD settings - Help')</div>
     <p>$_('This plugin shows information on a 16x2 character LCD with') PCF8574.</p>
     <p>$_('Automatically detects the display at the following') I&sup2;C $_('addresses'): 0x20-0x27, 0x38-0x3F.</p>
-    <p>$_('Compatible with the HD44780 controller').</p>
+    <p>$_('Compatible with the HD44780 controller.')</p>
     <p>$_('Warning: The LCD display must not have the same') I&sup2;C $_('address as other extensions.')</p>
     <p>$_('For example, if you use the Button Control extension, it has a 0x27 address, like some LCD displays. If you have the same address, change it on the LCD board!')</p>
     <br/><b><p>$_('Plugin setup')</p></b>
@@ -25,6 +25,8 @@ $var page: plugins
     </ul>
     <li>$_('Check Use print lines to debug files')</li>
     $_('If checked use print lines to debug files line 1 or line 2 print to debug files. Warning: If you enable this debug file will have a huge size.')
+    <li>$_('System notifications')</li>
+    $_('If the check box is selected, system notifications will be displayed in priority (other messages will be suppressed).')
     <li>$_('Display')</li>
     $_('If checked print state message to LCD display.')
     <ul>
@@ -39,14 +41,19 @@ $var page: plugins
     <li>$_('Last Run Program')</li>
     <li>$_('Pressure Sensor')</li>
     <li>$_('Water Tank Level')</li>
-    <li>$_('Running Stations')</li> 
     <li>$_('DS18B20 Temperature')</li>
+    <li>$_('Running Stations')</li>
+    <li>$_('Schedule - Manual')</li>
+    <li>$_('System enabled')</li>
+    <li>$_('Sensors')</li>
+    <li>$_('Current Loop Tanks Monitor')</li>
     </ul>
     <li>$_('Status')</li>
     $_('Status window from the plugin.')
     <li>$_('Important status information OSPy')</li>
     $_('If events occur in the system: restart, poweroff, update available, they will be displayed preferentially regardless of the above settings.')
     </ul></p>
+    <p>$_('On the setup page, there is a LCD simulation at the bottom that view the information to the real display.')</p>
     <p>$_('Visit') <a href="https://pihrt.com">Martin Pihrt blog</a> $_('for more information').</p></br>
     <p><b>$_('The hardware should be connected as follows (LCD board by pihrt.com).')</b></p>
     <a href="/plugins/lcd_display/static/images/schematics.png"><img src="/plugins/lcd_display/static/images/schematics.png" width="60%"></a>  </br>
@@ -61,6 +68,3 @@ $var page: plugins
 <div id="controls">
     <a href=$plugins.plugin_url('lcd_display.settings_page') class="button danger">$_('Cancel')</a><br/>
 </div>
-
-
-
