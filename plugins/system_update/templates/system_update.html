@@ -2,6 +2,80 @@ $def with(plugin_options, events, stat)
 
 $var title: $_('System update from GitHub')
 $var page: plugins
+
+<style>
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch::before {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: red;
+  font-weight: bold;
+}
+
+.switch::after {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: green;
+  font-weight: bold;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: green;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch {
+  display: inline-block;
+}
+
+.switch input {
+  display: none;
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -23,8 +97,11 @@ $var page: plugins
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use update plugin'):</td>
-                <td>
-                    <input name='use_update' type='checkbox'${" checked" if plugin_options['use_update'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the plugin will be active.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='use_update' type='checkbox'${" checked" if plugin_options['use_update'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
@@ -53,14 +130,20 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Automatic update'):</td>
-                <td>
-                    <input name='auto_update' type='checkbox'${" checked" if plugin_options['auto_update'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the plug-in updates the system OSPy itself.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='auto_update' type='checkbox'${" checked" if plugin_options['auto_update'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if update is available'):</td>
-                <td>
-                    <input name='use_eml' type='checkbox'${" checked" if plugin_options['use_eml'] else ""}> ($_('For this function required email plugin'))
+                <td title=$:{json.dumps(_('If checked, extension will send an e-mail notifying you when a new version is available. For this function required e-mail plugin.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='use_eml' type='checkbox'${" checked" if plugin_options['use_eml'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
@@ -71,19 +154,22 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('E-mail plug-ins'):</td>
-                <td title=$:{json.dumps(_(u'Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
                 <select name="eplug">
-                    <option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_(u'E-mail notifications V1')</option>
-                    <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
+                    <option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_('E-mail notifications V1')</option>
+                    <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_('E-mail notifications V2 SSL')</option>
                 </select>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
-                <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
@@ -91,7 +177,6 @@ $var page: plugins
                     <a href="$plugins.plugin_url('system_update.refresh_page')" class="button refresh">$_('Update Status')</a>
                 </td>
             </tr>
-            
         </table>
     </form>
 </div>
