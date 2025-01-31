@@ -212,37 +212,19 @@ class settings_page(ProtectedPage):
     """Load an html page for entering real time adjustments"""
 
     def GET(self):
-        try:
-            return self.plugin_render.real_time(plugin_options, log.events(NAME))
-        except:
-            log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('real_time -> settings_page GET')
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.real_time(plugin_options, log.events(NAME))
 
     def POST(self):
-        try:
-            plugin_options.web_update(web.input())
-            if checker is not None:
-                checker.update()
-            raise web.seeother(plugin_url(settings_page), True)
-        except:
-            log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('real_time -> settings_page POST')
-            return self.core_render.notice('/', msg)
+        plugin_options.web_update(web.input())
+        if checker is not None:
+            checker.update()
+        raise web.seeother(plugin_url(settings_page), True)
 
 class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        try:
-            return self.plugin_render.real_time_help()
-        except:
-            log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('real_time -> help_page GET')
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.real_time_help()
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format"""

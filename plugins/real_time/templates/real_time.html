@@ -2,6 +2,80 @@ $def with(plugin_options, events)
 
 $var title: $_('Real Time and NTP Time sync system time')
 $var page: plugins
+
+<style>
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch::before {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: red;
+  font-weight: bold;
+}
+
+.switch::after {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: green;
+  font-weight: bold;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: green;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch {
+  display: inline-block;
+}
+
+.switch input {
+  display: none;
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -23,14 +97,20 @@ $var page: plugins
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use Real Time'):</td>
-                <td>
-                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                <td title=$:{json.dumps(_('If the check box is selected, the plugin will be active.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use NTP Time'):</td>
-                <td>
-                    <input name='use_ntp' type='checkbox'${" checked" if plugin_options['use_ntp'] else ""}>
+                <td title=$:{json.dumps(_('If checked, the current time will be downloaded from the Internet (from the NTP server) and the OSPy time will be synchronized with it.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='use_ntp' type='checkbox'${" checked" if plugin_options['use_ntp'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
