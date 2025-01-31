@@ -475,8 +475,8 @@ def get_report(index):
                     sensor_result = ''
                     for sensor in sensors.get():
                         if sensor.enabled and sensor.manufacturer == 0:                 # pihrt.com sensor
+                            sensor_result += sensor.name + ': '
                             if sensor.response == 1:
-                                sensor_result += sensor.name + ': '
                                 if sensor.sens_type == 1:                               # dry contact
                                     if sensor.last_read_value[4] == 1:
                                         sensor_result += _('Contact Closed')
@@ -563,6 +563,7 @@ def get_report(index):
                                 sensor_result += sensor.name + ': ' + _('No response!')
 
                         elif sensor.enabled and sensor.manufacturer == 1:                 # shelly.com sensor
+                            sensor_result += sensor.name + ': '
                             if sensor.response == 1:
                                 if sensor.sens_type == 0:                               ### Voltage ###
                                     sensor_result += _('Voltage') + ': {} '.format(sensor.last_voltage) + _('V')
