@@ -2,6 +2,53 @@ $def with(plugin_options, events, stat, city_table)
 
 $var title: $_('Astro Sunrise and Sunset')
 $var page: plugins
+
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d; /* Default red for 'off' */
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+/* Green color when switch is 'on' */
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -28,14 +75,17 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Use astro plugin'):</td>
                 <td>
-                    <input name='use_astro' type='checkbox'${" checked" if plugin_options['use_astro'] else ""}>
+                    <label class="switch">
+                        <input name='use_astro' type='checkbox'${" checked" if plugin_options['use_astro'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>
                     <div><small>$_('Find location')</small></div>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('City Location'):</td>
                 <td title=$:{json.dumps(_(u'Select a city location from the list or enter your own location in the fields below'), ensure_ascii=False)}>
@@ -54,7 +104,7 @@ $var page: plugins
                 <td style='text-transform: none;'>
                     <div><small>$_('Manual location')</small></div>
                 </td>
-            </tr>                        
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Custom Location'):</td>
                 <td title=$:{json.dumps(_(u'Somewhere on earth (own name). Example: Pilsen'), ensure_ascii=False)}>
@@ -83,13 +133,25 @@ $var page: plugins
                <th colspan="2">
                  <hr>
                </th>
-            </tr>                                                                                 
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>            
+            </tr>
+            <tr>
+                <td>$_('Use Injection Script')</td>
+                <td colspan="5" title=$:{json.dumps(_('Create tanks charts from a plugin on the home page. You always need to restart OSPy afterwards for this option.'), ensure_ascii=False)}>
+                    <label class="switch">
+                        <input type="checkbox" name="use_script" ${'checked' if plugin_options['use_script'] else ''}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
@@ -97,7 +159,6 @@ $var page: plugins
                     <a href="$plugins.plugin_url('sunrise_and_sunset.refresh_page')" class="button refresh">$_('Refresh')</a>
                 </td>
             </tr>
-            
         </table>
     </form>
 </div>

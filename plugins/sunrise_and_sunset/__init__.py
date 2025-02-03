@@ -23,10 +23,6 @@ from ospy.webpages import pluginScripts # Inject javascript to call our API for 
 from ospy.webpages import showInFooter  # Enable plugin to display readings in UI footer
 #from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
 
-script_path = "sunrise_and_sunset/script/sunrise_sunset.js"
-if script_path not in pluginScripts:
-    pluginScripts.append(script_path)
-
 NAME = 'Astro Sunrise and Sunset'
 MENU =  _('Package: Astro Sunrise and Sunset')
 LINK = 'status_page'
@@ -35,6 +31,7 @@ plugin_options = PluginOptions(
     NAME, 
     {
         'use_astro': False,
+        'use_script': True,             # enable script injection on homepage
         'location': 0,
         'custom_location': '',
         'custom_region': '',
@@ -51,6 +48,11 @@ plugin_options = PluginOptions(
         'ignore_rain_delay': [False, False],      # program for running in rain delay
     }
 )
+
+if plugin_options['use_script']:
+    script_path = "sunrise_and_sunset/script/sunrise_sunset.js"
+    if script_path not in pluginScripts:
+        pluginScripts.append(script_path)
 
 stats = {}
 last_millis = 0

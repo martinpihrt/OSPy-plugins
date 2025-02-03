@@ -3,11 +3,9 @@
 */
 
 document.addEventListener('DOMContentLoaded', function() {
-    if (window.location.pathname == "/") {
-    if ($('#displayScheduleDate').length > 0) {
-    // Verify the schedule is available (i.e. not in Manual mode)
-    // Dynamické přidání CSS
-    var style = document.createElement('style');
+    if (window.location.pathname == "/") { 
+    if ($('#displayScheduleDate').length > 0) {     // Verify the schedule is available (i.e. not in Manual mode)
+    var style = document.createElement('style');    // Dynamic addition of CSS
     style.innerHTML = `
         .well-container {
             display: grid;
@@ -19,20 +17,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         .well {
             position: relative;
-            width: 200px;
             height: 400px;
-            border: 5px solid #654321;
+            border: 3px solid #2E3959;
             border-radius: 10px;
             overflow: hidden;
             background-color: #ddd;
-        }
-
-        .well.disabled {
-            background-color: #bbb;
-        }
-
-        .well.disabled .water {
-            background-color: #ccc;
         }
 
         .well-wrapper {
@@ -43,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .well-wrapper h3 {
             margin-bottom: 10px;
             font-size: 18px;
-            color: #654321;
+            color: #2E3959;
         }
 
         .water {
@@ -59,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
             position: absolute;
             top: 10px;
             left: 10px;
-            color: #000;
+            color: #2E3959;
             font-weight: bold;
             text-align: left;
             transition: color 0.5s ease;
@@ -76,47 +65,31 @@ document.addEventListener('DOMContentLoaded', function() {
         graphContainer.innerHTML = `
             <div class="well-container">
                 <div class="well-wrapper">
+                    <h3><span id="name1"></span></h3>
                     <div class="well">
                         <div class="water" id="water1"></div>
-                        <div class="label" id="label1">
-                            <p>Level: <span id="levelCm1">0</span> cm</p>
-                            <p>Level: <span id="levelPercent1">0</span> %</p>
-                            <p>Volume: <span id="volume1">0</span> l</p>
-                            <p>Voltage: <span id="voltage1">0</span> V</p>
-                        </div>
+                        <div class="label" id="label1"></div>
                     </div>
                 </div>
                 <div class="well-wrapper">
+                    <h3><span id="name2"></span></h3>
                     <div class="well">
                         <div class="water" id="water2"></div>
-                        <div class="label" id="label2">
-                            <p>Level: <span id="levelCm2">0</span> cm</p>
-                            <p>Level: <span id="levelPercent2">0</span> %</p>
-                            <p>Volume: <span id="volume2">0</span> l</p>
-                            <p>Voltage: <span id="voltage2">0</span> V</p>
-                        </div>
+                        <div class="label" id="label2"></div>
                     </div>
                 </div>
                 <div class="well-wrapper">
+                    <h3><span id="name3"></span></h3>
                     <div class="well">
                         <div class="water" id="water3"></div>
-                        <div class="label" id="label3">
-                            <p>Level: <span id="levelCm3">0</span> cm</p>
-                            <p>Level: <span id="levelPercent3">0</span> %</p>
-                            <p>Volume: <span id="volume3">0</span> l</p>
-                            <p>Voltage: <span id="voltage3">0</span> V</p>
-                        </div>
+                        <div class="label" id="label3"></div>
                     </div>
                 </div>
                 <div class="well-wrapper">
+                    <h3><span id="name4"></span></h3>
                     <div class="well">
                         <div class="water" id="water4"></div>
-                        <div class="label" id="label4">
-                            <p>Level: <span id="levelCm4">0</span> cm</p>
-                            <p>Level: <span id="levelPercent4">0</span> %</p>
-                            <p>Volume: <span id="volume4">0</span> l</p>
-                            <p>Voltage: <span id="voltage4">0</span> V</p>
-                        </div>
+                        <div class="label" id="label4"></div>
                     </div>
                 </div>
             </div>
@@ -129,34 +102,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });     
 
-function updateWell(wellId, levelCm, maxHeightCm, maxVolume, voltage){
-    var wellElement = jQuery('#water'+wellId);
-    if(wellElement.length === 0) {
-        console.error('Element not found.');
+function updateWell(wellId, levelCm, maxHeightCm, maxVolume, voltage, name, enabled) {
+    var wellWrapper = jQuery('#name' + wellId).closest('.well-wrapper');
+
+    if (!wellWrapper.length) {
+        console.error('Element not found for well ' + wellId);
+        return;
+    }
+
+    if (!enabled) {
+        wellWrapper.hide();  // Hide tank if disabled
+        return;
+    } else {
+        wellWrapper.show();  // Show tank if enabled
+    }
+
+    var wellElement = jQuery('#water' + wellId);
+    if (wellElement.length === 0) {
+        console.error('Water element not found for well ' + wellId);
         return;
     }
 
     const levelPercent = (levelCm / maxHeightCm) * 100;
     const volume = (levelCm / maxHeightCm) * maxVolume;
 
-    // Visual water height update
-    wellElement.css('height', levelPercent+'%');
+    // Refresh height
+    wellElement.css('height', levelPercent + '%');
 
-    // Update text values
-    var levelCmElement = jQuery('#levelCm'+wellId);
-    var levelPercentElement = jQuery('#levelPercent'+wellId);
-    var volumeElement = jQuery('#volume'+wellId);
-    var voltageElement = jQuery('#voltage'+wellId);
+    // Set name for tank
+    jQuery('#name' + wellId).text(name);
 
-    if (levelCmElement.length && levelPercentElement.length && volumeElement.length && voltageElement.length){
-        levelCmElement.text(Math.round(levelCm));
-        levelPercentElement.text(Math.round(levelPercent));
-        volumeElement.text(Math.round(volume));
-        voltageElement.text(voltage.toFixed(3));
-    } else {
-        console.error('Elements for level and volume were not found.');
-    }
+    jQuery('#label' + wellId).html(`
+        <p><span id="levelCm${wellId}">${Math.round(levelCm)}</span> cm</p>
+        <p><span id="levelPercent${wellId}">${Math.round(levelPercent)}</span> %</p>
+        <p><span id="volume${wellId}">${Math.round(volume)}</span> l</p>
+        <p><span id="voltage${wellId}">${voltage.toFixed(3)}</span> V</p>
+    `);
 }
+
 
 function updateAllWells() {
     if (window.location.pathname == "/") {
@@ -174,8 +157,9 @@ function updateAllWells() {
                     var maxVolume = tank.maxVolume || 0;
                     var level = tank.level !== undefined ? tank.level : 0;
                     var voltage = tank.voltage !== undefined ? tank.voltage : 0;
-                    console.log(name, maxHeightCm, maxVolume, level, voltage);
-                    updateWell(i, level, maxHeightCm, maxVolume, voltage);
+                    var tankEnabled = tank.use !== undefined ? tank.use : 0;
+                    console.log('Tank ' + i + ': ', tank);
+                    updateWell(i, level, maxHeightCm, maxVolume, voltage, name, tankEnabled);
                 }
             }).fail(function() {
                 console.error('Failed to load JSON data.');
@@ -188,6 +172,7 @@ jQuery(document).ready(function(){
     if (window.location.pathname == "/") {
         if ($('#displayScheduleDate').length > 0) {
             // Verify the schedule is available (i.e. not in Manual mode)
+            updateAllWells();
             observer = new MutationObserver(updateAllWells);
             observer.observe($('#displayScheduleDate')[0], {characterData: true, childList:true, subTree: true});
         }

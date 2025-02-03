@@ -201,13 +201,13 @@ class Sender(Thread):
                     if tank_mon is not None:
                         tempText = ""
                         if plugin_options['en_tank1']: 
-                            tempText += '{} {} % {} l '.format(tanks['label'][0], round(tanks['levelPercent'][0]), round(tanks['volumeLiter'][0]))
+                            tempText += '[{} {} % {} l] '.format(tanks['label'][0], round(tanks['levelPercent'][0]), round(tanks['volumeLiter'][0]))
                         if plugin_options['en_tank2']: 
-                            tempText += '{} {} % {} l '.format(tanks['label'][1], round(tanks['levelPercent'][1]), round(tanks['volumeLiter'][1]))
+                            tempText += '[{} {} % {} l] '.format(tanks['label'][1], round(tanks['levelPercent'][1]), round(tanks['volumeLiter'][1]))
                         if plugin_options['en_tank3']: 
-                            tempText += '{} {} % {} l '.format(tanks['label'][2], round(tanks['levelPercent'][2]), round(tanks['volumeLiter'][2]))
+                            tempText += '[{} {} % {} l] '.format(tanks['label'][2], round(tanks['levelPercent'][2]), round(tanks['volumeLiter'][2]))
                         if plugin_options['en_tank4']: 
-                            tempText += '{} {} % {} l '.format(tanks['label'][3], round(tanks['levelPercent'][3]), round(tanks['volumeLiter'][3]))
+                            tempText += '[{} {} % {} l] '.format(tanks['label'][3], round(tanks['levelPercent'][3]), round(tanks['volumeLiter'][3]))
                         if not plugin_options['en_tank1'] and not plugin_options['en_tank2'] and not plugin_options['en_tank3'] and not plugin_options['en_tank4']:
                             tempText = _('The measurement of all tanks is switched off.')
                         tank_mon.val = tempText.encode('utf8').decode('utf8')
