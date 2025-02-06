@@ -3,6 +3,52 @@ $def with(plugin_options, msg)
 $var title: $_('Astro Sunrise and Sunset - settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d; /* Default red for 'off' */
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+/* Green color when switch is 'on' */
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     var msg = "${msg}";
     // Initialize behaviors
@@ -22,7 +68,7 @@ $var page: plugins
                 jQuery("#msgHint").text($:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
             break;
         }
-        jQuery('#msgHint').fadeOut(4000);       
+        jQuery('#msgHint').fadeOut(4000);
     });
 </script>
 
@@ -36,10 +82,10 @@ $var page: plugins
         <table>
             <tr>
                 <td style='text-transform: none;'>$_('Number of programs'):</td>
-                <td title=$:{json.dumps(_(u'The number of used programs in these plugin.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('The number of used programs in these plugin.'), ensure_ascii=False)}>
                 <input name='number_pgm' id='number_pgm' type='number' min="1" max="100" value='$plugin_options["number_pgm"]'></td>
             </tr>
-        </table>                            
+        </table>
         $for c in range(0, plugin_options['number_pgm']):
             <table class="optionList">
             <tr>
@@ -47,22 +93,34 @@ $var page: plugins
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Enable program'):</td>
-            <td title=$:{json.dumps(_(u'If the check box is marked, the program will be active.'), ensure_ascii=False)}>
-            <input type="checkbox" name="pgm_enabled${c}" ${"checked" if plugin_options['pgm_enabled'][c] else ""}></td>
+            <td title=$:{json.dumps(_('If the check box is marked, the program will be active.'), ensure_ascii=False)}>
+            <label class="switch">
+            <input type="checkbox" name="pgm_enabled${c}" ${"checked" if plugin_options['pgm_enabled'][c] else ""}>
+            <span class="slider"></span>
+            </label>
+            </td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Ignore rain'):</td>
-            <td title=$:{json.dumps(_(u'If the checkbox is checked, the program will be active even if it is currently raining (rain is ignored).'), ensure_ascii=False)}>
-            <input type="checkbox" name="ignore_rain${c}" ${"checked" if plugin_options['ignore_rain'][c] else ""}></td>
+            <td title=$:{json.dumps(_('If the checkbox is checked, the program will be active even if it is currently raining (rain is ignored).'), ensure_ascii=False)}>
+            <label class="switch">
+            <input type="checkbox" name="ignore_rain${c}" ${"checked" if plugin_options['ignore_rain'][c] else ""}>
+            <span class="slider"></span>
+            </label>
+            </td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Ignore rain delay'):</td>
-            <td title=$:{json.dumps(_(u'If the checkbox is checked, the program will be active even if it is currently rain delay (rain delay is ignored).'), ensure_ascii=False)}>
-            <input type="checkbox" name="ignore_rain_delay${c}" ${"checked" if plugin_options['ignore_rain_delay'][c] else ""}></td>
-            </tr>                                               
+            <td title=$:{json.dumps(_('If the checkbox is checked, the program will be active even if it is currently rain delay (rain delay is ignored).'), ensure_ascii=False)}>
+            <label class="switch">
+            <input type="checkbox" name="ignore_rain_delay${c}" ${"checked" if plugin_options['ignore_rain_delay'][c] else ""}>
+            <span class="slider"></span>
+            </label>
+            </td>
+            </tr>
             <tr>
             <td style='text-transform: none;'>$_('Program type'):</td>
-            <td title=$:{json.dumps(_(u'Select program type (sunrise or sunset).'), ensure_ascii=False)}>
+            <td title=$:{json.dumps(_('Select program type (sunrise or sunset).'), ensure_ascii=False)}>
             <select name="pgm_type${c}" id='pgm_type'>
             <option value="0" ${"selected" if plugin_options["pgm_type"][c]==0 else ""}>$_('Sunrise')</option>
             <option value="1" ${"selected" if plugin_options["pgm_type"][c]==1 else ""}>$_('Sunset')</option>
@@ -71,14 +129,14 @@ $var page: plugins
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Move the beginning of the program'):</td>
-            <td title=$:{json.dumps(_(u'Enter the time in hours or minutes by which the program should move relative to the selected program type (sunrise or sunset).'), ensure_ascii=False)}>
+            <td title=$:{json.dumps(_('Enter the time in hours or minutes by which the program should move relative to the selected program type (sunrise or sunset).'), ensure_ascii=False)}>
             <input name='time_h${c}' type='number' min='-23' max='23' value='$plugin_options["time_h"][c]'>
             <input name='time_m${c}' type='number' min='-59' max='59' value='$plugin_options["time_m"][c]'>
             </td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Program for run'):</td>
-            <td title=$:{json.dumps(_(u'Select the program from the list that you want to run with this extension.'), ensure_ascii=False)}>
+            <td title=$:{json.dumps(_('Select the program from the list that you want to run with this extension.'), ensure_ascii=False)}>
             <select name="pgm_run${c}" id='pgm_run'>
             <option value="-1" ${"selected" if plugin_options["pgm_run"][c]==-1 else ""}>$_('Not selected')</option>
             $for program in programs.get():

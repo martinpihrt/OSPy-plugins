@@ -16,6 +16,26 @@ $var page: plugins
     <p>$_('Visit') <a href="https://pihrt.com/elektronika/482-mereni-vysky-tl136">Martin Pihrt blog</a> $_('for more information').</p><br>
     <p><b>$_('How to installing in tank')</b></p>
     <a href="/plugins/current_loop_tanks_monitor/static/images/tank.png"><img src="/plugins/current_loop_tanks_monitor/static/images/tank.png" width="40%"></a></br>
+    <p><b>$_('Calibration')</b></p>
+    <p>$_('Without a sensor connected (on inputs 1 to 4), the plugin must display a voltage of 0V.')</p>
+    <p>$_('When connecting + and - (on inputs 1 to 4), approximately 3.2V must be displayed.')</p>
+    <p>$_('We connect the sensor (without immersing it in water, i.e. outside the tank) and see what voltage the plugin shows (example: we will see something around 0.7 V).')</p>
+    <p>$_('We will enter this voltage in the plugin settings in the "minimum voltage" section.')</p>
+    <p>$_('Then we insert the sensor into a full tank "to the bottom" and see what voltage the plugin shows (example: we will see something around 3.2 V).')</p>
+    <p>$_('We will enter this voltage in the plugin settings in the "maximum voltage" section.')</p>
+    <p>$_('In the "maximum volume" section, we enter our calculated/actual volume of the tank when it is 100% full of water (example: 50 liters).')</p>
+    <p>$_('In the "maximum height" section, enter the actual measured distance between the sensor and the maximum level at 100% (example: 43 cm).')</p>
+    <p>$_('This completes the calibration. The plugin will then recalculate the tank level and volume.')</p>
+    <p><b>$_('Pressure sensor')</b></p>
+    <p>$_('It is powered by 24V directly from this board and does not need to connect any other source! Hard-wiring the input terminal on the board - for example, input 1 + and - will not damage the circuit (board). The maximum current is set to 20mA. For checking, we can leave the unused input connected to + and - (in the plugin we will see the maximum voltage of about 3.5V). Or we can connect an LED of any color between + and - (LED If=20mA).')</p>
+    <p><b>$_('Wiring diagram')</b></p>
+    <a href="/plugins/current_loop_tanks_monitor/static/images/wiring.png"><img src="/plugins/current_loop_tanks_monitor/static/images/wiring.png" width="40%"></a></br>
+    <p><b>$_('PCB')</b></p>
+    <a href="/plugins/current_loop_tanks_monitor/static/images/pcb1.png"><img src="/plugins/current_loop_tanks_monitor/static/images/pcb1.png" width="40%"></a></br>
+    <a href="/plugins/current_loop_tanks_monitor/static/images/pcb2.png"><img src="/plugins/current_loop_tanks_monitor/static/images/pcb2.png" width="40%"></a></br>
+    <a href="/plugins/current_loop_tanks_monitor/static/images/pcb3.png"><img src="/plugins/current_loop_tanks_monitor/static/images/pcb3.png" width="40%"></a></br>
+    <a href="/plugins/current_loop_tanks_monitor/static/images/pcb4.png"><img src="/plugins/current_loop_tanks_monitor/static/images/pcb4.png" width="40%"></a></br>
+    <a href="/plugins/current_loop_tanks_monitor/static/images/pcb5.png"><img src="/plugins/current_loop_tanks_monitor/static/images/pcb5.png" width="40%"></a></br>
 </div>
 
 <div id="controls">
