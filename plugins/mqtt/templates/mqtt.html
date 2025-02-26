@@ -51,8 +51,8 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Broker Port'):</td>
-                <td title=$:{json.dumps(_('Range for port is 80 to 65635.'), ensure_ascii=False)}>
-                    <input style='width:60%' type="number" name="broker_port" max="65635" min="80" value="${plugin_options['broker_port']}">
+                <td title=$:{json.dumps(_('Range for port is 80 to 65535.'), ensure_ascii=False)}>
+                    <input style='width:60%' type="number" name="broker_port" max="65535" min="80" value="${plugin_options['broker_port']}">
                 </td>
             </tr>
             <tr>
