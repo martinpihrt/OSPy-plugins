@@ -47,6 +47,34 @@ input:checked + .slider {
 input:checked + .slider:before {
     transform: translateX(26px);
 }
+
+th {
+    text-align: left;
+    padding-left: 10px;
+}
+
+table.optionList {
+    table-layout: fixed;
+    width: 100%;
+}
+
+table.optionList td, table.optionList th {
+    word-wrap: break-word;
+    overflow: hidden;
+}
+
+
+td[colspan="2"] input {
+    width: 80%;
+}
+
+td[colspan="5"] input {
+    width: 80%;
+}
+
+textarea {
+    width: 95%;
+}
 </style>
 
 <script>
@@ -69,7 +97,7 @@ jQuery(document).ready(function(){
         <form id="pluginForm" action="$plugins.plugin_url('current_loop_tanks_monitor.setup_page')" method="post">
             <table class="optionList">
                 <tr>
-                    <td colspan="5"></td>
+                    <td colspan="6"></td>
                     <td><b><small>$_('Tanks')</small></b></td>
                 </tr>
 
@@ -144,13 +172,13 @@ jQuery(document).ready(function(){
 
                 <!-- logging and graphing -->
                 <tr>
-                    <td colspan="5"><hr></td>
+                    <td colspan="6"><hr></td>
                     <td><b><small>$_('Logs and graphs')</small></b></td>
-                </tr>      
+                </tr>
 
                 <tr>
                     <td>$_('Show data in graph and log from')</td>
-                    <td colspan="5" title=$:{json.dumps(_('Choose from where the displayed data in the log and graph will be loaded.'), ensure_ascii=False)}>
+                    <td title=$:{json.dumps(_('Choose from where the displayed data in the log and graph will be loaded.'), ensure_ascii=False)}>
                         <select name="type_log">
                             <option value="0" ${'selected' if plugin_options['type_log'] == 0 else ''}>$_('Local File')</option>
                             <option value="1" ${'selected' if plugin_options['type_log'] == 1 else ''}>$_('Database File')</option>
@@ -160,7 +188,7 @@ jQuery(document).ready(function(){
 
                 <tr>
                     <td>$_('Enable SQL Logging')</td>
-                    <td colspan="3" title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured.'), ensure_ascii=False)}>
+                    <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured.'), ensure_ascii=False)}>
                         <label class="switch">
                             <input type="checkbox" name="en_sql_log" ${'checked' if plugin_options['en_sql_log'] else ''}>
                             <span class="slider"></span>
@@ -173,7 +201,7 @@ jQuery(document).ready(function(){
 
                 <tr>
                     <td>$_('Enable local logging')</td>
-                    <td colspan="5" title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
+                    <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
                         <label class="switch">
                             <input type="checkbox" name="en_log" ${'checked' if plugin_options['en_log'] else ''}>
                             <span class="slider"></span>
@@ -197,23 +225,23 @@ jQuery(document).ready(function(){
 
                 <tr>
                     <td>$_('Show data in graph from')</td>
-                    <td colspan="5" title=$:{json.dumps(_('Datetime FROM for Filtering.'), ensure_ascii=False)}><input name="dt_from" type="datetime-local" value="$plugin_options['dt_from']"></td>
+                    <td title=$:{json.dumps(_('Datetime FROM for Filtering.'), ensure_ascii=False)}><input name="dt_from" type="datetime-local" value="$plugin_options['dt_from']"></td>
                 </tr>
 
                 <tr>
                     <td>$_('Show data in graph to')</td>
-                    <td colspan="5" title=$:{json.dumps(_('Datetime TO for Filtering.'), ensure_ascii=False)}><input name="dt_to" type="datetime-local" value="$plugin_options['dt_to']"></td>
+                    <td title=$:{json.dumps(_('Datetime TO for Filtering.'), ensure_ascii=False)}><input name="dt_to" type="datetime-local" value="$plugin_options['dt_to']"></td>
                 </tr>
 
-                <!-- Additional Settings -->
+                <!-- Communications -->
                 <tr>
-                    <td colspan="5"><hr></td>
-                    <td><b><small>$_('Additional Settings')</small></b></td>
+                    <td colspan="6"><hr></td>
+                    <td><b><small>$_('Communications')</small></b></td>
                 </tr>
 
                 <tr>
                     <td>$_('I2C Address')</td>
-                    <td colspan="5" title=$:{json.dumps(_('Default address is 0x48.'), ensure_ascii=False)}>
+                    <td title=$:{json.dumps(_('Default address is 0x48.'), ensure_ascii=False)}>
                         <select name="i2c">
                             <option value="0" ${'selected' if plugin_options['i2c'] == 0 else ''}>0x48</option>
                             <option value="1" ${'selected' if plugin_options['i2c'] == 1 else ''}>0x49</option>
@@ -223,9 +251,15 @@ jQuery(document).ready(function(){
                     </td>
                 </tr>
 
+                <!-- display and graphics -->
+                <tr>
+                    <td colspan="6"><hr></td>
+                    <td><b><small>$_('Display and graphics')</small></b></td>
+                </tr>
+
                 <tr>
                     <td>$_('Use Footer')</td>
-                    <td colspan="5" title=$:{json.dumps(_('Show data from plugin in footer on home page.'), ensure_ascii=False)}>
+                    <td title=$:{json.dumps(_('Show data from plugin in footer on home page.'), ensure_ascii=False)}>
                         <label class="switch">
                             <input type="checkbox" name="use_footer" ${'checked' if plugin_options['use_footer'] else ''}>
                             <span class="slider"></span>
@@ -234,23 +268,17 @@ jQuery(document).ready(function(){
                 </tr>
                 <tr>
                     <td>$_('Use Injection Script')</td>
-                    <td colspan="5" title=$:{json.dumps(_('Create tanks charts from a plugin on the home page. You always need to restart OSPy afterwards for this option.'), ensure_ascii=False)}>
+                    <td title=$:{json.dumps(_('Create tanks charts from a plugin on the home page. You always need to restart OSPy afterwards for this option.'), ensure_ascii=False)}>
                         <label class="switch">
                             <input type="checkbox" name="use_script" ${'checked' if plugin_options['use_script'] else ''}>
                             <span class="slider"></span>
                         </label>
                     </td>
                 </tr>
-                <tr>
-                    <td style='text-transform: none;'>$_('Status')</td>
-                    <td colspan="5">
-                        <textarea style="font-family: monospace;" rows="10" cols="50" readonly>$'\n'.join(events)</textarea>
-                    </td>
-                </tr>
 
-                <!-- e-mail -->
+                <!-- Notifications -->
                 <tr>
-                    <td colspan="5"><hr></td>
+                    <td colspan="6"><hr></td>
                     <td><b><small>$_('Notifications')</small></b></td>
                 </tr>
 
@@ -273,7 +301,7 @@ jQuery(document).ready(function(){
                     </td>
                     <td title=$:{json.dumps(_('If the level drops below this value, sending an email is activated.'), ensure_ascii=False)}><input name="eml_tank1_low_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank1_low_lvl']"></td>
                     <td title=$:{json.dumps(_('As long as the level does not rise above this level, it will not allow sending an email when the level drops to the minimum. This is used to block the constant sending of emails when the level is at a minimum.'), ensure_ascii=False)}><input name="eml_tank1_high_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank1_high_lvl']"></td>
-                    <td><input name="eml_subject_1" type="text" value="$plugin_options['eml_subject_1']"></td>
+                    <td colspan="2"><input name="eml_subject_1" type="text" value="$plugin_options['eml_subject_1']"></td>
                 </tr>
 
                 <!-- Tank 2 -->
@@ -287,7 +315,7 @@ jQuery(document).ready(function(){
                     </td>
                     <td title=$:{json.dumps(_('If the level drops below this value, sending an email is activated.'), ensure_ascii=False)}><input name="eml_tank2_low_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank2_low_lvl']"></td>
                     <td title=$:{json.dumps(_('As long as the level does not rise above this level, it will not allow sending an email when the level drops to the minimum. This is used to block the constant sending of emails when the level is at a minimum.'), ensure_ascii=False)}><input name="eml_tank2_high_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank2_high_lvl']"></td>
-                    <td><input name="eml_subject_2" type="text" value="$plugin_options['eml_subject_2']"></td>
+                    <td colspan="2"><input name="eml_subject_2" type="text" value="$plugin_options['eml_subject_2']"></td>
                 </tr>
 
                 <!-- Tank 3 -->
@@ -301,7 +329,7 @@ jQuery(document).ready(function(){
                     </td>
                     <td title=$:{json.dumps(_('If the level drops below this value, sending an email is activated.'), ensure_ascii=False)}><input name="eml_tank3_low_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank3_low_lvl']"></td>
                     <td title=$:{json.dumps(_('As long as the level does not rise above this level, it will not allow sending an email when the level drops to the minimum. This is used to block the constant sending of emails when the level is at a minimum.'), ensure_ascii=False)}><input name="eml_tank3_high_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank3_high_lvl']"></td>
-                    <td><input name="eml_subject_3" type="text" value="$plugin_options['eml_subject_3']"></td>
+                    <td colspan="2"><input name="eml_subject_3" type="text" value="$plugin_options['eml_subject_3']"></td>
                 </tr>
 
                 <!-- Tank 4 -->
@@ -315,15 +343,222 @@ jQuery(document).ready(function(){
                     </td>
                     <td title=$:{json.dumps(_('If the level drops below this value, sending an email is activated.'), ensure_ascii=False)}><input name="eml_tank4_low_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank4_low_lvl']"></td>
                     <td title=$:{json.dumps(_('As long as the level does not rise above this level, it will not allow sending an email when the level drops to the minimum. This is used to block the constant sending of emails when the level is at a minimum.'), ensure_ascii=False)}><input name="eml_tank4_high_lvl" type="number" min="0" max="100" step="1" value="$plugin_options['eml_tank4_high_lvl']"></td>
-                    <td><input name="eml_subject_4" type="text" value="$plugin_options['eml_subject_4']"></td>
+                    <td colspan="2"><input name="eml_subject_4" type="text" value="$plugin_options['eml_subject_4']"></td>
                 </tr>
 
-                <!-- events -->
+                <!-- events Regulate maximum -->
                 <tr>
-                    <td colspan="5"><hr></td>
-                    <td><b><small>$_('Events')</small></b></td>
+                    <td colspan="6"><hr></td>
+                    <td><b><small>$_('Regulate maximum')</small></b></td>
                 </tr>
 
+                <tr>
+                    <th>$_('Tank')</th>
+                    <th>$_('Regulate')</th>
+                    <th>$_('Max level (cm)')</th>
+                    <th>$_('Max run time (mm:ss)')</th>
+                    <th>$_('Min level (cm)')</th>
+                    <th>$_('Select Output')</th>
+                </tr>
+                
+                <!-- Tank 1 events - Regulate maximum water level -->
+                <tr>
+                    <td>$plugin_options['label1']</td>
+                    <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_reg_tank1" ${'checked' if plugin_options['en_reg_tank1'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is activated'), ensure_ascii=False)}><input name='reg_max_tank1' type='number' min="1" value='$plugin_options["reg_max_tank1"]'></td>
+                    <td title=$:{json.dumps(_('Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}><input id="reg_mm_tank1" name="reg_mm_tank1" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_tank1"]' min="0" max="999">:<input id="reg_ss_tank1" name="reg_ss_tank1" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_tank1"]' min="0" max="59"></td>
+                    <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is deactivated'), ensure_ascii=False)}><input name='reg_min_tank1' type='number' min="1" value='$plugin_options["reg_min_tank1"]'></td>
+                    <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="reg_out_tank1">
+                    $for station in stations.get():
+                        <option value="${str(station.index)}" ${"selected" if plugin_options["reg_out_tank1"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 2 events - Regulate maximum water level -->
+                <tr>
+                    <td>$plugin_options['label2']</td>
+                    <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_reg_tank2" ${'checked' if plugin_options['en_reg_tank2'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is activated'), ensure_ascii=False)}><input name='reg_max_tank2' type='number' min="1" value='$plugin_options["reg_max_tank2"]'></td>
+                    <td title=$:{json.dumps(_('Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}><input id="reg_mm_tank2" name="reg_mm_tank2" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_tank2"]' min="0" max="999">:<input id="reg_ss_tank2" name="reg_ss_tank2" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_tank2"]' min="0" max="59"></td>
+                    <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is deactivated'), ensure_ascii=False)}><input name='reg_min_tank2' type='number' min="1" value='$plugin_options["reg_min_tank2"]'></td>
+                    <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="reg_out_tank2">
+                    $for station in stations.get():
+                        <option value="${str(station.index)}" ${"selected" if plugin_options["reg_out_tank2"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 3 events - Regulate maximum water level -->
+                <tr>
+                    <td>$plugin_options['label3']</td>
+                    <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_reg_tank3" ${'checked' if plugin_options['en_reg_tank3'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is activated'), ensure_ascii=False)}><input name='reg_max_tank3' type='number' min="1" value='$plugin_options["reg_max_tank3"]'></td>
+                    <td title=$:{json.dumps(_('Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}><input id="reg_mm_tank3" name="reg_mm_tank3" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_tank3"]' min="0" max="999">:<input id="reg_ss_tank3" name="reg_ss_tank3" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_tank3"]' min="0" max="59"></td>
+                    <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is deactivated'), ensure_ascii=False)}><input name='reg_min_tank3' type='number' min="1" value='$plugin_options["reg_min_tank3"]'></td>
+                    <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="reg_out_tank3">
+                    $for station in stations.get():
+                        <option value="${str(station.index)}" ${"selected" if plugin_options["reg_out_tank3"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 4 events - Regulate maximum water level -->
+                <tr>
+                    <td>$plugin_options['label4']</td>
+                    <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_reg_tank4" ${'checked' if plugin_options['en_reg_tank4'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is activated'), ensure_ascii=False)}><input name='reg_max_tank4' type='number' min="1" value='$plugin_options["reg_max_tank4"]'></td>
+                    <td title=$:{json.dumps(_('Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}><input id="reg_mm_tank4" name="reg_mm_tank4" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_tank4"]' min="0" max="999">:<input id="reg_ss_tank4" name="reg_ss_tank4" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_tank4"]' min="0" max="59"></td>
+                    <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is deactivated'), ensure_ascii=False)}><input name='reg_min_tank4' type='number' min="1" value='$plugin_options["reg_min_tank4"]'></td>
+                    <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="reg_out_tank4">
+                    $for station in stations.get():
+                        <option value="${str(station.index)}" ${"selected" if plugin_options["reg_out_tank4"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- events Stoping stations if is minimum water -->
+                <tr>
+                    <td colspan="6"><hr></td>
+                    <td><b><small>$_('Stoping stations')</small></b></td>
+                </tr>
+
+                <tr>
+                    <th>$_('Tank')</th>
+                    <th>$_('Stop')</th>
+                    <th>$_('Delay (hours)')</th>
+                    <th>$_('Blocking (cm)')</th>
+                    <th>$_('Unblocking (cm)')</th>
+                    <th>$_('Removing Delay')</th>
+                    <th>$_('Stop station')</th>
+                </tr>
+                
+                <!-- Tank 1 events - Stoping stations -->
+                <tr>
+                    <td>$plugin_options['label1']</td>
+                    <td title=$:{json.dumps(_('Stoping these stations if is minimum water level in the tank'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_stop_tank1" ${'checked' if plugin_options['en_stop_tank1'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking. if the level in the tank rises above the minimum + xx cm, the delay is deactivated'), ensure_ascii=False)}>
+                    <input name='delay_duration_tank1' type='number' min="0" max="96" value='$plugin_options["delay_duration_tank1"]'>
+                    </td>
+                    <td title=$:{json.dumps(_('Enter the level for Blocking delay duration and stop stations'), ensure_ascii=False)}><input name='water_block_tank1' type='number' min="1" value='$plugin_options["water_block_tank1"]'></td>
+                    <td title=$:{json.dumps(_('Enter the level for unblocking delay duration and stop stations'), ensure_ascii=False)}><input name='water_unblock_tank1' type='number' min="1" value='$plugin_options["water_unblock_tank1"]'></td>
+                    <td><a href="?del_rain_1"  class="button cancel danger">$_('Remove')</a></td>
+                    <td title=$:{json.dumps(_('Use this station for stoping scheduler if station is activated in scheduler'), ensure_ascii=False)}>
+                    <select name="used_stations_tank1">
+                    $for station in [station for station in stations if station.enabled]:
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations_tank1'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 2 events - Stoping stations -->
+                <tr>
+                    <td>$plugin_options['label2']</td>
+                    <td title=$:{json.dumps(_('Stoping these stations if is minimum water level in the tank'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_stop_tank2" ${'checked' if plugin_options['en_stop_tank2'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking. if the level in the tank rises above the minimum + xx cm, the delay is deactivated'), ensure_ascii=False)}>
+                    <input name='delay_duration_tank2' type='number' min="0" max="96" value='$plugin_options["delay_duration_tank2"]'>
+                    </td>
+                    <td title=$:{json.dumps(_('Enter the level for Blocking delay duration and stop stations'), ensure_ascii=False)}><input name='water_block_tank2' type='number' min="1" value='$plugin_options["water_block_tank2"]'></td>                    
+                    <td title=$:{json.dumps(_('Enter the level for unblocking delay duration and stop stations'), ensure_ascii=False)}><input name='water_unblock_tank2' type='number' min="1" value='$plugin_options["water_unblock_tank2"]'></td>
+                    <td><a href="?del_rain_2"  class="button cancel danger">$_('Remove')</a></td>
+                    <td title=$:{json.dumps(_('Use this station for stoping scheduler if station is activated in scheduler'), ensure_ascii=False)}>
+                    <select name="used_stations_tank2">
+                    $for station in [station for station in stations if station.enabled]:
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations_tank2'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 3 events - Stoping stations -->
+                <tr>
+                    <td>$plugin_options['label3']</td>
+                    <td title=$:{json.dumps(_('Stoping these stations if is minimum water level in the tank'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_stop_tank3" ${'checked' if plugin_options['en_stop_tank3'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking. if the level in the tank rises above the minimum + xx cm, the delay is deactivated'), ensure_ascii=False)}>
+                    <input name='delay_duration_tank3' type='number' min="0" max="96" value='$plugin_options["delay_duration_tank3"]'>
+                    </td>
+                    <td title=$:{json.dumps(_('Enter the level for Blocking delay duration and stop stations'), ensure_ascii=False)}><input name='water_block_tank3' type='number' min="1" value='$plugin_options["water_block_tank3"]'></td>
+                    <td title=$:{json.dumps(_('Enter the level for unblocking delay duration and stop stations'), ensure_ascii=False)}><input name='water_unblock_tank3' type='number' min="1" value='$plugin_options["water_unblock_tank3"]'></td>
+                    <td><a href="?del_rain_3"  class="button cancel danger">$_('Remove')</a></td>
+                    <td title=$:{json.dumps(_('Use this station for stoping scheduler if station is activated in scheduler'), ensure_ascii=False)}>
+                    <select name="used_stations_tank3">
+                    $for station in [station for station in stations if station.enabled]:
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations_tank3'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 4 events - Stoping stations -->
+                <tr>
+                    <td>$plugin_options['label4']</td>
+                    <td title=$:{json.dumps(_('Stoping these stations if is minimum water level in the tank'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="en_stop_tank4" ${'checked' if plugin_options['en_stop_tank4'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking. if the level in the tank rises above the minimum + xx cm, the delay is deactivated'), ensure_ascii=False)}>
+                    <input name='delay_duration_tank4' type='number' min="0" max="96" value='$plugin_options["delay_duration_tank4"]'>
+                    </td>
+                    <td title=$:{json.dumps(_('Enter the level for Blocking delay duration and stop stations'), ensure_ascii=False)}><input name='water_block_tank4' type='number' min="1" value='$plugin_options["water_block_tank4"]'></td>
+                    <td title=$:{json.dumps(_('Enter the level for unblocking delay duration and stop stations'), ensure_ascii=False)}><input name='water_unblock_tank4' type='number' min="1" value='$plugin_options["water_unblock_tank4"]'></td>
+                    <td><a href="?del_rain_4"  class="button cancel danger">$_('Remove')</a></td>
+                    <td title=$:{json.dumps(_('Use this station for stoping scheduler if station is activated in scheduler'), ensure_ascii=False)}>
+                    <select name="used_stations_tank4">
+                    $for station in [station for station in stations if station.enabled]:
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations_tank4'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- info -->
+                <tr>
+                    <td colspan="6"><hr></td>
+                    <td><b><small>$_('Info')</small></b></td>
+                </tr>
+
+                <tr>
+                    <td style='text-transform: none;'>$_('Status')</td>
+                    <td colspan="5"><textarea style="font-family: monospace;" rows="10" cols="50" readonly>$'\n'.join(events)</textarea></td>
+                </tr>
             </table>
         </form>
 </div>

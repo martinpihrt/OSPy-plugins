@@ -23,6 +23,10 @@ from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 
+from ospy.stations import stations
+from ospy.scheduler import predicted_schedule, combined_schedule
+from blinker import signal
+
 from ospy.webpages import pluginScripts # Inject javascript to call our API for data and modify the display (in base.html)
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 
@@ -85,6 +89,60 @@ plugin_options = PluginOptions(
         'eml_subject_2': _('Report from OSPy: Tank 2 has minimal level!'),
         'eml_subject_3': _('Report from OSPy: Tank 3 has minimal level!'),
         'eml_subject_4': _('Report from OSPy: Tank 4 has minimal level!'),
+        # events - Regulate maximum water level
+        ## tank 1
+        'en_reg_tank1': False,                   # use maximal water regulation
+        'reg_max_tank1': 300,                    # maximal water level in cm for activate
+        'reg_mm_tank1': 60,                      # minutes for maximal runtime
+        'reg_ss_tank1': 0,                       # seconds for maximal runtime
+        'reg_min_tank1': 280,                    # minimal water level in cm for deactivate
+        'reg_out_tank1': 0,                      # selector for output
+        ## tank 2
+        'en_reg_tank2': False,                   # use maximal water regulation
+        'reg_max_tank2': 300,                    # maximal water level in cm for activate
+        'reg_mm_tank2': 60,                      # minutes for maximal runtime
+        'reg_ss_tank2': 0,                       # seconds for maximal runtime
+        'reg_min_tank2': 280,                    # minimal water level in cm for deactivate
+        'reg_out_tank2': 0,                      # selector for output
+        ## tank 3
+        'en_reg_tank3': False,                   # use maximal water regulation
+        'reg_max_tank3': 300,                    # maximal water level in cm for activate
+        'reg_mm_tank3': 60,                      # minutes for maximal runtime
+        'reg_ss_tank3': 0,                       # seconds for maximal runtime
+        'reg_min_tank3': 280,                    # minimal water level in cm for deactivate
+        'reg_out_tank3': 0,                      # selector for output
+        ## tank 4
+        'en_reg_tank4': False,                   # use maximal water regulation
+        'reg_max_tank4': 300,                    # maximal water level in cm for activate
+        'reg_mm_tank4': 60,                      # minutes for maximal runtime
+        'reg_ss_tank4': 0,                       # seconds for maximal runtime
+        'reg_min_tank4': 280,                    # minimal water level in cm for deactivate
+        'reg_out_tank4': 0,                      # selector for output
+        # events - Stoping stations
+        ## tank 1
+        'en_stop_tank1': False,                  # use stoping stations if is minimum water level in the tank
+        'delay_duration_tank1': 0,               # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
+        'water_block_tank1': 5,                  # blocking for watering (add rain delay)
+        'water_unblock_tank1': 10,               # unblocking for watering (cut rain delay)
+        'used_stations_tank1': [0],              # use this station for stoping scheduler if station is activated in scheduler
+        ## tank 2
+        'en_stop_tank2': False,                  # use stoping stations if is minimum water level in the tank
+        'delay_duration_tank2': 0,               # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
+        'water_block_tank2': 5,                  # blocking for watering (add rain delay)
+        'water_unblock_tank2': 10,               # unblocking for watering (cut rain delay)
+        'used_stations_tank2': [0],              # use this station for stoping scheduler if station is activated in scheduler
+        ## tank 3
+        'en_stop_tank3': False,                  # use stoping stations if is minimum water level in the tank
+        'delay_duration_tank3': 0,               # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
+        'water_block_tank3': 5,                  # blocking for watering (add rain delay)
+        'water_unblock_tank3': 10,               # unblocking for watering (cut rain delay)
+        'used_stations_tank3': [0],              # use this station for stoping scheduler if station is activated in scheduler
+        ## tank 4
+        'en_stop_tank4': False,                  # use stoping stations if is minimum water level in the tank
+        'delay_duration_tank4': 0,               # if there is no water in the tank and the stations stop, then we set the rain delay for this time for blocking
+        'water_block_tank4': 5,                  # blocking for watering (add rain delay)
+        'water_unblock_tank4': 10,               # unblocking for watering (cut rain delay)
+        'used_stations_tank4': [0],              # use this station for stoping scheduler if station is activated in scheduler
     }
 )
 
@@ -143,9 +201,22 @@ class Sender(Thread):
         send_eml = [0,0,0,0]                                                    # status for sending e-mails from tank 1-4
         eml_refresh = [1,1,1,1]                                                 # status for release sending e-mails from tank 1-4
         first_wait = True                                                       # waiting on first measure (blocking send email after power on)
+        
+        mini = [1,1,1,1]                                                        # regulation rain delay (auxiliary data type)
+        mini2 = [1,1,1,1]                                                       # regulation maximal water in tank (auxiliary data type)
+        mini3 = [1,1,1,1]                                                       # regulation maximal water in tank (auxiliary data type)
+        end = datetime.datetime.now()
+        regulation_text = [_('Regulation NONE.')*4]
+
+        for i in range(4):
+            NM = '{} T{}'.format(NAME, i+1)                                     # NAME is 'Current Loop Tanks Monitor' and i is number 0-3 (for tank probe 1-4)
+            if NM in rain_blocks:                                               # ex: if exists 'Current Loop Tanks Monitor T1' in rain delay, deleting it
+                log.debug(NAME, _('Deleting: {} in rain delay.').format(NM))
+                del rain_blocks[NM]
+
         get_data()
         self._sleep(1)
-        get_data()        
+        get_data()
 
         if plugin_options['use_footer']:
             tank_mon = showInFooter()                                           # instantiate class to enable data in footer
@@ -170,6 +241,75 @@ class Sender(Thread):
                        update_log()
 
                 for i in range(4):
+                    ### REGULATION: the water level is higher than the set minimum unblock level and the water level is lower than the set minimum
+                    if plugin_options['en_stop_tank{}'.format(i+1)]:
+                        if tanks['levelCm'][i] > plugin_options['water_unblock_tank{}'.format(i+1)] and not mini[i]:
+                            mini[i] = True
+                            NM = '{} T{}'.format(NAME, i+1)                                                      # NAME is 'Current Loop Tanks Monitor' and i is number 0-3 (for tank probe 1-4)
+                            if NM in rain_blocks:                                                                # if exists 'Current Loop Tanks Monitor T1' in rain delay, deleting it
+                                log.debug(NAME, _('Deleting: {} in rain delay.').format(NM))
+                                del rain_blocks[NM]
+
+                        # the water level is lower than the set minimum
+                        if tanks['levelCm'][i] <= plugin_options['water_block_tank{}'.format(i+1)] and mini[i]:
+                            mini[i] = False
+                            set_stations_in_scheduler_off()
+                            log.info(NAME, datetime_string() + ' ' + _('ERROR: Water in Tank: {}').format(plugin_options['label{}'.format(i+1)]) + ' < ' + str(plugin_options['water_block_tank{}'.format(i+1)]) + ' ' + _('cm') + _('!'))
+                            delaytime = plugin_options['delay_duration_tank{}'.format(i+1)]
+                            if delaytime > 0:
+                                NM = '{} T{}'.format(NAME, i+1)
+                                if NM not in rain_blocks:
+                                    rain_blocks[NM] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
+
+                    ### REGULATION: maximum water level
+                    if plugin_options['en_reg_tank{}'.format(i+1)]:
+                        reg_station = stations.get(plugin_options['reg_out_tank{}'.format(i+1)])
+                        if tanks['levelCm'][i] > plugin_options['reg_max_tank{}'.format(i+1)]:                 # if actual water level in tank > set maximum water level
+                            if mini2[i]:
+                                mini2[i] = False
+                                mini3[i] = True
+                                regulation_text[i] = datetime_string() + ' ' + _('Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                start = datetime.datetime.now()
+                                sid = reg_station.index
+                                end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss_tank{}'.format(i+1)], minutes=plugin_options['reg_mm_tank{}'.format(i+1)])
+                                new_schedule = {
+                                    'active': True,
+                                    'program': -1,
+                                    'station': sid,
+                                    'program_name': plugin_options['label{}'.format(i+1)],
+                                    'fixed': True,
+                                    'cut_off': 0,
+                                    'manual': True,
+                                    'blocked': False,
+                                    'start': start,
+                                    'original_start': start,
+                                    'end': end,
+                                    'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                                    'usage': stations.get(sid).usage
+                                }
+                                log.start_run(new_schedule)
+                                stations.activate(new_schedule['station'])
+
+                        if tanks['levelCm'][i] < plugin_options['reg_min_tank{}'.format(i+1)]:                  # if actual level in tank < set minimum water level
+                            if mini3[i]:                                                                        # blocking for once
+                                mini2[i] = True
+                                mini3[i] = False
+                                regulation_text[i] = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                sid = reg_station.index
+                                stations.deactivate(sid)
+                                active = log.active_runs()
+                                for interval in active:
+                                    if interval['station'] == sid:
+                                        log.finish_run(interval)
+
+                        now = datetime.datetime.now()
+                        if now > end:                                                                           # if program end in schedule release five_text to true in regulation for next scheduling
+                            mini2[i] = True
+                            mini3[i] = False
+                            regulation_text[i] = _('Regulation waiting.')
+
+                        log.info(NAME, regulation_text[i])
+                    
                     ### check water level is lower than the set minimum for e-mails
                     if plugin_options['en_eml_tank{}_low'.format(i+1)] and not send_eml[i] and eml_refresh[i]:  # is enabled sendig e-mail and refresh is true and not sending
                         if tanks['levelPercent'][i] <= plugin_options['eml_tank{}_low_lvl'.format(i+1)]:        # level in tank xx < eml_tankXX_low_lvl
@@ -202,12 +342,20 @@ class Sender(Thread):
                         tempText = ""
                         if plugin_options['en_tank1']: 
                             tempText += '[{} {} % {} l] '.format(tanks['label'][0], round(tanks['levelPercent'][0]), round(tanks['volumeLiter'][0]))
+                            if plugin_options['en_reg_tank1']:
+                                tempText += '{} '.format(regulation_text[0])
                         if plugin_options['en_tank2']: 
                             tempText += '[{} {} % {} l] '.format(tanks['label'][1], round(tanks['levelPercent'][1]), round(tanks['volumeLiter'][1]))
+                            if plugin_options['en_reg_tank2']:
+                                tempText += '{} '.format(regulation_text[1])                            
                         if plugin_options['en_tank3']: 
                             tempText += '[{} {} % {} l] '.format(tanks['label'][2], round(tanks['levelPercent'][2]), round(tanks['volumeLiter'][2]))
+                            if plugin_options['en_reg_tank3']:
+                                tempText += '{} '.format(regulation_text[2])                            
                         if plugin_options['en_tank4']: 
                             tempText += '[{} {} % {} l] '.format(tanks['label'][3], round(tanks['levelPercent'][3]), round(tanks['volumeLiter'][3]))
+                            if plugin_options['en_reg_tank4']:
+                                tempText += '{} '.format(regulation_text[3])                            
                         if not plugin_options['en_tank1'] and not plugin_options['en_tank2'] and not plugin_options['en_tank3'] and not plugin_options['en_tank4']:
                             tempText = _('The measurement of all tanks is switched off.')
                         tank_mon.val = tempText.encode('utf8').decode('utf8')
@@ -237,6 +385,34 @@ def stop():
         sender.stop()
         sender.join()
         sender = None
+
+
+def set_stations_in_scheduler_off():
+    """Stoping selected station in scheduler."""
+    
+    current_time  = datetime.datetime.now()
+    check_start = current_time - datetime.timedelta(days=1)
+    check_end = current_time + datetime.timedelta(days=1)
+
+    # In manual mode we cannot predict, we only know what is currently running and the history
+    if options.manual_mode:
+        active = log.finished_runs() + log.active_runs()
+    else:
+        active = combined_schedule(check_start, check_end)
+
+    ending = False
+
+    # active stations
+    for entry in active:
+        for i in range(4):
+            if plugin_options['en_stop_tank{}'.format(i+1)]:
+                for used_stations in plugin_options['used_stations_tank{}'.format(i+1)]:    # selected stations for stoping
+                    if entry['station'] == used_stations:                                   # is this station in selected stations? 
+                        log.finish_run(entry)                                               # save end in log 
+                        stations.deactivate(entry['station'])                               # stations to OFF
+                        ending = True
+    if ending:
+        log.info(NAME, _('Stoping stations in scheduler'))
 
 
 def try_io(call, tries=10):
@@ -783,7 +959,7 @@ class log_page(ProtectedPage):
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `currentmonitor`"
                 execute_db(sql, test=False, commit=False)  
-#                log.info(NAME, _('Deleting the currentmonitor table from the database.'))
+                log.info(NAME, _('Deleting the currentmonitor table from the database.'))
             except:
                 log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
                 pass
@@ -803,13 +979,26 @@ class setup_page(ProtectedPage):
         global sender
         qdict  = web.input()
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        del_rain_1 = helpers.get_input(qdict, 'del_rain_1', False, lambda x: True)
+        del_rain_2 = helpers.get_input(qdict, 'del_rain_2', False, lambda x: True)
+        del_rain_3 = helpers.get_input(qdict, 'del_rain_3', False, lambda x: True)
+        del_rain_4 = helpers.get_input(qdict, 'del_rain_4', False, lambda x: True)
+
+        for i in range(4):
+            DR = 'del_rain_{}'.format(i+1)
+            if sender is not None and DR:
+                NM = '{} T{}'.format(NAME, i+1)
+                if NM in rain_blocks:
+                    del rain_blocks[NM]
+                    log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
+                    log.debug(NAME, _('Deleting: {} in rain delay.').format(NM))
 
         if sender is not None and delSQL:
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `currentmonitor`"
                 execute_db(sql, test=False, commit=False)  
-#                log.debug(NAME, _('Deleting the currentmonitor table from the database.'))
+                log.debug(NAME, _('Deleting the currentmonitor table from the database.'))
             except:
                 log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
                 pass
@@ -824,8 +1013,7 @@ class setup_page(ProtectedPage):
         if sender is not None:
             sender.update()
 
-#        log.debug(NAME, _('Options has updated.'))
-        raise web.seeother(plugin_url(settings_page), True)
+        return self.plugin_render.current_loop_tanks_monitor_setup(plugin_options, log.events(NAME))
 
 
 class data_json(ProtectedPage):
