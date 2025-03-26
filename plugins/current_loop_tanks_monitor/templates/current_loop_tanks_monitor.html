@@ -192,7 +192,7 @@ function updateWell(wellId, levelCm, maxHeightCm, maxVolume, voltage){
 }
 
 function updateAllWells() {
-    jQuery.getJSON("/plugins/current_loop_tanks_monitor/data_json", function(data) {
+    jQuery.getJSON("/plugins/current_loop_tanks_monitor/data_json?q=0", function(data) {
         for (var i = 1; i < 5; i++) {
             var tank = data['tank' + i];
 

@@ -441,6 +441,101 @@ jQuery(document).ready(function(){
                     </td>
                 </tr>
 
+                <!-- events Regulate minimum -->
+                <tr>
+                    <td colspan="6"><hr></td>
+                    <td><b><small>$_('Regulate minimum') NOT READY TO USE!</small></b></td>
+                </tr>
+
+                <tr>
+                    <th>$_('Tank')</th>
+                    <th>$_('Regulate')</th>
+                    <th>$_('Max level (cm)')</th>
+                    <th>$_('Max run time (mm:ss)')</th>
+                    <th>$_('Min level (cm)')</th>
+                    <th>$_('Select Output')</th>
+                </tr>
+                
+                <!-- Tank 1 events - Regulate minimum water level -->
+                <tr>
+                    <td>$plugin_options['label1']</td>
+                    <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="mini_en_reg_tank1" ${'checked' if plugin_options['mini_en_reg_tank1'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is deactivated'), ensure_ascii=False)}><input name='mini_reg_max_tank1' type='number' min="1" value='$plugin_options["mini_reg_max_tank1"]'></td>
+                    <td title=$:{json.dumps(_('Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}><input id="mini_reg_mm_tank1" name="mini_reg_mm_tank1" type="number" size="3" maxlength="3" value='$plugin_options["mini_reg_mm_tank1"]' min="0" max="999">:<input id="mini_reg_ss_tank1" name="mini_reg_ss_tank1" type="number" size="2" maxlength="2" value='$plugin_options["mini_reg_ss_tank1"]' min="0" max="59"></td>
+                    <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is activated'), ensure_ascii=False)}><input name='mini_reg_min_tank1' type='number' min="1" value='$plugin_options["mini_reg_min_tank1"]'></td>
+                    <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="mini_reg_out_tank1">
+                    $for station in stations.get():
+                        <option value="${str(station.index)}" ${"selected" if plugin_options["mini_reg_out_tank1"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 2 events - Regulate minimum water level -->
+                <tr>
+                    <td>$plugin_options['label2']</td>
+                    <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="mini_en_reg_tank2" ${'checked' if plugin_options['mini_en_reg_tank2'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is deactivated'), ensure_ascii=False)}><input name='mini_reg_max_tank2' type='number' min="1" value='$plugin_options["mini_reg_max_tank2"]'></td>
+                    <td title=$:{json.dumps(_('Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}><input id="mini_reg_mm_tank2" name="mini_reg_mm_tank2" type="number" size="3" maxlength="3" value='$plugin_options["mini_reg_mm_tank2"]' min="0" max="999">:<input id="mini_reg_ss_tank2" name="mini_reg_ss_tank2" type="number" size="2" maxlength="2" value='$plugin_options["mini_reg_ss_tank2"]' min="0" max="59"></td>
+                    <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is activated'), ensure_ascii=False)}><input name='mini_reg_min_tank2' type='number' min="1" value='$plugin_options["mini_reg_min_tank2"]'></td>
+                    <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="mini_reg_out_tank2">
+                    $for station in stations.get():
+                        <option value="${str(station.index)}" ${"selected" if plugin_options["mini_reg_out_tank2"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 3 events - Regulate minimum water level -->
+                <tr>
+                    <td>$plugin_options['label3']</td>
+                    <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="mini_en_reg_tank3" ${'checked' if plugin_options['mini_en_reg_tank3'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is deactivated'), ensure_ascii=False)}><input name='mini_reg_max_tank3' type='number' min="1" value='$plugin_options["mini_reg_max_tank3"]'></td>
+                    <td title=$:{json.dumps(_('Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}><input id="mini_reg_mm_tank3" name="mini_reg_mm_tank3" type="number" size="3" maxlength="3" value='$plugin_options["mini_reg_mm_tank3"]' min="0" max="999">:<input id="mini_reg_ss_tank3" name="mini_reg_ss_tank3" type="number" size="2" maxlength="2" value='$plugin_options["mini_reg_ss_tank3"]' min="0" max="59"></td>
+                    <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is activated'), ensure_ascii=False)}><input name='mini_reg_min_tank3' type='number' min="1" value='$plugin_options["mini_reg_min_tank3"]'></td>
+                    <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="mini_reg_out_tank3">
+                    $for station in stations.get():
+                        <option value="${str(station.index)}" ${"selected" if plugin_options["mini_reg_out_tank3"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
+                <!-- Tank 4 events - Regulate minimum water level -->
+                <tr>
+                    <td>$plugin_options['label4']</td>
+                    <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
+                        <label class="switch">
+                            <input type="checkbox" name="mini_en_reg_tank4" ${'checked' if plugin_options['mini_en_reg_tank4'] else ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is deactivated'), ensure_ascii=False)}><input name='mini_reg_max_tank4' type='number' min="1" value='$plugin_options["mini_reg_max_tank4"]'></td>
+                    <td title=$:{json.dumps(_('Maximum duration when activating the output (in minutes and seconds). After this time, the output will turn off regardless of other events (conditions)'), ensure_ascii=False)}><input id="mini_reg_mm_tank4" name="mini_reg_mm_tank4" type="number" size="3" maxlength="3" value='$plugin_options["mini_reg_mm_tank4"]' min="0" max="999">:<input id="mini_reg_ss_tank4" name="mini_reg_ss_tank4" type="number" size="2" maxlength="2" value='$plugin_options["mini_reg_ss_tank4"]' min="0" max="59"></td>
+                    <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is activated'), ensure_ascii=False)}><input name='mini_reg_min_tank4' type='number' min="1" value='$plugin_options["mini_reg_min_tank4"]'></td>
+                    <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
+                    <select name="mini_reg_out_tank4">
+                    $for station in stations.get():
+                        <option value="${str(station.index)}" ${"selected" if plugin_options["mini_reg_out_tank4"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
+                    </select>
+                    </td>
+                </tr>
+
                 <!-- events Stoping stations if is minimum water -->
                 <tr>
                     <td colspan="6"><hr></td>

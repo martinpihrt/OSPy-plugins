@@ -1,4 +1,4 @@
-$def with(plugin_options)
+$def with(plugin_options, show_graph)
 
 $var title: $_('Current Loop Tanks Monitor - Graph')
 $var page: plugins
@@ -11,6 +11,19 @@ $var page: plugins
 <script src="/static/scripts/jquery.flot.axislabels.js"></script>
 <script src="/static/scripts/jquery.flot.selection.js"></script>
 
+<style>
+.message-box {
+    border-radius: 10px;
+    padding: 5px 15px;
+    background-color: #f9f9f9;
+    line-height: 30px;
+    overflow: hidden;
+    font-size: 14px;
+    width: 90%;  
+    max-width: 800px;
+}
+</style>
+
 <script>
 var graph_text;
 
@@ -21,7 +34,7 @@ function draw_graph(result) {
 
     for (var i = 0; i < result.length; i++) {
         var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th><th>" + $:{json.dumps(_('Tank 1-4 % or liter'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th></tr>";
+        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th><th>" + $:{json.dumps(_('Tank % or liter'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th></tr>";
         var texts = [];
         var txt_body = "";
         var txt_footer = "</table>";
@@ -48,7 +61,7 @@ function draw_graph(result) {
             graph_text.push(texts);
         }
     }
-    var yLabels = $:{json.dumps(_('Tank 1-4 % or liter'), ensure_ascii=False).encode('utf8').decode('utf8')};
+    var yLabels = $:{json.dumps(_('Tank % or liter'), ensure_ascii=False).encode('utf8').decode('utf8')};
     return jQuery.plot("#graph-placeholder", data, {
         series: {
             lines: {
@@ -147,7 +160,7 @@ function create_graph(result) {
     });
 
     jQuery('#clearSelection').on('click', function(){
-        jQuery.getJSON("/plugins/current_loop_tanks_monitor/graph_json", create_graph)
+        jQuery.getJSON("/plugins/current_loop_tanks_monitor/graph_json?q=0", create_graph)
     });
 
     jQuery('#filterSelection').on('click', function(){
@@ -163,10 +176,29 @@ function check_history() {
     jQuery("#historyForm").submit();
 }
 
+function displayMessage(message) {
+    // Validates that message is a string, if not, casts to a string
+    message = typeof message === 'string' ? message : String(message);
+    // Dividing the message into individual parts by dots
+    var messages = message.split('.');
+    // Converting individual parts of the message to HTML with a new line, removing empty parts
+    var formattedMessage = messages.map(function(msg) {
+        return msg.trim() ? '<p>' + msg.trim() + '.</p>' : '';
+    }).join('');
+    // Insert formatted content into #messageBox
+    jQuery('#messageBox').html(formattedMessage);
+}
+
 // Initialize behaviors
 jQuery(document).ready(function(){
     if (jQuery("#graph-placeholder").length > 0){
-        setTimeout(function() {jQuery.getJSON("/plugins/current_loop_tanks_monitor/graph_json", create_graph)}, 500); 
+        var show_graph_nr = $show_graph;
+        var msg = $:{json.dumps(_('Filtration is not used chart is from tanks 1-4 (percentages and liters).'), ensure_ascii=False).encode('utf8').decode('utf8')};
+        if (show_graph_nr > 0){
+            msg = $:{json.dumps(_('The graph is filtered from only one tank (in percentage).'), ensure_ascii=False).encode('utf8').decode('utf8')};
+        }
+        displayMessage(msg);
+        setTimeout(function() {jQuery.getJSON("/plugins/current_loop_tanks_monitor/graph_json?q=" + show_graph_nr, create_graph)}, 500);
     }
 });
 </script>
@@ -176,6 +208,7 @@ $if plugin_options['en_log'] or plugin_options['en_sql_log']:
         $_('The chart from local file')
     $if plugin_options['type_log'] == 1:
         $_('The chart from database')
+    <div class="message-box" id="messageBox">$_('Please wait.')</div>
     <div id="graph-container" class="graph-container">
     <div id="legend-placeholder" style="display:none;"></div>
     <div id="legend-visible" style="float: right; width: auto;"></div>

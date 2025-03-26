@@ -70,8 +70,8 @@ plugin_options = PluginOptions(
         'type_log': 0,                           # 0 = show log and graph from local log file, 1 = from database
         'log_interval': 1,                       # interval for log in minutes
         'log_records': 0,                        # the number of records (0 = unlimited)
-        'dt_from' : '2024-01-01T00:00',          # for graph history (from date time ex: 2024-02-01T6:00)
-        'dt_to' : '2024-01-01T00:00',            # for graph history (to date time ex: 2024-03-17T12:00)
+        'dt_from' : '2025-01-01T00:00',          # for graph history (from date time ex: 2024-02-01T6:00)
+        'dt_to' : '2050-01-01T00:00',            # for graph history (to date time ex: 2024-03-17T12:00)
         # e-mail notifications
         'en_eml_tank1_low': False,               # send e-mail if water in tank 1 is LOW
         'en_eml_tank2_low': False,               # send e-mail if water in tank 2 is LOW
@@ -118,6 +118,35 @@ plugin_options = PluginOptions(
         'reg_ss_tank4': 0,                       # seconds for maximal runtime
         'reg_min_tank4': 280,                    # minimal water level in cm for deactivate
         'reg_out_tank4': 0,                      # selector for output
+        # events - Regulate minimum water level
+        ## tank 1
+        'mini_en_reg_tank1': False,              # use minimal water regulation
+        'mini_reg_max_tank1': 300,               # maximal water level in cm for deactivate
+        'mini_reg_mm_tank1': 60,                 # minutes for maximal runtime
+        'mini_reg_ss_tank1': 0,                  # seconds for maximal runtime
+        'mini_reg_min_tank1': 280,               # minimal water level in cm for activate
+        'mini_reg_out_tank1': 0,                 # selector for output
+        ## tank 2
+        'mini_en_reg_tank2': False,              # use maximal water regulation
+        'mini_reg_max_tank2': 300,               # maximal water level in cm for deactivate
+        'mini_reg_mm_tank2': 60,                 # minutes for maximal runtime
+        'mini_reg_ss_tank2': 0,                  # seconds for maximal runtime
+        'mini_reg_min_tank2': 280,               # minimal water level in cm for activate
+        'mini_reg_out_tank2': 0,                 # selector for output
+        ## tank 3
+        'mini_en_reg_tank3': False,              # use maximal water regulation
+        'mini_reg_max_tank3': 300,               # maximal water level in cm for deactivate
+        'mini_reg_mm_tank3': 60,                 # minutes for maximal runtime
+        'mini_reg_ss_tank3': 0,                  # seconds for maximal runtime
+        'mini_reg_min_tank3': 280,               # minimal water level in cm for activate
+        'mini_reg_out_tank3': 0,                 # selector for output
+        ## tank 4
+        'mini_en_reg_tank4': False,              # use maximal water regulation
+        'mini_reg_max_tank4': 300,               # maximal water level in cm for deactivate
+        'mini_reg_mm_tank4': 60,                 # minutes for maximal runtime
+        'mini_reg_ss_tank4': 0,                  # seconds for maximal runtime
+        'mini_reg_min_tank4': 280,               # minimal water level in cm for activate
+        'mini_reg_out_tank4': 0,                 # selector for output
         # events - Stoping stations
         ## tank 1
         'en_stop_tank1': False,                  # use stoping stations if is minimum water level in the tank
@@ -881,6 +910,12 @@ class graph_page(ProtectedPage):
         global sender
         qdict  = web.input()
         delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
+        qfilter = helpers.get_input(qdict, 'q', False, lambda x: True)
+
+        if sender is not None and qfilter:                 # filter for graph 1 - 4 (if q=1 -> only graph 1...)
+            q = qdict['q']
+        else:
+            q = 0                                          # any filter -> all graph 1-4
         
         if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
             dt_from = qdict['dt_from']
@@ -890,17 +925,25 @@ class graph_page(ProtectedPage):
 
         if sender is not None and delfilter:
             from datetime import datetime, timedelta
-            dt_now = (datetime.today() + timedelta(days=1)).date()
+            dt_now = (datetime.today() + timedelta(days=2)).date()
             plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
             plugin_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
-        return self.plugin_render.current_loop_tanks_monitor_graph(plugin_options)
+        return self.plugin_render.current_loop_tanks_monitor_graph(plugin_options, q)
 
 
 class graph_json(ProtectedPage):
     """Load an json data for graph"""
 
     def GET(self):
+        global sender
+        qdict  = web.input()
+        qfilter = helpers.get_input(qdict, 'q', False, lambda x: True)
+        if sender is not None and qfilter:                  # filter for graph 1 - 4 (if q=1 -> return json only graph 1...)
+            q = int(qdict['q'])
+        else:
+            q = 0                                           # any filter -> return json all graph 1-4
+
         data = []
         try:
             from datetime import datetime
@@ -924,17 +967,28 @@ class graph_json(ProtectedPage):
                 log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
                 pass
 
-            if len(json_data) > 0:  
-                for i in range(8):                                                 # 0=tank1 %, 1=tank2 %, 2=tank3 %, 3=tank4 %, 4=tank1 liter, 5=tank2 l, 6=tank3 l, 7=tank4 l
+            if len(json_data) > 0:
+                if q > 0:                                                              # filter for graph 1 - 4 (if q=1 -> return json only graph 1...)
                     temp_balances = {}
-                    for key in json_data[i]['balances']:
+                    for key in json_data[q-1]['balances']:
                         try:
-                            find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
+                            find_key = int(key.encode('utf8'))                         # key is in unicode ex: u'1601347000' -> find_key is int number
                         except:
                             find_key = key      
-                        if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
-                            temp_balances[key] = json_data[i]['balances'][key]    
-                    data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+                        if find_key >= log_start and find_key <= log_end:              # timestamp interval from <-> to
+                            temp_balances[key] = json_data[q-1]['balances'][key]    
+                    data.append({ 'station': json_data[q-1]['station'], 'balances': temp_balances })
+                else:  
+                    for i in range(8):                                                 # 0=tank1 %, 1=tank2 %, 2=tank3 %, 3=tank4 %, 4=tank1 liter, 5=tank2 l, 6=tank3 l, 7=tank4 l
+                        temp_balances = {}
+                        for key in json_data[i]['balances']:
+                            try:
+                                find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
+                            except:
+                                find_key = key      
+                            if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
+                                temp_balances[key] = json_data[i]['balances'][key]    
+                        data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
 
         except:
             log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
