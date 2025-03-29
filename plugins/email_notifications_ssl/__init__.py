@@ -48,7 +48,13 @@ email_options = PluginOptions(
         'emlrun': False,                # program has finished
         'emlrdr': False,                # rain delay has expired
         'emlrds': False,                # rain delay has setuped
-        'emlusrin': False,              # user logged in        
+        'emlusrin': False,              # user logged in
+        'eml_plug_tank': False,         # Send data from plugin sonic tank monitor
+        'eml_plug_4tank': False,        # Send data from plugin current loop tanks monitor
+        'eml_plug_wcounter': False,     # Send data from plugin water consumption counter
+        'eml_plug_6ds': False,          # Send data from plugin air temp humidity 6x DS18b20 
+        'eml_plug_sensors': False,      # Send data from OSPy sensors
+        'eml_plug_shelly': False,       # Send data from Shelly sensors
         'emlserver': 'smtp.seznam.cz',  # SMTP server address
         'emlport': 465,                 # SSL layer (number in range 0-65535)
         'emlusr': '',                   # SMTP username
@@ -143,410 +149,405 @@ class EmailSender(Thread):
                             logtext +=  _('Start time') + ': %s \n' % datetime_string(run['start'])
                             logtext +=  _('Duration') + ': %02d:%02d\n' % (minutes, seconds)
 
-                            # Water Tank Monitor
+                            # Send data from plugin sonic tank monitor
                             try:
-                                from plugins import tank_monitor
-
-                                cm = 0
-                                percent = 0
-                                ping = 0
-                                volume = 0
-                                units = False
-                                try: 
-                                    cm = tank_monitor.get_all_values()[0]
-                                    percent = tank_monitor.get_all_values()[1]
-                                    ping = tank_monitor.get_all_values()[2]
-                                    volume = tank_monitor.get_all_values()[3]
-                                    units = tank_monitor.get_all_values()[4]
-                                except:
-                                    pass
-
-                                msg = ' '
-                                if cm > 0:
-                                    msg =  _('Level') + ': ' + str(cm) + ' ' + _('cm')
-                                    msg += ' (' + str(percent) + ' %), '
-                                    msg += _('Ping') + ': ' + str(ping) + ' ' + _('cm')
-                                    if units:
-                                        msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('liters')
-                                    else:
-                                        msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('m3')
-
-                                    body += '<b>'  + _('Water') + '</b>'
-                                    body += '<br><ul><li>' + _('Water level in tank') + ': %s \n</li></ul>' % (msg)
-                                    logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)
-                                else: 
-                                    msg = _('Error - I2C device not found!')
-                                    body += '<b>'  + _('Water') + '</b>'
-                                    body += '<br><ul><li>' + _('Water level in tank') + ': %s \n</li></ul>' % (msg)
-                                    logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)
+                                if email_options["eml_plug_tank"]:
+                                    from plugins import tank_monitor
+                                    cm = 0
+                                    percent = 0
+                                    ping = 0
+                                    volume = 0
+                                    units = False
+                                    try: 
+                                        cm = tank_monitor.get_all_values()[0]
+                                        percent = tank_monitor.get_all_values()[1]
+                                        ping = tank_monitor.get_all_values()[2]
+                                        volume = tank_monitor.get_all_values()[3]
+                                        units = tank_monitor.get_all_values()[4]
+                                    except:
+                                        pass
+                                    msg = ' '
+                                    if cm > 0:
+                                        msg =  _('Level') + ': ' + str(cm) + ' ' + _('cm')
+                                        msg += ' (' + str(percent) + ' %), '
+                                        msg += _('Ping') + ': ' + str(ping) + ' ' + _('cm')
+                                        if units:
+                                            msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('liters')
+                                        else:
+                                            msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('m3')
+                                        body += '<b>'  + _('Water') + '</b>'
+                                        body += '<br><ul><li>' + _('Water level in tank') + ': %s \n</li></ul>' % (msg)
+                                        logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)
+                                    else: 
+                                        msg = _('Error - I2C device not found!')
+                                        body += '<b>'  + _('Water') + '</b>'
+                                        body += '<br><ul><li>' + _('Water level in tank') + ': %s \n</li></ul>' % (msg)
+                                        logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)
 
                             except ImportError:
                                 log.debug(NAME, _('Cannot import plugin: tank monitor.'))
                                 pass
 
-                            # Water Consumption Counter
+                            # Send data from plugin water consumption counter
                             try:
-                                from plugins import water_consumption_counter
-                                self._sleep(2) # wait for the meter to save consumption
-
-                                consum_from = water_consumption_counter.get_all_values()[0]
-                                consum_one  = float(water_consumption_counter.get_all_values()[1])
-                                consum_two  = float(water_consumption_counter.get_all_values()[2])
-
-                                msg = ' '
-                                msg +=  _('Measured from day') + ': ' + str(consum_from) + ', '
-                                msg +=  _('Master Station') + ': '
-                                if consum_one < 1000.0:
-                                    msg += str(consum_one) + ' '
-                                    msg += _('Liter') + ', '
-                                else: 
-                                    msg += str(round((consum_one/1000.0), 2)) + ' '
-                                    msg += _('m3') + ', '
-
-                                msg +=  _('Second Master Station') + ': '
-                                if consum_two < 1000.0:
-                                    msg += str(consum_two) + ' '
-                                    msg += _('Liter') 
-                                else:
-                                    msg += str(round((consum_two/1000.0), 2)) + ' '
-                                    msg += _('m3')
-
-                                body += '<br><b>'  + _('Water Consumption Counter') + '</b>'
-                                body += '<br><ul><li>%s \n</li></ul>' % (msg)
-                                logtext += _('Water Consumption Counter') + ': %s \n' % (msg)
+                                if email_options["eml_plug_wcounter"]:
+                                    from plugins import water_consumption_counter
+                                    self._sleep(2) # wait for the meter to save consumption
+                                    consum_from = water_consumption_counter.get_all_values()[0]
+                                    consum_one  = float(water_consumption_counter.get_all_values()[1])
+                                    consum_two  = float(water_consumption_counter.get_all_values()[2])
+                                    msg = ' '
+                                    msg +=  _('Measured from day') + ': ' + str(consum_from) + ', '
+                                    msg +=  _('Master Station') + ': '
+                                    if consum_one < 1000.0:
+                                        msg += str(consum_one) + ' '
+                                        msg += _('Liter') + ', '
+                                    else: 
+                                        msg += str(round((consum_one/1000.0), 2)) + ' '
+                                        msg += _('m3') + ', '
+                                    msg +=  _('Second Master Station') + ': '
+                                    if consum_two < 1000.0:
+                                        msg += str(consum_two) + ' '
+                                        msg += _('Liter') 
+                                    else:
+                                        msg += str(round((consum_two/1000.0), 2)) + ' '
+                                        msg += _('m3')
+                                    body += '<br><b>'  + _('Water Consumption Counter') + '</b>'
+                                    body += '<br><ul><li>%s \n</li></ul>' % (msg)
+                                    logtext += _('Water Consumption Counter') + ': %s \n' % (msg)
 
                             except ImportError:
                                 log.debug(NAME, _('Cannot import plugin: water consumption counter.'))
                                 pass
 
-                            # Air Temperature and Humidity Monitor
+                            # Send data from plugin air temp humidity 6x DS18b20
                             try:
-                                from plugins import air_temp_humi
-
-                                body += '<br><b>' + _('Temperature DS1-DS6') + '</b><ul>'
-                                logtext += _('Temperature DS1-DS6') + '-> \n'
-                                for i in range(0, air_temp_humi.plugin_options['ds_used']):
-                                    body += '<li>' + '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n</li>'  
-                                    logtext += '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103\n' % air_temp_humi.DS18B20_read_probe(i) 
-                                body += '</ul>'    
-
+                                if email_options["eml_plug_6ds"]:
+                                    from plugins import air_temp_humi
+                                    body += '<br><b>' + _('Temperature DS1-DS6') + '</b><ul>'
+                                    logtext += _('Temperature DS1-DS6') + '-> \n'
+                                    for i in range(0, air_temp_humi.plugin_options['ds_used']):
+                                        body += '<li>' + '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n</li>'  
+                                        logtext += '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103\n' % air_temp_humi.DS18B20_read_probe(i) 
+                                    body += '</ul>'    
                             except ImportError:
                                 log.debug(NAME, _('Cannot import plugin: air temp humi.'))
                                 pass
 
-                            # 4-20mA Loop Tanks Monitor
+                            # Send data from plugin current loop tanks monitor 4-20mA
                             try:
-                                from plugins import current_loop_tanks_monitor
-                                body += '<br><b>' + _('Current Loop Tanks Monitor') + '</b><ul>'
-                                logtext += _('Current Loop Tanks Monitor') + '-> \n'
-                                for i in range(4):
-                                    label = current_loop_tanks_monitor.tanks['label'][i]
-                                    level_cm = current_loop_tanks_monitor.tanks['levelCm'][i]
-                                    level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
-                                    volt = current_loop_tanks_monitor.tanks['voltage'][i]
-                                    volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
-                                    body += '<li>' + _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume) + '\n</li>'
-                                    logtext += _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume)
-                                body += '</ul>'
-
+                                if email_options["eml_plug_4tank"]:
+                                    from plugins import current_loop_tanks_monitor
+                                    body += '<br><b>' + _('Current Loop Tanks Monitor') + '</b><ul>'
+                                    logtext += _('Current Loop Tanks Monitor') + '-> \n'
+                                    for i in range(4):
+                                        label = current_loop_tanks_monitor.tanks['label'][i]
+                                        level_cm = current_loop_tanks_monitor.tanks['levelCm'][i]
+                                        level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
+                                        volt = current_loop_tanks_monitor.tanks['voltage'][i]
+                                        volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
+                                        body += '<li>' + _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume) + '\n</li>'
+                                        logtext += _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume)
+                                    body += '</ul>'
                             except ImportError:
                                 log.debug(NAME, _('Cannot import plugin: Current Loop Tanks Monitor.'))
                                 pass
 
-                            # OSPy Sensors
+                            # Send data from OSPy sensors
                             try:
-                                body += '<br><b>' + _('Sensors') + '</b>'
-                                logtext += _('Sensors') + '-> \n'
-                                sensor_result = ''
-                                if sensors.count() > 0:
-                                    body += '<ul>'
-                                    for sensor in sensors.get():
-                                        sensor_result = ''
-                                        body += '<li>'
-                                        sensor_result += '{} ({}): '.format(sensor.name, _('by Shelly.com') if sensor.manufacturer == 1 else _('by Pihrt.com'))
-                                        if sensor.enabled:
-                                            if sensor.manufacturer == 0:                                    # pihrt.com sensor
-                                                if sensor.response == 1:
-                                                    if sensor.sens_type == 1:                               # dry contact
-                                                        if sensor.last_read_value[4] == 1:
-                                                            sensor_result += _('Contact Closed')
-                                                        elif sensor.last_read_value[4] == 0:
-                                                            sensor_result += _('Contact Open')
-                                                        else:
-                                                            sensor_result += _('Probe Error')
-                                                    if sensor.sens_type == 2:                               # leak detector
-                                                        if sensor.last_read_value[5] != -127:
-                                                            sensor_result += str(sensor.last_read_value[5]) + ' ' + _('l/s')
-                                                        else:
-                                                            sensor_result += _('Probe Error')
-                                                    if sensor.sens_type == 3:                               # moisture
-                                                        if sensor.last_read_value[6] != -127:
-                                                            sensor_result += str(sensor.last_read_value[6]) + ' ' + _('%')
-                                                        else:
-                                                            sensor_result += _('Probe Error')
-                                                    if sensor.sens_type == 4:                               # motion
-                                                        if sensor.last_read_value[7] != -127:
-                                                            sensor_result += _('Motion Detected') if int(sensor.last_read_value[7]) == 1 else _('No Motion')
-                                                        else:
-                                                            sensor_result += _('Probe Error')
-                                                    if sensor.sens_type == 5:                               # temperature
-                                                        if sensor.last_read_value[0] != -127:
-                                                            sensor_result += '%.1f \u2103' % sensor.last_read_value[0]
-                                                        else:
-                                                            sensor_result += _('Probe Error')
-                                                    if sensor.sens_type == 6:                               # multi sensor
-                                                        if sensor.multi_type >= 0 and sensor.multi_type < 4:# multi temperature DS1-DS4
-                                                            if sensor.last_read_value[sensor.multi_type] != -127: 
-                                                                sensor_result += '%.1f \u2103' % sensor.last_read_value[sensor.multi_type]
+                                if email_options["eml_plug_sensors"]:
+                                    body += '<br><b>' + _('Sensors') + '</b>'
+                                    logtext += _('Sensors') + '-> \n'
+                                    sensor_result = ''
+                                    if sensors.count() > 0:
+                                        body += '<ul>'
+                                        for sensor in sensors.get():
+                                            sensor_result = ''
+                                            body += '<li>'
+                                            sensor_result += '{} ({}): '.format(sensor.name, _('by Shelly.com') if sensor.manufacturer == 1 else _('by Pihrt.com'))
+                                            if sensor.enabled:
+                                                if sensor.manufacturer == 0:                                    # pihrt.com sensor
+                                                    if sensor.response == 1:
+                                                        if sensor.sens_type == 1:                               # dry contact
+                                                            if sensor.last_read_value[4] == 1:
+                                                                sensor_result += _('Contact Closed')
+                                                            elif sensor.last_read_value[4] == 0:
+                                                                sensor_result += _('Contact Open')
                                                             else:
                                                                 sensor_result += _('Probe Error')
-                                                        if sensor.multi_type == 4:                          #  multi dry contact
-                                                            if sensor.last_read_value[4] != -127:
-                                                                sensor_result += _('Contact Closed') if int(sensor.last_read_value[4]) == 1 else _('Contact Open')
-                                                            else:
-                                                                sensor_result += _('Probe Error')
-                                                        if sensor.multi_type == 5:                          #  multi leak detector
+                                                        if sensor.sens_type == 2:                               # leak detector
                                                             if sensor.last_read_value[5] != -127:
                                                                 sensor_result += str(sensor.last_read_value[5]) + ' ' + _('l/s')
                                                             else:
                                                                 sensor_result += _('Probe Error')
-                                                        if sensor.multi_type == 6:                          #  multi moisture
+                                                        if sensor.sens_type == 3:                               # moisture
                                                             if sensor.last_read_value[6] != -127:
                                                                 sensor_result += str(sensor.last_read_value[6]) + ' ' + _('%')
                                                             else:
-                                                                sensor_result += _(u'Probe Error')
-                                                        if sensor.multi_type == 7:                          #  multi motion
+                                                                sensor_result += _('Probe Error')
+                                                        if sensor.sens_type == 4:                               # motion
                                                             if sensor.last_read_value[7] != -127:
-                                                                sensor_result += _('Motion Detected') if int(sensor.last_read_value[7])==1 else _('No Motion')
+                                                                sensor_result += _('Motion Detected') if int(sensor.last_read_value[7]) == 1 else _('No Motion')
                                                             else:
                                                                 sensor_result += _('Probe Error')
-                                                        if sensor.multi_type == 8:                          #  multi ultrasonic
-                                                            if sensor.last_read_value[8] != -127:
-                                                                get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
-                                                                get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
-                                                                sensor_result += '{} '.format(get_level) + _('cm') + ' ({} %)'.format(get_perc)
+                                                        if sensor.sens_type == 5:                               # temperature
+                                                            if sensor.last_read_value[0] != -127:
+                                                                sensor_result += '%.1f \u2103' % sensor.last_read_value[0]
                                                             else:
                                                                 sensor_result += _('Probe Error')
-                                                        if sensor.multi_type == 9:                          #  multi soil moisture
-                                                            err_check = 0
-                                                            calculate_soil = [0.0]*16
-                                                            state = [-127]*16
-                                                            for i in range(0, 16):
-                                                                if type(sensor.soil_last_read_value[i]) == float:
-                                                                    state[i] = sensor.soil_last_read_value[i]
-                                                                    ### voltage from probe to humidity 0-100% with calibration range (for footer info)
-                                                                    if sensor.soil_invert_probe_in[i]:                                  # probe: rotated state 0V=100%, 3V=0% humidity
-                                                                        calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
-                                                                        calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
-                                                                        calculate_soil[i] = 100.0 - calculate_soil[i]                   # ex: 90% - 90% = 10%, 10% is output in invert probe mode
-                                                                    else:                                                               # probe: normal state 0V=0%, 3V=100%
-                                                                        calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
-                                                                        calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
-                                                                    if state[i] > 0.1:
-                                                                        if sensor.soil_show_in_footer[i]:
-                                                                            sensor_result += '{} {}% ({}V) '.format(sensor.soil_probe_label[i], round(calculate_soil[i], 2), round(state[i], 2))
+                                                        if sensor.sens_type == 6:                               # multi sensor
+                                                            if sensor.multi_type >= 0 and sensor.multi_type < 4:# multi temperature DS1-DS4
+                                                                if sensor.last_read_value[sensor.multi_type] != -127: 
+                                                                    sensor_result += '%.1f \u2103' % sensor.last_read_value[sensor.multi_type]
                                                                 else:
-                                                                    err_check += 1
-                                                            if err_check > 15:
-                                                                sensor_result += _('Probe Error')
+                                                                    sensor_result += _('Probe Error')
+                                                            if sensor.multi_type == 4:                          #  multi dry contact
+                                                                if sensor.last_read_value[4] != -127:
+                                                                    sensor_result += _('Contact Closed') if int(sensor.last_read_value[4]) == 1 else _('Contact Open')
+                                                                else:
+                                                                    sensor_result += _('Probe Error')
+                                                            if sensor.multi_type == 5:                          #  multi leak detector
+                                                                if sensor.last_read_value[5] != -127:
+                                                                    sensor_result += str(sensor.last_read_value[5]) + ' ' + _('l/s')
+                                                                else:
+                                                                    sensor_result += _('Probe Error')
+                                                            if sensor.multi_type == 6:                          #  multi moisture
+                                                                if sensor.last_read_value[6] != -127:
+                                                                    sensor_result += str(sensor.last_read_value[6]) + ' ' + _('%')
+                                                                else:
+                                                                    sensor_result += _(u'Probe Error')
+                                                            if sensor.multi_type == 7:                          #  multi motion
+                                                                if sensor.last_read_value[7] != -127:
+                                                                    sensor_result += _('Motion Detected') if int(sensor.last_read_value[7])==1 else _('No Motion')
+                                                                else:
+                                                                    sensor_result += _('Probe Error')
+                                                            if sensor.multi_type == 8:                          #  multi ultrasonic
+                                                                if sensor.last_read_value[8] != -127:
+                                                                    get_level = get_tank_cm(sensor.last_read_value[8], sensor.distance_bottom, sensor.distance_top)
+                                                                    get_perc = get_percent(get_level, sensor.distance_bottom, sensor.distance_top)
+                                                                    sensor_result += '{} '.format(get_level) + _('cm') + ' ({} %)'.format(get_perc)
+                                                                else:
+                                                                    sensor_result += _('Probe Error')
+                                                            if sensor.multi_type == 9:                          #  multi soil moisture
+                                                                err_check = 0
+                                                                calculate_soil = [0.0]*16
+                                                                state = [-127]*16
+                                                                for i in range(0, 16):
+                                                                    if type(sensor.soil_last_read_value[i]) == float:
+                                                                        state[i] = sensor.soil_last_read_value[i]
+                                                                        ### voltage from probe to humidity 0-100% with calibration range (for footer info)
+                                                                        if sensor.soil_invert_probe_in[i]:                                  # probe: rotated state 0V=100%, 3V=0% humidity
+                                                                            calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_max[i]), float(sensor.soil_calibration_min[i]), 0.0, 100.0)
+                                                                            calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
+                                                                            calculate_soil[i] = 100.0 - calculate_soil[i]                   # ex: 90% - 90% = 10%, 10% is output in invert probe mode
+                                                                        else:                                                               # probe: normal state 0V=0%, 3V=100%
+                                                                            calculate_soil[i] = maping(state[i], float(sensor.soil_calibration_min[i]), float(sensor.soil_calibration_max[i]), 0.0, 100.0)
+                                                                            calculate_soil[i] = round(calculate_soil[i], 1)                 # round to one decimal point
+                                                                        if state[i] > 0.1:
+                                                                            if sensor.soil_show_in_footer[i]:
+                                                                                sensor_result += '{} {}% ({}V) '.format(sensor.soil_probe_label[i], round(calculate_soil[i], 2), round(state[i], 2))
+                                                                    else:
+                                                                        err_check += 1
+                                                                if err_check > 15:
+                                                                    sensor_result += _('Probe Error')
 
-                                                    if sensor.com_type == 0: # Wi-Fi/LAN
-                                                        sensor_result += ' ' + _('Last Wi-Fi signal: {}%, Source: {}V.').format(sensor.rssi, sensor.last_battery)
-                                                    if sensor.com_type == 1: # Radio
-                                                        sensor_result += ' ' + _('Last Radio signal: {}%, Source: {}V.').format(sensor.rssi, sensor.last_battery)
-                                                else:
-                                                    sensor_result += _('No response!')
+                                                        if sensor.com_type == 0: # Wi-Fi/LAN
+                                                            sensor_result += ' ' + _('Last Wi-Fi signal: {}%, Source: {}V.').format(sensor.rssi, sensor.last_battery)
+                                                        if sensor.com_type == 1: # Radio
+                                                            sensor_result += ' ' + _('Last Radio signal: {}%, Source: {}V.').format(sensor.rssi, sensor.last_battery)
+                                                    else:
+                                                        sensor_result += _('No response!')
 
-                                            if sensor.manufacturer == 1:                                    # shelly.com sensor
-                                                if sensor.response == 1:
-                                                    if sensor.sens_type == 0:                               ### Voltage ###
-                                                        sensor_result += _('Voltage') + ': {} '.format(sensor.last_voltage) + _('V')
-                                                    if sensor.sens_type == 1:                               ### Output 1 ###
-                                                        try:
-                                                            if sensor.last_read_value[0][0]:
-                                                                sensor_result += _('Output 1') + ': ' + _('ON')
-                                                            else:
-                                                                sensor_result += _('Output 1') + ': ' + _('OFF')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 2:                               ### Output 2 ###
-                                                        try:
-                                                            if sensor.last_read_value[0][1]:
-                                                                sensor_result += _('Output 2') + ': ' + _('ON')
-                                                            else:
-                                                                sensor_result += _('Output 2') + ': ' + _('OFF')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 3:                               ### Output 3 ###
-                                                        try:
-                                                            if sensor.last_read_value[0][2]:
-                                                                sensor_result += _('Output 3') + ': ' + _('ON')
-                                                            else:
-                                                                sensor_result += _('Output 3') + ': ' + _('OFF')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 4:                               ### Output 4 ###
-                                                        try:
-                                                            if sensor.last_read_value[0][3]:
-                                                                sensor_result += _('Output 4') + ': ' + _('ON')
-                                                            else:
-                                                                sensor_result += _('Output 4') + ': ' + _('OFF')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 5:                               ### Temperature 1 ###
-                                                        try:
-                                                            sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][0]) + _('°C')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 6:                               ### Temperature 2 ###
-                                                        try:
-                                                            sensor_result += _('Temperature 2') + ': {} '.format(sensor.last_read_value[2][1]) + _('°C')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 7:                               ### Temperature 3 ###
-                                                        try:
-                                                            sensor_result += _('Temperature 3') + ': {} '.format(sensor.last_read_value[2][2]) + _('°C')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 8:                               ### Temperature 4 ###
-                                                        try:
-                                                            sensor_result += _('Temperature 4') + ': {} '.format(sensor.last_read_value[2][3]) + _('°C')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 9:                               ### Temperature 5 ###
-                                                        try:
-                                                            sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][4]) + _('°C')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 10:                              ### Power 1 ###
-                                                        try:
-                                                            sensor_result += _('Power 1') + ': {} '.format(sensor.last_read_value[1][0]) + _('W')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 11:                              ### Power 2 ###
-                                                        try:
-                                                            sensor_result += _('Power 2') + ': {} '.format(sensor.last_read_value[1][1]) + _('W')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 12:                              ### Power 3 ###
-                                                        try:
-                                                            sensor_result += _('Power 3') + ': {} '.format(sensor.last_read_value[1][2]) + _('W')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 13:                              ### Power 4 ###
-                                                        try:
-                                                            sensor_result += _('Power 4') + ': {} '.format(sensor.last_read_value[1][3]) + _('W')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                    if sensor.sens_type == 14:
-                                                        try:
-                                                            sensor_result += _('Humidity') + ': {} '.format(sensor.last_read_value[3][0]) + _('%RV')
-                                                        except:
-                                                            sensor_result += _('Any error')
-                                                else:
-                                                    sensor_result += _('No response!')
-                                        else:
-                                            sensor_result += _('Disabled')
+                                                if sensor.manufacturer == 1:                                    # shelly.com sensor
+                                                    if sensor.response == 1:
+                                                        if sensor.sens_type == 0:                               ### Voltage ###
+                                                            sensor_result += _('Voltage') + ': {} '.format(sensor.last_voltage) + _('V')
+                                                        if sensor.sens_type == 1:                               ### Output 1 ###
+                                                            try:
+                                                                if sensor.last_read_value[0][0]:
+                                                                    sensor_result += _('Output 1') + ': ' + _('ON')
+                                                                else:
+                                                                    sensor_result += _('Output 1') + ': ' + _('OFF')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 2:                               ### Output 2 ###
+                                                            try:
+                                                                if sensor.last_read_value[0][1]:
+                                                                    sensor_result += _('Output 2') + ': ' + _('ON')
+                                                                else:
+                                                                    sensor_result += _('Output 2') + ': ' + _('OFF')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 3:                               ### Output 3 ###
+                                                            try:
+                                                                if sensor.last_read_value[0][2]:
+                                                                    sensor_result += _('Output 3') + ': ' + _('ON')
+                                                                else:
+                                                                    sensor_result += _('Output 3') + ': ' + _('OFF')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 4:                               ### Output 4 ###
+                                                            try:
+                                                                if sensor.last_read_value[0][3]:
+                                                                    sensor_result += _('Output 4') + ': ' + _('ON')
+                                                                else:
+                                                                    sensor_result += _('Output 4') + ': ' + _('OFF')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 5:                               ### Temperature 1 ###
+                                                            try:
+                                                                sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][0]) + _('°C')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 6:                               ### Temperature 2 ###
+                                                            try:
+                                                                sensor_result += _('Temperature 2') + ': {} '.format(sensor.last_read_value[2][1]) + _('°C')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 7:                               ### Temperature 3 ###
+                                                            try:
+                                                                sensor_result += _('Temperature 3') + ': {} '.format(sensor.last_read_value[2][2]) + _('°C')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 8:                               ### Temperature 4 ###
+                                                            try:
+                                                                sensor_result += _('Temperature 4') + ': {} '.format(sensor.last_read_value[2][3]) + _('°C')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 9:                               ### Temperature 5 ###
+                                                            try:
+                                                                sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][4]) + _('°C')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 10:                              ### Power 1 ###
+                                                            try:
+                                                                sensor_result += _('Power 1') + ': {} '.format(sensor.last_read_value[1][0]) + _('W')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 11:                              ### Power 2 ###
+                                                            try:
+                                                                sensor_result += _('Power 2') + ': {} '.format(sensor.last_read_value[1][1]) + _('W')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 12:                              ### Power 3 ###
+                                                            try:
+                                                                sensor_result += _('Power 3') + ': {} '.format(sensor.last_read_value[1][2]) + _('W')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 13:                              ### Power 4 ###
+                                                            try:
+                                                                sensor_result += _('Power 4') + ': {} '.format(sensor.last_read_value[1][3]) + _('W')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 14:
+                                                            try:
+                                                                sensor_result += _('Humidity') + ': {} '.format(sensor.last_read_value[3][0]) + _('%RV')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                    else:
+                                                        sensor_result += _('No response!')
+                                            else:
+                                                sensor_result += _('Disabled')
 
+                                            body += sensor_result
+                                            body += '</li>'
+                                            logtext += sensor_result
+                                            logtext += '\n'
+                                        body += '</ul>'
+                                        body += '<br>'
+
+                                    else:
+                                        sensor_result += _('No sensors available')
+                                        body += '<ul><li>'
                                         body += sensor_result
-                                        body += '</li>'
+                                        body += '</li></ul>'
+                                        body += '<br>'
                                         logtext += sensor_result
                                         logtext += '\n'
-                                    body += '</ul>'
-                                    body += '<br>'
-
-                                else:
-                                    sensor_result += _('No sensors available')
-                                    body += '<ul><li>'
-                                    body += sensor_result
-                                    body += '</li></ul>'
-                                    body += '<br>'
-                                    logtext += sensor_result
-                                    logtext += '\n'
-                                    
                             except:
                                 log.debug(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
                                 pass
 
+                            # Send data from Shelly sensors
                             try:
-                                from plugins import shelly_cloud_integrator
-
-                                body += '<b>' + _('Shelly cloud') + '</b><ul>'
-                                logtext += _('Shelly cloud') + '-> \n'
-                                for i in range(0, shelly_cloud_integrator.plugin_options['number_sensors']):
-                                    body += '<li>'
-                                    body += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
-                                    logtext += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
-                                    if shelly_cloud_integrator.sender.devices[i]['temperature']:
-                                        body += '{}\u2103 '.format(shelly_cloud_integrator.sender.devices[i]['temperature'][0])
-                                        logtext += '{}\u2103 '.format(shelly_cloud_integrator.sender.devices[i]['temperature'][0])
-                                    if shelly_cloud_integrator.sender.devices[i]['humidity']:
-                                        body += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
-                                        logtext += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
-                                    if shelly_cloud_integrator.sender.devices[i]['output']:
-                                        if shelly_cloud_integrator.sender.devices[i]['output'][0] == 'stop':    # roller mode
-                                            body += ' ' + _('STOP')
-                                            logtext += ' ' + _('STOP')
-                                        elif shelly_cloud_integrator.sender.devices[i]['output'][0] == 'up':    # roller mode
-                                            body += ' ' + _('UP')
-                                            logtext += ' ' + _('UP')
-                                        elif shelly_cloud_integrator.sender.devices[i]['output'][0] == 'down':  # roller mode
-                                            body += ' ' + _('DOWN')
-                                            logtext += ' ' + _('DOWN')
-                                        else:                                                                   # switch mode
-                                            body += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
-                                            logtext += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
-                                            try:
-                                                body += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
+                                if email_options["eml_plug_shelly"]:
+                                    from plugins import shelly_cloud_integrator
+                                    body += '<b>' + _('Shelly cloud') + '</b><ul>'
+                                    logtext += _('Shelly cloud') + '-> \n'
+                                    for i in range(0, shelly_cloud_integrator.plugin_options['number_sensors']):
+                                        body += '<li>'
+                                        body += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
+                                        logtext += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
+                                        if shelly_cloud_integrator.sender.devices[i]['temperature']:
+                                            body += '{}\u2103 '.format(shelly_cloud_integrator.sender.devices[i]['temperature'][0])
+                                            logtext += '{}\u2103 '.format(shelly_cloud_integrator.sender.devices[i]['temperature'][0])
+                                        if shelly_cloud_integrator.sender.devices[i]['humidity']:
+                                            body += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
+                                            logtext += ' {}'.format(shelly_cloud_integrator.sender.devices[i]['humidity'][0]) + _('%RH') + ' '
+                                        if shelly_cloud_integrator.sender.devices[i]['output']:
+                                            if shelly_cloud_integrator.sender.devices[i]['output'][0] == 'stop':    # roller mode
+                                                body += ' ' + _('STOP')
+                                                logtext += ' ' + _('STOP')
+                                            elif shelly_cloud_integrator.sender.devices[i]['output'][0] == 'up':    # roller mode
+                                                body += ' ' + _('UP')
+                                                logtext += ' ' + _('UP')
+                                            elif shelly_cloud_integrator.sender.devices[i]['output'][0] == 'down':  # roller mode
+                                                body += ' ' + _('DOWN')
+                                                logtext += ' ' + _('DOWN')
+                                            else:                                                                   # switch mode
+                                                body += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
                                                 logtext += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
+                                                try:
+                                                    body += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
+                                                    logtext += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
+                                                except:
+                                                    pass
+                                                try:
+                                                    body += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
+                                                    logtext += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
+                                                except:
+                                                    pass
+                                                try:
+                                                    body += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')
+                                                    logtext += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')
+                                                except:
+                                                    pass
+                                        if shelly_cloud_integrator.sender.devices[i]['power']:
+                                            body += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
+                                            logtext += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
+                                            try:
+                                                body += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
+                                                logtext += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
                                             except:
                                                 pass
                                             try:
-                                                body += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
-                                                logtext += ' ' + _('OUT3:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][2] else _('OFF')
+                                                body += ' ' + _('PWR3:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][2]) + _('W')
+                                                logtext += ' ' + _('PWR3:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][2]) + _('W')
                                             except:
                                                 pass
                                             try:
-                                                body += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')
-                                                logtext += ' ' + _('OUT4:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][3] else _('OFF')                                
+                                                body += ' ' + _('PWR4:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][3]) + _('W')
+                                                logtext += ' ' + _('PWR4:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][3]) + _('W')
                                             except:
                                                 pass
-                                    if shelly_cloud_integrator.sender.devices[i]['power']:
-                                        body += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
-                                        logtext += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
-                                        try:
-                                            body += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
-                                            logtext += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
-                                        except:
-                                            pass
-                                        try:
-                                            body += ' ' + _('PWR3:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][2]) + _('W')
-                                            logtext += ' ' + _('PWR3:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][2]) + _('W')
-                                        except:
-                                            pass
-                                        try:
-                                            body += ' ' + _('PWR4:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][3]) + _('W')
-                                            logtext += ' ' + _('PWR4:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][3]) + _('W')
-                                        except:
-                                            pass
-                                    if shelly_cloud_integrator.sender.devices[i]['voltage'] > 0:
-                                        body += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
-                                        logtext += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
-                                    if shelly_cloud_integrator.sender.devices[i]['battery'] > 0:
-                                        body += ' ' + _('BATTERY:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['battery']) + _('%')
-                                        logtext += ' ' + _('BATTERY:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['battery']) + _('%')
-                                    body += ' ' + _('IP:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['ip'])
-                                    logtext += ' ' + _('IP:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['ip'])
-                                    body += ' ' + _('RSSI:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['rssi']) + _('dbm') + ' '
-                                    logtext += ' ' + _('RSSI:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['rssi']) + _('dbm') + ' '
-                                    if shelly_cloud_integrator.sender.devices[i]['online']:
-                                        body += ' ' + _('Online')
-                                        logtext += ' ' + _('Online')
-                                    else:
-                                        body += ' ' + _('Offline')
-                                        logtext += ' ' + _('Offline')
-                                    body += '\n</li>'
-                                    logtext += '\n'
+                                        if shelly_cloud_integrator.sender.devices[i]['voltage'] > 0:
+                                            body += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
+                                            logtext += ' ' + _('VOLTAGE:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['voltage']) + _('V')
+                                        if shelly_cloud_integrator.sender.devices[i]['battery'] > 0:
+                                            body += ' ' + _('BATTERY:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['battery']) + _('%')
+                                            logtext += ' ' + _('BATTERY:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['battery']) + _('%')
+                                        body += ' ' + _('IP:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['ip'])
+                                        logtext += ' ' + _('IP:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['ip'])
+                                        body += ' ' + _('RSSI:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['rssi']) + _('dbm') + ' '
+                                        logtext += ' ' + _('RSSI:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['rssi']) + _('dbm') + ' '
+                                        if shelly_cloud_integrator.sender.devices[i]['online']:
+                                            body += ' ' + _('Online')
+                                            logtext += ' ' + _('Online')
+                                        else:
+                                            body += ' ' + _('Offline')
+                                            logtext += ' ' + _('Offline')
+                                        body += '\n</li>'
+                                        logtext += '\n'
                             except:
                                 pass
 

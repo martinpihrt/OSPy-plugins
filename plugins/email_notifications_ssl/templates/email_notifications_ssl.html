@@ -3,6 +3,52 @@ $def with(plugin_options, events)
 $var title: $_('E-mail Notifications SSL')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d; /* Default red for 'off' */
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+/* Green color when switch is 'on' */
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -36,7 +82,6 @@ function showPWD(){
 
 <div id="plugin">
     <div class="title">$_('E-mail Notifications SSL')</div>
-    <div><small>$_('This extension is for Python 3 only!')</small></div>
     <a href=$plugins.plugin_url('email_notifications_ssl.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('email_notifications_ssl.settings_page')" method="post">
         <table class="optionList">
@@ -44,49 +89,136 @@ function showPWD(){
                 <td style='text-transform: none;'>
                     <div><small><b>$_('Events to send')</b></small></div>
                 </td>
-            </tr>       
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail after power on'):</td>
                 <td>
-                    <input name='emlpwron' type='checkbox'${" checked" if plugin_options['emlpwron'] else ""}> $_('with events.log file') <input name='emllog' type='checkbox'${" checked" if plugin_options['emllog'] else ""}> 
+                    <label class="switch">
+                        <input name='emlpwron' type='checkbox'${" checked" if plugin_options['emlpwron'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                    <small>$_('Add log')</small>
+                    <label class="switch">
+                        <input name='emllog' type='checkbox'${" checked" if plugin_options['emllog'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if rain sensor is activated'):</td>
                 <td>
-                    <input name='emlrain' type='checkbox'${" checked" if plugin_options['emlrain'] else ""}>
+                    <label class="switch">
+                        <input name='emlrain' type='checkbox'${" checked" if plugin_options['emlrain'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if rain sensor is deactivated'):</td>
                 <td>
-                    <input name='emlrainde' type='checkbox'${" checked" if plugin_options['emlrainde'] else ""}>
+                    <label class="switch">
+                        <input name='emlrainde' type='checkbox'${" checked" if plugin_options['emlrainde'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if a program has finished'):</td>
                 <td>
-                    <input name='emlrun' type='checkbox'${" checked" if plugin_options['emlrun'] else ""}>
+                    <label class="switch"> 
+                        <input name='emlrun' type='checkbox'${" checked" if plugin_options['emlrun'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if the rain delay has setuped'):</td>
                 <td>
-                    <input name='emlrds' type='checkbox'${" checked" if plugin_options['emlrds'] else ""}>
+                    <label class="switch">
+                        <input name='emlrds' type='checkbox'${" checked" if plugin_options['emlrds'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if the rain delay has expired'):</td>
                 <td>
-                    <input name='emlrdr' type='checkbox'${" checked" if plugin_options['emlrdr'] else ""}>
+                    <label class="switch">
+                        <input name='emlrdr' type='checkbox'${" checked" if plugin_options['emlrdr'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if the user is logged in'):</td>
                 <td>
-                    <input name='emlusrin' type='checkbox'${" checked" if plugin_options['emlusrin'] else ""}>
+                    <label class="switch">
+                        <input name='emlusrin' type='checkbox'${" checked" if plugin_options['emlusrin'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>                        
+            </tr>
+            
+            <!-- Plug-in data sonic tank monitor -->
+            <tr>
+                <td style='text-transform: none;'>$_('Send data from plugin sonic tank monitor'):</td>
+                <td>
+                    <label class="switch">
+                        <input name='eml_plug_tank' type='checkbox'${" checked" if plugin_options['eml_plug_tank'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <!-- Plug-in data current loop tanks monitor -->
+            <tr>
+                <td style='text-transform: none;'>$_('Send data from plugin current loop tanks monitor'):</td>
+                <td>
+                    <label class="switch">
+                        <input name='eml_plug_4tank' type='checkbox'${" checked" if plugin_options['eml_plug_4tank'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <!-- Plug-in data water consumption counter -->
+            <tr>
+                <td style='text-transform: none;'>$_('Send data from plugin water consumption counter'):</td>
+                <td>
+                    <label class="switch">
+                        <input name='eml_plug_wcounter' type='checkbox'${" checked" if plugin_options['eml_plug_wcounter'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <!-- Plug-in data air temp humidity 6x ds18b20 -->
+            <tr>
+                <td style='text-transform: none;'>$_('Send data from plugin air temp humidity 6x DS18b20'):</td>
+                <td>
+                    <label class="switch">
+                        <input name='eml_plug_6ds' type='checkbox'${" checked" if plugin_options['eml_plug_6ds'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <!-- Send data from OSPy sensors -->
+            <tr>
+                <td style='text-transform: none;'>$_('Send data from OSPy sensors'):</td>
+                <td>
+                    <label class="switch">
+                        <input name='eml_plug_sensors' type='checkbox'${" checked" if plugin_options['eml_plug_sensors'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <!-- Send data from Shelly sensors -->
+            <tr>
+                <td style='text-transform: none;'>$_('Send data from Shelly sensors'):</td>
+                <td>
+                    <label class="switch">
+                        <input name='eml_plug_shelly' type='checkbox'${" checked" if plugin_options['eml_plug_shelly'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
@@ -96,7 +228,7 @@ function showPWD(){
                 <td style='text-transform: none;'>
                     <div><small><b>$_('E-mail settings')</b></small></div>
                 </td>
-            </tr>                        
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('SMTP server address'):
                     <div><small>$_('example: smtp.gmail.com')</small></div>
@@ -104,7 +236,7 @@ function showPWD(){
                 <td>
                     <input name='emlserver' type='text' value='$plugin_options["emlserver"]'>
                 </td>
-            </tr>      
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('SMTP port'):
                     <div><small>$_('example: 465 (number in range 0-65535)')</small></div>
@@ -117,7 +249,10 @@ function showPWD(){
               <div><small>$_('Some SMTP providers prohibit to use another sender than the same mail user.')</small></div>
             </td>
             <td>
-                <input name='emlsender' type='checkbox' ${" checked" if plugin_options['emlsender'] else ""}>
+                <label class="switch">
+                    <input name='emlsender' type='checkbox' ${" checked" if plugin_options['emlsender'] else ""}>
+                    <span class="slider"></span>
+                </label>
             </td>
             <tr>
                 <td style='text-transform: none;'>$_('SMTP username'):
@@ -133,7 +268,10 @@ function showPWD(){
                 </td>
                 <td>
                     <input name='emlpwd' type='password' id='emlpwd' value='$plugin_options["emlpwd"]'>
-                    <input type='checkbox' id='show_pwd' onclick='showPWD()'>
+                    <label class="switch">
+                        <input type='checkbox' id='show_pwd' onclick='showPWD()'>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -181,11 +319,14 @@ function showPWD(){
                 <td style='text-transform: none;'>
                     <div><small><b>$_('E-mail queue')</b></small></div>
                 </td>
-            </tr>                        
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Save and send it later'):</td>
                 <td>
-                    <input name='emlrepeater' type='checkbox'${" checked" if plugin_options['emlrepeater'] else ""}>
+                    <label class="switch">
+                        <input name='emlrepeater' type='checkbox'${" checked" if plugin_options['emlrepeater'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>   
             </tr>
             <tr>
@@ -197,7 +338,7 @@ function showPWD(){
                <th colspan="2">
                  <hr>
                </th>
-            </tr>                   
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
@@ -212,5 +353,3 @@ function showPWD(){
     <button id="cTest" class="submit"><b>$_('Send a test E-mail')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
-                                  
-                     
