@@ -234,6 +234,8 @@ class Sender(Thread):
         mini = [1,1,1,1]                                                        # regulation rain delay (auxiliary data type)
         mini2 = [1,1,1,1]                                                       # regulation maximal water in tank (auxiliary data type)
         mini3 = [1,1,1,1]                                                       # regulation maximal water in tank (auxiliary data type)
+        mini4 = [1,1,1,1]                                                       # regulation minimal water in tank (auxiliary data type)
+        mini5 = [1,1,1,1]                                                       # regulation minimal water in tank (auxiliary data type)        
         end = datetime.datetime.now()
         regulation_text = [_('Regulation NONE.')*4]
 
@@ -297,7 +299,7 @@ class Sender(Thread):
                             if mini2[i]:
                                 mini2[i] = False
                                 mini3[i] = True
-                                regulation_text[i] = datetime_string() + ' ' + _('Regulation set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                regulation_text[i] = datetime_string() + ' ' + _('Regulation maximum set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
                                 start = datetime.datetime.now()
                                 sid = reg_station.index
                                 end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss_tank{}'.format(i+1)], minutes=plugin_options['reg_mm_tank{}'.format(i+1)])
@@ -323,7 +325,7 @@ class Sender(Thread):
                             if mini3[i]:                                                                        # blocking for once
                                 mini2[i] = True
                                 mini3[i] = False
-                                regulation_text[i] = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                regulation_text[i] = datetime_string() + ' ' + _('Regulation maximum set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
                                 sid = reg_station.index
                                 stations.deactivate(sid)
                                 active = log.active_runs()
@@ -335,7 +337,56 @@ class Sender(Thread):
                         if now > end:                                                                           # if program end in schedule release five_text to true in regulation for next scheduling
                             mini2[i] = True
                             mini3[i] = False
-                            regulation_text[i] = _('Regulation waiting.')
+                            regulation_text[i] = _('Regulation maximum water waiting.')
+
+                        log.info(NAME, regulation_text[i])
+
+                    ### REGULATION: minimum water level
+                    if plugin_options['mini_en_reg_tank{}'.format(i+1)]:
+                        reg_station = stations.get(plugin_options['mini_reg_out_tank{}'.format(i+1)])
+                        if tanks['levelCm'][i] > plugin_options['mini_reg_max_tank{}'.format(i+1)]:            # if actual water level in tank > set maximum water level (to deactivate)
+                            if mini5[i]:                                                                        # blocking for once
+                                mini4[i] = True
+                                mini5[i] = False
+                                regulation_text[i] = datetime_string() + ' ' + _('Regulation minimum set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                sid = reg_station.index
+                                stations.deactivate(sid)
+                                active = log.active_runs()
+                                for interval in active:
+                                    if interval['station'] == sid:
+                                        log.finish_run(interval)
+
+                        if tanks['levelCm'][i] < plugin_options['mini_reg_min_tank{}'.format(i+1)]:             # if actual level in tank < set minimum water level (to activate)
+                            if mini4[i]:
+                                mini4[i] = False
+                                mini5[i] = True
+                                regulation_text[i] = datetime_string() + ' ' + _('Regulation minimum set ON.') + ' ' + ' (' + _('Output') + ' ' +  str(reg_station.index+1) + ').'
+                                start = datetime.datetime.now()
+                                sid = reg_station.index
+                                end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['mini_reg_ss_tank{}'.format(i+1)], minutes=plugin_options['mini_reg_mm_tank{}'.format(i+1)])
+                                new_schedule = {
+                                    'active': True,
+                                    'program': -1,
+                                    'station': sid,
+                                    'program_name': plugin_options['label{}'.format(i+1)],
+                                    'fixed': True,
+                                    'cut_off': 0,
+                                    'manual': True,
+                                    'blocked': False,
+                                    'start': start,
+                                    'original_start': start,
+                                    'end': end,
+                                    'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+                                    'usage': stations.get(sid).usage
+                                }
+                                log.start_run(new_schedule)
+                                stations.activate(new_schedule['station'])
+
+                        now = datetime.datetime.now()
+                        if now > end:                                                                           # if program end in schedule release five_text to true in regulation for next scheduling
+                            mini4[i] = True
+                            mini5[i] = False
+                            regulation_text[i] = _('Regulation minimum water waiting.')
 
                         log.info(NAME, regulation_text[i])
                     

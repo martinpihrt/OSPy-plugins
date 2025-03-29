@@ -218,7 +218,28 @@ $if plugin_options['en_log'] or plugin_options['en_sql_log']:
         $_('To') <input name='dt_to' id="dt_to" input type="datetime-local" value='$plugin_options['dt_to']' />
         <button id="filterSelection">$_('Filtering')</button>
         <button id="clearSelection"  class="button backup">$_('Reload chart')</button>
-        <a href="?delfilter" class="button cancel danger">$_('Delete range')</a></br>
+        <a href="?delfilter" class="button cancel danger">$_('Delete range')</a>
+        $if show_graph == '1':
+            <a href="?q=1" class="button backup"><b>$_('1')</b></a>
+        $else:
+            <a href="?q=1" class="button upload">$_('1')</a>
+        $if show_graph == '2':
+            <b><a href="?q=2" class="button backup"><b>$_('2')</b></a>
+        $else:
+            <a href="?q=2" class="button upload">$_('2')</a>
+        $if show_graph == '3':
+            <b><a href="?q=3" class="button backup"><b>$_('3')</b></a>
+        $else:
+            <a href="?q=3" class="button upload">$_('3')</a>
+        $if show_graph == '4':
+            <b><a href="?q=4" class="button backup"><b>$_('4')</b></a>
+        $else:
+            <a href="?q=4" class="button upload">$_('4')</a>
+        $if show_graph == '0':
+            <b><a href="?q=0" class="button backup"><b>$_('ALL')</b></a>
+        $else:
+            <a href="?q=0" class="button upload">$_('ALL')</a>
+        </br>
     </form>
     <div style="clear: both;"></div>
     </div>

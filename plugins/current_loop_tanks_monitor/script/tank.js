@@ -103,15 +103,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Adding an event listener for tank clicks
     document.querySelectorAll('.well').forEach((well, index) => {
-        well.addEventListener('click', function() {
+        function openLink() {
             const urls = [
                 "/plugins/current_loop_tanks_monitor/graph?q=1", 
                 "/plugins/current_loop_tanks_monitor/graph?q=2", 
                 "/plugins/current_loop_tanks_monitor/graph?q=3", 
                 "/plugins/current_loop_tanks_monitor/graph?q=4"
             ];
-            window.location.href = urls[index];
-        });
+            window.location.href = urls[index]; 
+        }
+        
+        well.addEventListener('click', openLink);
+        well.addEventListener('touchend', openLink);
     });
 });     
 
