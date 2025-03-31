@@ -244,6 +244,7 @@ $var page: plugins
                                 <option value="7" ${"selected" if plugin_options["sensor_type"][c]==7 else ""}>$_('Shelly 2PM Addon')</option>
                                 <option value="8" ${"selected" if plugin_options["sensor_type"][c]==8 else ""}>$_('Shelly 1PM Addon')</option>
                                 <option value="9" ${"selected" if plugin_options["sensor_type"][c]==9 else ""}>$_('Shelly HT')</option>
+                                <option value="10" ${"selected" if plugin_options["sensor_type"][c]==10 else ""}>$_('Shelly Pro 3EM')</option>
                             </select>
                         </td>
                         <td>
@@ -291,6 +292,10 @@ $var page: plugins
                             $if plugin_options["sensor_type"][c]==9:
                                 <a href="https://kb.shelly.cloud/knowledge-base/shelly-h-t" class="image-link">
                                 <img src="/plugins/shelly_cloud_integrator/static/images/HaT.webp" width="100" height="100">
+                                </a>
+                            $if plugin_options["sensor_type"][c]==10:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-3em-63-gen3" class="image-link">
+                                <img src="/plugins/shelly_cloud_integrator/static/images/pro3em.webp" width="100" height="100">
                                 </a>
                         </td>
                     </tr>

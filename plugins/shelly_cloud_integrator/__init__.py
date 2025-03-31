@@ -45,6 +45,7 @@ plugin_options = PluginOptions(
          # 4=Shelly 2.5, 5=Shelly Pro 4PM,
          # 6=Shelly 1 Mini, 7=Shelly 2PM Addon,
          # 8=Shelly 1PM Addon, 9= Shelly H&T
+         # 10=Shelly Pro 3EM 
         'gen_type': [0, 1],                                      # 0=Gen1, 1=Gen2
         'number_sensors': 2,                                     # default 2 sensors for example
         'addons_labels_1': [_('A')],                             # label for addons temperature:100 (DS18B20 nr1)
@@ -1132,6 +1133,78 @@ class Sender(Thread):
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
                                                     'hw': _('Shelly HT'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
+                                                }
+                                                update_or_add_device(self, payload)
+
+                                    # typ: 10=Shelly Pro 3EM
+                                    # gen: 0 = GEN1, 1 = GEN 2+
+                                    if plugin_options['sensor_type'][i] == 10:
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN1 not available yet \n').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
+                                            else:
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    a_total = response_data["data"]["device_status"]["emdata:0"]["a_total_act_energy"]# total energy L1
+                                                    b_total = response_data["data"]["device_status"]["emdata:0"]["b_total_act_energy"]# total energy L2
+                                                    c_total = response_data["data"]["device_status"]["emdata:0"]["c_total_act_energy"]# total energy L3
+                                                    a_power = response_data["data"]["device_status"]["em:0"]["a_act_power"]           # actual power L1
+                                                    b_power = response_data["data"]["device_status"]["em:0"]["b_act_power"]           # actual power L2
+                                                    c_power = response_data["data"]["device_status"]["em:0"]["c_act_power"]           # actual power L3
+                                                    a_voltage = response_data["data"]["device_status"]["em:0"]["a_voltage"]           # actual voltage L1
+                                                    b_voltage = response_data["data"]["device_status"]["em:0"]["b_voltage"]           # actual voltage L2
+                                                    c_voltage = response_data["data"]["device_status"]["em:0"]["c_voltage"]           # actual voltage L3
+                                                    internal_temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
+                                                    updated = now()
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+# TODO local
+                                                    updated = now()
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                if online:
+                                                        msg += _('[{}: L1 {} W, L2 {} W, L3 {} W]').format(name, a_power, b_power, c_power)
+                                                        msg_info += _('{}: L1:{} W L2:{} W L3:{} W {} V IP:{} RSSI:{} dbm INTt:{} °C {}\n').format(name, a_power, b_power, c_power, voltage, sta_ip, rssi, internal_temperature, format_timestamp(updated))
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': a_voltage,
+                                                    'battery': 0,
+                                                    'temperature': [internal_temperature],
+                                                    'humidity': [],
+                                                    'rssi': rssi,
+                                                    'output': [],
+                                                    'power': [a_power, b_power, c_power],
+                                                    'label': name,
+                                                    'online': online,
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly Pro 3EM'),
                                                     'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)

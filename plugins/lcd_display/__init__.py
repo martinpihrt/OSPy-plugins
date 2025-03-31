@@ -674,6 +674,7 @@ def get_report(index):
             try:
                 # 4-20mA Loop Tanks Monitor
                 from plugins import current_loop_tanks_monitor
+                tank_options = current_loop_tanks_monitor.plugin_options
                 tank_result = ''
                 for i in range(4):
                     label = current_loop_tanks_monitor.tanks['label'][i]
@@ -681,7 +682,8 @@ def get_report(index):
                     level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
                     volt = current_loop_tanks_monitor.tanks['voltage'][i]
                     volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
-                    tank_result += '{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} L'.format(label, level_cm, level_perc, volt, volume)
+                    if tank_options['en_tank%d' % i+1]:
+                        tank_result += '{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} L'.format(label, level_cm, level_perc, volt, volume)
                     if i < 3:
                         tank_result += ', '
                     result = ASCI_convert(tank_result)
