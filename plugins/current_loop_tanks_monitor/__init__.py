@@ -740,35 +740,35 @@ def read_graph_sql_log():
                 epoch = int(datetime.datetime.timestamp(row[1]))
 
                 tmp0 = graph_data[0]['balances']
-                tank1 = {'total': row[2]}
+                tank1 = {'total': float(row[2])}
                 tmp0.update({epoch: tank1})
 
                 tmp1 = graph_data[1]['balances']
-                tank2 = {'total': row[3]}
+                tank2 = {'total': float(row[3])}
                 tmp1.update({epoch: tank2})
 
                 tmp2 = graph_data[2]['balances']
-                tank3 = {'total': row[4]}
+                tank3 = {'total': float(row[4])}
                 tmp2.update({epoch: tank3})
 
                 tmp3 = graph_data[3]['balances']
-                tank4 = {'total': row[5]}
+                tank4 = {'total': float(row[5])}
                 tmp3.update({epoch: tank4})
 
                 tmp0 = graph_data[4]['balances']
-                tank1 = {'total': row[6]}
+                tank1 = {'total': float(row[6])}
                 tmp0.update({epoch: tank1})
 
                 tmp1 = graph_data[5]['balances']
-                tank2 = {'total': row[7]}
+                tank2 = {'total': float(row[7])}
                 tmp1.update({epoch: tank2})
 
                 tmp2 = graph_data[6]['balances']
-                tank3 = {'total': row[8]}
+                tank3 = {'total': float(row[8])}
                 tmp2.update({epoch: tank3})
 
                 tmp3 = graph_data[7]['balances']
-                tank4 = {'total': row[9]}
+                tank4 = {'total': float(row[9])}
                 tmp3.update({epoch: tank4})
 
         data = graph_data
