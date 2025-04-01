@@ -1178,15 +1178,15 @@ class Sender(Thread):
                                                     sta_ip = wifi["sta_ip"]
                                                     rssi = wifi["rssi"]
                                                 else:                                       # via local IP data
-                                                    a_total = response_data["data"]["device_status"]["emdata:0"]["a_total_act_energy"]# total energy L1
-                                                    b_total = response_data["data"]["device_status"]["emdata:0"]["b_total_act_energy"]# total energy L2
-                                                    c_total = response_data["data"]["device_status"]["emdata:0"]["c_total_act_energy"]# total energy L3
-                                                    a_power = response_data["data"]["device_status"]["em:0"]["a_act_power"]           # actual power L1
-                                                    b_power = response_data["data"]["device_status"]["em:0"]["b_act_power"]           # actual power L2
-                                                    c_power = response_data["data"]["device_status"]["em:0"]["c_act_power"]           # actual power L3
-                                                    a_voltage = response_data["data"]["device_status"]["em:0"]["a_voltage"]           # actual voltage L1
-                                                    b_voltage = response_data["data"]["device_status"]["em:0"]["b_voltage"]           # actual voltage L2
-                                                    c_voltage = response_data["data"]["device_status"]["em:0"]["c_voltage"]           # actual voltage L3
+                                                    a_total = response_data["emdata:0"]["a_total_act_energy"]# total energy L1
+                                                    b_total = response_data["emdata:0"]["b_total_act_energy"]# total energy L2
+                                                    c_total = response_data["emdata:0"]["c_total_act_energy"]# total energy L3
+                                                    a_power = response_data["em:0"]["a_act_power"]           # actual power L1
+                                                    b_power = response_data["em:0"]["b_act_power"]           # actual power L2
+                                                    c_power = response_data["em:0"]["c_act_power"]           # actual power L3
+                                                    a_voltage = response_data["em:0"]["a_voltage"]           # actual voltage L1
+                                                    b_voltage = response_data["em:0"]["b_voltage"]           # actual voltage L2
+                                                    c_voltage = response_data["em:0"]["c_voltage"]           # actual voltage L3
                                                     internal_temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
                                                     updated = now()
                                                     online = True
