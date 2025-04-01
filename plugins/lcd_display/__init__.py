@@ -682,13 +682,14 @@ def get_report(index):
                     level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
                     volt = current_loop_tanks_monitor.tanks['voltage'][i]
                     volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
-                    if tank_options['en_tank%d' % i+1]:
+                    if tank_options['en_tank{}'.format(i+1)]:
                         tank_result += '{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} L'.format(label, level_cm, level_perc, volt, volume)
-                    if i < 3:
-                        tank_result += ', '
+                        if i < 3:
+                            tank_result += ' '
                     result = ASCI_convert(tank_result)
             except Exception:
                 result = ASCI_convert(_('Not Available'))
+                log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
         else: 
             result = None
 
