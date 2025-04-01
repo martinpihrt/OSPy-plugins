@@ -1187,7 +1187,7 @@ class Sender(Thread):
                                                     a_voltage = response_data["em:0"]["a_voltage"]           # actual voltage L1
                                                     b_voltage = response_data["em:0"]["b_voltage"]           # actual voltage L2
                                                     c_voltage = response_data["em:0"]["c_voltage"]           # actual voltage L3
-                                                    internal_temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
+                                                    internal_temperature = response_data["temperature:0"]["tC"]
                                                     updated = now()
                                                     online = True
                                                     wifi = response_data["wifi"]
