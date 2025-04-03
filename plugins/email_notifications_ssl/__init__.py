@@ -495,11 +495,14 @@ class EmailSender(Thread):
                                                 body += ' ' + _('DOWN')
                                                 logtext += ' ' + _('DOWN')
                                             else:                                                                   # switch mode
-                                                body += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
-                                                logtext += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
+                                                try:
+                                                    body += ' ' + _('OUT1:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0] else _('OFF')
+                                                    logtext += ' ' + _('OUT1:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0] else _('OFF')
+                                                except:
+                                                    pass
                                                 try:
                                                     body += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
-                                                    logtext += ' ' + _('OUT:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][0]else _('OFF')
+                                                    logtext += ' ' + _('OUT2:') + ' ' +  _('ON') if shelly_cloud_integrator.sender.devices[i]['output'][1] else _('OFF')
                                                 except:
                                                     pass
                                                 try:
@@ -513,8 +516,8 @@ class EmailSender(Thread):
                                                 except:
                                                     pass
                                         if shelly_cloud_integrator.sender.devices[i]['power']:
-                                            body += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
-                                            logtext += ' ' + _('PWR:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
+                                            body += ' ' + _('PWR1:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
+                                            logtext += ' ' + _('PWR1:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][0]) + _('W')
                                             try:
                                                 body += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')
                                                 logtext += ' ' + _('PWR2:') + ' {}'.format(shelly_cloud_integrator.sender.devices[i]['power'][1]) + _('W')

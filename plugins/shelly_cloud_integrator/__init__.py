@@ -172,6 +172,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [],
                                                     'power': [],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -240,6 +241,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [output],
                                                     'power': [power],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -306,6 +308,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [output],
                                                     'power': [power],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -398,6 +401,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [a_output, b_output],
                                                     'power': [a_power, b_power],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -471,6 +475,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [output],
                                                     'power': [power],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -580,6 +585,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [a_output, b_output] if roller is None else [roller],
                                                     'power': [a_power, b_power],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -655,12 +661,14 @@ class Sender(Thread):
                                                     sta_ip = wifi["sta_ip"]
                                                     rssi = wifi["rssi"]
                                                 if online:
+                                                    msg += '[{}: '.format(name)
+                                                    msg_info += '{}: '.format(name)
                                                     if a_output:
-                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                        msg += _('1 ON {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('1 ON {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
                                                     else:
-                                                        msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
+                                                        msg += _('1 OFF {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('1 OFF {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
                                                     if b_output:
                                                         msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
                                                         msg_info += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
@@ -668,17 +676,17 @@ class Sender(Thread):
                                                         msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
                                                         msg_info += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                     if c_output:
-                                                        msg += _('2 ON {} W ({} kW/h)] ').format(c_power, round(c_total/1000.0, 2))
-                                                        msg_info += _('2 ON {} W ({} kW/h) ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg += _('3 ON {} W ({} kW/h)] ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg_info += _('3 ON {} W ({} kW/h) ').format(c_power, round(c_total/1000.0, 2))
                                                     else:
-                                                        msg += _('2 OFF {}W ({}kW/h)] ').format(c_power, round(c_total/1000.0, 2))
-                                                        msg_info += _('2 OFF {}W ({}kW/h) ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg += _('3 OFF {}W ({}kW/h)] ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg_info += _('3 OFF {}W ({}kW/h) ').format(c_power, round(c_total/1000.0, 2))
                                                     if d_output:
-                                                        msg += _('2 ON {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
-                                                        msg_info += _('2 ON {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), format_timestamp(updated))
+                                                        msg += _('4 ON {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
+                                                        msg_info += _('4 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(d_power, round(d_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                     else:
-                                                        msg += _('2 OFF {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
-                                                        msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(d_power, round(d_total/1000.0, 2), format_timestamp(updated))
+                                                        msg += _('4 OFF {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
+                                                        msg_info += _('4 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(d_power, round(d_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -692,6 +700,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [a_output, b_output, c_output, d_output],
                                                     'power': [a_power, b_power, c_power, d_power],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -759,6 +768,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [output],
                                                     'power': [],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -921,6 +931,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [a_output, b_output],
                                                     'power': [a_power, b_power],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -1071,6 +1082,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [a_output],
                                                     'power': [a_power],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -1128,6 +1140,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [],
                                                     'power': [],
+                                                    'retpower': [],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
@@ -1162,16 +1175,19 @@ class Sender(Thread):
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
                                                 if plugin_options['reading_type'][i] == 1:  # only cloud API data
-                                                    a_total = response_data["data"]["emdata:0"]["a_total_act_energy"]# total energy L1
-                                                    b_total = response_data["data"]["emdata:0"]["b_total_act_energy"]# total energy L2
-                                                    c_total = response_data["data"]["emdata:0"]["c_total_act_energy"]# total energy L3
-                                                    a_power = response_data["data"]["em:0"]["a_act_power"]           # actual power L1
-                                                    b_power = response_data["data"]["em:0"]["b_act_power"]           # actual power L2
-                                                    c_power = response_data["data"]["em:0"]["c_act_power"]           # actual power L3
-                                                    a_voltage = response_data["data"]["em:0"]["a_voltage"]           # actual voltage L1
-                                                    b_voltage = response_data["data"]["em:0"]["b_voltage"]           # actual voltage L2
-                                                    c_voltage = response_data["data"]["em:0"]["c_voltage"]           # actual voltage L3
-                                                    internal_temperature = response_data["data"]["temperature:0"]["tC"]
+                                                    a_total = response_data["data"]["device_status"]["emdata:0"]["a_total_act_energy"]# total energy L1
+                                                    b_total = response_data["data"]["device_status"]["emdata:0"]["b_total_act_energy"]# total energy L2
+                                                    c_total = response_data["data"]["device_status"]["emdata:0"]["c_total_act_energy"]# total energy L3
+                                                    a_power = response_data["data"]["device_status"]["em:0"]["a_act_power"]           # actual power L1
+                                                    b_power = response_data["data"]["device_status"]["em:0"]["b_act_power"]           # actual power L2
+                                                    c_power = response_data["data"]["device_status"]["em:0"]["c_act_power"]           # actual power L3
+                                                    a_revpower = -a_power if a_power < 0 else 0                                       # actual reverse power L1 (example from PV)
+                                                    b_revpower = -b_power if b_power < 0 else 0                                       # actual reverse power L2 (example from PV)
+                                                    c_revpower = -c_power if c_power < 0 else 0                                       # actual reverse power L3 (example from PV)                                                    
+                                                    a_voltage = response_data["data"]["device_status"]["em:0"]["a_voltage"]           # actual voltage L1
+                                                    b_voltage = response_data["data"]["device_status"]["em:0"]["b_voltage"]           # actual voltage L2
+                                                    c_voltage = response_data["data"]["device_status"]["em:0"]["c_voltage"]           # actual voltage L3
+                                                    internal_temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
                                                     updated = now()
                                                     online = response_data["data"]["online"]
                                                     wifi = response_data["data"]["device_status"]["wifi"]
@@ -1184,6 +1200,9 @@ class Sender(Thread):
                                                     a_power = response_data["em:0"]["a_act_power"]           # actual power L1
                                                     b_power = response_data["em:0"]["b_act_power"]           # actual power L2
                                                     c_power = response_data["em:0"]["c_act_power"]           # actual power L3
+                                                    a_revpower = -a_power if a_power < 0 else 0              # actual reverse power L1 (example from PV)
+                                                    b_revpower = -b_power if b_power < 0 else 0              # actual reverse power L2 (example from PV)
+                                                    c_revpower = -c_power if c_power < 0 else 0              # actual reverse power L3 (example from PV)                                                    
                                                     a_voltage = response_data["em:0"]["a_voltage"]           # actual voltage L1
                                                     b_voltage = response_data["em:0"]["b_voltage"]           # actual voltage L2
                                                     c_voltage = response_data["em:0"]["c_voltage"]           # actual voltage L3
@@ -1195,7 +1214,7 @@ class Sender(Thread):
                                                     rssi = wifi["rssi"]
                                                 if online:
                                                         msg += _('[{}: L1 {} W, L2 {} W, L3 {} W]').format(name, a_power, b_power, c_power)
-                                                        msg_info += _('{}: L1:{} W L2:{} W L3:{} W {} V IP:{} RSSI:{} dbm INTt:{} °C {}\n').format(name, a_power, b_power, c_power, voltage, sta_ip, rssi, internal_temperature, format_timestamp(updated))
+                                                        msg_info += _('{}: L1 {} W ({} kW/h) L2 {} W ({} kW/h) L3 {} W  ({} kW/h) {} V IP:{} RSSI:{} dbm INTt:{} °C {}\n').format(name, a_power, b_power, c_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), round(c_total/1000.0, 2), voltage, sta_ip, rssi, internal_temperature, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -1209,6 +1228,7 @@ class Sender(Thread):
                                                     'rssi': rssi,
                                                     'output': [],
                                                     'power': [a_power, b_power, c_power],
+                                                    'retpower': [a_revpower, b_revpower, c_revpower],
                                                     'label': name,
                                                     'online': online,
                                                     'updated': updated,
