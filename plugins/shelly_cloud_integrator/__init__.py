@@ -45,7 +45,8 @@ plugin_options = PluginOptions(
          # 4=Shelly 2.5, 5=Shelly Pro 4PM,
          # 6=Shelly 1 Mini, 7=Shelly 2PM Addon,
          # 8=Shelly 1PM Addon, 9= Shelly H&T
-         # 10=Shelly Pro 3EM 
+         # 10=Shelly Pro 3EM
+         # 11=Shelly Wall Display 
         'gen_type': [0, 1],                                      # 0=Gen1, 1=Gen2
         'number_sensors': 2,                                     # default 2 sensors for example
         'addons_labels_1': [_('A')],                             # label for addons temperature:100 (DS18B20 nr1)
@@ -98,7 +99,7 @@ class Sender(Thread):
                 log.clear(NAME)
                 msg = ''
                 msg_info = ''
-                if len(plugin_options['auth_key']) > 10 and len(plugin_options['server_uri']) > 10:
+                if len(plugin_options['auth_key']) > 5 and len(plugin_options['server_uri']) > 5:
                     for i in range(0, plugin_options['number_sensors']):
                         id = plugin_options['sensor_id'][i]
                         if len(id) > 5 and plugin_options['use_sensor'][i]:
@@ -169,6 +170,7 @@ class Sender(Thread):
                                                     'battery': batt_perc,
                                                     'temperature': [temperature],
                                                     'humidity': [humidity],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [],
                                                     'power': [],
@@ -238,6 +240,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [output],
                                                     'power': [power],
@@ -305,6 +308,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [output],
                                                     'power': [power],
@@ -376,17 +380,17 @@ class Sender(Thread):
                                                     rssi = wifi["rssi"]
                                                 if online:
                                                     if a_output:
-                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
+                                                        msg += _('[{}: 1-ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
                                                     else:
-                                                        msg += _('[{}: 1 OFF {}W ({}kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
+                                                        msg += _('[{}: 1-OFF {}W ({}kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
                                                     if b_output:
-                                                        msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 ON {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, format_timestamp(updated))
+                                                        msg += _('2-ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2-ON {} W ({} kW/h) {} V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, format_timestamp(updated))
                                                     else:
-                                                        msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 OFF {} W ({} kW/h) {}V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, format_timestamp(updated))
+                                                        msg += _('2-OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2-OFF {} W ({} kW/h) {} V {}\n').format(b_power, round(b_total/1000.0, 2), b_voltage, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -398,6 +402,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [a_output, b_output],
                                                     'power': [a_power, b_power],
@@ -472,6 +477,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [output],
                                                     'power': [power],
@@ -558,17 +564,17 @@ class Sender(Thread):
                                                 if online:
                                                     if roller is None:
                                                         if a_output:
-                                                            msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                            msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
+                                                            msg += _('[{}: 1-ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                            msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
                                                         else:
-                                                            msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                            msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
+                                                            msg += _('[{}: 1-OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                            msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
                                                         if b_output:
-                                                            msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                            msg_info += _('2 ON {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), format_timestamp(updated))
+                                                            msg += _('2-ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                            msg_info += _('2-ON {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), format_timestamp(updated))
                                                         else:
-                                                            msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                            msg_info += _('2 OFF {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), format_timestamp(updated))
+                                                            msg += _('2-OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
+                                                            msg_info += _('2-OFF {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h)] ').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2))
                                                         msg_info += _('{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, format_timestamp(updated))
@@ -582,6 +588,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [a_output, b_output] if roller is None else [roller],
                                                     'power': [a_power, b_power],
@@ -664,29 +671,29 @@ class Sender(Thread):
                                                     msg += '[{}: '.format(name)
                                                     msg_info += '{}: '.format(name)
                                                     if a_output:
-                                                        msg += _('1 ON {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('1 ON {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
+                                                        msg += _('1-ON {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('1-ON {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
                                                     else:
-                                                        msg += _('1 OFF {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('1 OFF {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
+                                                        msg += _('1-OFF {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('1-OFF {} W ({} kW/h) ').format(a_power, round(a_total/1000.0, 2))
                                                     if b_output:
-                                                        msg += _('2 ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg += _('2-ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2-ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                     else:
-                                                        msg += _('2 OFF {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg += _('2-OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2-OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                     if c_output:
-                                                        msg += _('3 ON {} W ({} kW/h)] ').format(c_power, round(c_total/1000.0, 2))
-                                                        msg_info += _('3 ON {} W ({} kW/h) ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg += _('3-ON {} W ({} kW/h) ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg_info += _('3-ON {} W ({} kW/h) ').format(c_power, round(c_total/1000.0, 2))
                                                     else:
-                                                        msg += _('3 OFF {}W ({}kW/h)] ').format(c_power, round(c_total/1000.0, 2))
-                                                        msg_info += _('3 OFF {}W ({}kW/h) ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg += _('3-OFF {}W ({}kW/h) ').format(c_power, round(c_total/1000.0, 2))
+                                                        msg_info += _('3-OFF {}W ({}kW/h) ').format(c_power, round(c_total/1000.0, 2))
                                                     if d_output:
-                                                        msg += _('4 ON {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
-                                                        msg_info += _('4 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(d_power, round(d_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
+                                                        msg += _('4-ON {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
+                                                        msg_info += _('4-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(d_power, round(d_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                     else:
-                                                        msg += _('4 OFF {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
-                                                        msg_info += _('4 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(d_power, round(d_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
+                                                        msg += _('4-OFF {} W ({} kW/h)] ').format(d_power, round(d_total/1000.0, 2))
+                                                        msg_info += _('4-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(d_power, round(d_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -697,6 +704,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [a_output, b_output, c_output, d_output],
                                                     'power': [a_power, b_power, c_power, d_power],
@@ -765,6 +773,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [output],
                                                     'power': [],
@@ -890,17 +899,17 @@ class Sender(Thread):
                                                     rssi = wifi["rssi"]
                                                 if online:
                                                     if a_output:
-                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
+                                                        msg += _('[{}: 1-ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     else:
-                                                        msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
+                                                        msg += _('[{}: 1-OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     if b_output:
-                                                        msg += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg += _('2-ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2-ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                     else:
-                                                        msg += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('2 OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg += _('2-OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
+                                                        msg_info += _('2-OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                     if temperature100 is not None:
                                                         msg += _('{} {} °C ').format(temp100name, temperature100)
                                                         msg_info += _('{} {} °C ').format(temp100name, temperature100)
@@ -928,6 +937,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [temperature100, temperature101, temperature102, temperature103, temperature104],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [a_output, b_output],
                                                     'power': [a_power, b_power],
@@ -1047,11 +1057,11 @@ class Sender(Thread):
                                                     rssi = wifi["rssi"]
                                                 if online:
                                                     if a_output:
-                                                        msg += _('[{}: 1 ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
+                                                        msg += _('[{}: 1-ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     else:
-                                                        msg += _('[{}: 1 OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1 OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
+                                                        msg += _('[{}: 1-OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
+                                                        msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     if temperature100 is not None:
                                                         msg += _('{} {} °C ').format(temp100name, temperature100)
                                                         msg_info += _('{} {} °C ').format(temp100name, temperature100)
@@ -1079,6 +1089,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [temperature100, temperature101, temperature102, temperature103, temperature104],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [a_output],
                                                     'power': [a_power],
@@ -1137,6 +1148,7 @@ class Sender(Thread):
                                                     'battery': batt_perc,
                                                     'temperature': [temperature],
                                                     'humidity': [humidity],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [],
                                                     'power': [],
@@ -1225,6 +1237,7 @@ class Sender(Thread):
                                                     'battery': 0,
                                                     'temperature': [internal_temperature],
                                                     'humidity': [],
+                                                    'illuminance': [],                                                    
                                                     'rssi': rssi,
                                                     'output': [],
                                                     'power': [a_power, b_power, c_power],
@@ -1234,6 +1247,83 @@ class Sender(Thread):
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
                                                     'hw': _('Shelly Pro 3EM'),
+                                                    'hw_nbr': plugin_options['sensor_type'][i]
+                                                }
+                                                update_or_add_device(self, payload)
+
+                                    # typ: 11=Shelly Wall Display
+                                    # gen: 0 = GEN1, 1 = GEN 2+
+                                    if plugin_options['sensor_type'][i] == 11:
+                                        if plugin_options['gen_type'][i] == 0:
+                                            name = plugin_options['sensor_label'][i]
+                                            msg_info += _('{}: GEN1 not available yet \n').format(name)
+                                        if plugin_options['gen_type'][i] == 1:
+                                            name = plugin_options['sensor_label'][i]
+                                            if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                isok = response_data["isok"]
+                                            else:
+                                                isok = True
+                                            err = ""
+                                            if not isok:
+                                                errors = response_data["errors"]
+                                                try:
+                                                    test = errors["device_not_found"]
+                                                    err = _('Your device has not been connected to the cloud!')
+                                                except:
+                                                    err = _('Unknown')
+                                                    pass
+                                                msg += _('[{}: Error] ').format(name)
+                                                msg_info += _('{}: Error: {}\n').format(name, err)
+                                            else:
+                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
+                                                    illuminance = response_data["data"]["device_status"]["illuminance:0"]["lux"]  # ex: 5 lux
+                                                    temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]   # ex: 18.3 C
+                                                    humidity = response_data["data"]["device_status"]["humidity:0"]["rh"]         # ex: 46 % 
+                                                    output = response_data["data"]["device_status"]["switch:0"]["output"]         # ex: false
+                                                    Input = response_data["data"]["device_status"]["input:0"]["state"]            # ex: false
+                                                    updated = now()
+                                                    online = response_data["data"]["online"]
+                                                    wifi = response_data["data"]["device_status"]["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                else:                                       # via local IP data
+                                                    illuminance = response_data["illuminance:0"]["lux"]                           # ex: 5 lux
+                                                    temperature = response_data["temperature:0"]["tC"]                            # ex: 18.3 C
+                                                    humidity = response_data["humidity:0"]["rh"]                                  # ex: 46 % 
+                                                    output = response_data["switch:0"]["output"]                                  # ex: false
+                                                    Input = response_data["input:0"]["state"]                                     # ex: false
+                                                    updated = now()
+                                                    online = True
+                                                    wifi = response_data["wifi"]
+                                                    sta_ip = wifi["sta_ip"]
+                                                    rssi = wifi["rssi"]
+                                                if online:
+                                                    if output:
+                                                        msg += _('[{}: ON {} °C {} RV {} Lx] ').format(name, round(temperature, 2), humidity, illuminance)
+                                                        msg_info += _('{}: ON {} °C {} RV {} Lx IP:{} RSSI:{} dbm {}\n').format(name, round(temperature, 2), humidity, illuminance, sta_ip, rssi, format_timestamp(updated))
+                                                    else:
+                                                        msg += _('[{}: OFF {} °C {} RV {} Lx] ').format(name, round(temperature, 2), humidity, illuminance)
+                                                        msg_info += _('{}: OFF {} °C {} RV {} Lx IP:{} RSSI:{} dbm {}\n').format(name, round(temperature, 2), humidity, illuminance, sta_ip, rssi, format_timestamp(updated))
+                                                else:
+                                                    msg += _('[{}: -] ').format(name)
+                                                    msg_info += _('{}: OFFLINE\n').format(name)
+                                                payload = {
+                                                    'id': id,
+                                                    'ip': sta_ip,
+                                                    'voltage': 0,
+                                                    'battery': 0,
+                                                    'temperature': [round(temperature, 2)],
+                                                    'humidity': [humidity],
+                                                    'illuminance': [illuminance],
+                                                    'rssi': rssi,
+                                                    'output': [output],
+                                                    'power': [],
+                                                    'retpower': [],
+                                                    'label': name,
+                                                    'online': online,
+                                                    'updated': updated,
+                                                    'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
+                                                    'hw': _('Shelly Wall Display'),
                                                     'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)

@@ -130,13 +130,13 @@ $var page: plugins
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Server uri'):</td>
-                <td title=$:{json.dumps(_('The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key. If you do not want to use the cloud, but only the local network, fill in at least 5 arbitrary characters. Some devices are not available on the local network (e.g. Wi-FI H&T).'), ensure_ascii=False)}>
                     <input name='server_uri' type='text' size='50' value='$plugin_options["server_uri"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Auth key'):</td>
-                <td title=$:{json.dumps(_('This can be obtained from Shelly > User Settings > Cloud Authorization Key.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('This can be obtained from Shelly > User Settings > Cloud Authorization Key. If you do not want to use the cloud, but only the local network, fill in at least 5 arbitrary characters. Some devices are not available on the local network (e.g. Wi-FI H&T).'), ensure_ascii=False)}>
                     <input name='auth_key' type='text' size='50' value='$plugin_options["auth_key"]'>
                 </td>
             </tr>
@@ -245,6 +245,7 @@ $var page: plugins
                                 <option value="8" ${"selected" if plugin_options["sensor_type"][c]==8 else ""}>$_('Shelly 1PM Addon')</option>
                                 <option value="9" ${"selected" if plugin_options["sensor_type"][c]==9 else ""}>$_('Shelly HT')</option>
                                 <option value="10" ${"selected" if plugin_options["sensor_type"][c]==10 else ""}>$_('Shelly Pro 3EM')</option>
+                                <option value="11" ${"selected" if plugin_options["sensor_type"][c]==11 else ""}>$_('Shelly Wall Display')</option>
                             </select>
                         </td>
                         <td>
@@ -295,8 +296,12 @@ $var page: plugins
                                 </a>
                             $if plugin_options["sensor_type"][c]==10:
                                 <a href="https://kb.shelly.cloud/knowledge-base/shelly-3em-63-gen3" class="image-link">
-                                <img src="/plugins/shelly_cloud_integrator/static/images/pro3em.webp" width="100" height="100">
+                                <img src="/plugins/shelly_cloud_integrator/static/images/pro3em.png" width="100" height="100">
                                 </a>
+                            $if plugin_options["sensor_type"][c]==11:
+                                <a href="https://kb.shelly.cloud/knowledge-base/shelly-wall-display" class="image-link">
+                                <img src="/plugins/shelly_cloud_integrator/static/images/wallDisplay.png" width="100" height="100">
+                                </a>                                
                         </td>
                     </tr>
                     <tr>
