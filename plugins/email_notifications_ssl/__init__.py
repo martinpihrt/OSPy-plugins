@@ -439,9 +439,29 @@ class EmailSender(Thread):
                                                                 sensor_result += _('Power 4') + ': {} '.format(sensor.last_read_value[1][3]) + _('W')
                                                             except:
                                                                 sensor_result += _('Any error')
-                                                        if sensor.sens_type == 14:
+                                                        if sensor.sens_type == 14:                              ### Humidity ###
                                                             try:
                                                                 sensor_result += _('Humidity') + ': {} '.format(sensor.last_read_value[3][0]) + _('%RV')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 15:                              ### PV Power 1 ###
+                                                            try:
+                                                                sensor_result += _('PV Power 1') + ': {} '.format(sensor.last_read_value[4][0]) + _('W')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 16:                              ### PV Power 2 ###
+                                                            try:
+                                                                sensor_result += _('PV Power 2') + ': {} '.format(sensor.last_read_value[4][1]) + _('W')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 17:                              ### PV Power 3 ###
+                                                            try:
+                                                                sensor_result += _('PV Power 3') + ': {} '.format(sensor.last_read_value[4][2]) + _('W')
+                                                            except:
+                                                                sensor_result += _('Any error')
+                                                        if sensor.sens_type == 18:                              ### Illuminance ###
+                                                            try:
+                                                                sensor_result += _('Illuminance') + ': {} '.format(sensor.last_read_value[5][0]) + _('Lx')
                                                             except:
                                                                 sensor_result += _('Any error')
                                                     else:
