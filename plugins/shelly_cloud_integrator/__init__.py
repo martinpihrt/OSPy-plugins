@@ -1286,17 +1286,17 @@ class Sender(Thread):
                                                     wifi = response_data["data"]["device_status"]["wifi"]
                                                     sta_ip = wifi["sta_ip"]
                                                     rssi = wifi["rssi"]
-                                                else:                                       # via local IP data
-                                                    illuminance = response_data["illuminance:0"]["lux"]                           # ex: 5 lux
-                                                    temperature = response_data["temperature:0"]["tC"]                            # ex: 18.3 C
-                                                    humidity = response_data["humidity:0"]["rh"]                                  # ex: 46 % 
-                                                    output = response_data["switch:0"]["output"]                                  # ex: false
-                                                    Input = response_data["input:0"]["state"]                                     # ex: false
+                                                else:                                       # via local IP data (not supported)
+                                                    illuminance = 0
+                                                    temperature = 0
+                                                    humidity = 0
+                                                    output = 0
+                                                    Input = 0
                                                     updated = now()
-                                                    online = True
-                                                    wifi = response_data["wifi"]
-                                                    sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]
+                                                    online = False
+                                                    wifi = 0
+                                                    sta_ip = 0
+                                                    rssi = 0
                                                 if online:
                                                     if output:
                                                         msg += _('[{}: ON {} °C {} RV {} Lx] ').format(name, round(temperature, 2), humidity, illuminance)

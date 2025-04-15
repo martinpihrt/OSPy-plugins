@@ -205,7 +205,7 @@ $var page: plugins
                         </td>
                     </tr>
                     $if plugin_options["reading_type"][c]==0:
-                        $if plugin_options["sensor_type"][c]==0 or plugin_options["sensor_type"][c]==9:
+                        $if plugin_options["sensor_type"][c]==0 or plugin_options["sensor_type"][c]==9 or plugin_options["sensor_type"][c]==11:
                             <tr>
                                 <td style='text-transform: none;'>$_('Local IP'):</td>
                                 <td title=$:{json.dumps(_('IP address of Shelly device on local network.'), ensure_ascii=False)}>
