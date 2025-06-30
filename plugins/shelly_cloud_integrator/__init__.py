@@ -103,6 +103,7 @@ class Sender(Thread):
                     for i in range(0, plugin_options['number_sensors']):
                         id = plugin_options['sensor_id'][i]
                         if len(id) > 5 and plugin_options['use_sensor'][i]:
+                            self._sleep(2)                                  # client has sent too many requests in a given amount of time. 2 second is optimal waiting.
                             if plugin_options['reading_type'][i] == 1:      # 0=Locally via IP, 1=Shelly cloud API
                                 url = 'https://{}/device/status?auth_key={}&id={}'.format(plugin_options['server_uri'], plugin_options['auth_key'], id)
                             else:
@@ -122,6 +123,16 @@ class Sender(Thread):
                                         log.error(NAME, _('Shelly Cloud Not Found'))
                                     else:
                                         log.error(NAME, _('Device Not Found'))
+                                elif response.status_code == 429:
+                                    if plugin_options['reading_type'][i] == 1:
+                                        log.error(NAME, _('Shelly Cloud Too Many Requests'))
+                                    else:
+                                        log.error(NAME, _('Device Not Found'))
+                                elif response.status_code == 200:
+                                    if plugin_options['reading_type'][i] == 0:
+                                        log.debug(NAME, _('Device Response'))
+                                else:
+                                    log.debug(NAME, _('Response from Shelly cloud: {}'.format(response.status_code)))
 
                                 try:
                                     response_data = response.json()
@@ -133,12 +144,15 @@ class Sender(Thread):
                                             msg_info += _('{}: GEN1 not available \n').format(name)
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
-                                            isok = response_data["isok"]
+                                            try:
+                                                isok = response_data["isok"]
+                                            except:
+                                                isok = False
+                                                log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
                                             err = ""
                                             if not isok:
-                                                errors = response_data["errors"]
                                                 try:
-                                                    test = errors["device_not_found"]
+                                                    errors = response_data["errors"]["device_not_found"]
                                                     err = _('Your device has not been connected to the cloud!')
                                                 except:
                                                     err = _('Unknown')
@@ -1260,14 +1274,17 @@ class Sender(Thread):
                                         if plugin_options['gen_type'][i] == 1:
                                             name = plugin_options['sensor_label'][i]
                                             if plugin_options['reading_type'][i] == 1:  # only cloud API data
-                                                isok = response_data["isok"]
+                                                try:
+                                                    isok = response_data["isok"]
+                                                except:
+                                                    isok = False
+                                                    log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
                                             else:
                                                 isok = True
                                             err = ""
                                             if not isok:
-                                                errors = response_data["errors"]
                                                 try:
-                                                    test = errors["device_not_found"]
+                                                    errors = response_data["errors"]["device_not_found"]
                                                     err = _('Your device has not been connected to the cloud!')
                                                 except:
                                                     err = _('Unknown')
