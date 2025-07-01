@@ -257,7 +257,7 @@ class Sender(Thread):
         while not self._stop_event.is_set():
             try:
                 millis = int(round(time.time() * 1000))
-    
+
                 ### periodically measuring after 5 seconds
                 if (millis - last_millis_2) >= 5000:
                     last_millis_2 = millis
@@ -427,15 +427,15 @@ class Sender(Thread):
                         if plugin_options['en_tank2']: 
                             tempText += '[{} {} % {} l] '.format(tanks['label'][1], round(tanks['levelPercent'][1]), round(tanks['volumeLiter'][1]))
                             if plugin_options['en_reg_tank2']:
-                                tempText += '{} '.format(regulation_text[1])                            
+                                tempText += '{} '.format(regulation_text[1])
                         if plugin_options['en_tank3']: 
                             tempText += '[{} {} % {} l] '.format(tanks['label'][2], round(tanks['levelPercent'][2]), round(tanks['volumeLiter'][2]))
                             if plugin_options['en_reg_tank3']:
-                                tempText += '{} '.format(regulation_text[2])                            
+                                tempText += '{} '.format(regulation_text[2])
                         if plugin_options['en_tank4']: 
                             tempText += '[{} {} % {} l] '.format(tanks['label'][3], round(tanks['levelPercent'][3]), round(tanks['volumeLiter'][3]))
                             if plugin_options['en_reg_tank4']:
-                                tempText += '{} '.format(regulation_text[3])                            
+                                tempText += '{} '.format(regulation_text[3])
                         if not plugin_options['en_tank1'] and not plugin_options['en_tank2'] and not plugin_options['en_tank3'] and not plugin_options['en_tank4']:
                             tempText = _('The measurement of all tanks is switched off.')
                         tank_mon.val = tempText.encode('utf8').decode('utf8')
@@ -530,8 +530,8 @@ def read_adc(bus, channel):
         raise ValueError(_('Error: Invalid channel.'))
 
     config |= CONFIG_GAIN | CONFIG_MODE | 0x8000  # Start single-conversion
-    
-    
+
+
     i2c_adr_list = [0x48, 0x49, 0x4A, 0x4B]
     i2c_adr = i2c_adr_list[plugin_options["i2c"]]
 
@@ -543,7 +543,7 @@ def read_adc(bus, channel):
 
     # Waiting for the conversion to complete
     time.sleep(0.2)
-    
+
     # Reading the result from the conversion register
     try:
         result = bus.read_i2c_block_data(i2c_adr, ADS1115_CONVERSION_REG, 2)
@@ -551,14 +551,14 @@ def read_adc(bus, channel):
         raise IOError(_('Error: It is not possible to read data from the AD converter.'))
 
     raw_adc = (result[0] << 8) | result[1]
-    
+
     # Convert to voltage range if the result exceeds 16bit
     if raw_adc > 0x7FFF:
         raw_adc -= 0x10000
-    
+
     # Converting ADC value to voltage
     voltage = raw_adc * 4.096 / 32768.0  # ±4.096V range, 16bit convert
-    
+
     return round(voltage if voltage > 0 else 0, 3)  # return positive voltage or 0
 
 
@@ -595,7 +595,7 @@ def get_data():
         try:
             adc_value = try_io(lambda: read_adc(bus, channel))
             adc_values.append(adc_value)
-            
+
             # Voltage conversion to tank level for the current channel
             min_voltage = LEVEL_DEFINITIONS[channel]["min"]
             max_voltage = LEVEL_DEFINITIONS[channel]["max"]
@@ -681,13 +681,13 @@ def create_default_graph():
 
     graph_data = [
         {"station": '{} %'.format(plugin_options['label1']), "balances": {}},
-        {"station": '{} %'.format(plugin_options['label2']), "balances": {}}, 
+        {"station": '{} %'.format(plugin_options['label2']), "balances": {}},
         {"station": '{} %'.format(plugin_options['label3']), "balances": {}},
         {"station": '{} %'.format(plugin_options['label4']), "balances": {}},
         {"station": '{} l'.format(plugin_options['label1']), "balances": {}},
         {"station": '{} l'.format(plugin_options['label2']), "balances": {}},
         {"station": '{} l'.format(plugin_options['label3']), "balances": {}},
-        {"station": '{} l'.format(plugin_options['label4']), "balances": {}},                        
+        {"station": '{} l'.format(plugin_options['label4']), "balances": {}},
     ]
     write_graph_log(graph_data)
 #    log.debug(NAME, _('Create default graph json file.'))
@@ -1025,9 +1025,9 @@ class graph_json(ProtectedPage):
                         try:
                             find_key = int(key.encode('utf8'))                         # key is in unicode ex: u'1601347000' -> find_key is int number
                         except:
-                            find_key = key      
+                            find_key = key
                         if find_key >= log_start and find_key <= log_end:              # timestamp interval from <-> to
-                            temp_balances[key] = json_data[q-1]['balances'][key]    
+                            temp_balances[key] = json_data[q-1]['balances'][key]
                     data.append({ 'station': json_data[q-1]['station'], 'balances': temp_balances })
                 else:  
                     for i in range(8):                                                 # 0=tank1 %, 1=tank2 %, 2=tank3 %, 3=tank4 %, 4=tank1 liter, 5=tank2 l, 6=tank3 l, 7=tank4 l
@@ -1036,9 +1036,9 @@ class graph_json(ProtectedPage):
                             try:
                                 find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
                             except:
-                                find_key = key      
+                                find_key = key
                             if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
-                                temp_balances[key] = json_data[i]['balances'][key]    
+                                temp_balances[key] = json_data[i]['balances'][key]
                         data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
 
         except:
@@ -1073,7 +1073,7 @@ class log_page(ProtectedPage):
             write_log([])
             create_default_graph()
             raise web.seeother(plugin_url(log_page), True)
-                
+
         return self.plugin_render.current_loop_tanks_monitor_log(read_log(), read_sql_log(), plugin_options)
 
 
@@ -1084,25 +1084,23 @@ class setup_page(ProtectedPage):
         global sender
         qdict  = web.input()
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
-        del_rain_1 = helpers.get_input(qdict, 'del_rain_1', False, lambda x: True)
-        del_rain_2 = helpers.get_input(qdict, 'del_rain_2', False, lambda x: True)
-        del_rain_3 = helpers.get_input(qdict, 'del_rain_3', False, lambda x: True)
-        del_rain_4 = helpers.get_input(qdict, 'del_rain_4', False, lambda x: True)
 
-        for i in range(4):
-            DR = 'del_rain_{}'.format(i+1)
-            if sender is not None and DR:
-                NM = '{} T{}'.format(NAME, i+1)
+        for i in range(1, 5):
+            param_name = f'del_rain_{i}'
+            param_value = helpers.get_input(qdict, param_name, False, lambda x: True)
+            if param_value:
+                NM = f'{NAME} T{i}'
                 if NM in rain_blocks:
                     del rain_blocks[NM]
-                    log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
-                    log.debug(NAME, _('Deleting: {} in rain delay.').format(NM))
+                    log.debug(NAME, datetime_string() + ': ' + _('Deleting: {} in rain delay.').format(NM))
+                else:
+                    log.debug(NAME, datetime_string() + ': ' + _('The button to remove the delay has been pressed, but no delay has been set before (no action used).'))
 
         if sender is not None and delSQL:
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `currentmonitor`"
-                execute_db(sql, test=False, commit=False)  
+                execute_db(sql, test=False, commit=False)
                 log.debug(NAME, _('Deleting the currentmonitor table from the database.'))
             except:
                 log.error(NAME, _('Current Loop Tanks Monitor plug-in') + ':\n' + traceback.format_exc())
