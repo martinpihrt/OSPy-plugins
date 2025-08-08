@@ -56,14 +56,17 @@ plugin_options = PluginOptions(
         'hass_uuid': hex(uuid.getnode()),                        # Unique identifier used as prefix for MQTT Discovery by HASS. UUID based on the network adapter MAC address
         'hass_ospy_fqdn': '',                                    # Default: auto detect
         'hass_device_is_station_name': True,                     # Default: uncheck
-        'hass_tested': '2024.8',                                 # Tested in these hass version
         'measurement_refresh_interval': 30,                      # Default: 30 seconds (refresh measuring data. Ex: from air temp humi plugin)
-    }
-)
+        'ext_ds1-6': True,                                       # Including temperature sensors DS1 to DS6 from the temperature and humidity monitor extension 
+        'ext_dht': False,                                        # Including temperature/humidity sensors DHT from the temperature and humidity monitor extension
+        'ext_water_sonic': False,                                # Including water level from the water tank (sonic) monitor extension
+        'ext_water_current': True                                # Including water level from the water tank (tanks with current loop) monitor extension
+    })
 
 mqtt = None
 _client = None
 _subscriptions = {}
+_is_connected = False
 
 slugify_is_installed = False
 try:
@@ -200,9 +203,10 @@ def get_client():
 
 def subscribe(topic, callback, data, qos=0):
     """ Subscribes to a topic with the given callback """
-    global _subscriptions, sender
+    global _subscriptions, sender, _is_connected
     client = sender.client
     if client:
+        _is_connected = True
         if topic not in _subscriptions:
             _subscriptions[topic] = [(callback, data)]
             client.subscribe(topic, qos)
@@ -223,15 +227,19 @@ def unsubscribe(topic):
 
 
 def on_restart():
-    global sender
+    global sender, _is_connected
     if sender is not None:
         if sender.client is not None:
             sender.client.disconnect()
             sender.client.loop_stop()
             sender.client = None
+        _is_connected = False
 
 
-
+def is_connected():
+    """Check if MQTT client is connected"""
+    global _is_connected
+    return _is_connected
 
 ################################################################################
 # Helper functions:                                                            #
@@ -645,9 +653,9 @@ def discovery_payload(device):
         payload["name"] = device._name
         if device._type == "stations":     # stations
             payload["name"] = ""
-        if device._type == "sensor_THDS":  # air temp humi plugin
+        if device._type == "sensor_THDS":  # air temp humi plugin (6xDS18b20 and DHT11 or DHT22)
             payload["name"] = ""
-        if device._type == "sensor_WTL":   # tank monitor plugin
+        if device._type == "sensor_WTL":   # tank monitor plugin (ultrasonic or current loop 4-20mA)
             payload["name"] = ""
         if device._type == "programs":     # programs
             payload["name"] = ""
@@ -747,84 +755,124 @@ def discovery_publish():
         baseDevices.append(device)
 
     try:
-        from plugins import tank_monitor
-        if (tank_monitor.tank_options['use_sonic']):
-            sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
-            sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
-            sensor_water_tank_percent._id = 400 # mqtt unique ID placeholder, 400 for water level percent, 401 for volume
-            sensor_water_tank_volume._id = 401
-            sensorWTLDevices.append(sensor_water_tank_percent)
-            sensorWTLDevices.append(sensor_water_tank_volume)
-            body = '<br><b>' + _('Tank monitor') + '</b><ul>'
-            logtext = _('Tank monitor') + '-> \n'
-            percent = tank_monitor.get_all_values()[1]
-            volume = tank_monitor.get_all_values()[3]
-            #cm = tank_monitor.get_all_values()[0]
-            #ping = tank_monitor.get_all_values()[2]
-            #units = tank_monitor.get_all_values()[4] 
-            body += '<li>' + _('Percent {}%').format(percent) + '\n</li>'
-            body += '<li>' + _('Volume {}m3').format(volume) + '\n</li>'  
-            logtext += _('Percent {}%, volume {}m3').format(percent, volume)
-            body += '</ul>'   
-            log.info(NAME, logtext)
-        else:
-            sensor_water_tank_percent = hass_device().createSensor("moisture", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
-            sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
-            remove_device(sensor_water_tank_percent)
-            remove_device(sensor_water_tank_volume)
+        if plugin_options['ext_water_sonic']:
+            from plugins import tank_monitor
+            if (tank_monitor.tank_options['use_sonic']):
+                sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
+                sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
+                sensor_water_tank_percent._id = 400 # mqtt unique ID placeholder, 400 for water level percent, 401 for volume
+                sensor_water_tank_volume._id = 401
+                sensorWTLDevices.append(sensor_water_tank_percent)
+                sensorWTLDevices.append(sensor_water_tank_volume)
+                body = '<br><b>' + _('Tank monitor') + '</b><ul>'
+                logtext = _('Tank monitor') + '-> \n'
+                percent = tank_monitor.get_all_values()[1]
+                volume = tank_monitor.get_all_values()[3]
+                #cm = tank_monitor.get_all_values()[0]
+                #ping = tank_monitor.get_all_values()[2]
+                #units = tank_monitor.get_all_values()[4] 
+                body += '<li>' + _('Percent {}%').format(percent) + '\n</li>'
+                body += '<li>' + _('Volume {}m3').format(volume) + '\n</li>'  
+                logtext += _('Percent {}%, volume {}m3').format(percent, volume)
+                body += '</ul>'   
+                log.info(NAME, logtext)
+            else:
+                sensor_water_tank_percent = hass_device().createSensor("moisture", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
+                sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
+                remove_device(sensor_water_tank_percent)
+                remove_device(sensor_water_tank_volume)
             
     except ImportError:
         log.debug(NAME, _('Cannot import plugin: tank_monitor.'))
-        pass 
+        pass
 
     try:
         from plugins import air_temp_humi
         #TODO remove from discovery topic when removed - create remove function. HASS dahsboard removes entity after refresh.
         if air_temp_humi.plugin_options['enabled']: #plugin enabled
             if air_temp_humi.plugin_options['enable_dht']: ##DHT enabled, add to discovery
-                dhtName = air_temp_humi.plugin_options['label']
-                sensorH = hass_device().createSensor( "humidity", "sensor_THDS", "HDT_humidity", dhtName + " " +  _('Humidity'), None, "%")
-                sensorH._isDHT = True
-                sensorH._isDS = False 
-                sensorH._id = 500 #mqtt unique ID placeholder, 500 for humidity, 501 for temperature
-                sensorT = hass_device().createSensor( "temperature", "sensor_THDS", "HDT_temperature", dhtName + " " + _('Temperature'), None, "°C")
-                sensorT._isDHT = True
-                sensorT._isDS = False
-                sensorT._id = 501
-                sensorTHDSDevices.append(sensorH)
-                sensorTHDSDevices.append(sensorT)
+                if plugin_options['ext_dht']:
+                    dhtName = air_temp_humi.plugin_options['label']
+                    sensorH = hass_device().createSensor( "humidity", "sensor_THDS", "HDT_humidity", dhtName + " " +  _('Humidity'), None, "%")
+                    sensorH._isDHT = True
+                    sensorH._isDS = False 
+                    sensorH._id = 500 #mqtt unique ID placeholder, 500 for humidity, 501 for temperature
+                    sensorT = hass_device().createSensor( "temperature", "sensor_THDS", "HDT_temperature", dhtName + " " + _('Temperature'), None, "°C")
+                    sensorT._isDHT = True
+                    sensorT._isDS = False
+                    sensorT._id = 501
+                    sensorTHDSDevices.append(sensorH)
+                    sensorTHDSDevices.append(sensorT)
             
             if air_temp_humi.plugin_options['ds_enabled'] and air_temp_humi.plugin_options['ds_used'] > 0:
-                for ds in range(0, air_temp_humi.plugin_options['ds_used']):
-                    sensor = hass_device().createSensor( "temperature", "sensor_THDS", "DS_temperature{}".format(ds), air_temp_humi.plugin_options['label_ds%d' % ds] + " " + _('Temperature'), None, "℃")
-                    sensor._isDS = True
-                    sensor._isDHT = False
-                    sensor._id = ds
-                    sensorTHDSDevices.append(sensor)
-                    pass
-
-            body = '<br><b>' + _('Temperature DS1-DS6') + '</b><ul>'
-            logtext = _('Temperature DS1-DS6') + '-> \n'
-            for i in range(0, air_temp_humi.plugin_options['ds_used']):
-                body += '<li>' + '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n</li>'  
-                logtext += '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103\n' % air_temp_humi.DS18B20_read_probe(i) 
-            body += '</ul>'   
-            log.info(NAME, logtext) 
+                if plugin_options['ext_ds1-6']:
+                    for ds in range(0, air_temp_humi.plugin_options['ds_used']):
+                        sensor = hass_device().createSensor( "temperature", "sensor_THDS", "DS_temperature{}".format(ds), air_temp_humi.plugin_options['label_ds%d' % ds] + " " + _('Temperature'), None, "℃")
+                        sensor._isDS = True
+                        sensor._isDHT = False
+                        sensor._id = ds
+                        sensorTHDSDevices.append(sensor)
+                        
+            if plugin_options['ext_ds1-6']:
+                body = '<br><b>' + _('Temperature DS1-DS6') + '</b><ul>'
+                logtext = _('Temperature DS1-DS6') + '-> \n'
+                for i in range(0, air_temp_humi.plugin_options['ds_used']):
+                    body += '<li>' + '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n</li>'  
+                    logtext += '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103\n' % air_temp_humi.DS18B20_read_probe(i) 
+                body += '</ul>'   
+                log.info(NAME, logtext) 
 
     except ImportError:
         log.debug(NAME, _('Cannot import plugin: air temp humi.'))
         pass
 
+    try:
+        if plugin_options['ext_water_current']:
+            from plugins import current_loop_tanks_monitor
+            tank_options = current_loop_tanks_monitor.plugin_options
+            i = 0 # jsou 4 nadrze 0-3 TODO 
+            if tank_options['en_tank{}'.format(i+1)]:
+                label = current_loop_tanks_monitor.tanks['label'][i]
+                percent = current_loop_tanks_monitor.tanks['levelPercent'][i]
+                volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
+                #level_cm = current_loop_tanks_monitor.tanks['levelCm'][i]
+                #volt = current_loop_tanks_monitor.tanks['voltage'][i]
+                sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", '{} '.format(label), "mdi:waves-arrow-up", "%")
+                sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", '{} '.format(label), "mdi:waves-arrow-up", "m³")
+                sensor_water_tank_percent._id = 410 # mqtt unique ID placeholder, 410 for water level percent, 411 for volume
+                sensor_water_tank_volume._id = 411
+                sensorWTLDevices.append(sensor_water_tank_percent)
+                sensorWTLDevices.append(sensor_water_tank_volume)
+                body = '<br><b>' + _('Tank monitor') + '</b><ul>'
+                logtext = _('Tank monitor') + '-> \n'    
+                body += '<li>' + ('{}').format(label) + '\n</li>'
+                body += '<li>' + '{:.2f} %'.format(percent) + '\n</li>'
+                body += '<li>' + '{:.2f} m3'.format(volume/1000) + '\n</li>'  
+                logtext += _('{} {:.2f} %, {:.2f} m3').format(label, percent, volume/1000)
+                body += '</ul>'   
+                log.info(NAME, logtext)
+            else:
+                sensor_water_tank_percent = hass_device().createSensor("moisture", "sensor_WTL", "tank_percent", '{} '.format(label), "mdi:waves-arrow-up", "%")
+                sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume",'{} '.format(label), "mdi:waves-arrow-up", "m³")
+                remove_device(sensor_water_tank_percent)
+                remove_device(sensor_water_tank_volume)
+            
+    except ImportError:
+        log.debug(NAME, _('Cannot import plugin: current_loop_tanks_monitor.'))
+        pass 
+
     for component in baseDevices:
         payload = discovery_payload(component)
         topic = discovery_topic_get(component._deviceclass, component._property)
-        publish(topic, payload)
+        if topic and payload:
+            publish(topic, payload)
         set_devices_online(component)
         
     for sensor in sensorTHDSDevices:
         payload = discovery_payload(sensor)
         topic = discovery_topic_get(sensor._deviceclass, sensor._property)
-        publish(topic, payload)
+        if topic and payload:
+            publish(topic, payload)
         set_devices_online(sensor)
     
     if sender.sensors_temp_humi_ds is not None:
@@ -840,7 +888,8 @@ def discovery_publish():
     for sensor in sensorWTLDevices:
         payload = discovery_payload(sensor)
         topic = discovery_topic_get(sensor._deviceclass, sensor._property)
-        publish(topic, payload)
+        if topic and payload:
+            publish(topic, payload)
         set_devices_online(sensor)
   
     sender.devices = baseDevices
@@ -867,9 +916,11 @@ def set_devices_online(device): # set inital values to HASS after plugin start
         elif device._type == "sensor_THDS" and device._isDS: #error with DS sensor, set to offline
             try:
                 if not device._isOK:
-                    publish(topic, "offline")
+                    if plugin_options['ext_ds1-6']:
+                        publish(topic, "offline")
                 else:
-                    publish(topic, "online")
+                    if plugin_options['ext_ds1-6']:
+                        publish(topic, "online")
             except AttributeError:
                 pass
         elif device._type == "sensor_WTL":
@@ -879,7 +930,7 @@ def set_devices_online(device): # set inital values to HASS after plugin start
         else:
             publish(topic, "online")
     except Exception as e:
-        log.error(NAME, _('Cannot set devices online.') )
+        log.error(NAME, _('Cannot set devices online.') + '{}'.format(e))
         pass
 
 def remove_device(device):
@@ -915,11 +966,15 @@ def set_devices_default_values(devices):
                 topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
                 payload = str(stations.get(device._id).active)
             else:
-                raise Exception
+                log.debug(NAME, _('Not visible device propertly was found') + ': {}'.format(device._property))
+#TODO pryc                
+                print(device._property)
 
-            publish(topic, payload)
+            if topic and payload:
+                publish(topic, payload)
         except:
             log.error(NAME, _('Cannot set devices default values.'))
+            log.debug(NAME, _('Error') + ':\n' + traceback.format_exc())
             pass
 
 def update_device_values(name, **kw):
@@ -939,7 +994,7 @@ def update_temp_humi_ds(sensors):
                 
                 payload = {}
                 topic = {}
-                if device._isDHT is not None and device._isDHT:
+                if device._isDHT is not None and device._isDHT and plugin_options['ext_dht']:
                     if device._property == "HDT_humidity":
                         topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
                         payload["state"] = air_temp_humi.sender.status['humi']
@@ -947,12 +1002,13 @@ def update_temp_humi_ds(sensors):
                         topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
                         payload["state"] = air_temp_humi.sender.status['temp']
                     set_devices_online(device)
-                if device._isDS is not None and device._isDS:                        
+                if device._isDS is not None and device._isDS and plugin_options['ext_ds1-6']:                        
                     topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
                     payload["state"] = air_temp_humi.sender.status['DS{}'.format(device._id)]
                     device._isOK = False if payload["state"] == -127 else True
                     set_devices_online(device)
-                publish(topic, payload)
+                if topic and payload:
+                    publish(topic, payload)
             except ImportError:
                 log.error(NAME, _('Cannot import plugin: air temp humi.'))
                 pass
@@ -960,26 +1016,54 @@ def update_temp_humi_ds(sensors):
 def update_tank_level(sensors):
     for device in sensors:
         if device._type == "sensor_WTL":
-            try:
-                from plugins import tank_monitor
+            if plugin_options['ext_water_sonic']:
+                try:
+                    from plugins import tank_monitor
                 
-                payload = {}
-                topic = {}
-                if device._property == "tank_percent":
-                    percent = tank_monitor.get_all_values()[1]
-                    topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-                    payload["state"] = percent
-                    set_devices_online(device)
-                    publish(topic, payload)
-                if device._property == "tank_volume":
-                    volume = tank_monitor.get_all_values()[3]
-                    topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
-                    payload["state"] = volume
-                    set_devices_online(device)
-                    publish(topic, payload)
-            except ImportError:
-                log.error(NAME, _('Cannot import plugin: tank_monitor.'))
-                pass
+                    payload = {}
+                    topic = {}
+                    if device._property == "tank_percent":
+                        percent = tank_monitor.get_all_values()[1]
+                        topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                        payload["state"] = percent
+                        set_devices_online(device)
+                        if topic and payload:
+                            publish(topic, payload)
+                    if device._property == "tank_volume":
+                        volume = tank_monitor.get_all_values()[3]
+                        topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                        payload["state"] = volume
+                        set_devices_online(device)
+                        if topic and payload:
+                            publish(topic, payload)
+                except ImportError:
+                    log.error(NAME, _('Cannot import plugin: tank_monitor.'))
+                    pass
+
+            if plugin_options['ext_water_current']:
+                try:
+                    from plugins import current_loop_tanks_monitor
+                
+                    payload = {}
+                    topic = {}
+                    i = 0 # meri se 4 nadrze TODO
+                    if device._property == "tank_percent":
+                        percent = current_loop_tanks_monitor.tanks['levelPercent'][i]
+                        topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                        payload["state"] = '{:.2f}'.format(percent)
+                        set_devices_online(device)
+                        if topic and payload:
+                            publish(topic, payload)
+                    if device._property == "tank_volume":
+                        volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
+                        topic = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
+                        payload["state"] = '{:.2f}'.format(volume/1000) 
+                        set_devices_online(device)
+                        if topic and payload:
+                            publish(topic, payload)
+                except ImportError:
+                    log.error(NAME, _('Cannot import plugin: current_loop_tanks_monitor.'))
+                    pass
 
 def update_device_plugin_settings(name, **kw):
     discovery_publish()
@@ -1071,19 +1155,13 @@ class settings_page(ProtectedPage):
             elif not mqtt_is_installed:
                 msg += ' ' + _('Error: paho-mqtt is not installed. Install it to system. sudo pip3 install paho-mqtt.')
             else:
-                client = sender.client
-                if client:
-                    msg = _('Client OK')
-                elif client is None:
-                    msg = _('Client not ready!')
-                else:
-                    msg = ''
-            return self.plugin_render.mqtt_home_assistant(plugin_options, log.events(NAME), msg)
+                msg = ''
+            return self.plugin_render.mqtt_home_assistant(plugin_options, log.events(NAME), msg, is_connected())
         except:
             log.error(NAME, _('MQTT Home Assistant plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('mqtt_home_assistant -> settings_page GET')
-            return self.core_render.notice('/', msg)
+            return self.core_render.notice('/', msg, is_connected())
 
     def POST(self):
         try:
@@ -1095,7 +1173,7 @@ class settings_page(ProtectedPage):
             log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('mqtt_home_assistant -> settings_page POST')
-            return self.core_render.notice('/', msg)
+            return self.core_render.notice('/', msg, is_connected())
 
 
 class help_page(ProtectedPage):

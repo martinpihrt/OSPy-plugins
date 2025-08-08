@@ -1,4 +1,4 @@
-$def with(plugin_options, events, msg)
+$def with(plugin_options, events, msg, is_connected)
 
 $var title: $_('MQTT Home Assistant Plugin')
 $var page: plugins
@@ -16,8 +16,89 @@ $var page: plugins
 </script>
 
 <style>
+.status-connected {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-disconnected {
+    color: #dc3545;
+    font-weight: bold;
+}
+
 #Message {
     color: blue;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch::before {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: red;
+  font-weight: bold;
+}
+
+.switch::after {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: green;
+  font-weight: bold;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: green;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch {
+  display: inline-block;
+}
+
+.switch input {
+  display: none;
 }
 </style>
 
@@ -31,25 +112,31 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Use TLS'):</td>
                 <td title=$:{json.dumps(_('If TLS is required. This enables a secure connection and sets the default security context.'), ensure_ascii=False)}>
-                    <input name='use_tls' type='checkbox'${" checked" if plugin_options['use_tls'] else ""}>
+                <label class="switch">
+                <input name='use_tls' type='checkbox'${" checked" if plugin_options['use_tls'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use debug log'):</td>
-                <td>
-                    <input name='use_mqtt_log' type='checkbox'${" checked" if plugin_options['use_mqtt_log'] else ""}>
+                <td title=$:{json.dumps(_('After enabling or disabling the button, it will be necessary to manually restart OSPy, at the same time logging must be enabled in the OSPy settings.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='use_mqtt_log' type='checkbox'${" checked" if plugin_options['use_mqtt_log'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Broker Host'):</td>
                 <td title=$:{json.dumps(_('Example: localhost.'), ensure_ascii=False)}>
-                    <input type="text" name="mqtt_broker_host" value="${plugin_options['mqtt_broker_host']}">
+                <input type="text" name="mqtt_broker_host" value="${plugin_options['mqtt_broker_host']}">
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Broker Port'):</td>
                 <td title=$:{json.dumps(_('Range for port is 80 to 65535. Default: 1883.'), ensure_ascii=False)}>
-                    <input type="number" name="mqtt_broker_port" max="65535" min="80" value="${plugin_options['mqtt_broker_port']}">
+                <input type="number" name="mqtt_broker_port" max="65535" min="80" value="${plugin_options['mqtt_broker_port']}">
                 </td>
             </tr>
             <tr>
@@ -69,7 +156,10 @@ $var page: plugins
             <tr>
                 <td style="text-transform: none;">$_('Name prefix'):</td>
                 <td title=$:{json.dumps(_('HASS name prefix for devices and zones (Default: System name)'), ensure_ascii=False)}>
+                <label class="switch">
                 <input type='text' name='hass_ospy_name' value="${plugin_options['hass_ospy_name']}">
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
@@ -77,7 +167,7 @@ $var page: plugins
                 <td title=$:{json.dumps(_('OSPy network name or IP address for web access from HASS (Default: auto detect)'), ensure_ascii=False)}>
                 <input type='text' name='hass_ospy_fqdn' value="${plugin_options['hass_ospy_fqdn']}">
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style="text-transform: none;">$_('Discovery topic'):</td>
                 <td title=$:{json.dumps(_('Default: homeassistant'), ensure_ascii=False)}>
@@ -87,7 +177,10 @@ $var page: plugins
             <tr>
                 <td style="text-transform: none;">$_('Device name is Station name'):</td>
                 <td title=$:{json.dumps(_('Use station name for HASS zone device name (Default: uncheck)'), ensure_ascii=False)}>
+                <label class="switch">
                 <input name='hass_device_is_station_name' type='checkbox' ${" checked" if plugin_options['hass_device_is_station_name'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
@@ -99,8 +192,13 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Verified in hass'):</td>
                 <td title=$:{json.dumps(_('Tested reliably in this version of home assistant.'), ensure_ascii=False)}>
-                ${plugin_options['hass_tested']}
+                2025.7.2
                 </td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Measurement refresh interval'):</td>
@@ -109,9 +207,62 @@ $var page: plugins
                 </td>
             </tr>
             <tr>
+                <td style="text-transform: none;">$_('Extension: DS1 - DS6'):</td>
+                <td title=$:{json.dumps(_('Including temperature sensors DS1 to DS6 from the temperature and humidity monitor extension.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='ext_ds1-6' type='checkbox' ${" checked" if plugin_options['ext_ds1-6'] else ""}>
+                <span class="slider"></span>
+                </label>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-transform: none;">$_('Extension: DHT'):</td>
+                <td title=$:{json.dumps(_('Including temperature/humidity sensors DHT from the temperature and humidity monitor extension.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='ext_dht' type='checkbox' ${" checked" if plugin_options['ext_dht'] else ""}>
+                <span class="slider"></span>
+                </label>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-transform: none;">$_('Extension: sonic tank'):</td>
+                <td title=$:{json.dumps(_('Including water level from the water tank (sonic) monitor extension.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='ext_water_sonic' type='checkbox' ${" checked" if plugin_options['ext_water_sonic'] else ""}>
+                <span class="slider"></span>
+                </label>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-transform: none;">$_('Extension: current loop tank'):</td>
+                <td title=$:{json.dumps(_('Including water level from the water tank (tanks with current loop) monitor extension.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='ext_water_current' type='checkbox' ${" checked" if plugin_options['ext_water_current'] else ""}>
+                <span class="slider"></span>
+                </label>
+                </td>
+            </tr>
+            <tr>
+               <th colspan="2">
+                 <hr>
+               </th>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
+                <label class="switch">
                 <input id='use_footer' name='use_footer' type='checkbox' ${" checked" if plugin_options['use_footer'] else ""}>
+                <span class="slider"></span>
+                </label>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Connection Status'):</td>
+                <td>
+                $if is_connected:
+                    <span class="status-connected">$_('Connected')</span>
+                $else:
+                    <span class="status-disconnected">$_('Disconnected')</span>
                 </td>
             </tr>
             <tr>
