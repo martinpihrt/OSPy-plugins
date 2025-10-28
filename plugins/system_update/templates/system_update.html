@@ -74,20 +74,135 @@ input:checked + .slider:before {
 .switch input {
   display: none;
 }
+
+table.optionList {
+   width: 92%;  
+}
+
+#controls {
+  width: 78%;
+  border: 3px solid #2E3959;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+#controls .button:hover,
+#controls .submit:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+#controls select {
+  width: 90%;            
+  white-space: normal;      
+  overflow-wrap: anywhere; 
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.status-area {
+  font-family: monospace;
+  width: 95%;
+  box-sizing: border-box;
+  border: 1px solid ;
+  border-radius: 6px;
+  background-color: #f8faff;
+  padding: 6px;
+  resize: vertical;
+}
+
+.section-box {
+  width: 90%;
+  border: 3px solid #2E3959;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.commit-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background-color: #ffffff;
+  padding: 8px;
+}
+
+.commit-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 6px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.commit-item:hover {
+  background-color: #e6f0ff;
+}
+
+.commit-item input[type="radio"] {
+  margin-right: 10px;
+  margin-top: 4px;
+}
+
+.commit-info {
+  flex: 1;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.commit-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  color: #004a9f;
+}
+
+.commit-date {
+  font-size: 0.9em;
+}
+
+.commit-hash {
+  font-size: 0.9em;
+  color: #555;
+  font-family: monospace;
+}
+
+.commit-message {
+  margin-top: 3px;
+  font-size: 0.9em;
+  white-space: normal;
+}
+
+.commit-actions {
+  text-align: center;
+  margin-top: 10px;
+}
 </style>
 
 <script>
-    // Initialize behaviors
-    jQuery(document).ready(function(){
-
-        jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
-        });
-        jQuery("button#cCancel").click(function(){
-            window.location="/";
-        });
-
+jQuery(document).ready(function(){
+    jQuery("#cSubmit").click(function() {
+        jQuery("#pluginForm").submit();
     });
+    jQuery("button#cCancel").click(function(){
+        window.location="/";
+    });
+    jQuery("#rollbackForm").submit(function(e){
+        let selected = jQuery('input[name="commit_hash"]:checked').val();
+        if(!selected){
+            alert("$_('Please select a version to rollback to!')");
+            e.preventDefault();
+            return false;
+        }
+        if(!confirm("$_('Are you sure you want to rollback to commit') " + selected + "?$_('All local changes will be lost!')")){
+            e.preventDefault();
+            return false;
+        }
+    });
+});
 </script>
 
 <div id="plugin">
@@ -107,25 +222,31 @@ input:checked + .slider:before {
             <tr>
                 <td style='text-transform: none;'><b>$_('Remote repository'):</b></td>
                 <td>
-                     $stat["remote"]
+                    $stat["remote"]
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Remote branch'):</b></td>
                 <td>
-                     $stat["remote_branch"]
+                    $stat["remote_branch"]
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Local OSPy version'):</b></td>
                 <td>
-                     $stat["ver_str"]
+                    $stat["ver_str"]
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Local OSPy date'):</b></td>
                 <td>
-                     $stat["ver_date"]
+                    $stat["ver_date"]
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Current commit hash'):</b></td>
+                <td>
+                    $stat["local_hash"]
                 </td>
             </tr>
             <tr>
@@ -171,23 +292,49 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
+                <td></td>
+                <td>
+                    <button id="cSubmit" class="submit"><b>$_('Save changes')</b></button>
+                    <a href="$plugins.plugin_url('system_update.restart_page')" class="button reboot danger">$_('Restart OSPy software')</a>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
-                    <a href="$plugins.plugin_url('system_update.refresh_page')" class="button refresh">$_('Update Status')</a>
+                    <textarea class="status-area" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
+                    <a href="$plugins.plugin_url('system_update.status_page')" class="button refresh">$_('Check new version')</a>
+                    $if stat['can_update']:
+                        <a href="$plugins.plugin_url('system_update.update_page')" class="button reboot danger"><b>$_('A new version of OSPy is available - update?')</b></a>
+                    $if stat['can_error']:
+                        <a href="$plugins.plugin_url('system_update.error_page')" class="button upload danger"><b>$_('Fix detected dubious ownership?')</b></a>                        
                 </td>
             </tr>
         </table>
     </form>
 </div>
-<div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
-    $if stat['can_update']:
-        <a href="$plugins.plugin_url('system_update.update_page')" class="button"><b>$_('Update OSPy')</b></a>
-    $else:
-        <a class="button cancel"><b>$_('Up-to-date')</b></a>
-    $if stat['can_error']:
-        <a href="$plugins.plugin_url('system_update.error_page')" class="button upload danger"><b>$_('Fix detected dubious ownership?')</b></a>
-    <a href="$plugins.plugin_url('system_update.restart_page')" class="button reboot danger">$_('Restart OSPy')</a>
-    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+
+<!-- Rollback Section -->
+<div class="section-box">
+  <h3>$_('Rollback to previous version')</h3>
+  <form id="rollbackForm" method="POST" action="$plugins.plugin_url('system_update.rollback_select_page')">
+    <div id="commitList" class="commit-list">
+      $for c in stat["commits"]:
+        <label class="commit-item">
+          <input type="radio" name="commit_hash" value="$c['hash']">
+          <div class="commit-info">
+            <div class="commit-header">
+              <span class="commit-date">$c['date']</span>
+              <span class="commit-hash">$c['hash']</span>
+            </div>
+            <div class="commit-message">$c['message']</div>
+          </div>
+        </label>
+    </div>
+
+    <div class="commit-actions">
+      <button type="submit" id="rollbackButton" class="button reboot danger">$_('Rollback to selected version')</button>
+    </div>
+  </form>
 </div>
+
+<button id="cCancel" class="cancel danger">$_('Cancel')</button>

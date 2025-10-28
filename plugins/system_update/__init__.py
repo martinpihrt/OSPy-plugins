@@ -1,40 +1,35 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
-# this plugins check sha on github and update ospy file from github
 
 from threading import Thread, Event, Condition
 import time
 import subprocess
-import sys
 import traceback
-
+import json
+import os
 import web
 from ospy.webpages import ProtectedPage
 from ospy.log import log, logEM, logEV
 from plugins import PluginOptions, plugin_url
 from ospy import version
-from ospy.options import options
 from ospy.helpers import datetime_string, restart
-
-from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
-#from ospy.webpages import showOnTimeline # Enable plugin to display station data on timeline
-
+from ospy.webpages import showInFooter
+from ospy.options import options
 from blinker import signal
 
-
 NAME = 'System Update'
-MENU =  _('Package: System Update')
+MENU = _('Package: System Update')
 LINK = 'status_page'
 
 plugin_options = PluginOptions(
-    NAME, 
+    NAME,
     {
         'auto_update': False,
         'use_update': False,
         'use_eml': False,
         'eml_subject': _('Report from OSPy SYSTEM UPDATE plugin'),
         'use_footer': False,
-        'eplug': 0,             # email plugin type (email notifications or email notifications SSL)
+        'eplug': 0, # email plugin type (email notifications or email notifications SSL)
     }
 )
 
@@ -43,7 +38,10 @@ stats = {
     'ver_new': '0.0.0',
     'can_update': False,
     'ver_new_date': '',
-    }
+}
+
+PLUGIN_DIR = os.path.dirname(__file__)
+ROLLBACK_FILE = os.path.join(PLUGIN_DIR, 'rollback_commit.txt')
 
 
 class StatusChecker(Thread):
@@ -51,7 +49,6 @@ class StatusChecker(Thread):
         Thread.__init__(self)
         self.daemon = True
         self.started = Event()
-        self._done = Condition()
         self._stop_event = Event()
 
         self.status = {
@@ -61,22 +58,11 @@ class StatusChecker(Thread):
             'remote_branch': 'origin/master',
             'can_update': False,
             'can_error': False,
-            }
-
+            'commits': [],
+            'local_hash': ''
+        }
         self._sleep_time = 0
         self.start()
-
-    def stop(self):
-        self._stop_event.set()
-
-    def update_wait(self):
-        self._done.acquire()
-        self._sleep_time = 0
-        self._done.wait(10)
-        self._done.release()
-
-    def update(self):
-        self._sleep_time = 0
 
     def _sleep(self, secs):
         self._sleep_time = secs
@@ -84,9 +70,10 @@ class StatusChecker(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
-    def _update_rev_data(self):
-        """Returns the update revision data."""
+    def stop(self):
+        self._stop_event.set()
 
+    def _update_rev_data(self):
         global stats
 
         new_date = 0
@@ -94,18 +81,23 @@ class StatusChecker(Thread):
         changes = '' 
 
         try:
-            command = 'git remote update'
-            run_command(command)
-
-            command = 'git config --get remote.origin.url'
-            remote = subprocess.check_output(command.split()).decode('utf8').strip()
+            run_command('git remote update')
+            remote = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url']).decode().strip()
             if remote:
                 self.status['remote'] = remote
 
-            command = 'git rev-parse --abbrev-ref --symbolic-full-name @{u}'
-            remote_branch = subprocess.check_output(command.split()).decode('utf8').strip()
+            remote_branch = subprocess.check_output(
+                ['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']
+            ).decode().strip()
             if remote_branch:
                 self.status['remote_branch'] = remote_branch
+
+            local_rev = int(subprocess.check_output(['git', 'rev-list', 'HEAD', '--count']).decode())
+            remote_rev = int(subprocess.check_output(['git', 'rev-list', remote_branch, '--count']).decode())
+            self.status['can_update'] = remote_rev > local_rev
+
+            # Aktuální commit hash
+            self.status['local_hash'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
 
             command = 'git log -1 %s --format=%%cd --date=short' % remote_branch
             new_date = subprocess.check_output(command.split()).decode('utf-8').strip()
@@ -117,21 +109,35 @@ class StatusChecker(Thread):
             changes = '  ' + '\n  '.join(subprocess.check_output(command.split()).decode('utf8').split('\n'))
 
             stats['ver_changes'] = ''
+
+            # Posledních 10 commitů (hash|datum|message)
+            commit_log = subprocess.check_output(
+                ['git', 'log', '-n', '10', '--pretty=format:%h|%cd|%s', '--date=short']
+            ).decode('utf-8').splitlines()
+
+            commits = []
+            for line in commit_log:
+                parts = line.split('|', 2)
+                if len(parts) == 3:
+                    commits.append({
+                        'hash': parts[0],
+                        'date': parts[1],
+                        'message': parts[2]
+                    })
+            self.status['commits'] = commits
             self.status['can_error'] = False
 
-        except:
-            pass
-            self.status['can_error'] = True 
+        except Exception:
+            log.error(NAME, _('Error while updating revision data:\n') + traceback.format_exc())
+            self.status['can_error'] = True
 
         if new_revision == version.revision and new_date == version.ver_date:
             log.info(NAME, _('Up-to-date.'))
-            self.status['can_update'] = False
         elif new_revision > version.revision:
             log.info(NAME, _('New version is available!'))
             log.info(NAME, _('Currently running revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date))
             log.info(NAME, _('Available revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date))
             log.info(NAME, _('Changes') +':\n' + changes)
-            self.status['can_update'] = True
             stats['ver_changes'] = changes
             msg = '<b>' + _('System update plug-in') + '</b> ' + '<br><p style="color:red;">' 
             msg += _('New OSPy version is available!') + '<br>' 
@@ -150,7 +156,6 @@ class StatusChecker(Thread):
                         from plugins.email_notifications_ssl import try_mail
                     if try_mail is not None:
                         try_mail(msg, msglog, attachment=None, subject=plugin_options['eml_subject']) # try_mail(text, logtext, attachment=None, subject=None)
-
                 except Exception:
                     log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc()) 
 
@@ -162,15 +167,11 @@ class StatusChecker(Thread):
             log.info(NAME, _('Running unknown version!'))
             log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
             log.info(NAME, _('Available revision') + ': %d (%s)' % (new_revision, new_date))
-            self.status['can_update'] = False
 
-        self._done.acquire()
-        self._done.notify_all()
-        self._done.release()
+        self.started.set()
 
     def run(self):
         global stats
-
         temp_upd = None
 
         if plugin_options['use_footer']:
@@ -187,8 +188,8 @@ class StatusChecker(Thread):
                     self._update_rev_data()
                         
                     if self.status['can_update']:
-                        msg =_('New OSPy version is available!') 
-                        stats['can_update'] = True
+                        msg =_('New OSPy version is available!')
+                        stats['can_update'] = True 
                         report_ospyupdate()
                     else:
                         msg =_('Up-to-date')
@@ -196,8 +197,6 @@ class StatusChecker(Thread):
 
                     if self.status['can_update'] and plugin_options['auto_update']:
                         perform_update()
-                      
-                    self.started.set()
                 else:
                     msg =_('Plugin is not enabled')
 
@@ -205,7 +204,7 @@ class StatusChecker(Thread):
                     if temp_upd is not None:
                         temp_upd.val = msg.encode('utf8').decode('utf8')  # value on footer  
                     else:
-                        log.error(NAME, _('Error: restart this plugin! Show in homepage footer have enabled.'))    
+                        log.error(NAME, _('Error: restart this plugin! Show in homepage footer have enabled.'))
 
                 self._sleep(3600)
 
@@ -217,40 +216,60 @@ class StatusChecker(Thread):
 
 checker = None
 
-
 ################################################################################
 # Helper functions:                                                            #
 ################################################################################
-def perform_update():
-    global stats
-
+def run_command(cmd):
     try:
-        # ignore local chmod permission
-        command = "git config core.filemode false"  # http://superuser.com/questions/204757/git-chmod-problem-checkout-screws-exec-bit
-        run_command(command)
+        proc = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+        output = proc.communicate()[0].decode('utf-8')
+        log.info(NAME, output)
+        return output.strip()
+    except Exception:
+        log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
+        return ''
 
-        command = "git reset --hard"
-        run_command(command)
+def perform_update():
+    try:
+        # Uložíme aktuální commit pro případ rollbacku
+        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+        with open(ROLLBACK_FILE, 'w') as f:
+            f.write(commit_hash)
 
-        command = "git pull"
-        output = subprocess.check_output(command.split()).decode('utf8')
-    
-        # Go back to master (refactor is old):
-        if checker is not None:
-            if checker.status['remote_branch'] == 'origin/refactor':
-                command = 'git checkout master'
-                run_command(command)
+        run_command("git config core.filemode false")
+        run_command("git reset --hard")
+        run_command("git pull")
 
-        log.debug(NAME, _('Update result') + ': ' + output)
+        msg = _('OSPy updated successfully. Please wait while restarting...')
+        log.info(NAME, msg)
 
         if options.run_logEV:
-            logEV.save_events_log( _('System OSPy'), _('Updated to version') + ': {}'.format(str(stats['ver_new'])))
+            logEV.save_events_log( _('System OSPy'), _('Updated to version') + ': {}'.format(str(stats['ver_new'])))        
 
-        report_restarted()
-        restart(wait=4)
+        # Spustíme restart v pozadí, aby se hláška stihla zobrazit
+        def delayed_restart():
+            time.sleep(4)  # čas na zobrazení hlášky
+            restart(wait=0)  # okamžitý restart po zpoždění
+
+        Thread(target=delayed_restart, daemon=True).start()
+
+        return msg  # pokud voláš z webu, můžeš tuto hlášku zobrazit
 
     except Exception:
-       log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
+        log.error(NAME, _('Update error:\n') + traceback.format_exc())
+        return _('Update failed!')
+
+
+def perform_rollback_selected(commit_hash):
+    try:
+        if not commit_hash:
+            log.error(NAME, _('No commit hash provided for rollback.'))
+            return
+        run_command(f'git reset --hard {commit_hash}')
+        log.info(NAME, _('Rolled back to commit: ') + commit_hash)
+        restart(wait=4)
+    except Exception:
+        log.error(NAME, _('Rollback error:\n') + traceback.format_exc())
 
 
 def start():
@@ -266,34 +285,20 @@ def stop():
         checker.join()
         checker = None
 
-
 def get_all_values():
-
     global stats
-
-    plg_state = 0 # 0= Plugin is not enabled, 1= Up-to-date, 2= New OSPy version is available,
-
-    if stats['can_update'] and plugin_options['use_update']: 
-        plg_state = 2
-    else:
-        plg_state = 1 
-
-    return plg_state , stats['ver_new'], stats['ver_act'], stats['ver_changes'] # state, new version, actual version, 'ver changes
-
-
-### Run any cmd ###
-def run_command(cmd):
+    plg_state = 0 # 0= Plugin is not enabled, 1= Up-to-date, 2= New OSPy version is available  
     try:
-        proc = subprocess.Popen(
-        cmd,
-        stderr=subprocess.STDOUT, # merge stdout and stderr
-        stdout=subprocess.PIPE,
-        shell=True)
-        output = proc.communicate()[0].decode('utf-8')
-        log.info(NAME, output)
-
-    except Exception:
-        log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())      
+        if stats['can_update'] and plugin_options['use_update']: 
+            plg_state = 2
+        elif not stats['can_update'] and plugin_options['use_update']:
+            plg_state = 1
+        else:
+            plg_state = 0
+        return plg_state, stats['ver_new'], stats['ver_act'], stats['ver_changes'] # state, new version, actual version, 'ver changes
+    except:
+        log.error(NAME, _('Get all values error:\n') + traceback.format_exc())
+        return plg_state, 0, 0, "error"                                            # state, new version, actual version, 'ver changes
 
 
 restarted = signal('restarted')
@@ -302,69 +307,126 @@ def report_restarted():
 
 ospyupdate = signal('ospyupdate')
 def report_ospyupdate():
-    ospyupdate.send()    
+    ospyupdate.send() 
 
 
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
 class status_page(ProtectedPage):
-    """Load an html page rev data."""
-
     def GET(self):
-        checker.started.wait(10)    # Make sure we are initialized
+        checker.started.wait(10)
         return self.plugin_render.system_update(plugin_options, log.events(NAME), checker.status)
 
     def POST(self):
         plugin_options.web_update(web.input())
-        if checker is not None:
-            checker.update()
-
-        msg = _('OSPy is now updated from Github and restarted. Please wait...')
-        raise web.seeother(plugin_url(update_page), msg) # ((status_page), True)
-
-
-class refresh_page(ProtectedPage):
-    """Refresh status and show it."""
-
-    def GET(self):
-        checker.update_wait()
-        raise web.seeother(plugin_url(status_page), True)
+        raise web.seeother(plugin_url(status_page))
 
 
 class update_page(ProtectedPage):
-    """Update OSPy from github and return text message from comm line."""
-
     def GET(self):
-        perform_update()
-        msg = _('OSPy is now updated from Github and restarted. Please wait...')
+        # Spustíme aktualizaci a získáme hlášku
+        msg = perform_update()  # vrací text hlášky
+
+        # Zobrazíme stránku s hláškou, restart proběhne později v pozadí
+        return self.core_render.notice('/', msg)
+
+
+class rollback_select_page(ProtectedPage):
+    def POST(self):
+        data = web.input(commit_hash=None)
+        commit_hash = data.get('commit_hash')
+
+        # Nejprve ověř, že je co vracet
+        if not commit_hash:
+            log.error(NAME, _('No commit hash provided for rollback.'))
+            msg = _('No commit selected for rollback.')
+            return self.core_render.notice('/', msg)
+
+        # Zobrazíme hlášku ihned, restart zpozdíme v pozadí
+        msg = _('OSPy rollback to selected version completed. Please wait...')
+        log.info(NAME, msg)
+
+        # Spustíme rollback a restart s krátkým zpožděním
+        def do_rollback_and_restart():
+            try:
+                perform_rollback_selected(commit_hash)
+                time.sleep(3)  # 3 sekundy na zobrazení hlášky
+                restart(wait=0)  # okamžitý restart po zpoždění
+            except Exception:
+                log.error(NAME, _('Rollback thread error:\n') + traceback.format_exc())
+
+        Thread(target=do_rollback_and_restart, daemon=True).start()
+
+        # Vrátíme HTML stránku s hláškou
         return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
-    """Load an html page for help"""
-
     def GET(self):
         return self.plugin_render.system_update_help()
 
 
 class restart_page(ProtectedPage):
-    """Restart system."""
-
     def GET(self):
+        msg = _('OSPy is now restarted. Please wait...')
         report_restarted()
-        restart(wait=4)
-        msg = _('OSPy is now restarted (invoked by the user). Please wait...')
+        
+        # Spustíme restart v pozadí, aby se hláška stihla zobrazit
+        def delayed_restart():
+            import time
+            from ospy.helpers import restart
+            time.sleep(3)  # čas na přečtení hlášky
+            restart(wait=0)  # okamžitý restart po zpoždění
+
+        from threading import Thread
+        Thread(target=delayed_restart, daemon=True).start()
+
+        # Zobrazíme stránku s hláškou
         return self.core_render.notice('/', msg)
 
-class error_page(ProtectedPage):
-    """Error page."""
 
+class error_page(ProtectedPage):
+    """Error page."""    
     def GET(self):
+        msg = _('OSPy is now restarted (invoked by the user). Please wait...')
+        report_restarted()
+        
         command = "git config --system --add safe.directory '*'"
         run_command(command)
-        checker._sleep(5)        
-        report_restarted()
-        restart(wait=5)
-        msg = _('OSPy is now restarted (invoked by the user). Please wait...')
-        return self.core_render.notice('/', msg)        
+
+        # Spustíme restart v pozadí, aby se hláška stihla zobrazit
+        def delayed_restart():
+            import time
+            from ospy.helpers import restart
+            time.sleep(4)  # čas na přečtení hlášky
+            restart(wait=0)  # okamžitý restart po zpoždění
+
+        from threading import Thread
+        Thread(target=delayed_restart, daemon=True).start()
+
+        # Zobrazíme stránku s hláškou
+        return self.core_render.notice('/', msg)
+
+
+class settings_json(ProtectedPage):
+    """Returns plugin settings in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            return json.dumps(plugin_options)
+        except:
+            return {}
+
+
+class test_page(ProtectedPage):
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        data = get_all_values()
+        try:
+            return json.dumps(data)
+        except:
+            return {}
