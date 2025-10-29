@@ -3,18 +3,6 @@ $def with(plugin_options, events, state)
 $var title: $_('Network Ping monitor - settings')
 $var page: plugins
 
-<script>
-// Initialize behaviors
-jQuery(document).ready(function(){
-    jQuery("#cSubmit").click(function() {
-        jQuery("#pluginForm").submit();
-    });
-    jQuery("button#cCancel").click(function(){
-        window.location="/";
-    });
-});
-</script>
-
 <style>
 .status-connected {
     color: #28a745;
@@ -107,9 +95,62 @@ input:checked + .slider:before {
 }
 </style>
 
+<script>
+const i18n = {
+  connected: $:{json.dumps(_('Connected'), ensure_ascii=False).encode('utf8').decode('utf-8')},
+  disconnected: $:{json.dumps(_('Disconnected'), ensure_ascii=False).encode('utf8').decode('utf-8')},
+  not_loaded: $:{json.dumps(_('Not yet loaded'), ensure_ascii=False).encode('utf8').decode('utf-8')},
+  disabled: $:{json.dumps(_('Disabled'), ensure_ascii=False).encode('utf8').decode('utf-8')},
+  ms: $:{json.dumps(_('ms'), ensure_ascii=False).encode('utf8').decode('utf-8')}
+};
+
+jQuery(document).ready(function() {
+    jQuery("#cSubmit").click(function() {
+        jQuery("#pluginForm").submit();
+    });
+    jQuery("button#cCancel").click(function() {
+        window.location = "/";
+    });
+
+    // Auto-refresh každých 5 sekund
+    setInterval(updatePingStates, 5000);
+});
+
+function updatePingStates() {
+    jQuery.getJSON("/plugins/network_ping_monitor/data_json", function(data) {
+        if (data.error) return;
+
+        // Aktualizace stavů pingů
+        updatePingState(1, data.ping1, data.rtt1, data.use_ping);
+        updatePingState(2, data.ping2, data.rtt2, data.use_ping);
+        updatePingState(3, data.ping3, data.rtt3, data.use_ping);
+
+        // Aktualizace log textarea
+        if (data.events) {
+            jQuery("textarea[readonly]").val(data.events.join("\n"));
+        }
+    });
+}
+
+function updatePingState(num, pingState, rtt, use_ping) {
+    const el = jQuery("#ping_state_" + num);
+    if (!use_ping) {
+        el.html('<span class="status-disabled">' + i18n.disabled + '</span>');
+        return;
+    }
+    if (pingState === null) {
+        el.html('<span class="status-disconnected">' + i18n.not_loaded + '</span>');
+    } else if (pingState) {
+        el.html('<span class="status-connected">' + i18n.connected + ' (' + rtt + ' ' + i18n.ms + ')</span>');
+    } else {
+        el.html('<span class="status-disconnected">' + i18n.disconnected + '</span>');
+    }
+}
+</script>
+
 <div id="plugin">
     <div class="title">$_('Network Ping monitor - settings')</div>
-    The plugin is not yet complete (it works to some extent, but not everything)!
+    The plugin is not yet complete (it works to some extent, but not everything)!<br/>
     <a href=$plugins.plugin_url('network_ping_monitor.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
         <p>
@@ -137,7 +178,7 @@ input:checked + .slider:before {
                 <td style='text-transform: none;'>$_('Ping address 1'):</td>
                 <td><input name='address_1' type='text' value='$plugin_options['address_1']'></td>
                 <td><input name='label_1' type='text' value='$plugin_options['label_1']'></td>
-                <td>
+                <td id="ping_state_1">
                 $if plugin_options['use_ping']:
                     $if state["ping1"] is None:
                         <span class="status-disconnected">$_('Not yet loaded')</span>
@@ -154,7 +195,7 @@ input:checked + .slider:before {
                 <td style='text-transform: none;'>$_('Ping address 2'):</td>
                 <td><input name='address_2' type='text' value='$plugin_options['address_2']'></td>
                 <td><input name='label_2' type='text' value='$plugin_options['label_2']'></td> 
-                <td>
+                <td id="ping_state_2">
                 $if plugin_options['use_ping']:
                     $if state["ping2"] is None:
                         <span class="status-disconnected">$_('Not yet loaded')</span>
@@ -171,7 +212,7 @@ input:checked + .slider:before {
                 <td style='text-transform: none;'>$_('Ping address 3'):</td>
                 <td><input name='address_3' type='text' value='$plugin_options['address_3']'></td>
                 <td><input name='label_3' type='text' value='$plugin_options['label_3']'></td>
-                <td>
+                <td id="ping_state_3">
                 $if plugin_options['use_ping']:
                     $if state["ping3"] is None:
                         <span class="status-disconnected">$_('Not yet loaded')</span>

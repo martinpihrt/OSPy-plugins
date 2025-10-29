@@ -162,7 +162,7 @@ class Sender(Thread):
                             if data["status"] and data["status"] is not None:
                                 available_times.append(data.get("avg_time", 0))
                         avg_rtt = round(sum(all_times)/len(all_times), 2) if all_times else 0
-                        log.info(NAME, datetime_string() + ' ' + _('Summary of statuses:') + ' {}'.format(',\n'.join(summary)) + '.\n' + _('Average RTT of available servers:') + ' {}'.format(avg_rtt) + ' ' + _('ms'))
+                        log.info(NAME, datetime_string() + ' ' + _('Summary of statuses:') + ' {}\n'.format(',\n'.join(summary)) + '.\n' + _('Average RTT of available servers:') + ' {}'.format(avg_rtt) + ' ' + _('ms'))
                         last_summary = time.time()
                     self._sleep(5)
 
@@ -240,12 +240,20 @@ class settings_json(ProtectedPage):
 
 class data_json(ProtectedPage):
     def GET(self):
-        global status
-        data = {}
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+
         try:
-            web.header('Access-Control-Allow-Origin', '*')
-            web.header('Content-Type', 'application/json')
-            
+            data = {
+                "ping1": state["ping1"],
+                "rtt1": state["rtt1"],
+                "ping2": state["ping2"],
+                "rtt2": state["rtt2"],
+                "ping3": state["ping3"],
+                "rtt3": state["rtt3"],
+                "events": log.events(NAME)[-10:],  # posledních 10 záznamů
+                "use_ping": plugin_options["use_ping"]
+            }
             return json.dumps(data)
-        except:
-            return data
+        except Exception as e:
+            return json.dumps({"error": str(e)})
