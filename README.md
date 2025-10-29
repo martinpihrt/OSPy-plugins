@@ -74,3 +74,4 @@ Available plugins:
 * MQTT Home Assistant
 * Shelly Cloud Integration
 * Current Loop Tanks Monitor
+* Network Ping Monitor
