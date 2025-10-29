@@ -187,17 +187,25 @@ jQuery(document).ready(function(){
     jQuery("#cSubmit").click(function() {
         jQuery("#pluginForm").submit();
     });
+
     jQuery("button#cCancel").click(function(){
         window.location="/";
     });
+
     jQuery("#rollbackForm").submit(function(e){
         let selected = jQuery('input[name="commit_hash"]:checked').val();
-        if(!selected){
-            alert("$_('Please select a version to rollback to!')");
+        if (!selected) {
+            alert($:{json.dumps(_('Please select a version to rollback to!'), ensure_ascii=False).encode('utf8').decode('utf-8')});
             e.preventDefault();
             return false;
         }
-        if(!confirm("$_('Are you sure you want to rollback to commit') " + selected + "?$_('All local changes will be lost!')")){
+
+        let confirmMsg =
+            $:{json.dumps(_('Are you sure you want to rollback to commit'), ensure_ascii=False).encode('utf8').decode('utf-8')} +
+            " " + selected + "? " +
+            $:{json.dumps(_('All local changes will be lost!'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+
+        if (!confirm(confirmMsg)) {
             e.preventDefault();
             return false;
         }
