@@ -38,6 +38,7 @@ stats = {
     'ver_new': '0.0.0',
     'can_update': False,
     'ver_new_date': '',
+    'ver_changes': ''
 }
 
 PLUGIN_DIR = os.path.dirname(__file__)
