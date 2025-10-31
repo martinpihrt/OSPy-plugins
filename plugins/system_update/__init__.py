@@ -321,7 +321,7 @@ class status_page(ProtectedPage):
 
     def POST(self):
         plugin_options.web_update(web.input())
-        raise web.seeother(plugin_url(status_page))
+        raise web.seeother(plugin_url(status_page), True)
 
 
 class update_page(ProtectedPage):
