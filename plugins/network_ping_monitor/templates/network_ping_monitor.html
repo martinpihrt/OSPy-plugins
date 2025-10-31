@@ -154,7 +154,7 @@ function updatePingState(num, pingState, rtt, use_ping) {
     <a href=$plugins.plugin_url('network_ping_monitor.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
         <p>
-        <a href="?show" class="button backup">$_('Show logs')</a>
+        <a href="$plugins.plugin_url('network_ping_monitor.log_page')" class="button backup">$_('Show logs')</a>
         </p>
         </br>     
     <form id="pluginForm" action="$plugins.plugin_url('network_ping_monitor.settings_page')" method="post">
@@ -241,7 +241,7 @@ function updatePingState(num, pingState, rtt, use_ping) {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Enable SQL logging'):</td>
-                <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the airtemp table from the database, thus deleting all saved data from this extension! This promotion is non-refundable! Requires database connector plugin'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the netping table from the database, thus deleting all saved data from this extension! This promotion is non-refundable! Requires database connector plugin'), ensure_ascii=False)}>
                     <label class="switch"> 
                     <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}>
                     <span class="slider"></span>
