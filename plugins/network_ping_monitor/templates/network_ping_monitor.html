@@ -150,11 +150,11 @@ function updatePingState(num, pingState, rtt, use_ping) {
 
 <div id="plugin">
     <div class="title">$_('Network Ping monitor - settings')</div>
-    The plugin is not yet complete (it works to some extent, but not everything)!<br/>
-    <a href=$plugins.plugin_url('network_ping_monitor.help_page') class="button upload">$_('Help')</a><br/>
+    <a href=$plugins.plugin_url('network_ping_monitor.help_page') class="button upload">$_('Help')</a>
     $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
         <p>
         <a href="$plugins.plugin_url('network_ping_monitor.log_page')" class="button backup">$_('Show logs')</a>
+        <a href="$plugins.plugin_url('network_ping_monitor.graph_page')" class="button backup">$_('Show graph')</a>
         </p>
         </br>     
     <form id="pluginForm" action="$plugins.plugin_url('network_ping_monitor.settings_page')" method="post">

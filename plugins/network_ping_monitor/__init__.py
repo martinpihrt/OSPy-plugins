@@ -40,6 +40,7 @@ plugin_options = PluginOptions(
        'type_log': 0,
        'log_records': 0,
        'log_interval': 1,
+       'graph_filter': 10,
     }
 )
 
@@ -168,7 +169,7 @@ class Sender(Thread):
                             status_str = _('Available') if data['status'] else _('Unavailable')
                             status_list.append(f"{name}: {status_str}")
                         avg_rtt = round(sum(all_times)/len(all_times), 2) if all_times else 0
-                        msg = _('Periodic status log') + ': ' + ', '.join(status_list) + + _('Average RTT:') + f' {avg_rtt} ms'
+                        msg = _('Periodic status log') + ': ' + ', '.join(status_list) + _('Average RTT:') + f' {avg_rtt} ms'
                         log.info(NAME, datetime_string() + ' ' + msg)
                         update_log_if_enabled(msg)
                         last_periodic_log = time.time()
@@ -449,3 +450,28 @@ class data_json(ProtectedPage):
             return json.dumps(data)
         except Exception as e:
             return json.dumps({'error': str(e)})
+
+class graph_page(ProtectedPage):
+    def GET(self):
+        qdict = web.input(limit='500')
+        limit = int(qdict.limit) if qdict.limit.isdigit() else 500
+
+        if plugin_options['type_log'] == 0:
+            records_data = read_log()[:limit]
+        else:
+            records_data = read_sql_log()[:limit]
+
+        if 'limit' in qdict:
+            plugin_options['graph_filter'] = limit
+
+        series = []
+        for r in records_data:
+            if plugin_options['type_log'] == 0:
+                all_up = int(r['ping1'] and r['ping2'] and r['ping3'])
+                timestamp = f"{r['date']} {r['time']}"
+            else:
+                all_up = int(r[3] and r[4] and r[5])
+                timestamp = str(r[1])
+            series.append({'ts': timestamp, 'all_up': all_up})
+
+        return self.plugin_render.network_ping_monitor_graph(plugin_options, series)

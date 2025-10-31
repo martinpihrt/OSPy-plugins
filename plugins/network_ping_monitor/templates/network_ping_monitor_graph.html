@@ -1,0 +1,92 @@
+$def with(plugin_options, series)
+
+$var title: $_('Network Ping Monitor - graph')
+$var page: plugins
+
+<div class="title">$_('Network Ping Monitor - graph')</div>
+
+<div id="plugin">
+    <div id="graph-container" class="graph-container">
+        <p>
+        $if plugin_options['type_log'] == 0:
+            $_('Log from local file')
+        $else:
+            $_('Log from database')
+        </p>
+        <p>
+        <a href="$plugins.plugin_url('network_ping_monitor.log_page')" class="button backup">$_('Show logs')</a>
+        </p>
+        <form method="get">
+            <label>$_('Number of records:')</label>
+            <input type="number" name="limit" value="$plugin_options['graph_filter']" min="10" max="10000"/>
+            <button type="submit" class="button submit">$_('Apply')</button>
+        </form>
+        <canvas id="availabilityChart" width="900" height="300"></canvas>
+    </div>
+</div>
+
+<script src="/plugins/network_ping_monitor/script/chart.js"></script>
+<script>
+const data = $:{json.dumps(series, ensure_ascii=False)};
+
+const ctx = document.getElementById('availabilityChart').getContext('2d');
+const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: data.map(d => d.ts),
+        datasets: [{
+            label: $:{json.dumps(_('All servers available'), ensure_ascii=False).encode('utf8').decode('utf-8')},
+            data: data.map(d => d.all_up),
+            borderColor: 'blue',
+            backgroundColor: 'rgba(0, 0, 255, 0.2)',
+            stepped: true,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.raw ? $:{json.dumps(_('Available'), ensure_ascii=False).encode('utf8').decode('utf-8')} : $:{json.dumps(_('Not available'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+                    }
+                }
+            },
+            legend: {
+                display: true
+            }
+        },
+        scales: {
+            y: {
+                min: 0,
+                max: 1,
+                ticks: {
+                    stepSize: 1,
+                    callback: function(value) {
+                        return value ? $:{json.dumps(_('Available'), ensure_ascii=False).encode('utf8').decode('utf-8')} : $:{json.dumps(_('Not available'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+                    }
+                },
+                title: {
+                    display: true,
+                    text: $:{json.dumps(_('Status'), ensure_ascii=False).encode('utf8').decode('utf-8')}
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: $:{json.dumps(_('Time'), ensure_ascii=False).encode('utf8').decode('utf-8')}
+                },
+                ticks: {
+                    maxRotation: 90,
+                    minRotation: 45
+                }
+            }
+        }
+    }
+});
+</script>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('network_ping_monitor.settings_page') class="button submit">$_('Cancel')</a><br/>
+</div>
