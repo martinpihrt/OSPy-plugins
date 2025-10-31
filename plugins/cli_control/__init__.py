@@ -214,90 +214,64 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        try:
-            global sender
-            qdict = web.input()
-            delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
-            show = helpers.get_input(qdict, 'show', False, lambda x: True)
-            state = helpers.get_input(qdict, 'state', False, lambda x: True)
+        global sender
+        qdict = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        show = helpers.get_input(qdict, 'show', False, lambda x: True)
+        state = helpers.get_input(qdict, 'state', False, lambda x: True)
 
-            # Testování příkazů
-            if sender is not None and 'test' in qdict:
-                test = qdict['test']
-                index = int(test)
-                if state:
-                    log.clear(NAME)
-                    log.info(NAME, _('Test CMD: {} ON.').format(index + 1))
-                    command = plugin_options['on']
-                    cmd = command[index]
-                    if cmd:
-                        run_command(cmd)
-                    else:
-                        log.info(NAME, _('No ON command set for station {}').format(index + 1))
+        if sender is not None and 'test' in qdict:
+            test = qdict['test']
+            index = int(test)
+            if state:
+                log.clear(NAME)
+                log.info(NAME, _('Test CMD: {} ON.').format(index + 1))
+                command = plugin_options['on']
+                cmd = command[index]
+                if cmd:
+                    run_command(cmd)
                 else:
-                    log.clear(NAME)
-                    log.info(NAME, _('Test CMD: {} OFF.').format(index + 1))
-                    command = plugin_options['off']
-                    cmd = command[index]
-                    if cmd:
-                        run_command(cmd)
-                    else:
-                        log.info(NAME, _('No OFF command set for station {}').format(index + 1))
+                    log.info(NAME, _('No ON command set for station {}').format(index + 1))
+            else:
+                log.clear(NAME)
+                log.info(NAME, _('Test CMD: {} OFF.').format(index + 1))
+                command = plugin_options['off']
+                cmd = command[index]
+                if cmd:
+                    run_command(cmd)
+                else:
+                    log.info(NAME, _('No OFF command set for station {}').format(index + 1))
 
-            # Smazání logu
-            if sender is not None and delete:
-                write_log([])
-                log.info(NAME, _('Deleted all log files successfully.'))
-                return web.seeother(plugin_url(settings_page))
+        if sender is not None and delete:
+            write_log([])
+            log.info(NAME, _('Deleted all log files successfully.'))
+            raise web.seeother(plugin_url(settings_page), True)
 
-            # Zobrazení logu
-            if sender is not None and show:
-                return web.seeother(plugin_url(log_page))
+        if sender is not None and show:
+            raise web.seeother(plugin_url(log_page), True)
 
-            # Výchozí zobrazení stránky s nastavením
-            return self.plugin_render.cli_control(plugin_options, log.events(NAME))
-
-        except Exception:
-            log.error(NAME, _('CLI Control plug-in error in GET:\n') + traceback.format_exc())
-            msg = (
-                _('An internal error was found in the system, see the error log for more information. ')
-                + _('The error is in part: cli_control -> settings_page GET')
-            )
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.cli_control(plugin_options, log.events(NAME))
 
     def POST(self):    
-        try:
-            qdict = web.input()
+        qdict = web.input()
+        plugin_options['use_control'] = qdict.get('use_control') == 'on'
+        plugin_options['use_log'] = qdict.get('use_log') == 'on'
 
-            # Nastavení přepínače "use_control"
-            plugin_options['use_control'] = qdict.get('use_control') == 'on'
+        
+        commands = {'on': [], 'off': []}
+        for i in range(options.output_count):
+            commands['on'].append(qdict.get(f'con{i}', ''))
+            commands['off'].append(qdict.get(f'coff{i}', ''))
 
-            # Nastavení přepínače "use_log"
-            plugin_options['use_log'] = qdict.get('use_log') == 'on'
+        plugin_options['on'] = commands['on']
+        plugin_options['off'] = commands['off']
 
-            # Načtení příkazů pro ON a OFF
-            commands = {'on': [], 'off': []}
-            for i in range(options.output_count):
-                commands['on'].append(qdict.get(f'con{i}', ''))
-                commands['off'].append(qdict.get(f'coff{i}', ''))
+        if sender is not None:
+            sender.update()
 
-            plugin_options['on'] = commands['on']
-            plugin_options['off'] = commands['off']
+        log.info(NAME, _('CLI Control settings updated successfully.'))
+        raise web.seeother(plugin_url(settings_page), True)
 
-            if sender is not None:
-                sender.update()
-
-            log.info(NAME, _('CLI Control settings updated successfully.'))
-
-            return web.seeother(plugin_url(settings_page))
-
-        except Exception:
-            log.error(NAME, _('CLI Control plug-in error in POST:\n') + traceback.format_exc())
-            msg = (
-                _('An internal error was found in the system, see the error log for more information. ')
-                + _('The error is in part: cli_control -> settings_page POST')
-            )
-            return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
     """Load an HTML help page."""
@@ -313,22 +287,12 @@ class help_page(ProtectedPage):
             )
             return self.core_render.notice('/', msg)
 
-
 class log_page(ProtectedPage):
     """Load an HTML page with log data."""
 
     def GET(self):
-        try:
-            data = read_log()
-            return self.plugin_render.cli_control_log(data)
-        except Exception:
-            log.error(NAME, _('CLI Control plug-in error in log_page GET:\n') + traceback.format_exc())
-            msg = (
-                _('An internal error was found in the system, see the error log for more information. ')
-                + _('The error is in part: cli_control -> log_page GET')
-            )
-            return self.core_render.notice('/', msg)
-
+        data = read_log()
+        return self.plugin_render.cli_control_log(data)
 
 class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
@@ -336,12 +300,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        try:
-            return json.dumps(plugin_options)
-        except Exception:
-            log.error(NAME, _('CLI Control plug-in error in settings_json GET:\n') + traceback.format_exc())
-            return json.dumps({'error': 'Unable to read plugin settings'})
-
+        return json.dumps(plugin_options)
 
 class log_json(ProtectedPage):
     """Returns plugin log data in JSON format."""

@@ -4,56 +4,75 @@ $var title: $_('CLI Control settings')
 $var page: plugins
 
 <style>
-/* Style for switch toggle switch */
 .switch {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
 }
 
 .switch input {
-    display: none;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch::before {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: red;
+  font-weight: bold;
+}
+
+.switch::after {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: green;
+  font-weight: bold;
 }
 
 .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc; /* Default grey colour */
-    transition: 0.4s;
-    border-radius: 34px;
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  transition: 0.4s;
+  border-radius: 24px;
 }
 
 .slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    border-radius: 50%;
-    left: 4px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.4s;
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
 }
 
-/* When the switch is on */
 input:checked + .slider {
-    background-color: #4caf50; /* Green colour when switched on */
+  background-color: green;
 }
 
 input:checked + .slider:before {
-    transform: translateX(26px);
+  transform: translateX(26px);
 }
 
-/* When the switch is off, set the background colour to red */
-input:not(:checked) + .slider {
-    background-color: #ff4d4d;  /* Red colour when switched off */
+.switch {
+  display: inline-block;
+}
+
+.switch input {
+  display: none;
 }
 </style>
 
@@ -84,20 +103,20 @@ input:not(:checked) + .slider {
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use CLI Control'):</td>
-                <td>
-                    <label class="switch">
-                    <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>
-                    <span class="slider"></span>
-                    </label>
+                <td title=$:{json.dumps(_('Activate this extension for CLI control.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Enable logging'):</td>
-                <td>
-                    <label class="switch">
-                    <input name='use_log' type='checkbox'${" checked" if plugin_options['use_log'] else ""}>
-                    <span class="slider"></span>
-                    </label>
+                <td title=$:{json.dumps(_('Activate this for CLI logging.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='use_log' type='checkbox'${" checked" if plugin_options['use_log'] else ""}>
+                <span class="slider"></span>
+                </label>
                 </td>
             </tr>
             <tr>
