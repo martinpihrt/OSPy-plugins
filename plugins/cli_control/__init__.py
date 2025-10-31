@@ -220,103 +220,117 @@ class settings_page(ProtectedPage):
             delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
             show = helpers.get_input(qdict, 'show', False, lambda x: True)
             state = helpers.get_input(qdict, 'state', False, lambda x: True)
- 
+
+            # Testování příkazů
             if sender is not None and 'test' in qdict:
                 test = qdict['test']
+                index = int(test)
                 if state:
                     log.clear(NAME)
-                    log.info(NAME, _('Test CMD: {} ON.').format(int(test)+1))
-                    command = plugin_options['on'] 
-                    data = command[int(test)]
-                    if data:
-                        run_command(data)
+                    log.info(NAME, _('Test CMD: {} ON.').format(index + 1))
+                    command = plugin_options['on']
+                    cmd = command[index]
+                    if cmd:
+                        run_command(cmd)
+                    else:
+                        log.info(NAME, _('No ON command set for station {}').format(index + 1))
                 else:
                     log.clear(NAME)
-                    log.info(NAME, _('Test CMD: {} OFF.').format(int(test)+1))
-                    command = plugin_options['off'] 
-                    data = command[int(test)]
-                    if data:
-                        run_command(data)
+                    log.info(NAME, _('Test CMD: {} OFF.').format(index + 1))
+                    command = plugin_options['off']
+                    cmd = command[index]
+                    if cmd:
+                        run_command(cmd)
+                    else:
+                        log.info(NAME, _('No OFF command set for station {}').format(index + 1))
 
+            # Smazání logu
             if sender is not None and delete:
                 write_log([])
-                log.info(NAME, _('Deleted all log files OK'))
-                raise web.seeother(plugin_url(settings_page), True)
+                log.info(NAME, _('Deleted all log files successfully.'))
+                return web.seeother(plugin_url(settings_page))
 
+            # Zobrazení logu
             if sender is not None and show:
-                raise web.seeother(plugin_url(log_page), True)
+                return web.seeother(plugin_url(log_page))
 
+            # Výchozí zobrazení stránky s nastavením
             return self.plugin_render.cli_control(plugin_options, log.events(NAME))
 
-        except:
-            log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('cli_control -> settings_page GET')
+        except Exception:
+            log.error(NAME, _('CLI Control plug-in error in GET:\n') + traceback.format_exc())
+            msg = (
+                _('An internal error was found in the system, see the error log for more information. ')
+                + _('The error is in part: cli_control -> settings_page GET')
+            )
             return self.core_render.notice('/', msg)
 
     def POST(self):    
         try:
             qdict = web.input()
 
-            if 'use_control' in qdict:
-                if qdict['use_control']=='on':
-                    plugin_options.__setitem__('use_control', True)
+            # Nastavení přepínače "use_control"
+            plugin_options['use_control'] = qdict.get('use_control') == 'on'
 
-            else:  
-                plugin_options.__setitem__('use_control', False)
+            # Nastavení přepínače "use_log"
+            plugin_options['use_log'] = qdict.get('use_log') == 'on'
 
-            if 'use_log' in qdict:
-                if qdict['use_log']=='on':
-                    plugin_options.__setitem__('use_log', True)
-
-            else:
-                plugin_options.__setitem__('use_log', False)
-
-            commands = {u'on': [], u'off': []} 
-
+            # Načtení příkazů pro ON a OFF
+            commands = {'on': [], 'off': []}
             for i in range(options.output_count):
-                commands['on'].append(qdict['con'+str(i)])
-                commands['off'].append(qdict['coff'+str(i)])
+                commands['on'].append(qdict.get(f'con{i}', ''))
+                commands['off'].append(qdict.get(f'coff{i}', ''))
 
-            plugin_options.__setitem__('on', commands['on']) 
-            plugin_options.__setitem__('off', commands['off'])
+            plugin_options['on'] = commands['on']
+            plugin_options['off'] = commands['off']
 
             if sender is not None:
                 sender.update()
 
-            raise web.seeother(plugin_url(settings_page), True)
+            log.info(NAME, _('CLI Control settings updated successfully.'))
 
-        except:
-            log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('cli_control -> settings_page POST')
+            return web.seeother(plugin_url(settings_page))
+
+        except Exception:
+            log.error(NAME, _('CLI Control plug-in error in POST:\n') + traceback.format_exc())
+            msg = (
+                _('An internal error was found in the system, see the error log for more information. ')
+                + _('The error is in part: cli_control -> settings_page POST')
+            )
             return self.core_render.notice('/', msg)
 
 class help_page(ProtectedPage):
-    """Load an html page for help"""
+    """Load an HTML help page."""
 
     def GET(self):
         try:
             return self.plugin_render.cli_control_help()
-        except:
-            log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('cli_control -> help_page GET')
+        except Exception:
+            log.error(NAME, _('CLI Control plug-in error in help_page GET:\n') + traceback.format_exc())
+            msg = (
+                _('An internal error was found in the system, see the error log for more information. ')
+                + _('The error is in part: cli_control -> help_page GET')
+            )
             return self.core_render.notice('/', msg)
 
+
 class log_page(ProtectedPage):
-    """Load an html page for help"""
+    """Load an HTML page with log data."""
 
     def GET(self):
         try:
-            return self.plugin_render.cli_control_log(read_log())
-        except:
-            log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('cli_control -> log_page GET')
+            data = read_log()
+            return self.plugin_render.cli_control_log(data)
+        except Exception:
+            log.error(NAME, _('CLI Control plug-in error in log_page GET:\n') + traceback.format_exc())
+            msg = (
+                _('An internal error was found in the system, see the error log for more information. ')
+                + _('The error is in part: cli_control -> log_page GET')
+            )
             return self.core_render.notice('/', msg)
 
-class settings_json(ProtectedPage): 
+
+class settings_json(ProtectedPage):
     """Returns plugin settings in JSON format."""
 
     def GET(self):
@@ -324,43 +338,48 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         try:
             return json.dumps(plugin_options)
-        except:
-            log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
-            return {}
+        except Exception:
+            log.error(NAME, _('CLI Control plug-in error in settings_json GET:\n') + traceback.format_exc())
+            return json.dumps({'error': 'Unable to read plugin settings'})
+
 
 class log_json(ProtectedPage):
-    """Returns data in JSON format."""
+    """Returns plugin log data in JSON format."""
 
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         try:
             return json.dumps(read_log())
-        except:
-            log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
-            return {}
+        except Exception:
+            log.error(NAME, _('CLI Control plug-in error in log_json GET:\n') + traceback.format_exc())
+            return json.dumps({'error': 'Unable to read log data'})
+
 
 class log_csv(ProtectedPage):
-    """Simple Log API"""
+    """Provides log data as downloadable CSV file."""
 
     def GET(self):
-        data = ""
         try:
-            data = "Date/Time; Command; State \n"
             log_file = read_log()
-            for interval in log_file:
-                data += '; '.join([
-                    interval['datetime'],
-                    '{}'.format(interval['cmd']),
-                    '{}'.format(interval['status']),
+
+            # Prepare CSV content
+            csv_data = "Date/Time; Command; State\n"
+            for entry in log_file:
+                csv_data += '; '.join([
+                    entry.get('datetime', ''),
+                    entry.get('cmd', '').replace(';', ','),
+                    entry.get('status', '').replace(';', ','),
                 ]) + '\n'
 
-            content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+            # Set headers for download
             web.header('Access-Control-Allow-Origin', '*')
-            web.header('Content-type', content) 
-            web.header('Content-Disposition', 'attachment; filename="log.csv"')
-        except:
-            log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
-            pass
+            web.header('Content-Type', 'text/csv; charset=utf-8')
+            web.header('Content-Disposition', 'attachment; filename="cli_control_log.csv"')
 
-        return data
+            log.info(NAME, _('Log file exported as CSV successfully.'))
+            return csv_data
+
+        except Exception:
+            log.error(NAME, _('CLI Control plug-in error in log_csv GET:\n') + traceback.format_exc())
+            return _('Error while generating CSV log file. Please check system log for details.')
