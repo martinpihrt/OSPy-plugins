@@ -103,16 +103,26 @@ def run_command(cmd):
     """run command"""
     if plugin_options['use_control']:
         try:
-            proc = subprocess.Popen(cmd, stderr=subprocess.STDOUT, # merge stdout and stderr
-            stdout=subprocess.PIPE, shell=True)
-            output = proc.communicate()[0]
-            output = output.decode('utf8')#.strip()
-            log.info(NAME, output)
-            if plugin_options['use_log']:
-                update_log(cmd, output)
+            msg_ok =  _('Command OK')
+            msg_err = _('Command failed')
+            log.debug(NAME, datetime_string() + ': {}'.format(cmd))
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            output, _stderr = proc.communicate()
+            output = output.decode('utf-8', errors='replace')
+            ret = proc.returncode
+            if ret != 0:
+                log.error(NAME, msg_err + f" ({ret})\n{output}")
+                if plugin_options['use_log']:
+                    update_log(cmd, msg_err + f" ({ret})\n{output}")
+            else:
+                log.info(NAME, msg_ok + f" ({ret})\n{output}")
+                if plugin_options['use_log']:
+                    update_log(cmd, msg_ok + f" ({ret})\n{output}")
         except:
-            log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
+            log.error(NAME, datetime_string() + ':\n' + traceback.format_exc())
             pass
+    else:
+        log.info(NAME, _('CLI Control is disabled.'))
 
 def on_station_on(name, **kw):
     """ Send CMD to ON when core program signals in station state."""
@@ -252,23 +262,32 @@ class settings_page(ProtectedPage):
 
         return self.plugin_render.cli_control(plugin_options, log.events(NAME))
 
-    def POST(self):    
+    def POST(self):
         qdict = web.input()
-        plugin_options['use_control'] = qdict.get('use_control') == 'on'
-        plugin_options['use_log'] = qdict.get('use_log') == 'on'
+        if 'use_control' in qdict:
+            if qdict['use_control']=='on':
+                plugin_options.__setitem__('use_control', True)
+        else:  
+            plugin_options.__setitem__('use_control', False)
 
+        if 'use_log' in qdict:
+            if qdict['use_log']=='on':
+                plugin_options.__setitem__('use_log', True)
+        else:
+            plugin_options.__setitem__('use_log', False)
         
         commands = {'on': [], 'off': []}
         for i in range(options.output_count):
-            commands['on'].append(qdict.get(f'con{i}', ''))
-            commands['off'].append(qdict.get(f'coff{i}', ''))
+            commands['on'].append(qdict['con'+str(i)])
+            commands['off'].append(qdict['coff'+str(i)])
 
-        plugin_options['on'] = commands['on']
-        plugin_options['off'] = commands['off']
+        plugin_options.__setitem__('on', commands['on']) 
+        plugin_options.__setitem__('off', commands['off'])
 
         if sender is not None:
             sender.update()
 
+        log.clear(NAME)
         log.info(NAME, _('CLI Control settings updated successfully.'))
         raise web.seeother(plugin_url(settings_page), True)
 
@@ -277,15 +296,8 @@ class help_page(ProtectedPage):
     """Load an HTML help page."""
 
     def GET(self):
-        try:
-            return self.plugin_render.cli_control_help()
-        except Exception:
-            log.error(NAME, _('CLI Control plug-in error in help_page GET:\n') + traceback.format_exc())
-            msg = (
-                _('An internal error was found in the system, see the error log for more information. ')
-                + _('The error is in part: cli_control -> help_page GET')
-            )
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.cli_control_help()
+
 
 class log_page(ProtectedPage):
     """Load an HTML page with log data."""
