@@ -252,6 +252,15 @@ function updatePingState(num, pingState, rtt, use_ping) {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Logging all errors'):</td>
+                <td title=$:{json.dumps(_('If this option is checked, all outages will be saved in the logs. Otherwise, only outages and restarts of all 3 servers will be saved.'), ensure_ascii=False)}>
+                    <label class="switch">
+                    <input name='log_all_servers' type='checkbox'${" checked" if plugin_options['log_all_servers'] else ""}>
+                    <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Show data from'):</td>
                 <td>
                     <select id="type_log" name="type_log" style="width: 200px" title=$:{json.dumps(_('Choose from where the displayed data in the log and graph will be loaded.'), ensure_ascii=False)}>

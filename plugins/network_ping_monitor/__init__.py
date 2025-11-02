@@ -28,19 +28,20 @@ LINK = 'settings_page'
 plugin_options = PluginOptions(
     NAME,
     {  'use_ping': False,
-       'address_1': '8.8.8.8',         # Google.com
-       'address_2': '78.128.246.93',   # Cesnet.cz
-       'address_3': '85.162.11.19',    # Cetin.cz
-       'label_1': 'google.com',
-       'label_2': 'cesnet.cz',
-       'label_3': 'cetin.cz',
+       'address_1': '8.8.8.8',
+       'address_2': '1.1.1.1',
+       'address_3': '77.75.79.222',
+       'label_1': 'Google',
+       'label_2': 'Flare',
+       'label_3': 'Seznam',
        'SUMMARY_INTERVAL': 30,
        'enable_log': False,
        'en_sql_log': False,
        'type_log': 0,
        'log_records': 0,
        'log_interval': 1,
-       'graph_filter': 10,
+       'limit': 10,
+       'log_all_servers': False,
     }
 )
 
@@ -110,15 +111,18 @@ class Sender(Thread):
                                 duration_str = str(outage_duration).split('.')[0]
                                 msg = f"[{name}] " + _('AVAILABLE AGAIN after outage') + f" {avg} ms"
                                 log.info(NAME, datetime_string() + ' ' + msg)
-                                update_log_if_enabled(msg)
+                                if plugin_options['log_all_servers']:
+                                    update_log_if_enabled(msg)
                             elif not status:
                                 msg = f"[{name}] " + _('Unavailable')
                                 log.info(NAME, datetime_string() + ' ' + msg)
-                                update_log_if_enabled(msg)
+                                if plugin_options['log_all_servers']:
+                                    update_log_if_enabled(msg)
                             elif status and data["status"] is None:
                                 msg = f"[{name}] " + _('Available') + f" {avg} ms"
                                 log.info(NAME, datetime_string() + ' ' + msg)
-                                update_log_if_enabled(msg)
+                                if plugin_options['log_all_servers']:
+                                    update_log_if_enabled(msg)
 
                             data["status"] = status
                             data["last_change"] = now
@@ -167,11 +171,12 @@ class Sender(Thread):
                         status_list = []
                         for name, data in servers.items():
                             status_str = _('Available') if data['status'] else _('Unavailable')
-                            status_list.append(f"{name}: {status_str}")
+                            status_list.append(f"{name} {status_str}")
                         avg_rtt = round(sum(all_times)/len(all_times), 2) if all_times else 0
-                        msg = _('Periodic status log') + ': ' + ', '.join(status_list) + _('Average RTT:') + f' {avg_rtt} ms'
+                        msg = ' ' + _('Periodic status log') + '\n{}'.format(',\n'.join(status_list)) + '\n' + _('Average RTT:') + f' {avg_rtt} ms'
                         log.info(NAME, datetime_string() + ' ' + msg)
-                        update_log_if_enabled(msg)
+                        if plugin_options['log_all_servers']:
+                            update_log_if_enabled(msg)
                         last_periodic_log = time.time()
 
                     if time.time() - last_summary >= plugin_options['SUMMARY_INTERVAL']:
@@ -180,11 +185,11 @@ class Sender(Thread):
                         available_times = []
                         for name, data in servers.items():
                             status_str = _('Available') if data["status"] else _('Unavailable')
-                            summary.append(f"{name}: {status_str}")
+                            summary.append(f"{name} {status_str}")
                             if data["status"] and data["status"] is not None:
                                 available_times.append(data.get("avg_time", 0))
                         avg_rtt = round(sum(all_times)/len(all_times), 2) if all_times else 0
-                        log.info(NAME, datetime_string() + ' ' + _('Summary of statuses:') + ' {}\n'.format(',\n'.join(summary)) + '.\n' + _('Average RTT of available servers:') + f' {avg_rtt} ms')
+                        log.info(NAME, datetime_string() + ' ' + _('Summary of statuses:') + '\n{}'.format(',\n'.join(summary)) + '\n' + _('Average RTT:') + f' {avg_rtt} ms')
                         last_summary = time.time()
                     self._sleep(5)
 
@@ -323,12 +328,29 @@ def ping_test(ip):
 
 class settings_page(ProtectedPage):
     def GET(self):
+        qdict = web.input()
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
+        if delSQL:
+            try:
+                from plugins.database_connector import execute_db
+                sql = "DROP TABLE IF EXISTS `netping`"
+                execute_db(sql, test=False, commit=False)
+                log.info(NAME, _('Deleted SQL table netping OK'))
+            except Exception:
+                log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+
         return self.plugin_render.network_ping_monitor(plugin_options, log.events(NAME), state)
 
     def POST(self):
+        global servers
         plugin_options.web_update(web.input())
         if sender is not None:
             sender.update()
+            servers = {
+                plugin_options["label_1"]: {"ip": plugin_options["address_1"], "status": None, "last_change": None},
+                plugin_options["label_2"]: {"ip": plugin_options["address_2"], "status": None, "last_change": None},
+                plugin_options["label_3"]: {"ip": plugin_options["address_3"], "status": None, "last_change": None}
+            }
         raise web.seeother(plugin_url(settings_page), True)
 
 class help_page(ProtectedPage):
@@ -453,16 +475,17 @@ class data_json(ProtectedPage):
 
 class graph_page(ProtectedPage):
     def GET(self):
-        qdict = web.input(limit='500')
-        limit = int(qdict.limit) if qdict.limit.isdigit() else 500
-
-        if plugin_options['type_log'] == 0:
-            records_data = read_log()[:limit]
-        else:
-            records_data = read_sql_log()[:limit]
+        qdict = web.input()
 
         if 'limit' in qdict:
-            plugin_options['graph_filter'] = limit
+            plugin_options['limit'] = int(qdict['limit'])
+
+        _limit = int(plugin_options['limit'])
+
+        if plugin_options['type_log'] == 0:
+            records_data = read_log()[:_limit][::-1]      # [:plugin_options['limit']][::-1] for reversed data in graph
+        else:
+            records_data = read_sql_log()[:_limit][::-1]  # [:plugin_options['limit']] not reveres
 
         series = []
         for r in records_data:

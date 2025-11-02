@@ -18,7 +18,7 @@ $var page: plugins
         </p>
         <form method="get">
             <label>$_('Number of records:')</label>
-            <input type="number" name="limit" value="$plugin_options['graph_filter']" min="10" max="10000"/>
+            <input type="number" name="limit" value="$plugin_options['limit']" min="5" max="10000"/>
             <button type="submit" class="button submit">$_('Apply')</button>
         </form>
         <canvas id="availabilityChart" width="900" height="300"></canvas>
@@ -38,7 +38,7 @@ const chart = new Chart(ctx, {
             label: $:{json.dumps(_('All servers available'), ensure_ascii=False).encode('utf8').decode('utf-8')},
             data: data.map(d => d.all_up),
             borderColor: 'blue',
-            backgroundColor: 'rgba(0, 0, 255, 0.2)',
+            backgroundColor: 'blue',
             stepped: true,
             fill: true
         }]
