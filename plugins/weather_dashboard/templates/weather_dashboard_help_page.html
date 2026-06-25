@@ -1,0 +1,93 @@
+$def with()
+
+$var title: $_('OSPy Weather Dashboard - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('OSPy Weather Dashboard - help')</div>
+
+    <p>$_('Weather Dashboard shows selected values from other OSPy plugins and OSPy sensors on one dashboard.')</p>
+    <p>$_('Each displayed item is configured as one gauge. A gauge can be shown as a round canvas meter or as a simple text value.')</p>
+
+    <p><b>$_('Dashboard modes')</b></p>
+    <ul>
+        <li>$_('Canvas')</li>
+        $_('Shows enabled gauges as round meters. Use Canvas size to set the width and height of each meter.')
+        <li>$_('Text')</li>
+        $_('Shows enabled gauges as text values. Use Text font to set the size of the displayed text.')
+    </ul>
+
+    <p><b>$_('General settings')</b></p>
+    <ul>
+        <li>$_('Dashboard mode')</li>
+        $_('Select whether the dashboard page will use canvas meters or text values.')
+        <li>$_('Canvas size')</li>
+        $_('The number determines the size of the round meter in canvas mode.')
+        <li>$_('Text font')</li>
+        $_('The number determines the font size in text mode.')
+    </ul>
+
+    <p><b>$_('Gauge settings')</b></p>
+    <ul>
+        <li>$_('Add Gauge')</li>
+        $_('Adds a new gauge with default settings.')
+        <li>$_('Delete')</li>
+        $_('Removes the selected gauge from the dashboard.')
+        <li>$_('Enabled')</li>
+        $_('When checked, this gauge is shown on the dashboard. When unchecked, the gauge is saved but hidden.')
+        <li>$_('Name')</li>
+        $_('The name displayed on the canvas meter or before the text value.')
+        <li>$_('Unit')</li>
+        $_('The unit displayed after the value, for example C, %, cm, l, V, or km/h.')
+        <li>$_('Source')</li>
+        $_('Selects where the value is read from. Available sources are loaded from the plugin source registry.')
+        <li>$_('Channel')</li>
+        $_('Selects the input channel for the selected source. The list changes automatically after changing Source.')
+        <li>$_('Value type')</li>
+        $_('Selects which value from the selected source is used. The list changes automatically after changing Source.')
+    </ul>
+
+    <p><b>$_('Scale and colors')</b></p>
+    <ul>
+        <li>$_('Ticks')</li>
+        $_('Comma separated scale labels used by the canvas meter, for example 0,25,50,75,100.')
+        <li>$_('Min')</li>
+        $_('Minimum value of the canvas meter scale.')
+        <li>$_('Max')</li>
+        $_('Maximum value of the canvas meter scale.')
+        <li>$_('Red')</li>
+        $_('Range highlighted in red on the canvas meter.')
+        <li>$_('Blue')</li>
+        $_('Range highlighted in blue on the canvas meter.')
+        <li>$_('Green')</li>
+        $_('Range highlighted in green on the canvas meter.')
+    </ul>
+
+    <p><b>$_('Available sources')</b></p>
+    <ul>
+        <li>$_('Air Temperature')</li>
+        $_('Reads DS18B20 probes from the Air Temperature and Humidity Monitor plugin.')
+        <li>$_('Tank Monitor')</li>
+        $_('Reads percent and volume values from the Water Tank Monitor plugin.')
+        <li>$_('Current Loop')</li>
+        $_('Reads percent, cm, liter, and voltage values from the Current Loop Tanks Monitor plugin.')
+        <li>$_('Wind Monitor')</li>
+        $_('Reads wind speed from the Wind Speed Monitor plugin.')
+        <li>$_('OSPy Sensor')</li>
+        $_('Reads values from configured OSPy sensors.')
+    </ul>
+
+    <p><b>$_('Saving settings')</b></p>
+    <ul>
+        <li>$_('Submit')</li>
+        $_('Saves all dashboard and gauge settings.')
+        <li>$_('Cancel')</li>
+        $_('Leaves the settings page without saving changes.')
+    </ul>
+
+    <p>$_('After saving, open the dashboard page to view the configured gauges. Values are refreshed automatically.')</p><br>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('weather_dashboard.settings_page') class="button danger">$_('Cancel')</a><br/> 
+</div>

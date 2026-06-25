@@ -1,0 +1,117 @@
+$def with(plugin_options)
+
+$var title: $_('Weather Dashboard')
+$var page: plugins
+
+<script src="/static/scripts/gauge.min.js"></script>
+
+<script>
+var gauges = [];
+var dashboard_data = [];
+
+function buildGaugeMap() {
+    gauges = [];
+    if (!document.gauges) {
+        return;
+    }
+    document.gauges.forEach(function(gauge) {
+        gauges.push({
+            gauge: gauge,
+            id: parseInt(
+                gauge.canvas.element.dataset.gaugeId
+            )
+        });
+    });
+}
+
+function updateData() {
+    jQuery.getJSON(
+        "/plugins/weather_dashboard/data_json",
+        function(dataVals) {
+            dashboard_data = dataVals;
+            dashboard_data.forEach(function(item) {
+                gauges.forEach(function(g) {
+                    if (g.id == item.id){
+                        g.gauge.value = item.value;
+                    }
+                });
+                jQuery('.gauge-value[data-gauge-id="' + item.id + '"]').text(item.value);
+            });
+        }
+    );
+    setTimeout(updateData, 4000);
+}
+
+jQuery(document).ready(function() {
+    buildGaugeMap();
+    setTimeout(updateData, 100);
+});
+</script>
+
+$if plugin_options['dashboard_mode'] == 'canvas':
+    <div id="canvas-container" class="canvas-container">
+    $for i in range(len(plugin_options['gauges'])):
+        $ gauge = plugin_options['gauges'][i]
+        $if gauge['enabled']:
+            <canvas
+                data-type="radial-gauge"
+                data-gauge-id="$i"
+                data-title=$:{json.dumps(gauge['name'], ensure_ascii=False)}
+                data-value="0"
+                data-min-value="$gauge['min']"
+                data-max-value="$gauge['max']"
+                data-width="$plugin_options['canvas_size_xy']"
+                data-height="$plugin_options['canvas_size_xy']"
+                data-major-ticks="$gauge['tick']"
+                data-units=$:{json.dumps(gauge['unit'], ensure_ascii=False)}
+                data-highlights='[
+                    {
+                        "from": $gauge["red_from"],
+                        "to": $gauge["red_to"],
+                        "color": "red"
+                    },
+                    {
+                        "from": $gauge["blue_from"],
+                        "to": $gauge["blue_to"],
+                        "color": "blue"
+                    },
+                    {
+                        "from": $gauge["green_from"],
+                        "to": $gauge["green_to"],
+                        "color": "green"
+                    }
+                ]'>
+
+                $_('Your browser does not support canvas.')
+            </canvas>
+    </div>
+
+$else:
+    <div id="text-container" class="text-container">
+    $for i in range(len(plugin_options['gauges'])):
+        $ gauge = plugin_options['gauges'][i]
+        $if gauge['enabled']:
+            <p
+                id="gauge${i}"
+                style="font-size: $plugin_options['txt_size_font']px">
+                $gauge['name']:
+                <span
+                    class="gauge-value"
+                    data-gauge-id="$i">
+                    --
+                </span>
+                $gauge['unit']
+            </p>
+    </div>
+
+<div id="controls">
+    <button
+        onclick="window.location='/'"
+        class="submit">
+        $_('Cancel')
+    </button>
+    <a href=$plugins.plugin_url('weather_dashboard.settings_page')
+       class="button danger">
+        $_('Settings')
+    </a>
+</div>

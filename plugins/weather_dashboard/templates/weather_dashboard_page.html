@@ -1,0 +1,463 @@
+$def with(plugin_options, events, SOURCE_REGISTRY, SOURCE_KEYS)
+
+$var title: $_('Weather Dashboard')
+$var page: plugins
+
+<script>
+var sourceRegistry = {};
+
+function getGaugeSelects(index) {
+    return {
+        source: jQuery('select[name="source' + index + '"]'),
+        channel: jQuery('select[name="channel' + index + '"]'),
+        valueType: jQuery('select[name="value_type' + index + '"]')
+    };
+}
+
+function appendOption(select, value, text, selectedValue) {
+    var option = jQuery('<option></option>')
+        .attr('value', value)
+        .text(text);
+
+    if (String(value) === String(selectedValue)) {
+        option.attr('selected', 'selected');
+    }
+
+    select.append(option);
+}
+
+function selectedOrFirst(select) {
+    var value = select.val();
+    if (value !== null && value !== undefined && value !== '') {
+        return value;
+    }
+    return select.find('option:first').val();
+}
+
+function buildChannelOptions(source, selectedChannel) {
+    var options = [];
+    var channelNames = source.channel_names || [];
+    var count = parseInt(source.channels, 10);
+
+    if (channelNames.length > 0) {
+        for (var i = 0; i < channelNames.length; i += 1) {
+            options.push({
+                value: i,
+                text: channelNames[i]
+            });
+        }
+    } else if (count > 0) {
+        for (var j = 0; j < count; j += 1) {
+            options.push({
+                value: j,
+                text: j + 1
+            });
+        }
+    } else if (selectedChannel !== null && selectedChannel !== undefined && selectedChannel !== '') {
+        options.push({
+            value: selectedChannel,
+            text: selectedChannel
+        });
+    }
+
+    return options;
+}
+
+function refreshGaugeOptions(index, keepCurrentValues) {
+    var selects = getGaugeSelects(index);
+    var selectedSource = keepCurrentValues
+        ? selectedOrFirst(selects.source)
+        : selects.source.data('selected');
+    var selectedChannel = keepCurrentValues
+        ? selectedOrFirst(selects.channel)
+        : selects.channel.data('selected');
+    var selectedValueType = keepCurrentValues
+        ? selectedOrFirst(selects.valueType)
+        : selects.valueType.data('selected');
+    var source = sourceRegistry[selectedSource];
+
+    if (!source) {
+        selectedSource = Object.keys(sourceRegistry)[0];
+        source = sourceRegistry[selectedSource];
+    }
+
+    selects.channel.empty();
+    selects.valueType.empty();
+
+    if (!source) {
+        return;
+    }
+
+    buildChannelOptions(source, selectedChannel).forEach(function(option) {
+        appendOption(selects.channel, option.value, option.text, selectedChannel);
+    });
+
+    (source.types || []).forEach(function(valueType) {
+        appendOption(selects.valueType, valueType, valueType, selectedValueType);
+    });
+}
+
+function populateSourceSelects() {
+    jQuery('.weather-dashboard-source').each(function() {
+        var sourceSelect = jQuery(this);
+        var index = sourceSelect.data('gauge-index');
+        var selectedSource = sourceSelect.data('selected');
+
+        sourceSelect.empty();
+
+        Object.keys(sourceRegistry).sort().forEach(function(key) {
+            var source = sourceRegistry[key];
+            appendOption(sourceSelect, key, source.title || key, selectedSource);
+        });
+
+        refreshGaugeOptions(index, false);
+    });
+}
+
+jQuery(document).ready(function(){
+
+    jQuery("#cSubmit").click(function(){
+        jQuery("#pluginForm").submit();
+    });
+
+    jQuery('.weather-dashboard-source').change(function(){
+        refreshGaugeOptions(jQuery(this).data('gauge-index'), true);
+    });
+
+    jQuery.getJSON(
+        "$plugins.plugin_url('weather_dashboard.sources_json')",
+        function(data) {
+            sourceRegistry = data || {};
+            populateSourceSelects();
+        }
+    );
+
+});
+</script>
+
+<div id="plugin">
+
+<div class="title">
+$_('Weather Dashboard')
+</div>
+
+<form id="pluginForm"
+      action="$plugins.plugin_url('weather_dashboard.settings_page')"
+      method="post">
+
+<input type="hidden"
+       name="gauge_count"
+       value="$len(plugin_options['gauges'])">
+
+<table class="optionList">
+
+<tr>
+    <th colspan="2">
+        <hr>
+        $_('General Settings')
+    </th>
+</tr>
+
+<tr>
+    <td>$_('Dashboard mode')</td>
+
+    <td>
+
+        <select name="dashboard_mode">
+
+            <option value="canvas"
+            ${"selected" if plugin_options['dashboard_mode']=="canvas" else ""}>
+            Canvas
+            </option>
+
+            <option value="text"
+            ${"selected" if plugin_options['dashboard_mode']=="text" else ""}>
+            Text
+            </option>
+
+        </select>
+
+    </td>
+</tr>
+
+<tr>
+    <td>$_('Canvas size')</td>
+
+    <td>
+
+        <input
+            type="number"
+            min="150"
+            max="800"
+            name="canvas_size_xy"
+            value="$plugin_options['canvas_size_xy']">
+
+    </td>
+
+</tr>
+
+<tr>
+
+    <td>$_('Text font')</td>
+
+    <td>
+
+        <input
+            type="number"
+            min="10"
+            max="150"
+            name="txt_size_font"
+            value="$plugin_options['txt_size_font']">
+
+    </td>
+
+</tr>
+
+<tr>
+
+    <th colspan="2">
+
+        <hr>
+
+        <a
+            class="button submit"
+            href="$plugins.plugin_url('weather_dashboard.add_gauge')">
+
+            $_('Add Gauge')
+
+        </a>
+
+    </th>
+
+</tr>
+
+$for i in range(len(plugin_options['gauges'])):
+    <tr>
+
+        <th colspan="2">
+
+            <hr>
+
+            $_('Gauge')
+            ${i+1}
+
+            &nbsp;
+
+            <a
+                class="button danger"
+                href="$plugins.plugin_url('weather_dashboard.delete_gauge')?id=${i}">
+
+                $_('Delete')
+
+            </a>
+
+        </th>
+
+    </tr>
+    <tr>
+        <td>$_('Enabled')</td>
+        <td>
+            <input
+                type="checkbox"
+                name="enabled${i}"
+                ${"checked" if plugin_options['gauges'][i]['enabled'] else ""}>
+        </td>
+    </tr>
+
+    <tr>
+        <td>$_('Name')</td>
+        <td>
+            <input
+                type="text"
+                size="40"
+                name="name${i}"
+                value="${plugin_options['gauges'][i]['name']}">
+        </td>
+    </tr>
+
+    <tr>
+        <td>$_('Unit')</td>
+        <td>
+            <input
+                type="text"
+                size="10"
+                name="unit${i}"
+                value="${plugin_options['gauges'][i]['unit']}">
+        </td>
+    </tr>
+
+    <tr>
+        <td>$_('Source')</td>
+        <td>
+
+            <select
+                class="weather-dashboard-source"
+                name="source${i}"
+                data-gauge-index="${i}"
+                data-selected="${plugin_options['gauges'][i]['source']}">
+            </select>
+
+        </td>
+    </tr>
+
+    <tr>
+        <td>$_('Channel')</td>
+
+        <td>
+
+            <select
+                name="channel${i}"
+                data-selected="${plugin_options['gauges'][i]['channel']}">
+            </select>
+
+        </td>
+
+    </tr>
+
+    <tr>
+
+        <td>$_('Value type')</td>
+
+        <td>
+
+            <select
+                name="value_type${i}"
+                data-selected="${plugin_options['gauges'][i]['value_type']}">
+            </select>
+
+        </td>
+
+    </tr>
+
+    <tr>
+
+        <td>$_('Scale')</td>
+
+        <td>
+
+            $_('Ticks')
+
+            <input
+                type="text"
+                size="25"
+                name="tick${i}"
+                value="${plugin_options['gauges'][i]['tick']}">
+
+            &nbsp;
+
+            $_('Min')
+
+            <input
+                type="text"
+                size="4"
+                name="min${i}"
+                value="${plugin_options['gauges'][i]['min']}">
+
+            &nbsp;
+
+            $_('Max')
+
+            <input
+                type="text"
+                size="4"
+                name="max${i}"
+                value="${plugin_options['gauges'][i]['max']}">
+
+        </td>
+
+    </tr>
+
+    <tr>
+
+        <td>$_('Red')</td>
+
+        <td>
+
+            <input
+                type="number"
+                size="4"
+                name="red_from${i}"
+                value="${plugin_options['gauges'][i]['red_from']}">
+
+            →
+
+            <input
+                type="number"
+                size="4"
+                name="red_to${i}"
+                value="${plugin_options['gauges'][i]['red_to']}">
+
+        </td>
+
+    </tr>
+
+    <tr>
+
+        <td>$_('Blue')</td>
+
+        <td>
+
+            <input
+                type="number"
+                size="4"
+                name="blue_from${i}"
+                value="${plugin_options['gauges'][i]['blue_from']}">
+
+            →
+
+            <input
+                type="number"
+                size="4"
+                name="blue_to${i}"
+                value="${plugin_options['gauges'][i]['blue_to']}">
+
+        </td>
+
+    </tr>
+
+    <tr>
+
+        <td>$_('Green')</td>
+
+        <td>
+
+            <input
+                type="number"
+                size="4"
+                name="green_from${i}"
+                value="${plugin_options['gauges'][i]['green_from']}">
+
+            →
+
+            <input
+                type="number"
+                size="4"
+                name="green_to${i}"
+                value="${plugin_options['gauges'][i]['green_to']}">
+
+        </td>
+
+    </tr>
+
+</table>
+
+</form>
+
+</div>
+
+<div id="controls">
+    <button
+        id="cSubmit"
+        class="submit">
+        $_('Submit')
+    </button>
+    <button
+        onclick="window.location='/'"
+        class="cancel">
+        $_('Cancel')
+    </button>
+    <a href=$plugins.plugin_url('weather_dashboard.help_page')
+       class="button danger">
+        $_('Help')
+    </a>
+</div>

@@ -75,3 +75,4 @@ Available plugins:
 * Shelly Cloud Integration
 * Current Loop Tanks Monitor
 * Network Ping Monitor
+* Weather Dashboard
