@@ -97,18 +97,24 @@ input:checked + .slider:before {
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use Real Time'):</td>
-                <td title=$:{json.dumps(_('If the check box is selected, the plugin will be active.'), ensure_ascii=False)}>
+                <td title="$_('If the check box is selected, the plugin will be active.')">
                 <label class="switch">
-                <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                $if plugin_options['enabled']:
+                    <input name='enabled' type='checkbox' checked>
+                $else:
+                    <input name='enabled' type='checkbox'>
                 <span class="slider"></span>
                 </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use NTP Time'):</td>
-                <td title=$:{json.dumps(_('If checked, the current time will be downloaded from the Internet (from the NTP server) and the OSPy time will be synchronized with it.'), ensure_ascii=False)}>
+                <td title="$_('If checked, the current time will be downloaded from the Internet (from the NTP server) and the OSPy time will be synchronized with it.')">
                 <label class="switch">
-                <input name='use_ntp' type='checkbox'${" checked" if plugin_options['use_ntp'] else ""}>
+                $if plugin_options['use_ntp']:
+                    <input name='use_ntp' type='checkbox' checked>
+                $else:
+                    <input name='use_ntp' type='checkbox'>
                 <span class="slider"></span>
                 </label>
                 </td>
@@ -134,7 +140,7 @@ input:checked + .slider:before {
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="7" cols="55" readonly>$events</textarea>
                 </td>
             </tr>
         </table>

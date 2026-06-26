@@ -6,21 +6,17 @@ import subprocess
 import datetime
 import socket
 import struct
-import sys
 import time
-import os
 
 from . import rtc_DS1307
 
 from threading import Thread, Event
 
-from socket import AF_INET, SOCK_DGRAM
 import traceback
 import json
 
 import web
 from ospy.log import log
-from ospy.options import options
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from plugins import PluginOptions, plugin_url
@@ -74,13 +70,13 @@ class RealTimeChecker(Thread):
 
             try:
                 if plugin_options['enabled']:
+                    ds1307 = None
                     log.clear(NAME)
                     dis_text = True
                     log.info(NAME, _('Local time') + ': ' + datetime_string())
                     try:                                                                 # try use library rtc_DS1307
                        ds1307 = try_io(lambda: rtc_DS1307.rtc_DS1307(1))
                     except:
-                       pass
                        log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
                     if plugin_options['use_ntp']:
@@ -94,14 +90,14 @@ class RealTimeChecker(Thread):
                               ntp_time = getNTPtime(plugin_options['ntp_server_two'])   # try read NTP time from web: server 2
                               log.info(NAME, _('NTP time') + ': ' + str(plugin_options['ntp_server_two']) + ': ' + str(ntp_time))
                            except:
-                              pass
                               log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
-                    try:
-                       rtc_time = try_io(lambda:ds1307.read_datetime())                          # try read RTC time from DS1307
-                       log.info(NAME, _('RTC time') + ': ' + str(rtc_time))
-                    except:
-                       log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
+                    if ds1307 is not None:
+                       try:
+                          rtc_time = try_io(lambda:ds1307.read_datetime())                          # try read RTC time from DS1307
+                          log.info(NAME, _('RTC time') + ': ' + str(rtc_time))
+                       except:
+                          log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
                     if ntp_time is not None and rtc_time is not None and ntp_time != rtc_time:   # try save NTP time to RTC DS1307 if NTP!=RTC
                        try:
@@ -112,10 +108,10 @@ class RealTimeChecker(Thread):
                        except:
                           log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
-                    if ntp_time is not None and ntp_time != datetime_string():           # try sync local time from NTP time if NTP!=local time
+                    if ntp_time is not None and abs((ntp_time - datetime.datetime.now()).total_seconds()) > 1:           # try sync local time from NTP time if NTP!=local time
                        try:
                           log.info(NAME, _('Saving NTP time to local system time.'))
-                          subprocess.call("sudo date -s '{:}'".format(ntp_time.strftime('%Y/%m/%d %H:%M:%S')), shell=True) # Sets system time (Requires root, obviously)
+                          subprocess.call(['sudo', 'date', '-s', ntp_time.strftime('%Y/%m/%d %H:%M:%S')]) # Sets system time (Requires root, obviously)
                        except:
                           log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
                     else:                                                                 # try sync local time from RTC time
@@ -127,8 +123,8 @@ class RealTimeChecker(Thread):
                              # date 021415232015 (Sun Feb 14 15:23:31 PST 2015)
                              # date --set='20150125 09:17:00'
 
-                             set_time = rtc_time.strftime('"%Y%m%d ') + rtc_time.strftime('%H:%M:%S"')
-                             os.system('sudo date --set=' + set_time)  
+                             set_time = rtc_time.strftime('%Y%m%d ') + rtc_time.strftime('%H:%M:%S')
+                             subprocess.call(['sudo', 'date', '--set=' + set_time])
 
                        except:
                           log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
@@ -178,18 +174,19 @@ def getNTPtime(server_address):
     buf = 1024
     REF_TIME_1970 = 2208988800  # Reference time (in seconds since 1900-01-01 00:00:00)
     client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    data = b'\x1b' + 47 * b'\0'
-    client.sendto(data, (server_address, int(plugin_options['ntp_port'])))
-    data, address = client.recvfrom(buf)
-    if data:
-        t = struct.unpack('!12I', data)[10]
-        t -= REF_TIME_1970
+    client.settimeout(10)
     try:
-        t = datetime.datetime.strptime(time.ctime(t), "%a %b %d %H:%M:%S %Y")
-        return t
-    except Exception: 
-        pass   
-        return None
+        data = b'\x1b' + 47 * b'\0'
+        client.sendto(data, (server_address, int(plugin_options['ntp_port'])))
+        data, address = client.recvfrom(buf)
+        if data:
+            t = struct.unpack('!12I', data)[10]
+            t -= REF_TIME_1970
+            return datetime.datetime.strptime(time.ctime(t), "%a %b %d %H:%M:%S %Y")
+    finally:
+        client.close()
+
+    return None
 
     
 def start():
@@ -202,7 +199,7 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
 
 ################################################################################
@@ -212,7 +209,7 @@ class settings_page(ProtectedPage):
     """Load an html page for entering real time adjustments"""
 
     def GET(self):
-        return self.plugin_render.real_time(plugin_options, log.events(NAME))
+        return self.plugin_render.real_time(plugin_options, '\n'.join(log.events(NAME)))
 
     def POST(self):
         plugin_options.web_update(web.input())
