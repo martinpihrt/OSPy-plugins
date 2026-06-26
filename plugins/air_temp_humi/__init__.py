@@ -63,6 +63,12 @@ plugin_options = PluginOptions(
      'label_ds3': 'label',  # label for DS4
      'label_ds4': 'label',  # label for DS5
      'label_ds5': 'label',  # label for DS6
+     'ds0_enabled': False,  # use DS1 in UI, logs and graph
+     'ds1_enabled': False,  # use DS2 in UI, logs and graph
+     'ds2_enabled': False,  # use DS3 in UI, logs and graph
+     'ds3_enabled': False,  # use DS4 in UI, logs and graph
+     'ds4_enabled': False,  # use DS5 in UI, logs and graph
+     'ds5_enabled': False,  # use DS6 in UI, logs and graph
      'ds_used': 0,          # count DS18b20, default 0 max 6x
      'reg_mm': 60,          # min for maximal runtime
      'reg_ss': 0,           # sec for maximal runtime
@@ -74,6 +80,50 @@ plugin_options = PluginOptions(
      'dt_to' : '2024-01-01T00:00',          # for graph history (to date time ex: 2024-03-17T12:00)
      }
 )
+
+
+def normalize_ds_options(migrate_legacy=True):
+    """Keep old ds_used compatible while new DS checkboxes drive the UI."""
+    active = []
+
+    if migrate_legacy and plugin_options['ds_enabled'] and plugin_options['ds_used'] > 0:
+        for i in range(0, 6):
+            if plugin_options['ds%d_enabled' % i]:
+                active.append(i)
+        if not active:
+            for i in range(0, min(plugin_options['ds_used'], 6)):
+                plugin_options.__setitem__('ds%d_enabled' % i, True)
+
+    active = []
+    for i in range(0, 6):
+        if plugin_options['ds_enabled'] and plugin_options['ds%d_enabled' % i]:
+            active.append(i)
+
+    ds_used = active[-1] + 1 if active else 0
+    if plugin_options['ds_used'] != ds_used:
+        plugin_options.__setitem__('ds_used', ds_used)
+
+    return active
+
+
+def DS18B20_is_enabled(probe):
+    try:
+        return plugin_options['ds_enabled'] and plugin_options['ds%d_enabled' % probe]
+    except:
+        return False
+
+
+def DS18B20_active_indexes():
+    return normalize_ds_options(migrate_legacy=False)
+
+
+def DS18B20_graph_name(probe):
+    if DS18B20_is_enabled(probe):
+        return plugin_options['label_ds%d' % probe]
+    return ''
+
+
+normalize_ds_options()
 
 
 ################################################################################
@@ -226,8 +276,10 @@ class Sender(Thread):
 
                     if plugin_options['ds_enabled']:  # if in plugin is enabled DS18B20
                        DS18B20_read_data()            # get read DS18B20 temperature data to global tempDS[xx]
-                       tempText +=  _('DS') + ': '
-                       for i in range(0, plugin_options['ds_used']):
+                       active_ds = DS18B20_active_indexes()
+                       if active_ds:
+                          tempText +=  _('DS') + ': '
+                       for i in active_ds:
                           self.status['DS%d' % i] = tempDS[i]
                           log.debug(NAME, _('Temperature') + ' ' + _('DS') + str(i+1) + ' (' + '%s' % plugin_options['label_ds%d' % i] + '): ' + '%.1f \u2103' % self.status['DS%d' % i])   
                           tempText += ' %s' % plugin_options['label_ds%d' % i] + ' %.1f \u2103' % self.status['DS%d' % i]
@@ -306,12 +358,14 @@ def DS18B20_read_data():
        # Test recieved data byte 1 and 2
        if i2c_data[1] == 255 or i2c_data[2] == 255:         
           log.debug(NAME, _('Data is not correct. Please try again later.'))
+          for i in range(0, 6):
+             tempDS[i] = -127
           return [-127,-127,-127,-127,-127,-127] # data has error 
 
        # Each float temperature from the hw board is 5 bytes long (5byte * 6 probe = 30 bytes).
        pom = 0
        teplota = [-127,-127,-127,-127,-127,-127]
-       for i in range(0, plugin_options['ds_used']):
+       for i in range(0, 6):
           priznak=0
           jed=0
           des=0
@@ -335,6 +389,8 @@ def DS18B20_read_data():
     except Exception:
       log.debug(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())       
       time.sleep(0.5)
+      for i in range(0, 6):
+         tempDS[i] = -127
       pass
       return [-127,-127,-127,-127,-127,-127] # try data has error
 
@@ -343,7 +399,7 @@ def DS18B20_read_data():
 
 def DS18B20_read_string_data():
     txt = [-127,-127,-127,-127,-127,-127,]
-    for i in range(0, plugin_options['ds_used']):
+    for i in range(0, 6):
        txt[i] = tempDS[i]
     return str(txt)
 
@@ -414,27 +470,15 @@ def read_graph_sql_log():
     try:
         sql_data = read_sql_log()
 
-        name1 = ""
-        name2 = ""
-        name3 = ""
-        name4 = ""
-        name5 = ""
-        name6 = ""
+        name1 = DS18B20_graph_name(0)
+        name2 = DS18B20_graph_name(1)
+        name3 = DS18B20_graph_name(2)
+        name4 = DS18B20_graph_name(3)
+        name5 = DS18B20_graph_name(4)
+        name6 = DS18B20_graph_name(5)
         name7 = ""
         name8 = ""
 
-        if plugin_options['ds_used'] > 0:
-            name1 = plugin_options['label_ds0']
-        if plugin_options['ds_used'] > 1:
-            name2 = plugin_options['label_ds1']
-        if plugin_options['ds_used'] > 2:
-            name3 = plugin_options['label_ds2']
-        if plugin_options['ds_used'] > 3:
-            name4 = plugin_options['label_ds3']
-        if plugin_options['ds_used'] > 4:
-            name5 = plugin_options['label_ds4']
-        if plugin_options['ds_used'] > 5:
-            name6 = plugin_options['label_ds5']
         if plugin_options['enable_dht']:
             name7 = plugin_options['label'] + ' &deg;C'
             name8 = plugin_options['label'] + ' %'
@@ -544,30 +588,11 @@ def update_log(status):
             data['humi'] = _('Not used')
             data['outp'] = _('Not used')
 
-        if plugin_options['ds_used'] > 0:
-            data['ds0']  = str(status['DS0'])
-        else:
-            data['ds0']  = _('Not used')
-        if plugin_options['ds_used'] > 1:
-            data['ds1']  = str(status['DS1'])
-        else:
-            data['ds1']  = _('Not used')
-        if plugin_options['ds_used'] > 2:
-            data['ds2']  = str(status['DS2'])
-        else:
-            data['ds2']  = _('Not used')
-        if plugin_options['ds_used'] > 3:
-            data['ds3']  = str(status['DS3'])
-        else:
-            data['ds3']  = _('Not used')
-        if plugin_options['ds_used'] > 4:
-            data['ds4']  = str(status['DS4'])
-        else:
-            data['ds4']  = _('Not used')
-        if plugin_options['ds_used'] > 5:
-            data['ds5']  = str(status['DS5'])
-        else:
-            data['ds5']  = _('Not used')
+        for i in range(0, 6):
+            if DS18B20_is_enabled(i):
+                data['ds%d' % i] = str(status['DS%d' % i])
+            else:
+                data['ds%d' % i] = _('Not used')
 
         log_data.insert(0, data)
         if plugin_options['log_records'] > 0:
@@ -585,30 +610,10 @@ def update_log(status):
         timestamp = int(time.time())
 
         try:
-            if plugin_options['ds_used'] > 0:      # DS1
-                temp0 = graph_data[0]['balances']
-                DS1 = {'total': status['DS0']}
-                temp0.update({timestamp: DS1})
-            if plugin_options['ds_used'] > 1:      # DS2
-                temp1 = graph_data[1]['balances']
-                DS2 = {'total': status['DS1']}
-                temp1.update({timestamp: DS2})
-            if plugin_options['ds_used'] > 2:      # DS3
-                temp2 = graph_data[2]['balances']
-                DS3 = {'total': status['DS2']}
-                temp2.update({timestamp: DS3})
-            if plugin_options['ds_used'] > 3:      # DS4
-                temp3 = graph_data[3]['balances']
-                DS4 = {'total': status['DS3']}
-                temp3.update({timestamp: DS4})
-            if plugin_options['ds_used'] > 4:      # DS5
-                temp4 = graph_data[4]['balances']
-                DS5 = {'total': status['DS4']}
-                temp4.update({timestamp: DS5})
-            if plugin_options['ds_used'] > 5:      # DS6
-                temp5 = graph_data[5]['balances']
-                DS6 = {'total': status['DS5']}
-                temp5.update({timestamp: DS6})
+            for i in DS18B20_active_indexes():
+                temp = graph_data[i]['balances']
+                DS = {'total': status['DS%d' % i]}
+                temp.update({timestamp: DS})
 
             if plugin_options['enable_dht']:
                 temp6 = graph_data[6]['balances']  # DHT temp
@@ -643,27 +648,15 @@ def update_log(status):
 def create_default_graph():
     """Create default graph json file."""
 
-    name1 = ""
-    name2 = ""
-    name3 = ""
-    name4 = ""
-    name5 = ""
-    name6 = ""
+    name1 = DS18B20_graph_name(0)
+    name2 = DS18B20_graph_name(1)
+    name3 = DS18B20_graph_name(2)
+    name4 = DS18B20_graph_name(3)
+    name5 = DS18B20_graph_name(4)
+    name6 = DS18B20_graph_name(5)
     name7 = ""
     name8 = ""
 
-    if plugin_options['ds_used'] > 0:
-        name1 = plugin_options['label_ds0']
-    if plugin_options['ds_used'] > 1:
-        name2 = plugin_options['label_ds1']
-    if plugin_options['ds_used'] > 2:
-        name3 = plugin_options['label_ds2']
-    if plugin_options['ds_used'] > 3:
-        name4 = plugin_options['label_ds3']
-    if plugin_options['ds_used'] > 4:
-        name5 = plugin_options['label_ds4']
-    if plugin_options['ds_used'] > 5:
-        name6 = plugin_options['label_ds5']
     if plugin_options['enable_dht']:
         name7 = plugin_options['label'] + ' &deg;C'
         name8 = plugin_options['label'] + ' %'
@@ -692,6 +685,7 @@ class settings_page(ProtectedPage):
     def GET(self):
         try:
             global sender
+            normalize_ds_options()
             qdict = web.input()
             show = helpers.get_input(qdict, 'show', False, lambda x: True)
             delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
@@ -736,8 +730,11 @@ class settings_page(ProtectedPage):
     def POST(self):
         try:
             plugin_options.web_update(web.input())
+            normalize_ds_options(migrate_legacy=False)
 
             updateSignal = signal('hass_plugin_update')
+            updateSignal.send()
+            updateSignal = signal('air_temp_humi_plugin_update')
             updateSignal.send()
             if sender is not None:
                 sender.update()
@@ -814,6 +811,9 @@ class data_json(ProtectedPage):
         data = {}
         try:
             data =  {
+            'enabled': plugin_options['enabled'],
+            'enable_dht': plugin_options['enable_dht'],
+            'ds_enabled': plugin_options['ds_enabled'],
             'label': plugin_options['label'],
             'label_ds0': plugin_options['label_ds0'],
             'label_ds1': plugin_options['label_ds1'],
@@ -821,6 +821,13 @@ class data_json(ProtectedPage):
             'label_ds3': plugin_options['label_ds3'],
             'label_ds4': plugin_options['label_ds4'],
             'label_ds5': plugin_options['label_ds5'],
+            'ds0_enabled': DS18B20_is_enabled(0),
+            'ds1_enabled': DS18B20_is_enabled(1),
+            'ds2_enabled': DS18B20_is_enabled(2),
+            'ds3_enabled': DS18B20_is_enabled(3),
+            'ds4_enabled': DS18B20_is_enabled(4),
+            'ds5_enabled': DS18B20_is_enabled(5),
+            'ds_active': DS18B20_active_indexes(),
             'temp_ds0':  DS18B20_read_probe(0),
             'temp_ds1':  DS18B20_read_probe(1),
             'temp_ds2':  DS18B20_read_probe(2),
@@ -874,9 +881,18 @@ class graph_json(ProtectedPage):
         data = []
         try:
             from datetime import datetime
+            qdict = web.input()
 
-            dt_from = datetime.strptime(plugin_options['dt_from'], '%Y-%m-%dT%H:%M') # from
-            dt_to   = datetime.strptime(plugin_options['dt_to'], '%Y-%m-%dT%H:%M')   # to
+            dt_from_text = qdict.get('dt_from', plugin_options['dt_from'])
+            dt_to_text = qdict.get('dt_to', plugin_options['dt_to'])
+            show_err = qdict.get('show_err', None)
+            if show_err is None:
+                show_err = plugin_options['show_err']
+            else:
+                show_err = show_err in ('1', 'on', 'true', 'True')
+
+            dt_from = datetime.strptime(dt_from_text, '%Y-%m-%dT%H:%M') # from
+            dt_to   = datetime.strptime(dt_to_text, '%Y-%m-%dT%H:%M')   # to
 
             epoch_time = datetime(1970, 1, 1)
 
@@ -893,7 +909,17 @@ class graph_json(ProtectedPage):
                 pass
 
             if len(json_data) > 0:
-                for i in range(0, 8):                                              # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
+                for i in range(0, min(8, len(json_data))):                         # 0 = ds1 ... 5 = ds6, 6 = DHT temp, 7 = DHT humi
+                    if i < 6:
+                        station_name = DS18B20_graph_name(i)
+                    elif i == 6 and plugin_options['enable_dht']:
+                        station_name = plugin_options['label'] + ' &deg;C'
+                    elif i == 7 and plugin_options['enable_dht']:
+                        station_name = plugin_options['label'] + ' %'
+                    else:
+                        station_name = ''
+                    if not station_name:
+                        continue
                     temp_balances = {}
                     for key in json_data[i]['balances']:
                         try:
@@ -902,12 +928,12 @@ class graph_json(ProtectedPage):
                             find_key = key   
                         if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
                             find_data = json_data[i]['balances'][key] 
-                            if plugin_options['show_err']:                         # if is checked show error values in graph
+                            if show_err:                                           # if is checked show error values in graph
                                 temp_balances[key] = json_data[i]['balances'][key]
                             else:
                                 if float(find_data['total']) != -127.0:            # not checked, add values if not -127
                                     temp_balances[key] = json_data[i]['balances'][key]    
-                    data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+                    data.append({ 'station': station_name, 'balances': temp_balances })
 
         except:
             log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())

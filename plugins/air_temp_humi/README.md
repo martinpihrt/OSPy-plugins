@@ -49,8 +49,8 @@ Plugin setup
 * Check Enable DS18B20:  
   If checked enabled DS18B20, I2C bus is in plugin enabled.
 
-* Used DS18B20:  
-  Value count for connected DS18B20 devices (1-6).
+* DS18B20 sensors:  
+  Enable only the connected DS18B20 sensors (DS1-DS6) and set a label for each used sensor. Disabled sensors are hidden from the graph and log view.
   
 * Label for sensor DS 1-6:  
   Type label for Your probe Dallas DS18B20.
