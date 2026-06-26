@@ -171,8 +171,8 @@ class Sender(Thread):
                                                 batt_V = battery["V"]
                                                 batt_perc = battery["percent"]
                                                 if online:
-                                                    msg += _('[{}: {} Â°C {} RV] ').format(name, temperature, humidity, batt_perc)
-                                                    msg_info += _('{}: {} Â°C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, format_timestamp(updated))
+                                                    msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
+                                                    msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -925,20 +925,20 @@ class Sender(Thread):
                                                         msg += _('2-OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                         msg_info += _('2-OFF {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                     if temperature100 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp100name, temperature100)
-                                                        msg_info += _('{} {} Â°C ').format(temp100name, temperature100)
+                                                        msg += _('{} {} °C ').format(temp100name, temperature100)
+                                                        msg_info += _('{} {} °C ').format(temp100name, temperature100)
                                                     if temperature101 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp101name, temperature101)
-                                                        msg_info += _('{} {} Â°C ').format(temp101name, temperature101)
+                                                        msg += _('{} {} °C ').format(temp101name, temperature101)
+                                                        msg_info += _('{} {} °C ').format(temp101name, temperature101)
                                                     if temperature102 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp102name, temperature102)
-                                                        msg_info += _('{} {} Â°C ').format(temp102name, temperature102)
+                                                        msg += _('{} {} °C ').format(temp102name, temperature102)
+                                                        msg_info += _('{} {} °C ').format(temp102name, temperature102)
                                                     if temperature103 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp103name, temperature103)
-                                                        msg_info += _('{} {} Â°C ').format(temp103name, temperature103)
+                                                        msg += _('{} {} °C ').format(temp103name, temperature103)
+                                                        msg_info += _('{} {} °C ').format(temp103name, temperature103)
                                                     if temperature104 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp104name, temperature104)
-                                                        msg_info += _('{} {} Â°C ').format(temp104name, temperature104)
+                                                        msg += _('{} {} °C ').format(temp104name, temperature104)
+                                                        msg_info += _('{} {} °C ').format(temp104name, temperature104)
                                                     msg += '] '
                                                     msg_info += '] '
                                                 else:
@@ -1077,20 +1077,20 @@ class Sender(Thread):
                                                         msg += _('[{}: 1-OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
                                                         msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
                                                     if temperature100 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp100name, temperature100)
-                                                        msg_info += _('{} {} Â°C ').format(temp100name, temperature100)
+                                                        msg += _('{} {} °C ').format(temp100name, temperature100)
+                                                        msg_info += _('{} {} °C ').format(temp100name, temperature100)
                                                     if temperature101 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp101name, temperature101)
-                                                        msg_info += _('{} {} Â°C ').format(temp101name, temperature101)
+                                                        msg += _('{} {} °C ').format(temp101name, temperature101)
+                                                        msg_info += _('{} {} °C ').format(temp101name, temperature101)
                                                     if temperature102 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp102name, temperature102)
-                                                        msg_info += _('{} {} Â°C ').format(temp102name, temperature102)
+                                                        msg += _('{} {} °C ').format(temp102name, temperature102)
+                                                        msg_info += _('{} {} °C ').format(temp102name, temperature102)
                                                     if temperature103 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp103name, temperature103)
-                                                        msg_info += _('{} {} Â°C ').format(temp103name, temperature103)
+                                                        msg += _('{} {} °C ').format(temp103name, temperature103)
+                                                        msg_info += _('{} {} °C ').format(temp103name, temperature103)
                                                     if temperature104 is not None:
-                                                        msg += _('{} {} Â°C ').format(temp104name, temperature104)
-                                                        msg_info += _('{} {} Â°C ').format(temp104name, temperature104)
+                                                        msg += _('{} {} °C ').format(temp104name, temperature104)
+                                                        msg_info += _('{} {} °C ').format(temp104name, temperature104)
                                                     msg += '] '
                                                     msg_info += '] '
                                                 else:
@@ -1149,8 +1149,8 @@ class Sender(Thread):
                                                 batt_V = battery["voltage"]
                                                 batt_perc = battery["value"]
                                                 if online:
-                                                    msg += _('[{}: {} Â°C {} RV] ').format(name, temperature, humidity, batt_perc)
-                                                    msg_info += _('{}: {} Â°C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, format_timestamp(updated))
+                                                    msg += _('[{}: {} °C {} RV] ').format(name, temperature, humidity, batt_perc)
+                                                    msg_info += _('{}: {} °C {} RV BAT{} % IP:{} RSSI:{} dbm {}\n').format(name, temperature, humidity, batt_perc, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -1240,7 +1240,7 @@ class Sender(Thread):
                                                     rssi = wifi["rssi"]
                                                 if online:
                                                         msg += _('[{}: L1 {} W, L2 {} W, L3 {} W]').format(name, a_power, b_power, c_power)
-                                                        msg_info += _('{}: L1 {} W ({} kW/h) L2 {} W ({} kW/h) L3 {} W  ({} kW/h) {} V IP:{} RSSI:{} dbm INTt:{} Â°C {}\n').format(name, a_power, b_power, c_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), round(c_total/1000.0, 2), voltage, sta_ip, rssi, internal_temperature, format_timestamp(updated))
+                                                        msg_info += _('{}: L1 {} W ({} kW/h) L2 {} W ({} kW/h) L3 {} W  ({} kW/h) {} V IP:{} RSSI:{} dbm INTt:{} °C {}\n').format(name, a_power, b_power, c_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), round(c_total/1000.0, 2), voltage, sta_ip, rssi, internal_temperature, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -1316,11 +1316,11 @@ class Sender(Thread):
                                                     rssi = 0
                                                 if online:
                                                     if output:
-                                                        msg += _('[{}: ON {} Â°C {} RV {} Lx] ').format(name, round(temperature, 2), humidity, illuminance)
-                                                        msg_info += _('{}: ON {} Â°C {} RV {} Lx IP:{} RSSI:{} dbm {}\n').format(name, round(temperature, 2), humidity, illuminance, sta_ip, rssi, format_timestamp(updated))
+                                                        msg += _('[{}: ON {} °C {} RV {} Lx] ').format(name, round(temperature, 2), humidity, illuminance)
+                                                        msg_info += _('{}: ON {} °C {} RV {} Lx IP:{} RSSI:{} dbm {}\n').format(name, round(temperature, 2), humidity, illuminance, sta_ip, rssi, format_timestamp(updated))
                                                     else:
-                                                        msg += _('[{}: OFF {} Â°C {} RV {} Lx] ').format(name, round(temperature, 2), humidity, illuminance)
-                                                        msg_info += _('{}: OFF {} Â°C {} RV {} Lx IP:{} RSSI:{} dbm {}\n').format(name, round(temperature, 2), humidity, illuminance, sta_ip, rssi, format_timestamp(updated))
+                                                        msg += _('[{}: OFF {} °C {} RV {} Lx] ').format(name, round(temperature, 2), humidity, illuminance)
+                                                        msg_info += _('{}: OFF {} °C {} RV {} Lx IP:{} RSSI:{} dbm {}\n').format(name, round(temperature, 2), humidity, illuminance, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
