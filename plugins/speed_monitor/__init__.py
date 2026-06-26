@@ -37,6 +37,8 @@ speed_options = PluginOptions(
         'log_records': 0,       # 0=unlimited logs
         'use_footer': True,     # show data from plugin in footer on home page
         'history': 0,           # selector for graph history
+        'dt_from': '2024-01-01T00:00', # for graph history
+        'dt_to': '2024-01-01T00:00',   # for graph history
     }
 )
 
@@ -385,6 +387,34 @@ class graph_json(ProtectedPage):
     def GET(self):
         #import datetime
         data = []
+        qdict = web.input()
+
+        if 'dt_from' in qdict and 'dt_to' in qdict:
+            try:
+                dt_from = datetime.datetime.strptime(qdict['dt_from'], '%Y-%m-%dT%H:%M')
+                dt_to = datetime.datetime.strptime(qdict['dt_to'], '%Y-%m-%dT%H:%M')
+                epoch_time = datetime.datetime(1970, 1, 1)
+                log_start = int((dt_from - epoch_time).total_seconds())
+                log_end = int((dt_to - epoch_time).total_seconds())
+                json_data = read_graph_log()
+
+                if len(json_data) > 0:
+                    for i in range(0, 3):
+                        temp_balances = {}
+                        for key in json_data[i]['balances']:
+                            try:
+                                find_key = int(key.encode('utf8'))
+                            except:
+                                find_key = key
+                            if find_key >= log_start and find_key <= log_end:
+                                temp_balances[key] = json_data[i]['balances'][key]
+                        data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })
+            except:
+                log.error(NAME, _('Speed Monitor plug-in') + ':\n' + traceback.format_exc())
+
+            web.header('Access-Control-Allow-Origin', '*')
+            web.header('Content-Type', 'application/json')
+            return json.dumps(data)
 
         epoch = datetime.date(1970, 1, 1)                                      # first date
         current_time  = datetime.date.today()                                  # actual date

@@ -636,9 +636,13 @@ class graph_json(ProtectedPage):
         data = []
         try:
             from datetime import datetime
+            qdict = web.input()
 
-            dt_from = datetime.strptime(pressure_options['dt_from'], '%Y-%m-%dT%H:%M') # from
-            dt_to   = datetime.strptime(pressure_options['dt_to'], '%Y-%m-%dT%H:%M')   # to
+            dt_from_text = qdict.get('dt_from', pressure_options['dt_from'])
+            dt_to_text = qdict.get('dt_to', pressure_options['dt_to'])
+
+            dt_from = datetime.strptime(dt_from_text, '%Y-%m-%dT%H:%M') # from
+            dt_to   = datetime.strptime(dt_to_text, '%Y-%m-%dT%H:%M')   # to
 
             epoch_time = datetime(1970, 1, 1)
 
