@@ -17,6 +17,7 @@ from datetime import timedelta
 
 from threading import Thread, Event, Timer                              # For use a separate thread in which the plugin is running
 
+import plugins as plugin_manager                                # For checking whether optional plugins are running
 from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
 from ospy.helpers import datetime_string                         # For using date time in events logs
@@ -67,6 +68,13 @@ mqtt = None
 _client = None
 _subscriptions = {}
 _is_connected = False
+
+
+def plugin_is_running(module):
+    try:
+        return module in plugin_manager.running()
+    except Exception:
+        return False
 
 slugify_is_installed = False
 try:
@@ -823,6 +831,8 @@ def discovery_publish():
 
     try:
         if plugin_options['ext_water_sonic']:
+            if not plugin_is_running('tank_monitor'):
+                raise ImportError
             from plugins import tank_monitor
             if (tank_monitor.tank_options['use_sonic']):
                 sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
@@ -855,11 +865,13 @@ def discovery_publish():
                 remove_device(sensor_water_tank_percent)
                 remove_device(sensor_water_tank_volume)
             
-    except ImportError:
+    except Exception:
         log.debug(NAME, _('Cannot import plugin: tank_monitor.'))
         pass
 
     try:
+        if not plugin_is_running('air_temp_humi'):
+            raise ImportError
         from plugins import air_temp_humi
         #TODO remove from discovery topic when removed - create remove function. HASS dahsboard removes entity after refresh.
         if air_temp_humi.plugin_options['enabled']: #plugin enabled
@@ -904,12 +916,14 @@ def discovery_publish():
                 body += '</ul>'   
                 log.info(NAME, logtext) 
 
-    except ImportError:
+    except Exception:
         log.debug(NAME, _('Cannot import plugin: air temp humi.'))
         pass
 
     try:
         if plugin_options['ext_water_current']:
+            if not plugin_is_running('current_loop_tanks_monitor'):
+                raise ImportError
             from plugins import current_loop_tanks_monitor
             tank_options = current_loop_tanks_monitor.plugin_options
             logtext = _('Current loop tanks monitor') + '-> \n'
@@ -958,7 +972,7 @@ def discovery_publish():
                 remove_device(sensor_water_tank_percent)
                 remove_device(sensor_water_tank_volume)
             
-    except ImportError:
+    except Exception:
         log.debug(NAME, _('Cannot import plugin: current_loop_tanks_monitor.'))
         pass 
 
@@ -1014,18 +1028,16 @@ def set_devices_online(device): # set inital values to HASS after plugin start
             publish(topic, "offline")
         elif device._type == "stations" and not stations.get(int(device._id)).enabled:
             publish(topic, "offline")
-        elif device._type == "sensor_THDS" and device._isDS: #error with DS sensor, set to offline
-            try:
-                if not device._isOK:
-                    if plugin_options['ext_ds1-6']:
-                        publish(topic, "offline")
-                else:
-                    if plugin_options['ext_ds1-6']:
-                        publish(topic, "online")
-            except AttributeError:
-                pass
+        elif device._type == "sensor_THDS":
+            if getattr(device, '_isOK', True):
+                publish(topic, "online")
+            else:
+                publish(topic, "offline")
         elif device._type == "sensor_WTL":
-            publish(topic, "online")
+            if getattr(device, '_isOK', True):
+                publish(topic, "online")
+            else:
+                publish(topic, "offline")
         elif device._type == "programs":
             publish(topic, "online")
         else:
@@ -1091,6 +1103,11 @@ def update_temp_humi_ds(sensors):
     for device in sensors:
         if device._type == "sensor_THDS":
             try:
+                if not plugin_is_running('air_temp_humi'):
+                    device._isOK = False
+                    set_devices_online(device)
+                    continue
+
                 from plugins import air_temp_humi
                  
                 payload = {}
@@ -1114,15 +1131,22 @@ def update_temp_humi_ds(sensors):
                     set_devices_online(device)
                 if topic and payload and payload.get("state") is not None:
                     publish(topic, payload)
-            except ImportError:
+            except Exception:
+                device._isOK = False
+                set_devices_online(device)
                 log.error(NAME, _('Cannot import plugin: air temp humi.'))
-                pass
+                log.debug(NAME, _('Error') + ':\n' + traceback.format_exc())
 
 def update_tank_level(sensors):
     for device in sensors:
         if device._type == "sensor_WTL":
             if plugin_options['ext_water_sonic'] and getattr(device, '_is_sonic', False):
                 try:
+                    if not plugin_is_running('tank_monitor'):
+                        device._isOK = False
+                        set_devices_online(device)
+                        continue
+
                     from plugins import tank_monitor
                  
                     payload = {}
@@ -1141,12 +1165,19 @@ def update_tank_level(sensors):
                         set_devices_online(device)
                         if topic and payload:
                             publish(topic, payload)
-                except ImportError:
+                except Exception:
+                    device._isOK = False
+                    set_devices_online(device)
                     log.error(NAME, _('Cannot import plugin: tank_monitor.'))
-                    pass
+                    log.debug(NAME, _('Error') + ':\n' + traceback.format_exc())
 
             if plugin_options['ext_water_current'] and getattr(device, '_is_current_loop', False):
                 try:
+                    if not plugin_is_running('current_loop_tanks_monitor'):
+                        device._isOK = False
+                        set_devices_online(device)
+                        continue
+
                     from plugins import current_loop_tanks_monitor
                  
                     payload = {}
@@ -1170,9 +1201,11 @@ def update_tank_level(sensors):
                         set_devices_online(device)
                         if topic and payload:
                             publish(topic, payload)
-                except ImportError:
+                except Exception:
+                    device._isOK = False
+                    set_devices_online(device)
                     log.error(NAME, _('Cannot import plugin: current_loop_tanks_monitor.'))
-                    pass
+                    log.debug(NAME, _('Error') + ':\n' + traceback.format_exc())
 
 def update_device_plugin_settings(name, **kw):
     discovery_publish()
