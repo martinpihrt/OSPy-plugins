@@ -214,7 +214,10 @@ def get_value(source, channel, value_type):
                 'liter': 'volumeLiter',
                 'voltage': 'voltage'
             }
-            return current_loop_tanks_monitor.tanks[mapping[value_type]][channel]
+            value = current_loop_tanks_monitor.tanks[mapping[value_type]][channel]
+            if value_type == 'liter':
+                return int(round(value))
+            return value
         except:
             return -127
 
@@ -257,7 +260,18 @@ def get_value(source, channel, value_type):
             elif sensor.sens_type == 4:
                 return sensor.last_read_value[7]
             elif sensor.sens_type == 6:
-                return sensor.last_read_value[0]
+                if sensor.multi_type >= 0 and sensor.multi_type < 4:
+                    return sensor.last_read_value[sensor.multi_type]
+                elif sensor.multi_type == 4:
+                    return sensor.last_read_value[4]
+                elif sensor.multi_type == 5:
+                    return sensor.last_read_value[5]
+                elif sensor.multi_type == 6:
+                    return sensor.last_read_value[6]
+                elif sensor.multi_type == 7:
+                    return sensor.last_read_value[7]
+                elif sensor.multi_type == 8:
+                    return sensor.last_read_value[8]
             return -127
         except:
             return -127
