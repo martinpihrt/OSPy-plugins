@@ -32,11 +32,8 @@ Plugin setup
 * Check Enable SQL logging:  
   If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured. The button will delete the upsmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!   
 
-* Select filter for graph history  
-  Without limits  
-  Day filter  
-  Month filter  
-  Year filter      
+* Graph history  
+  Use quick ranges (Today, 24 h, 7 days, 30 days, All) or set a custom From/To range. The graph refreshes without reloading the settings page.     
 
 Power line is connected via optocoupler between GPIO 23 - pin 16 and ground.
 Output pulse on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS.  

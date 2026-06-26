@@ -260,6 +260,28 @@ def get_check_power():
         pass
 
 
+def get_power_state_data():
+    """Return UPS state in a UI/API friendly form."""
+    fault = True if get_check_power() else False
+    if fault:
+        text = _('FAULT')
+        message = _('Detected fault on power line!')
+        css = 'fault'
+    else:
+        text = _('OK')
+        message = _('Power line has restored OK')
+        css = 'ok'
+
+    return {
+        'ups': text,
+        'ups_state': text,
+        'power_fault': fault,
+        'state': 0 if fault else 1,
+        'state_text': message,
+        'state_class': css
+    }
+
+
 def read_log():
     """Read log data from json file."""
 
@@ -457,16 +479,8 @@ class data_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        test = get_check_power()
-        if not test:
-           text = _('OK')
-        else:
-           text = _('FAULT')
-
-        data =  {
-          'label': ups_options['emlsubject'],
-          'ups_state':  text
-        }
+        data = get_power_state_data()
+        data['label'] = ups_options['emlsubject']
 
         return json.dumps(data)
 
@@ -532,9 +546,13 @@ class graph_json(ProtectedPage):
         data = []
         try:
             from datetime import datetime
+            qdict = web.input()
 
-            dt_from = datetime.strptime(ups_options['dt_from'], '%Y-%m-%dT%H:%M') # from
-            dt_to   = datetime.strptime(ups_options['dt_to'], '%Y-%m-%dT%H:%M')   # to
+            dt_from_text = qdict.get('dt_from', ups_options['dt_from'])
+            dt_to_text = qdict.get('dt_to', ups_options['dt_to'])
+
+            dt_from = datetime.strptime(dt_from_text, '%Y-%m-%dT%H:%M') # from
+            dt_to   = datetime.strptime(dt_to_text, '%Y-%m-%dT%H:%M')   # to
 
             epoch_time = datetime(1970, 1, 1)
 
@@ -646,10 +664,4 @@ class ups_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        data = {}
-        test = get_check_power()
-        if not test:
-           data['ups'] = _('OK')
-        else:
-           data['ups'] = _('FAULT')
-        return json.dumps(data)
+        return json.dumps(get_power_state_data())

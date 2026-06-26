@@ -3,6 +3,25 @@ $def with(records, records_sql, plugin_options)
 $var title: $_('UPS monitor - log')
 $var page: plugins
 
+<style>
+.ups-state-badge {
+    display: inline-block;
+    min-width: 70px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+.ups-state-ok {
+    background-color: #d8f0d2;
+    color: #245b1f;
+}
+.ups-state-fault {
+    background-color: #f5d1d1;
+    color: #8a1f1f;
+}
+</style>
+
 <div class="title">$_('UPS monitor - log')</div>
 <div id="plugin">
     <div id="graph-container" class="graph-container">
@@ -47,9 +66,9 @@ $var page: plugins
                     <td align='left'>${interval["date"]}</td>
                     <td align='left'>${interval["time"]}</td>
                     $if interval["state"] == "0":
-                        <td align='left'><p style="color:red;">$_('Detected fault on power line!')</p></td>
+                        <td align='left'><span class="ups-state-badge ups-state-fault">$_('FAULT')</span> $_('Detected fault on power line!')</td>
                     $if interval["state"] == "1":
-                        <td align='left'><p style="color:green;">$_('Power line has restored OK')</p></td>
+                        <td align='left'><span class="ups-state-badge ups-state-ok">$_('OK')</span> $_('Power line has restored OK')</td>
                 </tr>
         $if plugin_options['type_log'] == 1 and records_sql is not None:
             $for interval in records_sql:
@@ -57,9 +76,9 @@ $var page: plugins
                     <td align='left'>${interval[0]}</td>
                     <td align='left'>${interval[1]}</td>
                     $if interval[2] == "0":
-                        <td align='left'><p style="color:red;">$_('Detected fault on power line!')</p></td>
+                        <td align='left'><span class="ups-state-badge ups-state-fault">$_('FAULT')</span> $_('Detected fault on power line!')</td>
                     $if interval[2] == "1":
-                        <td align='left'><p style="color:green;">$_('Power line has restored OK')</p></td>
+                        <td align='left'><span class="ups-state-badge ups-state-ok">$_('OK')</span> $_('Power line has restored OK')</td>
                 </tr>            
     </table>
 </div>
