@@ -16,11 +16,25 @@ $var page: plugins
         <p>
         <a href="$plugins.plugin_url('network_ping_monitor.log_page')" class="button backup">$_('Show logs')</a>
         </p>
-        <form method="get">
-            <label>$_('Number of records:')</label>
-            <input type="number" name="limit" value="$plugin_options['limit']" min="5" max="10000"/>
-            <button type="submit" class="button submit">$_('Apply')</button>
+        <form id="graphForm" method="get">
+            <div id="graph-controls" style="margin-bottom: 8px;">
+                <button type="button" class="button backup graph-range" data-range="today">$_('Today')</button>
+                <button type="button" class="button backup graph-range" data-range="24h">24 h</button>
+                <button type="button" class="button backup graph-range" data-range="7d">7 $_('days')</button>
+                <button type="button" class="button backup graph-range" data-range="30d">30 $_('days')</button>
+                <button type="button" class="button backup graph-range" data-range="all">$_('All')</button>
+                <span id="graph-range-label" style="margin-left: 8px;"></span>
+            </div>
+            <p>
+                $_('From') <input name="dt_from" id="dt_from" type="datetime-local" value="$plugin_options['dt_from']" />
+                $_('To') <input name="dt_to" id="dt_to" type="datetime-local" value="$plugin_options['dt_to']" />
+                <label>$_('Number of records:')</label>
+                <input type="number" name="limit" id="limit" value="$plugin_options['limit']" min="5" max="10000"/>
+                <button type="submit" id="filterSelection" class="button submit">$_('Filtering')</button>
+                <button type="button" id="clearSelection" class="button backup">$_('Reset')</button>
+            </p>
         </form>
+        <div id="graph-empty" style="display: none; margin-bottom: 8px;">$_('No records found for selected range.')</div>
         <canvas id="availabilityChart" width="900" height="300"></canvas>
     </div>
 </div>
@@ -28,6 +42,40 @@ $var page: plugins
 <script src="/plugins/network_ping_monitor/script/chart.js"></script>
 <script>
 const data = $:{json.dumps(series, ensure_ascii=False)};
+
+function graphDateTime(date) {
+    function pad(value) {
+        return value < 10 ? "0" + value : value;
+    }
+    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()) + "T" + pad(date.getHours()) + ":" + pad(date.getMinutes());
+}
+
+function setGraphRange(range) {
+    var now = new Date();
+    var from = new Date(now.getTime());
+    var label = "";
+
+    if (range == "today") {
+        from.setHours(0, 0, 0, 0);
+        label = $:{json.dumps(_('Today'), ensure_ascii=False).encode('utf8').decode('utf8')};
+    } else if (range == "24h") {
+        from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        label = "24 h";
+    } else if (range == "7d") {
+        from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        label = "7 " + $:{json.dumps(_('days'), ensure_ascii=False).encode('utf8').decode('utf8')};
+    } else if (range == "30d") {
+        from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        label = "30 " + $:{json.dumps(_('days'), ensure_ascii=False).encode('utf8').decode('utf8')};
+    } else {
+        from = new Date(2020, 0, 1, 0, 0, 0, 0);
+        label = $:{json.dumps(_('All'), ensure_ascii=False).encode('utf8').decode('utf8')};
+    }
+
+    jQuery("#dt_from").val(graphDateTime(from));
+    jQuery("#dt_to").val(graphDateTime(now));
+    jQuery("#graph-range-label").text(label);
+}
 
 const ctx = document.getElementById('availabilityChart').getContext('2d');
 const chart = new Chart(ctx, {
@@ -84,6 +132,22 @@ const chart = new Chart(ctx, {
             }
         }
     }
+});
+
+jQuery(document).ready(function() {
+    if (data.length === 0) {
+        jQuery("#graph-empty").show();
+    }
+
+    jQuery(".graph-range").click(function() {
+        setGraphRange(jQuery(this).attr("data-range"));
+        jQuery("#graphForm").submit();
+    });
+
+    jQuery("#clearSelection").click(function() {
+        setGraphRange("all");
+        jQuery("#graphForm").submit();
+    });
 });
 </script>
 

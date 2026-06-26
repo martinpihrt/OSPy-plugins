@@ -37,12 +37,14 @@ plugin_options = PluginOptions(
        'SUMMARY_INTERVAL': 30,
        'enable_log': False,
        'en_sql_log': False,
-       'type_log': 0,
-       'log_records': 0,
-       'log_interval': 1,
-       'limit': 10,
-       'log_all_servers': False,
-    }
+        'type_log': 0,
+        'log_records': 0,
+        'log_interval': 1,
+        'limit': 10,
+        'dt_from': '',
+        'dt_to': '',
+        'log_all_servers': False,
+     }
 )
 
 state = {}
@@ -302,6 +304,34 @@ def read_sql_log():
         log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
         return []
 
+def parse_graph_datetime(value):
+    """Parse datetime values from HTML inputs, local JSON logs, and SQL rows."""
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    value = str(value)
+    for fmt in ('%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S',
+                '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M',
+                '%d.%m.%Y %H:%M:%S'):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            pass
+    return None
+
+def record_datetime(record, type_log):
+    if type_log == 0:
+        return parse_graph_datetime('%s %s' % (record.get('date', ''), record.get('time', '')))
+    return parse_graph_datetime(record[1])
+
+def record_in_range(record_dt, dt_from, dt_to):
+    if dt_from and (not record_dt or record_dt < dt_from):
+        return False
+    if dt_to and (not record_dt or record_dt > dt_to):
+        return False
+    return True
+
 def start():
     global sender
     if sender is None:
@@ -479,13 +509,27 @@ class graph_page(ProtectedPage):
 
         if 'limit' in qdict:
             plugin_options['limit'] = int(qdict['limit'])
+        if 'dt_from' in qdict:
+            plugin_options['dt_from'] = qdict['dt_from']
+        if 'dt_to' in qdict:
+            plugin_options['dt_to'] = qdict['dt_to']
 
         _limit = int(plugin_options['limit'])
+        dt_from = parse_graph_datetime(plugin_options['dt_from'])
+        dt_to = parse_graph_datetime(plugin_options['dt_to'])
 
         if plugin_options['type_log'] == 0:
-            records_data = read_log()[:_limit][::-1]      # [:plugin_options['limit']][::-1] for reversed data in graph
+            records = read_log()
         else:
-            records_data = read_sql_log()[:_limit][::-1]  # [:plugin_options['limit']] not reveres
+            records = read_sql_log()
+
+        records_data = []
+        for record in records:
+            if record_in_range(record_datetime(record, plugin_options['type_log']), dt_from, dt_to):
+                records_data.append(record)
+            if len(records_data) >= _limit:
+                break
+        records_data = records_data[::-1]
 
         series = []
         for r in records_data:
