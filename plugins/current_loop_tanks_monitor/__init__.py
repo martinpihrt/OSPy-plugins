@@ -1119,6 +1119,9 @@ class setup_page(ProtectedPage):
         if sender is not None:
             sender.update()
 
+        updateSignal = signal('hass_plugin_update')
+        updateSignal.send()
+
         return self.plugin_render.current_loop_tanks_monitor_setup(plugin_options, log.events(NAME))
 
 
