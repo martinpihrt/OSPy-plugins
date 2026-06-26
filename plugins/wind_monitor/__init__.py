@@ -311,7 +311,7 @@ def stop():
     global wind_sender
     if wind_sender is not None:
         wind_sender.stop()
-        wind_sender.join()
+        wind_sender.join(15)
         wind_sender = None
 
 

@@ -123,7 +123,7 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
-        sender.join()
+        sender.join(15)
         sender = None
 
 def uri_validator(x):
@@ -152,7 +152,7 @@ def send_cmd_to_blind(button, position):
         if url is not None:
             if uri_validator(url):
                 try:
-                    data = urlopen(url)
+                    data = urlopen(url, timeout=10)
                     data = json.loads(data.read().decode(data.info().get_content_charset('utf-8')))
                     msg_log = '{}: {}'.format(_('Answer ok'), data)
                     update_log(pos_msg, msg_log)
@@ -185,7 +185,7 @@ def read_blinds_status():
                 if uri_validator(plugin_options['status'][i]):
                     try:
                         url = plugin_options['status'][i]
-                        data = urlopen(url)
+                        data = urlopen(url, timeout=10)
                         data = json.loads(data.read().decode(data.info().get_content_charset('utf-8')))
                         if len(data) > 0:
                             # eg: data [{'state': 'stop', 'source': 'input', 'power': 0.0, 'is_valid': True, 'safety_switch': False, 'overtemperature': False, 'stop_reason': 'normal', 'last_direction': 'close', 'current_pos': 0, 'calibrating': False, 'positioning': True}]

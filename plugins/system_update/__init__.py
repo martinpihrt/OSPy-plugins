@@ -7,6 +7,7 @@ import subprocess
 import traceback
 import json
 import os
+import shlex
 import web
 from ospy.webpages import ProtectedPage
 from ospy.log import log, logEM, logEV
@@ -97,7 +98,7 @@ class StatusChecker(Thread):
             remote_rev = int(subprocess.check_output(['git', 'rev-list', remote_branch, '--count']).decode())
             self.status['can_update'] = remote_rev > local_rev
 
-            # Aktuální commit hash
+            # AktuĂˇlnĂ­ commit hash
             self.status['local_hash'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
 
             command = 'git log -1 %s --format=%%cd --date=short' % remote_branch
@@ -111,7 +112,7 @@ class StatusChecker(Thread):
 
             stats['ver_changes'] = ''
 
-            # Posledních 10 commitů (hash|datum|message)
+            # PoslednĂ­ch 10 commitĹŻ (hash|datum|message)
             commit_log = subprocess.check_output(
                 ['git', 'log', '-n', '10', '--pretty=format:%h|%cd|%s', '--date=short']
             ).decode('utf-8').splitlines()
@@ -222,8 +223,9 @@ checker = None
 ################################################################################
 def run_command(cmd):
     try:
-        proc = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-        output = proc.communicate()[0].decode('utf-8')
+        args = shlex.split(cmd) if isinstance(cmd, str) else cmd
+        proc = subprocess.run(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=300)
+        output = proc.stdout.decode('utf-8')
         log.info(NAME, output)
         return output.strip()
     except Exception:
@@ -232,7 +234,7 @@ def run_command(cmd):
 
 def perform_update():
     try:
-        # Uložíme aktuální commit pro případ rollbacku
+        # UloĹľĂ­me aktuĂˇlnĂ­ commit pro pĹ™Ă­pad rollbacku
         commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
         with open(ROLLBACK_FILE, 'w') as f:
             f.write(commit_hash)
@@ -247,14 +249,14 @@ def perform_update():
         if options.run_logEV:
             logEV.save_events_log( _('System OSPy'), _('Updated to version') + ': {}'.format(str(stats['ver_new'])))        
 
-        # Spustíme restart v pozadí, aby se hláška stihla zobrazit
+        # SpustĂ­me restart v pozadĂ­, aby se hlĂˇĹˇka stihla zobrazit
         def delayed_restart():
-            time.sleep(4)  # čas na zobrazení hlášky
-            restart(wait=0)  # okamžitý restart po zpoždění
+            time.sleep(4)  # ÄŤas na zobrazenĂ­ hlĂˇĹˇky
+            restart(wait=0)  # okamĹľitĂ˝ restart po zpoĹľdÄ›nĂ­
 
         Thread(target=delayed_restart, daemon=True).start()
 
-        return msg  # pokud voláš z webu, můžeš tuto hlášku zobrazit
+        return msg  # pokud volĂˇĹˇ z webu, mĹŻĹľeĹˇ tuto hlĂˇĹˇku zobrazit
 
     except Exception:
         log.error(NAME, _('Update error:\n') + traceback.format_exc())
@@ -283,7 +285,7 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
 
 def get_all_values():
@@ -326,10 +328,10 @@ class status_page(ProtectedPage):
 
 class update_page(ProtectedPage):
     def GET(self):
-        # Spustíme aktualizaci a získáme hlášku
-        msg = perform_update()  # vrací text hlášky
+        # SpustĂ­me aktualizaci a zĂ­skĂˇme hlĂˇĹˇku
+        msg = perform_update()  # vracĂ­ text hlĂˇĹˇky
 
-        # Zobrazíme stránku s hláškou, restart proběhne později v pozadí
+        # ZobrazĂ­me strĂˇnku s hlĂˇĹˇkou, restart probÄ›hne pozdÄ›ji v pozadĂ­
         return self.core_render.notice('/', msg)
 
 
@@ -338,28 +340,28 @@ class rollback_select_page(ProtectedPage):
         data = web.input(commit_hash=None)
         commit_hash = data.get('commit_hash')
 
-        # Nejprve ověř, že je co vracet
+        # Nejprve ovÄ›Ĺ™, Ĺľe je co vracet
         if not commit_hash:
             log.error(NAME, _('No commit hash provided for rollback.'))
             msg = _('No commit selected for rollback.')
             return self.core_render.notice('/', msg)
 
-        # Zobrazíme hlášku ihned, restart zpozdíme v pozadí
+        # ZobrazĂ­me hlĂˇĹˇku ihned, restart zpozdĂ­me v pozadĂ­
         msg = _('OSPy rollback to selected version completed. Please wait...')
         log.info(NAME, msg)
 
-        # Spustíme rollback a restart s krátkým zpožděním
+        # SpustĂ­me rollback a restart s krĂˇtkĂ˝m zpoĹľdÄ›nĂ­m
         def do_rollback_and_restart():
             try:
                 perform_rollback_selected(commit_hash)
-                time.sleep(3)  # 3 sekundy na zobrazení hlášky
-                restart(wait=0)  # okamžitý restart po zpoždění
+                time.sleep(3)  # 3 sekundy na zobrazenĂ­ hlĂˇĹˇky
+                restart(wait=0)  # okamĹľitĂ˝ restart po zpoĹľdÄ›nĂ­
             except Exception:
                 log.error(NAME, _('Rollback thread error:\n') + traceback.format_exc())
 
         Thread(target=do_rollback_and_restart, daemon=True).start()
 
-        # Vrátíme HTML stránku s hláškou
+        # VrĂˇtĂ­me HTML strĂˇnku s hlĂˇĹˇkou
         return self.core_render.notice('/', msg)
 
 
@@ -373,17 +375,17 @@ class restart_page(ProtectedPage):
         msg = _('OSPy is now restarted. Please wait...')
         report_restarted()
         
-        # Spustíme restart v pozadí, aby se hláška stihla zobrazit
+        # SpustĂ­me restart v pozadĂ­, aby se hlĂˇĹˇka stihla zobrazit
         def delayed_restart():
             import time
             from ospy.helpers import restart
-            time.sleep(3)  # čas na přečtení hlášky
-            restart(wait=0)  # okamžitý restart po zpoždění
+            time.sleep(3)  # ÄŤas na pĹ™eÄŤtenĂ­ hlĂˇĹˇky
+            restart(wait=0)  # okamĹľitĂ˝ restart po zpoĹľdÄ›nĂ­
 
         from threading import Thread
         Thread(target=delayed_restart, daemon=True).start()
 
-        # Zobrazíme stránku s hláškou
+        # ZobrazĂ­me strĂˇnku s hlĂˇĹˇkou
         return self.core_render.notice('/', msg)
 
 
@@ -396,17 +398,17 @@ class error_page(ProtectedPage):
         command = "git config --system --add safe.directory '*'"
         run_command(command)
 
-        # Spustíme restart v pozadí, aby se hláška stihla zobrazit
+        # SpustĂ­me restart v pozadĂ­, aby se hlĂˇĹˇka stihla zobrazit
         def delayed_restart():
             import time
             from ospy.helpers import restart
-            time.sleep(4)  # čas na přečtení hlášky
-            restart(wait=0)  # okamžitý restart po zpoždění
+            time.sleep(4)  # ÄŤas na pĹ™eÄŤtenĂ­ hlĂˇĹˇky
+            restart(wait=0)  # okamĹľitĂ˝ restart po zpoĹľdÄ›nĂ­
 
         from threading import Thread
         Thread(target=delayed_restart, daemon=True).start()
 
-        # Zobrazíme stránku s hláškou
+        # ZobrazĂ­me strĂˇnku s hlĂˇĹˇkou
         return self.core_render.notice('/', msg)
 
 

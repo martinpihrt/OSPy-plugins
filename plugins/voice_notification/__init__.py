@@ -9,6 +9,7 @@ import traceback
 import json
 import os
 import subprocess
+import shlex
 import web
 
 # Local imports
@@ -166,19 +167,15 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
 
 
 ### Run any cmd ###
 def run_command(cmd):
     try:
-        proc = subprocess.Popen(
-        cmd,
-        stderr=subprocess.STDOUT, # merge stdout and stderr
-        stdout=subprocess.PIPE,
-        shell=True)
-        output = proc.communicate()[0].decode('utf-8')
+        proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
+        output = proc.stdout.decode('utf-8')
         log.info(NAME, output)
 
     except Exception:

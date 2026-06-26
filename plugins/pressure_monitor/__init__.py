@@ -217,7 +217,7 @@ def stop():
     global pressure_sender
     if pressure_sender is not None:
         pressure_sender.stop()
-        pressure_sender.join()
+        pressure_sender.join(15)
         pressure_sender = None
 
 

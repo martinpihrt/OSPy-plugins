@@ -55,7 +55,7 @@ plugin_options = PluginOptions(
 
 # We work in the WGS-84 coordinate system
 # In order to be able to convert degrees of latitude and longitude into pixels,
-# we need to know the coordinates of the upper left and lower right edges of the ČHMÚ radar image
+# we need to know the coordinates of the upper left and lower right edges of the ÄŚHMĂš radar image
 
 ################################################################################
 # Main function loop:                                                          #
@@ -118,7 +118,7 @@ class CHMI_Checker(Thread):
                             
                             # Save radar img to local file
                             image_path = os.path.join(plugin_data_dir(), 'last.png')                              # last radar image
-                            borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')      # čr borders map image
+                            borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')      # ÄŤr borders map image
                             result_path = os.path.join(plugin_data_dir(),'result.png')                            # merge radar + borders image
                             corner_path = os.path.join(plugin_data_dir(),'corner.png')                            # draw corner to result
                             try:
@@ -206,7 +206,7 @@ class CHMI_Checker(Thread):
                                         # Right here we could also detect the strength of the rain, but for the simplicity of the example we will do with a simple color
                                         if r+g+b > 0:
                                             # If we activated drawing at the beginning of the program,
-                                            # on the canvas we draw a square with dimensions of 10×10 px representing the city
+                                            # on the canvas we draw a square with dimensions of 10Ă—10 px representing the city
                                             # The square will have the color of rain and a red outline
                                             draw.rectangle((x-5, y-5, x+5, y+5), fill=(r, g, b), outline=(255, 0, 0))
                                             # If logging is active, we will display colored text indicating that it is raining in the given city,
@@ -287,7 +287,7 @@ class CHMI_Checker(Thread):
                                 try:
                                     addr = 'http://{}/'.format(plugin_options['IP_ADDR'])
                                     log.debug(NAME, datetime_string() + ' ' + _('I will try to send to {} post data {}').format(addr, form_data))
-                                    r = requests.post(addr, data=form_data)
+                                    r = requests.post(addr, data=form_data, timeout=10)
                                     if r.status_code == 200:
                                         log.debug(NAME, datetime_string() + ' ' + _('HTTP {}').format(r.text))
                                     else:
@@ -333,12 +333,12 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
 
 # Function to download bitmap with radar data from URL:
 # https://www.chmi.cz/files/portal/docs/meteo/rad/inca-cz/data/czrad-z_max3d_masked/pacz2gmaps3.z_max3d.{datum_txt}.0.png
-# date_txt must be in UTC YYYYMMDD.HHM0 format (ČHMÚ publishes images every full 10 minutes)
+# date_txt must be in UTC YYYYMMDD.HHM0 format (ÄŚHMĂš publishes images every full 10 minutes)
 # If the URL is not valid (the image does not exist yet),
 # I'll try to download a bitmap with a ten minute old timestamp
 # The number of repetitions is determined by the variable trials 
@@ -352,7 +352,7 @@ def download_radar(date=None, trials=5):
         try:
             url = f"https://www.chmi.cz/files/portal/docs/meteo/rad/inca-cz/data/czrad-z_max3d_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png"
             log.debug(NAME,datetime_string() + ' ' + _('Downloading a file: {}').format(url))
-            r = requests.get(url)
+            r = requests.get(url, timeout=10)
             if r and r.status_code == 200:
                 return True, r.content, date_txt
             else:

@@ -187,7 +187,7 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
     if NAME in level_adjustments:
         del level_adjustments[NAME]
@@ -477,7 +477,7 @@ def postRequest(url, params, json_resp=True, body_size=65535):
     req = urllib.request.Request(url)
     req.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
     params = urllib.parse.urlencode(params).encode('utf-8')
-    resp = urllib.request.urlopen(req, params).read(body_size).decode("utf-8")
+    resp = urllib.request.urlopen(req, params, timeout=10).read(body_size).decode("utf-8")
                 
     if json_resp:
         return json.loads(resp)

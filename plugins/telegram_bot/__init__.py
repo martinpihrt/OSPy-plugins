@@ -8,6 +8,7 @@ import sys
 import traceback
 import os
 import subprocess
+import shlex
 from threading import Thread, Event
 
 import web
@@ -214,8 +215,8 @@ class Sender(Thread):
             log.clear(NAME)
             log.error(NAME, _(u'Telegram not found, installing. Please wait...'))
             cmd = "sudo pip3 install python-telegram-bot --upgrade" # python 3+
-            proc = subprocess.Popen(cmd,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,shell=True)
-            output = proc.communicate()[0].decode('utf8')
+            proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
+            output = proc.stdout.decode('utf8')
             log.info(NAME, u'{}'.format(output))
         
         try:
@@ -355,7 +356,7 @@ def stop():
     global sender
     if sender is not None:
        sender.stop()
-       sender.join()
+       sender.join(15)
        sender = None
 
 def notify_zone_change(name, **kw):

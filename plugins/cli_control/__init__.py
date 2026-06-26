@@ -96,7 +96,7 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
-        sender.join()
+        sender.join(15)
         sender = None
 
 def run_command(cmd):
@@ -107,7 +107,7 @@ def run_command(cmd):
             msg_err = _('Command failed')
             log.debug(NAME, datetime_string() + ': {}'.format(cmd))
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            output, _stderr = proc.communicate()
+            output, _stderr = proc.communicate(timeout=60)
             output = output.decode('utf-8', errors='replace')
             ret = proc.returncode
             if ret != 0:
@@ -118,6 +118,14 @@ def run_command(cmd):
                 log.info(NAME, msg_ok + f" ({ret})\n{output}")
                 if plugin_options['use_log']:
                     update_log(cmd, msg_ok + f" ({ret})\n{output}")
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            output, _stderr = proc.communicate()
+            output = output.decode('utf-8', errors='replace')
+            msg_err = _('Command failed')
+            log.error(NAME, msg_err + ' (timeout)\n' + output)
+            if plugin_options['use_log']:
+                update_log(cmd, msg_err + ' (timeout)\n' + output)
         except:
             log.error(NAME, datetime_string() + ':\n' + traceback.format_exc())
             pass

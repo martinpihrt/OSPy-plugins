@@ -240,13 +240,13 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
-        sender.join()
+        sender.join(15)
         sender = None
 
 
 def ping_ip(current_ip_address):
     try:
-        output = subprocess.check_output("ping -{} 1 {}".format('c', current_ip_address ), shell=True, universal_newlines=True)
+        output = subprocess.check_output(['ping', '-c', '1', current_ip_address], universal_newlines=True, timeout=10)
         if 'unreachable' in output:
             return False
         else:

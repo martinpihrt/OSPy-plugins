@@ -9,6 +9,7 @@ import os
 from threading import Thread, Event
 
 import web
+import plugins as plugin_manager
 
 from ospy.options import options
 from ospy.log import log
@@ -55,6 +56,13 @@ plugin_options = PluginOptions(
 
 
 global status
+
+def plugin_is_running(module):
+    try:
+        return module in plugin_manager.running()
+    except Exception:
+        return False
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -128,6 +136,8 @@ class Sender(Thread):
             try:
                 if plugin_options["sensor_probe"] == 2:                                        # loading probe name from plugin air_temp_humi
                     try:
+                        if not plugin_is_running('air_temp_humi'):
+                            raise Exception(_('The plug-in is not running.'))
                         from plugins.air_temp_humi import plugin_options as air_temp_data
                         self.status['ds_name_0'] = air_temp_data['label_ds0']
                         self.status['ds_name_1'] = air_temp_data['label_ds1']
@@ -142,6 +152,7 @@ class Sender(Thread):
 
                     except:
                         log.error(NAME, _('Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
+                        self.status['ds_count'] = 0
                         pass
 
                 # regulation
@@ -362,7 +373,7 @@ def stop():
     global sender
     if sender is not None:
        sender.stop()
-       sender.join()
+       sender.join(15)
        sender = None 
 
 

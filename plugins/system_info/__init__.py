@@ -4,12 +4,14 @@ __author__ = 'Martin Pihrt'
 
 import platform
 from collections import OrderedDict
+import glob
 
 import traceback
 from ospy import helpers
 from ospy.webpages import ProtectedPage
 from ospy.options import options
 import subprocess
+import shlex
 from ospy.log import log
 
 import web
@@ -140,11 +142,7 @@ def get_tty():
     """Returns the tty data."""
     result = []
     try:
-        cmd = 'ls /dev/tty*'
-        if (cmd.find('Error') != -1):
-            result.append(_('Could not open ls /dev/tty*!'))
-        else:    
-            result.append(process(cmd))
+        result.append('\n'.join(sorted(glob.glob('/dev/tty*'))))
 
     except Exception:
         log.error(NAME, traceback.format_exc())
@@ -248,13 +246,12 @@ def get_all_addr():
 
 def process(cmd):
     """process in system"""
-    proc = subprocess.Popen(
-        cmd,
+    proc = subprocess.run(
+        shlex.split(cmd),
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
-        shell=True)
-    output = proc.communicate()[0]
-    return output.decode('utf-8')
+        timeout=20)
+    return proc.stdout.decode('utf-8')
 
 ################################################################################
 # Web pages:                                                                   #

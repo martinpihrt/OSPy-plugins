@@ -10,6 +10,7 @@ import time
 import subprocess
 import os
 import mimetypes
+import shlex
 
 from threading import Thread, Event
 
@@ -109,7 +110,7 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
-        sender.join()
+        sender.join(15)
         sender = None
 
 
@@ -123,12 +124,9 @@ def install_db():
 
 def run_command(cmd, return_text = None):
     try:
-        proc = subprocess.Popen(
-        cmd,
-        stderr=subprocess.STDOUT, # merge stdout and stderr
-        stdout=subprocess.PIPE,
-        shell=True)
-        output = proc.communicate()[0].decode('utf-8')
+        args = shlex.split(cmd) if isinstance(cmd, str) else cmd
+        proc = subprocess.run(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
+        output = proc.stdout.decode('utf-8')
         if return_text is not None:
             return output
         else:
@@ -204,19 +202,19 @@ def get_dump():
         filestamp = time.strftime('%Y%m%d-%H%M%S')
         bkp_name = '{}_{}.sql'.format(plugin_options['database'], filestamp)
         path = os.path.join(plugin_data_dir(), bkp_name)
-        import re
-        sanity_password = re.sub('["]','\\"', str(plugin_options['pass'])) # sanity in password if char is "  example:  123"456  -> 123\\"456
-        process = os.popen("mysqldump -h %s -P %s -u %s -p%s %s > %s" % (
-            plugin_options['host'],
-            plugin_options['port'],
-            plugin_options['user'],
-            sanity_password,
-            plugin_options['database'],
-            path)
-        )
-        preprocessed = process.read()
-        print(preprocessed)
-        process.close()
+        cmd = [
+            'mysqldump',
+            '-h', str(plugin_options['host']),
+            '-P', str(plugin_options['port']),
+            '-u', str(plugin_options['user']),
+            '-p{}'.format(str(plugin_options['pass'])),
+            str(plugin_options['database'])
+        ]
+        with open(path, 'w') as dump_file:
+            process = subprocess.run(cmd, stdout=dump_file, stderr=subprocess.PIPE, text=True, timeout=120)
+        if process.returncode != 0:
+            log.error(NAME, process.stderr)
+            return False
         log.info(NAME, 'Database dumped to' + ' ' + bkp_name)
         return True
     except:

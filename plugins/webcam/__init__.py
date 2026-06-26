@@ -11,6 +11,7 @@ import re
 import os
 import mimetypes
 import datetime
+import shlex
 
 import web
 from ospy.log import log
@@ -66,12 +67,8 @@ def get_run_cam():
                     log.info(NAME, _(u'Fswebcam is not installed.'))
                     log.info(NAME, _(u'Please wait installing....'))
                     cmd = "sudo apt-get install fswebcam"
-                    proc = subprocess.Popen(
-                        cmd,
-                        stderr=subprocess.STDOUT, # merge stdout and stderr
-                        stdout=subprocess.PIPE,
-                        shell=True)
-                    output = proc.communicate()[0]
+                    proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
+                    output = proc.stdout.decode('utf-8', errors='replace')
                     log.info(NAME, output)
                     cam_options['installed_fswebcam'] = False
 
@@ -82,12 +79,8 @@ def get_run_cam():
 
                     cmd = "fswebcam -r " + cam_options[
                         'resolution'] + flip_img_h + flip_img_v + " --info OSPyCAM -S 3 --save " + get_image_location()
-                    proc = subprocess.Popen(
-                        cmd,
-                        stderr=subprocess.STDOUT, # merge stdout and stderr
-                        stdout=subprocess.PIPE,
-                        shell=True)
-                    output = proc.communicate()[0]
+                    proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=60)
+                    output = proc.stdout.decode('utf-8', errors='replace')
                     text = re.sub('\x1b[^m]*m', '', output) # remove color character from communication in text
                     log.info(NAME, text)
                     log.info(NAME, _(u'Ready...'))

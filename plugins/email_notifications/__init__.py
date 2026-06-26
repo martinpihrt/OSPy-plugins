@@ -405,7 +405,7 @@ def stop():
     global email_sender
     if email_sender is not None:
         email_sender.stop()
-        email_sender.join()
+        email_sender.join(15)
         email_sender = None
 
 def safeStr(obj):

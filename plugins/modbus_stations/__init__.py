@@ -108,7 +108,7 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
-        sender.join()
+        sender.join(15)
         sender = None
 
 
@@ -211,7 +211,7 @@ def update_log(cmd, status):
         log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
 
 
-""" Table of CRC values for high–order byte """
+""" Table of CRC values for highâ€“order byte """
 CRCTableHigh = [
   0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
   0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
@@ -234,7 +234,7 @@ CRCTableHigh = [
 ]
 
 
-""" Table of CRC values for low–order byte """
+""" Table of CRC values for lowâ€“order byte """
 CRCTableLow = [
   0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 0x07, 0xC7, 0x05, 0xC5, 0xC4,
   0x04, 0xCC, 0x0C, 0x0D, 0xCD, 0x0F, 0xCF, 0xCE, 0x0E, 0x0A, 0xCA, 0xCB, 0x0B, 0xC9, 0x09,
@@ -284,7 +284,7 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
 
         if s is not None:    
-            cmd[0] = address  # 0 x 00 is broadcast address； 0x01-0xFF are device addresses (Device address is 01 by default)
+            cmd[0] = address  # 0 x 00 is broadcast addressďĽ› 0x01-0xFF are device addresses (Device address is 01 by default)
             cmd[1] = command  # Command for controlling Relay
             cmd[2] = 0        # The register address of controlled Relay, 0x0000 - 0x0008 (in relay mode)
             cmd[3] = relay_nr # Output relay 1-8 (in single mode)
@@ -316,10 +316,10 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
 
 def Read_address():
     # https://www.waveshare.com/wiki/Modbus_RTU_Relay
-    # Command：00 03 40 00 00 01 90 1B
-    # 00    Device address  0 x 00 is the boradcast address；0 x 01-0 x FF are device addresses
+    # CommandďĽš00 03 40 00 00 01 90 1B
+    # 00    Device address  0 x 00 is the boradcast addressďĽ›0 x 01-0 x FF are device addresses
     # 03    03 Command, Read Device address 
-    # 40 00 Command register 0 x 0200: Read software revision，0 x 0040: Read device address 
+    # 40 00 Command register 0 x 0200: Read software revisionďĽŚ0 x 0040: Read device address 
     # 00 01 Device address  Device address
     # 90 1B CRC16, The CRC16 checksum of the first six bytes.
     cmd = [0]*8 
@@ -382,7 +382,7 @@ def Read_address():
 
 def Read_firmware_version(address=0x01):
     # https://www.waveshare.com/wiki/Modbus_RTU_Relay
-    # Command： 00 03 80 00 00 01
+    # CommandďĽš 00 03 80 00 00 01
     cmd = [0]*8 
     try:
         s = None
@@ -437,11 +437,11 @@ def Read_firmware_version(address=0x01):
 def Write_address(address):
     cmd = [0]*8
     # https://www.waveshare.com/wiki/Modbus_RTU_Relay
-    # Command：00 06 40 00 00 01 5C 1B
+    # CommandďĽš00 06 40 00 00 01 5C 1B
     # Byte    Meaning     Description
-    # 00      Device address  0 x 00 is the boradcast address；0 x 01-0 x FF are device addresses
+    # 00      Device address  0 x 00 is the boradcast addressďĽ›0 x 01-0 x FF are device addresses
     # 06      06 Command  Set baud rate or device address
-    # 40 00   Command register    0 x 2000: Set baud rate，0 x 4000: Set device address
+    # 40 00   Command register    0 x 2000: Set baud rateďĽŚ0 x 4000: Set device address
     # 00 01   Device address  The device address,0 x 0001-0 x 00FF
     # 5C 1B   CRC16   The CRC16 checksum of the first six bytes.  
     try:

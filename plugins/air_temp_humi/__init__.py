@@ -319,7 +319,7 @@ def stop():
     global sender
     if sender is not None:
        sender.stop()
-       sender.join()
+       sender.join(15)
        sender = None 
 
 

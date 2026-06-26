@@ -9,6 +9,7 @@ from datetime import datetime
 import traceback
 import os
 import subprocess
+import shlex
 
 import web
 from ospy import helpers
@@ -151,17 +152,13 @@ def stop():
     global sms_sender
     if sms_sender is not None:
         sms_sender.stop()
-        sms_sender.join()
+        sms_sender.join(15)
         sms_sender = None
 
 def proc_install(self, cmd):
     """installation"""
-    proc = subprocess.Popen(
-    cmd,
-    stderr=subprocess.STDOUT, # merge stdout and stderr
-    stdout=subprocess.PIPE,
-    shell=True)
-    output = proc.communicate()[0].decode('utf-8')
+    proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
+    output = proc.stdout.decode('utf-8')
     log.info(NAME, output)
 
 def sms_check(self):

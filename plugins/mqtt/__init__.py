@@ -6,6 +6,7 @@ import time
 import traceback
 import os
 import subprocess
+import shlex
 
 import datetime
 from threading import Thread, Event
@@ -124,18 +125,14 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
-        sender.join()
+        sender.join(15)
         sender = None 
 
 
 def proc_install(cmd):
     """installation"""
-    proc = subprocess.Popen(
-    cmd,
-    stderr=subprocess.STDOUT, # merge stdout and stderr
-    stdout=subprocess.PIPE,
-    shell=True)
-    output = proc.communicate()[0].decode('utf8')
+    proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
+    output = proc.stdout.decode('utf8')
     log.info(NAME, output)
 
 

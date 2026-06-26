@@ -85,7 +85,7 @@ class Sender(Thread):
                             url_pass = '{}'.format(plugin_options['jpg_pass'][c])
                             img_path = os.path.join(plugin_data_dir(), '{}.jpg'.format(c+1))
                             try:
-                                res = requests.get(url_ip_port + '/' + url_query, stream = True, verify=False, auth=HTTPBasicAuth(url_user, url_pass))
+                                res = requests.get(url_ip_port + '/' + url_query, stream = True, verify=False, auth=HTTPBasicAuth(url_user, url_pass), timeout=15)
                                 if res.status_code == 200:
                                     with open(img_path, 'wb') as f:
                                         shutil.copyfileobj(res.raw, f)
@@ -149,7 +149,7 @@ def stop():
     global sender
     if sender is not None:
        sender.stop()
-       sender.join()
+       sender.join(15)
        sender = None 
 
 

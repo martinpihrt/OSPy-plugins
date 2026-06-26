@@ -12,6 +12,7 @@ from threading import Thread, Event
 import traceback
 import json
 import subprocess
+import shlex
 
 import web
 from ospy.log import log
@@ -172,14 +173,14 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
 
 
 def install(cmd):
     try:
-        proc = subprocess.Popen(cmd,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,shell=True)
-        output = proc.communicate()[0].decode('utf8')
+        proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
+        output = proc.stdout.decode('utf8')
         log.info(NAME, '{}'.format(output))
     except:
         log.error(NAME, datetime_string() + ' ' + _('Label Maker plug-in') + ':\n' + traceback.format_exc())

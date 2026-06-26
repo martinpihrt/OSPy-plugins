@@ -88,7 +88,7 @@ def stop():
     global msg_sender
     if msg_sender is not None:
         msg_sender.stop()
-        msg_sender.join()
+        msg_sender.join(15)
         msg_sender = None
 
 

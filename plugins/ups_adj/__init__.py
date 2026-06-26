@@ -237,7 +237,7 @@ def stop():
     global ups_sender
     if ups_sender is not None:
         ups_sender.stop()
-        ups_sender.join()
+        ups_sender.join(15)
         ups_sender = None
 
 

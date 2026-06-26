@@ -9,6 +9,7 @@ import subprocess
 import os
 import sys
 import traceback
+import shlex
 
 import web
 from ospy import helpers
@@ -108,19 +109,26 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
 
 def run_process(cmd):
     try:
-        proc = subprocess.Popen(
-            cmd,
+        proc = subprocess.run(
+            shlex.split(cmd),
             stderr=subprocess.STDOUT, # merge stdout and stderr
             stdout=subprocess.PIPE,
-            shell=True)
-        output = proc.communicate()[0].decode('utf8')
+            timeout=120)
+        output = proc.stdout.decode('utf8')
         log.info(NAME, _('System watchodg plug-in') + ':\n' + output)
 
+    except:
+        log.info(NAME, _('System watchodg plug-in') + ':\n' + traceback.format_exc())
+
+def add_module(module):
+    try:
+        with open('/etc/modules', 'a') as module_file:
+            module_file.write(module + '\n')
     except:
         log.info(NAME, _('System watchodg plug-in') + ':\n' + traceback.format_exc())
 
@@ -149,15 +157,9 @@ class install_page(ProtectedPage):
 
     def GET(self):
         log.clear(NAME)
-        cmd = "sudo echo 'bcm2708_wdog' >> /etc/modules"     
-        log.debug(NAME, cmd)
-        run_process(cmd)
-        cmd = "sudo echo 'bcm2835_wdog' >> /etc/modules"    
-        log.debug(NAME, cmd)
-        run_process(cmd)
-        cmd = "sudo echo 'bcm2711_wdt' >> /etc/modules"      
-        log.debug(NAME, cmd)
-        run_process(cmd)
+        add_module('bcm2708_wdog')
+        add_module('bcm2835_wdog')
+        add_module('bcm2711_wdt')
 
 
         try:
@@ -184,7 +186,7 @@ class install_page(ProtectedPage):
 
         # http://linux.die.net/man/5/watchdog.conf
         fname = "/etc/watchdog.conf"
-        with open(fname, 'rb') as f:
+        with open(fname, 'wb') as f:
             f.write(b"watchdog-device = /dev/watchdog\n")
             f.write(b"watchdog-timeout = 14\n")
             f.write(b"realtime = yes\n")

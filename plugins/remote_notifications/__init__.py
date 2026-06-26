@@ -244,7 +244,7 @@ def stop():
     global remote_sender
     if remote_sender is not None:
         remote_sender.stop()
-        remote_sender.join()
+        remote_sender.join(15)
         remote_sender = None
 
 
@@ -260,7 +260,7 @@ def send_data(text):
         from urllib.parse import quote_plus 
 
         url = remote_options['rem_adr'] + 'save.php/?' + text 
-        data = urlopen(url)
+        data = urlopen(url, timeout=10)
         log.info(NAME, _('Remote server reply') + ':\n' + data.read().decode('utf-8'))
     else:
         raise Exception(_('Remote plug-in is not properly configured') + '!')

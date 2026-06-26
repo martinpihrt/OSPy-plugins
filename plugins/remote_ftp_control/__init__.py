@@ -137,7 +137,7 @@ def stop():
     global plugin_sender
     if plugin_sender is not None:
         plugin_sender.stop()
-        plugin_sender.join()
+        plugin_sender.join(15)
         plugin_sender = None
 
 

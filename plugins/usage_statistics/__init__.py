@@ -52,7 +52,7 @@ class StatusChecker(Thread):
            import requests
 
            link = "https://pihrt.com/ospystats/statistics.json"
-           req = requests.get(link)
+           req = requests.get(link, timeout=10)
            bodytext = req.text
            #log.debug(NAME, bodytext) # downloaded text
 
@@ -113,7 +113,7 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
 
 ################################################################################

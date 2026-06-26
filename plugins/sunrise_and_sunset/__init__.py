@@ -4,6 +4,7 @@ __author__ = 'Martin Pihrt'
 from threading import Thread, Event, Condition
 import time
 import subprocess
+import shlex
 import sys
 import traceback
 import json
@@ -522,7 +523,7 @@ class StatusChecker(Thread):
                                     from astral.geocoder import add_locations, database, lookup
                                     db = database()
                                     _loc = '{},{},{},{}'.format(plugin_options['custom_location'], plugin_options['custom_region'], plugin_options['custom_timezone'], plugin_options['custom_lati_longit'])
-                                    add_locations(_loc, db) # "Somewhere,Secret Location,UTC,24°28'N,39°36'E"
+                                    add_locations(_loc, db) # "Somewhere,Secret Location,UTC,24Â°28'N,39Â°36'E"
                                     city = lookup(plugin_options['custom_location'], db)
                                     found_name = city.name
                                     found_region = city.region
@@ -663,17 +664,13 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
-        checker.join()
+        checker.join(15)
         checker = None
 
 def run_command(cmd):
     try:
-        proc = subprocess.Popen(
-        cmd,
-        stderr=subprocess.STDOUT, # merge stdout and stderr
-        stdout=subprocess.PIPE,
-        shell=True)
-        output = proc.communicate()[0].decode('utf-8')
+        proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
+        output = proc.stdout.decode('utf-8')
         log.info(NAME, output)
 
     except Exception:

@@ -268,7 +268,7 @@ def stop():
             sender.client.loop_stop()
             sender.client = None
         sender.stop()
-        sender.join()
+        sender.join(15)
         sender = None
     if _client is not None:
         _client.disconnect()
@@ -836,7 +836,7 @@ def discovery_publish():
             from plugins import tank_monitor
             if (tank_monitor.tank_options['use_sonic']):
                 sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
-                sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
+                sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "mÂł")
                 sensor_water_tank_percent._id = 400 # mqtt unique ID placeholder, 400 for water level percent, 401 for volume
                 sensor_water_tank_volume._id = 401
                 sensor_water_tank_percent._is_sonic = True
@@ -861,7 +861,7 @@ def discovery_publish():
                 log.info(NAME, logtext)
             else:
                 sensor_water_tank_percent = hass_device().createSensor("moisture", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
-                sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
+                sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "mÂł")
                 remove_device(sensor_water_tank_percent)
                 remove_device(sensor_water_tank_volume)
             
@@ -882,7 +882,7 @@ def discovery_publish():
                     sensorH._isDHT = True
                     sensorH._isDS = False 
                     sensorH._id = 500 #mqtt unique ID placeholder, 500 for humidity, 501 for temperature
-                    sensorT = hass_device().createSensor( "temperature", "sensor_THDS", "HDT_temperature", dhtName + " " + _('Temperature'), None, "°C")
+                    sensorT = hass_device().createSensor( "temperature", "sensor_THDS", "HDT_temperature", dhtName + " " + _('Temperature'), None, "Â°C")
                     sensorT._isDHT = True
                     sensorT._isDS = False
                     sensorT._id = 501
@@ -900,7 +900,7 @@ def discovery_publish():
             if False and air_temp_humi.plugin_options['ds_enabled'] and air_temp_humi.plugin_options['ds_used'] > 0:
                 if plugin_options['ext_ds1-6']:
                     for ds in range(0, air_temp_humi.plugin_options['ds_used']):
-                        sensor = hass_device().createSensor( "temperature", "sensor_THDS", "DS_temperature{}".format(ds), air_temp_humi.plugin_options['label_ds%d' % ds] + " " + _('Temperature'), None, "℃")
+                        sensor = hass_device().createSensor( "temperature", "sensor_THDS", "DS_temperature{}".format(ds), air_temp_humi.plugin_options['label_ds%d' % ds] + " " + _('Temperature'), None, "â„")
                         sensor._isDS = True
                         sensor._isDHT = False
                         sensor._id = ds
@@ -953,7 +953,7 @@ def discovery_publish():
                 #level_cm = current_loop_tanks_monitor.tanks['levelCm'][i]
                 #volt = current_loop_tanks_monitor.tanks['voltage'][i]
                 sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", '{} '.format(label), "mdi:waves-arrow-up", "%")
-                sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", '{} '.format(label), "mdi:waves-arrow-up", "m³")
+                sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", '{} '.format(label), "mdi:waves-arrow-up", "mÂł")
                 sensor_water_tank_percent._id = 410 # mqtt unique ID placeholder, 410 for water level percent, 411 for volume
                 sensor_water_tank_volume._id = 411
                 sensorWTLDevices.append(sensor_water_tank_percent)
@@ -968,7 +968,7 @@ def discovery_publish():
                 log.info(NAME, logtext)
             if False:
                 sensor_water_tank_percent = hass_device().createSensor("moisture", "sensor_WTL", "tank_percent", '{} '.format(label), "mdi:waves-arrow-up", "%")
-                sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume",'{} '.format(label), "mdi:waves-arrow-up", "m³")
+                sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume",'{} '.format(label), "mdi:waves-arrow-up", "mÂł")
                 remove_device(sensor_water_tank_percent)
                 remove_device(sensor_water_tank_volume)
             

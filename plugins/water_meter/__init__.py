@@ -164,7 +164,7 @@ def stop():
     global water_sender
     if water_sender is not None:
         water_sender.stop()
-        water_sender.join()
+        water_sender.join(15)
         water_sender = None
 
 

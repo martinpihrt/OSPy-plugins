@@ -129,7 +129,7 @@ def stop():
     global pcf_sender
     if pcf_sender is not None:
         pcf_sender.stop()
-        pcf_sender.join()
+        pcf_sender.join(15)
         pcf_sender = None
 
 
