@@ -219,7 +219,7 @@ jQuery(document).ready(function(){
         jQuery("#localVersion").text(stat.ver_str || "");
         jQuery("#localDate").text(stat.ver_date || "");
         jQuery("#localHash").text(stat.local_hash || "");
-        jQuery("#statusArea").val((data.events || []).join("\\n"));
+        jQuery("#statusArea").val((data.events || []).join("\n"));
         jQuery("#checkingStatus").toggle(!!stat.checking);
 
         if (stat.can_update) {

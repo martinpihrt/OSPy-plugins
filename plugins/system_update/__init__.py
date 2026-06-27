@@ -86,6 +86,7 @@ class StatusChecker(Thread):
             if self._refresh_thread is not None and self._refresh_thread.is_alive():
                 return False
 
+            log.clear(NAME)
             self._refresh_thread = Thread(target=self._manual_refresh, daemon=True)
             self._refresh_thread.start()
             return True
