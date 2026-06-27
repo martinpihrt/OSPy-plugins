@@ -160,6 +160,7 @@ class StatusChecker(Thread):
 
         if new_revision == version.revision and new_date == version.ver_date:
             log.info(NAME, _('Up-to-date.'))
+            stats['can_update'] = False
         elif new_revision > version.revision:
             log.info(NAME, _('New version is available!'))
             log.info(NAME, _('Currently running revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date))
@@ -189,11 +190,13 @@ class StatusChecker(Thread):
             stats['ver_new'] =  '%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date) 
             stats['ver_new_date'] = '%s' % new_date   
             stats['ver_act'] =  '%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date)
+            stats['can_update'] = True
 
         else:
             log.info(NAME, _('Running unknown version!'))
             log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
             log.info(NAME, _('Available revision') + ': %d (%s)' % (new_revision, new_date))
+            stats['can_update'] = False
 
         self.status['checking'] = False
         self.started.set()
@@ -358,6 +361,29 @@ class status_page(ProtectedPage):
     def POST(self):
         plugin_options.web_update(web.input())
         raise web.seeother(plugin_url(status_page), True)
+
+
+class status_json(ProtectedPage):
+    """Returns live System Update status in JSON format."""
+
+    def GET(self):
+        qdict = web.input()
+        if 'refresh' in qdict:
+            checker.refresh_async()
+
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            return json.dumps({
+                'status': checker.status,
+                'events': log.events(NAME)
+            })
+        except Exception:
+            log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
+            return json.dumps({
+                'status': {},
+                'events': []
+            })
 
 
 class update_page(ProtectedPage):

@@ -184,8 +184,81 @@ table.optionList {
 
 <script>
 jQuery(document).ready(function(){
+    let statusJsonUrl = "$plugins.plugin_url('system_update.status_json')";
+    let updateUrl = "$plugins.plugin_url('system_update.update_page')";
+    let errorUrl = "$plugins.plugin_url('system_update.error_page')";
+    let updateText = $:{json.dumps(_('A new version of OSPy is available - update?'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+    let errorText = $:{json.dumps(_('Fix detected dubious ownership?'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+    let checkingTimer = null;
+
+    function escapeHtml(text) {
+        return jQuery("<div>").text(text == null ? "" : text).html();
+    }
+
+    function renderCommits(commits) {
+        let html = "";
+        jQuery.each(commits || [], function(index, commit) {
+            html += '<label class="commit-item">';
+            html += '<input type="radio" name="commit_hash" value="' + escapeHtml(commit.hash) + '">';
+            html += '<div class="commit-info">';
+            html += '<div class="commit-header">';
+            html += '<span class="commit-date">' + escapeHtml(commit.date) + '</span>';
+            html += '<span class="commit-hash">' + escapeHtml(commit.hash) + '</span>';
+            html += '</div>';
+            html += '<div class="commit-message">' + escapeHtml(commit.message) + '</div>';
+            html += '</div>';
+            html += '</label>';
+        });
+        jQuery("#commitList").html(html);
+    }
+
+    function renderStatus(data) {
+        let stat = data.status || {};
+        jQuery("#remoteRepository").text(stat.remote || "");
+        jQuery("#remoteBranch").text(stat.remote_branch || "");
+        jQuery("#localVersion").text(stat.ver_str || "");
+        jQuery("#localDate").text(stat.ver_date || "");
+        jQuery("#localHash").text(stat.local_hash || "");
+        jQuery("#statusArea").val((data.events || []).join("\\n"));
+        jQuery("#checkingStatus").toggle(!!stat.checking);
+
+        if (stat.can_update) {
+            jQuery("#updateAction").html('<a href="' + updateUrl + '" class="button reboot danger"><b>' + updateText + '</b></a>');
+        } else {
+            jQuery("#updateAction").empty();
+        }
+
+        if (stat.can_error) {
+            jQuery("#errorAction").html('<a href="' + errorUrl + '" class="button upload danger"><b>' + errorText + '</b></a>');
+        } else {
+            jQuery("#errorAction").empty();
+        }
+
+        renderCommits(stat.commits);
+
+        if (stat.checking) {
+            checkingTimer = setTimeout(loadStatus, 1500);
+        } else {
+            checkingTimer = null;
+        }
+    }
+
+    function loadStatus() {
+        jQuery.getJSON(statusJsonUrl, renderStatus);
+    }
+
     jQuery("#cSubmit").click(function() {
         jQuery("#pluginForm").submit();
+    });
+
+    jQuery("#checkVersion").click(function(e) {
+        e.preventDefault();
+        if (checkingTimer !== null) {
+            return false;
+        }
+        jQuery("#checkingStatus").show();
+        jQuery.getJSON(statusJsonUrl + "?refresh=1", renderStatus);
+        return false;
     });
 
     jQuery("button#cCancel").click(function(){
@@ -210,6 +283,9 @@ jQuery(document).ready(function(){
             return false;
         }
     });
+
+    $if stat.get('checking'):
+        checkingTimer = setTimeout(loadStatus, 1500);
 });
 </script>
 
@@ -229,31 +305,31 @@ jQuery(document).ready(function(){
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Remote repository'):</b></td>
-                <td>
+                <td id="remoteRepository">
                     $stat["remote"]
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Remote branch'):</b></td>
-                <td>
+                <td id="remoteBranch">
                     $stat["remote_branch"]
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Local OSPy version'):</b></td>
-                <td>
+                <td id="localVersion">
                     $stat["ver_str"]
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Local OSPy date'):</b></td>
-                <td>
+                <td id="localDate">
                     $stat["ver_date"]
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Current commit hash'):</b></td>
-                <td>
+                <td id="localHash">
                     $stat["local_hash"]
                 </td>
             </tr>
@@ -309,14 +385,17 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea class="status-area" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
-                    <a href="$plugins.plugin_url('system_update.status_page')?refresh=1" class="button refresh">$_('Check new version')</a>
-                    $if stat.get('checking'):
-                        <span style="margin-left: 10px; color: #666666;">$_('Checking...')</span>
-                    $if stat['can_update']:
-                        <a href="$plugins.plugin_url('system_update.update_page')" class="button reboot danger"><b>$_('A new version of OSPy is available - update?')</b></a>
-                    $if stat['can_error']:
-                        <a href="$plugins.plugin_url('system_update.error_page')" class="button upload danger"><b>$_('Fix detected dubious ownership?')</b></a>                        
+                    <textarea id="statusArea" class="status-area" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
+                    <a id="checkVersion" href="$plugins.plugin_url('system_update.status_json')?refresh=1" class="button refresh">$_('Check new version')</a>
+                    <span id="checkingStatus" style="margin-left: 10px; color: #666666; display: ${'inline' if stat.get('checking') else 'none'};">$_('Checking...')</span>
+                    <span id="updateAction">
+                        $if stat['can_update']:
+                            <a href="$plugins.plugin_url('system_update.update_page')" class="button reboot danger"><b>$_('A new version of OSPy is available - update?')</b></a>
+                    </span>
+                    <span id="errorAction">
+                        $if stat['can_error']:
+                            <a href="$plugins.plugin_url('system_update.error_page')" class="button upload danger"><b>$_('Fix detected dubious ownership?')</b></a>
+                    </span>                        
                 </td>
             </tr>
         </table>
