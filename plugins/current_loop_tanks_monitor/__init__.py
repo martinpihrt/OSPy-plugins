@@ -180,7 +180,7 @@ ADS1115_CONVERSION_REG = 0x00
 ADS1115_CONFIG_REG = 0x01
 
 # Mode setting for independent channels (single-ended) AIN0 to AIN3
-CONFIG_GAIN = 0x0200  # Gain 1 (range Â±4.096V)
+CONFIG_GAIN = 0x0200  # Gain 1 (range ±4.096V)
 CONFIG_MODE = 0x0100  # Mode: single-shot
 
 tanks = {}
@@ -557,7 +557,7 @@ def read_adc(bus, channel):
         raw_adc -= 0x10000
 
     # Converting ADC value to voltage
-    voltage = raw_adc * 4.096 / 32768.0  # Â±4.096V range, 16bit convert
+    voltage = raw_adc * 4.096 / 32768.0  # ±4.096V range, 16bit convert
 
     return round(voltage if voltage > 0 else 0, 3)  # return positive voltage or 0
 

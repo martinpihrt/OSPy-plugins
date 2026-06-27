@@ -601,27 +601,27 @@ def get_report(index):
                                         sensor_result += _('Any error')
                                 if sensor.sens_type == 5:                               ### Temperature 1 ###
                                     try:
-                                        sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][0]) + _('Â°C')
+                                        sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][0]) + _('°C')
                                     except:
                                         sensor_result += _('Any error')
                                 if sensor.sens_type == 6:                               ### Temperature 2 ###
                                     try:
-                                        sensor_result += _('Temperature 2') + ': {} '.format(sensor.last_read_value[2][1]) + _('Â°C')
+                                        sensor_result += _('Temperature 2') + ': {} '.format(sensor.last_read_value[2][1]) + _('°C')
                                     except:
                                         sensor_result += _('Any error')
                                 if sensor.sens_type == 7:                               ### Temperature 3 ###
                                     try:
-                                        sensor_result += _('Temperature 3') + ': {} '.format(sensor.last_read_value[2][2]) + _('Â°C')
+                                        sensor_result += _('Temperature 3') + ': {} '.format(sensor.last_read_value[2][2]) + _('°C')
                                     except:
                                         sensor_result += _('Any error')
                                 if sensor.sens_type == 8:                               ### Temperature 4 ###
                                     try:
-                                        sensor_result += _('Temperature 4') + ': {} '.format(sensor.last_read_value[2][3]) + _('Â°C')
+                                        sensor_result += _('Temperature 4') + ': {} '.format(sensor.last_read_value[2][3]) + _('°C')
                                     except:
                                         sensor_result += _('Any error')
                                 if sensor.sens_type == 9:                               ### Temperature 5 ###
                                     try:
-                                        sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][4]) + _('Â°C')
+                                        sensor_result += _('Temperature 1') + ': {} '.format(sensor.last_read_value[2][4]) + _('°C')
                                     except:
                                         sensor_result += _('Any error')
                                 if sensor.sens_type == 10:                              ### Power 1 ###

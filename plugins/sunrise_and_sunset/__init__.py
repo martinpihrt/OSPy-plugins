@@ -523,7 +523,7 @@ class StatusChecker(Thread):
                                     from astral.geocoder import add_locations, database, lookup
                                     db = database()
                                     _loc = '{},{},{},{}'.format(plugin_options['custom_location'], plugin_options['custom_region'], plugin_options['custom_timezone'], plugin_options['custom_lati_longit'])
-                                    add_locations(_loc, db) # "Somewhere,Secret Location,UTC,24Â°28'N,39Â°36'E"
+                                    add_locations(_loc, db) # "Somewhere,Secret Location,UTC,24°28'N,39°36'E"
                                     city = lookup(plugin_options['custom_location'], db)
                                     found_name = city.name
                                     found_region = city.region
