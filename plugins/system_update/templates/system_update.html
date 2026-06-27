@@ -184,108 +184,110 @@ table.optionList {
 
 <script>
 jQuery(document).ready(function(){
-    let statusJsonUrl = "$plugins.plugin_url('system_update.status_json')";
-    let updateUrl = "$plugins.plugin_url('system_update.update_page')";
-    let errorUrl = "$plugins.plugin_url('system_update.error_page')";
-    let updateText = $:{json.dumps(_('A new version of OSPy is available - update?'), ensure_ascii=False).encode('utf8').decode('utf-8')};
-    let errorText = $:{json.dumps(_('Fix detected dubious ownership?'), ensure_ascii=False).encode('utf8').decode('utf-8')};
-    let checkingTimer = null;
+let statusJsonUrl = "$plugins.plugin_url('system_update.status_json')";
+let updateUrl = "$plugins.plugin_url('system_update.update_page')";
+let errorUrl = "$plugins.plugin_url('system_update.error_page')";
+let updateText = $:{json.dumps(_('A new version of OSPy is available - update?'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+let errorText = $:{json.dumps(_('Fix detected dubious ownership?'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+let initialChecking = $:{json.dumps(bool(stat.get('checking')))};
+let checkingTimer = null;
 
-    function escapeHtml(text) {
-        return jQuery("<div>").text(text == null ? "" : text).html();
-    }
+function escapeHtml(text) {
+return jQuery("<div>").text(text == null ? "" : text).html();
+}
 
-    function renderCommits(commits) {
-        let html = "";
-        jQuery.each(commits || [], function(index, commit) {
-            html += '<label class="commit-item">';
-            html += '<input type="radio" name="commit_hash" value="' + escapeHtml(commit.hash) + '">';
-            html += '<div class="commit-info">';
-            html += '<div class="commit-header">';
-            html += '<span class="commit-date">' + escapeHtml(commit.date) + '</span>';
-            html += '<span class="commit-hash">' + escapeHtml(commit.hash) + '</span>';
-            html += '</div>';
-            html += '<div class="commit-message">' + escapeHtml(commit.message) + '</div>';
-            html += '</div>';
-            html += '</label>';
-        });
-        jQuery("#commitList").html(html);
-    }
+function renderCommits(commits) {
+let html = "";
+jQuery.each(commits || [], function(index, commit) {
+html += '<label class="commit-item">';
+html += '<input type="radio" name="commit_hash" value="' + escapeHtml(commit.hash) + '">';
+html += '<div class="commit-info">';
+html += '<div class="commit-header">';
+html += '<span class="commit-date">' + escapeHtml(commit.date) + '</span>';
+html += '<span class="commit-hash">' + escapeHtml(commit.hash) + '</span>';
+html += '</div>';
+html += '<div class="commit-message">' + escapeHtml(commit.message) + '</div>';
+html += '</div>';
+html += '</label>';
+});
+jQuery("#commitList").html(html);
+}
 
-    function renderStatus(data) {
-        let stat = data.status || {};
-        jQuery("#remoteRepository").text(stat.remote || "");
-        jQuery("#remoteBranch").text(stat.remote_branch || "");
-        jQuery("#localVersion").text(stat.ver_str || "");
-        jQuery("#localDate").text(stat.ver_date || "");
-        jQuery("#localHash").text(stat.local_hash || "");
-        jQuery("#statusArea").val((data.events || []).join("\n"));
-        jQuery("#checkingStatus").toggle(!!stat.checking);
+function renderStatus(data) {
+let stat = data.status || {};
+jQuery("#remoteRepository").text(stat.remote || "");
+jQuery("#remoteBranch").text(stat.remote_branch || "");
+jQuery("#localVersion").text(stat.ver_str || "");
+jQuery("#localDate").text(stat.ver_date || "");
+jQuery("#localHash").text(stat.local_hash || "");
+jQuery("#statusArea").val((data.events || []).join("\n"));
+jQuery("#checkingStatus").toggle(!!stat.checking);
 
-        if (stat.can_update) {
-            jQuery("#updateAction").html('<a href="' + updateUrl + '" class="button reboot danger"><b>' + updateText + '</b></a>');
-        } else {
-            jQuery("#updateAction").empty();
-        }
+if (stat.can_update) {
+jQuery("#updateAction").html('<a href="' + updateUrl + '" class="button reboot danger"><b>' + updateText + '</b></a>');
+} else {
+jQuery("#updateAction").empty();
+}
 
-        if (stat.can_error) {
-            jQuery("#errorAction").html('<a href="' + errorUrl + '" class="button upload danger"><b>' + errorText + '</b></a>');
-        } else {
-            jQuery("#errorAction").empty();
-        }
+if (stat.can_error) {
+jQuery("#errorAction").html('<a href="' + errorUrl + '" class="button upload danger"><b>' + errorText + '</b></a>');
+} else {
+jQuery("#errorAction").empty();
+}
 
-        renderCommits(stat.commits);
+renderCommits(stat.commits);
 
-        if (stat.checking) {
-            checkingTimer = setTimeout(loadStatus, 1500);
-        } else {
-            checkingTimer = null;
-        }
-    }
+if (stat.checking) {
+checkingTimer = setTimeout(loadStatus, 1500);
+} else {
+checkingTimer = null;
+}
+}
 
-    function loadStatus() {
-        jQuery.getJSON(statusJsonUrl, renderStatus);
-    }
+function loadStatus() {
+jQuery.getJSON(statusJsonUrl, renderStatus);
+}
 
-    jQuery("#cSubmit").click(function() {
-        jQuery("#pluginForm").submit();
-    });
+jQuery("#cSubmit").click(function() {
+jQuery("#pluginForm").submit();
+});
 
-    jQuery("#checkVersion").click(function(e) {
-        e.preventDefault();
-        if (checkingTimer !== null) {
-            return false;
-        }
-        jQuery("#checkingStatus").show();
-        jQuery.getJSON(statusJsonUrl + "?refresh=1", renderStatus);
-        return false;
-    });
+jQuery("#checkVersion").click(function(e) {
+e.preventDefault();
+if (checkingTimer !== null) {
+return false;
+}
+jQuery("#checkingStatus").show();
+jQuery.getJSON(statusJsonUrl + "?refresh=1", renderStatus);
+return false;
+});
 
-    jQuery("button#cCancel").click(function(){
-        window.location="/";
-    });
+jQuery("button#cCancel").click(function(){
+window.location="/";
+});
 
-    jQuery("#rollbackForm").submit(function(e){
-        let selected = jQuery('input[name="commit_hash"]:checked').val();
-        if (!selected) {
-            alert($:{json.dumps(_('Please select a version to rollback to!'), ensure_ascii=False).encode('utf8').decode('utf-8')});
-            e.preventDefault();
-            return false;
-        }
+jQuery("#rollbackForm").submit(function(e){
+let selected = jQuery('input[name="commit_hash"]:checked').val();
+if (!selected) {
+alert($:{json.dumps(_('Please select a version to rollback to!'), ensure_ascii=False).encode('utf8').decode('utf-8')});
+e.preventDefault();
+return false;
+}
 
-        let confirmMsg =
-            $:{json.dumps(_('Are you sure you want to rollback to commit'), ensure_ascii=False).encode('utf8').decode('utf-8')} +
-            " " + selected + "? " +
-            $:{json.dumps(_('All local changes will be lost!'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+let confirmMsg =
+$:{json.dumps(_('Are you sure you want to rollback to commit'), ensure_ascii=False).encode('utf8').decode('utf-8')} +
+" " + selected + "? " +
+$:{json.dumps(_('All local changes will be lost!'), ensure_ascii=False).encode('utf8').decode('utf-8')};
 
-        if (!confirm(confirmMsg)) {
-            e.preventDefault();
-            return false;
-        }
-    });
+if (!confirm(confirmMsg)) {
+e.preventDefault();
+return false;
+}
+});
 
-    $if stat.get('checking'):
-        checkingTimer = setTimeout(loadStatus, 1500);
+if (initialChecking) {
+checkingTimer = setTimeout(loadStatus, 1500);
+}
 });
 </script>
 
