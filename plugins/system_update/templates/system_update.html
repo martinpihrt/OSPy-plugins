@@ -310,7 +310,9 @@ jQuery(document).ready(function(){
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
                     <textarea class="status-area" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
-                    <a href="$plugins.plugin_url('system_update.status_page')" class="button refresh">$_('Check new version')</a>
+                    <a href="$plugins.plugin_url('system_update.status_page')?refresh=1" class="button refresh">$_('Check new version')</a>
+                    $if stat.get('checking'):
+                        <span style="margin-left: 10px; color: #666666;">$_('Checking...')</span>
                     $if stat['can_update']:
                         <a href="$plugins.plugin_url('system_update.update_page')" class="button reboot danger"><b>$_('A new version of OSPy is available - update?')</b></a>
                     $if stat['can_error']:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 
-from threading import Thread, Event, Condition
+from threading import Thread, Event, Lock
 import time
 import subprocess
 import traceback
@@ -52,6 +52,8 @@ class StatusChecker(Thread):
         self.daemon = True
         self.started = Event()
         self._stop_event = Event()
+        self._refresh_lock = Lock()
+        self._refresh_thread = None
 
         self.status = {
             'ver_str': version.ver_str,
@@ -60,6 +62,7 @@ class StatusChecker(Thread):
             'remote_branch': 'origin/master',
             'can_update': False,
             'can_error': False,
+            'checking': False,
             'commits': [],
             'local_hash': ''
         }
@@ -75,47 +78,66 @@ class StatusChecker(Thread):
     def stop(self):
         self._stop_event.set()
 
+    def refresh_async(self):
+        with self._refresh_lock:
+            if self.status.get('checking'):
+                return False
+
+            if self._refresh_thread is not None and self._refresh_thread.is_alive():
+                return False
+
+            self._refresh_thread = Thread(target=self._manual_refresh, daemon=True)
+            self._refresh_thread.start()
+            return True
+
+    def _manual_refresh(self):
+        try:
+            self._update_rev_data()
+        except Exception:
+            log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
+
     def _update_rev_data(self):
         global stats
 
         new_date = 0
         new_revision = 0
         changes = '' 
+        self.status['checking'] = True
 
         try:
-            run_command('git remote update')
-            remote = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url']).decode().strip()
+            run_command(['git', 'fetch', '--prune', 'origin'], timeout=45)
+            remote = git_output(['git', 'config', '--get', 'remote.origin.url'])
             if remote:
                 self.status['remote'] = remote
 
-            remote_branch = subprocess.check_output(
+            remote_branch = git_output(
                 ['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']
-            ).decode().strip()
+            )
             if remote_branch:
                 self.status['remote_branch'] = remote_branch
 
-            local_rev = int(subprocess.check_output(['git', 'rev-list', 'HEAD', '--count']).decode())
-            remote_rev = int(subprocess.check_output(['git', 'rev-list', remote_branch, '--count']).decode())
+            local_rev = int(git_output(['git', 'rev-list', 'HEAD', '--count']))
+            remote_rev = int(git_output(['git', 'rev-list', remote_branch, '--count']))
             self.status['can_update'] = remote_rev > local_rev
 
             # AktuĂˇlnĂ­ commit hash
-            self.status['local_hash'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+            self.status['local_hash'] = git_output(['git', 'rev-parse', 'HEAD'])
 
             command = 'git log -1 %s --format=%%cd --date=short' % remote_branch
-            new_date = subprocess.check_output(command.split()).decode('utf-8').strip()
+            new_date = git_output(command.split())
 
             command = 'git rev-list %s --count --first-parent' % remote_branch
-            new_revision = int(subprocess.check_output(command.split()).decode('utf8'))
+            new_revision = int(git_output(command.split()))
 
             command = 'git log HEAD..%s --oneline' % remote_branch
-            changes = '  ' + '\n  '.join(subprocess.check_output(command.split()).decode('utf8').split('\n'))
+            changes = '  ' + '\n  '.join(git_output(command.split()).split('\n'))
 
             stats['ver_changes'] = ''
 
             # PoslednĂ­ch 10 commitĹŻ (hash|datum|message)
-            commit_log = subprocess.check_output(
+            commit_log = git_output(
                 ['git', 'log', '-n', '10', '--pretty=format:%h|%cd|%s', '--date=short']
-            ).decode('utf-8').splitlines()
+            ).splitlines()
 
             commits = []
             for line in commit_log:
@@ -132,6 +154,9 @@ class StatusChecker(Thread):
         except Exception:
             log.error(NAME, _('Error while updating revision data:\n') + traceback.format_exc())
             self.status['can_error'] = True
+            self.status['checking'] = False
+            self.started.set()
+            return
 
         if new_revision == version.revision and new_date == version.ver_date:
             log.info(NAME, _('Up-to-date.'))
@@ -170,6 +195,7 @@ class StatusChecker(Thread):
             log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
             log.info(NAME, _('Available revision') + ': %d (%s)' % (new_revision, new_date))
 
+        self.status['checking'] = False
         self.started.set()
 
     def run(self):
@@ -221,10 +247,14 @@ checker = None
 ################################################################################
 # Helper functions:                                                            #
 ################################################################################
-def run_command(cmd):
+def git_output(args, timeout=30):
+    return subprocess.check_output(args, stderr=subprocess.STDOUT, timeout=timeout).decode('utf-8').strip()
+
+
+def run_command(cmd, timeout=60):
     try:
         args = shlex.split(cmd) if isinstance(cmd, str) else cmd
-        proc = subprocess.run(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=300)
+        proc = subprocess.run(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=timeout)
         output = proc.stdout.decode('utf-8')
         log.info(NAME, output)
         return output.strip()
@@ -235,13 +265,13 @@ def run_command(cmd):
 def perform_update():
     try:
         # UloĹľĂ­me aktuĂˇlnĂ­ commit pro pĹ™Ă­pad rollbacku
-        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+        commit_hash = git_output(['git', 'rev-parse', 'HEAD'])
         with open(ROLLBACK_FILE, 'w') as f:
             f.write(commit_hash)
 
         run_command("git config core.filemode false")
-        run_command("git reset --hard")
-        run_command("git pull")
+        run_command("git reset --hard", timeout=120)
+        run_command("git pull", timeout=300)
 
         msg = _('OSPy updated successfully. Please wait while restarting...')
         log.info(NAME, msg)
@@ -318,7 +348,11 @@ def report_ospyupdate():
 ################################################################################
 class status_page(ProtectedPage):
     def GET(self):
-        checker.started.wait(10)
+        qdict = web.input()
+        if 'refresh' in qdict:
+            checker.refresh_async()
+        else:
+            checker.started.wait(1)
         return self.plugin_render.system_update(plugin_options, log.events(NAME), checker.status)
 
     def POST(self):
