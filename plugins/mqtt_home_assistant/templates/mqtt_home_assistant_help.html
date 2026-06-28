@@ -65,7 +65,15 @@ $var page: plugins
 <h2>$_('Home Assistant - available OSPy Devices and Entities')</h2>
 $_('Devices and associated Entities made available with this plugin are:')
 <ul>
-    <li>TODO</li>
+    <li>$_('System device: rain delay control, water level adjustment, scheduler enable switch, manual operation switch, and rain sensor state.')</li>
+    <li>$_('Station devices: one switch entity for each enabled OSPy station, allowing the station to be switched on or off from Home Assistant.')</li>
+    <li>$_('Program devices: one button entity for each OSPy program, allowing the program to be started from Home Assistant.')</li>
+    <li>$_('Stop buttons: button entities for stopping all stations from the station and program device groups.')</li>
+    <li>$_('Temperature and humidity extension entities, when enabled: DHT temperature, DHT humidity, and DS1 to DS6 temperature sensors from the air temperature and humidity plugin.')</li>
+    <li>$_('DS18B20 error filtering, when enabled in settings: DS error values such as -127 can be sent or suppressed before publishing to Home Assistant.')</li>
+    <li>$_('Water tank extension entities, when enabled: tank level percentage and tank volume from the ultrasonic tank monitor plugin.')</li>
+    <li>$_('Current loop tank extension entities, when enabled: level percentage and volume for each enabled current loop tank.')</li>
+    <li>$_('Device availability status is published so Home Assistant can show unavailable entities when a station, sensor, or optional plugin is disabled or not responding.')</li>
 </ul>
 
 <div id="controls">
