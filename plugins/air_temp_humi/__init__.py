@@ -41,6 +41,9 @@ LINK = 'settings_page'
 tempDS = [-127,-127,-127,-127,-127,-127]
 tempDHT = 0
 humiDHT = 0
+DS18B20_ERROR_VALUE = -127
+DS18B20_READ_RETRIES = 3
+DS18B20_RETRY_DELAY = 0.5
 
 plugin_options = PluginOptions(
     NAME,
@@ -344,57 +347,82 @@ def try_io(call, tries=10):
     return result
 
 
+def DS18B20_decode_i2c_data(i2c_data):
+    if len(i2c_data) < 30:
+       raise ValueError('Incomplete DS18B20 I2C data.')
+
+    # Test received data byte 1 and 2.
+    if i2c_data[1] == 255 or i2c_data[2] == 255:
+       return None
+
+    # Each float temperature from the hw board is 5 bytes long (5byte * 6 probe = 30 bytes).
+    pom = 0
+    teplota = [DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE]
+    for i in range(0, 6):
+       jed = i2c_data[pom+4]        # 4 byte
+       des = i2c_data[pom+3]*10     # 3
+       sto = i2c_data[pom+2]*100    # 2
+       tis = i2c_data[pom+1]*1000   # 1
+       priznak = i2c_data[pom]      # 0 byte
+       pom += 5
+       soucet = tis+sto+des+jed
+       if priznak == 1:
+          soucet = soucet * -1      # negation number
+       teplota[i] = soucet/10.0
+       if teplota[i] > 127:
+          teplota[i] = DS18B20_ERROR_VALUE
+    return teplota
+
+
+def DS18B20_has_error(teplota):
+    active_ds = DS18B20_active_indexes()
+    check_indexes = active_ds if active_ds else range(0, 6)
+    for i in check_indexes:
+       if teplota[i] == DS18B20_ERROR_VALUE:
+          return True
+    return False
+
+
 def DS18B20_read_data():
-    import smbus  
+    import smbus
+    last_read = None
     try:
-       bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0) 
+       bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
        time.sleep(1) #wait here to avoid 121 IO Error
-       try:    
-            i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0))
-       except:
-            i2c_data = [255, 255, 255]
-            pass
 
-       # Test recieved data byte 1 and 2
-       if i2c_data[1] == 255 or i2c_data[2] == 255:         
-          log.debug(NAME, _('Data is not correct. Please try again later.'))
-          for i in range(0, 6):
-             tempDS[i] = -127
-          return [-127,-127,-127,-127,-127,-127] # data has error 
+       for attempt in range(0, DS18B20_READ_RETRIES):
+          try:
+             i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0))
+             teplota = DS18B20_decode_i2c_data(i2c_data)
+          except Exception:
+             teplota = None
 
-       # Each float temperature from the hw board is 5 bytes long (5byte * 6 probe = 30 bytes).
-       pom = 0
-       teplota = [-127,-127,-127,-127,-127,-127]
+          if teplota is None:
+             log.debug(NAME, _('Data is not correct. Please try again later.'))
+          else:
+             last_read = teplota
+             if not DS18B20_has_error(teplota):
+                for i in range(0, 6):
+                   tempDS[i] = teplota[i]      # global temperature for all probe DS18B20
+                return teplota                 # data is ok
+             log.debug(NAME, _('DS18B20 returned error value. Reading again.'))
+
+          if attempt < DS18B20_READ_RETRIES - 1:
+             time.sleep(DS18B20_RETRY_DELAY)
+
+       if last_read is None:
+          last_read = [DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE]
+
        for i in range(0, 6):
-          priznak=0
-          jed=0
-          des=0
-          sto=0
-          tis=0
-          soucet=0
-          jed = i2c_data[pom+4]        # 4 byte
-          des = i2c_data[pom+3]*10     # 3
-          sto = i2c_data[pom+2]*100    # 2
-          tis = i2c_data[pom+1]*1000   # 1  
-          priznak = i2c_data[pom]      # 0 byte
-          pom += 5
-          soucet = tis+sto+des+jed
-          if(priznak==1):
-            soucet = soucet * -1      # negation number
-          teplota[i]  = soucet/10.0
-          if teplota[i] > 127:
-             teplota[i] = -127
-          tempDS[i] = teplota[i]      # global temperature for all probe DS18B20
+          tempDS[i] = last_read[i]
+       return last_read
 
     except Exception:
-      log.debug(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())       
+      log.debug(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
       time.sleep(0.5)
       for i in range(0, 6):
-         tempDS[i] = -127
-      pass
-      return [-127,-127,-127,-127,-127,-127] # try data has error
-
-    return teplota     # data is ok
+         tempDS[i] = DS18B20_ERROR_VALUE
+      return [DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE] # try data has error
 
 
 def DS18B20_read_string_data():
