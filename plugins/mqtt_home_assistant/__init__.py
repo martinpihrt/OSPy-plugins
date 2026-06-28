@@ -1295,47 +1295,29 @@ class settings_page(ProtectedPage):
     """ Load an html page for entering adjustments. """
 
     def GET(self):
-        try:
-            global slugify_is_installed
-            global mqtt_is_installed
+        global slugify_is_installed
+        global mqtt_is_installed
+        msg = ''
+        if not slugify_is_installed:
+            msg = _('Error: slugify not installed. Install it to system. sudo apt install python3 slugify.')
+        elif not mqtt_is_installed:
+            msg += ' ' + _('Error: paho-mqtt is not installed. Install it to system. sudo pip3 install paho-mqtt.')
+        else:
             msg = ''
-            if not slugify_is_installed:
-                msg = _('Error: slugify not installed. Install it to system. sudo apt install python3 slugify.')
-            elif not mqtt_is_installed:
-                msg += ' ' + _('Error: paho-mqtt is not installed. Install it to system. sudo pip3 install paho-mqtt.')
-            else:
-                msg = ''
-            return self.plugin_render.mqtt_home_assistant(plugin_options, log.events(NAME), msg, is_connected())
-        except:
-            log.error(NAME, _('MQTT Home Assistant plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('mqtt_home_assistant -> settings_page GET')
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.mqtt_home_assistant(plugin_options, log.events(NAME), msg, is_connected())
 
     def POST(self):
-        try:
-            plugin_options.web_update(web.input())
-            updateSignal = signal('hass_plugin_update')
-            updateSignal.send()
-            raise web.seeother(plugin_url(settings_page), True)
-        except:
-            log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('mqtt_home_assistant -> settings_page POST')
-            return self.core_render.notice('/', msg)
+        plugin_options.web_update(web.input())
+        updateSignal = signal('hass_plugin_update')
+        updateSignal.send()
+        raise web.seeother(plugin_url(settings_page), True)
 
 
 class help_page(ProtectedPage):
     """ Load an html page for help """
 
     def GET(self):
-        try:
-            return self.plugin_render.mqtt_home_assistant_help()
-        except:
-            log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
-            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
-            msg += _('mqtt_home_assistant -> help_page GET')
-            return self.core_render.notice('/', msg)
+        return self.plugin_render.mqtt_home_assistant_help()
 
 
 class settings_json(ProtectedPage):
