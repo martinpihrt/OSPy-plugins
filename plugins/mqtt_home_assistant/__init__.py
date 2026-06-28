@@ -59,6 +59,7 @@ plugin_options = PluginOptions(
         'hass_device_is_station_name': True,                     # Default: uncheck
         'measurement_refresh_interval': 30,                      # Default: 30 seconds (refresh measuring data. Ex: from air temp humi plugin)
         'ext_ds1-6': True,                                       # Including temperature sensors DS1 to DS6 from the temperature and humidity monitor extension 
+        'ext_ds_errors': True,                                   # Send DS error values such as -127 to Home Assistant
         'ext_dht': False,                                        # Including temperature/humidity sensors DHT from the temperature and humidity monitor extension
         'ext_water_sonic': False,                                # Including water level from the water tank (sonic) monitor extension
         'ext_water_current': True                                # Including water level from the water tank (tanks with current loop) monitor extension
@@ -1129,6 +1130,8 @@ def update_temp_humi_ds(sensors):
                         payload["state"] = -127
                     device._isOK = False if payload["state"] == -127 else True
                     set_devices_online(device)
+                    if not plugin_options['ext_ds_errors'] and payload["state"] < -100:
+                        continue
                 if topic and payload and payload.get("state") is not None:
                     publish(topic, payload)
             except Exception:

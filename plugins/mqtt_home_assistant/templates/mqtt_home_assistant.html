@@ -216,6 +216,15 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
+                <td style="text-transform: none;">$_('Send errors'):</td>
+                <td title=$:{json.dumps(_('If enabled, DS18B20 error values such as -127 are also sent to Home Assistant.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='ext_ds_errors' type='checkbox' ${" checked" if plugin_options['ext_ds_errors'] else ""}>
+                <span class="slider"></span>
+                </label>
+                </td>
+            </tr>
+            <tr>
                 <td style="text-transform: none;">$_('Extension: DHT'):</td>
                 <td title=$:{json.dumps(_('Including temperature/humidity sensors DHT from the temperature and humidity monitor extension.'), ensure_ascii=False)}>
                 <label class="switch">
