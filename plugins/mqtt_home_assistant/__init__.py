@@ -1130,7 +1130,11 @@ def update_temp_humi_ds(sensors):
                         payload["state"] = -127
                     device._isOK = False if payload["state"] == -127 else True
                     set_devices_online(device)
-                    if not plugin_options['ext_ds_errors'] and payload["state"] < -100:
+                    try:
+                        send_ds_value = plugin_options['ext_ds_errors'] or float(payload["state"]) >= -100
+                    except (TypeError, ValueError):
+                        send_ds_value = True
+                    if not send_ds_value:
                         continue
                 if topic and payload and payload.get("state") is not None:
                     publish(topic, payload)
@@ -1306,7 +1310,7 @@ class settings_page(ProtectedPage):
             log.error(NAME, _('MQTT Home Assistant plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('mqtt_home_assistant -> settings_page GET')
-            return self.core_render.notice('/', msg, is_connected())
+            return self.core_render.notice('/', msg)
 
     def POST(self):
         try:
@@ -1318,7 +1322,7 @@ class settings_page(ProtectedPage):
             log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('mqtt_home_assistant -> settings_page POST')
-            return self.core_render.notice('/', msg, is_connected())
+            return self.core_render.notice('/', msg)
 
 
 class help_page(ProtectedPage):
