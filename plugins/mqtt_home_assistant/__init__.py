@@ -212,8 +212,8 @@ def get_client():
 
 def subscribe(topic, callback, data, qos=0):
     """ Subscribes to a topic with the given callback """
-    global _subscriptions, sender, _is_connected
-    client = sender.client
+    global _subscriptions, _is_connected
+    client = _mqtt_client()
     if client:
         _is_connected = True
         if topic not in _subscriptions:
@@ -227,8 +227,8 @@ def subscribe(topic, callback, data, qos=0):
 
 def unsubscribe(topic):
     """ Unsubscribes to a topic """
-    global _subscriptions, sender
-    client = sender.client
+    global _subscriptions
+    client = _mqtt_client()
     if client:
         if topic in _subscriptions:
             del _subscriptions[topic]
@@ -253,6 +253,12 @@ def is_connected():
 ################################################################################
 # Helper functions:                                                            #
 ################################################################################
+def _mqtt_client():
+    if sender is not None:
+        return sender.client
+    return None
+
+
 def start():
     global sender
     if sender is None:
@@ -371,8 +377,7 @@ def system_web_url():
 
 def publish(topic, payload=''):
     """ MQTT publish helper function. Publish dictionary as JSON """
-    global sender
-    client = sender.client
+    client = _mqtt_client()
     if client:
         if isinstance(payload, dict):
             payload = json.dumps(payload, sort_keys=True)
@@ -381,8 +386,7 @@ def publish(topic, payload=''):
 
 
 def removeTopic(topic):
-    global sender
-    client = sender.client
+    client = _mqtt_client()
     if client:
         client.publish(topic, None, 0, False)
 
