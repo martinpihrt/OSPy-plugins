@@ -18,7 +18,7 @@ import web
 from ospy.log import log
 from ospy.options import options, rain_blocks
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string, stop_onrain, get_input
+from ospy.helpers import datetime_string, stop_onrain, get_input, verify_csrf
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
