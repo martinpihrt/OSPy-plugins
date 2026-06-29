@@ -11,6 +11,7 @@ from threading import Thread, Event
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 from ospy.sensors import sensors
+from ospy.helpers import verify_csrf
 
 NAME = 'Weather Stations'
 MENU =  _(u'Package: Weather Stations')

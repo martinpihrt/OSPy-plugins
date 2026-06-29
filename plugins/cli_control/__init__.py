@@ -13,7 +13,7 @@ from blinker import signal
 
 from ospy.stations import stations
 from ospy.options import options
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers 
 from ospy.log import log
 from threading import Thread, Event

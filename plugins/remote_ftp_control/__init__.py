@@ -14,7 +14,7 @@ from ospy import version
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision, datetime_string, uptime
+from ospy.helpers import get_rpi_revision, datetime_string, uptime, verify_csrf
 from ospy.stations import stations
 from ospy.scheduler import scheduler
 from ospy.programs import programs

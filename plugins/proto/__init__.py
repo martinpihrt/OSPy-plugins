@@ -11,7 +11,7 @@ from threading import Thread, Event                              # For use a sep
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
-from ospy.helpers import datetime_string                         # For using date time in events logs
+from ospy.helpers import datetime_string, verify_csrf            # For using date time in events logs
 from ospy.webpages import ProtectedPage                          # For check user login permissions
 
 from ospy.webpages import showInFooter                           # Enable plugin to display readings in UI footer

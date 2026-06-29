@@ -18,6 +18,7 @@ from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.options import options
+from ospy.helpers import verify_csrf
 
 NAME = 'Webcam Monitor'
 MENU =  _(u'Package: Webcam Monitor')

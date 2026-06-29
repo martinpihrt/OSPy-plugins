@@ -10,6 +10,7 @@ from ospy.log import log
 from ospy.options import level_adjustments
 from ospy.webpages import ProtectedPage
 from plugins import PluginOptions, plugin_url
+from ospy.helpers import verify_csrf
 
 
 NAME = 'Monthly Water Level'

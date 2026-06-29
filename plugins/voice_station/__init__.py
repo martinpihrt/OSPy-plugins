@@ -19,6 +19,7 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy import helpers
 from plugins import PluginOptions, plugin_url, plugin_data_dir
+from ospy.helpers import verify_csrf
 
 from blinker import signal
 

@@ -17,6 +17,7 @@ from ospy.runonce import run_once
 from ospy.stations import stations
 from ospy.weather import weather
 from plugins import PluginOptions, plugin_url
+from ospy.helpers import verify_csrf
 
 
 NAME = 'Weather-based Water Level'

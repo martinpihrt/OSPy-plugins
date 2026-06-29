@@ -24,7 +24,7 @@ from ospy.options import options
 from ospy.stations import stations
 from ospy.inputs import inputs
 from ospy.log import log, EVENT_FILE, logEM
-from ospy.helpers import datetime_string, get_input
+from ospy.helpers import datetime_string, get_input, verify_csrf
 from ospy.sensors import sensors
 
 

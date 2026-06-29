@@ -10,7 +10,7 @@ import web
 from blinker import signal
 
 from ospy import helpers
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from ospy.log import log, logEM
 from threading import Thread, Event
 from plugins import PluginOptions, plugin_url

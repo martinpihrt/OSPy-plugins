@@ -15,7 +15,7 @@ from ospy.webpages import ProtectedPage
 from ospy.log import log, logEM, logEV
 from plugins import PluginOptions, plugin_url
 from ospy.options import options, rain_blocks
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from ospy.programs import programs
 from ospy.runonce import run_once
 from ospy.inputs import inputs

@@ -16,7 +16,7 @@ from ospy import helpers
 from ospy.options import options
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from ospy.webpages import ProtectedPage
 
 from plugins.network_ping_monitor.pythonping import ping

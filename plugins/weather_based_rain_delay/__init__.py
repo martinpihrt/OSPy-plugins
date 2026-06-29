@@ -8,7 +8,7 @@ import json
 import time
 import datetime
 import web
-from ospy.helpers import stop_onrain
+from ospy.helpers import stop_onrain, verify_csrf
 from ospy.log import log
 from ospy.options import options, rain_blocks
 from ospy.webpages import ProtectedPage

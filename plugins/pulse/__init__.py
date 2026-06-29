@@ -14,6 +14,7 @@ from ospy.stations import stations
 from ospy.webpages import ProtectedPage
 from plugins import PluginOptions, plugin_url
 from ospy.log import log
+from ospy.helpers import verify_csrf
 
 
 NAME = 'Pulse Output Test'

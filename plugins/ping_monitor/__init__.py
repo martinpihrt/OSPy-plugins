@@ -26,7 +26,7 @@ from ospy import helpers
 from ospy.options import options
 from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url, plugin_data_dir
-from ospy.helpers import reboot
+from ospy.helpers import reboot, verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 

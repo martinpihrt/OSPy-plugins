@@ -17,7 +17,7 @@ from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.options import options, rain_blocks
-from ospy.helpers import datetime_string, get_cpu_temp, uptime
+from ospy.helpers import datetime_string, get_cpu_temp, uptime, verify_csrf
 from ospy.stations import stations
 from ospy.inputs import inputs
 from ospy import version

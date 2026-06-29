@@ -20,7 +20,7 @@ from ospy.inputs import inputs
 from ospy.scheduler import predicted_schedule
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_input, datetime_string
+from ospy.helpers import get_input, datetime_string, verify_csrf
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 
 

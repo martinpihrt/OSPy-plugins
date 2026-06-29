@@ -18,7 +18,7 @@ from time import strftime
 from ospy.log import log
 from ospy.options import options
 from ospy.options import level_adjustments
-from ospy.helpers import mkdir_p
+from ospy.helpers import mkdir_p, verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.weather import weather
 from plugins import PluginOptions, plugin_url, plugin_data_dir

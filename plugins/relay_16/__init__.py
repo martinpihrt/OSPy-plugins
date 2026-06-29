@@ -12,7 +12,7 @@ import web
 from ospy.log import log
 from ospy.options import options
 from ospy.webpages import ProtectedPage
-from ospy.helpers import determine_platform, get_rpi_revision, datetime_string
+from ospy.helpers import determine_platform, get_rpi_revision, datetime_string, verify_csrf
 from ospy.stations import stations
 from plugins import PluginOptions, plugin_url
 

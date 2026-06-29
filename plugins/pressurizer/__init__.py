@@ -17,7 +17,7 @@ from ospy.stations import stations
 from ospy.inputs import inputs
 from ospy.outputs import outputs
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from plugins import PluginOptions, plugin_url
 
 from blinker import signal

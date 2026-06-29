@@ -15,13 +15,13 @@ import ssl
 import datetime
 from datetime import timedelta
 
-from threading import Thread, Event, Timer                              # For use a separate thread in which the plugin is running
+from threading import Thread, Event, Timer                       # For use a separate thread in which the plugin is running
 
-import plugins as plugin_manager                                # For checking whether optional plugins are running
+import plugins as plugin_manager                                 # For checking whether optional plugins are running
 from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
 from ospy.helpers import datetime_string                         # For using date time in events logs
-from ospy.helpers import is_fqdn                                 # Fully qualified domain name
+from ospy.helpers import is_fqdn, verify_csrf                    # Fully qualified domain name
 from ospy.helpers import stop_onrain                             # For rain delay timer
 from ospy.webpages import ProtectedPage                          # For check user login permissions
 from ospy.webpages import showInFooter                           # Enable plugin to display readings in UI footer

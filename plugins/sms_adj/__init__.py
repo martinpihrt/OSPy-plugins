@@ -19,7 +19,7 @@ from ospy.options import options
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import reboot, poweroff, is_python2
+from ospy.helpers import reboot, poweroff, is_python2, verify_csrf
 from ospy.programs import programs
 from ospy.stations import stations
 from ospy.helpers import datetime_string

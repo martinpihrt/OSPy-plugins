@@ -18,7 +18,7 @@ from ospy.options import options
 from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string, reboot, restart, poweroff
+from ospy.helpers import datetime_string, reboot, restart, poweroff, verify_csrf
 from ospy.stations import stations
 from ospy.runonce import run_once
 from ospy.programs import programs
