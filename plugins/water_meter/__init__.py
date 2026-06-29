@@ -13,8 +13,9 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers
+from plugins.i2c_guard import i2c_transaction
 
 
 NAME = 'Water Meter'
@@ -199,10 +200,11 @@ def set_counter(i2cbus):
         #i2cbus.write_byte_data(addr, 0x01, 0x00) # reset LSB
         #i2cbus.write_byte_data(addr, 0x02, 0x00) # reset midle Byte
         #i2cbus.write_byte_data(addr, 0x03, 0x00) # reset MSB
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB        
+        with i2c_transaction():
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB        
         log.debug(NAME, _(u'Setup PCF8583 as event counter is OK'))
         return 1  
     except:
@@ -220,13 +222,15 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         #i2cbus.write_byte_data(addr, 0x01, 0x00) # reset LSB
         #i2cbus.write_byte_data(addr, 0x02, 0x00) # reset midle Byte
         #i2cbus.write_byte_data(addr, 0x03, 0x00) # reset MSB
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB        
+        with i2c_transaction():
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB        
         time.sleep(1)
         # read number (pulses in counter) and translate to DEC
         #counter = i2cbus.read_i2c_block_data(addr, 0x00)
-        counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
+        with i2c_transaction():
+            counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
         num1 = (counter[1] & 0x0F)             # units
         num10 = (counter[1] & 0xF0) >> 4       # dozens
         num100 = (counter[2] & 0x0F)           # hundred
@@ -256,6 +260,7 @@ class settings_page(ProtectedPage):
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
 
         if water_sender is not None and reset:
+            verify_csrf(qdict)
             if options['enabled']:
                 qdict['enabled'] = u'on' 
             if options['address']:
@@ -273,7 +278,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.water_meter(options, log.events(NAME))
 
     def POST(self):
-        options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        options.web_update(qdict)
 
         if water_sender is not None:
             water_sender.update()

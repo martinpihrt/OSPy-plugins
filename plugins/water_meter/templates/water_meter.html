@@ -30,6 +30,7 @@ $var page: plugins
     <div class="title">$_('Water meter settings')</div>
     <a href=$plugins.plugin_url('water_meter.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('water_meter.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use Water Meter'):</td>
@@ -67,5 +68,5 @@ $var page: plugins
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?reset"     class="button cancel danger">$_('Reset summary')</a>
+    <a href="?reset&$csrf_query()" class="button cancel danger">$_('Reset summary')</a>
 </div>

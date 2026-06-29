@@ -20,8 +20,9 @@ $var page: plugins
 <div id="plugin">
     <div class="title">$_(u'Voltage and Temperature Monitor')</div>
     <a href=$plugins.plugin_url('volt_temp_da.help_page') class="button upload">$_(u'Help')</a><br/>
-    <p><a href="$plugins.plugin_url('volt_temp_da.log_csv')" class="button download">$_('Download log')</a> <a href="$plugins.plugin_url('volt_temp_da.delete_log_page')" class="button cancel danger">$_('Delete log')</a></p>
+    <p><a href="$plugins.plugin_url('volt_temp_da.log_csv')" class="button download">$_('Download log')</a> <a href="$plugins.plugin_url('volt_temp_da.delete_log_page')?$csrf_query()" class="button cancel danger">$_('Delete log')</a></p>
     <form id="pluginForm" action="$plugins.plugin_url('volt_temp_da.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Enabled'):</td>

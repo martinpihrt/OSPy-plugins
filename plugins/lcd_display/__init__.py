@@ -21,7 +21,8 @@ from ospy.options import options
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import ASCI_convert, datetime_string
+from ospy.helpers import ASCI_convert, datetime_string, verify_csrf
+from plugins.i2c_guard import i2c_transaction
 from ospy.stations import stations
 from ospy.sensors import sensors
 
@@ -729,7 +730,8 @@ def find_lcd_address():
         for addr, pcf_type in search_range.items():
             try:
                 # bus.write_quick(addr)
-                try_io(lambda: bus.read_byte(addr)) #bus.read_byte(addr) # DF - write_quick doesn't work on BBB
+                with i2c_transaction():
+                    try_io(lambda: bus.read_byte(addr)) #bus.read_byte(addr) # DF - write_quick doesn't work on BBB
                 log.info(NAME, _('Found {} on address {}').format(pcf_type, hex(addr)))
                 lcd_options['address'] = addr
                 break
@@ -891,6 +893,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         refind = helpers.get_input(qdict, 'refind', False, lambda x: True)
         if lcd_sender is not None and refind:
+            verify_csrf(qdict)
             lcd_options['address'] = 0
             log.clear(NAME)
             log.info(NAME, _('I2C address has re-finded.'))
@@ -899,7 +902,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.lcd_display(lcd_options, log.events(NAME))
  
     def POST(self):
-        lcd_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        lcd_options.web_update(qdict)
         if lcd_sender is not None:
             lcd_sender.update()
         raise web.seeother(plugin_url(settings_page), True)  

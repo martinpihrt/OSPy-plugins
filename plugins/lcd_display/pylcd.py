@@ -21,6 +21,7 @@ Edit: Martin Pihrt - www.pihrt.com
 
 import smbus
 from time import *
+from plugins.i2c_guard import i2c_transaction
 
 # General i2c device class so that other devices can be added easily
 class i2c_device:
@@ -29,13 +30,16 @@ class i2c_device:
 		self.bus = smbus.SMBus(port)
 
 	def write(self, byte):
-		self.bus.write_byte(self.addr, byte)
+		with i2c_transaction():
+			self.bus.write_byte(self.addr, byte)
 
 	def read(self):
-		return self.bus.read_byte(self.addr)
+		with i2c_transaction():
+			return self.bus.read_byte(self.addr)
 
 	def read_nbytes_data(self, data, n): # For sequential reads > 1 byte
-		return self.bus.read_i2c_block_data(self.addr, data, n)
+		with i2c_transaction():
+			return self.bus.read_i2c_block_data(self.addr, data, n)
 
 		
 		

@@ -23,7 +23,8 @@ from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
+from plugins.i2c_guard import i2c_transaction
 from ospy.stations import stations
 from ospy.scheduler import predicted_schedule, combined_schedule
 
@@ -417,7 +418,8 @@ def get_sonic_cm():
         import smbus
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         try:
-            data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'], 4)) # read bytes from I2C
+            with i2c_transaction():
+                data = try_io(lambda: bus.read_i2c_block_data(tank_options['address_ping'], 4)) # read bytes from I2C
             # data[0] is ultrasonic distance in overflow 255
             # data[1] is ultrasonic distance in range 0-255cm
             # ex: sonic is 180cm -> d0=0, d1=180
@@ -844,6 +846,7 @@ class settings_page(ProtectedPage):
             delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
             if sender is not None and reset:
+                verify_csrf(qdict)
                 status['minlevel'] = status['level']
                 status['maxlevel'] = status['level']
                 tank_options['saved_max'] = status['level']
@@ -854,21 +857,25 @@ class settings_page(ProtectedPage):
                 raise web.seeother(plugin_url(settings_page), True)
 
             if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+                verify_csrf(qdict)
                 dt_from = qdict['dt_from']
                 dt_to = qdict['dt_to']
                 tank_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
                 tank_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
 
             if sender is not None and delfilter:
+                verify_csrf(qdict)
                 from datetime import datetime, timedelta
                 dt_now = (datetime.today() + timedelta(days=1)).date()
                 tank_options.__setitem__('dt_from', "2020-01-01T00:00")
                 tank_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
 
             if sender is not None and log_now:
+                verify_csrf(qdict)
                 update_log()
 
             if sender is not None and 'history' in qdict:
+                verify_csrf(qdict)
                 history = qdict['history']
                 tank_options.__setitem__('history', int(history))
 
@@ -879,12 +886,14 @@ class settings_page(ProtectedPage):
                 raise web.seeother(plugin_url(log_debug_page), True)
 
             if sender is not None and del_rain:
+                verify_csrf(qdict)
                 if NAME in rain_blocks:
                     del rain_blocks[NAME]
                     log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
                 raise web.seeother(plugin_url(settings_page), True)
 
             if sender is not None and delSQL:
+                verify_csrf(qdict)
                 try:
                     from plugins.database_connector import execute_db
                     sql = "DROP TABLE IF EXISTS `tankmonitor`"
@@ -905,7 +914,9 @@ class settings_page(ProtectedPage):
     def POST(self):
         try:
             global sender, avg_lst, avg_cnt, avg_rdy
-            tank_options.web_update(web.input(**tank_options)) #for save multiple select
+            qdict = web.input(**tank_options)
+            verify_csrf(qdict)
+            tank_options.web_update(qdict) #for save multiple select
             
             if tank_options['use_sonic']:
                 avg_lst = [0]*tank_options['avg_samples']
@@ -953,6 +964,7 @@ class log_page(ProtectedPage):
             delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
             if sender is not None and delete:
+                verify_csrf(qdict)
                 write_log([])
                 create_default_graph()
                 avg_lst = [0]*tank_options['avg_samples']
@@ -963,6 +975,7 @@ class log_page(ProtectedPage):
                 raise web.seeother(plugin_url(log_page), True)
 
             if sender is not None and delSQL and tank_options['en_sql_log']:
+                verify_csrf(qdict)
                 try:
                     from plugins.database_connector import execute_db
                     sql = "DROP TABLE IF EXISTS `tankmonitor`"
@@ -988,6 +1001,7 @@ class log_debug_page(ProtectedPage):
             qdict  = web.input()
             delete_debug = helpers.get_input(qdict, 'delete_debug', False, lambda x: True)
             if sender is not None and delete_debug:
+                verify_csrf(qdict)
                 write_debug_log([])
 
             return self.plugin_render.tank_monitor_debug_log(read_debug_log(), tank_options)        

@@ -17,7 +17,7 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision, datetime_string
+from ospy.helpers import get_rpi_revision, datetime_string, verify_csrf
 from ospy import helpers
 from ospy.stations import stations
 
@@ -794,6 +794,7 @@ class settings_page(ProtectedPage):
             delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
             if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+                verify_csrf(qdict)
                 dt_from = qdict['dt_from']
                 dt_to = qdict['dt_to']
                 plugin_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
@@ -804,6 +805,7 @@ class settings_page(ProtectedPage):
                     plugin_options.__setitem__('show_err', False)
 
             if sender is not None and delfilter:
+                verify_csrf(qdict)
                 from datetime import datetime, timedelta
                 dt_now = (datetime.today() + timedelta(days=1)).date()
                 plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
@@ -813,6 +815,7 @@ class settings_page(ProtectedPage):
                 raise web.seeother(plugin_url(log_page), True)
 
             if sender is not None and delSQL:
+                verify_csrf(qdict)
                 try:
                     from plugins.database_connector import execute_db
                     sql = "DROP TABLE IF EXISTS `airtemp`"
@@ -831,7 +834,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            plugin_options.web_update(web.input())
+            qdict = web.input()
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict)
             normalize_ds_options(migrate_legacy=False)
 
             updateSignal = signal('hass_plugin_update')
@@ -870,11 +875,13 @@ class log_page(ProtectedPage):
             delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
         
             if sender is not None and delete and plugin_options['enable_log']:
+                verify_csrf(qdict)
                 write_log([])
                 create_default_graph()
                 log.info(NAME, _('Deleted all log files OK'))
 
             if sender is not None and delSQL and plugin_options['en_sql_log']:
+                verify_csrf(qdict)
                 try:
                     from plugins.database_connector import execute_db
                     sql = "DROP TABLE IF EXISTS `airtemp`"

@@ -22,6 +22,7 @@ from ospy.runonce import run_once
 from ospy import helpers
 from ospy.helpers import get_rpi_revision, datetime_string, reboot, restart, poweroff
 from ospy.scheduler import predicted_schedule, combined_schedule
+from plugins.i2c_guard import i2c_transaction
 
 from blinker import signal
 
@@ -310,13 +311,15 @@ def read_buttons():
         bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
         
         # Set 8 GPA pins as input pull-UP
-        try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x0C,0xFF)) #bus.write_byte_data(0x27,0x0C,0xFF)  
+        with i2c_transaction():
+            try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x0C,0xFF)) #bus.write_byte_data(0x27,0x0C,0xFF)  
      
         # Wait for device
         time.sleep(0.2) 
 
         # Read state of GPIOA register
-        MySwitch = try_io(lambda: bus.read_byte_data(plugin_options['i2c_addr'],0x12))  # MySwitch = bus.read_byte_data(0x27,0x12)
+        with i2c_transaction():
+            MySwitch = try_io(lambda: bus.read_byte_data(plugin_options['i2c_addr'],0x12))  # MySwitch = bus.read_byte_data(0x27,0x12)
                
         inBut = 255-MySwitch; # inversion number for led off if button is not pressed
 
@@ -363,12 +366,14 @@ def led_outputs(led):
 
         bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
  
-        try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x01,0x00)) # bus.write_byte_data(0x27,0x01,0x00)
+        with i2c_transaction():
+            try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x01,0x00)) # bus.write_byte_data(0x27,0x01,0x00)
         
         # Wait for device
         time.sleep(0.2) 
         
-        try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x13,led))  # bus.write_byte_data(0x27,0x13,led)
+        with i2c_transaction():
+            try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x13,led))  # bus.write_byte_data(0x27,0x13,led)
               
     except Exception:
         log.error(NAME, datetime_string() + ': ' + _('Set LED - FAULT'))
@@ -394,7 +399,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
+            qdict = web.input(**plugin_options) #for save multiple select
+            helpers.verify_csrf(qdict)
+            plugin_options.web_update(qdict)
             if plugin_sender is not None:
                 plugin_sender.update()
             raise web.seeother(plugin_url(settings_page), True)

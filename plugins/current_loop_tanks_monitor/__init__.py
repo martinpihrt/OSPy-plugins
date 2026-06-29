@@ -21,7 +21,8 @@ from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
+from plugins.i2c_guard import i2c_transaction
 
 from ospy.stations import stations
 from ospy.scheduler import predicted_schedule, combined_schedule
@@ -537,7 +538,8 @@ def read_adc(bus, channel):
 
     # Write config to ADS1115
     try:
-        bus.write_i2c_block_data(i2c_adr, ADS1115_CONFIG_REG, [(config >> 8) & 0xFF, config & 0xFF])
+        with i2c_transaction():
+            bus.write_i2c_block_data(i2c_adr, ADS1115_CONFIG_REG, [(config >> 8) & 0xFF, config & 0xFF])
     except IOError:
         raise IOError(_('Error: No I2C bus or ADC available on address 0x48, 0x49, 0x4A, 0x4B.'))
 
@@ -546,7 +548,8 @@ def read_adc(bus, channel):
 
     # Reading the result from the conversion register
     try:
-        result = bus.read_i2c_block_data(i2c_adr, ADS1115_CONVERSION_REG, 2)
+        with i2c_transaction():
+            result = bus.read_i2c_block_data(i2c_adr, ADS1115_CONVERSION_REG, 2)
     except IOError:
         raise IOError(_('Error: It is not possible to read data from the AD converter.'))
 
@@ -638,7 +641,8 @@ def scan_i2c():
     devices = []
     for address in range(128):
         try:
-            bus.write_byte(address, 0)
+            with i2c_transaction():
+                bus.write_byte(address, 0)
             devices.append(hex(address))
         except OSError:
             pass
@@ -918,10 +922,12 @@ class settings_page(ProtectedPage):
         find_i2c = helpers.get_input(qdict, 'find_i2c', False, lambda x: True)
 
         if sender is not None and log_now:
+            verify_csrf(qdict)
             update_log()
             return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 
         if sender is not None and find_i2c:
+            verify_csrf(qdict)
             found = scan_i2c()
             i2c_adr_list = ['0x48', '0x49', '0x4A', '0x4B']
             matching_addresses = [address for address in found if address in i2c_adr_list]
@@ -935,6 +941,7 @@ class settings_page(ProtectedPage):
         for i in range(1, 4):
             if sender is not None:
                 if 'en_tank{}'.format(i) in qdict:
+                    verify_csrf(qdict)
                     if qdict['en_tank{}'.format(i)] == 'on':
                         plugin_options.__setitem__('en_tank{}'.format(i), True)
                     if qdict['en_tank{}'.format(i)] == 'off':
@@ -969,12 +976,14 @@ class graph_page(ProtectedPage):
             q = 0                                          # any filter -> all graph 1-4
         
         if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+            verify_csrf(qdict)
             dt_from = qdict['dt_from']
             dt_to = qdict['dt_to']
             plugin_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
             plugin_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
 
         if sender is not None and delfilter:
+            verify_csrf(qdict)
             from datetime import datetime, timedelta
             dt_now = (datetime.today() + timedelta(days=2)).date()
             plugin_options.__setitem__('dt_from', "2020-01-01T00:00")
@@ -1063,6 +1072,7 @@ class log_page(ProtectedPage):
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
 
         if sender is not None and delSQL:
+            verify_csrf(qdict)
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `currentmonitor`"
@@ -1073,6 +1083,7 @@ class log_page(ProtectedPage):
                 pass
 
         if sender is not None and delete:
+            verify_csrf(qdict)
             write_log([])
             create_default_graph()
             raise web.seeother(plugin_url(log_page), True)
@@ -1092,6 +1103,7 @@ class setup_page(ProtectedPage):
             param_name = f'del_rain_{i}'
             param_value = helpers.get_input(qdict, param_name, False, lambda x: True)
             if param_value:
+                verify_csrf(qdict)
                 NM = f'{NAME} T{i}'
                 if NM in rain_blocks:
                     del rain_blocks[NM]
@@ -1100,6 +1112,7 @@ class setup_page(ProtectedPage):
                     log.debug(NAME, datetime_string() + ': ' + _('The button to remove the delay has been pressed, but no delay has been set before (no action used).'))
 
         if sender is not None and delSQL:
+            verify_csrf(qdict)
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `currentmonitor`"
@@ -1114,7 +1127,9 @@ class setup_page(ProtectedPage):
     def POST(self):
         global sender
 
-        plugin_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict)
 
         if sender is not None:
             sender.update()

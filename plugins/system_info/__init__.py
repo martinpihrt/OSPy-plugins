@@ -13,6 +13,7 @@ from ospy.options import options
 import subprocess
 import shlex
 from ospy.log import log
+from plugins.i2c_guard import i2c_transaction
 
 import web
 
@@ -206,7 +207,8 @@ def find_address(search_range, range=False):
         if range:
            for addr, type in search_range.items():
                try:
-                   bus.read_byte(addr) 
+                   with i2c_transaction():
+                       bus.read_byte(addr) 
                    return True
                    break
                except Exception:
@@ -215,7 +217,8 @@ def find_address(search_range, range=False):
                    return False
         else:
            try:
-               bus.read_byte(search_range) 
+               with i2c_transaction():
+                   bus.read_byte(search_range) 
                return True
            except Exception:
                pass
@@ -233,7 +236,8 @@ def get_all_addr():
         find_adr += _('Available addresses') + '\n' 
         for addr in range(128):
             try:
-                bus.read_byte(addr)
+                with i2c_transaction():
+                    bus.read_byte(addr)
                 find_adr += '0x{:02x}\n'.format(addr) 
             except Exception:
                 pass

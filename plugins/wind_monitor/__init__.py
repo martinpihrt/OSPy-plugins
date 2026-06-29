@@ -20,8 +20,9 @@ from ospy.options import options
 from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers
+from plugins.i2c_guard import i2c_transaction
 from ospy.scheduler import predicted_schedule, combined_schedule
 from ospy.programs import programs
 
@@ -343,10 +344,11 @@ def set_counter(i2cbus):
             addr = 0x51
         else:
             addr = 0x50
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
+        with i2c_transaction():
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
         log.debug(NAME, _('Wind speed monitor plug-in') + ': ' + _('Setup PCF8583 as event counter - OK')) 
     except:
         log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + _('Setup PCF8583 as event counter - FAULT'))
@@ -362,12 +364,14 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         else:
             addr = 0x50
         # reset PCF8583
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
-        try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
+        with i2c_transaction():
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
+            try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
         time_.sleep(10)
         # read number (pulses in counter) and translate to DEC
-        counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
+        with i2c_transaction():
+            counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
         num1 = (counter[1] & 0x0F)             # units
         num10 = (counter[1] & 0xF0) >> 4       # dozens
         num100 = (counter[2] & 0x0F)           # hundred
@@ -549,12 +553,14 @@ class settings_page(ProtectedPage):
         delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
         if wind_sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+            verify_csrf(qdict)
             dt_from = qdict['dt_from']
             dt_to = qdict['dt_to']
             wind_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
             wind_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)        
 
         if wind_sender is not None and reset:
+            verify_csrf(qdict)
             wind_sender.status['max_meter'] = 0
             wind_sender.status['log_date_maxspeed'] = datetime_string()
             log.clear(NAME)
@@ -562,6 +568,7 @@ class settings_page(ProtectedPage):
             raise web.seeother(plugin_url(settings_page), True)
 
         if wind_sender is not None and delfilter:
+            verify_csrf(qdict)
             from datetime import datetime, timedelta
             dt_now = (datetime.today() + timedelta(days=1)).date()
             wind_options.__setitem__('dt_from', "2020-01-01T00:00")
@@ -571,6 +578,7 @@ class settings_page(ProtectedPage):
             raise web.seeother(plugin_url(log_page), True)
 
         if wind_sender is not None and delSQL:
+            verify_csrf(qdict)
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `windmonitor`"
@@ -583,7 +591,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.wind_monitor(wind_options, wind_sender.status, log.events(NAME))
 
     def POST(self):
-        wind_options.web_update(web.input(used_stations=[])) #for save multiple select
+        qdict = web.input(used_stations=[])
+        verify_csrf(qdict)
+        wind_options.web_update(qdict) #for save multiple select
 
         if wind_sender is not None:
             wind_sender.update()
@@ -617,11 +627,13 @@ class log_page(ProtectedPage):
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
         
         if wind_sender is not None and delete and wind_options['enable_log']:
+           verify_csrf(qdict)
            write_log([])
            create_default_graph()
            log.info(NAME, _('Deleted all log files OK'))
 
         if wind_sender is not None and delSQL and wind_options['en_sql_log']:
+            verify_csrf(qdict)
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `windmonitor`"

@@ -14,7 +14,8 @@ from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
+from plugins.i2c_guard import i2c_transaction
 
 
 NAME = 'Voltage and Temperature Monitor'
@@ -162,15 +163,17 @@ def read_AD(adc, pin):
     """Return number 0-255 from A/D PCF8591 to webpage."""
     result = 0
     if adc is not None:
-        adc.write_byte_data(0x48, (0x40 + pin), pin)
-        result = adc.read_byte(0x48)
+        with i2c_transaction():
+            adc.write_byte_data(0x48, (0x40 + pin), pin)
+            result = adc.read_byte(0x48)
     return result
 
 
 def write_DA(adc, value):  # PCF8591 D/A converter Y=(0-255) for future use
     """Write analog voltage to output"""
     if adc is not None:
-        adc.write_byte_data(0x48, 0x40, value)
+        with i2c_transaction():
+            adc.write_byte_data(0x48, 0x40, value)
 
 
 def read_log():
@@ -210,7 +213,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.volt_temp_da(pcf_options, pcf_sender.status, log.events(NAME))
 
     def POST(self):
-        pcf_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        pcf_options.web_update(qdict)
 
         if pcf_sender is not None:
             pcf_sender.update()                
@@ -266,6 +271,7 @@ class delete_log_page(ProtectedPage):  # delete log file from web
     """Delete all pcflog log_records"""
 
     def GET(self):
+        verify_csrf()
         write_log([])
         log.info(NAME, _('Deleted log file'))
         raise web.seeother(plugin_url(settings_page), True)
