@@ -11,7 +11,7 @@ from threading import Thread, Event                              # For use a sep
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
-from ospy.helpers import datetime_string, now, get_input         # For using date time in events logs
+from ospy.helpers import datetime_string, now, get_input, verify_csrf # For using date time in events logs
 from ospy.webpages import ProtectedPage                          # For check user login permissions
 
 from ospy.webpages import showInFooter                           # Enable plugin to display readings in UI footer
@@ -1421,6 +1421,7 @@ class status_page(ProtectedPage):
         qdict = web.input()
         reset = get_input(qdict, 'reset', False, lambda x: True)
         if sender is not None and reset:
+            verify_csrf(qdict)
             sender.devices.clear()
             log.debug(NAME, _('Reseting device list.'))
             msg = _('The list of loaded devices has been cleared. Once the Shelly cloud integrator extension reloads all devices, they will appear in the list again (depending on the request interval set in the extension. For example, 20 seconds).')
@@ -1446,6 +1447,7 @@ class sensors_page(ProtectedPage):
     def POST(self):
         try:
             qdict = web.input()
+            verify_csrf(qdict)
 
             if 'number_sensors' in qdict:
                 plugin_options.__setitem__('number_sensors', int(qdict['number_sensors']))
@@ -1578,6 +1580,17 @@ class help_page(ProtectedPage):
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('shelly_cloud -> help_page GET')
             return self.core_render.notice('/', msg)
+
+
+class status_json(ProtectedPage):
+    """Returns the current status log in JSON format."""
+
+    def GET(self):
+        web.header('Content-Type', 'application/json')
+        try:
+            return json.dumps({'events': log.events(NAME)})
+        except:
+            return json.dumps({'events': []})
 
 
 class settings_json(ProtectedPage):

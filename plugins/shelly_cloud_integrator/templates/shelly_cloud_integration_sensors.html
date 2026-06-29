@@ -127,6 +127,7 @@ $var page: plugins
     <p><button id="cSubmit" class="submitButton">$_('Submit')</button>
     <a href=$plugins.plugin_url('shelly_cloud_integrator.status_page') class="button cancel danger">$_('Cancel')</a></p><br/>
     <form id="pluginForm" action="$plugins.plugin_url('shelly_cloud_integrator.sensors_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Server uri'):</td>

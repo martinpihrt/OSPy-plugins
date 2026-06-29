@@ -4,28 +4,41 @@ $var title: $_('Shelly Cloud Integration')
 $var page: plugins
 
 <script>
+    function refreshStatus() {
+        jQuery.getJSON("$plugins.plugin_url('shelly_cloud_integrator.status_json')", function(data) {
+            if (data && data.events) {
+                jQuery("#statusEvents").val(data.events.join("\\n"));
+            }
+        });
+    }
+
     // Initialize behaviors
     jQuery(document).ready(function(){
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+        refreshStatus();
+        setInterval(refreshStatus, 5000);
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_('Shelly Cloud Integration')</div>
     <p><a href=$plugins.plugin_url('shelly_cloud_integrator.help_page') class="button upload">$_('Help')</a></p>
-    <p><a href=$plugins.plugin_url('shelly_cloud_integrator.sensors_page') class="button submit">$_('Setup')</a></p><br/>
-    <form id="pluginForm" action="$plugins.plugin_url('shelly_cloud_integrator.setup_page')" method="post">
+    <p>
+        <a href=$plugins.plugin_url('shelly_cloud_integrator.sensors_page') class="button submit">$_('Setup')</a>
+        <a href="?reset&$csrf_query()" class="button cancel danger">$_('Reset devices')</a>
+    </p><br/>
+    <div id="pluginStatus">
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="20" cols="150" readonly>$'\n'.join(events)</textarea>
+                    <textarea id="statusEvents" style="font-family: monospace;" rows="20" cols="150" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
-    </form>
+    </div>
 </div>
 <div id="controls">
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
