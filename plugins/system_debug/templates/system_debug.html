@@ -3,6 +3,52 @@ $def with(plugin_options,overview)
 $var title: $_('System Debug Information')
 $var page: plugins
 
+<style>
+    .debug-log {
+        box-sizing: border-box;
+        width: 100%;
+        max-height: 68vh;
+        overflow: auto;
+        padding: 8px;
+        border: 1px solid #b8c0d4;
+        background: #f8f9fb;
+        color: #151923;
+        font-family: monospace;
+        font-size: 13px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .log-level {
+        display: inline-block;
+        padding: 0 4px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+    .log-debug {
+        background: #eeeeee;
+        color: #555555;
+    }
+
+    .log-info {
+        background: #d9ebff;
+        color: #174f83;
+    }
+
+    .log-warning {
+        background: #fff0c2;
+        color: #7a5300;
+    }
+
+    .log-error,
+    .log-critical {
+        background: #ffd6d6;
+        color: #8f1d1d;
+    }
+</style>
+
 <script>
     // Initialize behaviors
     function check_type() {
@@ -24,6 +70,7 @@ $var page: plugins
     <div class="title">$_('System Debug Information')</div>
     <p>$_('This plugin prints debug information from events.log file').</p>
     <form id="pluginForm" action="$plugins.plugin_url('system_debug.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Maximum number of records'):</td>
@@ -33,7 +80,7 @@ $var page: plugins
             </tr>
             <tr>
                 <td colspan="2">
-                    <textarea style="font-family: monospace;" rows="30" cols="90" readonly>$'\n'.join(overview)</textarea><br/>
+                    <pre class="debug-log">$:overview</pre><br/>
                 </td>
             </tr>
         </table>
@@ -43,7 +90,7 @@ $var page: plugins
 <div id="controls">
     <button id="cCancel" class="button add">$_('Cancel')</button>
     <a href="$plugins.plugin_url('system_debug.log_page')" class="button upload" target="_blank">$_('Download log')</a>
-    <a href="?delete" class="button cancel danger"><b>$_('Delete file')</b></a> 
+    <a href="?delete&$csrf_query()" class="button cancel danger"><b>$_('Delete file')</b></a> 
 
 </div>
 

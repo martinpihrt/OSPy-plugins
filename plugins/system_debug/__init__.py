@@ -5,6 +5,7 @@ __author__ = 'Martin Pihrt'
 from ospy.webpages import ProtectedPage
 from ospy import log
 from ospy import helpers
+from ospy.helpers import verify_csrf
 
 from plugins import plugin_url
 from plugins import PluginOptions
@@ -12,6 +13,12 @@ import web
 import os
 import json
 import mimetypes
+import re
+
+try:
+    from html import escape as html_escape
+except ImportError:
+    from cgi import escape as html_escape
 
 
 NAME = 'System Debug Information'
@@ -78,6 +85,26 @@ def get_overview():
 
     return result
 
+
+def format_log_overview(lines):
+    """Return escaped log lines with the level/module block highlighted."""
+    formatted = []
+    pattern = re.compile(r'(\[(DEBUG|INFO|WARNING|WARN|ERROR|CRITICAL)[^\]]*\])')
+
+    for line in lines:
+        escaped = html_escape(line)
+
+        def replace(match):
+            badge = match.group(1)
+            level = match.group(2).lower()
+            if level == 'warn':
+                level = 'warning'
+            return '<span class="log-level log-{}">{}</span>'.format(level, badge)
+
+        formatted.append(pattern.sub(replace, escaped, count=1))
+
+    return '\n'.join(formatted)
+
 def read_log():
     """Read log from json file."""
     try:                
@@ -97,20 +124,23 @@ class status_page(ProtectedPage):
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         if delete:
+            verify_csrf(qdict)
             try:
                 os.remove(log.EVENT_FILE)
             except Exception:
                 pass
             raise web.seeother(plugin_url(status_page), True)
 
-        return self.plugin_render.system_debug(debug_options,get_overview())
+        return self.plugin_render.system_debug(debug_options, format_log_overview(get_overview()))
 
 
 class settings_page(ProtectedPage):
     """Save an html page for entering."""
 
     def POST(self):
-        debug_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        debug_options.web_update(qdict)
         raise web.seeother(plugin_url(status_page), True)
 
 
