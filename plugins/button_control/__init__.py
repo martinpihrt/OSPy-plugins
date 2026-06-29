@@ -352,6 +352,16 @@ def read_buttons():
             log.debug(NAME, _('Switch 1 pressed'))
         return button_number #if button is not pressed return -1
 
+    except IOError as e:
+        if str(e) == 'I2C bus is busy.':
+            log.debug(NAME, datetime_string() + ': ' + _('I2C bus is busy, button read skipped.'))
+        else:
+            log.clear(NAME)
+            log.debug(NAME, datetime_string() + ': ' + _('Read button - FAULT'))
+            log.debug(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
+            log.error(NAME, '\n' + traceback.format_exc())
+        return -1
+
     except Exception:
         log.clear(NAME)
         log.debug(NAME, datetime_string() + ': ' + _('Read button - FAULT'))
@@ -375,6 +385,14 @@ def led_outputs(led):
         with i2c_transaction():
             try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x13,led))  # bus.write_byte_data(0x27,0x13,led)
               
+    except IOError as e:
+        if str(e) == 'I2C bus is busy.':
+            log.debug(NAME, datetime_string() + ': ' + _('I2C bus is busy, LED update skipped.'))
+        else:
+            log.error(NAME, datetime_string() + ': ' + _('Set LED - FAULT'))
+            log.error(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
+        pass
+
     except Exception:
         log.error(NAME, datetime_string() + ': ' + _('Set LED - FAULT'))
         log.error(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
