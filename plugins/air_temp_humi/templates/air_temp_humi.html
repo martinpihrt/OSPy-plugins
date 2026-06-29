@@ -377,6 +377,12 @@ jQuery(document).ready(function(){
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('DS18B20 error timeout'):</td>
+                <td title=$:{json.dumps(_('How long the last valid DS18B20 value is kept when the I2C read returns an error value. Use 0 to keep the last valid value without timeout.'), ensure_ascii=False)}>
+                    <input name='ds_error_timeout' type='number' min='0' max='86400' value='$plugin_options["ds_error_timeout"]'> $_('seconds')
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('DS18B20 sensors'):</td>
                 <td>
                     <table class="optionList">

@@ -10,6 +10,7 @@ import datetime
 import traceback
 import os
 from threading import Thread, Event
+from contextlib import contextmanager
 
 import web
 
@@ -42,8 +43,41 @@ tempDS = [-127,-127,-127,-127,-127,-127]
 tempDHT = 0
 humiDHT = 0
 DS18B20_ERROR_VALUE = -127
-DS18B20_READ_RETRIES = 3
-DS18B20_RETRY_DELAY = 0.5
+DS18B20_READ_RETRIES = 6
+DS18B20_RETRY_DELAY = 0.4
+DS18B20_I2C_LOCK_TIMEOUT = 5.0
+DS18B20_I2C_SETTLE_TIME = 0.05
+DS18B20_LAST_VALID = [None, None, None, None, None, None]
+DS18B20_LAST_VALID_TS = [0, 0, 0, 0, 0, 0]
+
+try:
+    from plugins.i2c_guard import i2c_transaction
+except Exception:
+    _LOCAL_I2C_LOCK = None
+
+    @contextmanager
+    def i2c_transaction(timeout=5.0, settle_time=0.05):
+        global _LOCAL_I2C_LOCK
+        if _LOCAL_I2C_LOCK is None:
+            from threading import Lock
+            _LOCAL_I2C_LOCK = Lock()
+
+        start = time.time()
+        acquired = False
+        while not acquired:
+            acquired = _LOCAL_I2C_LOCK.acquire(False)
+            if acquired:
+                break
+            if time.time() - start >= timeout:
+                raise IOError('I2C bus is busy.')
+            time.sleep(0.05)
+
+        try:
+            if settle_time > 0:
+                time.sleep(settle_time)
+            yield
+        finally:
+            _LOCAL_I2C_LOCK.release()
 
 plugin_options = PluginOptions(
     NAME,
@@ -79,6 +113,7 @@ plugin_options = PluginOptions(
      'en_sql_log': False,   # logging temperature to sql database
      'type_log': 0,         # 0 = show log and graph from local log file, 1 = from database
      'show_err': 0,         # 0 = disable show error values in graph ex: -127 C
+     'ds_error_timeout': 300, # seconds to keep last valid DS18B20 value before showing error
      'dt_from' : '2024-01-01T00:00',        # for graph history (from date time ex: 2024-02-01T6:00)
      'dt_to' : '2024-01-01T00:00',          # for graph history (to date time ex: 2024-03-17T12:00)
      }
@@ -383,16 +418,60 @@ def DS18B20_has_error(teplota):
     return False
 
 
+def DS18B20_error_timeout():
+    try:
+       return max(0, int(plugin_options['ds_error_timeout']))
+    except:
+       return 300
+
+
+def DS18B20_value_is_valid(value):
+    return value is not None and value != DS18B20_ERROR_VALUE
+
+
+def DS18B20_store_valid_values(teplota):
+    now = time.time()
+    for i in range(0, 6):
+       if DS18B20_value_is_valid(teplota[i]):
+          DS18B20_LAST_VALID[i] = teplota[i]
+          DS18B20_LAST_VALID_TS[i] = now
+
+
+def DS18B20_apply_reading(teplota):
+    now = time.time()
+    timeout = DS18B20_error_timeout()
+    active_ds = DS18B20_active_indexes()
+    check_indexes = active_ds if active_ds else range(0, 6)
+    result = [DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE]
+
+    if teplota is not None:
+       DS18B20_store_valid_values(teplota)
+
+    for i in range(0, 6):
+       if teplota is not None and DS18B20_value_is_valid(teplota[i]):
+          result[i] = teplota[i]
+       elif DS18B20_LAST_VALID[i] is not None and (timeout == 0 or now - DS18B20_LAST_VALID_TS[i] <= timeout):
+          result[i] = DS18B20_LAST_VALID[i]
+
+    for i in range(0, 6):
+       tempDS[i] = result[i]
+
+    for i in check_indexes:
+       if result[i] == DS18B20_ERROR_VALUE:
+          return False
+    return True
+
+
 def DS18B20_read_data():
     import smbus
-    last_read = None
+    best_read = None
     try:
        bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
-       time.sleep(1) #wait here to avoid 121 IO Error
 
        for attempt in range(0, DS18B20_READ_RETRIES):
           try:
-             i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0))
+             with i2c_transaction(timeout=DS18B20_I2C_LOCK_TIMEOUT, settle_time=DS18B20_I2C_SETTLE_TIME):
+                i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0), tries=3)
              teplota = DS18B20_decode_i2c_data(i2c_data)
           except Exception:
              teplota = None
@@ -400,29 +479,24 @@ def DS18B20_read_data():
           if teplota is None:
              log.debug(NAME, _('Data is not correct. Please try again later.'))
           else:
-             last_read = teplota
+             if best_read is None or not DS18B20_has_error(teplota):
+                best_read = teplota
              if not DS18B20_has_error(teplota):
-                for i in range(0, 6):
-                   tempDS[i] = teplota[i]      # global temperature for all probe DS18B20
+                DS18B20_apply_reading(teplota)
                 return teplota                 # data is ok
              log.debug(NAME, _('DS18B20 returned error value. Reading again.'))
 
           if attempt < DS18B20_READ_RETRIES - 1:
              time.sleep(DS18B20_RETRY_DELAY)
 
-       if last_read is None:
-          last_read = [DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE]
-
-       for i in range(0, 6):
-          tempDS[i] = last_read[i]
-       return last_read
+       DS18B20_apply_reading(best_read)
+       return tempDS
 
     except Exception:
       log.debug(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
       time.sleep(0.5)
-      for i in range(0, 6):
-         tempDS[i] = DS18B20_ERROR_VALUE
-      return [DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE, DS18B20_ERROR_VALUE] # try data has error
+      DS18B20_apply_reading(None)
+      return tempDS # try data has error
 
 
 def DS18B20_read_string_data():

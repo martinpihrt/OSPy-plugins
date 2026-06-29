@@ -49,6 +49,9 @@ Plugin setup
 * Check Enable DS18B20:  
   If checked enabled DS18B20, I2C bus is in plugin enabled.
 
+* DS18B20 error timeout:  
+  Time in seconds for keeping the last valid DS18B20 value when an I2C read returns an error value such as -127. During this time the plugin does not overwrite the displayed/logged value with the error value. Use 0 to keep the last valid value without timeout.
+
 * DS18B20 sensors:  
   Enable only the connected DS18B20 sensors (DS1-DS6) and set a label for each used sensor. Disabled sensors are hidden from the graph and log view.
   
