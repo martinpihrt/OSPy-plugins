@@ -22,7 +22,7 @@ from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 from ospy.helpers import ASCI_convert, datetime_string, verify_csrf
-from plugins.i2c_guard import i2c_transaction
+from ospy.i2c_guard import i2c_transaction
 from ospy.stations import stations
 from ospy.sensors import sensors
 

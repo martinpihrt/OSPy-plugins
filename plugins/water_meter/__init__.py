@@ -15,7 +15,7 @@ from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers
-from plugins.i2c_guard import i2c_transaction
+from ospy.i2c_guard import i2c_transaction
 
 
 NAME = 'Water Meter'

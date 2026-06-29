@@ -13,7 +13,7 @@ from ospy.options import options
 import subprocess
 import shlex
 from ospy.log import log
-from plugins.i2c_guard import i2c_transaction
+from ospy.i2c_guard import i2c_transaction
 
 import web
 

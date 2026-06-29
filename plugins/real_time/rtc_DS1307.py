@@ -12,7 +12,7 @@ import time
 import smbus
 
 try:
-    from plugins.i2c_guard import i2c_transaction
+    from ospy.i2c_guard import i2c_transaction
 except Exception:
     _LOCAL_I2C_LOCK = None
 

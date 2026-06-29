@@ -24,7 +24,7 @@ from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
-from plugins.i2c_guard import i2c_transaction
+from ospy.i2c_guard import i2c_transaction
 from ospy.stations import stations
 from ospy.scheduler import predicted_schedule, combined_schedule
 

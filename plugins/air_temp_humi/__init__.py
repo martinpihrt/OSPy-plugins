@@ -51,7 +51,7 @@ DS18B20_LAST_VALID = [None, None, None, None, None, None]
 DS18B20_LAST_VALID_TS = [0, 0, 0, 0, 0, 0]
 
 try:
-    from plugins.i2c_guard import i2c_transaction
+    from ospy.i2c_guard import i2c_transaction
 except Exception:
     _LOCAL_I2C_LOCK = None
 

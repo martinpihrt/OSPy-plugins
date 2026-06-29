@@ -22,7 +22,7 @@ from ospy.runonce import run_once
 from ospy import helpers
 from ospy.helpers import get_rpi_revision, datetime_string, reboot, restart, poweroff
 from ospy.scheduler import predicted_schedule, combined_schedule
-from plugins.i2c_guard import i2c_transaction
+from ospy.i2c_guard import i2c_transaction
 
 from blinker import signal
 

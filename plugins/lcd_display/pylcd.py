@@ -21,7 +21,7 @@ Edit: Martin Pihrt - www.pihrt.com
 
 import smbus
 from time import *
-from plugins.i2c_guard import i2c_transaction
+from ospy.i2c_guard import i2c_transaction
 
 # General i2c device class so that other devices can be added easily
 class i2c_device:
