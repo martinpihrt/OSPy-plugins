@@ -142,7 +142,7 @@ class WindSender(Thread):
                         puls = counter(self.bus)  # read pulses
 
                     if puls is not None and puls < 1000:        # limiter for maximal pulses from counter (error filter)
-                        puls = counter(self.bus)/10.0           # counter value is value/10sec
+                        puls = puls/10.0                       # counter value is value/10sec
                         val = puls/(wind_options['pulses']*1.0)
                         val = val*wind_options['metperrot']
 
@@ -380,9 +380,14 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         num100000 = (counter[3] & 0xF0) >> 4   # hundreds of thousands
         pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
         return pulses
+    except IOError as e:
+        if str(e) == 'I2C bus is busy.':
+            log.debug(NAME, datetime_string() + ': ' + _('I2C bus is busy, wind counter read skipped.'))
+        else:
+            log.error(NAME, _('Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
+        return None
     except:
         log.error(NAME, _('Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
-        time_.sleep(10)
         return None
 
 
