@@ -18,7 +18,7 @@ import json
 import web
 from ospy.log import log
 from ospy.webpages import ProtectedPage
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from plugins import PluginOptions, plugin_url
 
 
@@ -212,7 +212,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.real_time(plugin_options, '\n'.join(log.events(NAME)))
 
     def POST(self):
-        plugin_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict)
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)

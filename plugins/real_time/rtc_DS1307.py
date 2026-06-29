@@ -7,7 +7,38 @@
 # edited Martin Pihrt
 
 from datetime import datetime
+from contextlib import contextmanager
+import time
 import smbus
+
+try:
+    from plugins.i2c_guard import i2c_transaction
+except Exception:
+    _LOCAL_I2C_LOCK = None
+
+    @contextmanager
+    def i2c_transaction(timeout=5.0, settle_time=0.05):
+        global _LOCAL_I2C_LOCK
+        if _LOCAL_I2C_LOCK is None:
+            from threading import Lock
+            _LOCAL_I2C_LOCK = Lock()
+
+        start = time.time()
+        acquired = False
+        while not acquired:
+            acquired = _LOCAL_I2C_LOCK.acquire(False)
+            if acquired:
+                break
+            if time.time() - start >= timeout:
+                raise IOError('I2C bus is busy.')
+            time.sleep(0.05)
+
+        try:
+            if settle_time > 0:
+                time.sleep(settle_time)
+            yield
+        finally:
+            _LOCAL_I2C_LOCK.release()
 
 
 def _bcd_to_int(bcd):
@@ -55,10 +86,12 @@ class rtc_DS1307():
 
     def _write(self, register, data):
         #print "addr =0x%x register = 0x%x data = 0x%x %i " % (self._addr, register, data,_bcd_to_int(data))
-        self._bus.write_byte_data(self._addr, register, data)
+        with i2c_transaction():
+            self._bus.write_byte_data(self._addr, register, data)
 
     def _read(self, data):
-        returndata = self._bus.read_byte_data(self._addr, data)
+        with i2c_transaction():
+            returndata = self._bus.read_byte_data(self._addr, data)
         #print "addr = 0x%x data = 0x%x %i returndata = 0x%x %i " % (self._addr, data, data, returndata, _bcd_to_int(returndata))
         return returndata
 
