@@ -50,7 +50,7 @@ $code:
             <td>${c + 1}</td>
             <td><center>$'{}'.format(plugin_options['bkp_name'][c])</center></td>
             <td><center>$format_bytes(plugin_options['bkp_size'][c])</center></td>        
-            <td><a href="?delete=${c}" class="button cancel danger">$_('Delete')</a></td>
+            <td><a href="?delete=${c}&$csrf_query()" class="button cancel danger">$_('Delete')</a></td>
             <td><a href="?download=${c}" class="button submit">$_('Download')</a></td>            
             </tr>
             $ odd = 1 - odd            

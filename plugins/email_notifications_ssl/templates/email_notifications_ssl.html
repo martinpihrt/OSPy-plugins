@@ -60,11 +60,11 @@ input:checked + .slider:before {
             window.location="/";
         });
         jQuery("#cTest").click(function() {
-            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications_ssl.settings_page')?test")
+            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications_ssl.settings_page')?test&$csrf_query()")
             jQuery("#pluginForm").submit();
         });
         jQuery("#cDel").click(function() {
-            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications_ssl.settings_page')?del")
+            jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications_ssl.settings_page')?del&$csrf_query()")
             jQuery("#pluginForm").submit();
         });        
 
@@ -84,6 +84,7 @@ function showPWD(){
     <div class="title">$_('E-mail Notifications SSL')</div>
     <a href=$plugins.plugin_url('email_notifications_ssl.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('email_notifications_ssl.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>

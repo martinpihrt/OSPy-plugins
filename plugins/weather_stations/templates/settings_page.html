@@ -17,6 +17,7 @@ jQuery(document).ready(function(){
 <div id="plugin">
     <div class="title">$_('Weather Stations Settings')</div>   
     <form id="pluginForm" action="$plugins.plugin_url('weather_stations.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Canvas or Text mode for showing data'):</td> 

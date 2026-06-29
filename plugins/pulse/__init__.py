@@ -94,6 +94,7 @@ class start_page(ProtectedPage):
             qdict = web.input()
             stop = helpers.get_input(qdict, 'stop', False, lambda x: True)
             if sender is not None and stop:
+                verify_csrf(qdict)
                 sender.stop()
                 sender.join(5)
                 sender = None
@@ -110,7 +111,11 @@ class start_page(ProtectedPage):
         try:
             global sender
 
-            pulse_options.web_update(web.input())
+            qdict = web.input()
+
+            verify_csrf(qdict)
+
+            pulse_options.web_update(qdict)
             if sender is not None:
                 sender.stop()
                 sender.join(5)

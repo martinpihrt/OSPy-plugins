@@ -444,14 +444,17 @@ class settings_page(ProtectedPage):
             show = get_input(qdict, 'show', False, lambda x: True)
 
             if checker is not None and del_rain:
+                verify_csrf(qdict)
                 if NAME in rain_blocks:
                     del rain_blocks[NAME]
                     log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
 
             if checker is not None and refresh:
+                verify_csrf(qdict)
                 checker.update()
 
             if checker is not None and delete:
+                verify_csrf(qdict)
                 write_log([])
                 log.info(NAME, datetime_string() + ': ' + _('Deleted all log files OK'))
 
@@ -468,7 +471,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            plugin_options.web_update(web.input())
+            qdict = web.input()
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict)
             if checker is not None:
                 checker.update()
             raise web.seeother(plugin_url(settings_page), True)

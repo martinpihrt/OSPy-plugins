@@ -19,6 +19,7 @@ $var page: plugins
     <div class="title">$_(u'Temperature Switch')</div>
     <a href=$plugins.plugin_url('temperature_switch.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('temperature_switch.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control A'):</b></td>

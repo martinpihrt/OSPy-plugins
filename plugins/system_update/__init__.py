@@ -354,13 +354,16 @@ class status_page(ProtectedPage):
     def GET(self):
         qdict = web.input()
         if 'refresh' in qdict:
+            verify_csrf(qdict)
             checker.refresh_async()
         else:
             checker.started.wait(1)
         return self.plugin_render.system_update(plugin_options, log.events(NAME), checker.status)
 
     def POST(self):
-        plugin_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict)
         raise web.seeother(plugin_url(status_page), True)
 
 
@@ -370,6 +373,7 @@ class status_json(ProtectedPage):
     def GET(self):
         qdict = web.input()
         if 'refresh' in qdict:
+            verify_csrf(qdict)
             checker.refresh_async()
 
         web.header('Access-Control-Allow-Origin', '*')
@@ -389,6 +393,7 @@ class status_json(ProtectedPage):
 
 class update_page(ProtectedPage):
     def GET(self):
+        verify_csrf()
         # SpustĂ­me aktualizaci a zĂ­skĂˇme hlĂˇĹˇku
         msg = perform_update()  # vracĂ­ text hlĂˇĹˇky
 
@@ -399,6 +404,7 @@ class update_page(ProtectedPage):
 class rollback_select_page(ProtectedPage):
     def POST(self):
         data = web.input(commit_hash=None)
+        verify_csrf(data)
         commit_hash = data.get('commit_hash')
 
         # Nejprve ovÄ›Ĺ™, Ĺľe je co vracet
@@ -433,6 +439,7 @@ class help_page(ProtectedPage):
 
 class restart_page(ProtectedPage):
     def GET(self):
+        verify_csrf()
         msg = _('OSPy is now restarted. Please wait...')
         report_restarted()
         
@@ -453,6 +460,7 @@ class restart_page(ProtectedPage):
 class error_page(ProtectedPage):
     """Error page."""    
     def GET(self):
+        verify_csrf()
         msg = _('OSPy is now restarted (invoked by the user). Please wait...')
         report_restarted()
         

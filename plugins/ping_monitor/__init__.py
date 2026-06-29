@@ -443,6 +443,7 @@ class settings_page(ProtectedPage):
             show = helpers.get_input(qdict, 'show', False, lambda x: True)
 
             if sender is not None and delete:
+                verify_csrf(qdict)
                 write_log([])
                 create_default_graph()
                 log_csv_file = os.path.join(plugin_data_dir(), 'log.csv')
@@ -469,7 +470,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            plugin_options.web_update(web.input())
+            qdict = web.input()
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict)
 
             if sender is not None:
                 sender.update()

@@ -13,7 +13,7 @@ import mimetypes
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.log import log
-from ospy.helpers import datetime_string, get_input, mkdir_p, del_rw
+from ospy.helpers import datetime_string, get_input, mkdir_p, del_rw, verify_csrf
 from ospy.webpages import ProtectedPage
 
 
@@ -159,6 +159,7 @@ class settings_page(ProtectedPage):
             bkp = get_input(qdict, 'bkp', False, lambda x: True)
 
             if sender is not None and bkp:
+                verify_csrf(qdict)
                 log.clear(NAME)
                 if get_backup():
                     log.info(NAME, datetime_string() + '\n' + _('Created all backup files OK.'))
@@ -166,6 +167,7 @@ class settings_page(ProtectedPage):
                     log.info(NAME, datetime_string() + '\n' + _('Failed to create backup, see debug list (if debug is enabled in ospy system).'))
 
             if 'delete' in qdict and sender is not None:
+                verify_csrf(qdict)
                 delete = qdict['delete']
                 if len(plugin_options['bkp_name']) > 0:
                     del_file = os.path.join(plugin_data_dir(), plugin_options['bkp_name'][int(delete)] )

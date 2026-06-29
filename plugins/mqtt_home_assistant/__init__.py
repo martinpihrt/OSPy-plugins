@@ -1311,7 +1311,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.mqtt_home_assistant(plugin_options, log.events(NAME), msg, is_connected())
 
     def POST(self):
-        plugin_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict)
         updateSignal = signal('hass_plugin_update')
         updateSignal.send()
         raise web.seeother(plugin_url(settings_page), True)

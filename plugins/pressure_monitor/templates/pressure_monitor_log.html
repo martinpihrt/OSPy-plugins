@@ -22,10 +22,10 @@ $var page: plugins
     <p>
     $if plugin_options['type_log'] == 0:
         <a href=$plugins.plugin_url('pressure_monitor.log_csv') class="button download">$_('Download local log')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all local logs')</a></br>
+        <a href="?delete&$csrf_query()" class="button cancel danger">$_('Delete all local logs')</a></br>
     $if plugin_options['type_log'] == 1:
         <a href=$plugins.plugin_url('pressure_monitor.log_sql_csv') class="button download">$_('Download database log')</a>
-        <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a></br>
+        <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a></br>
     <a href="" class="button refresh">$_('Refresh')</a>
     <a href=$plugins.plugin_url('pressure_monitor.settings_page') class="button danger">$_('Cancel')</a>
     <p></br>

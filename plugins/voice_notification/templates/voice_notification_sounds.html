@@ -72,7 +72,7 @@ $code:
         $format_bytes(plugin_options['sounds_size'][c])
         </td>        
         <td>
-        <a href="?delete=${c}" class="button cancel danger">$_('Delete')</a>
+        <a href="?delete=${c}&$csrf_query()" class="button cancel danger">$_('Delete')</a>
         </td>
         </tr>
         $ odd = 1 - odd
@@ -81,6 +81,7 @@ $code:
 
 <div style="margin: 10px 0px 10px 0px;">
    <form id="pluginFormUpload" action="$plugins.plugin_url('voice_notification.upload_page')" method="POST" enctype="multipart/form-data">
+       $:csrf_input()
      <table class="optionList">
         <tr>
           <td style='text-transform: none;'>$_('Upload sound file'):</td>

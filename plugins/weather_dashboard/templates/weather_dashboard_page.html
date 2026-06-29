@@ -145,6 +145,8 @@ $_('Weather Dashboard')
       action="$plugins.plugin_url('weather_dashboard.settings_page')"
       method="post">
 
+$:csrf_input()
+
 <input type="hidden"
        name="gauge_count"
        value="$len(plugin_options['gauges'])">
@@ -221,7 +223,7 @@ $_('Weather Dashboard')
 
         <a
             class="button submit"
-            href="$plugins.plugin_url('weather_dashboard.add_gauge')">
+            href="$plugins.plugin_url('weather_dashboard.add_gauge')?$csrf_query()">
 
             $_('Add Gauge')
 
@@ -245,7 +247,7 @@ $for i in range(len(plugin_options['gauges'])):
 
             <a
                 class="button danger"
-                href="$plugins.plugin_url('weather_dashboard.delete_gauge')?id=${i}">
+                href="$plugins.plugin_url('weather_dashboard.delete_gauge')?id=${i}&$csrf_query()">
 
                 $_('Delete')
 

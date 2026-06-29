@@ -71,6 +71,7 @@ input:checked + .slider:before {
     <p><a href=$plugins.plugin_url('sunrise_and_sunset.help_page') class="button upload">$_('Help')</a><p/>
     <p><a href=$plugins.plugin_url('sunrise_and_sunset.setup_page') class="button submit">$_('Programs Settings')</a></p>
     <form id="pluginForm" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use astro plugin'):</td>

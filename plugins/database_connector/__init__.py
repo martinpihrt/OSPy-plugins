@@ -263,10 +263,12 @@ class settings_page(ProtectedPage):
             install = get_input(qdict, 'install', False, lambda x: True)
 
             if sender is not None and test:
+                verify_csrf(qdict)
                 sql = "SHOW DATABASES"
                 execute_db(sql, test=True, commit=False)
 
             if sender is not None and install:
+                verify_csrf(qdict)
                 install_db()
 
             return self.plugin_render.database_connector(plugin_options, log.events(NAME))
@@ -279,7 +281,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            plugin_options.web_update(web.input())
+            qdict = web.input()
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict)
             raise web.seeother(plugin_url(settings_page), True)
         except:
             log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
@@ -298,12 +302,14 @@ class backup_page(ProtectedPage):
 
             log.clear(NAME)
             if sender is not None and backup:
+                verify_csrf(qdict)
                 if get_dump():
                     log.info(NAME, datetime_string() + ': ' + _('Created database backup.'))
                 else:
                     log.error(NAME, datetime_string() + ': ' + _('Error in database backup.'))
 
             if 'delete' in qdict and sender is not None:
+                verify_csrf(qdict)
                 delete = qdict['delete']
                 if len(plugin_options['sql_name']) > 0:
                     del_file = os.path.join(plugin_data_dir(), plugin_options['sql_name'][int(delete)] )

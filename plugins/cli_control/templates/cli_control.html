@@ -97,9 +97,10 @@ input:checked + .slider:before {
         <p>
         <a href=$plugins.plugin_url('cli_control.log_csv') class="button download">$_('Download log')</a>
         <a href="?show" class="button backup">$_('Show logs')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        <a href="?delete&$csrf_query()" class="button cancel danger">$_('Delete all logs')</a>
         </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('cli_control.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use CLI Control'):</td>
@@ -129,11 +130,11 @@ input:checked + .slider:before {
                     <td class="stationNumber">${c + 1}</td>
                     <td class="command">
                        <input type="text" size="30" value="${plugin_options['on'][c] if c < len(plugin_options['on']) else ''}" id="con${c}" name="con${c}">
-                       <a href="?test=${c}&state=1" class="button upload">$_('Test')</a>
+                       <a href="?test=${c}&state=1&$csrf_query()" class="button upload">$_('Test')</a>
                     </td>
                     <td>
                        <input type="text" size="30" value="${plugin_options['off'][c] if c < len(plugin_options['off']) else ''}"  id="coff${c}" name="coff${c}">
-                       <a href="?test=${c}" class="button upload">$_('Test')</a>
+                       <a href="?test=${c}&$csrf_query()" class="button upload">$_('Test')</a>
                     </td>
                 </tr>
             <tr>

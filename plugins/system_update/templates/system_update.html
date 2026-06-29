@@ -185,8 +185,8 @@ table.optionList {
 <script>
 jQuery(document).ready(function(){
 let statusJsonUrl = "$plugins.plugin_url('system_update.status_json')";
-let updateUrl = "$plugins.plugin_url('system_update.update_page')";
-let errorUrl = "$plugins.plugin_url('system_update.error_page')";
+let updateUrl = "$plugins.plugin_url('system_update.update_page')?$csrf_query()";
+let errorUrl = "$plugins.plugin_url('system_update.error_page')?$csrf_query()";
 let updateText = $:{json.dumps(_('A new version of OSPy is available - update?'), ensure_ascii=False).encode('utf8').decode('utf-8')};
 let errorText = $:{json.dumps(_('Fix detected dubious ownership?'), ensure_ascii=False).encode('utf8').decode('utf-8')};
 let initialChecking = $:{json.dumps(bool(stat.get('checking')))};
@@ -258,7 +258,7 @@ if (checkingTimer !== null) {
 return false;
 }
 jQuery("#checkingStatus").show();
-jQuery.getJSON(statusJsonUrl + "?refresh=1", renderStatus);
+jQuery.getJSON(statusJsonUrl + "?refresh=1&$csrf_query()", renderStatus);
 return false;
 });
 
@@ -295,6 +295,7 @@ checkingTimer = setTimeout(loadStatus, 1500);
     <div class="title">$_('System update from GitHub')</div>
     <a href=$plugins.plugin_url('system_update.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use update plugin'):</td>
@@ -381,22 +382,22 @@ checkingTimer = setTimeout(loadStatus, 1500);
                 <td></td>
                 <td>
                     <button id="cSubmit" class="submit"><b>$_('Save changes')</b></button>
-                    <a href="$plugins.plugin_url('system_update.restart_page')" class="button reboot danger">$_('Restart OSPy software')</a>
+                    <a href="$plugins.plugin_url('system_update.restart_page')?$csrf_query()" class="button reboot danger">$_('Restart OSPy software')</a>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
                     <textarea id="statusArea" class="status-area" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
-                    <a id="checkVersion" href="$plugins.plugin_url('system_update.status_json')?refresh=1" class="button refresh">$_('Check new version')</a>
+                    <a id="checkVersion" href="$plugins.plugin_url('system_update.status_json')?refresh=1&$csrf_query()" class="button refresh">$_('Check new version')</a>
                     <span id="checkingStatus" style="margin-left: 10px; color: #666666; display: ${'inline' if stat.get('checking') else 'none'};">$_('Checking...')</span>
                     <span id="updateAction">
                         $if stat['can_update']:
-                            <a href="$plugins.plugin_url('system_update.update_page')" class="button reboot danger"><b>$_('A new version of OSPy is available - update?')</b></a>
+                            <a href="$plugins.plugin_url('system_update.update_page')?$csrf_query()" class="button reboot danger"><b>$_('A new version of OSPy is available - update?')</b></a>
                     </span>
                     <span id="errorAction">
                         $if stat['can_error']:
-                            <a href="$plugins.plugin_url('system_update.error_page')" class="button upload danger"><b>$_('Fix detected dubious ownership?')</b></a>
+                            <a href="$plugins.plugin_url('system_update.error_page')?$csrf_query()" class="button upload danger"><b>$_('Fix detected dubious ownership?')</b></a>
                     </span>                        
                 </td>
             </tr>
@@ -408,6 +409,7 @@ checkingTimer = setTimeout(loadStatus, 1500);
 <div class="section-box">
   <h3>$_('Rollback to previous version')</h3>
   <form id="rollbackForm" method="POST" action="$plugins.plugin_url('system_update.rollback_select_page')">
+      $:csrf_input()
     <div id="commitList" class="commit-list">
       $for c in stat["commits"]:
         <label class="commit-item">

@@ -97,6 +97,7 @@ input:checked + .slider:before {
     <a href=$plugins.plugin_url('voice_station.help_page') class="button upload">$_('Help')</a><br/>
     <a href=$plugins.plugin_url('voice_station.sound_page') class="button submit">$_('Sound editing')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('voice_station.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
         <tr>
             <td style='text-transform: none;'>$_('Enable voice'):</td>
@@ -147,7 +148,7 @@ input:checked + .slider:before {
                         <option value="-1">${str(plugin_options['sounds'][i])}</option>
                 </select>
                 $if station.index < len(plugin_options['on']):
-                    <a href="?test=${station.index}&state=1" class="button upload">$_('Play')</a>
+                    <a href="?test=${station.index}&state=1&$csrf_query()" class="button upload">$_('Play')</a>
                 </td>
                 <td>
                 <select name="coff${station.index}">
@@ -160,7 +161,7 @@ input:checked + .slider:before {
                         <option value="-1">${str(plugin_options['sounds'][i])}</option>
                 </select>
                 $if station.index < len(plugin_options['off']):
-                    <a href="?test=${station.index}&state=0" class="button upload">$_('Play')</a>
+                    <a href="?test=${station.index}&state=0&$csrf_query()" class="button upload">$_('Play')</a>
                 </td>
                 </tr>
             <tr>
@@ -183,5 +184,5 @@ input:checked + .slider:before {
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?clear" class="button cancel danger">$_('Clear playlist')</a>
+    <a href="?clear&$csrf_query()" class="button cancel danger">$_('Clear playlist')</a>
 </div>

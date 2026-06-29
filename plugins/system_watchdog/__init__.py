@@ -14,7 +14,7 @@ import shlex
 import web
 from ospy import helpers
 from ospy.options import options
-from ospy.helpers import restart, reboot, ASCI_convert
+from ospy.helpers import restart, reboot, ASCI_convert, verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.log import log
 from plugins import plugin_url
@@ -156,6 +156,7 @@ class install_page(ProtectedPage):
     """Instalation watchdog page"""
 
     def GET(self):
+        verify_csrf()
         log.clear(NAME)
         add_module('bcm2708_wdog')
         add_module('bcm2835_wdog')
@@ -213,6 +214,7 @@ class stop_page(ProtectedPage):
     """Stop watchdog service page"""
 
     def GET(self):
+        verify_csrf()
         log.clear(NAME)
         cmd = "sudo systemctl stop watchdog"
         log.debug(NAME, cmd) 
@@ -231,6 +233,7 @@ class start_page(ProtectedPage):
     """Start watchdog service page"""
 
     def GET(self):
+        verify_csrf()
         log.clear(NAME)
         cmd = "sudo systemctl start watchdog"
         log.debug(NAME, cmd)

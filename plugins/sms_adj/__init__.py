@@ -457,7 +457,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.sms_adj(sms_options, log.events(NAME))
 
     def POST(self):
-        sms_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        sms_options.web_update(qdict)
 
         sms_sender.update()
         raise web.seeother(plugin_url(settings_page), True)

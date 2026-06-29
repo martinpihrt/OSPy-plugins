@@ -209,6 +209,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
         if sender is not None and reset:
+            verify_csrf(qdict)
             plugin_options.__setitem__('sum_one', 0)
             plugin_options.__setitem__('sum_two', 0)
             plugin_options.__setitem__('last_reset', datetime_string())
@@ -220,7 +221,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.water_consumption_counter(plugin_options, log.events(NAME))
 
     def POST(self):
-        plugin_options.web_update(web.input()) ### update options from web ###
+        qdict = web.input()
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict) ### update options from web ###
 
         if sender is not None:
             sender.update()

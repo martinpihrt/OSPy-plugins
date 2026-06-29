@@ -21,6 +21,7 @@ $var page: plugins
     <div class="title">$_('MQTT settings')</div>
     <a href=$plugins.plugin_url('mqtt.help_page') class="button upload">$_('Help')</a><br/>   
     <form id="pluginForm" action="$plugins.plugin_url('mqtt.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList" style="width:80%">
             <caption>$_('MQTT core')</caption>
             <tr>

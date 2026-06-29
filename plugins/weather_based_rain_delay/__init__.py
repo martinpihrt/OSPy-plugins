@@ -188,7 +188,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.weather_based_rain_delay(plugin_options, log.events(NAME))
 
     def POST(self):
-        plugin_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict)
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)

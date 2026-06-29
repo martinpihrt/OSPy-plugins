@@ -9,16 +9,16 @@ $var page: plugins
             window.location="$plugins.plugin_url('system_watchdog.status_page')";
         });
         jQuery("button#cInstall").click(function(){
-            window.location="$plugins.plugin_url('system_watchdog.install_page')";
+            window.location="$plugins.plugin_url('system_watchdog.install_page')?$csrf_query()";
         });
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
         jQuery("button#cStop").click(function(){
-            window.location="$plugins.plugin_url('system_watchdog.stop_page')";
+            window.location="$plugins.plugin_url('system_watchdog.stop_page')?$csrf_query()";
         });
         jQuery("button#cStart").click(function(){
-            window.location="$plugins.plugin_url('system_watchdog.start_page')";
+            window.location="$plugins.plugin_url('system_watchdog.start_page')?$csrf_query()";
         });
 
 

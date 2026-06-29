@@ -41,6 +41,7 @@ $var page: plugins
     <div class="title">$_('Pool Heating')</div>
     <a href=$plugins.plugin_url('pool_heating.help_page') class="button upload">$_('Help')</a><br/>    
     <form id="pluginForm" action="$plugins.plugin_url('pool_heating.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control'):</b></td>

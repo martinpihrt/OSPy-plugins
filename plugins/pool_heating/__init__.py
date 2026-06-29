@@ -399,7 +399,9 @@ class settings_page(ProtectedPage):
     def POST(self):
         try:
             global sender
-            plugin_options.web_update(web.input())
+            qdict = web.input()
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict)
 
             if sender is not None:
                 sender.update()

@@ -21,6 +21,7 @@ $var page: plugins
     <a href=$plugins.plugin_url('webcam.download_page') class="button download">$_('Download image')</a>
     <a href=$plugins.plugin_url('webcam.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('webcam.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Enabled'):</td>

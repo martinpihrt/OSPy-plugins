@@ -768,7 +768,9 @@ class status_page(ProtectedPage):
         global last_millis
         try:
             last_millis = 0
-            plugin_options.web_update(web.input())
+            qdict = web.input()
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict)
             if checker is not None:
                 checker.update()
                 checker.update_wait()
@@ -816,6 +818,7 @@ class setup_page(ProtectedPage):
             last_millis = 0
 
             qdict = web.input()
+            verify_csrf(qdict)
 
             if 'number_pgm' in qdict:
                 plugin_options.__setitem__('number_pgm', int(qdict['number_pgm']))

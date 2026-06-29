@@ -235,9 +235,10 @@ function loadGraph() {
         <p>
         <a href=$plugins.plugin_url('ping_monitor.log_csv') class="button download">$_('Download log')</a>
         <a href="?show" class="button backup">$_('Show logs')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        <a href="?delete&$csrf_query()" class="button cancel danger">$_('Delete all logs')</a>
         </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('ping_monitor.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use ping monitoring'):</b></td>

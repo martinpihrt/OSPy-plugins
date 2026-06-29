@@ -150,7 +150,9 @@ class settings_page(ProtectedPage):
     def POST(self):
         try:
             #plugin_options.web_update(web.input(**proto))        # For save multiple elements (example selector with more selected elements)
-            plugin_options.web_update(web.input())                # For save only one element (example selector with one selected element, checkbox, fieldname...)
+            qdict = web.input()
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict)                # For save only one element (example selector with one selected element, checkbox, fieldname...)
             raise web.seeother(plugin_url(settings_page), True)   # Redirect to settings_page after saving filds from form
         except:
             log.error(NAME, _('Proto plugin') + ':\n' + traceback.format_exc())

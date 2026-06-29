@@ -59,9 +59,10 @@ $var page: plugins
     $if plugin_options['use_log']:
         <p>
         <a href=$plugins.plugin_url('venetian_blind.log_csv') class="button download">$_('Download log')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        <a href="?delete&$csrf_query()" class="button cancel danger">$_('Delete all logs')</a>
         </p></br>    
     <form id="pluginForm" action="$plugins.plugin_url('venetian_blind.setup_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use Control'):</td>
@@ -103,21 +104,21 @@ $var page: plugins
                     <td style='text-transform: none;'>$_('Command for open blind'):</td>
                     <td>
                        <input type="text" size="60" value="${plugin_options['open'][c] if c < len(plugin_options['open']) else ''}" id="open${c}" name="open${c}">
-                       <a href="?test=${c}&pos=1" id='btn_open' class="button upload">$_('Test Open')</a>
+                       <a href="?test=${c}&pos=1&$csrf_query()" id='btn_open' class="button upload">$_('Test Open')</a>
                     </td>
                 </tr>
                 <tr>
                     <td style='text-transform: none;'>$_('Command for stop blind'):</td>
                     <td>
                        <input type="text" size="60" value="${plugin_options['stop'][c] if c < len(plugin_options['stop']) else ''}"  id="stop${c}" name="stop${c}">
-                       <a href="?test=${c}&pos=0" id='btn_stop' class="button upload">$_('Test Stop')</a>
+                       <a href="?test=${c}&pos=0&$csrf_query()" id='btn_stop' class="button upload">$_('Test Stop')</a>
                     </td>
                 </tr>
                 <tr>
                     <td style='text-transform: none;'>$_('Command for close blind'):</td>
                     <td>
                        <input type="text" size="60" value="${plugin_options['close'][c] if c < len(plugin_options['close']) else ''}"  id="close${c}" name="close${c}">
-                       <a href="?test=${c}&pos=-1" id='btn_close' class="button upload">$_('Test Close')</a>
+                       <a href="?test=${c}&pos=-1&$csrf_query()" id='btn_close' class="button upload">$_('Test Close')</a>
                     </td>
                 </tr>
                 <tr>

@@ -23,6 +23,7 @@ $var page: plugins
     <div class="title">$_('E-mail Reader')</div>
     <a href=$plugins.plugin_url('email_reader.help_page') class="button upload">$_('Help')</a><br/>  
     <form id="pluginForm" action="$plugins.plugin_url('email_reader.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use E-mail reader'):</b></td>

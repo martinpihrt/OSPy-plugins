@@ -23,6 +23,7 @@ $var page: plugins
     <p>$_('This plugin enables OSPy to communicate the change of status via a telegram') (<a href="http://www.telegram.org/">www.telegram.org</a>).</p>
     <a href=$plugins.plugin_url('telegram_bot.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('telegram_bot.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>

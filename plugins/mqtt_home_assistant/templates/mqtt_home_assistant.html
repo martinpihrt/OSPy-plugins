@@ -108,6 +108,7 @@ input:checked + .slider:before {
     <p><a href=$plugins.plugin_url('mqtt_home_assistant.help_page') class="button upload">$_('Help')</a></p><br/>
     <div id="Message">${msg}</div>
     <form id="pluginForm" action="$plugins.plugin_url('mqtt_home_assistant.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList" style="width:60%">
             <tr>
                 <td style='text-transform: none;'>$_('Use TLS'):</td>

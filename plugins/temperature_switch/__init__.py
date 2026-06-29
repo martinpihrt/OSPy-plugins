@@ -359,7 +359,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.temperature_switch(plugin_options, log.events(NAME))
 
     def POST(self):
-        plugin_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict)
 
         if sender is not None:
             sender.update()                

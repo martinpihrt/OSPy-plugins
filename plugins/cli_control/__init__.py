@@ -239,6 +239,7 @@ class settings_page(ProtectedPage):
         state = helpers.get_input(qdict, 'state', False, lambda x: True)
 
         if sender is not None and 'test' in qdict:
+            verify_csrf(qdict)
             test = qdict['test']
             index = int(test)
             if state:
@@ -261,6 +262,7 @@ class settings_page(ProtectedPage):
                     log.info(NAME, _('No OFF command set for station {}').format(index + 1))
 
         if sender is not None and delete:
+            verify_csrf(qdict)
             write_log([])
             log.info(NAME, _('Deleted all log files successfully.'))
             raise web.seeother(plugin_url(settings_page), True)
@@ -272,6 +274,7 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         qdict = web.input()
+        verify_csrf(qdict)
         if 'use_control' in qdict:
             if qdict['use_control']=='on':
                 plugin_options.__setitem__('use_control', True)

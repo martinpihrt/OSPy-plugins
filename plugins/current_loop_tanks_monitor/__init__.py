@@ -950,6 +950,7 @@ class settings_page(ProtectedPage):
         return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 
     def POST(self):
+        verify_csrf()
         i2c = None
         return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 

@@ -402,6 +402,7 @@ class settings_page(ProtectedPage):
         delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
         if ups_sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+            verify_csrf(qdict)
             dt_from = qdict['dt_from']
             dt_to = qdict['dt_to']
             ups_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
@@ -411,6 +412,7 @@ class settings_page(ProtectedPage):
             raise web.seeother(plugin_url(log_page), True)
 
         if ups_sender is not None and delSQL:
+            verify_csrf(qdict)
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `upsmonitor`"
@@ -423,7 +425,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.ups_adj(ups_options, ups_sender.status, log.events(NAME))
 
     def POST(self):
-        ups_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        ups_options.web_update(qdict)
 
         if ups_sender is not None:
             ups_sender.update()
@@ -447,11 +451,13 @@ class log_page(ProtectedPage):
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
         
         if ups_sender is not None and delete and ups_options['enable_log']:
+           verify_csrf(qdict)
            write_log([])
            create_default_graph()
            log.info(NAME, _('Deleted all log files OK'))
 
         if ups_sender is not None and delSQL and ups_options['en_sql_log']:
+            verify_csrf(qdict)
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `upsmonitor`"

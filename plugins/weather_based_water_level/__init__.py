@@ -185,7 +185,9 @@ class settings_page(ProtectedPage):
         return self.plugin_render.weather_based_water_level(plugin_options, log.events(NAME))
 
     def POST(self):
-        plugin_options.web_update(web.input(**plugin_options))
+        qdict = web.input(**plugin_options)
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict)
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)

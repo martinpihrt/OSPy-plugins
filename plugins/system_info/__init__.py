@@ -8,6 +8,7 @@ import glob
 
 import traceback
 from ospy import helpers
+from ospy.helpers import verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.options import options
 import subprocess
@@ -272,9 +273,11 @@ class status_page(ProtectedPage):
         cpu = helpers.get_input(qdict, 'cpu', False, lambda x: True)
 
         if find_usb:
+            verify_csrf(qdict)
             return self.plugin_render.system_info(get_usb())
 
         if find_tty:
+            verify_csrf(qdict)
             return self.plugin_render.system_info(get_tty())
 
         if aux:

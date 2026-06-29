@@ -284,8 +284,11 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            remote_options.web_update(web.input())
             qdict = web.input()
+            verify_csrf(qdict)
+            remote_options.web_update(qdict)
+            qdict = web.input()
+            verify_csrf(qdict)
             test = get_input(qdict, 'test', False, lambda x: True)
 
             if remote_sender is not None:

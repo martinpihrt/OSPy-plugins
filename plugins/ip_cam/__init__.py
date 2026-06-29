@@ -13,7 +13,7 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision, datetime_string, get_input
+from ospy.helpers import get_rpi_revision, datetime_string, get_input, verify_csrf
 from ospy import helpers
 from ospy.options import options
 
@@ -212,6 +212,7 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
+            verify_csrf()
             return self.plugin_render.ip_cam(plugin_options, log.events(NAME))
         except:
             log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
@@ -249,6 +250,7 @@ class setup_page(ProtectedPage):
         global sender
         try:
             qdict = web.input()
+            verify_csrf(qdict)
             commands = {'mjpeg_que': [], 'jpg_ip': [], 'jpg_que': [], 'jpg_user': [], 'jpg_pass': []}
             for i in range(0, options.output_count):
                 if 'mjpeg_que'+str(i) in qdict:

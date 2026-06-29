@@ -37,6 +37,7 @@ $var page: plugins
     <p>$_('This extension allows you to generate bar or QR codes for your use...')</p>
     <a href=$plugins.plugin_url('labelmaker.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('labelmaker.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Select output format'):</td>

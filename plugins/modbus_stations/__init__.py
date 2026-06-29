@@ -504,7 +504,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            plugin_options.web_update(web.input())
+            qdict = web.input()
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict)
             if sender is not None:
                 sender.update()
             raise web.seeother(plugin_url(settings_page), True)
@@ -528,6 +530,7 @@ class address_page(ProtectedPage):
             log.clear(NAME)
 
             if sender is not None and adr_btn:
+                verify_csrf(qdict)
                 adr = int(qdict['adr'])
                 Write_address(adr)
                 log.info(NAME, _('The address that should have been set on the device') + ': {}.'.format(adr))
@@ -535,6 +538,7 @@ class address_page(ProtectedPage):
                 find_btn = True
 
             if sender is not None and find_btn:
+                verify_csrf(qdict)
                 find_adr = int(Read_address())
                 if find_adr > 0:
                     log.info(NAME, _('Found device on address') + ': {}.'.format(find_adr))
@@ -555,6 +559,7 @@ class address_page(ProtectedPage):
 
     def POST(self):
         try:
+            verify_csrf()
             raise web.seeother(plugin_url(address_page), True)
         except:
             log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
@@ -584,6 +589,7 @@ class log_page(ProtectedPage):
             qdict = web.input()
             delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
             if sender is not None and delete:
+                verify_csrf(qdict)
                 write_log([])
                 log.info(NAME, _('Deleted all log files OK'))
                 raise web.seeother(plugin_url(settings_page), True)

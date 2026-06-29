@@ -79,6 +79,7 @@ input:checked + .slider:before {
     <p>$_('If the program does not have a days marked, it will not start (neither by the "run now" button in the programs, nor by this plug-in)!')</p>    
     <a href=$plugins.plugin_url('sunrise_and_sunset.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('sunrise_and_sunset.setup_page')" method="post">
+        $:csrf_input()
         <table>
             <tr>
                 <td style='text-transform: none;'>$_('Number of programs'):</td>

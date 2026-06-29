@@ -361,6 +361,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
         if delSQL:
+            verify_csrf(qdict)
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `netping`"
@@ -373,7 +374,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         global servers
-        plugin_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        plugin_options.web_update(qdict)
         if sender is not None:
             sender.update()
             servers = {
@@ -401,10 +404,12 @@ class log_page(ProtectedPage):
 
         # handle deletes
         if delete and plugin_options['enable_log']:
+            verify_csrf(qdict)
             write_log([])
             log.info(NAME, _('Deleted all local log files OK'))
 
         if delSQL and plugin_options['en_sql_log']:
+            verify_csrf(qdict)
             try:
                 from plugins.database_connector import execute_db
                 sql = "DROP TABLE IF EXISTS `netping`"

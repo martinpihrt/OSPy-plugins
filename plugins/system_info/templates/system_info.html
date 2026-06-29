@@ -27,8 +27,8 @@ $var page: plugins
             </tr>
         </table>
     </form>
-    <a href="?find_usb" class="button backup">$_('Find USB devices')</a>
-    <a href="?find_tty" class="button backup">$_('Show TTY devices')</a>
+    <a href="?find_usb&$csrf_query()" class="button backup">$_('Find USB devices')</a>
+    <a href="?find_tty&$csrf_query()" class="button backup">$_('Show TTY devices')</a>
     <a href="?aux" class="button backup">$_('AUX output')</a>
     <a href="?part" class="button backup">$_('Show partitions')</a>
     <a href="?cpu" class="button backup">$_('CPU info')</a>

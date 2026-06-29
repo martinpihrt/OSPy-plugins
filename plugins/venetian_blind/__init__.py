@@ -10,7 +10,7 @@ import os
 import mimetypes
 
 from ospy.options import options
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers 
 from ospy.log import log
 from threading import Thread, Event
@@ -282,6 +282,7 @@ class home_page(ProtectedPage):
         position = None
         button = helpers.get_input(qdict, 'btn', False, lambda x: True)
         if sender is not None and button:
+            verify_csrf(qdict)
             if 'pos' in qdict:
                 position = int(qdict['pos'])
                 button = int(qdict['btn'])
@@ -299,6 +300,7 @@ class home_page(ProtectedPage):
         return self.plugin_render.venetian_blind(plugin_options)
 
     def POST(self):
+        verify_csrf()
         raise web.seeother(plugin_url(home_page), True)
 
 class setup_page(ProtectedPage):
@@ -313,11 +315,13 @@ class setup_page(ProtectedPage):
         position = None
         test_btn = None
         if sender is not None and delete:
+            verify_csrf(qdict)
             write_log([])
             log.info(NAME, _('Deleted all log files OK.'))
             raise web.seeother(plugin_url(setup_page), True)
         
         if sender is not None and test:
+            verify_csrf(qdict)
             if 'pos' in qdict:
                 position = int(qdict['pos'])
             test_btn = int(qdict['test'])
@@ -339,6 +343,7 @@ class setup_page(ProtectedPage):
     def POST(self):
         try:
             qdict = web.input()
+            verify_csrf(qdict)
 
             if 'use_control' in qdict:
                 if qdict['use_control']=='on':

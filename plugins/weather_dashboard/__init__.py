@@ -12,7 +12,7 @@ from threading import Thread, Event                              # For use a sep
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
-from ospy.helpers import datetime_string                         # For using date time in events logs
+from ospy.helpers import datetime_string, verify_csrf            # For using date time in events logs
 from ospy.webpages import ProtectedPage                          # For check user login permissions
 from ospy.sensors import sensors
 
@@ -393,6 +393,7 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         qdict = web.input()
+        verify_csrf(qdict)
         gauges = []
         count = int(qdict['gauge_count'])
         plugin_options['dashboard_mode'] = qdict['dashboard_mode']
@@ -451,6 +452,7 @@ class sources_json(ProtectedPage):
 class add_gauge(ProtectedPage):
  
     def GET(self):
+        verify_csrf()
         gauges = plugin_options['gauges']
         gauges.append(default_gauge())
         save_gauges(gauges)
@@ -461,6 +463,7 @@ class delete_gauge(ProtectedPage):
 
     def GET(self):
         qdict = web.input()
+        verify_csrf(qdict)
         try:
             idx = int(qdict.get('id', -1))
         except:

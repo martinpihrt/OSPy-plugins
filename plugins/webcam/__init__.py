@@ -112,7 +112,9 @@ class settings_page(ProtectedPage):
 
 
     def POST(self):
-        cam_options.web_update(web.input())
+        qdict = web.input()
+        verify_csrf(qdict)
+        cam_options.web_update(qdict)
         raise web.seeother(plugin_url(settings_page), True)
 
 

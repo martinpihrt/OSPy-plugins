@@ -140,6 +140,7 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         qdict = web.input()
+        verify_csrf(qdict)
 
         try:
             commands = {

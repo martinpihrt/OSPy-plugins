@@ -293,11 +293,13 @@ class settings_page(ProtectedPage):
         test = helpers.get_input(qdict, 'test', False, lambda x: True)
 
         if sender is not None and delete:
+           verify_csrf(qdict)
            write_log([])
            create_default_graph()
            raise web.seeother(plugin_url(settings_page), True)
 
         if sender is not None and test:
+            verify_csrf(qdict)
             log.clear(NAME)
             try:
                 new_speeds = get_new_speeds()
@@ -325,7 +327,9 @@ class settings_page(ProtectedPage):
 
 
     def POST(self):
-        speed_options.web_update(web.input(**speed_options)) #for save multiple select
+        qdict = web.input(**speed_options)
+        verify_csrf(qdict)
+        speed_options.web_update(qdict) #for save multiple select
 
         if sender is not None:
             sender.update()

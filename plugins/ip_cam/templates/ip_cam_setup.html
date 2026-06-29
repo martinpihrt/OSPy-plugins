@@ -30,6 +30,7 @@ $var page: plugins
     <div class="title">$_('IP cam - settings') <span id="msgHint"></span></div>    
     <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('ip_cam.setup_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use JPEG image downloads'):</td>

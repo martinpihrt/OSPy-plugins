@@ -13,7 +13,7 @@ from ospy.webpages import ProtectedPage
 from ospy.log import log, logEM
 from plugins import PluginOptions, plugin_url
 from ospy.options import options
-from ospy.helpers import datetime_string
+from ospy.helpers import datetime_string, verify_csrf
 
 
 NAME = 'Usage Statistics'
@@ -128,6 +128,7 @@ class status_page(ProtectedPage):
         return self.plugin_render.usage_statistics(checker.status, log.events(NAME))
 
     def POST(self):
+        verify_csrf()
         if checker is not None:
             checker.update()
 

@@ -22,7 +22,7 @@ $code:
             <tr>
                 <td style='text-transform: none;'>$_('Backup'):</td>
                 <td title=$:{json.dumps(_('After pressing the button, the current backup of the database is created.'), ensure_ascii=False)}>
-                <a href="?backup" class="button backup">$_('Backup now')</a>
+                <a href="?backup&$csrf_query()" class="button backup">$_('Backup now')</a>
                 </td>
             </tr>
             <tr>
@@ -42,7 +42,7 @@ $code:
             <td>${c + 1}</td>
             <td><center>$'{}'.format(plugin_options['sql_name'][c])</center></td>
             <td><center>$format_bytes(plugin_options['sql_size'][c])</center></td>        
-            <td><a href="?delete=${c}" class="button cancel danger">$_('Delete')</a></td>
+            <td><a href="?delete=${c}&$csrf_query()" class="button cancel danger">$_('Delete')</a></td>
             <td><a href="?download=${c}" class="button submit">$_('Download')</a></td>            
             </tr>
             $ odd = 1 - odd

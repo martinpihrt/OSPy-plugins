@@ -21,6 +21,7 @@ $var page: plugins
     <p><a href=$plugins.plugin_url('proto.help_page') class="button upload">$_('Help')</a></p><br/> <!--Edit: Replace "proto.help_page" with URL of plugin class for help-->
     <p>$_('Example Check Boxes')</p>
     <form id="pluginForm" action="$plugins.plugin_url('proto.settings_page')" method="post"> <!--Edit: Replace "proto.settings_page" with URL of plugin class for saving settings-->
+        $:csrf_input()
         <table class="optionList">
             <!--Check boxes-->
             <thead>

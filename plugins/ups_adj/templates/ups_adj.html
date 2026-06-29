@@ -269,6 +269,7 @@ jQuery(document).ready(function(){
         <a href="?show" class="button backup">$_('Show logs')</a>
         </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('ups_adj.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use UPS'):</b></td>
@@ -286,7 +287,7 @@ jQuery(document).ready(function(){
                 <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the upsmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
                     <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))
-                    <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>
+                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>
                 </td>
             </tr>
             <tr>

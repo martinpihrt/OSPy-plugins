@@ -232,7 +232,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            plugin_options.web_update(web.input(**plugin_options)) #for save multiple select
+            qdict = web.input(**plugin_options)
+            verify_csrf(qdict)
+            plugin_options.web_update(qdict) #for save multiple select
 
             if checker is not None:
                 checker.update()

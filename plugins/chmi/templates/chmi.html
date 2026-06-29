@@ -56,9 +56,10 @@ $var page: plugins
         <p>
         <a href=$plugins.plugin_url('chmi.log_csv') class="button download">$_('Download log')</a>
         <a href="?show" class="button backup">$_('Show logs')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        <a href="?delete&$csrf_query()" class="button cancel danger">$_('Delete all logs')</a>
         </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('chmi.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use CHMI'):</b></td>
@@ -117,7 +118,7 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Delay time'):</td>
                 <td title=$:{json.dumps(_(u'Delay time in hours.'), ensure_ascii=False)}>
                     <input name='RAIN_DELAY' type='number' min='1' value='$plugin_options["RAIN_DELAY"]'> $_('(in hours)')
-                    <a href="?del_rain"  class="button cancel danger">$_('Removing Rain Delay')</a>
+                    <a href="?del_rain&$csrf_query()"  class="button cancel danger">$_('Removing Rain Delay')</a>
                 </td>
             </tr>
             <tr>
@@ -166,7 +167,7 @@ $var page: plugins
     </form>
 </div>
 <div id="controls">
-    <a href="?refresh"  class="button backup">$_('Refresh')</a>
+                    <a href="?refresh&$csrf_query()"  class="button backup">$_('Refresh')</a>
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>

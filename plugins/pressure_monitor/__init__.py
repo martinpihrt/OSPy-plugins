@@ -476,12 +476,14 @@ class settings_page(ProtectedPage):
             delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
 
             if pressure_sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
+                verify_csrf(qdict)
                 dt_from = qdict['dt_from']
                 dt_to = qdict['dt_to']
                 pressure_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
                 pressure_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)
 
             if pressure_sender is not None and delfilter:
+                verify_csrf(qdict)
                 from datetime import datetime, timedelta
                 dt_now = (datetime.today() + timedelta(days=1)).date()
                 pressure_options.__setitem__('dt_from', "2020-01-01T00:00")
@@ -491,6 +493,7 @@ class settings_page(ProtectedPage):
                 raise web.seeother(plugin_url(log_page), True)
 
             if pressure_sender is not None and delSQL:
+                verify_csrf(qdict)
                 try:
                     from plugins.database_connector import execute_db
                     sql = "DROP TABLE IF EXISTS `pressmonitor`"
@@ -509,7 +512,9 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         try:
-            pressure_options.web_update(web.input(**pressure_options)) #for save multiple select
+            qdict = web.input(**pressure_options)
+            verify_csrf(qdict)
+            pressure_options.web_update(qdict) #for save multiple select
             if pressure_sender is not None:
                 pressure_sender.update()
             raise web.seeother(plugin_url(settings_page), True)
@@ -544,11 +549,13 @@ class log_page(ProtectedPage):
             delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
 
             if pressure_sender is not None and delete and pressure_options['enable_log']:
+                verify_csrf(qdict)
                 write_log([])
                 create_default_graph()
                 log.info(NAME, _('Deleted all log files OK'))
 
             if pressure_sender is not None and delSQL and pressure_options['en_sql_log']:
+                verify_csrf(qdict)
                 try:
                     from plugins.database_connector import execute_db
                     sql = "DROP TABLE IF EXISTS `pressmonitor`"

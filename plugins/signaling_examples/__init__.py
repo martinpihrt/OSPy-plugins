@@ -9,7 +9,7 @@ import web
 
 from blinker import signal ### for this example ###
 
-from ospy.helpers import datetime_string 
+from ospy.helpers import datetime_string, verify_csrf 
 from ospy.log import log
 from threading import Thread, Event
 from plugins import plugin_url
@@ -271,6 +271,7 @@ class settings_page(ProtectedPage):
         return self.plugin_render.signaling_examples()
 
     def POST(self):
+        verify_csrf()
         if sender is not None:
             sender.update()                
         raise web.seeother(plugin_url(settings_page), True)

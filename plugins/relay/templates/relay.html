@@ -1,0 +1,13 @@
+$def with()
+
+$var title: $_('Relay Test')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Relay Test')</div>
+    <form id="pluginForm" action="$plugins.plugin_url('relay.test_page')" method="post">
+        $:csrf_input()
+        <button type="submit" class="button submit">$_('Test relay')</button>
+        <a href="/" class="button cancel danger">$_('Cancel')</a>
+    </form>
+</div>

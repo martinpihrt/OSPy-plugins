@@ -24,6 +24,7 @@ $var page: plugins
         <p><a href="?show" class="button backup">$_('Show logs')</a></p>
     <p><a href="?program" class="button backup">$_('Address programming')</a></p>
     <form id="pluginForm" action="$plugins.plugin_url('modbus_stations.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use Modbus Control'):</td>

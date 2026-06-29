@@ -158,6 +158,7 @@ function updatePingState(num, pingState, rtt, use_ping) {
         </p>
         </br>     
     <form id="pluginForm" action="$plugins.plugin_url('network_ping_monitor.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use ping monitoring'):</td>
@@ -248,7 +249,7 @@ function updatePingState(num, pingState, rtt, use_ping) {
                     </label>
                 </td>
                 <td>
-                    <a href="?delSQL" class="button cancel danger">$_('Delete SQL table')</a>
+                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>
                 </td>
             </tr>
             <tr>

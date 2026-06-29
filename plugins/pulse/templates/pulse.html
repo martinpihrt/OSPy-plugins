@@ -21,6 +21,7 @@ $var page: plugins
     <div class="title">$_('Pulse output')</div>
     <a href=$plugins.plugin_url('pulse.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('pulse.start_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Select Output'):</td>
@@ -48,6 +49,6 @@ $var page: plugins
 <div id="controls">
 
     <button id="cSubmit" class="submit"><b>$_('Start test')</b></button>
-    <a href="?stop" class="button cancel danger"><b>$_('Stop test')</b></a>
+    <a href="?stop&$csrf_query()" class="button cancel danger"><b>$_('Stop test')</b></a>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>

@@ -313,6 +313,7 @@ class settings_page(ProtectedPage):
             clear = get_input(qdict, 'clear', False, lambda x: True)
 
             if 'test' in qdict:
+                verify_csrf(qdict)
                 command = -1
                 data = {}
                 if 'state' in qdict and int(qdict['state']) == 1:
@@ -332,11 +333,13 @@ class settings_page(ProtectedPage):
                     log.info(NAME, datetime_string() + u': ' + _(u'File not exists!'))
 
             if stop:
+                verify_csrf(qdict)
                 must_stop = True
                 log.clear(NAME)
                 log.info(NAME, datetime_string() + u': ' + _(u'Button Stop.'))
             
             if clear:
+                verify_csrf(qdict)
                 must_stop = True
                 song_queue = read_song_queue()
                 while len(song_queue) > 0:
@@ -351,6 +354,7 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         qdict = web.input(skip_stations=[]) # skip_stations [] for multiple select
+        verify_csrf(qdict)
         try:
             if 'enabled' in qdict:
                 if qdict['enabled']=='on':
@@ -404,6 +408,7 @@ class upload_page(ProtectedPage):
 
     def POST(self):
         qdict = web.input(myfile={})
+        verify_csrf(qdict)
         errorCode = qdict.get('errorCode', 'none')
 
         #web.debug(qdict['myfile'].filename)    # This is the filename
@@ -449,6 +454,7 @@ class sound_page(ProtectedPage):
         errorCode = qdict.get('errorCode', 'none')
 
         if 'delete' in qdict:
+            verify_csrf(qdict)
             delete = qdict['delete']
             if len(plugin_options['sounds']) > 0:
                 del_file = os.path.join(plugin_data_dir(), plugin_options['sounds'][int(delete)] )

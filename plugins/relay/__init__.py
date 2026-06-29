@@ -6,6 +6,7 @@ import web
 import traceback
 
 from ospy.log import log
+from ospy.helpers import verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.outputs import outputs
 
@@ -18,7 +19,11 @@ class test_page(ProtectedPage):
     """Test relay by turning it on for a short time, then off."""
 
     def GET(self):
+        return self.plugin_render.relay()
+
+    def POST(self):
         try:
+            verify_csrf()
             outputs.relay_output = True
             log.debug(NAME, _('Relay Test: ON')) 
             time.sleep(3)

@@ -12,6 +12,7 @@ import subprocess
 from threading import Thread, Event
 
 from ospy.webpages import ProtectedPage                          # For check user login permissions
+from ospy.helpers import verify_csrf
 from ospy import helpers
 from ospy.log import log
 
@@ -105,7 +106,8 @@ class status_page(ProtectedPage):
 
             qdict = web.input()
             find = helpers.get_input(qdict, 'find', False, lambda x: True)
-            if find:        
+            if find:
+                verify_csrf(qdict)
                 find_now = True
             return self.plugin_render.ip_scanner()
 

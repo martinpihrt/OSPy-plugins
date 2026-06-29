@@ -583,8 +583,13 @@ class settings_page(ProtectedPage):
         try:
             global saved_emails
         
-            email_options.web_update(web.input())
             qdict = web.input()
+        
+            verify_csrf(qdict)
+        
+            email_options.web_update(qdict)
+            qdict = web.input()
+            verify_csrf(qdict)
             test = get_input(qdict, 'test', False, lambda x: True)
             delete = get_input(qdict, 'del', False, lambda x: True)
 

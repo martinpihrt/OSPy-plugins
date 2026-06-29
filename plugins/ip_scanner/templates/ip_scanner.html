@@ -30,7 +30,7 @@ $var page: plugins
 
         jQuery("button#cFind").click(function(){
             jQuery('textarea.msg').text($:{json.dumps(_('Processing...'), ensure_ascii=False).encode('utf8').decode('utf8')});
-            jQuery.get("?find", function(data) {
+            jQuery.get("?find&$csrf_query()", function(data) {
                 console.log(data);
             });
         });

@@ -95,6 +95,7 @@ class settings_page(ProtectedPage):
     def POST(self):
         try:
             qdict = web.input()
+            verify_csrf(qdict)
             months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
             vals = {}
             for index, month in enumerate(months):

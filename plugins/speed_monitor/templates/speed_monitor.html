@@ -235,9 +235,10 @@ function loadGraph() {
         <p>
         <a href=$plugins.plugin_url('speed_monitor.log_csv') class="button download">$_('Download log')</a>
         <a href="?show" class="button backup">$_('Show logs')</a>
-        <a href="?delete" class="button cancel danger">$_('Delete all logs')</a>
+        <a href="?delete&$csrf_query()" class="button cancel danger">$_('Delete all logs')</a>
     </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('speed_monitor.settings_page')" method="post">
+        $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Use Monitor'):</b></td>
@@ -292,7 +293,7 @@ function loadGraph() {
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-    <a href="?test=1" class="button upload">$_('Test')</a>
+    <a href="?test=1&$csrf_query()" class="button upload">$_('Test')</a>
 </div>
 
 $if plugin_options['enable_log']:
