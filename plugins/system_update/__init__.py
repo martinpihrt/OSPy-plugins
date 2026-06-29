@@ -13,7 +13,7 @@ from ospy.webpages import ProtectedPage
 from ospy.log import log, logEM, logEV
 from plugins import PluginOptions, plugin_url
 from ospy import version
-from ospy.helpers import datetime_string, restart
+from ospy.helpers import datetime_string, restart, verify_csrf
 from ospy.webpages import showInFooter
 from ospy.options import options
 from blinker import signal
