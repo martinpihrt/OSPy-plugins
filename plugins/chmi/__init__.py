@@ -13,6 +13,7 @@ import mimetypes
 from threading import Thread, Event, Lock
 import traceback
 import json
+import tarfile
 
 import web
 from ospy.log import log
@@ -56,6 +57,7 @@ plugin_options = PluginOptions(
     })
 
 RADAR_URL = 'https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.{}.0.png'
+FORECAST_URL = 'https://opendata.chmi.cz/meteorology/weather/radar/composite/fct_pseudocappi2km/png/pacz2gmaps3.fct_z_cappi020.{}.ft60s10.tar'
 RADAR_HEADERS = {'User-Agent': 'OSPy CHMI radar monitor/1.0'}
 animation_lock = Lock()
 animation_frames = []
@@ -350,6 +352,23 @@ def stop():
 def radar_date_txt(date):
     return date.strftime("%Y%m%d.%H%M")[:-1] + "0"
 
+def forecast_date_txt(date):
+    return date.strftime("%Y%m%d.%H%M")
+
+def local_datetime_from_utc_text(date_txt):
+    utc_date = datetime.datetime.strptime(date_txt, "%Y%m%d.%H%M")
+    local_offset = datetime.datetime.now() - datetime.datetime.utcnow()
+    return utc_date + local_offset
+
+def animation_label(date_txt, frame_type, relative_minutes):
+    local_date = local_datetime_from_utc_text(date_txt)
+    label = local_date.strftime("%d.%m. %H:%M")
+    if frame_type == 'forecast':
+        return '{} ({})'.format(label, _('forecast +{} min').format(relative_minutes))
+    if relative_minutes < 0:
+        return '{} ({} min)'.format(label, relative_minutes)
+    return '{} ({})'.format(label, _('now'))
+
 def download_radar_frame(date):
     date_txt = radar_date_txt(date)
     url = RADAR_URL.format(date_txt)
@@ -358,7 +377,7 @@ def download_radar_frame(date):
         return True, r.content, date_txt
     return False, None, date_txt
 
-def create_animation_image(byte, date_txt):
+def create_animation_image(byte, date_txt, frame_type, relative_minutes):
     borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')
     wmark = Image.open(borders_path)
     img = Image.open(BytesIO(byte))
@@ -379,11 +398,70 @@ def create_animation_image(byte, date_txt):
     draw.rectangle((0, 0, 680, 25), fill=(0, 0, 0), outline=(0, 0, 0))
     font_path = os.path.join('plugins', 'chmi', 'static', 'font', 'Roboto-Bold.ttf')
     font = ImageFont.truetype(font_path, 18)
-    draw.text((5, 5), '{} UTC'.format(date_txt), font=font, fill="white")
+    draw.text((5, 5), animation_label(date_txt, frame_type, relative_minutes), font=font, fill="white")
+
+    if options.weather_lat and options.weather_lon:
+        try:
+            degree_width = float(plugin_options['LON_1']) - float(plugin_options['LON_0'])
+            degree_height = float(plugin_options['LAT_0']) - float(plugin_options['LAT_1'])
+            size_lat_pixel = degree_height / frame_img.height
+            size_lon_pixel = degree_width / frame_img.width
+            lat = float(options.weather_lat)
+            lon = float(options.weather_lon)
+            x = int((lon - plugin_options['LON_0']) / size_lon_pixel)
+            y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
+            if 0 <= x < frame_img.width and 0 <= y < frame_img.height:
+                radius = 8
+                draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill=(255, 255, 0), outline=(0, 0, 0), width=2)
+                draw.ellipse((x-3, y-3, x+3, y+3), fill=(0, 0, 0), outline=(255, 255, 255))
+        except:
+            log.debug(NAME, traceback.format_exc())
 
     output = BytesIO()
     frame_img.save(output, format='PNG')
     return output.getvalue()
+
+def download_forecast_frames(base_date):
+    frames = []
+    forecast_date = datetime.datetime.utcnow()
+    forecast_date -= timedelta(minutes=forecast_date.minute % 5,
+                               seconds=forecast_date.second,
+                               microseconds=forecast_date.microsecond)
+    for attempt in range(0, 35, 5):
+        date_txt = forecast_date_txt(forecast_date - timedelta(minutes=attempt))
+        url = FORECAST_URL.format(date_txt)
+        try:
+            r = requests.get(url, timeout=15, headers=RADAR_HEADERS)
+            if not r or r.status_code != 200:
+                continue
+            forecast_tar = tarfile.open(fileobj=BytesIO(r.content), mode='r:*')
+            members = [member for member in forecast_tar.getmembers() if member.isfile() and member.name.endswith('.png')]
+            members.sort(key=lambda member: member.name)
+            for member in members:
+                try:
+                    parts = os.path.basename(member.name).split('.')
+                    member_date_txt = '{}.{}'.format(parts[2], parts[3])
+                    relative_minutes = int(parts[4])
+                    extracted = forecast_tar.extractfile(member)
+                    if extracted is None:
+                        continue
+                    byte = extracted.read()
+                    if byte.startswith(b'\x89PNG\r\n\x1a\n'):
+                        frames.append({
+                            'date': member_date_txt,
+                            'label': animation_label(member_date_txt, 'forecast', relative_minutes),
+                            'type': 'forecast',
+                            'relative': relative_minutes,
+                            'content': create_animation_image(byte, member_date_txt, 'forecast', relative_minutes),
+                        })
+                except:
+                    log.debug(NAME, traceback.format_exc())
+            if frames:
+                break
+        except:
+            log.debug(NAME, traceback.format_exc())
+
+    return frames
 
 def update_animation_cache():
     global animation_frames
@@ -405,12 +483,17 @@ def update_animation_cache():
             try:
                 frames.append({
                     'date': date_txt,
-                    'label': '{} UTC'.format(date_txt),
-                    'content': create_animation_image(byte, date_txt),
+                    'label': animation_label(date_txt, 'history', -offset),
+                    'type': 'history',
+                    'relative': -offset,
+                    'content': create_animation_image(byte, date_txt, 'history', -offset),
                 })
             except:
                 log.debug(NAME, traceback.format_exc())
         time.sleep(0.2)
+
+    frames += download_forecast_frames(base_date)
+    frames.sort(key=lambda frame: frame['relative'])
 
     with animation_lock:
         animation_frames = frames
@@ -667,6 +750,8 @@ class animation_json(ProtectedPage):
                         'index': index,
                         'date': frame['date'],
                         'label': frame['label'],
+                        'type': frame['type'],
+                        'relative': frame['relative'],
                         'url': plugin_url(animation_frame) + '?i={}&ts={}'.format(index, frame['date']),
                     }
                     for index, frame in enumerate(animation_frames)

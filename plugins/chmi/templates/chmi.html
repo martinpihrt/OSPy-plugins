@@ -33,13 +33,42 @@ $var page: plugins
         setTimeout(updateStatus, 2000); // 2 seconds
     }
 
-    function showAnimationFrame(){
+    function updateTimeline(){
+        let timeline = jQuery("#radarTimeline");
+        timeline.empty();
+        if (!animationFrames.length) {
+            jQuery("#radarSlider").hide();
+            return;
+        }
+        jQuery("#radarSlider")
+            .attr("max", animationFrames.length - 1)
+            .val(animationIndex)
+            .show();
+        for (let i = 0; i < animationFrames.length; i++) {
+            let frame = animationFrames[i];
+            let item = jQuery("<span></span>")
+                .addClass("radarTick")
+                .addClass(frame.type === "forecast" ? "forecast" : "history")
+                .attr("title", frame.label)
+                .text(frame.relative === 0 ? "0" : frame.relative);
+            if (i === animationIndex) {
+                item.addClass("active");
+            }
+            timeline.append(item);
+        }
+    }
+
+    function showAnimationFrame(index){
         if (!animationFrames.length) {
             return;
+        }
+        if (typeof index === "number") {
+            animationIndex = index;
         }
         let frame = animationFrames[animationIndex];
         jQuery("#meteoMap").attr("src", frame.url + "&_=" + new Date().getTime());
         jQuery("#meteoFrameLabel").text(frame.label);
+        updateTimeline();
         animationIndex = (animationIndex + 1) % animationFrames.length;
     }
 
@@ -58,6 +87,10 @@ $var page: plugins
             else if (animationTimer) {
                 clearInterval(animationTimer);
                 animationTimer = null;
+                animationFrames = [];
+                jQuery("#radarSlider").hide();
+                jQuery("#radarTimeline").empty();
+                jQuery("#meteoFrameLabel").text("");
             }
         })
         setTimeout(updateAnimationFrames, 10000); // 10 seconds
@@ -81,6 +114,10 @@ $var page: plugins
         jQuery(".IPnumbersOnly").keyup(function () {
             let newValue = this.value.replace(/[^0-9\.]/g, '');
             this.value = newValue;
+        });
+
+        jQuery("#radarSlider").on("input", function() {
+            showAnimationFrame(parseInt(this.value));
         });
 
         updateStatus();
@@ -136,6 +173,53 @@ input:checked + .slider:before {
 
 .switch input {
   display: none;
+}
+
+.radarTimeWrap {
+  width: 640px;
+  margin-top: 8px;
+}
+
+#radarSlider {
+  width: 640px;
+  display: none;
+}
+
+#meteoFrameLabel {
+  display: inline-block;
+  margin-top: 4px;
+  font-weight: bold;
+}
+
+.radarTimeline {
+  display: flex;
+  align-items: center;
+  width: 640px;
+  margin-top: 4px;
+  gap: 3px;
+}
+
+.radarTick {
+  flex: 1;
+  min-width: 28px;
+  padding: 2px 3px;
+  border-radius: 3px;
+  text-align: center;
+  font-size: 11px;
+  color: white;
+}
+
+.radarTick.history {
+  background: #2b7f2b;
+}
+
+.radarTick.forecast {
+  background: #d69b00;
+}
+
+.radarTick.active {
+  outline: 3px solid #1f355e;
+  font-weight: bold;
 }
 </style>
 
@@ -204,7 +288,11 @@ input:checked + .slider:before {
                 <td style='text-transform: none;'>$_('Meteo map'):</td>
                 <td title=$:{json.dumps(_(u'A downloaded map from the Meteo Institute is displayed here.'), ensure_ascii=False)}>
                     <a href="$plugins.plugin_url('chmi.download_page')"><img id="meteoMap" src="$plugins.plugin_url('chmi.download_page')" width="640"></a><br/>
-                    <small id="meteoFrameLabel"></small>
+                    <div class="radarTimeWrap">
+                        <input id="radarSlider" type="range" min="0" max="0" value="0">
+                        <div id="radarTimeline" class="radarTimeline"></div>
+                        <small id="meteoFrameLabel"></small>
+                    </div>
                 </td>
             </tr>
             $if options.weather_lat and options.weather_lon:
