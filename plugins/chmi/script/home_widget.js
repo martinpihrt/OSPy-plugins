@@ -17,7 +17,7 @@
             .chmiHomeWidgetHost {
                 position: relative;
                 box-sizing: border-box;
-                min-height: 230px;
+                min-height: 246px;
                 padding-right: 350px;
             }
 
@@ -25,6 +25,7 @@
                 position: absolute;
                 top: 8px;
                 right: 8px;
+                bottom: 8px;
                 width: 318px;
                 max-width: calc(100% - 16px);
                 margin: 0;
@@ -34,12 +35,18 @@
                 overflow: hidden;
                 cursor: pointer;
                 z-index: 2;
+                display: flex;
+                flex-direction: column;
+                box-sizing: border-box;
             }
 
             #chmiHomeWidget img {
                 display: block;
                 width: 100%;
-                height: auto;
+                min-height: 0;
+                flex: 1 1 auto;
+                object-fit: contain;
+                background: #ffffff;
             }
 
             #chmiHomeWidgetLabel {
@@ -54,6 +61,7 @@
 
             #chmiHomeWidgetTimeline {
                 display: flex;
+                flex: 0 0 auto;
                 gap: 2px;
                 padding: 3px;
                 background: #f1f1f1;
@@ -84,8 +92,10 @@
                     position: relative;
                     top: auto;
                     right: auto;
+                    bottom: auto;
                     width: calc(100% - 16px);
                     max-width: 318px;
+                    height: 230px;
                     margin: 8px auto 0;
                 }
             }
