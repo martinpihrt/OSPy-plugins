@@ -334,6 +334,18 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Detection radius'):</td>
+                <td title=$:{json.dumps(_(u'Pixel radius around my location used for rain detection. A larger radius is less sensitive to one bad pixel.'), ensure_ascii=False)}>
+                    <input name='DETECTION_RADIUS' type='number' min='0' max='30' value='$plugin_options["DETECTION_RADIUS"]'> px
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Minimum rainy pixels'):</td>
+                <td title=$:{json.dumps(_(u'Minimum percentage of pixels in the detection area that must exceed the intensity threshold before rain delay is activated.'), ensure_ascii=False)}>
+                    <input name='MIN_RAIN_PIXELS' type='number' min='1' max='100' value='$plugin_options["MIN_RAIN_PIXELS"]'> %
+                </td>
+            </tr>
+            <tr>
                 <th colspan="2">
                 <hr>
                 </th>

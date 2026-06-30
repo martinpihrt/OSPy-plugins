@@ -54,6 +54,8 @@ plugin_options = PluginOptions(
         'R_INTENS' : 0,              # R intensity threshold for activate rain delay
         'G_INTENS' : 0,              # G intensity threshold for activate rain delay
         'B_INTENS' : 0,              # B intensity threshold for activate rain delay
+        'DETECTION_RADIUS': 6,       # Pixel radius around my location for rain detection
+        'MIN_RAIN_PIXELS': 10,       # Minimum percent of rainy pixels in the detection area
     })
 
 RADAR_URL = 'https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.{}.0.png'
@@ -231,6 +233,7 @@ class CHMI_Checker(Thread):
                                 tempText = ""
                                 is_lat_lon = None
                                 r=g=b=rad=0
+                                rain_area = None
 
                                 if options.weather_lat and options.weather_lon:
                                     lat = float(options.weather_lat)
@@ -239,7 +242,10 @@ class CHMI_Checker(Thread):
                                     # We calculate the pixel coordinates my location on the radar image
                                     x = int((lon - plugin_options['LON_0']) / size_lon_pixel)
                                     y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
-                                    r,g,b = bitmap.getpixel((x, y))
+                                    rain_area = analyze_location_rain(bitmap, x, y)
+                                    r = rain_area['red']
+                                    g = rain_area['green']
+                                    b = rain_area['blue']
                                     rad = 8
                                 else:
                                     lat = 0.0
@@ -248,9 +254,10 @@ class CHMI_Checker(Thread):
                                 if is_lat_lon is not None:
                                     drawtext =  _('RGB in my location is R:{}, G:{}, B:{}').format(r,g,b)
                                     draw.text((300, 5), drawtext, font=font, fill="white")
-                                    if (r > int(plugin_options['R_INTENS'])) or (g > int(plugin_options['G_INTENS'])) or (b > int(plugin_options['B_INTENS'])):
-                                        draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=1)
+                                    if rain_area['rain']:
+                                        draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=2)
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
+                                        log.info(NAME, datetime_string() + ' ' + _('Rain detection area: {} of {} pixels ({}%) are above the threshold.').format(rain_area['rainy_pixels'], rain_area['total_pixels'], rain_area['rainy_percent']))
                                         self.status['red'] = r
                                         self.status['green'] = g
                                         self.status['blue'] = b
@@ -269,6 +276,7 @@ class CHMI_Checker(Thread):
                                     else:
                                         draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(0, 0, 0), outline=(255, 255, 255))
                                         log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably not rain.').format(options.weather_lat, options.weather_lon))
+                                        log.info(NAME, datetime_string() + ' ' + _('Rain detection area: {} of {} pixels ({}%) are above the threshold.').format(rain_area['rainy_pixels'], rain_area['total_pixels'], rain_area['rainy_percent']))
                                         tempText += _('Probably not rain')
                                         self.status['state'] = 0
                                 else:
@@ -376,6 +384,56 @@ def download_radar_frame(date):
     if r and r.status_code == 200 and r.content.startswith(b'\x89PNG\r\n\x1a\n'):
         return True, r.content, date_txt
     return False, None, date_txt
+
+def analyze_location_rain(bitmap, x, y):
+    radius = max(0, int(plugin_options['DETECTION_RADIUS']))
+    min_percent = max(0, min(100, int(plugin_options['MIN_RAIN_PIXELS'])))
+    r_threshold = int(plugin_options['R_INTENS'])
+    g_threshold = int(plugin_options['G_INTENS'])
+    b_threshold = int(plugin_options['B_INTENS'])
+
+    rainy_pixels = 0
+    total_pixels = 0
+    red_sum = 0
+    green_sum = 0
+    blue_sum = 0
+
+    for dx in range(-radius, radius + 1):
+        for dy in range(-radius, radius + 1):
+            if dx * dx + dy * dy > radius * radius:
+                continue
+            px = x + dx
+            py = y + dy
+            if px < 0 or py < 0 or px >= bitmap.width or py >= bitmap.height:
+                continue
+
+            r, g, b = bitmap.getpixel((px, py))
+            total_pixels += 1
+            if (r > r_threshold) or (g > g_threshold) or (b > b_threshold):
+                rainy_pixels += 1
+                red_sum += r
+                green_sum += g
+                blue_sum += b
+
+    rainy_percent = int(round((rainy_pixels * 100.0) / total_pixels)) if total_pixels else 0
+    if rainy_pixels:
+        red = int(round(red_sum / rainy_pixels))
+        green = int(round(green_sum / rainy_pixels))
+        blue = int(round(blue_sum / rainy_pixels))
+    else:
+        red = green = blue = 0
+
+    return {
+        'rain': rainy_percent >= min_percent,
+        'red': red,
+        'green': green,
+        'blue': blue,
+        'rainy_pixels': rainy_pixels,
+        'total_pixels': total_pixels,
+        'rainy_percent': rainy_percent,
+        'radius': radius,
+        'min_percent': min_percent,
+    }
 
 def create_animation_image(byte, date_txt, frame_type, relative_minutes):
     borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')
