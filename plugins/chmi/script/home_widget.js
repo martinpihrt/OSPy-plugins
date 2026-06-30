@@ -14,15 +14,26 @@
 
         let style = document.createElement("style");
         style.innerHTML = `
+            .chmiHomeWidgetHost {
+                position: relative;
+                box-sizing: border-box;
+                min-height: 230px;
+                padding-right: 350px;
+            }
+
             #chmiHomeWidget {
-                float: right;
+                position: absolute;
+                top: 8px;
+                right: 8px;
                 width: 318px;
-                margin: 4px 8px 4px 16px;
+                max-width: calc(100% - 16px);
+                margin: 0;
                 border: 2px solid #2E3959;
                 border-radius: 4px;
                 background: #ffffff;
                 overflow: hidden;
                 cursor: pointer;
+                z-index: 2;
             }
 
             #chmiHomeWidget img {
@@ -62,6 +73,22 @@
             #chmiHomeWidgetTimeline span.active {
                 background: #2E3959;
             }
+
+            @media (max-width: 900px) {
+                .chmiHomeWidgetHost {
+                    min-height: 0;
+                    padding-right: 0;
+                }
+
+                #chmiHomeWidget {
+                    position: relative;
+                    top: auto;
+                    right: auto;
+                    width: calc(100% - 16px);
+                    max-width: 318px;
+                    margin: 8px auto 0;
+                }
+            }
         `;
         document.head.appendChild(style);
 
@@ -76,7 +103,9 @@
             window.location.href = "/plugins/chmi/settings";
         });
 
-        jQuery("#options").closest("#graph-container").append(widget);
+        let host = jQuery("#options").closest("#graph-container");
+        host.addClass("chmiHomeWidgetHost");
+        host.append(widget);
     }
 
     function updateTimeline() {
@@ -114,6 +143,7 @@
         jQuery.getJSON("/plugins/chmi/animation_json", function (data) {
             if (!data.enabled || !data.frames || !data.frames.length) {
                 jQuery("#chmiHomeWidget").remove();
+                jQuery(".chmiHomeWidgetHost").removeClass("chmiHomeWidgetHost");
                 if (frameTimer) {
                     clearInterval(frameTimer);
                     frameTimer = null;
