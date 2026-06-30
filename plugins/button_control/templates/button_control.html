@@ -1,4 +1,4 @@
-$def with(plugin_options, events)
+$def with(plugin_options, events, program_list)
 
 $var title: $_('Button control settings')
 $var page: plugins
@@ -56,21 +56,23 @@ $var page: plugins
             $for i in range(8):
                 <tr>
                 <td style="text-transform: none;">$_('Button') ${i+1} $_('controls'):</td>
-                <td title=$:{json.dumps(_(u'Asociation concrete button with operation.'), ensure_ascii=False)}>
-                <select id="button${i}" name="button${i}">    
+                <td title=$:{json.dumps(_(u'Association of a concrete button with an operation.'), ensure_ascii=False)}>
+                <select id="button${i}" name="button${i}">
+                    <optgroup label="$_('System actions')">
                     <option value='reboot'   ${"selected" if plugin_options['button%d' % i]== 'reboot' else ""}> $_('Reboot OS system')</option>
                     <option value='pwrOff'   ${"selected" if plugin_options['button%d' % i]== 'pwrOff' else ""}> $_('Shutdown OS system')</option>
                     <option value='stopAll'  ${"selected" if plugin_options['button%d' % i]== 'stopAll' else ""}> $_('Stop stations')</option>
                     <option value='schedEn'  ${"selected" if plugin_options['button%d' % i]== 'schedEn' else ""}> $_('Enable scheduler')</option>
                     <option value='schedDis' ${"selected" if plugin_options['button%d' % i]== 'schedDis' else ""}> $_('Disable scheduler')</option>
-                    <option value='RunP1'    ${"selected" if plugin_options['button%d' % i]== 'RunP1' else ""}> $_('Run program 1')</option>
-                    <option value='RunP2'    ${"selected" if plugin_options['button%d' % i]== 'RunP2' else ""}> $_('Run program 2')</option>
-                    <option value='RunP3'    ${"selected" if plugin_options['button%d' % i]== 'RunP3' else ""}> $_('Run program 3')</option>
-                    <option value='RunP4'    ${"selected" if plugin_options['button%d' % i]== 'RunP4' else ""}> $_('Run program 4')</option>
-                    <option value='RunP5'    ${"selected" if plugin_options['button%d' % i]== 'RunP5' else ""}> $_('Run program 5')</option>
-                    <option value='RunP6'    ${"selected" if plugin_options['button%d' % i]== 'RunP6' else ""}> $_('Run program 6')</option>
-                    <option value='RunP7'    ${"selected" if plugin_options['button%d' % i]== 'RunP7' else ""}> $_('Run program 7')</option>
-                    <option value='RunP8'    ${"selected" if plugin_options['button%d' % i]== 'RunP8' else ""}> $_('Run program 8')</option>
+                    </optgroup>
+                    <optgroup label="$_('Programs')">
+                    $if program_list:
+                        $for program in program_list:
+                            $ action = 'RunP%s' % (program.index + 1)
+                            <option value='$action' ${"selected" if plugin_options['button%d' % i] in [action, 'runP%s' % (program.index + 1)] else ""}>$_('Run program') ${program.index + 1}: ${program.name}</option>
+                    $else:
+                        <option value='' disabled>$_('No programs available')</option>
+                    </optgroup>
                 </select>
                 </td>
                 </tr>

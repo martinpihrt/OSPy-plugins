@@ -56,6 +56,37 @@ reppoweroff = signal('poweroff')
 def report_poweroff():
     reppoweroff.send()
 
+
+def _program_index_from_action(action):
+    action = str(action or '')
+    if action.lower().startswith('runp') and action[4:].isdigit():
+        program_number = int(action[4:])
+        if program_number > 0:
+            return program_number - 1
+    return None
+
+
+def _program_label(program):
+    name = getattr(program, 'name', '')
+    label = _('Run now program {}').format(program.index + 1)
+    if name:
+        label += ': ' + name
+    return label
+
+
+def _run_program_now(program_index):
+    for program in programs.get():
+        if program.index == program_index:
+            log.info(NAME, datetime_string() + ': ' + _program_label(program))
+            options.manual_mode = False
+            if plugin_options['first_stop']:
+                log.finish_run(None)
+                stations.clear()
+            programs.run_now(program.index)
+            return True
+    log.info(NAME, datetime_string() + ': ' + _('Program {} was not found.').format(program_index + 1))
+    return False
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -126,100 +157,9 @@ class PluginSender(Thread):
                           options.scheduler_enabled = False
                           self._sleep(1)
 
-                       if actual_buttons == i and plugin_options[tb]== "RunP1":
-                          log.info(NAME, datetime_string() + ': ' + _('Run now program 1')) 
-                          for program in programs.get():
-                             if (program.index == 0):   # Run-now program 1
-                                options.manual_mode = False
-                                if plugin_options['first_stop']:  
-                                  log.finish_run(None)
-                                  stations.clear()    
-                                programs.run_now(program.index)       
-                             program.index+1
-                          self._sleep(1)
-
-                       if actual_buttons == i and plugin_options[tb]== "RunP2":
-                          log.info(NAME, datetime_string() + ': ' + _('Run now program 2')) 
-                          for program in programs.get():
-                             if (program.index == 1):   # Run-now program 2  
-                                options.manual_mode = False
-                                if plugin_options['first_stop']:     
-                                  log.finish_run(None)
-                                  stations.clear()   
-                                programs.run_now(program.index)
-                             program.index+1
-                          self._sleep(1)
-
-                       if actual_buttons == i and plugin_options[tb]== "RunP3":
-                          log.info(NAME, datetime_string() + ': ' + _('Run now program 3')) 
-                          for program in programs.get():
-                             if (program.index == 2):   # Run-now program 3  
-                                options.manual_mode = False
-                                if plugin_options['first_stop']:     
-                                  log.finish_run(None)  
-                                  stations.clear() 
-                                programs.run_now(program.index)
-                             program.index+1
-                          self._sleep(1)
-                            
-                       if actual_buttons == i and plugin_options[tb]== "RunP4":
-                          log.info(NAME, datetime_string() + ': ' + _('Run now program 4')) 
-                          for program in programs.get():
-                             if (program.index == 3):   # Run-now program 4  
-                                options.manual_mode = False 
-                                if plugin_options['first_stop']:  
-                                  log.finish_run(None)
-                                  stations.clear()     
-                                programs.run_now(program.index)
-                             program.index+1
-                          self._sleep(1)        
- 
-                       if actual_buttons == i and plugin_options[tb]== "RunP5":
-                          log.info(NAME, datetime_string() + ': ' + _('Run now program 5'))
-                          for program in programs.get():
-                             if (program.index == 4):   # Run-now program 5
-                                options.manual_mode = False
-                                if plugin_options['first_stop']:
-                                  log.finish_run(None)
-                                  stations.clear() 
-                                programs.run_now(program.index)
-                             program.index+1
-                          self._sleep(1)
-
-                       if actual_buttons == i and plugin_options[tb]== "RunP6":
-                          log.info(NAME, datetime_string() + ': ' + _('Run now program 6'))
-                          for program in programs.get():
-                             if (program.index == 5):   # Run-now program 6
-                                options.manual_mode = False
-                                if plugin_options['first_stop']:
-                                  log.finish_run(None)
-                                  stations.clear() 
-                                programs.run_now(program.index)
-                             program.index+1
-                          self._sleep(1)
-
-                       if actual_buttons == i and plugin_options[tb]== "RunP7":
-                          log.info(NAME, datetime_string() + ': ' + _('Run now program 7'))
-                          for program in programs.get():
-                             if (program.index == 6):   # Run-now program 7
-                                options.manual_mode = False
-                                if plugin_options['first_stop']:
-                                  log.finish_run(None)
-                                  stations.clear() 
-                                programs.run_now(program.index)
-                             program.index+1
-                          self._sleep(1)
-
-                       if actual_buttons == i and plugin_options[tb]== "RunP8":
-                          log.info(NAME, datetime_string() + ': ' + _('Run now program 8'))
-                          for program in programs.get():
-                             if (program.index == 7):   # Run-now program 8
-                                options.manual_mode = False
-                                if plugin_options['first_stop']:
-                                  log.finish_run(None)
-                                  stations.clear() 
-                                programs.run_now(program.index)
-                             program.index+1
+                       program_index = _program_index_from_action(plugin_options[tb])
+                       if actual_buttons == i and program_index is not None:
+                          _run_program_now(program_index)
                           self._sleep(1)
 
                     self._sleep(1)
@@ -408,7 +348,7 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         try:
-            return self.plugin_render.button_control(plugin_options, log.events(NAME))
+            return self.plugin_render.button_control(plugin_options, log.events(NAME), programs.get())
         except:
             log.error(NAME, _('Button plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
