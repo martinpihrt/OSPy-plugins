@@ -341,29 +341,38 @@ def stop():
 # date_txt must be in UTC YYYYMMDD.HHM0 format (ÄŚHMĂš publishes images every full 10 minutes)
 # If the URL is not valid (the image does not exist yet),
 # I'll try to download a bitmap with a ten minute old timestamp
-# The number of repetitions is determined by the variable trials 
-def download_radar(date=None, trials=5):
+# The number of repetitions is determined by the variable trials
+def download_radar(date=None, trials=3):
     if date == None:
-        date = datetime.datetime.utcnow()
+        date = datetime.datetime.utcnow() - timedelta(minutes=20)
 
+    headers = {'User-Agent': 'OSPy CHMI radar monitor/1.0'}
     date_txt = date
     while trials > 0:
         date_txt = date.strftime("%Y%m%d.%H%M")[:-1] + "0"
         try:
             url = f"https://www.chmi.cz/files/portal/docs/meteo/rad/inca-cz/data/czrad-z_max3d_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png"
             log.debug(NAME,datetime_string() + ' ' + _('Downloading a file: {}').format(url))
-            r = requests.get(url, timeout=10)
-            if r and r.status_code == 200:
+            r = requests.get(url, timeout=15, headers=headers)
+            if r and r.status_code == 200 and r.content.startswith(b'\x89PNG\r\n\x1a\n'):
                 return True, r.content, date_txt
             else:
-                log.error(NAME, _('HTTP {}: I can not download the file.').format(r.status_code))
-                log.info(NAME, _('I will try to download a file that is 10 minutes older.'))
+                if r and r.status_code == 200:
+                    log.error(NAME, _('HTTP {}: downloaded file is not a valid PNG image.').format(r.status_code))
+                else:
+                    log.debug(NAME, _('HTTP {}: I can not download the file.').format(r.status_code if r else '---'))
+                log.debug(NAME, _('I will try to download a file that is 10 minutes older.'))
                 date -= timedelta(minutes=10)
                 trials -= 1
                 time.sleep(1)
+        except requests.RequestException:
+            log.debug(NAME, traceback.format_exc())
+            log.debug(NAME, _('I will try to download a file that is 10 minutes older.'))
+            date -= timedelta(minutes=10)
+            trials -= 1
+            time.sleep(1)
         except:
             log.debug(NAME, traceback.format_exc())
-            pass
             return False, None, date_txt
 
     return False, None, date_txt
