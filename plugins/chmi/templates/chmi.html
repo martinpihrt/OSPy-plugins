@@ -20,8 +20,13 @@ $var page: plugins
     function updateStatus(){
         jQuery.getJSON("/plugins/chmi/state_json", function(_data) {
             jQuery("#state span.state").text(_data.state);
-        })      
-        setTimeout(updateStatus, 2000); // 2 second
+        })
+        jQuery.getJSON("/plugins/chmi/status_json", function(_data) {
+            if (_data.events) {
+                jQuery("#statusLog").val(_data.events.join("\n"));
+            }
+        })
+        setTimeout(updateStatus, 2000); // 2 seconds
     }
 
     // Initialize behaviors
@@ -48,6 +53,57 @@ $var page: plugins
     });
 </script>
 
+<style>
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: green;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch input {
+  display: none;
+}
+</style>
+
 <div id="plugin">
     <div class="title">$_('CHMI meteoradar')</div>
     <p>$_('The measurement time is primarily given in UTC world time (UTC=UT=GMT=SELC-2h = CET-1h).')</p>
@@ -64,7 +120,19 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'><b>$_('Use CHMI'):</b></td>
                 <td title=$:{json.dumps(_(u'When the box is checked, the extension will be active.'), ensure_ascii=False)}>
+                    <label class="switch">
                     <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                    <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Send to HW map'):</b></td>
+                <td title=$:{json.dumps(_(u'When enabled, detected rainy cities will be sent to the external hardware map.'), ensure_ascii=False)}>
+                    <label class="switch">
+                    <input name='SEND_TO_HW' type='checkbox'${" checked" if plugin_options['SEND_TO_HW'] else ""}>
+                    <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -111,7 +179,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'><b>$_('Use a rain delay'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague). Warning: you have to enable Use Weather and Storm Glass API key. If you do not use a key, enter anything.'), ensure_ascii=False)}>
+                    <label class="switch">
                     <input name='USE_RAIN_DELAY' type='checkbox'${" checked" if plugin_options['USE_RAIN_DELAY'] else ""}>
+                    <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -137,7 +208,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
                 <td>
-                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                    <label class="switch">
+                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
+                    <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -154,20 +228,23 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'><b>$_('Show in footer'):</b></td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False).encode('utf-8').decode('utf-8')}>
+                    <label class="switch">
                     <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <span class="slider"></span>
+                    </label>
                 </td>
             </tr>                        
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="18" cols="95" readonly>$'\n'.join(events)</textarea>
+                    <textarea id="statusLog" style="font-family: monospace;" rows="18" cols="95" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>
     </form>
 </div>
 <div id="controls">
-                    <a href="?refresh&$csrf_query()"  class="button backup">$_('Refresh')</a>
+    <a href="?refresh&$csrf_query()" class="button backup">$_('Download now')</a>
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>

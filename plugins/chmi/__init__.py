@@ -46,6 +46,7 @@ plugin_options = PluginOptions(
         'LAT_0': 52.1670717,
         'LON_1': 20.7703153,         # LOWER RIGHT CORNER
         'LAT_1': 48.1,
+        'SEND_TO_HW': True,          # Send detected rainy cities to the external hardware map
         'IP_ADDR': '192.168.88.2',   # remote map IP address
         'HW_BOARD': '0',             # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
         'R_INTENS' : 0,              # R intensity threshold for activate rain delay
@@ -276,26 +277,29 @@ class CHMI_Checker(Thread):
                             if len(cities_with_rain) > 0:
                                 # we save the list of cities that had rain as JSON
                                 # We then send the JSON form with the variable name "city" to the LaskaKit map of the Czech Republic via HTTP POST
-                                if plugin_options['HW_BOARD']   == "0":
-                                    map_name = _('Laskakit')
-                                if plugin_options['HW_BOARD']   == "1":
-                                    map_name = _('TMEP')
-                                if plugin_options['HW_BOARD']   == "2":
-                                    map_name = _('Pihrt')
-                                log.info(NAME, datetime_string() + ' ' + _('I am sending JSON with cities to the {} map of the Czech Republic...').format(map_name))
-                                form_data = {"mesta": json.dumps(cities_with_rain)}
-                                try:
-                                    addr = 'http://{}/'.format(plugin_options['IP_ADDR'])
-                                    log.debug(NAME, datetime_string() + ' ' + _('I will try to send to {} post data {}').format(addr, form_data))
-                                    r = requests.post(addr, data=form_data, timeout=10)
-                                    if r.status_code == 200:
-                                        log.debug(NAME, datetime_string() + ' ' + _('HTTP {}').format(r.text))
-                                    else:
-                                        log.error(NAME, datetime_string() + ' ' + _('HTTP {}: I cannot connect to the board map of the Czech Republic at the URL http://{}/').format(r.status_code, plugin_options['IP_ADDR']))
-                                except:
-                                    pass
-                                    log.debug(NAME, traceback.format_exc())
-                                    log.error(NAME, datetime_string() + ' ' + _('I cannot connect to the map board of the Czech Republic at the URL http://{}/').format(plugin_options['IP_ADDR']))                                        
+                                if plugin_options['SEND_TO_HW']:
+                                    if plugin_options['HW_BOARD']   == "0":
+                                        map_name = _('Laskakit')
+                                    if plugin_options['HW_BOARD']   == "1":
+                                        map_name = _('TMEP')
+                                    if plugin_options['HW_BOARD']   == "2":
+                                        map_name = _('Pihrt')
+                                    log.info(NAME, datetime_string() + ' ' + _('I am sending JSON with cities to the {} map of the Czech Republic...').format(map_name))
+                                    form_data = {"mesta": json.dumps(cities_with_rain)}
+                                    try:
+                                        addr = 'http://{}/'.format(plugin_options['IP_ADDR'])
+                                        log.debug(NAME, datetime_string() + ' ' + _('I will try to send to {} post data {}').format(addr, form_data))
+                                        r = requests.post(addr, data=form_data, timeout=10)
+                                        if r.status_code == 200:
+                                            log.debug(NAME, datetime_string() + ' ' + _('HTTP {}').format(r.text))
+                                        else:
+                                            log.error(NAME, datetime_string() + ' ' + _('HTTP {}: I cannot connect to the board map of the Czech Republic at the URL http://{}/').format(r.status_code, plugin_options['IP_ADDR']))
+                                    except:
+                                        pass
+                                        log.debug(NAME, traceback.format_exc())
+                                        log.error(NAME, datetime_string() + ' ' + _('I cannot connect to the map board of the Czech Republic at the URL http://{}/').format(plugin_options['IP_ADDR']))
+                                else:
+                                    log.debug(NAME, datetime_string() + ' ' + _('Sending data to the hardware map is disabled.'))
                             else:
                                 log.info(NAME, datetime_string() + ' ' + _('Looks like it is not raining in any city.'))
                             
@@ -337,8 +341,8 @@ def stop():
         checker = None
 
 # Function to download bitmap with radar data from URL:
-# https://www.chmi.cz/files/portal/docs/meteo/rad/inca-cz/data/czrad-z_max3d_masked/pacz2gmaps3.z_max3d.{datum_txt}.0.png
-# date_txt must be in UTC YYYYMMDD.HHM0 format (ÄŚHMĂš publishes images every full 10 minutes)
+# https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png
+# date_txt must be in UTC YYYYMMDD.HHM0 format (CHMI publishes images every full 10 minutes)
 # If the URL is not valid (the image does not exist yet),
 # I'll try to download a bitmap with a ten minute old timestamp
 # The number of repetitions is determined by the variable trials
@@ -351,7 +355,7 @@ def download_radar(date=None, trials=3):
     while trials > 0:
         date_txt = date.strftime("%Y%m%d.%H%M")[:-1] + "0"
         try:
-            url = f"https://www.chmi.cz/files/portal/docs/meteo/rad/inca-cz/data/czrad-z_max3d_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png"
+            url = f"https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png"
             log.debug(NAME,datetime_string() + ' ' + _('Downloading a file: {}').format(url))
             r = requests.get(url, timeout=15, headers=headers)
             if r and r.status_code == 200 and r.content.startswith(b'\x89PNG\r\n\x1a\n'):
@@ -562,6 +566,16 @@ class log_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         try:
             return json.dumps(read_log())
+        except:
+            return {}
+
+class status_json(ProtectedPage):
+    """Returns the current plugin status log in JSON format."""
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            return json.dumps({'events': log.events(NAME)})
         except:
             return {}
 

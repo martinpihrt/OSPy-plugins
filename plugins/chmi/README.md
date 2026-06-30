@@ -6,10 +6,16 @@ Tested in Python 3+
 When is enabled extension retrieves data from the meteorological radar of the Czech Hydrometeorological Institute. The interactive map of the Czech Republic is based on an ESP32 microcontroller and contains 72 WS2812 RGB LEDs on the front - each for one district city. It is thus possible, for example, to display current warnings in given locations, or other dates. Different sensors can be connected and all usable pins are brought out on solder pads for possible connection of different sensors and devices. The board is equipped with a USB programming converter, so all you need to program it is a cable with a USB-C connector and, for example, the Arduino IDE. https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/.
 The extension allows you to set a rain delay when rain is detected at a set position on the map. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
 
+Radar PNG images are downloaded from the CHMI open data endpoint:
+https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/
+
 Plugin setup
 -----------
 * Check Use CHMI:  
   If checked use CHMI plugin is enabled.
+
+* Send to HW map:
+  If checked, detected rainy cities are sent to the external hardware map.
 
 * Map IP address:
   IP address for laskakit map or other diy maps.
@@ -33,4 +39,7 @@ Plugin setup
   0 = unlimited.     
  
 * Status:  
-  Status window from the plugin.
+  Status window from the plugin. The status is refreshed automatically while the settings page is open.
+
+* Download now:
+  Starts a new radar data download without waiting for the next scheduled update.
