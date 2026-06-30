@@ -20,6 +20,9 @@ Plugin setup
 * Animate radar map:
   If checked, recent radar images from the last hour and available forecast frames are kept in RAM and animated on the settings page. Animation frames are not written to the SD card. The time slider below the map can be used to move through the animation manually. The timeline uses green frames for radar history and yellow frames for forecast data. Forecast frames are loaded from the CHMI forecast archive when available and cover approximately +10 to +60 minutes. The current location from the OSPy weather settings is drawn directly into the animation map. The static map remains available when animation data is not ready yet.
 
+* Show on home page:
+  If checked, a small animated CHMI radar widget is injected into the OSPy home page. The widget is shown only when CHMI is enabled and animation frames are available. Clicking the widget opens the CHMI plugin settings page.
+
 * Map IP address:
   IP address for laskakit map or other diy maps.
 

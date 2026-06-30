@@ -22,7 +22,7 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, stop_onrain, get_input, verify_csrf
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 
-from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+from ospy.webpages import showInFooter, pluginScripts # Enable plugin to display readings in UI footer
 
 from PIL import Image, ImageDraw, ImageFont
 import requests
@@ -49,6 +49,7 @@ plugin_options = PluginOptions(
         'LAT_1': 48.1,
         'SEND_TO_HW': True,          # Send detected rainy cities to the external hardware map
         'ANIMATE': False,            # Animate the radar map from recent images kept in RAM
+        'HOME_WIDGET': False,        # Show a small animated radar widget on the OSPy home page
         'IP_ADDR': '192.168.88.2',   # remote map IP address
         'HW_BOARD': '0',             # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
         'R_INTENS' : 0,              # R intensity threshold for activate rain delay
@@ -63,6 +64,18 @@ FORECAST_URL = 'https://opendata.chmi.cz/meteorology/weather/radar/composite/fct
 RADAR_HEADERS = {'User-Agent': 'OSPy CHMI radar monitor/1.0'}
 animation_lock = Lock()
 animation_frames = []
+
+HOME_WIDGET_SCRIPT = 'chmi/script/home_widget.js'
+
+def update_home_widget_script():
+    if plugin_options['HOME_WIDGET']:
+        if HOME_WIDGET_SCRIPT not in pluginScripts:
+            pluginScripts.append(HOME_WIDGET_SCRIPT)
+    else:
+        while HOME_WIDGET_SCRIPT in pluginScripts:
+            pluginScripts.remove(HOME_WIDGET_SCRIPT)
+
+update_home_widget_script()
 
 # We work in the WGS-84 coordinate system
 # In order to be able to convert degrees of latitude and longitude into pixels,
@@ -523,7 +536,7 @@ def download_forecast_frames(base_date):
 
 def update_animation_cache():
     global animation_frames
-    if not plugin_options['ANIMATE']:
+    if not plugin_options['ANIMATE'] and not plugin_options['HOME_WIDGET']:
         with animation_lock:
             animation_frames = []
         return
@@ -704,6 +717,7 @@ class settings_page(ProtectedPage):
             qdict = web.input()
             verify_csrf(qdict)
             plugin_options.web_update(qdict)
+            update_home_widget_script()
             if checker is not None:
                 checker.update()
             raise web.seeother(plugin_url(settings_page), True)
@@ -814,7 +828,7 @@ class animation_json(ProtectedPage):
                     }
                     for index, frame in enumerate(animation_frames)
                 ]
-            return json.dumps({'enabled': plugin_options['enabled'] and plugin_options['ANIMATE'], 'frames': frames})
+            return json.dumps({'enabled': plugin_options['enabled'] and (plugin_options['ANIMATE'] or plugin_options['HOME_WIDGET']), 'frames': frames})
         except:
             log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
             return {}

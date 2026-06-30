@@ -7,6 +7,7 @@ $var page: plugins
     let animationFrames = [];
     let animationIndex = 0;
     let animationTimer = null;
+    let animateSettingsPage = ${'true' if plugin_options['ANIMATE'] else 'false'};
 
     function checkIP(){
         let IPAddress = jQuery(".IPnumbersOnly").val();
@@ -73,6 +74,9 @@ $var page: plugins
     }
 
     function updateAnimationFrames(){
+        if (!animateSettingsPage) {
+            return;
+        }
         jQuery.getJSON("/plugins/chmi/animation_json", function(_data) {
             if (_data.enabled && _data.frames && _data.frames.length) {
                 animationFrames = _data.frames;
@@ -259,6 +263,15 @@ input:checked + .slider:before {
                 <td title=$:{json.dumps(_(u'When enabled, recent radar images are kept in RAM and animated on the settings page.'), ensure_ascii=False)}>
                     <label class="switch">
                     <input name='ANIMATE' type='checkbox'${" checked" if plugin_options['ANIMATE'] else ""}>
+                    <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'><b>$_('Show on home page'):</b></td>
+                <td title=$:{json.dumps(_(u'When enabled, a small animated CHMI radar widget is shown on the OSPy home page.'), ensure_ascii=False)}>
+                    <label class="switch">
+                    <input name='HOME_WIDGET' type='checkbox'${" checked" if plugin_options['HOME_WIDGET'] else ""}>
                     <span class="slider"></span>
                     </label>
                 </td>
