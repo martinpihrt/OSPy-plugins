@@ -88,7 +88,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Install Mariadb'):</td>
                 <td title=$:{json.dumps(_('It was pressed button for install, I will try to install Mariadb in the system. If everything goes successfully, restart this extension!'), ensure_ascii=False)}>
-                <a href="?install" class="button danger">$_('Install')</a>
+                <a href="?install&$csrf_query()" class="button danger">$_('Install')</a>
                 </td>
             </tr>            
             <tr>
