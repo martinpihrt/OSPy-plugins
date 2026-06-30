@@ -10,7 +10,7 @@ import sys
 import os
 import mimetypes
 
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 import traceback
 import json
 
@@ -47,12 +47,18 @@ plugin_options = PluginOptions(
         'LON_1': 20.7703153,         # LOWER RIGHT CORNER
         'LAT_1': 48.1,
         'SEND_TO_HW': True,          # Send detected rainy cities to the external hardware map
+        'ANIMATE': False,            # Animate the radar map from recent images kept in RAM
         'IP_ADDR': '192.168.88.2',   # remote map IP address
         'HW_BOARD': '0',             # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
         'R_INTENS' : 0,              # R intensity threshold for activate rain delay
         'G_INTENS' : 0,              # G intensity threshold for activate rain delay
         'B_INTENS' : 0,              # B intensity threshold for activate rain delay
     })
+
+RADAR_URL = 'https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.{}.0.png'
+RADAR_HEADERS = {'User-Agent': 'OSPy CHMI radar monitor/1.0'}
+animation_lock = Lock()
+animation_frames = []
 
 # We work in the WGS-84 coordinate system
 # In order to be able to convert degrees of latitude and longitude into pixels,
@@ -271,6 +277,7 @@ class CHMI_Checker(Thread):
                                         chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
                                 c_img.save(corner_path)
+                                update_animation_cache()
 
 
                             # We ve gone through all the cities, so well see if we have any on the list that are raining
@@ -340,6 +347,76 @@ def stop():
         checker.join(15)
         checker = None
 
+def radar_date_txt(date):
+    return date.strftime("%Y%m%d.%H%M")[:-1] + "0"
+
+def download_radar_frame(date):
+    date_txt = radar_date_txt(date)
+    url = RADAR_URL.format(date_txt)
+    r = requests.get(url, timeout=15, headers=RADAR_HEADERS)
+    if r and r.status_code == 200 and r.content.startswith(b'\x89PNG\r\n\x1a\n'):
+        return True, r.content, date_txt
+    return False, None, date_txt
+
+def create_animation_image(byte, date_txt):
+    borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')
+    wmark = Image.open(borders_path)
+    img = Image.open(BytesIO(byte))
+    ia, wa = None, None
+    if len(img.getbands()) == 4:
+        ir, ig, ib, ia = img.split()
+        img = Image.merge('RGB', (ir, ig, ib))
+    if len(wmark.getbands()) == 4:
+        wa = wmark.split()[-1]
+    img.paste(wmark, (0, 0), wmark)
+    if ia:
+        if wa:
+            ia = max_alpha(wa, ia)
+        img.putalpha(ia)
+
+    frame_img = img.convert("RGBA")
+    draw = ImageDraw.Draw(frame_img)
+    draw.rectangle((0, 0, 680, 25), fill=(0, 0, 0), outline=(0, 0, 0))
+    font_path = os.path.join('plugins', 'chmi', 'static', 'font', 'Roboto-Bold.ttf')
+    font = ImageFont.truetype(font_path, 18)
+    draw.text((5, 5), '{} UTC'.format(date_txt), font=font, fill="white")
+
+    output = BytesIO()
+    frame_img.save(output, format='PNG')
+    return output.getvalue()
+
+def update_animation_cache():
+    global animation_frames
+    if not plugin_options['ANIMATE']:
+        with animation_lock:
+            animation_frames = []
+        return
+
+    base_date = datetime.datetime.utcnow() - timedelta(minutes=20)
+    base_date -= timedelta(minutes=base_date.minute % 10,
+                           seconds=base_date.second,
+                           microseconds=base_date.microsecond)
+
+    frames = []
+    for offset in range(60, -1, -10):
+        frame_date = base_date - timedelta(minutes=offset)
+        ok, byte, date_txt = download_radar_frame(frame_date)
+        if ok:
+            try:
+                frames.append({
+                    'date': date_txt,
+                    'label': '{} UTC'.format(date_txt),
+                    'content': create_animation_image(byte, date_txt),
+                })
+            except:
+                log.debug(NAME, traceback.format_exc())
+        time.sleep(0.2)
+
+    with animation_lock:
+        animation_frames = frames
+
+    log.debug(NAME, datetime_string() + ' ' + _('Radar animation cache contains {} frame(s).').format(len(frames)))
+
 # Function to download bitmap with radar data from URL:
 # https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png
 # date_txt must be in UTC YYYYMMDD.HHM0 format (CHMI publishes images every full 10 minutes)
@@ -350,14 +427,13 @@ def download_radar(date=None, trials=3):
     if date == None:
         date = datetime.datetime.utcnow() - timedelta(minutes=20)
 
-    headers = {'User-Agent': 'OSPy CHMI radar monitor/1.0'}
     date_txt = date
     while trials > 0:
-        date_txt = date.strftime("%Y%m%d.%H%M")[:-1] + "0"
+        date_txt = radar_date_txt(date)
         try:
-            url = f"https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.{date_txt}.0.png"
+            url = RADAR_URL.format(date_txt)
             log.debug(NAME,datetime_string() + ' ' + _('Downloading a file: {}').format(url))
-            r = requests.get(url, timeout=15, headers=headers)
+            r = requests.get(url, timeout=15, headers=RADAR_HEADERS)
             if r and r.status_code == 200 and r.content.startswith(b'\x89PNG\r\n\x1a\n'):
                 return True, r.content, date_txt
             else:
@@ -578,6 +654,50 @@ class status_json(ProtectedPage):
             return json.dumps({'events': log.events(NAME)})
         except:
             return {}
+
+class animation_json(ProtectedPage):
+    """Returns radar animation frame metadata in JSON format."""
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            with animation_lock:
+                frames = [
+                    {
+                        'index': index,
+                        'date': frame['date'],
+                        'label': frame['label'],
+                        'url': plugin_url(animation_frame) + '?i={}&ts={}'.format(index, frame['date']),
+                    }
+                    for index, frame in enumerate(animation_frames)
+                ]
+            return json.dumps({'enabled': plugin_options['enabled'] and plugin_options['ANIMATE'], 'frames': frames})
+        except:
+            log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+            return {}
+
+class animation_frame(ProtectedPage):
+    """Returns one radar animation frame from RAM."""
+    def GET(self):
+        try:
+            qdict = web.input()
+            index = int(qdict.get('i', 0))
+            with animation_lock:
+                if index < 0 or index >= len(animation_frames):
+                    raise IndexError()
+                frame = animation_frames[index]
+                content = frame['content']
+            web.header('Content-type', 'image/png')
+            web.header('Content-Length', len(content))
+            web.header('Cache-Control', 'no-store')
+            return content
+        except:
+            download_name = os.path.join('plugins', 'chmi', 'static', 'images', 'none.png')
+            content = mimetypes.guess_type(download_name)[0]
+            web.header('Content-type', content)
+            web.header('Content-Length', os.path.getsize(download_name))
+            img = open(download_name,'rb')
+            return img.read()
 
 class log_csv(ProtectedPage):  # save log file from web as csv file type
     """Simple Log API"""

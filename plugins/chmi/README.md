@@ -17,6 +17,9 @@ Plugin setup
 * Send to HW map:
   If checked, detected rainy cities are sent to the external hardware map.
 
+* Animate radar map:
+  If checked, recent radar images from the last hour are kept in RAM and animated on the settings page. The static map remains available when animation data is not ready yet.
+
 * Map IP address:
   IP address for laskakit map or other diy maps.
 

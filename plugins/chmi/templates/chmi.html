@@ -4,6 +4,10 @@ $var title: $_('CHMI meteoradar')
 $var page: plugins
 
 <script>
+    let animationFrames = [];
+    let animationIndex = 0;
+    let animationTimer = null;
+
     function checkIP(){
         let IPAddress = jQuery(".IPnumbersOnly").val();
         let IPRegex=new RegExp("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
@@ -29,6 +33,36 @@ $var page: plugins
         setTimeout(updateStatus, 2000); // 2 seconds
     }
 
+    function showAnimationFrame(){
+        if (!animationFrames.length) {
+            return;
+        }
+        let frame = animationFrames[animationIndex];
+        jQuery("#meteoMap").attr("src", frame.url + "&_=" + new Date().getTime());
+        jQuery("#meteoFrameLabel").text(frame.label);
+        animationIndex = (animationIndex + 1) % animationFrames.length;
+    }
+
+    function updateAnimationFrames(){
+        jQuery.getJSON("/plugins/chmi/animation_json", function(_data) {
+            if (_data.enabled && _data.frames && _data.frames.length) {
+                animationFrames = _data.frames;
+                if (animationIndex >= animationFrames.length) {
+                    animationIndex = 0;
+                }
+                if (!animationTimer) {
+                    showAnimationFrame();
+                    animationTimer = setInterval(showAnimationFrame, 800);
+                }
+            }
+            else if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+        })
+        setTimeout(updateAnimationFrames, 10000); // 10 seconds
+    }
+
     // Initialize behaviors
     jQuery(document).ready(function(){
         jQuery("#cRefresh").click(function() {
@@ -50,6 +84,7 @@ $var page: plugins
         });
 
         updateStatus();
+        updateAnimationFrames();
     });
 </script>
 
@@ -136,6 +171,15 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'><b>$_('Animate radar map'):</b></td>
+                <td title=$:{json.dumps(_(u'When enabled, recent radar images are kept in RAM and animated on the settings page.'), ensure_ascii=False)}>
+                    <label class="switch">
+                    <input name='ANIMATE' type='checkbox'${" checked" if plugin_options['ANIMATE'] else ""}>
+                    <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Map IP address'):</td>
                 <td title=$:{json.dumps(_(u'IP address for map.'), ensure_ascii=False)}><input name='IP_ADDR' class="Input IPnumbersOnly" type='text' size='15' maxlength='15' id='IPnumbersOnly' value='$plugin_options["IP_ADDR"]'>
                 </td>
@@ -159,7 +203,8 @@ input:checked + .slider:before {
             <tr>
                 <td style='text-transform: none;'>$_('Meteo map'):</td>
                 <td title=$:{json.dumps(_(u'A downloaded map from the Meteo Institute is displayed here.'), ensure_ascii=False)}>
-                    <a href="$plugins.plugin_url('chmi.download_page')"><img src="$plugins.plugin_url('chmi.download_page')" width="640"></a>
+                    <a href="$plugins.plugin_url('chmi.download_page')"><img id="meteoMap" src="$plugins.plugin_url('chmi.download_page')" width="640"></a><br/>
+                    <small id="meteoFrameLabel"></small>
                 </td>
             </tr>
             $if options.weather_lat and options.weather_lon:
