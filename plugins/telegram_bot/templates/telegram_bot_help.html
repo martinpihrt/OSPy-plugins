@@ -5,25 +5,37 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Telegram Bot - Help')</div>
-    <p><ul>
-    <li>$_('In the telegram application, we send a message to user @botfather and confirm it /start')</li>
-    <li>$_('Create a new bot with the /newbot command and specify what the bot will be named ex: ospyk_bot (name must end with _bot)')</li>
-    <li>$_('Use the /token command to request the new token (for example: we get something like this 1655412493:AAEPKTaO6KWDS-SCkDniRLRt2sdfewT4nc0Q)')</li>
-    <li>$_('After inserting the token into the plugin and restarting the OSPy system, we will see the assigned ID from the telegram on the plugin page (example: 221581551)')</li>
-    <li>$_('On a mobile phone, tablet, or computer we enter /221581551 to add OSPy to the client to receive messages')</li>
-    <li>$_('Next type your commands (/enable, /disble, /runnow, /info...) for cummunications with bot')</li>
-    </ul></p>
+
     <p>$_('You must provide a token to enable the bot to talk to telegram, follow the instructions') <a href="https://core.telegram.org/bots#botfather">$_('Here').</a></p>
-    <p>$_('After starting the extension, it is checked whether a telegram is available in the system. If not, the extension will try to install it itself') "sudo pip install python-telegram-bot==2.4" $_('For Python 2.7'), "sudo pip3 install python-telegram-bot --upgrade" $_('For Python 3').</p> 
-    <p>$_('After the first start and setup of the extension, we recommend restarting the OSPy').</p>   
+
+    <p><b>$_('Setup')</b></p>
+    <ul>
+        <li>$_('In Telegram, open @BotFather and send /start.')</li>
+        <li>$_('Create a new bot with /newbot and copy the token from BotFather.')</li>
+        <li>$_('Paste the token into the Telegram Bot plugin, enable the plugin, and submit the form.')</li>
+        <li>$_('The plugin connects automatically; OSPy restart is not required.')</li>
+        <li>$_('After the bot ID appears, open your bot chat and send /subscribe followed by the displayed bot ID.')</li>
+    </ul>
+
+    <p><b>$_('Commands')</b></p>
+    <ul>
+        <li><span style="font-family: monospace;">/start</span> - $_('shows the first setup message.')</li>
+        <li><span style="font-family: monospace;">/subscribe ID</span> - $_('subscribes the current Telegram chat.')</li>
+        <li><span style="font-family: monospace;">/help</span> - $_('shows available commands.')</li>
+        <li><span style="font-family: monospace;">/info</span> - $_('shows station and scheduler state.')</li>
+        <li><span style="font-family: monospace;">/enable</span> - $_('enables the scheduler.')</li>
+        <li><span style="font-family: monospace;">/disable</span> - $_('disables the scheduler.')</li>
+        <li><span style="font-family: monospace;">/runOnce 1</span> - $_('runs a program by number.')</li>
+        <li><span style="font-family: monospace;">/stop</span> - $_('stops all stations and disables the scheduler.')</li>
+    </ul>
+
+    <p>$_('The plugin uses the official Telegram Bot API directly and does not install python-telegram-bot automatically.')</p>
 
     <p><b>$_('Example')</b></p></br>
     <a href="/plugins/telegram_bot/static/images/phone1.png"><img src="/plugins/telegram_bot/static/images/phone1.png" width="20%"></a>  </br>
-    <a href="/plugins/telegram_bot/static/images/phone2.png"><img src="/plugins/telegram_bot/static/images/phone2.png" width="20%"></a>  </br> 
+    <a href="/plugins/telegram_bot/static/images/phone2.png"><img src="/plugins/telegram_bot/static/images/phone2.png" width="20%"></a>  </br>
 </div>
 
 <div id="controls">
     <a href=$plugins.plugin_url('telegram_bot.settings_page') class="button danger">$_('Cancel')</a><br/>
 </div>
-
-

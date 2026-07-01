@@ -3,8 +3,67 @@ $def with(plugin_options, events)
 $var title: $_('Telegram Bot')
 $var page: plugins
 
+<style>
+    .telegram-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px;
+        margin: 10px 0;
+    }
+
+    .telegram-status {
+        border: 1px solid #b8c0d4;
+        background: #f8f9fb;
+        color: #151923;
+        padding: 8px;
+    }
+
+    .telegram-status-ok {
+        border-color: #2f8525;
+        background: #eef8eb;
+    }
+
+    .telegram-status-warn {
+        border-color: #d9a300;
+        background: #fff7d7;
+    }
+
+    .telegram-status-title {
+        color: #46536b;
+        font-weight: bold;
+        margin-bottom: 4px;
+    }
+
+    .telegram-code {
+        font-family: monospace;
+        word-break: break-word;
+    }
+
+    .telegram-help {
+        margin: 8px 0;
+        padding: 8px;
+        border: 1px solid #dde3ef;
+        background: #ffffff;
+    }
+
+    .telegram-command-list {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        gap: 4px 10px;
+        margin: 0;
+    }
+
+    .telegram-command-list dt {
+        font-family: monospace;
+        font-weight: bold;
+    }
+
+    .telegram-command-list dd {
+        margin: 0;
+    }
+</style>
+
 <script>
-    // Initialize behaviors
     jQuery(document).ready(function(){
         jQuery("#cSubmit").click(function() {
             jQuery("#pluginForm").submit();
@@ -12,16 +71,62 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
-        jQuery("button#docButton").click(function(){
-            window.open("/plugins/telegram_bot/help')", "_blank");
-        });        
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_('Telegram Bot')</div>
-    <p>$_('This plugin enables OSPy to communicate the change of status via a telegram') (<a href="http://www.telegram.org/">www.telegram.org</a>).</p>
+    <p>$_('This plugin enables OSPy to communicate the change of status via a telegram') (<a href="https://www.telegram.org/">www.telegram.org</a>).</p>
     <a href=$plugins.plugin_url('telegram_bot.help_page') class="button upload">$_('Help')</a><br/>
+
+    <div class="telegram-summary">
+        $if plugin_options['use_plugin'] and plugin_options['botID']:
+            <div class="telegram-status telegram-status-ok">
+                <div class="telegram-status-title">$_('Status')</div>
+                <div>$_('Connected')</div>
+            </div>
+        $elif plugin_options['use_plugin']:
+            <div class="telegram-status telegram-status-warn">
+                <div class="telegram-status-title">$_('Status')</div>
+                <div>$_('Waiting for Telegram connection')</div>
+            </div>
+        $else:
+            <div class="telegram-status">
+                <div class="telegram-status-title">$_('Status')</div>
+                <div>$_('Disabled')</div>
+            </div>
+        <div class="telegram-status">
+            <div class="telegram-status-title">$_('Bot')</div>
+            <div class="telegram-code">
+                $if plugin_options['botUsername']:
+                    @$plugin_options['botUsername']
+                $else:
+                    $_('Not detected yet')
+            </div>
+        </div>
+        <div class="telegram-status">
+            <div class="telegram-status-title">$_('Subscribe command')</div>
+            <div class="telegram-code">
+                $if plugin_options['botID']:
+                    /subscribe $plugin_options['botID']
+                $else:
+                    $_('Save token and enable the plugin first')
+            </div>
+        </div>
+    </div>
+
+    <div class="telegram-help">
+        <dl class="telegram-command-list">
+            <dt>/start</dt><dd>$_('Shows the first setup message.')</dd>
+            <dt>/subscribe ID</dt><dd>$_('Adds the current Telegram chat to OSPy notifications.')</dd>
+            <dt>/$plugin_options['info_cmd']</dt><dd>$_('Shows current station and scheduler state.')</dd>
+            <dt>/$plugin_options['enable_cmd']</dt><dd>$_('Enables the scheduler.')</dd>
+            <dt>/$plugin_options['disable_cmd']</dt><dd>$_('Disables the scheduler.')</dd>
+            <dt>/$plugin_options['runOnce_cmd'] 1</dt><dd>$_('Runs a program by number.')</dd>
+            <dt>/$plugin_options['stop_cmd']</dt><dd>$_('Stops all stations and disables the scheduler.')</dd>
+        </dl>
+    </div>
+
     <form id="pluginForm" action="$plugins.plugin_url('telegram_bot.settings_page')" method="post">
         $:csrf_input()
         <table class="optionList">
@@ -32,35 +137,37 @@ $var page: plugins
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_(u'Enable Telegram Bot'):</td>
-                <td title=$:{json.dumps(_(u'If the box is checked, Telegram Bot A will be enabled.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'If the box is checked, Telegram Bot will be enabled.'), ensure_ascii=False)}>
                      <input name='use_plugin' type='checkbox'${" checked" if plugin_options['use_plugin'] else ""}>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_(u'Bot Token'):</td>
-                <td title=$:{json.dumps(_(u'Type your token for enabling the bot to talk with telegram.'), ensure_ascii=False)}>
-                     <input name='botToken' type='text' size="55" value="${plugin_options['botToken']}">
+                <td title=$:{json.dumps(_(u'Paste the token from @BotFather. The bot connects after saving; OSPy restart is not required.'), ensure_ascii=False)}>
+                     <input name='botToken' type='password' size="55" value="${plugin_options['botToken']}">
                 </td>
             </tr>
-            <tr>
-                <td style='text-transform: none;'>
-                    <div><small>$_(u'Example: 5498756874:AAEPKTa987456SQ')</small></div>
-                </td>
-            </tr>
-             <tr>
-                <td style='text-transform: none;'>
-                    <div><small>$_(u'Please restart OSPy if these options are changed!')</small></div>
-                </td>
-            </tr>            
             <tr>
                 <td style='text-transform: none;'>$_(u'Your Bot ID'):</td>
-                <td title=$:{json.dumps(_(u'ID for subscribe talk with telegram.'), ensure_ascii=False)}>
-                    <textarea readonly>${plugin_options['botID']}</textarea>
+                <td title=$:{json.dumps(_(u'Use this ID as the access key for /subscribe.'), ensure_ascii=False)}>
+                    <input type='text' readonly size="30" value="${plugin_options['botID']}">
                 </td>
-            </tr>            
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Bot username'):</td>
+                <td title=$:{json.dumps(_(u'Telegram username detected from the token.'), ensure_ascii=False)}>
+                    <input type='text' readonly size="30" value="${plugin_options['botUsername']}">
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_(u'Subscribed chats'):</td>
+                <td title=$:{json.dumps(_(u'Telegram chats that can control OSPy and receive notifications.'), ensure_ascii=False)}>
+                    <textarea style="font-family: monospace;" rows="3" cols="65" readonly>$plugin_options['currentChats']</textarea>
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>
-                    <div><small>$_(u'Signals to connect')
+                    <div><small>$_(u'Signals to connect')</small></div>
                 </td>
             </tr>
             <tr>
@@ -73,13 +180,13 @@ $var page: plugins
                 <td style='text-transform: none;'>
                     <div><small>$_(u'Commands')</small></div>
                 </td>
-            </tr> 
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_(u'Help Command'):</td>
                 <td title=$:{json.dumps(_(u'Type Help Command for your info. Bot send you available commands for OSPy Control.'), ensure_ascii=False)}>
                      <input name='help_cmd' type='text' value="${plugin_options['help_cmd']}">
                 </td>
-            </tr>                       
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_(u'Info Command'):</td>
                 <td title=$:{json.dumps(_(u'Type Info Command for OSPy info. Bot send OSPy actual states.'), ensure_ascii=False)}>
@@ -109,13 +216,13 @@ $var page: plugins
                 <td title=$:{json.dumps(_(u'Stop Command, for stop all running stations and disabling OSPy scheduler.'), ensure_ascii=False)}>
                      <input name='stop_cmd' type='text' value="${plugin_options['stop_cmd']}">
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
                     <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
@@ -129,6 +236,3 @@ $var page: plugins
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
-
-
-

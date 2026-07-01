@@ -1,56 +1,96 @@
 Telegram Bot Readme
 ====
 
-Tested in Python 3+
+This plugin lets OSPy send Telegram notifications and lets subscribed Telegram
+chats run a small set of OSPy control commands.
 
-In the telegram application, we send a message to user @botfather and confirm it */start*.  
-Create a new bot with the */newbot* command and specify what the bot will be named ex: ospyk_bot (name must end with *_bot*).  
-Use the * /token* command to request the new token (for example: we get something like this 1655412493:AAEPKTaO6KWDS-SCkDLRt2sdfewT4nc0Q).  
-Test on webpage https://telegram.me/ospyk_bot. On telegram plugin we insert: token to Subscribee.  
-Subscribe to the Announcement list, need an Access Key. Next type your commands (enable, disble, runnow...) for cummunications with bot.  
-You must provide a token to enable the bot to talk to telegram, follow the instructions https://core.telegram.org/bots#botfather.  
-After starting the extension, it is checked whether a telegram is available in the system.  
-If not, the extension will try to install it itself *sudo pip install python-telegram-bot==2.4* for Python 2.7.
-*sudo pip3 install python-telegram-bot --upgrade* for Python 3 
-After the first start and setup of the extension, we recommend restarting the OSPy.
+The plugin uses the official Telegram Bot API directly. It does not install or
+upgrade `python-telegram-bot`, because current versions of that library use a
+new asynchronous API and older plugin code is not compatible with it.
 
+Setup
+-----------
+
+1. In Telegram, open `@BotFather` and send `/start`.
+2. Create a bot with `/newbot`.
+3. Copy the token from BotFather.
+4. Paste the token into the OSPy Telegram Bot plugin.
+5. Enable the plugin and submit the form.
+6. Wait until the plugin shows the bot ID and username.
+7. Open your bot chat and send `/subscribe BOT_ID`, where `BOT_ID` is the ID
+   shown on the plugin page.
+
+OSPy restart is not required after changing the token or enabling the plugin.
 
 Plugin setup
 -----------
 
-* Enable Telegram Bot:  
-  If the box is checked, Telegram Bot A will be enabled.  
+* Enable Telegram Bot:
+  Enables or disables the Telegram polling worker.
 
-* Bot Token:  
-  Type your token for enabling the bot to talk with telegram.  Example: 5498756874:AAEPKTa987456SQ.   
+* Bot Token:
+  Token from `@BotFather`.
 
-* Signals to connect - Zone Change:  
-  Send message if there has been a stations changed state.   
+* Your Bot ID:
+  Telegram ID detected from the token. Use this ID as the subscribe access key.
 
-* Help Command:  
-  Type Help Command for your info. Bot send you available commands for OSPy Control.    
+* Bot username:
+  Telegram username detected from the token.
 
-* Info Command:  
-  Type Info Command for OSPy info. Bot send OSPy actual states.  
+* Subscribed chats:
+  Telegram chats that can control OSPy and receive notifications.
 
-* Start Command:  
-  Type Start Command for enabling OSPy scheduler.  
+* Zone Change:
+  Send a message when station state changes.
 
-* Stop Command:  
-  Type Stop Command for disabling OSPy scheduler.  
+* Help Command:
+  Command for showing available commands.
 
-* RunOnce Command:  
-  Run Once Command, use program number as argument. 
+* Info Command:
+  Command for showing current station and scheduler state.
 
-* Stop Command:  
-  Stop Command, for stop all running stations and disabling OSPy scheduler.    
+* Enable Command:
+  Command for enabling the scheduler.
 
-* Show in footer:  
-  Show data from plugin in footer on home page.   
+* Disable Command:
+  Command for disabling the scheduler.
 
-* Status:  
-  Status window from the plugin.  
+* RunOnce Command:
+  Command for running a program by number, for example `/runOnce 1`.
+
+* Stop Command:
+  Command for stopping all stations and disabling the scheduler.
+
+* Show in footer:
+  Show Telegram Bot status in the OSPy footer.
+
+Commands
+-----------
+
+* `/start`:
+  Show the first setup message.
+
+* `/subscribe BOT_ID`:
+  Subscribe the current Telegram chat to OSPy.
+
+* `/help`:
+  Show available commands.
+
+* `/info`:
+  Show station and scheduler state.
+
+* `/enable`:
+  Enable the scheduler.
+
+* `/disable`:
+  Disable the scheduler.
+
+* `/runOnce 1`:
+  Run program number 1.
+
+* `/stop`:
+  Stop all stations and disable the scheduler.
 
 ## Example
-[![](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone1.png?raw=true)](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone1.png) 
-[![](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone2.png?raw=true)](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone2.png) 
+[![](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone1.png?raw=true)](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone1.png)
+[![](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone2.png?raw=true)](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/telegram_bot/static/images/phone2.png)
