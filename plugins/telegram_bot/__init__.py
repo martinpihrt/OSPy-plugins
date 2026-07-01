@@ -142,7 +142,7 @@ class Sender(Thread):
             self._footer.val = text.encode('utf8').decode('utf8')
 
     def _authorized(self, chat_id):
-        return chat_id in list(plugin_options['currentChats'])
+        return str(chat_id) in [str(chat) for chat in plugin_options['currentChats']]
 
     def _command_name(self, value):
         value = str(value or '').strip().lstrip('/')
@@ -176,7 +176,7 @@ class Sender(Thread):
         expected_key = str(plugin_options['botID'])
         if expected_key and str(access_key).strip() == expected_key:
             chats = list(plugin_options['currentChats'])
-            if chat_id not in chats:
+            if str(chat_id) not in [str(chat) for chat in chats]:
                 chats.append(chat_id)
                 plugin_options['currentChats'] = chats
                 txt = _(u'Hi! you are now added to the {} announcement.').format(options.name)
