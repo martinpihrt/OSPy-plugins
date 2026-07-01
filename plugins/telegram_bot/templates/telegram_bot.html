@@ -127,6 +127,35 @@ $var page: plugins
             tokenInput.attr("type", visible ? "password" : "text");
             jQuery(this).text(visible ? "$_('Show')" : "$_('Hide')");
         });
+
+        function updateTelegramStatus(data) {
+            var statusBox = jQuery("#telegramStatusBox");
+            statusBox.removeClass("telegram-status-ok telegram-status-warn");
+
+            if (data.use_plugin && data.botID) {
+                statusBox.addClass("telegram-status-ok");
+                jQuery("#telegramStatusText").text("$_('Connected')");
+            } else if (data.use_plugin) {
+                statusBox.addClass("telegram-status-warn");
+                jQuery("#telegramStatusText").text("$_('Waiting for Telegram connection')");
+            } else {
+                jQuery("#telegramStatusText").text("$_('Disabled')");
+            }
+
+            jQuery("#telegramBotName").text(data.botUsername ? "@" + data.botUsername : "$_('Not detected yet')");
+            jQuery("#telegramSubscribeCommand").text(data.botID ? "/subscribe " + data.botID : "$_('Save token and enable the plugin first')");
+            jQuery("#telegramBotId").val(data.botID || "");
+            jQuery("#telegramBotUsername").val(data.botUsername || "");
+            jQuery("#telegramSubscribedChats").val(JSON.stringify(data.currentChats || []));
+            jQuery("#telegramStatusLog").val((data.events || []).join("\\n"));
+        }
+
+        function refreshTelegramStatus() {
+            jQuery.getJSON("$plugins.plugin_url('telegram_bot.settings_json')", updateTelegramStatus);
+        }
+
+        refreshTelegramStatus();
+        setInterval(refreshTelegramStatus, 5000);
     });
 </script>
 
@@ -137,23 +166,23 @@ $var page: plugins
 
     <div class="telegram-summary">
         $if plugin_options['use_plugin'] and plugin_options['botID']:
-            <div class="telegram-status telegram-status-ok">
+            <div id="telegramStatusBox" class="telegram-status telegram-status-ok">
                 <div class="telegram-status-title">$_('Status')</div>
-                <div>$_('Connected')</div>
+                <div id="telegramStatusText">$_('Connected')</div>
             </div>
         $elif plugin_options['use_plugin']:
-            <div class="telegram-status telegram-status-warn">
+            <div id="telegramStatusBox" class="telegram-status telegram-status-warn">
                 <div class="telegram-status-title">$_('Status')</div>
-                <div>$_('Waiting for Telegram connection')</div>
+                <div id="telegramStatusText">$_('Waiting for Telegram connection')</div>
             </div>
         $else:
-            <div class="telegram-status">
+            <div id="telegramStatusBox" class="telegram-status">
                 <div class="telegram-status-title">$_('Status')</div>
-                <div>$_('Disabled')</div>
+                <div id="telegramStatusText">$_('Disabled')</div>
             </div>
         <div class="telegram-status">
             <div class="telegram-status-title">$_('Bot')</div>
-            <div class="telegram-code">
+            <div id="telegramBotName" class="telegram-code">
                 $if plugin_options['botUsername']:
                     @$plugin_options['botUsername']
                 $else:
@@ -162,7 +191,7 @@ $var page: plugins
         </div>
         <div class="telegram-status">
             <div class="telegram-status-title">$_('Subscribe command')</div>
-            <div class="telegram-code">
+            <div id="telegramSubscribeCommand" class="telegram-code">
                 $if plugin_options['botID']:
                     /subscribe $plugin_options['botID']
                 $else:
@@ -212,19 +241,19 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_(u'Your Bot ID'):</td>
                 <td title=$:{json.dumps(_(u'Use this ID as the access key for /subscribe.'), ensure_ascii=False)}>
-                    <input type='text' readonly size="30" value="${plugin_options['botID']}">
+                    <input id="telegramBotId" type='text' readonly size="30" value="${plugin_options['botID']}">
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_(u'Bot username'):</td>
                 <td title=$:{json.dumps(_(u'Telegram username detected from the token.'), ensure_ascii=False)}>
-                    <input type='text' readonly size="30" value="${plugin_options['botUsername']}">
+                    <input id="telegramBotUsername" type='text' readonly size="30" value="${plugin_options['botUsername']}">
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_(u'Subscribed chats'):</td>
                 <td title=$:{json.dumps(_(u'Telegram chats that can control OSPy and receive notifications.'), ensure_ascii=False)}>
-                    <textarea style="font-family: monospace;" rows="3" cols="65" readonly>$plugin_options['currentChats']</textarea>
+                    <textarea id="telegramSubscribedChats" style="font-family: monospace;" rows="3" cols="65" readonly>$plugin_options['currentChats']</textarea>
                 </td>
             </tr>
             <tr>
@@ -294,7 +323,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="11" cols="65" readonly>$'\n'.join(events)</textarea>
+                    <textarea id="telegramStatusLog" style="font-family: monospace;" rows="11" cols="65" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>

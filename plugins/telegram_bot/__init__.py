@@ -295,13 +295,13 @@ class Sender(Thread):
         if run_once_command and not argument and command_name.startswith(run_once_command) and command_name != run_once_command:
             argument = command_name[len(run_once_command):]
 
-        if command == u'/start':
+        if command_name == 'start':
             await self._bot_cmd_start(chat_id)
             temp_text = _('Last msg: /start')
         elif command_name == 'subscribe':
             await self._bot_cmd_subscribe(chat_id, argument)
             temp_text = _('Last msg: /subscribe')
-        elif command == u'/{}'.format(plugin_options['botID']):
+        elif command_name == self._command_name(plugin_options['botID']):
             await self._bot_cmd_subscribe(chat_id, plugin_options['botID'])
             temp_text = _('Last msg: /subscribe')
         elif self._command_matches(command, plugin_options['help_cmd']):
@@ -319,7 +319,7 @@ class Sender(Thread):
         elif self._command_matches(command, plugin_options['stop_cmd']):
             await self._bot_cmd_stop(chat_id)
             temp_text = _('Last msg: /{}').format(plugin_options['stop_cmd'])
-        elif self._command_matches(command, plugin_options['runOnce_cmd']):
+        elif self._command_matches(command, plugin_options['runOnce_cmd']) or (run_once_command and command_name.startswith(run_once_command)):
             await self._bot_cmd_run_once(chat_id, argument)
             temp_text = _('Last msg: /{} arg: {}').format(plugin_options['runOnce_cmd'], argument)
         else:
@@ -478,4 +478,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        data = dict(plugin_options)
+        data['botToken'] = ''
+        data['events'] = log.events(NAME)
+        return json.dumps(data)
