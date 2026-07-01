@@ -2,6 +2,7 @@
 __author__ = u'Martin Pihrt'
 
 import asyncio
+import html
 import json
 import sys
 import time
@@ -73,10 +74,12 @@ class TelegramApi(object):
             params['offset'] = int(offset)
         return await self._request('getUpdates', params)
 
-    async def send_message(self, chat_id, text):
+    async def send_message(self, chat_id, text, parse_mode=None):
         if text is None:
             text = ''
         params = {'chat_id': chat_id, 'text': str(text)[:4096]}
+        if parse_mode:
+            params['parse_mode'] = parse_mode
         return await self._request('sendMessage', params)
 
     async def _request(self, method, params=None):
@@ -113,6 +116,7 @@ class Sender(Thread):
         self._footer = None
         self._zone_connected = False
         self._loop = None
+        self._last_station_states = self._station_states()
         self.start()
 
     def stop(self):
@@ -151,19 +155,61 @@ class Sender(Thread):
     def _command_matches(self, command, configured):
         return self._command_name(command) == self._command_name(configured)
 
-    async def _send(self, chat_id, text):
+    async def _send(self, chat_id, text, parse_mode=None):
         if self._api is not None:
-            await self._api.send_message(chat_id, text)
+            await self._api.send_message(chat_id, text, parse_mode=parse_mode)
 
-    async def _announce(self, text):
+    async def _announce(self, text, parse_mode=None):
         if self._api is None:
             return
 
         for chat_id in list(plugin_options['currentChats']):
             try:
-                await self._api.send_message(chat_id, text)
+                await self._api.send_message(chat_id, text, parse_mode=parse_mode)
             except Exception:
                 log.error(NAME, _(u'Cannot send Telegram message to chat {}.').format(chat_id))
+
+    def _station_states(self):
+        return {station.index: bool(station.active) for station in stations.get()}
+
+    def _station_state_text(self, station):
+        if station.active:
+            if station.remaining_seconds == -1:
+                return _(u'ON') + u' (' + _(u'Forever') + u')'
+            return _(u'ON') + u' (' + u'{}'.format(str(int(station.remaining_seconds))) + u')'
+        return _(u'OFF')
+
+    def _format_station_line(self, station, changed=False):
+        name = html.escape(station.name)
+        state = html.escape(self._station_state_text(station))
+        if changed:
+            return u'>> <b>{}</b>: <b>{}</b>'.format(name, state)
+        if station.active:
+            return u'ON  <b>{}</b>: {}'.format(name, state)
+        return u'OFF {}: {}'.format(name, state)
+
+    def zone_change_message(self):
+        previous_states = self._last_station_states
+        current_states = self._station_states()
+        self._last_station_states = current_states
+
+        station_list = list(stations.get())
+        changed_stations = [
+            station for station in station_list
+            if station.index in previous_states and previous_states[station.index] != current_states.get(station.index)
+        ]
+
+        txt = u'<b>{}</b>\n'.format(html.escape(_('There has been a Station Change.')))
+        if changed_stations:
+            txt += u'\n<b>{}</b>\n'.format(html.escape(_('Changed')))
+            for station in changed_stations:
+                txt += self._format_station_line(station, changed=True) + u'\n'
+
+        txt += u'\n<b>{}</b>\n'.format(html.escape(_('All stations')))
+        changed_indexes = set([station.index for station in changed_stations])
+        for station in station_list:
+            txt += self._format_station_line(station, changed=station.index in changed_indexes) + u'\n'
+        return txt
 
     async def _bot_cmd_start(self, chat_id):
         await self._send(chat_id, _(u'Hi! I am a Bot to interface with {}.\nSend /{} for commands. To subscribe, send /subscribe {}.').format(
@@ -428,20 +474,9 @@ def stop():
 
 def notify_zone_change(name, **kw):
     if plugin_options['zoneChange'] and sender is not None:
-        txt =  _('There has been a Station Change.\n')
-        for station in stations.get():
-            txt += _('Station: {} State: ').format(station.name)
-            if station.active:
-                txt += _('ON') + u' ('
-                if station.remaining_seconds == -1:
-                    txt += _('Forever') + _(u')')
-                else:
-                    txt += '{}'.format(str(int(station.remaining_seconds))) + _(')')
-            else:
-                txt += _('OFF')
-            txt += '\n'
         if sender._api is not None and sender._loop is not None:
-            asyncio.run_coroutine_threadsafe(sender._announce(txt), sender._loop)
+            txt = sender.zone_change_message()
+            asyncio.run_coroutine_threadsafe(sender._announce(txt, parse_mode='HTML'), sender._loop)
 
 
 ################################################################################
