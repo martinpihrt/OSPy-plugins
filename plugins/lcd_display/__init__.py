@@ -234,8 +234,10 @@ def write_lcd_lines(lcd, line1, line2):
     if lines == last_lcd_lines:
         return
 
-    try_io(lambda: lcd.lcd_puts(line1, 1))
-    try_io(lambda: lcd.lcd_puts(line2, 2))
+    if last_lcd_lines is None or line1 != last_lcd_lines[0]:
+        try_io(lambda: lcd.lcd_puts(line1, 1))
+    if last_lcd_lines is None or line2 != last_lcd_lines[1]:
+        try_io(lambda: lcd.lcd_puts(line2, 2))
     last_lcd_lines = lines
 
 

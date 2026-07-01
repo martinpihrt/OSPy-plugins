@@ -23,6 +23,8 @@ import smbus
 from time import *
 from ospy.i2c_guard import i2c_transaction
 
+LCD_I2C_SETTLE_TIME = 0.0
+
 # General i2c device class so that other devices can be added easily
 class i2c_device:
 	def __init__(self, addr, port):
@@ -30,7 +32,7 @@ class i2c_device:
 		self.bus = smbus.SMBus(port)
 
 	def write(self, byte):
-		with i2c_transaction():
+		with i2c_transaction(settle_time=LCD_I2C_SETTLE_TIME):
 			self.bus.write_byte(self.addr, byte)
 
 	def read(self):
