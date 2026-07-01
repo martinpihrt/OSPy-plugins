@@ -151,6 +151,8 @@ class DummyLCD(object):
     lcd_clear = __init__
 
     def lcd_puts(self, text, line):
+        if isinstance(text, bytes):
+            text = text.decode('utf8', 'replace')
         text = text[:16]
         if line == 1:
             self._lines = '{}'.format(text) + self._lines[len(text):]
@@ -158,6 +160,11 @@ class DummyLCD(object):
             self._lines = self._lines[:20] + '{}'.format(text) + self._lines[20 + len(text):]
 
 dummy_lcd = DummyLCD()
+cached_lcd = None
+cached_lcd_key = None
+last_lcd_lines = None
+LCD_WIDTH = 16
+LCD_SCROLL_DELAY = 0.25
 
 ################################################################################
 # Helper functions:                                                            #
@@ -174,6 +181,62 @@ def stop():
         lcd_sender.stop()
         lcd_sender.join(15)
         lcd_sender = None
+    reset_lcd_cache()
+
+
+def reset_lcd_cache():
+    global cached_lcd, cached_lcd_key, last_lcd_lines
+    cached_lcd = None
+    cached_lcd_key = None
+    last_lcd_lines = None
+
+
+def get_lcd():
+    global cached_lcd, cached_lcd_key
+
+    if lcd_options['address'] == 0:
+        find_lcd_address()
+
+    key = (lcd_options['address'], helpers.get_rpi_revision(), lcd_options['hw_PCF8574'])
+    if cached_lcd is not None and cached_lcd_key == key:
+        return cached_lcd
+
+    if lcd_options['address'] != 0:
+        from . import pylcd  # Library for LCD 16x2 PCF8574
+
+        cached_lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
+        # DF - alter RPi version test fallback to value that works on BBB
+    else:
+        cached_lcd = dummy_lcd
+
+    cached_lcd_key = key
+    return cached_lcd
+
+
+def lcd_bytes(line):
+    if line is None:
+        return b''
+    if isinstance(line, bytes):
+        return line
+    return ASCI_convert(str(line))
+
+
+def lcd_window(line, position):
+    if len(line) <= LCD_WIDTH:
+        return line.ljust(LCD_WIDTH, b' ')
+    return line[position:position + LCD_WIDTH].ljust(LCD_WIDTH, b' ')
+
+
+def write_lcd_lines(lcd, line1, line2):
+    global last_lcd_lines
+
+    lines = (line1, line2)
+    if lines == last_lcd_lines:
+        return
+
+    try_io(lambda: lcd.lcd_puts(line1, 1))
+    try_io(lambda: lcd.lcd_puts(line2, 2))
+    last_lcd_lines = lines
 
 
 def try_io(call, tries=10):
@@ -750,40 +813,21 @@ def update_lcd(line1, line2=None):
     ### Print messages to LCD 16x2 ###
     global blocker, L1web, L2web
 
-    if lcd_options['address'] == 0:
-        find_lcd_address()
-
-    if lcd_options['address'] != 0:
-        from . import pylcd  # Library for LCD 16x2 PCF8574
-
-        lcd = pylcd.lcd(lcd_options['address'], 0 if helpers.get_rpi_revision() == 1 else 1, lcd_options['hw_PCF8574']) # (address, bus, hw version for expander)
-        # DF - alter RPi version test fallback to value that works on BBB
-    else:
-        lcd = dummy_lcd
-
-    try_io(lambda: lcd.lcd_clear())
-    sleep_time = 1
+    line1 = lcd_bytes(line1)
+    line2 = lcd_bytes(line2)
     L1web = line1
     L2web = line2
-    while line1 is not None and not blocker:
-        try_io(lambda: lcd.lcd_puts(line1[:16], 1))
 
-        if line2 is not None:
-           try_io(lambda: lcd.lcd_puts(line2[:16], 2))
+    lcd = get_lcd()
+    max_position = max(max(len(line1), len(line2)) - LCD_WIDTH, 0)
+    position = 0
 
-        if max(len(line1), len(line2)) <= 16:
-           break
- 
-        if line1 is not None:
-           if len(line1) > 16:
-              line1 = line1[1:]
-
-        if line2 is not None:
-            if len(line2) > 16:
-                line2 = line2[1:]
-
-        time.sleep(sleep_time)
-        sleep_time = 0.9
+    while not blocker:
+        write_lcd_lines(lcd, lcd_window(line1, position), lcd_window(line2, position))
+        if position >= max_position:
+            break
+        position += 1
+        time.sleep(LCD_SCROLL_DELAY)
 
 def notify_rebooted(name, **kw):
     ### Reboot Linux HW software ###
@@ -894,6 +938,7 @@ class settings_page(ProtectedPage):
         refind = helpers.get_input(qdict, 'refind', False, lambda x: True)
         if lcd_sender is not None and refind:
             verify_csrf(qdict)
+            reset_lcd_cache()
             lcd_options['address'] = 0
             log.clear(NAME)
             log.info(NAME, _('I2C address has re-finded.'))
@@ -905,6 +950,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         verify_csrf(qdict)
         lcd_options.web_update(qdict)
+        reset_lcd_cache()
         if lcd_sender is not None:
             lcd_sender.update()
         raise web.seeother(plugin_url(settings_page), True)  
