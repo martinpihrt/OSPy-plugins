@@ -72,6 +72,15 @@ email_options = PluginOptions(
 
 global saved_emails
 
+
+def html_heading(text):
+    return '<br><b>' + text + '</b>'
+
+
+def html_line(text):
+    return '<br>&nbsp;&nbsp;' + text
+
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -139,10 +148,10 @@ class EmailSender(Thread):
                             body += '<br>'
                             body += '<b>' + datetime_string() + '</b>' 
                             body += '<br><b>'  + _('Finished run') + '</b>'
-                            body += '<ul><li>' + _('Program') + ': %s \n' % pname + '</li>'
-                            body += '<li>' + _('Station') + ': %s \n' % sname + '</li>'
-                            body += '<li>' + _('Start time') + ': %s \n' % datetime_string(run['start']) + '</li>'
-                            body += '<li>' + _('Duration') + ': %02d:%02d\n' % (minutes, seconds) + '</li></ul>'
+                            body += html_line(_('Program') + ': %s' % pname)
+                            body += html_line(_('Station') + ': %s' % sname)
+                            body += html_line(_('Start time') + ': %s' % datetime_string(run['start']))
+                            body += html_line(_('Duration') + ': %02d:%02d' % (minutes, seconds))
                             body += add_to_body_local_ospy_name()
                             logtext  =  _('Finished run') + '-> \n' + _('Program') + ': %s\n' % pname 
                             logtext +=  _('Station') + ': %s\n' % sname
@@ -175,13 +184,13 @@ class EmailSender(Thread):
                                             msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('liters')
                                         else:
                                             msg += ', ' + _('Volume') + ': ' + str(volume) + ' ' + _('m3')
-                                        body += '<b>'  + _('Water') + '</b>'
-                                        body += '<br><ul><li>' + _('Water level in tank') + ': %s \n</li></ul>' % (msg)
+                                        body += html_heading(_('Water'))
+                                        body += html_line(_('Water level in tank') + ': %s' % (msg))
                                         logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)
                                     else: 
                                         msg = _('Error - I2C device not found!')
-                                        body += '<b>'  + _('Water') + '</b>'
-                                        body += '<br><ul><li>' + _('Water level in tank') + ': %s \n</li></ul>' % (msg)
+                                        body += html_heading(_('Water'))
+                                        body += html_line(_('Water level in tank') + ': %s' % (msg))
                                         logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)
 
                             except ImportError:
@@ -212,8 +221,8 @@ class EmailSender(Thread):
                                     else:
                                         msg += str(round((consum_two/1000.0), 2)) + ' '
                                         msg += _('m3')
-                                    body += '<br><b>'  + _('Water Consumption Counter') + '</b>'
-                                    body += '<br><ul><li>%s \n</li></ul>' % (msg)
+                                    body += html_heading(_('Water Consumption Counter'))
+                                    body += html_line('%s' % (msg))
                                     logtext += _('Water Consumption Counter') + ': %s \n' % (msg)
 
                             except ImportError:
@@ -224,12 +233,17 @@ class EmailSender(Thread):
                             try:
                                 if email_options["eml_plug_6ds"]:
                                     from plugins import air_temp_humi
-                                    body += '<br><b>' + _('Temperature DS1-DS6') + '</b><ul>'
-                                    logtext += _('Temperature DS1-DS6') + '-> \n'
-                                    for i in range(0, air_temp_humi.plugin_options['ds_used']):
-                                        body += '<li>' + '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103' % air_temp_humi.DS18B20_read_probe(i) + '\n</li>'  
-                                        logtext += '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103\n' % air_temp_humi.DS18B20_read_probe(i) 
-                                    body += '</ul>'    
+                                    active_ds = air_temp_humi.DS18B20_active_indexes() if hasattr(air_temp_humi, 'DS18B20_active_indexes') else range(0, air_temp_humi.plugin_options['ds_used'])
+                                    active_ds = list(active_ds)
+                                    if active_ds:
+                                        body += html_heading(_('Temperature DS1-DS6'))
+                                        logtext += _('Temperature DS1-DS6') + '-> \n'
+                                        for i in active_ds:
+                                            value = air_temp_humi.DS18B20_read_probe(i)
+                                            label = '%s' % air_temp_humi.plugin_options['label_ds%d' % i]
+                                            msg = label + ': ' + '%.1f \u2103' % value
+                                            body += html_line(msg)
+                                            logtext += msg + '\n'
                             except ImportError:
                                 log.debug(NAME, _('Cannot import plugin: air temp humi.'))
                                 pass
@@ -238,7 +252,7 @@ class EmailSender(Thread):
                             try:
                                 if email_options["eml_plug_4tank"]:
                                     from plugins import current_loop_tanks_monitor
-                                    body += '<br><b>' + _('Current Loop Tanks Monitor') + '</b><ul>'
+                                    body += html_heading(_('Current Loop Tanks Monitor'))
                                     logtext += _('Current Loop Tanks Monitor') + '-> \n'
                                     for i in range(4):
                                         label = current_loop_tanks_monitor.tanks['label'][i]
@@ -246,9 +260,9 @@ class EmailSender(Thread):
                                         level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
                                         volt = current_loop_tanks_monitor.tanks['voltage'][i]
                                         volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
-                                        body += '<li>' + _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume) + '\n</li>'
-                                        logtext += _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume)
-                                    body += '</ul>'
+                                        msg = _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume)
+                                        body += html_line(msg)
+                                        logtext += msg + '\n'
                             except ImportError:
                                 log.debug(NAME, _('Cannot import plugin: Current Loop Tanks Monitor.'))
                                 pass
@@ -256,14 +270,12 @@ class EmailSender(Thread):
                             # Send data from OSPy sensors
                             try:
                                 if email_options["eml_plug_sensors"]:
-                                    body += '<br><b>' + _('Sensors') + '</b>'
+                                    body += html_heading(_('Sensors'))
                                     logtext += _('Sensors') + '-> \n'
                                     sensor_result = ''
                                     if sensors.count() > 0:
-                                        body += '<ul>'
                                         for sensor in sensors.get():
                                             sensor_result = ''
-                                            body += '<li>'
                                             sensor_result += '{} ({}): '.format(sensor.name, _('by Shelly.com') if sensor.manufacturer == 1 else _('by Pihrt.com'))
                                             if sensor.enabled:
                                                 if sensor.manufacturer == 0:                                    # pihrt.com sensor
@@ -469,18 +481,14 @@ class EmailSender(Thread):
                                             else:
                                                 sensor_result += _('Disabled')
 
-                                            body += sensor_result
-                                            body += '</li>'
+                                            body += html_line(sensor_result)
                                             logtext += sensor_result
                                             logtext += '\n'
-                                        body += '</ul>'
                                         body += '<br>'
 
                                     else:
                                         sensor_result += _('No sensors available')
-                                        body += '<ul><li>'
-                                        body += sensor_result
-                                        body += '</li></ul>'
+                                        body += html_line(sensor_result)
                                         body += '<br>'
                                         logtext += sensor_result
                                         logtext += '\n'
@@ -492,10 +500,10 @@ class EmailSender(Thread):
                             try:
                                 if email_options["eml_plug_shelly"]:
                                     from plugins import shelly_cloud_integrator
-                                    body += '<b>' + _('Shelly cloud') + '</b><ul>'
+                                    body += html_heading(_('Shelly cloud'))
                                     logtext += _('Shelly cloud') + '-> \n'
                                     for i in range(0, shelly_cloud_integrator.plugin_options['number_sensors']):
-                                        body += '<li>'
+                                        body += '<br>&nbsp;&nbsp;'
                                         body += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
                                         logtext += '{} '.format(shelly_cloud_integrator.sender.devices[i]['label'])
                                         if shelly_cloud_integrator.sender.devices[i]['temperature']:
@@ -569,7 +577,7 @@ class EmailSender(Thread):
                                         else:
                                             body += ' ' + _('Offline')
                                             logtext += ' ' + _('Offline')
-                                        body += '\n</li>'
+                                        body += '\n'
                                         logtext += '\n'
                             except:
                                 pass
