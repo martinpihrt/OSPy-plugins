@@ -191,6 +191,8 @@ tanks['levelPercent']   = [0, 0, 0, 0]
 tanks['voltage']        = [0, 0, 0, 0]
 tanks['label']          = [plugin_options['label1'], plugin_options['label2'], plugin_options['label3'], plugin_options['label4']]
 tanks['use']            = [plugin_options['en_tank1'], plugin_options['en_tank2'], plugin_options['en_tank3'], plugin_options['en_tank4']]
+tanks['io_error']       = False
+tanks['channel_error']  = [False, False, False, False]
 
 if plugin_options['use_script']:
     script_path = "current_loop_tanks_monitor/script/tank.js"
@@ -571,6 +573,8 @@ def get_data():
     try:
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
     except FileNotFoundError:
+        tanks['io_error'] = True
+        tanks['channel_error'] = [True, True, True, True]
         log.error(NAME, _('Error: the I2C bus is not available.'))
         return
     
@@ -593,6 +597,7 @@ def get_data():
     IO_error = False
     VAL_error = False
     adc_values = []
+    channel_error = [False, False, False, False]
 
     for channel in range(4):
         try:
@@ -614,11 +619,16 @@ def get_data():
 
         except ValueError as ve:
             VAL_error = True
+            channel_error[channel] = True
             #log.error(NAME, _('Error for channel {}: {}.').format(channel, ve))
 
         except IOError as ioe:
             IO_error = True
+            channel_error[channel] = True
             #log.error(NAME, _('I/O error for channel {}: {}.').format(channel, ioe))
+
+    tanks['io_error'] = IO_error
+    tanks['channel_error'] = channel_error
 
     if IO_error:    
         log.error(NAME, _('Error: I/O.'))
@@ -938,7 +948,7 @@ class settings_page(ProtectedPage):
             return self.plugin_render.current_loop_tanks_monitor(plugin_options, i2c)
 
         # switch 1-4 on plugin homepage in tank (on-off for tanks)
-        for i in range(1, 4):
+        for i in range(1, 5):
             if sender is not None:
                 if 'en_tank{}'.format(i) in qdict:
                     verify_csrf(qdict)

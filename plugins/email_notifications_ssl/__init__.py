@@ -74,7 +74,7 @@ global saved_emails
 
 
 def html_heading(text):
-    return '<br><b>' + text + '</b>'
+    return '<br><br><b>' + text + '</b>'
 
 
 def html_line(text):
@@ -252,17 +252,27 @@ class EmailSender(Thread):
                             try:
                                 if email_options["eml_plug_4tank"]:
                                     from plugins import current_loop_tanks_monitor
-                                    body += html_heading(_('Current Loop Tanks Monitor'))
-                                    logtext += _('Current Loop Tanks Monitor') + '-> \n'
-                                    for i in range(4):
-                                        label = current_loop_tanks_monitor.tanks['label'][i]
-                                        level_cm = current_loop_tanks_monitor.tanks['levelCm'][i]
-                                        level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
-                                        volt = current_loop_tanks_monitor.tanks['voltage'][i]
-                                        volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
-                                        msg = _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume)
-                                        body += html_line(msg)
-                                        logtext += msg + '\n'
+                                    enabled_tanks = [i for i in range(4) if current_loop_tanks_monitor.plugin_options['en_tank{}'.format(i + 1)]]
+                                    if enabled_tanks:
+                                        body += html_heading(_('Current Loop Tanks Monitor'))
+                                        logtext += _('Current Loop Tanks Monitor') + '-> \n'
+                                        if current_loop_tanks_monitor.tanks.get('io_error', False):
+                                            msg = _('Error: I/O.')
+                                            body += html_line(msg)
+                                            logtext += msg + '\n'
+                                        else:
+                                            channel_error = current_loop_tanks_monitor.tanks.get('channel_error', [False, False, False, False])
+                                            for i in enabled_tanks:
+                                                if channel_error[i]:
+                                                    continue
+                                                label = current_loop_tanks_monitor.tanks['label'][i]
+                                                level_cm = current_loop_tanks_monitor.tanks['levelCm'][i]
+                                                level_perc = current_loop_tanks_monitor.tanks['levelPercent'][i]
+                                                volt = current_loop_tanks_monitor.tanks['voltage'][i]
+                                                volume = current_loop_tanks_monitor.tanks['volumeLiter'][i]
+                                                msg = _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume)
+                                                body += html_line(msg)
+                                                logtext += msg + '\n'
                             except ImportError:
                                 log.debug(NAME, _('Cannot import plugin: Current Loop Tanks Monitor.'))
                                 pass
