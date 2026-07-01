@@ -477,10 +477,11 @@ def get_report(index):
                 from plugins import air_temp_humi
                 air_options = air_temp_humi.plugin_options
                 if air_options['ds_enabled']:
+                    active_ds = air_temp_humi.DS18B20_active_indexes() if hasattr(air_temp_humi, 'DS18B20_active_indexes') else range(0, air_options['ds_used'])
                     air_result = ''
-                    for i in range(0, air_options['ds_used']):
+                    for i in active_ds:
                         air_result += '{}:{} '.format(air_options['label_ds%d' % i], air_temp_humi.DS18B20_read_probe(i))
-                    result = ASCI_convert(air_result)
+                    result = ASCI_convert(air_result if air_result else _('DS temperature not use'))
                 else:     
                     result = ASCI_convert(_('DS temperature not use'))
             except Exception:
