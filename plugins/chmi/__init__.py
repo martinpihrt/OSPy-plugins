@@ -9,6 +9,10 @@ import time
 import sys
 import os
 import mimetypes
+import re
+import subprocess
+import shutil
+import importlib.util
 
 from threading import Thread, Event, Lock
 import traceback
@@ -38,6 +42,7 @@ plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,
+        'DATA_SOURCE': 'chmi',        # chmi = Czech CHMI PNG radar, shmu = Slovak SHMU HDF radar
         'use_footer': False,         # Information in footer
         'enable_log': False,         # Enable log
         'log_records': 0,            # Number of max logs (0=unlimited)
@@ -61,9 +66,19 @@ plugin_options = PluginOptions(
 
 RADAR_URL = 'https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.{}.0.png'
 FORECAST_URL = 'https://opendata.chmi.cz/meteorology/weather/radar/composite/fct_pseudocappi2km/png/pacz2gmaps3.fct_z_cappi020.{}.ft60s10.tar'
+SHMU_RADAR_URL = 'https://opendata.shmu.sk/meteorology/weather/radar/composite/skcomp/{product}/{day}/'
+SHMU_DEFAULT_PRODUCT = 'zmax'
+SHMU_BOUNDS = {
+    'LON_0': 13.6,
+    'LAT_0': 50.7,
+    'LON_1': 23.804495372410756,
+    'LAT_1': 46.04688049237037,
+}
 RADAR_HEADERS = {'User-Agent': 'OSPy CHMI radar monitor/1.0'}
 animation_lock = Lock()
 animation_frames = []
+dependency_install_lock = Lock()
+dependency_install_running = False
 
 HOME_WIDGET_SCRIPT = 'chmi/script/home_widget.js'
 
@@ -127,8 +142,9 @@ class CHMI_Checker(Thread):
                     log.clear(NAME)
                     dis_text = True
                     # Bitmap dimensions in degrees
-                    degree_width  = float(plugin_options['LON_1']) - float(plugin_options['LON_0'])
-                    degree_heigth = float(plugin_options['LAT_0']) - float(plugin_options['LAT_1'])
+                    bounds = radar_bounds()
+                    degree_width  = float(bounds['LON_1']) - float(bounds['LON_0'])
+                    degree_heigth = float(bounds['LAT_0']) - float(bounds['LAT_1'])
 
                     # I will try to download the bitmap with the radar data
                     # If successful, ok = True, bytes = HTTP data of response (image), txt_date = YYYYMMDD.HHM0 of downloaded image
@@ -147,21 +163,23 @@ class CHMI_Checker(Thread):
                             corner_path = os.path.join(plugin_data_dir(),'corner.png')                            # draw corner to result
                             try:
                                 bitmap.save(image_path)
-                                # Merge images (radar and outline of the Czech Republic)
-                                wmark = Image.open(borders_path)
+                                # Merge images (radar and outline of the Czech Republic) if the source uses the same canvas.
                                 img = Image.open(image_path)
                                 ia, wa = None, None
                                 if len(img.getbands()) == 4:
                                     ir, ig, ib, ia = img.split()
                                     img = Image.merge('RGB', (ir, ig, ib))
-                                if len(wmark.getbands()) == 4:
-                                    wa = wmark.split()[-1]
-                                img.paste(wmark, (0, 0), wmark)
-                                if ia:
-                                    if wa:
-                                        # This seems to solve the contradiction, discard if unwanted
-                                        ia = max_alpha(wa, ia)
-                                    img.putalpha(ia)
+                                if radar_source() == 'chmi':
+                                    wmark = Image.open(borders_path)
+                                    if wmark.size == img.size:
+                                        if len(wmark.getbands()) == 4:
+                                            wa = wmark.split()[-1]
+                                        img.paste(wmark, (0, 0), wmark)
+                                        if ia:
+                                            if wa:
+                                                # This seems to solve the contradiction, discard if unwanted
+                                                ia = max_alpha(wa, ia)
+                                            img.putalpha(ia)
                                 img.save(result_path)
                                 log.debug(NAME, datetime_string() + ' ' + _('The merging of the images (radar and outline of the Czech Republic) went OK.'))
                             except:
@@ -221,8 +239,10 @@ class CHMI_Checker(Thread):
                                         lat = float(cell[2])
                                         lon = float(cell[3])
                                         # We calculate the pixel coordinates of the city on the radar image
-                                        x = int((lon - plugin_options['LON_0']) / size_lon_pixel)
-                                        y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
+                                        x = int((lon - bounds['LON_0']) / size_lon_pixel)
+                                        y = int((bounds['LAT_0'] - lat) / size_lat_pixel)
+                                        if x < 0 or y < 0 or x >= bitmap.width or y >= bitmap.height:
+                                            continue
                                         # We will find the RGB on the given coordinate, i.e. the possible color of the rain
                                         r,g,b = bitmap.getpixel((x, y))
                                         # If there is a non-zero color in a given location on the radar image, it is probably raining there
@@ -253,8 +273,8 @@ class CHMI_Checker(Thread):
                                     lon = float(options.weather_lon)
                                     is_lat_lon = True
                                     # We calculate the pixel coordinates my location on the radar image
-                                    x = int((lon - plugin_options['LON_0']) / size_lon_pixel)
-                                    y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
+                                    x = int((lon - bounds['LON_0']) / size_lon_pixel)
+                                    y = int((bounds['LAT_0'] - lat) / size_lat_pixel)
                                     rain_area = analyze_location_rain(bitmap, x, y)
                                     r = rain_area['red']
                                     g = rain_area['green']
@@ -381,6 +401,78 @@ def local_datetime_from_utc_text(date_txt):
     local_offset = datetime.datetime.now() - datetime.datetime.utcnow()
     return utc_date + local_offset
 
+def radar_source():
+    source = str(plugin_options.get('DATA_SOURCE', 'chmi')).lower()
+    if source not in ('chmi', 'shmu'):
+        source = 'chmi'
+    return source
+
+def radar_bounds():
+    if radar_source() == 'shmu':
+        return SHMU_BOUNDS
+    return {
+        'LON_0': float(plugin_options['LON_0']),
+        'LAT_0': float(plugin_options['LAT_0']),
+        'LON_1': float(plugin_options['LON_1']),
+        'LAT_1': float(plugin_options['LAT_1']),
+    }
+
+def shmu_missing_dependencies():
+    missing = []
+    for module_name in ('h5py', 'numpy'):
+        if importlib.util.find_spec(module_name) is None:
+            missing.append(module_name)
+    return missing
+
+def shmu_dependencies_installing():
+    with dependency_install_lock:
+        return dependency_install_running
+
+def start_shmu_dependency_install():
+    global dependency_install_running
+    with dependency_install_lock:
+        if dependency_install_running:
+            log.info(NAME, datetime_string() + ' ' + _('SHMU dependency installation is already running.'))
+            return
+        dependency_install_running = True
+
+    install_thread = Thread(target=install_shmu_dependencies)
+    install_thread.daemon = True
+    install_thread.start()
+
+def install_shmu_dependencies():
+    global dependency_install_running
+    try:
+        missing = shmu_missing_dependencies()
+        if not missing:
+            log.info(NAME, datetime_string() + ' ' + _('SHMU radar dependencies are already installed.'))
+            return
+
+        log.info(NAME, datetime_string() + ' ' + _('Installing SHMU radar dependencies. This operation can take several minutes.'))
+        if os.name == 'posix' and shutil.which('apt-get'):
+            cmd = ['sudo', 'apt-get', 'install', '-y', 'python3-h5py', 'python3-numpy', 'python3-pillow']
+            log.info(NAME, datetime_string() + ' ' + _('Running command') + ': ' + ' '.join(cmd))
+        else:
+            cmd = [sys.executable, '-m', 'pip', 'install', 'h5py', 'numpy', 'Pillow']
+            log.info(NAME, datetime_string() + ' ' + _('Running command') + ': ' + ' '.join(cmd))
+
+        proc = subprocess.run(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=900)
+        output = proc.stdout.decode('utf-8', 'replace').strip()
+        if output:
+            log.info(NAME, output[-4000:])
+
+        missing = shmu_missing_dependencies()
+        if proc.returncode == 0 and not missing:
+            log.info(NAME, datetime_string() + ' ' + _('SHMU radar dependencies were installed successfully.'))
+            log.info(NAME, datetime_string() + ' ' + _('Set your location coordinates in the OSPy options so rain detection works correctly.'))
+        else:
+            log.error(NAME, datetime_string() + ' ' + _('SHMU radar dependency installation failed. Missing modules') + ': ' + ', '.join(missing))
+    except:
+        log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
+    finally:
+        with dependency_install_lock:
+            dependency_install_running = False
+
 def animation_label(date_txt, frame_type, relative_minutes):
     local_date = local_datetime_from_utc_text(date_txt)
     label = local_date.strftime("%d.%m. %H:%M")
@@ -391,12 +483,115 @@ def animation_label(date_txt, frame_type, relative_minutes):
     return '{} ({})'.format(label, _('now'))
 
 def download_radar_frame(date):
+    if radar_source() == 'shmu':
+        return download_shmu_radar(date=date, trials=1)
+
     date_txt = radar_date_txt(date)
     url = RADAR_URL.format(date_txt)
     r = requests.get(url, timeout=15, headers=RADAR_HEADERS)
     if r and r.status_code == 200 and r.content.startswith(b'\x89PNG\r\n\x1a\n'):
         return True, r.content, date_txt
     return False, None, date_txt
+
+def shmu_date_txt(date):
+    return date.strftime("%Y%m%d.%H%M")
+
+def shmu_hdf_to_png(byte):
+    try:
+        import h5py
+        import numpy
+    except ImportError:
+        log.error(NAME, _('SHMU radar source requires python3-h5py and python3-numpy. Install them and restart OSPy.'))
+        return False, None
+
+    with h5py.File(BytesIO(byte), 'r') as hdf:
+        data = hdf['dataset1/data1/data'][:]
+        gain = float(hdf['dataset1/what'].attrs.get('gain', 0.5))
+        offset = float(hdf['dataset1/what'].attrs.get('offset', -32.5))
+
+    dbz = data.astype('float32') * gain + offset
+    valid = (data > 0) & (data < 255)
+    image = numpy.zeros((data.shape[0], data.shape[1], 3), dtype=numpy.uint8)
+
+    color_steps = [
+        (5,  (70,  120, 255)),
+        (15, (0,   190, 255)),
+        (25, (0,   180, 60)),
+        (35, (255, 220, 0)),
+        (45, (255, 130, 0)),
+        (55, (230, 0,   0)),
+        (65, (180, 0,   180)),
+        (99, (255, 255, 255)),
+    ]
+    for limit, color in color_steps:
+        mask = valid & (dbz <= limit)
+        image[mask] = color
+        valid = valid & (dbz > limit)
+
+    radar_img = Image.fromarray(image, 'RGB')
+    output = BytesIO()
+    radar_img.save(output, format='PNG')
+    return True, output.getvalue()
+
+def shmu_latest_hdf_url(date, product=SHMU_DEFAULT_PRODUCT):
+    day = date.strftime('%Y%m%d')
+    index_url = SHMU_RADAR_URL.format(product=product, day=day)
+    log.debug(NAME, datetime_string() + ' ' + _('Downloading a file: {}').format(index_url))
+    requests.packages.urllib3.disable_warnings()
+    r = requests.get(index_url, timeout=15, headers=RADAR_HEADERS, verify=False)
+    if not r or r.status_code != 200:
+        return None, None
+
+    files = re.findall(r'href="([^"]+\.hdf)"', r.text)
+    if not files:
+        return None, None
+
+    if date is not None:
+        wanted = date.strftime('%Y%m%d%H%M')
+        usable = [name for name in files if wanted in name]
+        if usable:
+            filename = usable[-1]
+        else:
+            older = [name for name in files if re.search(r'_(\d{12})00\.hdf$', name) and re.search(r'_(\d{12})00\.hdf$', name).group(1) <= wanted]
+            filename = older[-1] if older else files[-1]
+    else:
+        filename = files[-1]
+
+    match = re.search(r'_(\d{8})(\d{4})00\.hdf$', filename)
+    date_txt = '{}.{}'.format(match.group(1), match.group(2)) if match else shmu_date_txt(date)
+    return index_url + filename, date_txt
+
+def download_shmu_radar(date=None, trials=3):
+    if date is None:
+        date = datetime.datetime.utcnow() - timedelta(minutes=10)
+
+    while trials > 0:
+        try:
+            url, date_txt = shmu_latest_hdf_url(date)
+            if not url:
+                date -= timedelta(minutes=10)
+                trials -= 1
+                continue
+
+            log.debug(NAME, datetime_string() + ' ' + _('Downloading a file: {}').format(url))
+            requests.packages.urllib3.disable_warnings()
+            r = requests.get(url, timeout=20, headers=RADAR_HEADERS, verify=False)
+            if r and r.status_code == 200 and r.content.startswith(b'\x89HDF\r\n\x1a\n'):
+                ok, content = shmu_hdf_to_png(r.content)
+                return ok, content, date_txt
+
+            log.debug(NAME, _('HTTP {}: I can not download the file.').format(r.status_code if r else '---'))
+        except requests.RequestException:
+            log.debug(NAME, traceback.format_exc())
+        except:
+            log.debug(NAME, traceback.format_exc())
+            return False, None, shmu_date_txt(date)
+
+        date -= timedelta(minutes=10)
+        trials -= 1
+        time.sleep(1)
+
+    return False, None, shmu_date_txt(date)
 
 def analyze_location_rain(bitmap, x, y):
     radius = max(0, int(plugin_options['DETECTION_RADIUS']))
@@ -450,19 +645,21 @@ def analyze_location_rain(bitmap, x, y):
 
 def create_animation_image(byte, date_txt, frame_type, relative_minutes):
     borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')
-    wmark = Image.open(borders_path)
     img = Image.open(BytesIO(byte))
     ia, wa = None, None
     if len(img.getbands()) == 4:
         ir, ig, ib, ia = img.split()
         img = Image.merge('RGB', (ir, ig, ib))
-    if len(wmark.getbands()) == 4:
-        wa = wmark.split()[-1]
-    img.paste(wmark, (0, 0), wmark)
-    if ia:
-        if wa:
-            ia = max_alpha(wa, ia)
-        img.putalpha(ia)
+    if radar_source() == 'chmi':
+        wmark = Image.open(borders_path)
+        if wmark.size == img.size:
+            if len(wmark.getbands()) == 4:
+                wa = wmark.split()[-1]
+            img.paste(wmark, (0, 0), wmark)
+            if ia:
+                if wa:
+                    ia = max_alpha(wa, ia)
+                img.putalpha(ia)
 
     frame_img = img.convert("RGBA")
     draw = ImageDraw.Draw(frame_img)
@@ -473,14 +670,15 @@ def create_animation_image(byte, date_txt, frame_type, relative_minutes):
 
     if options.weather_lat and options.weather_lon:
         try:
-            degree_width = float(plugin_options['LON_1']) - float(plugin_options['LON_0'])
-            degree_height = float(plugin_options['LAT_0']) - float(plugin_options['LAT_1'])
+            bounds = radar_bounds()
+            degree_width = float(bounds['LON_1']) - float(bounds['LON_0'])
+            degree_height = float(bounds['LAT_0']) - float(bounds['LAT_1'])
             size_lat_pixel = degree_height / frame_img.height
             size_lon_pixel = degree_width / frame_img.width
             lat = float(options.weather_lat)
             lon = float(options.weather_lon)
-            x = int((lon - plugin_options['LON_0']) / size_lon_pixel)
-            y = int((plugin_options['LAT_0'] - lat) / size_lat_pixel)
+            x = int((lon - bounds['LON_0']) / size_lon_pixel)
+            y = int((bounds['LAT_0'] - lat) / size_lat_pixel)
             if 0 <= x < frame_img.width and 0 <= y < frame_img.height:
                 radius = 8
                 draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill=(255, 255, 0), outline=(0, 0, 0), width=2)
@@ -563,7 +761,8 @@ def update_animation_cache():
                 log.debug(NAME, traceback.format_exc())
         time.sleep(0.2)
 
-    frames += download_forecast_frames(base_date)
+    if radar_source() == 'chmi':
+        frames += download_forecast_frames(base_date)
     frames.sort(key=lambda frame: frame['relative'])
 
     with animation_lock:
@@ -578,6 +777,9 @@ def update_animation_cache():
 # I'll try to download a bitmap with a ten minute old timestamp
 # The number of repetitions is determined by the variable trials
 def download_radar(date=None, trials=3):
+    if radar_source() == 'shmu':
+        return download_shmu_radar(date, trials)
+
     if date == None:
         date = datetime.datetime.utcnow() - timedelta(minutes=20)
 
@@ -684,6 +886,7 @@ class settings_page(ProtectedPage):
             del_rain = get_input(qdict, 'del_rain', False, lambda x: True)
             refresh = get_input(qdict, 'refresh', False, lambda x: True)
             delete = get_input(qdict, 'delete', False, lambda x: True)
+            install_deps = get_input(qdict, 'install_deps', False, lambda x: True)
             show = get_input(qdict, 'show', False, lambda x: True)
 
             if checker is not None and del_rain:
@@ -696,6 +899,11 @@ class settings_page(ProtectedPage):
                 verify_csrf(qdict)
                 checker.update()
 
+            if install_deps:
+                verify_csrf(qdict)
+                start_shmu_dependency_install()
+                raise web.seeother(plugin_url(settings_page), True)
+
             if checker is not None and delete:
                 verify_csrf(qdict)
                 write_log([])
@@ -704,7 +912,14 @@ class settings_page(ProtectedPage):
             if checker is not None and show:
                 raise web.seeother(plugin_url(log_page), True)
 
-            return self.plugin_render.chmi(plugin_options, log.events(NAME))
+            missing_dependencies = shmu_missing_dependencies()
+            return self.plugin_render.chmi(
+                plugin_options,
+                log.events(NAME),
+                missing_dependencies,
+                shmu_dependencies_installing(),
+                ', '.join(missing_dependencies),
+            )
 
         except:
             log.error(NAME, _('CHMI plug-in') + ':\n' + traceback.format_exc())
@@ -807,6 +1022,19 @@ class status_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         try:
             return json.dumps({'events': log.events(NAME)})
+        except:
+            return {}
+
+class dependency_json(ProtectedPage):
+    """Returns SHMU dependency state in JSON format."""
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            return json.dumps({
+                'missing': shmu_missing_dependencies(),
+                'installing': shmu_dependencies_installing(),
+            })
         except:
             return {}
 

@@ -3,16 +3,29 @@ CHMI Readme
 
 Tested in Python 3+
 
-When is enabled extension retrieves data from the meteorological radar of the Czech Hydrometeorological Institute. The interactive map of the Czech Republic is based on an ESP32 microcontroller and contains 72 WS2812 RGB LEDs on the front - each for one district city. It is thus possible, for example, to display current warnings in given locations, or other dates. Different sensors can be connected and all usable pins are brought out on solder pads for possible connection of different sensors and devices. The board is equipped with a USB programming converter, so all you need to program it is a cable with a USB-C connector and, for example, the Arduino IDE. https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/.
+When enabled, the extension retrieves radar data from the selected meteorological service. The CHMI source uses Czech Hydrometeorological Institute PNG radar images. The SHMU source uses Slovak Hydrometeorological Institute OpenData HDF radar composites.
+
+The SHMU source requires the h5py and numpy Python libraries. If they are missing, the settings page shows an install button and writes the installation progress to the status window. On Raspberry Pi OS the plugin installs the system packages `python3-h5py`, `python3-numpy`, and `python3-pillow`. After installation, set your location coordinates in the OSPy options so rain detection works correctly.
+
+The interactive map of the Czech Republic is based on an ESP32 microcontroller and contains 72 WS2812 RGB LEDs on the front - each for one district city. It is thus possible, for example, to display current warnings in given locations, or other dates. Different sensors can be connected and all usable pins are brought out on solder pads for possible connection of different sensors and devices. The board is equipped with a USB programming converter, so all you need to program it is a cable with a USB-C connector and, for example, the Arduino IDE. https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/.
 The extension allows you to set a rain delay when rain is detected at a set position on the map. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
 
 Radar PNG images are downloaded from the CHMI open data endpoint:
 https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/
 
+Radar HDF files are downloaded from the SHMU open data endpoint:
+https://opendata.shmu.sk/meteorology/weather/radar/composite/skcomp/zmax/
+
 Plugin setup
 -----------
-* Check Use CHMI:  
-  If checked use CHMI plugin is enabled.
+* Radar data source:
+  Select CHMI Czech Republic or SHMU Slovakia.
+
+* SHMU radar libraries:
+  This row is visible only when the SHMU dependencies are missing. Click "Install libraries" to install the required Python libraries. The status window shows progress and the final result.
+
+* Use radar:
+  If checked, the radar plugin is enabled.
 
 * Send to HW map:
   If checked, detected rainy cities are sent to the external hardware map.

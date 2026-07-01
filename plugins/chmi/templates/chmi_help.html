@@ -5,7 +5,10 @@ $var page: plugins
 
 <div id="plugin">
 <div class="title">$_('CHMI - help')</div>
-<p>$_('When is enabled extension retrieves data from the meteorological radar of the Czech Hydrometeorological Institute.')</p>
+<p>$_('When enabled, the extension retrieves radar data from the selected meteorological service.')</p>
+<p>$_('The CHMI source uses Czech Hydrometeorological Institute PNG radar images. The SHMU source uses Slovak Hydrometeorological Institute OpenData HDF radar composites.')</p>
+<p>$_('The SHMU source requires the h5py and numpy Python libraries. If they are missing, the settings page shows an install button and writes the installation progress to the status window.')</p>
+<p>$_('After installing the SHMU libraries, set your location coordinates in the OSPy options so rain detection works correctly.')</p>
 <p>$_('The interactive map of the Czech Republic is based on an ESP32 microcontroller and contains 72 WS2812 RGB LEDs on the front - each for one district city.')</p>    <p>$_('It is thus possible, for example, to display current warnings in given locations, or other dates. Different sensors can be connected and all usable pins are brought out on solder pads for possible connection of different sensors and devices.')</p>
 <p>$_('The board is equipped with a USB programming converter, so all you need to program it is a cable with a USB-C connector and, for example, the Arduino IDE.')</p>
 <p>$_('Visit') <a href="https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b">laskakit.cz</a> $_('for more information').</p><br>
