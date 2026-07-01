@@ -30,7 +30,8 @@ class StatusChecker(Thread):
         self.status = {
             'pageOK': _(u'Error: data cannot be downloaded from') +  ' www.pihrt.com!',
             'pageID': ' ',
-            'pageOKstate': False
+            'pageOKstate': False,
+            'records': []
             }
 
         self._sleep_time = 0
@@ -59,20 +60,33 @@ class StatusChecker(Thread):
            import json
 
            jsonStr = json.loads(bodytext)
-           IDlenght = len(jsonStr['user'])
+           users = jsonStr.get('user', [])
+           records = []
 
            log.clear(NAME)
-           for i in range(0, IDlenght-1):
-              log.info(NAME, _('ID') + ': ' + str(jsonStr['user'][i]['id']))
-              log.info(NAME, _('Log') + ': ' + str(jsonStr['user'][i]['log']))
-              log.info(NAME, _('OSPy') + ': ' + str(jsonStr['user'][i]['ospy']))
-              log.info(NAME, _('CPU') + ': ' + str(jsonStr['user'][i]['cpu']))
-              log.info(NAME, _('Distribution') + ': ' + str(jsonStr['user'][i]['distribution']))
-              log.info(NAME, _('System') + ': ' + str(jsonStr['user'][i]['system']))
-              log.info(NAME, _('Python') + ': ' + str(jsonStr['user'][i]['python']) + '\n')
+           for user in users:
+              record = {
+                 'id': str(user.get('id', '')),
+                 'log': str(user.get('log', '')),
+                 'ospy': str(user.get('ospy', '')),
+                 'cpu': str(user.get('cpu', '')),
+                 'distribution': str(user.get('distribution', '')),
+                 'system': str(user.get('system', '')),
+                 'python': str(user.get('python', ''))
+              }
+              records.append(record)
+
+              log.info(NAME, _('ID') + ': ' + record['id'])
+              log.info(NAME, _('Log') + ': ' + record['log'])
+              log.info(NAME, _('OSPy') + ': ' + record['ospy'])
+              log.info(NAME, _('CPU') + ': ' + record['cpu'])
+              log.info(NAME, _('Distribution') + ': ' + record['distribution'])
+              log.info(NAME, _('System') + ': ' + record['system'])
+              log.info(NAME, _('Python') + ': ' + record['python'] + '\n')
 
            self.status['pageOK'] =  _(u'The data from') +  ' www.pihrt.com ' +  _(u'was downloaded correctly.') + ' ' + datetime_string()
            self.status['pageOKstate'] = True
+           self.status['records'] = records
 
            try:
               f = open("./ospy/statistics/user_id", "r")
@@ -86,6 +100,7 @@ class StatusChecker(Thread):
         except Exception:
            self.status['pageOK'] = _(u'Error: data cannot be downloaded from') +  ' www.pihrt.com!'
            self.status['pageOKstate'] = False
+           self.status['records'] = []
            log.clear(NAME)
            #log.error(NAME, _('Usage statistics plug-in') + ':\n' + traceback.format_exc())
 

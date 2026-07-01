@@ -3,6 +3,115 @@ $def with(status, events)
 $var title: $_('Usage Statistics')
 $var page: plugins
 
+<style>
+    .usage-summary {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #b8c0d4;
+        background: #f8f9fb;
+        color: #151923;
+    }
+
+    .usage-status-ok {
+        color: #1f6b2a;
+        font-weight: bold;
+    }
+
+    .usage-status-error {
+        color: #8f1d1d;
+        font-weight: bold;
+    }
+
+    .usage-id {
+        margin-top: 6px;
+        font-family: monospace;
+        word-break: break-word;
+    }
+
+    .usage-records {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .usage-card {
+        border: 1px solid #b8c0d4;
+        background: #ffffff;
+        color: #151923;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .usage-card-header {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #dde3ef;
+        padding-bottom: 6px;
+    }
+
+    .usage-card-title {
+        font-weight: bold;
+        font-family: monospace;
+        word-break: break-all;
+    }
+
+    .usage-version {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: #d9ebff;
+        color: #174f83;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .usage-fields {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        gap: 5px 10px;
+        margin: 0;
+    }
+
+    .usage-fields dt {
+        color: #46536b;
+        font-weight: bold;
+    }
+
+    .usage-fields dd {
+        margin: 0;
+        word-break: break-word;
+    }
+
+    .usage-chip {
+        display: inline-block;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: #fff0c2;
+        color: #7a5300;
+        font-family: monospace;
+    }
+
+    .usage-log {
+        box-sizing: border-box;
+        width: 100%;
+        max-height: 36vh;
+        overflow: auto;
+        padding: 8px;
+        border: 1px solid #b8c0d4;
+        background: #f8f9fb;
+        color: #151923;
+        font-family: monospace;
+        font-size: 13px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -17,23 +126,42 @@ $var page: plugins
     <p>$_('This plugin prints all available statistics from all users OSPy systems').</p>
     <p>$_('In the OSPy system is embedded statistical sending anonymous data (specifically python version, general information about the operating system - architecture, distribution, system, OSPy system version).')</p>
     <p>$_('Read from source www.pihrt.com') <a href="https://pihrt.com/ospystats/statistics.json">json</a></p>
+    <div class="usage-summary">
     $if status['pageOKstate']:
-       <font color="green">
-       $status['pageOK']
-       </font>
-       <br><b>
-       $status['pageID']
-       </b>
+       <div class="usage-status-ok">$status['pageOK']</div>
+       <div class="usage-id">$status['pageID']</div>
     $else:
-       <font color="red">
-       $status['pageOK']
-       </font>
+       <div class="usage-status-error">$status['pageOK']</div>
+    </div>
 
     <form id="pluginForm">
         <table class="optionList">
             <tr>
                 <td>
-                    <textarea style="font-family: monospace;" rows="20" cols="80" readonly>$'\n'.join(events)</textarea><br/>
+                    $if status.get('records'):
+                        <div class="usage-records">
+                        $for record in status['records']:
+                            <section class="usage-card">
+                                <div class="usage-card-header">
+                                    <div class="usage-card-title">$record['id']</div>
+                                    <span class="usage-version">OSPy $record['ospy']</span>
+                                </div>
+                                <dl class="usage-fields">
+                                    <dt>$_('Log')</dt>
+                                    <dd>$record['log']</dd>
+                                    <dt>$_('CPU')</dt>
+                                    <dd><span class="usage-chip">$record['cpu']</span></dd>
+                                    <dt>$_('Distribution')</dt>
+                                    <dd>$record['distribution']</dd>
+                                    <dt>$_('System')</dt>
+                                    <dd>$record['system']</dd>
+                                    <dt>$_('Python')</dt>
+                                    <dd><span class="usage-chip">$record['python']</span></dd>
+                                </dl>
+                            </section>
+                        </div>
+                    $else:
+                        <pre class="usage-log">$'\n'.join(events)</pre>
                 </td>
             </tr>
         </table>
