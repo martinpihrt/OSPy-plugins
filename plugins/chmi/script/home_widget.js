@@ -19,6 +19,7 @@
                 box-sizing: border-box;
                 min-height: 246px;
                 padding-right: 350px;
+                z-index: 0;
             }
 
             #chmiHomeWidget {
@@ -34,7 +35,7 @@
                 background: #ffffff;
                 overflow: hidden;
                 cursor: pointer;
-                z-index: 2;
+                z-index: 0;
                 display: flex;
                 flex-direction: column;
                 box-sizing: border-box;
