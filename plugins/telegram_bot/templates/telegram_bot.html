@@ -147,7 +147,7 @@ $var page: plugins
             jQuery("#telegramBotId").val(data.botID || "");
             jQuery("#telegramBotUsername").val(data.botUsername || "");
             jQuery("#telegramSubscribedChats").val(JSON.stringify(data.currentChats || []));
-            jQuery("#telegramStatusLog").val((data.events || []).join("\\n"));
+            jQuery("#telegramStatusLog").val((data.events || []).join("\n"));
         }
 
         function refreshTelegramStatus() {
