@@ -3,6 +3,51 @@ $def with(plugin_options, events)
 $var title: $_(u'Temperature Switch')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -24,7 +69,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control A'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, regulation A will be enabled.'), ensure_ascii=False)}>
-                     <input name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
+                     <label class="switch">
+                         <input name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>
+                         <span class="slider"></span>
+                     </label>
                 </td>
             </tr>
             <tr>
@@ -35,7 +83,7 @@ $var page: plugins
                             <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
-            </tr>                      
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
                 <td title=$:{json.dumps(_(u'When this temperature is exceeded, the output will be activated.'), ensure_ascii=False)}>
@@ -48,7 +96,7 @@ $var page: plugins
                     <input id="reg_mm_a" name="reg_mm_a" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_a"]' min="0" max="999">:
                     <input id="reg_ss_a" name="reg_ss_a" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_a"]' min="0" max="59"> (mm:ss)
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
@@ -57,7 +105,7 @@ $var page: plugins
                             <option value="${i}" ${"selected" if plugin_options["probe_A_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
                 <td title=$:{json.dumps(_(u'When falling below this temperature, the output will be deactivated.'), ensure_ascii=False)}>
@@ -72,16 +120,19 @@ $var page: plugins
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control B'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, regulation B will be enabled.'), ensure_ascii=False)}>
-                    <input name='enabled_b' type='checkbox'${" checked" if plugin_options['enabled_b'] else ""}>   
+                    <label class="switch">
+                        <input name='enabled_b' type='checkbox'${" checked" if plugin_options['enabled_b'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -92,7 +143,7 @@ $var page: plugins
                             <option value="${i}" ${"selected" if plugin_options["probe_B_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
-            </tr>                      
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
                 <td title=$:{json.dumps(_(u'When this temperature is exceeded, the output will be activated.'), ensure_ascii=False)}>
@@ -105,7 +156,7 @@ $var page: plugins
                     <input id="reg_mm_b" name="reg_mm_b" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_b"]' min="0" max="999">:
                     <input id="reg_ss_b" name="reg_ss_b" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_b"]' min="0" max="59"> (mm:ss)
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
@@ -114,7 +165,7 @@ $var page: plugins
                             <option value="${i}" ${"selected" if plugin_options["probe_B_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
                 <td title=$:{json.dumps(_(u'When falling below this temperature, the output will be deactivated.'), ensure_ascii=False)}>
@@ -129,18 +180,21 @@ $var page: plugins
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_B"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>  
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control C'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, regulation C will be enabled.'), ensure_ascii=False)}>
-                    <input name='enabled_c' type='checkbox'${" checked" if plugin_options['enabled_c'] else ""}>   
+                    <label class="switch">
+                        <input name='enabled_c' type='checkbox'${" checked" if plugin_options['enabled_c'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>   
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Probe input for ON'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
@@ -149,7 +203,7 @@ $var page: plugins
                             <option value="${i}" ${"selected" if plugin_options["probe_C_on"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
-            </tr>                      
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output ON'):</td>
                 <td title=$:{json.dumps(_(u'When this temperature is exceeded, the output will be activated.'), ensure_ascii=False)}>
@@ -162,7 +216,7 @@ $var page: plugins
                     <input id="reg_mm_c" name="reg_mm_c" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm_c"]' min="0" max="999">:
                     <input id="reg_ss_c" name="reg_ss_c" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss_c"]' min="0" max="59"> (mm:ss)
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Probe input for OFF'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
@@ -171,7 +225,7 @@ $var page: plugins
                             <option value="${i}" ${"selected" if plugin_options["probe_C_off"]==i else ""}>${plugin_options["ds_name_%d" % i]}</option>
                     </select>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for output OFF'):</td>
                 <td title=$:{json.dumps(_(u'When falling below this temperature, the output will be deactivated.'), ensure_ascii=False)}>
@@ -190,9 +244,12 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>

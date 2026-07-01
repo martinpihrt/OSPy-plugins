@@ -3,6 +3,51 @@ $def with(plugin_options, events, client_id)
 $var title: $_('MQTT settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -19,7 +64,7 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('MQTT settings')</div>
-    <a href=$plugins.plugin_url('mqtt.help_page') class="button upload">$_('Help')</a><br/>   
+    <a href=$plugins.plugin_url('mqtt.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('mqtt.settings_page')" method="post">
         $:csrf_input()
         <table class="optionList" style="width:80%">
@@ -27,15 +72,21 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none; width:30%'><b>$_('Use MQTT core'):</b></td>
                 <td title=$:{json.dumps(_('Required to receive and send MQTT messages. This MQTT core is always required for all options below.'), ensure_ascii=False)}>
-                    <input name='use_mqtt' type='checkbox'${" checked" if plugin_options['use_mqtt'] else ""}>
+                    <label class="switch">
+                        <input name='use_mqtt' type='checkbox'${" checked" if plugin_options['use_mqtt'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none; width:30%'><b>$_('Use TLS'):</b></td>
                 <td title=$:{json.dumps(_('As HiveMQ Cloud does not support insecure connections, TLS is required. This enables a secure connection and sets the default security context. The default port used for secure MQTT connections is 8883.'), ensure_ascii=False)}>
-                    <input name='use_tls' type='checkbox'${" checked" if plugin_options['use_tls'] else ""}>
+                    <label class="switch">
+                        <input name='use_tls' type='checkbox'${" checked" if plugin_options['use_tls'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Broker Host'):</td>
                 <td title=$:{json.dumps(_('For test use: http://www.hivemq.com/demos/websocket-client/.'), ensure_ascii=False)}>
@@ -69,16 +120,22 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none; width:30%'><small>$_('Show MQTT communication'):</small></td>
                 <td title=$:{json.dumps(_('When checked, communication between the client and the server will be written in the OSPy log (OSPy debug level. Must be enabled in OSPy settings).'), ensure_ascii=False)}>
-                    <input name='use_mqtt_log' type='checkbox'${" checked" if plugin_options['use_mqtt_log'] else ""}>
+                    <label class="switch">
+                        <input name='use_mqtt_log' type='checkbox'${" checked" if plugin_options['use_mqtt_log'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>            
+            </tr>
         </table>
         <table class="optionList" style="width:80%">
             <caption>$_('MQTT manual control')</caption>
             <tr>
                 <td style='text-transform: none; width:30%'><b>$_('Use manual control'):<b></td>
                 <td title=$:{json.dumps(_('After checking the box, station control commands (on/off) will be received from the given topic. This OSPy will be controlled by another device. Warning: only works if OSPy is in manual mode!'), ensure_ascii=False)}>
-                    <input name='use_mqtt_secondary' type='checkbox'${" checked" if plugin_options['use_mqtt_secondary'] else ""}>
+                    <label class="switch">
+                        <input name='use_mqtt_secondary' type='checkbox'${" checked" if plugin_options['use_mqtt_secondary'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -105,7 +162,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none; width:30%'><b>$_('Use zones'):</b></td>
                 <td title=$:{json.dumps(_('When the box is checked, the statuses of all stations will be sent to the given topic. MQTT core is required for the feature.'), ensure_ascii=False)}>
-                    <input name='use_zones' type='checkbox'${" checked" if plugin_options['use_zones'] else ""}>
+                    <label class="switch">
+                        <input name='use_zones' type='checkbox'${" checked" if plugin_options['use_zones'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -120,7 +180,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none; width:30%'><b>$_('Use run-once'):</b></td>
                 <td title=$:{json.dumps(_('When the box is checked, will be received from the given topic for commands to start stations. MQTT core is required for this feature.'), ensure_ascii=False)}>
-                    <input name='use_runonce' type='checkbox'${" checked" if plugin_options['use_runonce'] else ""}>
+                    <label class="switch">
+                        <input name='use_runonce' type='checkbox'${" checked" if plugin_options['use_runonce'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -135,7 +198,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none; width:30%'><b>$_('Use get values'):</b></td>
                 <td title=$:{json.dumps(_('When the box is checked, the statuses of the system settings will be sent to the given topic (cpu temperature, manual mode, scheduler enabled...)'), ensure_ascii=False)}>
-                    <input name='use_get_val' type='checkbox'${" checked" if plugin_options['use_get_val'] else ""}>
+                    <label class="switch">
+                        <input name='use_get_val' type='checkbox'${" checked" if plugin_options['use_get_val'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -154,7 +220,7 @@ $var page: plugins
             </tr>
         </table>
     </form>
-    <p>$_('If you change the settings, restart OSPy to load the changes!')</p> 
+    <p>$_('If you change the settings, restart OSPy to load the changes!')</p>
 </div>
 <div id="controls">
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>

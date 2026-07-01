@@ -2,6 +2,51 @@ $def with(plugin_options, events)
 
 $var title: $_('Pressurizer')
 $var page: plugins
+
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
 <script>
 		// Initialize behaviors
 jQuery(document).ready(function(){
@@ -13,7 +58,7 @@ jQuery(document).ready(function(){
 				var minutes = jQuery("input[id^='ss']").map(function() {
 						return jQuery(this).attr("id");
 				}).get();
-				
+
 				for (var i = 0; i < hours.length; i++) {
 						var hour = parseInt(jQuery('#' + hours[i]).val());
 						var minute = parseInt(jQuery('#' + minutes[i]).val());
@@ -43,22 +88,34 @@ jQuery(document).ready(function(){
 				<tr>
 					<td style='text-transform: none;'>$_('Enable'):</td>
 					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations.'), ensure_ascii=False)}>
-					<input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}></td>
+					<label class="switch">
+					    <input type="checkbox" name="enabled" ${"checked" if plugin_options['enabled'] else ""}>
+					    <span class="slider"></span>
+					</label></td>
 				</tr>
 				<tr>
 					<td style='text-transform: none;'>$_('Ignore manual mode'):</td>
 					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations in manual mode.'), ensure_ascii=False)}>
-					<input type="checkbox" name="ignore_manual" ${"checked" if plugin_options['ignore_manual'] else ""}></td>
+					<label class="switch">
+					    <input type="checkbox" name="ignore_manual" ${"checked" if plugin_options['ignore_manual'] else ""}>
+					    <span class="slider"></span>
+					</label></td>
 				</tr>
 				<tr>
 					<td style='text-transform: none;'>$_('Ignore rain'):</td>
 					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations if rain is detected.'), ensure_ascii=False)}>
-					<input type="checkbox" name="ignore_rain" ${"checked" if plugin_options['ignore_rain'] else ""}></td>
+					<label class="switch">
+					    <input type="checkbox" name="ignore_rain" ${"checked" if plugin_options['ignore_rain'] else ""}>
+					    <span class="slider"></span>
+					</label></td>
 				</tr>
 				<tr>
 					<td style='text-transform: none;'>$_('Ignore rain delay'):</td>
 					<td title=$:{json.dumps(_(u'If the check box is marked, the master pump is activated before turning on the stations if rain delay is detected.'), ensure_ascii=False)}>
-					<input type="checkbox" name="ignore_rain_delay" ${"checked" if plugin_options['ignore_rain_delay'] else ""}></td>
+					<label class="switch">
+					    <input type="checkbox" name="ignore_rain_delay" ${"checked" if plugin_options['ignore_rain_delay'] else ""}>
+					    <span class="slider"></span>
+					</label></td>
 				</tr>
                 <tr>
                     <td style='text-transform: none;'>$_('Use these stations')</td>
@@ -72,13 +129,13 @@ jQuery(document).ready(function(){
 				<tr>
 					<td style='text-transform: none;'>$_('Pre run time'):</td>
 					<td title=$:{json.dumps(_(u'How many seconds before turning on station has turning on master station.'), ensure_ascii=False)}>
-					<input name='pre_time' type='number' min="1" max="999" value="$plugin_options['pre_time']"> (1 - 999s)</td> 
+					<input name='pre_time' type='number' min="1" max="999" value="$plugin_options['pre_time']"> (1 - 999s)</td>
 				</tr>
 				<tr>
-					<td style='text-transform: none;'>$_('Run time'):</td> 
+					<td style='text-transform: none;'>$_('Run time'):</td>
 					<td title=$:{json.dumps(_(u'For what time will turn on the master station.'), ensure_ascii=False)}>
-					<input name='run_time' type='number' min="1" max="999" value="$plugin_options['run_time']"> (1 - 999s)</td> 
-				</tr>  
+					<input name='run_time' type='number' min="1" max="999" value="$plugin_options['run_time']"> (1 - 999s)</td>
+				</tr>
 				<tr>
 					<td style='text-transform: none;'>$_('Wait after activation'):</td>
 					<td title=$:{json.dumps(_(u'How long after the relay is activated wait for another stations (in order not to activate the pressurizer before each switch is stations on).'), ensure_ascii=False)}>
@@ -89,7 +146,10 @@ jQuery(document).ready(function(){
 				<tr>
 					<td style='text-transform: none;'>$_('Activated relay'):</td>
 					<td title=$:{json.dumps(_(u'If the check box is marked, the relay is activated before turning on the stations.'), ensure_ascii=False)}>
-					<input type="checkbox" name="relay" ${"checked" if plugin_options['relay'] else ""}></td>
+					<label class="switch">
+					    <input type="checkbox" name="relay" ${"checked" if plugin_options['relay'] else ""}>
+					    <span class="slider"></span>
+					</label></td>
 				</tr>
 				<tr>
 					<td style='text-transform: none;'>$_('Status'):</td>

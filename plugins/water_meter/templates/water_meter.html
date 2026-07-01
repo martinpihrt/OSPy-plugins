@@ -3,15 +3,60 @@ $def with(plugin_options, events)
 $var title: $_('Water meter settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     function updateWater(){
         jQuery.getJSON("/plugins/water_meter/water_json", function(_data) {
             let second_water = _data.sec_water;
             //console.log(second_water);
             jQuery("#water span.water").text(second_water);
-        })      
+        })
         setTimeout(updateWater, 500); // 1 second
-    } 
+    }
 
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -21,7 +66,7 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
-       
+
         updateWater();
     });
 </script>
@@ -35,19 +80,25 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Use Water Meter'):</td>
                 <td>
-                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>   
+                    <label class="switch">
+                        <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>I&sup2;C $_('address 0x50'):</td>
                 <td>
-                    <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}> ($_('if checked 0x51'))  
+                    <label class="switch">
+                        <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}>
+                        <span class="slider"></span>
+                    </label> ($_('if checked 0x51'))
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of pulses per liter'):</td>
                 <td>
-                    <input name='pulses' type='text' value='$plugin_options["pulses"]' style="width:40px;"> 
+                    <input name='pulses' type='text' value='$plugin_options["pulses"]' style="width:40px;">
                 </td>
             </tr>
             <tr>

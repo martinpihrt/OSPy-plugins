@@ -3,6 +3,51 @@ $def with(plugin_options, events, status)
 $var title: $_('Pool Heating')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     function check_type() {
        jQuery("#pluginForm").submit();
@@ -18,7 +63,7 @@ $var page: plugins
         });
         jQuery("button#docButton").click(function(){
             window.open("/plugins/pool_heating/help')", "_blank");
-        });        
+        });
         jQuery("#sensor_probe").change(check_type);
         jQuery("#probe_A_on").change(check_type);
         jQuery("#probe_A_off").change(check_type);
@@ -39,14 +84,17 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Pool Heating')</div>
-    <a href=$plugins.plugin_url('pool_heating.help_page') class="button upload">$_('Help')</a><br/>    
+    <a href=$plugins.plugin_url('pool_heating.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('pool_heating.settings_page')" method="post">
         $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, regulation will be enabled.'), ensure_ascii=False)}>
-                     <input id="enabled_a" name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
+                     <label class="switch">
+                         <input id="enabled_a" name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>
+                         <span class="slider"></span>
+                     </label>
                 </td>
             </tr>
             <tr>
@@ -66,7 +114,7 @@ $var page: plugins
                         <select id="probe_A_on" name="probe_A_on">
                         $for i in range(status["ds_count"]):
                             <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${status["ds_name_%d" % i]}</option>
-                        </select>    
+                        </select>
                     $elif plugin_options["sensor_probe"]==1:
                         <select id="probe_A_on" name="probe_A_on_sens">
                         $for sensor in sensors.get():
@@ -74,9 +122,9 @@ $var page: plugins
                                 <option value="${sensor.index}" ${"selected" if plugin_options["probe_A_on_sens"]==sensor.index else ""}>${sensor.name}</option>
                         </select>
                     $else:
-                        $_('Not selected type')                         
+                        $_('Not selected type')
                 </td>
-            </tr>    
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Probe input from Solar'):</td>
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
@@ -92,7 +140,7 @@ $var page: plugins
                                 <option value="${sensor.index}" ${"selected" if plugin_options["probe_A_off_sens"]==sensor.index else ""}>${sensor.name}</option>
                         </select>
                     $else:
-                        $_('Not selected type') 
+                        $_('Not selected type')
                 </td>
             </tr>
             <tr>
@@ -136,9 +184,12 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Safety'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, safety will be enabled.'), ensure_ascii=False)}>
-                     <input id="enabled_safety" name='enabled_safety' type='checkbox'${" checked" if plugin_options['enabled_safety'] else ""}>   
+                     <label class="switch">
+                         <input id="enabled_safety" name='enabled_safety' type='checkbox'${" checked" if plugin_options['enabled_safety'] else ""}>
+                         <span class="slider"></span>
+                     </label>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature safety difference'):</td>
                 <td title=$:{json.dumps(_(u'Temperature difference for safety shutdown of automation.'), ensure_ascii=False)}>
@@ -155,7 +206,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail with error'):</td>
                 <td title=$:{json.dumps(_(u'For this function required E-mail plugin'), ensure_ascii=False)}>
-                    <input name='sendeml' id="sendeml" type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
+                    <label class="switch">
+                        <input name='sendeml' id="sendeml" type='checkbox'${" checked" if plugin_options['sendeml'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -172,7 +226,7 @@ $var page: plugins
                     <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
                 </select>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
@@ -181,9 +235,12 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>

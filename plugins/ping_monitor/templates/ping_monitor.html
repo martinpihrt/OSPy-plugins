@@ -3,6 +3,51 @@ $def with(plugin_options, events)
 $var title: $_('Ping monitor settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -153,7 +198,7 @@ function create_graph(result) {
         });
         plot.setupGrid();
         plot.draw();
-        plot.clearSelection(); 
+        plot.clearSelection();
     });
 
 }
@@ -212,7 +257,7 @@ function loadGraph() {
         });
 
     if (jQuery("#graph-placeholder").length > 0) {
-        setTimeout(loadGraph, 500); 
+        setTimeout(loadGraph, 500);
     }
 
     jQuery(".graph-range").click(function(){
@@ -230,7 +275,7 @@ function loadGraph() {
 
 <div id="plugin">
     <div class="title">$_('Ping monitor settings')</div>
-    <a href=$plugins.plugin_url('ping_monitor.help_page') class="button upload">$_('Help')</a><br/> 
+    <a href=$plugins.plugin_url('ping_monitor.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log']:
         <p>
         <a href=$plugins.plugin_url('ping_monitor.log_csv') class="button download">$_('Download log')</a>
@@ -243,13 +288,19 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'><b>$_('Use ping monitoring'):</b></td>
                 <td title=$:{json.dumps(_(u'Activate this extension use for ping testing.'), ensure_ascii=False)}>
-                <input name='use_ping' type='checkbox'${" checked" if plugin_options['use_ping'] else ""}></td>
+                <label class="switch">
+                    <input name='use_ping' type='checkbox'${" checked" if plugin_options['use_ping'] else ""}>
+                    <span class="slider"></span>
+                </label></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
                 <td title=$:{json.dumps(_(u'When logging is enabled, a log file is created (required for the graph and for sending an e-mail at the same time).'), ensure_ascii=False)}>
-                <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}></td>
-            </tr>            
+                <label class="switch">
+                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
+                    <span class="slider"></span>
+                </label></td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Ping address 1'):</td>
                 <td title=$:{json.dumps(_('First address for testing.'), ensure_ascii=False)}>
@@ -269,38 +320,47 @@ function loadGraph() {
                 <td title=$:{json.dumps(_(u'Third address for testing.'), ensure_ascii=False)}>
                 <input name='address_3' type='text' value='$plugin_options["address_3"]'></td>
                 <td title=$:{json.dumps(_('Label for address.'), ensure_ascii=False)}>
-                <input name='label_3' type='text' value='$plugin_options["label_3"]'></td>                
-            </tr>                        
+                <input name='label_3' type='text' value='$plugin_options["label_3"]'></td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Ping interval'):</td>
                 <td title=$:{json.dumps(_(u'After what time do we want to repeat the ping. From 2 to 600 seconds.'), ensure_ascii=False)}>
                 <input name='ping_interval' type='number' min="2" max="600" value='$plugin_options["ping_interval"]'></td>
-            </tr>  
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of invalid pings to restart the device'):</td>
                 <td title=$:{json.dumps(_(u'If enabled restart this device, then this item affects how many unsuccessful pings will be performed before a restart. From 2 to 60.'), ensure_ascii=False)}>
                 <input name='ping_count' type='number' min="2" max="60" value='$plugin_options["ping_count"]'></td>
-            </tr> 
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Restart this device'):</td>
                 <td title=$:{json.dumps(_(u'When enabled, the device will be restarted after a certain number of unsuccessful pings (HW restart).'), ensure_ascii=False)}>
-                <input name='use_restart' type='checkbox'${" checked" if plugin_options['use_restart'] else ""}></td>
+                <label class="switch">
+                    <input name='use_restart' type='checkbox'${" checked" if plugin_options['use_restart'] else ""}>
+                    <span class="slider"></span>
+                </label></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send an E-mail with statistics (csv file)'):</td>
                 <td title=$:{json.dumps(_(u'Send a csv file with statistics via E-mail.'), ensure_ascii=False)}>
-                <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}> ($_('For this function required E-mail plugin'))</td>
+                <label class="switch">
+                    <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}>
+                    <span class="slider"></span>
+                </label> ($_('For this function required E-mail plugin'))</td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Interval for sending statistics'):</td>
                 <td title=$:{json.dumps(_(u'Interval for sending statistics by email. From 1 to 48 hours.'), ensure_ascii=False)}>
                 <input name='send_interval' type='number' min="1" max="48" value='$plugin_options["send_interval"]'></td>
-            </tr>             
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Delete statistics after send'):</td>
                 <td title=$:{json.dumps(_(u'Delete the csv file with statistics after sending the E-mail and create a new clean file.'), ensure_ascii=False)}>
-                <input name='use_send_delete' type='checkbox'${" checked" if plugin_options['use_send_delete'] else ""}></td>
-            </tr>            
+                <label class="switch">
+                    <input name='use_send_delete' type='checkbox'${" checked" if plugin_options['use_send_delete'] else ""}>
+                    <span class="slider"></span>
+                </label></td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
                 <td title=$:{json.dumps(_(u'The subject of the message being sent.'), ensure_ascii=False)}>
@@ -314,12 +374,12 @@ function loadGraph() {
                     <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
                 </select>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>                                     
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

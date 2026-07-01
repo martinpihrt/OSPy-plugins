@@ -3,6 +3,51 @@ $def with(plugin_options, events, SOURCE_REGISTRY, SOURCE_KEYS)
 $var title: $_('Weather Dashboard')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
 var sourceRegistry = {};
 
@@ -259,10 +304,13 @@ $for i in range(len(plugin_options['gauges'])):
     <tr>
         <td>$_('Enabled')</td>
         <td>
-            <input
-                type="checkbox"
-                name="enabled${i}"
-                ${"checked" if plugin_options['gauges'][i]['enabled'] else ""}>
+            <label class="switch">
+                <input
+                    type="checkbox"
+                    name="enabled${i}"
+                    ${"checked" if plugin_options['gauges'][i]['enabled'] else ""}>
+                <span class="slider"></span>
+            </label>
         </td>
     </tr>
 

@@ -3,6 +3,51 @@ $def with(plugin_options, events)
 $var title: $_('Air Temperature and Humidity Monitor')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -153,7 +198,7 @@ function create_graph(result) {
         });
         plot.setupGrid();
         plot.draw();
-        plot.clearSelection(); 
+        plot.clearSelection();
     });
 
 }
@@ -224,9 +269,9 @@ jQuery(document).ready(function(){
     jQuery("button#cCancel").click(function(){
         window.location="/";
     });
-    
+
     if (jQuery("#graph-placeholder").length > 0) {
-        setTimeout(loadGraph, 500); 
+        setTimeout(loadGraph, 500);
     }
 
     jQuery(".graph-range").click(function(){
@@ -242,7 +287,7 @@ jQuery(document).ready(function(){
     updateTemperatures();
  });
 </script>
-    
+
 
 <div id="plugin">
     <div class="title">$_('Air Temperature and Humidity Monitor')</div>
@@ -258,7 +303,10 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable plugin'):</b></td>
                 <td title=$:{json.dumps(_('Enable the plugin and then enable the dht, ds18b20 and logging'), ensure_ascii=False)}>
-                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>   
+                    <label class="switch">
+                        <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -269,14 +317,20 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable local logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
-                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                    <label class="switch">
+                        <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the airtemp table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
-                    <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))  
-                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>    
+                    <label class="switch">
+                        <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}>
+                        <span class="slider"></span>
+                    </label> ($_('requires database connector plugin'))
+                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>
                 </td>
             </tr>
             <tr>
@@ -308,7 +362,10 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable DHT'):</b></td>
                 <td>
-                    <input name='enable_dht' type='checkbox'${" checked" if plugin_options['enable_dht'] else ""}>
+                    <label class="switch">
+                        <input name='enable_dht' type='checkbox'${" checked" if plugin_options['enable_dht'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -323,13 +380,16 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'>$_('Label for sensor'):</td>
                 <td>
-                <input name='label' type='text' value='$plugin_options['label']'> <b><span id="dht1">-</span>&deg;C <span id="dht2">-</span>%</b> 
+                <input name='label' type='text' value='$plugin_options['label']'> <b><span id="dht1">-</span>&deg;C <span id="dht2">-</span>%</b>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Allow regulation'):</td>
                 <td>
-                    <input name='enabled_reg' type='checkbox'${" checked" if plugin_options['enabled_reg'] else ""}>   
+                    <label class="switch">
+                        <input name='enabled_reg' type='checkbox'${" checked" if plugin_options['enabled_reg'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -365,7 +425,7 @@ jQuery(document).ready(function(){
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
                 </td>
-            </tr>  
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
@@ -374,7 +434,10 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable DS18B20'):</b></td>
                 <td>
-                    <input name='ds_enabled' type='checkbox'${" checked" if plugin_options['ds_enabled'] else ""}>   
+                    <label class="switch">
+                        <input name='ds_enabled' type='checkbox'${" checked" if plugin_options['ds_enabled'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -394,37 +457,55 @@ jQuery(document).ready(function(){
                             <th>$_('Actual')</th>
                         </tr>
                         <tr>
-                            <td><input name='ds0_enabled' type='checkbox'${" checked" if plugin_options['ds0_enabled'] else ""}></td>
+                            <td><label class="switch">
+                                <input name='ds0_enabled' type='checkbox'${" checked" if plugin_options['ds0_enabled'] else ""}>
+                                <span class="slider"></span>
+                            </label></td>
                             <td>DS1</td>
                             <td><input name='label_ds0' type='text' value='$plugin_options['label_ds0']'></td>
                             <td><b><span id="temp1">-</span>&deg;C</b></td>
                         </tr>
                         <tr>
-                            <td><input name='ds1_enabled' type='checkbox'${" checked" if plugin_options['ds1_enabled'] else ""}></td>
+                            <td><label class="switch">
+                                <input name='ds1_enabled' type='checkbox'${" checked" if plugin_options['ds1_enabled'] else ""}>
+                                <span class="slider"></span>
+                            </label></td>
                             <td>DS2</td>
                             <td><input name='label_ds1' type='text' value='$plugin_options['label_ds1']'></td>
                             <td><b><span id="temp2">-</span>&deg;C</b></td>
                         </tr>
                         <tr>
-                            <td><input name='ds2_enabled' type='checkbox'${" checked" if plugin_options['ds2_enabled'] else ""}></td>
+                            <td><label class="switch">
+                                <input name='ds2_enabled' type='checkbox'${" checked" if plugin_options['ds2_enabled'] else ""}>
+                                <span class="slider"></span>
+                            </label></td>
                             <td>DS3</td>
                             <td><input name='label_ds2' type='text' value='$plugin_options['label_ds2']'></td>
                             <td><b><span id="temp3">-</span>&deg;C</b></td>
                         </tr>
                         <tr>
-                            <td><input name='ds3_enabled' type='checkbox'${" checked" if plugin_options['ds3_enabled'] else ""}></td>
+                            <td><label class="switch">
+                                <input name='ds3_enabled' type='checkbox'${" checked" if plugin_options['ds3_enabled'] else ""}>
+                                <span class="slider"></span>
+                            </label></td>
                             <td>DS4</td>
                             <td><input name='label_ds3' type='text' value='$plugin_options['label_ds3']'></td>
                             <td><b><span id="temp4">-</span>&deg;C</b></td>
                         </tr>
                         <tr>
-                            <td><input name='ds4_enabled' type='checkbox'${" checked" if plugin_options['ds4_enabled'] else ""}></td>
+                            <td><label class="switch">
+                                <input name='ds4_enabled' type='checkbox'${" checked" if plugin_options['ds4_enabled'] else ""}>
+                                <span class="slider"></span>
+                            </label></td>
                             <td>DS5</td>
                             <td><input name='label_ds4' type='text' value='$plugin_options['label_ds4']'></td>
                             <td><b><span id="temp5">-</span>&deg;C</b></td>
                         </tr>
                         <tr>
-                            <td><input name='ds5_enabled' type='checkbox'${" checked" if plugin_options['ds5_enabled'] else ""}></td>
+                            <td><label class="switch">
+                                <input name='ds5_enabled' type='checkbox'${" checked" if plugin_options['ds5_enabled'] else ""}>
+                                <span class="slider"></span>
+                            </label></td>
                             <td>DS6</td>
                             <td><input name='label_ds5' type='text' value='$plugin_options['label_ds5']'></td>
                             <td><b><span id="temp6">-</span>&deg;C</b></td>
@@ -440,9 +521,12 @@ jQuery(document).ready(function(){
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>                          
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>
@@ -476,7 +560,10 @@ $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
         $_('To') <input name='dt_to' id="dt_to" input type="datetime-local" value='$plugin_options['dt_to']' />
         <button type="button" id="filterSelection" class="button submit">$_('Filtering')</button>
         <button type="button" id="clearSelection" class="button backup">$_('Reset')</button>
-        $_('Show also errors') <input name="show_err" id="show_err" type="checkbox"${" checked" if plugin_options['show_err'] else ""} title=$:{json.dumps(_('Show also errors in graph. Example: -127'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+        $_('Show also errors') <label class="switch">
+            <input name="show_err" id="show_err" type="checkbox"${" checked" if plugin_options['show_err'] else ""} title=$:{json.dumps(_('Show also errors in graph. Example: -127'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+            <span class="slider"></span>
+        </label>
     </div>
     <div id="graph-empty" style="display: none; margin-bottom: 8px;">$_('No records found for selected range.')</div>
     <div id="legend-placeholder" style="display:none;"></div>

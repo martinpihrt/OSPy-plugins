@@ -4,11 +4,56 @@ $var title: $_('Venetian blind settings')
 $var page: plugins
 
 <style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
+<style>
 .alert-box {
     padding: 15px;
     margin-bottom: 20px;
     border: 1px solid transparent;
-    border-radius: 4px;  
+    border-radius: 4px;
 }
 
 .success {
@@ -38,16 +83,16 @@ $var page: plugins
         });
         jQuery("#nbr_blinds").click(function() {
             jQuery("#pluginForm").submit();
-        });   
+        });
         switch (msg) {
             case "saved":
                 jQuery("div.success").fadeIn(100).delay(2000).fadeOut(2000);
-            break;  
+            break;
             case "test":
                 jQuery("div.test").fadeIn(100).delay(2000).fadeOut(2000);
             break;
         }
-       
+
     });
 </script>
 
@@ -60,28 +105,37 @@ $var page: plugins
         <p>
         <a href=$plugins.plugin_url('venetian_blind.log_csv') class="button download">$_('Download log')</a>
         <a href="?delete&$csrf_query()" class="button cancel danger">$_('Delete all logs')</a>
-        </p></br>    
+        </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('venetian_blind.setup_page')" method="post">
         $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use Control'):</td>
                 <td>
-                    <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>
+                    <label class="switch">
+                        <input name='use_control' type='checkbox'${" checked" if plugin_options['use_control'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Enable logging'):</td>
                 <td>
-                    <input name='use_log' type='checkbox'${" checked" if plugin_options['use_log'] else ""}>
+                    <label class="switch">
+                        <input name='use_log' type='checkbox'${" checked" if plugin_options['use_log'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of blinds'):</td>
                 <td title=$:{json.dumps(_(u'The number of blinds controlled by this extension.'), ensure_ascii=False)}>
@@ -91,7 +145,7 @@ $var page: plugins
                <th colspan="2">
                  <hr>
                </th>
-            </tr>            
+            </tr>
             $for c in range(0, plugin_options['number_blinds']):
                 <tr><td class="blindNumber"><b><small>$_('Blind') ${c+1}</small></b></td></tr>
                 <tr>
@@ -138,7 +192,7 @@ $var page: plugins
                     <td>
                        <input type="text" size="20" value="${plugin_options['label100'][c] if c < len(plugin_options['label100']) else ''}" id="label100${c}" name="label100${c}">
                     </td>
-                </tr>                                
+                </tr>
         </table>
     </form>
 </div>

@@ -3,6 +3,51 @@ $def with(plugin_options, events, status)
 $var title: $_('Photovoltaic Boiler')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     function check_type() {
        jQuery("#pluginForm").submit();
@@ -18,7 +63,7 @@ $var page: plugins
         });
         jQuery("button#docButton").click(function(){
             window.open("/plugins/photovoltaic_boiler/help')", "_blank");
-        });        
+        });
         jQuery("#sensor_probe").change(check_type);
         jQuery("#probe_A_on").change(check_type);
         jQuery("#probe_A_on_sens").change(check_type);
@@ -32,7 +77,7 @@ $var page: plugins
         jQuery("#start_hh_2").change(check_type);
         jQuery("#start_mm_2").change(check_type);
         jQuery("#stop_hh_2").change(check_type);
-        jQuery("#stop_mm_2").change(check_type);        
+        jQuery("#stop_mm_2").change(check_type);
         jQuery("#use_footer").change(check_type);
         jQuery("#temp_a_on").change(check_type);
     });
@@ -40,14 +85,17 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Photovoltaic Boiler')</div>
-    <a href=$plugins.plugin_url('photovoltaic_boiler.help_page') class="button upload">$_('Help')</a><br/>    
+    <a href=$plugins.plugin_url('photovoltaic_boiler.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('photovoltaic_boiler.settings_page')" method="post">
         $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable Control'):</b></td>
                 <td title=$:{json.dumps(_(u'If the box is checked, regulation will be enabled.'), ensure_ascii=False)}>
-                     <input id="enabled_a" name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>   
+                     <label class="switch">
+                         <input id="enabled_a" name='enabled_a' type='checkbox'${" checked" if plugin_options['enabled_a'] else ""}>
+                         <span class="slider"></span>
+                     </label>
                 </td>
             </tr>
             <tr>
@@ -67,7 +115,7 @@ $var page: plugins
                         <select id="probe_A_on" name="probe_A_on">
                         $for i in range(status["ds_count"]):
                             <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${status["ds_name_%d" % i]}</option>
-                        </select>    
+                        </select>
                     $elif plugin_options["sensor_probe"]==1:
                         <select id="probe_A_on" name="probe_A_on_sens">
                         $for sensor in sensors.get():
@@ -91,11 +139,14 @@ $var page: plugins
                     <input id="stop_hh" name="stop_hh" type="number" size="2" maxlength="2" value='$plugin_options["stop_hh"]' min="0" max="23">:
                     <input id="stop_mm" name="stop_mm" type="number" size="2" maxlength="2" value='$plugin_options["stop_mm"]' min="0" max="59"><small>$_('hh:mm')</small>
                 </td>
-            </tr>           
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Enable secondary time'):</td>
                 <td title=$:{json.dumps(_(u'If the box is checked, second time will be enabled.'), ensure_ascii=False)}>
-                     <input id="two_time" name='two_time' type='checkbox'${" checked" if plugin_options['two_time'] else ""}>   
+                     <label class="switch">
+                         <input id="two_time" name='two_time' type='checkbox'${" checked" if plugin_options['two_time'] else ""}>
+                         <span class="slider"></span>
+                     </label>
                 </td>
             </tr>
             $if plugin_options['two_time']:
@@ -112,23 +163,23 @@ $var page: plugins
                     <input id="stop_hh_2" name="stop_hh_2" type="number" size="2" maxlength="2" value='$plugin_options["stop_hh_2"]' min="0" max="23">:
                     <input id="stop_mm_2" name="stop_mm_2" type="number" size="2" maxlength="2" value='$plugin_options["stop_mm_2"]' min="0" max="59"><small>$_('hh:mm')</small>
                 </td>
-                </tr>                                
+                </tr>
             $else:
                 <input id="start_hh_2" name="start_hh_2" type="hidden" value='$plugin_options["start_hh_2"]'>
                 <input id="start_mm_2" name="start_mm_2" type="hidden" value='$plugin_options["start_mm_2"]'>
                 <input id="stop_hh_2" name="stop_hh_2" type="hidden" value='$plugin_options["stop_hh_2"]'>
-                <input id="stop_mm_2" name="stop_mm_2" type="hidden" value='$plugin_options["stop_mm_2"]'>                    
+                <input id="stop_mm_2" name="stop_mm_2" type="hidden" value='$plugin_options["stop_mm_2"]'>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Temperature for ON output'):</td>
                 <td title=$:{json.dumps(_(u'Temperature for switch ON (boiler output). If the temperature of the probe is lower than this set value, the output switches.'), ensure_ascii=False)}>
                     <input id="temp_a_on" name='temp_a_on' type='number' min='0' max='100' value='$plugin_options["temp_a_on"]'>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Select Output'):</td>
                 <td title=$:{json.dumps(_(u'Select the output you want to control with regulation.'), ensure_ascii=False)}>
@@ -137,7 +188,7 @@ $var page: plugins
                             <option value="${str(station.index)}" ${"selected" if plugin_options["control_output_A"]==station.index else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                     </select>
                 </td>
-            </tr> 
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
@@ -146,9 +197,12 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Status'):</b></td>
                 <td>

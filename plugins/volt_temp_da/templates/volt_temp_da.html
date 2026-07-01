@@ -3,6 +3,51 @@ $def with(plugin_options, status, events)
 $var title: $_(u'Voltage and Temperature Monitor')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -15,7 +60,7 @@ $var page: plugins
         });
  });
 </script>
-    
+
 
 <div id="plugin">
     <div class="title">$_(u'Voltage and Temperature Monitor')</div>
@@ -27,13 +72,19 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Enabled'):</td>
                 <td>
-                    <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>   
+                    <label class="switch">
+                        <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Enable logging'):</td>
                 <td>
-                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                    <label class="switch">
+                        <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -58,7 +109,10 @@ $var page: plugins
                 <tr>
                     <td style='text-transform: none;'>$_('Label for input') ${i}:</td>
                     <td>
-                        <input name='ad${i}_label' type='text' value='$plugin_options['ad%d_label' % i]'> $_('Measure as temperature'): <input name='ad${i}_temp' type='checkbox'${" checked" if plugin_options['ad%d_temp' % i] else ""}>
+                        <input name='ad${i}_label' type='text' value='$plugin_options['ad%d_label' % i]'> $_('Measure as temperature'): <label class="switch">
+                            <input name='ad${i}_temp' type='checkbox'${" checked" if plugin_options['ad%d_temp' % i] else ""}>
+                            <span class="slider"></span>
+                        </label>
                     </td>
                 </tr>
             <tr>
@@ -80,5 +134,5 @@ $var page: plugins
     <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
-                                  
-                     
+
+

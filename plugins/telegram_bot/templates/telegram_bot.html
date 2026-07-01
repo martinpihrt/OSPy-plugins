@@ -4,6 +4,51 @@ $var title: $_('Telegram Bot')
 $var page: plugins
 
 <style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
+<style>
     .telegram-summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -224,7 +269,10 @@ $var page: plugins
                 <td style='text-transform: none;'>$_(u'Enable Telegram Bot'):</td>
                 <td title=$:{json.dumps(_(u'If the box is checked, Telegram Bot will be enabled.'), ensure_ascii=False)}>
                     <label class="telegram-switch">
-                        <input name='use_plugin' type='checkbox'${" checked" if plugin_options['use_plugin'] else ""}>
+                        <label class="switch">
+                            <input name='use_plugin' type='checkbox'${" checked" if plugin_options['use_plugin'] else ""}>
+                            <span class="slider"></span>
+                        </label>
                         <span class="telegram-slider"></span>
                     </label>
                 </td>
@@ -265,7 +313,10 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Zone Change'):</td>
                 <td title=$:{json.dumps(_(u'Send message if there has been a stations changed state.'), ensure_ascii=False)}>
                     <label class="telegram-switch">
-                        <input name='zoneChange' type='checkbox'${" checked" if plugin_options['zoneChange'] else ""}>
+                        <label class="switch">
+                            <input name='zoneChange' type='checkbox'${" checked" if plugin_options['zoneChange'] else ""}>
+                            <span class="slider"></span>
+                        </label>
                         <span class="telegram-slider"></span>
                     </label>
                 </td>
@@ -315,7 +366,10 @@ $var page: plugins
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
                     <label class="telegram-switch">
-                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <label class="switch">
+                            <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                            <span class="slider"></span>
+                        </label>
                         <span class="telegram-slider"></span>
                     </label>
                 </td>

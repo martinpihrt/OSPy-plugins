@@ -3,6 +3,51 @@ $def with(plugin_options, events)
 $var title: $_('Water tank monitor settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -153,7 +198,7 @@ function create_graph(result) {
         });
         plot.setupGrid();
         plot.draw();
-        plot.clearSelection(); 
+        plot.clearSelection();
     });
 
 }
@@ -228,7 +273,7 @@ function updateValues(){
         });
 
     if (jQuery("#graph-placeholder").length > 0) {
-        setTimeout(loadGraph, 500); 
+        setTimeout(loadGraph, 500);
     }
 
     jQuery(".graph-range").click(function(){
@@ -249,12 +294,12 @@ function updateValues(){
 <div id="plugin">
     <div class="title">$_('Water tank monitor settings')</div>
     <p><a href=$plugins.plugin_url('tank_monitor.help_page') class="button upload">$_('Help')</a></p><br/>
-    <p> 
+    <p>
     $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
         <a href="?show" class="button backup">$_('Show logs')</a>
         <a href="?log_now&$csrf_query()" class="button submit">$_('Log sample now')</a>
     $if plugin_options['input_byte_debug_log']:
-        <a href="?debug" class="button backup">$_('Show debug logs')</a>    
+        <a href="?debug" class="button backup">$_('Show debug logs')</a>
     <a href="?reset&$csrf_query()" class="button cancel danger">$_('Reset min/max level')</a>
     </p></br>
     <form id="pluginForm" action="$plugins.plugin_url('tank_monitor.settings_page')" method="post">
@@ -263,7 +308,10 @@ function updateValues(){
             <tr>
                 <td style='text-transform: none;'><b>$_('Use ultrasonic measuring the water level in the tank'):</b></td>
                 <td title=$:{json.dumps(_('If checked, the extension will measure the level using ultrasound'), ensure_ascii=False)}>
-                    <input name='use_sonic' type='checkbox'${" checked" if plugin_options['use_sonic'] else ""}> 
+                    <label class="switch">
+                        <input name='use_sonic' type='checkbox'${" checked" if plugin_options['use_sonic'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -287,36 +335,45 @@ function updateValues(){
             <tr>
                 <td style='text-transform: none;'>$_('Cylinder diameter for volume calculation'):</td>
                 <td title=$:{json.dumps(_('Enter the diameter for volume calculation'), ensure_ascii=False)}>
-                    <input name='diameter' type='number' min="2" max="4000" value='$plugin_options["diameter"]'>$_('cm') 
+                    <input name='diameter' type='number' min="2" max="4000" value='$plugin_options["diameter"]'>$_('cm')
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Display as liters or m')<sup>3</sup>:</td>
                 <td title=$:{json.dumps(_('Show measured water as liters or m3'), ensure_ascii=False)}>
-                    <input name='check_liters' type='checkbox'${" checked" if plugin_options['check_liters'] else ""}> 
+                    <label class="switch">
+                        <input name='check_liters' type='checkbox'${" checked" if plugin_options['check_liters'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Use averaging for samples'):</b></td>
                 <td title=$:{json.dumps(_('If checked, averaging of measured values will be performed (this option affects the speed of response to the measured value)'), ensure_ascii=False)}>
-                    <input name='use_avg' type='checkbox'${" checked" if plugin_options['use_avg'] else ""}> 
+                    <label class="switch">
+                        <input name='use_avg' type='checkbox'${" checked" if plugin_options['use_avg'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of samples for average'):</td>
                 <td title=$:{json.dumps(_('Enter the number count for samples'), ensure_ascii=False)}>
-                    <input name='avg_samples' type='number' min="3" max="100" value='$plugin_options["avg_samples"]'> 
+                    <input name='avg_samples' type='number' min="3" max="100" value='$plugin_options["avg_samples"]'>
                 </td>
-            </tr>                         
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>                         
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Stop stations if minimum water level'):</b></td>
                 <td title=$:{json.dumps(_('Stoping these stations if is minimum water level in the tank'), ensure_ascii=False)}>
-                    <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
+                    <label class="switch">
+                        <input name='use_stop' type='checkbox'${" checked" if plugin_options['use_stop'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -331,11 +388,14 @@ function updateValues(){
                 <td title=$:{json.dumps(_('Enter the number for unblocking delay duration and stop stations in cm'), ensure_ascii=False)}>
                     <input name='water_unblocking' type='number' min="5" max="100" value='$plugin_options["water_unblocking"]'>$_('cm')
                 </td>
-            </tr>                        
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Stop stations if sonic probe has fault'):</td>
                 <td title=$:{json.dumps(_('If the level sensor fails, the above selected stations in the scheduler will stop'), ensure_ascii=False)}>
-                    <input name='use_water_stop' type='checkbox'${" checked" if plugin_options['use_water_stop'] else ""}>
+                    <label class="switch">
+                        <input name='use_water_stop' type='checkbox'${" checked" if plugin_options['use_water_stop'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -346,24 +406,30 @@ function updateValues(){
                         <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
                 </select>
                 </td>
-            </tr>                                                
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>                
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Send an E-mail with an error that there is minimum water in the tank'):<b></td>
                 <td title=$:{json.dumps(_('For this function required E-mail plugin'), ensure_ascii=False)}>
-                    <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}>
+                    <label class="switch">
+                        <input name='use_send_email' type='checkbox'${" checked" if plugin_options['use_send_email'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send an E-mail with an error if sonic probe has fault'):</td>
                 <td title=$:{json.dumps(_('For this function required E-mail plugin'), ensure_ascii=False)}>
-                    <input name='use_water_err' type='checkbox'${" checked" if plugin_options['use_water_err'] else ""}>
+                    <label class="switch">
+                        <input name='use_water_err' type='checkbox'${" checked" if plugin_options['use_water_err'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>                       
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('E-mail subject'):</td>
                 <td title=$:{json.dumps(_('Subject for E-mail from this tank monitor'), ensure_ascii=False)}>
@@ -378,18 +444,21 @@ function updateValues(){
                     <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
                 </select>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr> 
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Regulate the maximum water level'):</b></td>
                 <td title=$:{json.dumps(_('If checked, regulation is enabled'), ensure_ascii=False)}>
-                    <input name='enable_reg' type='checkbox'${" checked" if plugin_options['enable_reg'] else ""}>   
+                    <label class="switch">
+                        <input name='enable_reg' type='checkbox'${" checked" if plugin_options['enable_reg'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>   
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum maintained water level'):</td>
                 <td title=$:{json.dumps(_('If the measured water level exceeds this set value, the output is activated'), ensure_ascii=False)}>
@@ -402,13 +471,13 @@ function updateValues(){
                     <input id="reg_mm" name="reg_mm" type="number" size="3" maxlength="3" value='$plugin_options["reg_mm"]' min="0" max="999">:
                     <input id="reg_ss" name="reg_ss" type="number" size="2" maxlength="2" value='$plugin_options["reg_ss"]' min="0" max="59"> [mm:ss]
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Minimum maintained water level'):</td>
                 <td title=$:{json.dumps(_('If the measured water level falls below this set value, the output is deactivated'), ensure_ascii=False)}>
                     <input name='reg_min' type='number' min="10" max="400" value='$plugin_options["reg_min"]'>$_('cm')
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Select Output for regulation'):</td>
                 <td title=$:{json.dumps(_('Select Output for controled zones'), ensure_ascii=False)}>
@@ -422,18 +491,24 @@ function updateValues(){
                 <th colspan="2">
                 <hr>
                 </th>
-            </tr>                        
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable local logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
-                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                    <label class="switch">
+                        <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the tankmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
-                    <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))  
-                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>    
+                    <label class="switch">
+                        <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}>
+                        <span class="slider"></span>
+                    </label> ($_('requires database connector plugin'))
+                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>
                 </td>
             </tr>
             <tr>
@@ -444,7 +519,7 @@ function updateValues(){
                 <option value="1" ${"selected" if plugin_options['type_log']==1 else ""}>$_('Database file')</option>
                 </select>
                 </td>
-            </tr>           
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
                 <td title=$:{json.dumps(_('0 = unlimited. The maximum number of records sets the number of saved records, i.e. after exceeding the set limit, older data is overwritten.'), ensure_ascii=False)}>
@@ -454,21 +529,27 @@ function updateValues(){
             <tr>
                 <td style='text-transform: none;'>$_('Interval for logging'):</td>
                 <td title=$:{json.dumps(_('In minutes (Minimum is 1). The logging interval is common for both local storage and sql storage of measured data.'), ensure_ascii=False)}>
-                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> 
+                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><small>$_('Enable bus logging'):</small></td>
                 <td title=$:{json.dumps(_('Logging for advanced user (save debug data from I2C bus)'), ensure_ascii=False)}>
-                    <input name='input_byte_debug_log' type='checkbox'${" checked" if plugin_options['input_byte_debug_log'] else ""}>   
+                    <label class="switch">
+                        <input name='input_byte_debug_log' type='checkbox'${" checked" if plugin_options['input_byte_debug_log'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><small>$_('Only if data changed'):</small></td>
                 <td title=$:{json.dumps(_('Logging of data only when this data changes, otherwise still logging'), ensure_ascii=False)}>
-                    <input name='byte_changed' type='checkbox'${" checked" if plugin_options['byte_changed'] else ""}>   
+                    <label class="switch">
+                        <input name='byte_changed' type='checkbox'${" checked" if plugin_options['byte_changed'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>                         
+            </tr>
             <tr>
                 <th colspan="2">
                 <hr>
@@ -477,7 +558,10 @@ function updateValues(){
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -500,33 +584,33 @@ function updateValues(){
                 <td>
                 <b><span id="maxlevel">-</span>$_('cm')</b> (<span id="maxlevel_datetime">-</span>)
                 </td>
-            </tr>            
-            <tr>    
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Percent'):
                 </td>
                 <td>
                 <b><span id="percent">-</span>$_('%')</b>
                 </td>
             </tr>
-            <tr>    
+            <tr>
                 <td style='text-transform: none;'>$_('Ping'):
                 </td>
                 <td>
                 <b><span id="ping">-</span>$_('cm')</b>
                 </td>
             </tr>
-            <tr>    
+            <tr>
                 <td style='text-transform: none;'>$_('Volume'):
                 </td>
                 <td>
                 <b><span id="volume">-</span><span id="unit">-</span></b>
-                </td>                 
+                </td>
             </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>                                      
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

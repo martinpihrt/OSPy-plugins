@@ -3,6 +3,51 @@ $def with(plugin_options, events)
 $var title: $_('E-mail Notifications')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     // Initialize behaviors
     jQuery(document).ready(function(){
@@ -20,7 +65,7 @@ $var page: plugins
         jQuery("#cDel").click(function() {
             jQuery("#pluginForm").attr('action', "$plugins.plugin_url('email_notifications.settings_page')?del&$csrf_query()")
             jQuery("#pluginForm").submit();
-        });        
+        });
 
     });
 </script>
@@ -34,20 +79,32 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail after power on'):</td>
                 <td>
-                    <input name='emlpwron' type='checkbox'${" checked" if plugin_options['emlpwron'] else ""}> $_('with events.log file') <input name='emllog' type='checkbox'${" checked" if plugin_options['emllog'] else ""}> 
+                    <label class="switch">
+                        <input name='emlpwron' type='checkbox'${" checked" if plugin_options['emlpwron'] else ""}>
+                        <span class="slider"></span>
+                    </label> $_('with events.log file') <label class="switch">
+                        <input name='emllog' type='checkbox'${" checked" if plugin_options['emllog'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if rain is detected'):</td>
                 <td>
-                    <input name='emlrain' type='checkbox'${" checked" if plugin_options['emlrain'] else ""}>
+                    <label class="switch">
+                        <input name='emlrain' type='checkbox'${" checked" if plugin_options['emlrain'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
 
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if a program has finished'):</td>
                 <td>
-                    <input name='emlrun' type='checkbox'${" checked" if plugin_options['emlrun'] else ""}>
+                    <label class="switch">
+                        <input name='emlrun' type='checkbox'${" checked" if plugin_options['emlrun'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -57,7 +114,7 @@ $var page: plugins
                 <td>
                     <input name='emlserver' type='text' value='$plugin_options["emlserver"]'>
                 </td>
-            </tr>      
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('SMTP port'):
                     <div><small>$_('example: 587')</small></div>
@@ -70,14 +127,17 @@ $var page: plugins
               <div><small>$_('Some SMTP providers prohibit to use another sender than the same mail user.')</small></div>
             </td>
             <td>
-                <input name='emlsender' type='checkbox' ${" checked" if plugin_options['emlsender'] else ""}>
+                <label class="switch">
+                    <input name='emlsender' type='checkbox' ${" checked" if plugin_options['emlsender'] else ""}>
+                    <span class="slider"></span>
+                </label>
             </td>
             <tr>
                 <td style='text-transform: none;'>$_('SMTP username'):
                     <div><small>$_('Your E-mail username')</small></div>
                 </td>
                 <td>
-                    <input name='emlusr' type='text' value='$plugin_options["emlusr"]'> 
+                    <input name='emlusr' type='text' value='$plugin_options["emlusr"]'>
                 </td>
             </tr>
             <tr>
@@ -127,14 +187,17 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Save and send it later'):</td>
                 <td>
-                    <input name='emlrepeater' type='checkbox'${" checked" if plugin_options['emlrepeater'] else ""}>
-                </td>   
+                    <label class="switch">
+                        <input name='emlrepeater' type='checkbox'${" checked" if plugin_options['emlrepeater'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
             </tr>
             <tr>
                 <td colspan="2">
                     <button id="cDel" class="cancel danger">$_('Delete queue')</button>
-                </td> 
-            </tr>        
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
@@ -149,5 +212,5 @@ $var page: plugins
     <button id="cTest" class="submit"><b>$_('Send a test E-mail')</b></button>
     <button id="cCancel" class="cancel danger">$_('Cancel')</button>
 </div>
-                                  
-                     
+
+

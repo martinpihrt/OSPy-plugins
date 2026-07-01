@@ -3,6 +3,51 @@ $def with(plugin_options, status, events)
 $var title: $_('Wind Speed Monitor settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -15,9 +60,9 @@ function updateWind(){
         let wind = _data.wind;
         //console.log(wind);
         jQuery("#wind span.wind").text(wind);
-    })      
+    })
     setTimeout(updateWind, 2000); // 2 second
-}    
+}
 
 var graph_text;
 
@@ -55,7 +100,7 @@ function draw_graph(result) {
             graph_text.push(texts);
         }
     }
-    
+
     var yLabels = $:{json.dumps(_('Wind m/s or km/h'), ensure_ascii=False).encode('utf8').decode('utf8')};
 
     return jQuery.plot("#graph-placeholder", data, {
@@ -164,7 +209,7 @@ function create_graph(result) {
         });
         plot.setupGrid();
         plot.draw();
-        plot.clearSelection(); 
+        plot.clearSelection();
     });
 
 }
@@ -223,7 +268,7 @@ function loadGraph() {
         });
 
     if (jQuery("#graph-placeholder").length > 0) {
-        setTimeout(loadGraph, 500); 
+        setTimeout(loadGraph, 500);
     }
 
     jQuery(".graph-range").click(function(){
@@ -255,13 +300,19 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'><b>$_('Use wind monitor'):</b></td>
                 <td title=$:{json.dumps(_('If the box is checked, wind monitor be enabled.'), ensure_ascii=False)}>
-                    <input name='use_wind_monitor' type='checkbox'${" checked" if plugin_options['use_wind_monitor'] else ""}>
+                    <label class="switch">
+                        <input name='use_wind_monitor' type='checkbox'${" checked" if plugin_options['use_wind_monitor'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable local logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
-                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
+                    <label class="switch">
+                        <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -272,24 +323,33 @@ function loadGraph() {
                 <option value="1" ${"selected" if plugin_options['type_log']==1 else ""}>$_('Database file')</option>
                 </select>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the windmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
-                    <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}> ($_('requires database connector plugin'))  
-                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>    
+                    <label class="switch">
+                        <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}>
+                        <span class="slider"></span>
+                    </label> ($_('requires database connector plugin'))
+                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Save to log if maximal speed change'):</td>
                 <td title=$:{json.dumps(_('If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately'), ensure_ascii=False)}>
-                    <input name='enable_log_change' type='checkbox'${" checked" if plugin_options['enable_log_change'] else ""}>
+                    <label class="switch">
+                        <input name='enable_log_change' type='checkbox'${" checked" if plugin_options['enable_log_change'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Delete max speed after selected interval'):</td>
                 <td title=$:{json.dumps(_('If the box is checked, the maximum measured speed is reset after selected interval (log is not deleted)'), ensure_ascii=False)}>
-                    <input name='delete_max_24h' type='checkbox'${" checked" if plugin_options['delete_max_24h'] else ""}>
+                    <label class="switch">
+                        <input name='delete_max_24h' type='checkbox'${" checked" if plugin_options['delete_max_24h'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -321,7 +381,10 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'>I&sup2;C $_('address 0x50'):</td>
                 <td title=$:{json.dumps(_('If the box is checked, wind monitor is on address 0x50.'), ensure_ascii=False)}>
-                    <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}>
+                    <label class="switch">
+                        <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -339,7 +402,10 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'>$_('Display in km/h'):</td>
                 <td title=$:{json.dumps(_('If the box is checked, the speed is in km/h'), ensure_ascii=False)}>
-                    <input name='use_kmh' type='checkbox'${" checked" if plugin_options['use_kmh'] else ""}>
+                    <label class="switch">
+                        <input name='use_kmh' type='checkbox'${" checked" if plugin_options['use_kmh'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -356,7 +422,10 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'>$_('Send E-mail if stop'):</td>
                 <td title=$:{json.dumps(_('For this function required E-mail plugin'), ensure_ascii=False)}>
-                    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}> 
+                    <label class="switch">
+                        <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -373,7 +442,7 @@ function loadGraph() {
                     <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
                 </select>
                 </td>
-            </tr>             
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
@@ -382,7 +451,10 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'>$_('Stoping stations'):</td>
                 <td title=$:{json.dumps(_('Stoping selected stations in scheduler if stations has run'), ensure_ascii=False)}>
-                    <input name='stoperr' type='checkbox'${" checked" if plugin_options['stoperr'] else ""}> 
+                    <label class="switch">
+                        <input name='stoperr' type='checkbox'${" checked" if plugin_options['stoperr'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -391,7 +463,7 @@ function loadGraph() {
             </tr>
             <tr>
                 <td></td>
-                <td title=$:{json.dumps(_('If wind speed is bigger stop this selected stations'), ensure_ascii=False)}>  
+                <td title=$:{json.dumps(_('If wind speed is bigger stop this selected stations'), ensure_ascii=False)}>
                 <select multiple name="used_stations" width="250" style="width: 250px" size="8">
                     $for station in [station for station in stations if station.enabled]:
                         <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
@@ -406,7 +478,10 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'>$_('Run program when exceeded'):</td>
                 <td title=$:{json.dumps(_('When the set speed is exceeded, start the selected program and close the window blinds, for example.'), ensure_ascii=False)}>
-                    <input name='use_stop_pgm' type='checkbox'${" checked" if plugin_options['use_stop_pgm'] else ""}> 
+                    <label class="switch">
+                        <input name='use_stop_pgm' type='checkbox'${" checked" if plugin_options['use_stop_pgm'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -427,26 +502,26 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'>$_('Number of event repetitions for the action'):</td>
                 <td title=$:{json.dumps(_('If the maximum wind speed is repeatedly exceeded in a given time period (it is set in the box below), the program will be started.'), ensure_ascii=False)}>
-                    <input name='event_repetitions' type='number' min='1' value='$plugin_options["event_repetitions"]'> 
+                    <input name='event_repetitions' type='number' min='1' value='$plugin_options["event_repetitions"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Repeatedly exceeded in these interval'):</td>
                 <td title=$:{json.dumps(_('In this time period, the number of set exceeded events (time in minutes) is measured.'), ensure_ascii=False)}>
-                    <input name='event_interval' type='number' min='1' value='$plugin_options["event_interval"]'> 
+                    <input name='event_interval' type='number' min='1' value='$plugin_options["event_interval"]'>
                 </td>
-            </tr>     
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Ignore other events for a while'):</td>
                 <td title=$:{json.dumps(_('If the program has been started, the next possible start will be triggered by an event only after this set time (in hours).'), ensure_ascii=False)}>
-                    <input name='ignore_interval' type='number' min='1' value='$plugin_options["ignore_interval"]'> 
+                    <input name='ignore_interval' type='number' min='1' value='$plugin_options["ignore_interval"]'>
                 </td>
-            </tr>                                                      
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>            
+            </tr>
             <tr>
                 <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (measuring every 10 sec)'):</td>
                 <td style="background-color: rgb(220, 220, 220);text-align: left;">
@@ -459,7 +534,10 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>

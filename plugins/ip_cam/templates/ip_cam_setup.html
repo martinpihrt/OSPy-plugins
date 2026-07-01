@@ -3,6 +3,51 @@ $def with(plugin_options, msg)
 $var title: $_('IP cam - settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script>
     var msg = "${msg}";
     // Initialize behaviors
@@ -27,7 +72,7 @@ $var page: plugins
 </script>
 
 <div id="plugin">
-    <div class="title">$_('IP cam - settings') <span id="msgHint"></span></div>    
+    <div class="title">$_('IP cam - settings') <span id="msgHint"></span></div>
     <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('ip_cam.setup_page')" method="post">
         $:csrf_input()
@@ -35,17 +80,23 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Use JPEG image downloads'):</td>
                 <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds to the plugin folder and these images will be previewed on the web page. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
-                <input type="checkbox" name="use_jpg" ${"checked" if plugin_options['use_jpg'] else ""}></td>
+                <label class="switch">
+                    <input type="checkbox" name="use_jpg" ${"checked" if plugin_options['use_jpg'] else ""}>
+                    <span class="slider"></span>
+                </label></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use GIF image creating'):</td>
                 <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from xx images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
-                <input type="checkbox" name="use_gif" ${"checked" if plugin_options['use_gif'] else ""}></td>
+                <label class="switch">
+                    <input type="checkbox" name="use_gif" ${"checked" if plugin_options['use_gif'] else ""}>
+                    <span class="slider"></span>
+                </label></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of frames in GIF'):</td>
                 <td title=$:{json.dumps(_(u'How many images from the camera are saved and then used to create a GIF image. (The more frames, the longer the gif will be refreshed. Frames are created every 5 seconds. eg: 10 frames - gif is created in 10x5sec=50sec).'), ensure_ascii=False)}>
-                <input name='gif_frames' type='number' min="3" max="50" value="$plugin_options['gif_frames']"> (3-50)</td> 
+                <input name='gif_frames' type='number' min="3" max="50" value="$plugin_options['gif_frames']"> (3-50)</td>
             </tr>
         </table>
         <p></br></p>
@@ -53,36 +104,36 @@ $var page: plugins
         $for c in range(0, options.output_count):
             <table class="optionList">
             <tr>
-            <td class="NumberCam"><b><small>$_('Station') ${c+1})</small></b></td>
+            <td class="NumberCam"><b><small>$_('Station') (${c+1})</small></b></td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('IP address and port'):</td>
             <td title=$:{json.dumps(_(u'Example: http://12.34.56.78:88'), ensure_ascii=False)}>
-            <input name='jpg_ip${c}' type='text' size='60' value='$plugin_options['jpg_ip'][c]'>
+            <input name='jpg_ip${c}' type='text' size='60' value="${plugin_options['jpg_ip'][c]}">
             </td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Query for get JPEG image'):</td>
             <td title=$:{json.dumps(_(u'Example: cgi-bin/guest/Video.cgi?media=JPEG&channel=1'), ensure_ascii=False)}>
-            <input name='jpg_que${c}' type='text' size='60' value='$plugin_options['jpg_que'][c]'>
+            <input name='jpg_que${c}' type='text' size='60' value="${plugin_options['jpg_que'][c]}">
             </td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Query for get MJPEG image'):</td>
             <td title=$:{json.dumps(_(u'Example ISAPI/Streaming/channels/102/httpPreview'), ensure_ascii=False)}>
-            <input name='mjpeg_que${c}' type='text' size='60' value='$plugin_options['mjpeg_que'][c]'> 
+            <input name='mjpeg_que${c}' type='text' size='60' value="${plugin_options['mjpeg_que'][c]}">
             </td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Username for access'):</td>
             <td title=$:{json.dumps(_(u'Example: admin'), ensure_ascii=False)}>
-            <input name='jpg_user${c}' type='text' size='20' value='$plugin_options['jpg_user'][c]'>
+            <input name='jpg_user${c}' type='text' size='20' value="${plugin_options['jpg_user'][c]}">
             </td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Password for access'):</td>
             <td title=$:{json.dumps(_(u'Example: 1234'), ensure_ascii=False)}>
-            <input name='jpg_pass${c}' type='password' size='20' value='$plugin_options['jpg_pass'][c]'>
+            <input name='jpg_pass${c}' type='password' size='20' value="${plugin_options['jpg_pass'][c]}">
             </td>
             </tr>
             </table>

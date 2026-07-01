@@ -3,6 +3,51 @@ $def with(plugin_options, events)
 $var title: $_('Speed monitor settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -153,7 +198,7 @@ function create_graph(result) {
         });
         plot.setupGrid();
         plot.draw();
-        plot.clearSelection(); 
+        plot.clearSelection();
     });
 
 }
@@ -212,7 +257,7 @@ function loadGraph() {
         });
 
     if (jQuery("#graph-placeholder").length > 0) {
-        setTimeout(loadGraph, 500); 
+        setTimeout(loadGraph, 500);
     }
 
     jQuery(".graph-range").click(function(){
@@ -230,7 +275,7 @@ function loadGraph() {
 
 <div id="plugin">
     <div class="title">$_('Speed monitor settings')</div>
-    <a href=$plugins.plugin_url('speed_monitor.help_page') class="button upload">$_('Help')</a><br/> 
+    <a href=$plugins.plugin_url('speed_monitor.help_page') class="button upload">$_('Help')</a><br/>
     $if plugin_options['enable_log']:
         <p>
         <a href=$plugins.plugin_url('speed_monitor.log_csv') class="button download">$_('Download log')</a>
@@ -243,19 +288,25 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'><b>$_('Use Monitor'):</b></td>
                 <td title=$:{json.dumps(_(u'if checked, the extension will measure the connection speed'), ensure_ascii=False)}>
-                    <input name='use_monitor' type='checkbox'${" checked" if plugin_options['use_monitor'] else ""}> 
+                    <label class="switch">
+                        <input name='use_monitor' type='checkbox'${" checked" if plugin_options['use_monitor'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Interval for testing'):</td>
                 <td title=$:{json.dumps(_(u'minutes (Minimum is 1)'), ensure_ascii=False)}>
-                    <input name='test_interval' type='number' min='1' value='$plugin_options["test_interval"]'> 
+                    <input name='test_interval' type='number' min='1' value='$plugin_options["test_interval"]'>
                 </td>
-            </tr>                                    
+            </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
                 <td>
-                    <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>   
+                    <label class="switch">
+                        <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -267,20 +318,23 @@ function loadGraph() {
             <tr>
                 <td style='text-transform: none;'>$_('Interval for logging'):</td>
                 <td title=$:{json.dumps(_(u'minutes (Minimum is 1)'), ensure_ascii=False)}>
-                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'> 
+                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="switch">
+                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
-            </tr>            
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
                </th>
-            </tr>         
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>

@@ -3,26 +3,74 @@ $def with(plugin_options)
 $var title: $_('Weather Stations Settings')
 $var page: plugins
 
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
+
 
 <script>
 jQuery(document).ready(function(){
 
     jQuery("#cSubmit").click(function() {
         jQuery("#pluginForm").submit();
-    });   
+    });
 });
 </script>
-    
+
 
 <div id="plugin">
-    <div class="title">$_('Weather Stations Settings')</div>   
+    <div class="title">$_('Weather Stations Settings')</div>
     <form id="pluginForm" action="$plugins.plugin_url('weather_stations.settings_page')" method="post">
         $:csrf_input()
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Canvas or Text mode for showing data'):</td> 
+                <td style='text-transform: none;'>$_('Canvas or Text mode for showing data'):</td>
                 <td title=$:{json.dumps(_(u'When checked, it is text mode.'), ensure_ascii=False)}>
-                    <input name='can_or_txt' type='checkbox'${" checked" if plugin_options['can_or_txt'] else ""}>
+                    <label class="switch">
+                        <input name='can_or_txt' type='checkbox'${" checked" if plugin_options['can_or_txt'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -36,7 +84,7 @@ jQuery(document).ready(function(){
                 <td title=$:{json.dumps(_(u'The number determines the font size in text mode. The minimum is 15px, the maximum is 800px.'), ensure_ascii=False)}>
                     <input name='txt_size_font' type='number' min='15' max='800' value='$plugin_options["txt_size_font"]'>
                 </td>
-            </tr> 
+            </tr>
             <tr>
                <th colspan="2">
                  <hr>
@@ -48,7 +96,10 @@ jQuery(document).ready(function(){
                 <tr>
                     <td style='text-transform: none;'>$_('Show this DS18b20-')${c + 1}:</td>
                     <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                        <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>  
+                        <label class="switch">
+                            <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>
+                            <span class="slider"></span>
+                        </label>
                     </td>
                 </tr>
                 <tr>
@@ -72,7 +123,7 @@ jQuery(document).ready(function(){
                         <input type='number' size='4' value="${plugin_options['s_a_high_fr'][c] if c < len(plugin_options['s_a_high_fr']) else ''}"  id="s_a_high_fr${c}" name="s_a_high_fr${c}"> $_(u'To:')
                         <input type='number' size='4' value="${plugin_options['s_a_high_to'][c] if c < len(plugin_options['s_a_high_to']) else ''}"  id="s_a_high_to${c}" name="s_a_high_to${c}">
                     </td>
-                </tr>  
+                </tr>
                 <tr>
                     <td style='text-transform: none;'>$_('Blue color from'):</td>
                     <td title=$:{json.dumps(_(u'Your scale from blue color (from - to). Example: 0,10,20,30 (type to from 10 to 20).'), ensure_ascii=False)}>
@@ -93,7 +144,7 @@ jQuery(document).ready(function(){
                <th colspan="2">
                  <hr>
                  <p>$_('This part needs correct setuped plugin Water Tank Monitor')</p>
-                 <a href='/plugins/tank_monitor/settings' class="button upload">$_('Open package')</a> 
+                 <a href='/plugins/tank_monitor/settings' class="button upload">$_('Open package')</a>
                </th>
             </tr>
             $for c in range(6, 8):
@@ -103,7 +154,10 @@ jQuery(document).ready(function(){
                     $if c==7:
                         <td style='text-transform: none;'>$_('Show this Water Volume'):</td>
                     <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                        <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>  
+                        <label class="switch">
+                            <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>
+                            <span class="slider"></span>
+                        </label>
                     </td>
                 </tr>
                 <tr>
@@ -130,7 +184,7 @@ jQuery(document).ready(function(){
                         <input type='number' size='4' value="${plugin_options['s_a_high_fr'][c] if c < len(plugin_options['s_a_high_fr']) else ''}"  id="s_a_high_fr${c}" name="s_a_high_fr${c}"> $_(u'To:')
                         <input type='number' size='4' value="${plugin_options['s_a_high_to'][c] if c < len(plugin_options['s_a_high_to']) else ''}"  id="s_a_high_to${c}" name="s_a_high_to${c}">
                     </td>
-                </tr>  
+                </tr>
                 <tr>
                     <td style='text-transform: none;'>$_('Blue color from'):</td>
                     <td title=$:{json.dumps(_(u'Your scale from blue color (from - to). Example: 0,10,20,30 (type to from 10 to 20).'), ensure_ascii=False)}>
@@ -159,7 +213,10 @@ jQuery(document).ready(function(){
                     $if c==8:
                         <td style='text-transform: none;'>$_('Show this Wind Speed'):</td>
                     <td title=$:{json.dumps(_(u'When checked, showing this canvas (text) is enabled.'), ensure_ascii=False)}>
-                        <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>  
+                        <label class="switch">
+                            <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>
+                            <span class="slider"></span>
+                        </label>
                     </td>
                 </tr>
                 <tr>
@@ -184,7 +241,7 @@ jQuery(document).ready(function(){
                         <input type='number' size='4' value="${plugin_options['s_a_high_fr'][c] if c < len(plugin_options['s_a_high_fr']) else ''}"  id="s_a_high_fr${c}" name="s_a_high_fr${c}"> $_(u'To:')
                         <input type='number' size='4' value="${plugin_options['s_a_high_to'][c] if c < len(plugin_options['s_a_high_to']) else ''}"  id="s_a_high_to${c}" name="s_a_high_to${c}">
                     </td>
-                </tr>  
+                </tr>
                 <tr>
                     <td style='text-transform: none;'>$_('Blue color from'):</td>
                     <td title=$:{json.dumps(_(u'Your scale from blue color (from - to). Example: 0,10,20,30 (type to from 10 to 20).'), ensure_ascii=False)}>
@@ -212,7 +269,10 @@ jQuery(document).ready(function(){
                 <tr>
                     <td style='text-transform: none;'>$_('Show this Sensor') ${c-8} $_('(')$sensor.name$_(')'):</td>
                     <td title=$:{json.dumps(_(u'When checked, showing this sensor (text) is enabled.'), ensure_ascii=False)}>
-                        <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>  
+                        <label class="switch">
+                            <input name="s_use${c}" type='checkbox' ${" checked" if plugin_options['s_use'][c] and c < len(plugin_options['s_use']) else ""}>
+                            <span class="slider"></span>
+                        </label>
                     </td>
                 </tr>
                 <tr>
@@ -236,7 +296,7 @@ jQuery(document).ready(function(){
                         <input type='number' size='4' value="${plugin_options['s_a_high_fr'][c] if c < len(plugin_options['s_a_high_fr']) else ''}"  id="s_a_high_fr${c}" name="s_a_high_fr${c}"> $_(u'To:')
                         <input type='number' size='4' value="${plugin_options['s_a_high_to'][c] if c < len(plugin_options['s_a_high_to']) else ''}"  id="s_a_high_to${c}" name="s_a_high_to${c}">
                     </td>
-                </tr>  
+                </tr>
                 <tr>
                     <td style='text-transform: none;'>$_('Blue color from'):</td>
                     <td title=$:{json.dumps(_(u'Your scale from blue color (from - to). Example: 0,10,20,30 (type to from 10 to 20).'), ensure_ascii=False)}>
@@ -252,7 +312,7 @@ jQuery(document).ready(function(){
                     </td>
                 </tr>
                 $if sensors.count()>1:
-                    <tr><th><hr></th></tr>                                                                            
+                    <tr><th><hr></th></tr>
         </table>
     </form>
 </div>
