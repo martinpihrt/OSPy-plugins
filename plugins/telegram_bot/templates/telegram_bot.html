@@ -61,6 +61,56 @@ $var page: plugins
     .telegram-command-list dd {
         margin: 0;
     }
+
+    .telegram-token-field {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .telegram-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .telegram-switch input {
+        display: none;
+    }
+
+    .telegram-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: red;
+        transition: 0.4s;
+        border-radius: 24px;
+    }
+
+    .telegram-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    .telegram-switch input:checked + .telegram-slider {
+        background-color: green;
+    }
+
+    .telegram-switch input:checked + .telegram-slider:before {
+        transform: translateX(26px);
+    }
 </style>
 
 <script>
@@ -70,6 +120,12 @@ $var page: plugins
         });
         jQuery("button#cCancel").click(function(){
             window.location="/";
+        });
+        jQuery("#toggleToken").click(function(){
+            var tokenInput = jQuery("#botToken");
+            var visible = tokenInput.attr("type") === "text";
+            tokenInput.attr("type", visible ? "password" : "text");
+            jQuery(this).text(visible ? "$_('Show')" : "$_('Hide')");
         });
     });
 </script>
@@ -138,13 +194,19 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_(u'Enable Telegram Bot'):</td>
                 <td title=$:{json.dumps(_(u'If the box is checked, Telegram Bot will be enabled.'), ensure_ascii=False)}>
-                     <input name='use_plugin' type='checkbox'${" checked" if plugin_options['use_plugin'] else ""}>
+                    <label class="telegram-switch">
+                        <input name='use_plugin' type='checkbox'${" checked" if plugin_options['use_plugin'] else ""}>
+                        <span class="telegram-slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_(u'Bot Token'):</td>
                 <td title=$:{json.dumps(_(u'Paste the token from @BotFather. The bot connects after saving; OSPy restart is not required.'), ensure_ascii=False)}>
-                     <input name='botToken' type='password' size="55" value="${plugin_options['botToken']}">
+                    <div class="telegram-token-field">
+                        <input id="botToken" name='botToken' type='password' size="55" value="${plugin_options['botToken']}">
+                        <button id="toggleToken" type="button" class="execute">$_('Show')</button>
+                    </div>
                 </td>
             </tr>
             <tr>
@@ -173,7 +235,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Zone Change'):</td>
                 <td title=$:{json.dumps(_(u'Send message if there has been a stations changed state.'), ensure_ascii=False)}>
-                     <input name='zoneChange' type='checkbox'${" checked" if plugin_options['zoneChange'] else ""}>
+                    <label class="telegram-switch">
+                        <input name='zoneChange' type='checkbox'${" checked" if plugin_options['zoneChange'] else ""}>
+                        <span class="telegram-slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
@@ -220,7 +285,10 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                    <label class="telegram-switch">
+                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="telegram-slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>
