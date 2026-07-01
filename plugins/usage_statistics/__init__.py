@@ -20,6 +20,11 @@ NAME = 'Usage Statistics'
 MENU =  _(u'Package: Usage Statistics')
 LINK = 'status_page'
 
+
+def _normalize_id(value):
+    return str(value or '').strip().lower()
+
+
 class StatusChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -64,11 +69,13 @@ class StatusChecker(Thread):
            users = jsonStr.get('user', [])
            records = []
            userID = ''
+           userID_compare = ''
            self.status['pageID'] = ' '
 
            try:
               with open("./ospy/statistics/user_id", "r") as f:
                  userID = f.read().strip()
+              userID_compare = _normalize_id(userID)
               self.status['pageID'] = _(u'Your ID is: ') + str(userID)
               self.status['current_id'] = userID
            except:
@@ -78,7 +85,8 @@ class StatusChecker(Thread):
 
            log.clear(NAME)
            for user in users:
-              record_id = str(user.get('id', ''))
+              record_id = str(user.get('id', '')).strip()
+              record_current = userID_compare != '' and _normalize_id(record_id) == userID_compare
               record = {
                  'id': record_id,
                  'log': str(user.get('log', '')),
@@ -87,8 +95,8 @@ class StatusChecker(Thread):
                  'distribution': str(user.get('distribution', '')),
                  'system': str(user.get('system', '')),
                  'python': str(user.get('python', '')),
-                 'current': userID != '' and record_id == userID,
-                 'card_class': 'usage-card usage-card-current' if userID != '' and record_id == userID else 'usage-card'
+                 'current': record_current,
+                 'card_class': 'usage-card usage-card-current' if record_current else 'usage-card'
               }
               records.append(record)
 
