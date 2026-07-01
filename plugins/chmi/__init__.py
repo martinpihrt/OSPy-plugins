@@ -13,6 +13,7 @@ import re
 import subprocess
 import shutil
 import importlib.util
+import math
 
 from threading import Thread, Event, Lock
 import traceback
@@ -37,6 +38,7 @@ from io import BytesIO
 NAME = 'CHMI'
 MENU =  _('Package: CHMI radar')
 LINK = 'settings_page'
+PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
 
 plugin_options = PluginOptions(
     NAME,
@@ -74,6 +76,7 @@ SHMU_BOUNDS = {
     'LON_1': 23.804495372410756,
     'LAT_1': 46.04688049237037,
 }
+SHMU_BORDERS_PATH = os.path.join(PLUGIN_DIR, 'static', 'images', 'shmu_borders.png')
 RADAR_HEADERS = {'User-Agent': 'OSPy CHMI radar monitor/1.0'}
 animation_lock = Lock()
 animation_frames = []
@@ -158,28 +161,11 @@ class CHMI_Checker(Thread):
                             
                             # Save radar img to local file
                             image_path = os.path.join(plugin_data_dir(), 'last.png')                              # last radar image
-                            borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')      # ÄŤr borders map image
                             result_path = os.path.join(plugin_data_dir(),'result.png')                            # merge radar + borders image
                             corner_path = os.path.join(plugin_data_dir(),'corner.png')                            # draw corner to result
                             try:
                                 bitmap.save(image_path)
-                                # Merge images (radar and outline of the Czech Republic) if the source uses the same canvas.
-                                img = Image.open(image_path)
-                                ia, wa = None, None
-                                if len(img.getbands()) == 4:
-                                    ir, ig, ib, ia = img.split()
-                                    img = Image.merge('RGB', (ir, ig, ib))
-                                if radar_source() == 'chmi':
-                                    wmark = Image.open(borders_path)
-                                    if wmark.size == img.size:
-                                        if len(wmark.getbands()) == 4:
-                                            wa = wmark.split()[-1]
-                                        img.paste(wmark, (0, 0), wmark)
-                                        if ia:
-                                            if wa:
-                                                # This seems to solve the contradiction, discard if unwanted
-                                                ia = max_alpha(wa, ia)
-                                            img.putalpha(ia)
+                                img = compose_radar_image(Image.open(image_path))
                                 img.save(result_path)
                                 log.debug(NAME, datetime_string() + ' ' + _('The merging of the images (radar and outline of the Czech Republic) went OK.'))
                             except:
@@ -203,18 +189,23 @@ class CHMI_Checker(Thread):
                             # The line has the format: ID;name;country. width; ground length
                             # ID represents the order of RGB LEDs on the LaskaKit map of the Czech Republic
 
-                            log.debug(NAME, datetime_string() + ' ' + _('Loading cities database...'))
-                            if plugin_options['HW_BOARD']   == "0":
-                                city_table = 'laska_cities'
-                            elif plugin_options['HW_BOARD'] == "1":
-                                city_table = 'tmep_cities'
-                            elif plugin_options['HW_BOARD'] == "2":
-                                city_table = 'pihrt_cities'
-                            else:
-                                return
-
                             cities_with_rain = []
-                            cities_path = os.path.join('plugins', 'chmi', 'static', city_table)
+                            cities = []
+                            if radar_source() == 'chmi':
+                                log.debug(NAME, datetime_string() + ' ' + _('Loading cities database...'))
+                                if plugin_options['HW_BOARD']   == "0":
+                                    city_table = 'laska_cities'
+                                elif plugin_options['HW_BOARD'] == "1":
+                                    city_table = 'tmep_cities'
+                                elif plugin_options['HW_BOARD'] == "2":
+                                    city_table = 'pihrt_cities'
+                                else:
+                                    return
+                                cities_path = os.path.join('plugins', 'chmi', 'static', city_table)
+                                with open(cities_path, "r") as fi:
+                                    cities = fi.readlines()
+                            else:
+                                log.info(NAME, datetime_string() + ' ' + _('City and hardware map processing is disabled for the SHMU radar source.'))
 
                             corner_img = Image.open(result_path)
                             c_img = img.convert("RGBA")
@@ -226,8 +217,7 @@ class CHMI_Checker(Thread):
                             font = ImageFont.truetype(font_path, font_size)
                             draw.text((5, 5), drawtext, font=font, fill="white")
 
-                            with open(cities_path, "r") as fi:
-                                cities = fi.readlines()
+                            if cities:
                                 log.debug(NAME, datetime_string() + ' ' + _('Analyzing if is raining in the cities...'))
                                 log.debug(NAME, '-' * 40)
                                 # We go through the list city by city
@@ -239,8 +229,7 @@ class CHMI_Checker(Thread):
                                         lat = float(cell[2])
                                         lon = float(cell[3])
                                         # We calculate the pixel coordinates of the city on the radar image
-                                        x = int((lon - bounds['LON_0']) / size_lon_pixel)
-                                        y = int((bounds['LAT_0'] - lat) / size_lat_pixel)
+                                        x, y = radar_pixel_xy(lat, lon, bitmap.width, bitmap.height, bounds)
                                         if x < 0 or y < 0 or x >= bitmap.width or y >= bitmap.height:
                                             continue
                                         # We will find the RGB on the given coordinate, i.e. the possible color of the rain
@@ -262,65 +251,64 @@ class CHMI_Checker(Thread):
                                             # If it is not raining in the given city, we draw an empty square with a white outline in its coordinates
                                             draw.rectangle((x-5, y-5, x+5, y+5), fill=(0, 0, 0), outline=(255, 255, 255))
 
-                                # MY LOCATION
-                                tempText = ""
-                                is_lat_lon = None
-                                r=g=b=rad=0
-                                rain_area = None
+                            # MY LOCATION
+                            tempText = ""
+                            is_lat_lon = None
+                            r=g=b=rad=0
+                            rain_area = None
 
-                                if options.weather_lat and options.weather_lon:
-                                    lat = float(options.weather_lat)
-                                    lon = float(options.weather_lon)
-                                    is_lat_lon = True
-                                    # We calculate the pixel coordinates my location on the radar image
-                                    x = int((lon - bounds['LON_0']) / size_lon_pixel)
-                                    y = int((bounds['LAT_0'] - lat) / size_lat_pixel)
-                                    rain_area = analyze_location_rain(bitmap, x, y)
-                                    r = rain_area['red']
-                                    g = rain_area['green']
-                                    b = rain_area['blue']
-                                    rad = 8
-                                else:
-                                    lat = 0.0
-                                    lon = 0.0
+                            if options.weather_lat and options.weather_lon:
+                                lat = float(options.weather_lat)
+                                lon = float(options.weather_lon)
+                                is_lat_lon = True
+                                # We calculate the pixel coordinates my location on the radar image
+                                x, y = radar_pixel_xy(lat, lon, bitmap.width, bitmap.height, bounds)
+                                rain_area = analyze_location_rain(bitmap, x, y)
+                                r = rain_area['red']
+                                g = rain_area['green']
+                                b = rain_area['blue']
+                                rad = 8
+                            else:
+                                lat = 0.0
+                                lon = 0.0
 
-                                if is_lat_lon is not None:
-                                    drawtext =  _('RGB in my location is R:{}, G:{}, B:{}').format(r,g,b)
-                                    draw.text((300, 5), drawtext, font=font, fill="white")
-                                    if rain_area['rain']:
-                                        draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=2)
-                                        log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
-                                        log.info(NAME, datetime_string() + ' ' + _('Rain detection area: {} of {} pixels ({}%) are above the threshold.').format(rain_area['rainy_pixels'], rain_area['total_pixels'], rain_area['rainy_percent']))
-                                        self.status['red'] = r
-                                        self.status['green'] = g
-                                        self.status['blue'] = b
-                                        self.status['state'] = 1
-                                        # LOG
-                                        if plugin_options['enable_log']:
-                                            update_log(self.status)
-                                        # RAIND DELAY and FOOTER
-                                        if plugin_options['USE_RAIN_DELAY']:
-                                            delaytime = int(plugin_options['RAIN_DELAY'])
-                                            rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
-                                            stop_onrain()
-                                            tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours')
-                                        else:
-                                            tempText += _('Probably raining right now')
+                            if is_lat_lon is not None:
+                                drawtext =  _('RGB in my location is R:{}, G:{}, B:{}').format(r,g,b)
+                                draw.text((300, 5), drawtext, font=font, fill="white")
+                                if rain_area['rain']:
+                                    draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(r, g, b), outline=(255, 0, 0), width=2)
+                                    log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably raining right now.').format(options.weather_lat, options.weather_lon))
+                                    log.info(NAME, datetime_string() + ' ' + _('Rain detection area: {} of {} pixels ({}%) are above the threshold.').format(rain_area['rainy_pixels'], rain_area['total_pixels'], rain_area['rainy_percent']))
+                                    self.status['red'] = r
+                                    self.status['green'] = g
+                                    self.status['blue'] = b
+                                    self.status['state'] = 1
+                                    # LOG
+                                    if plugin_options['enable_log']:
+                                        update_log(self.status)
+                                    # RAIND DELAY and FOOTER
+                                    if plugin_options['USE_RAIN_DELAY']:
+                                        delaytime = int(plugin_options['RAIN_DELAY'])
+                                        rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
+                                        stop_onrain()
+                                        tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours')
                                     else:
-                                        draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(0, 0, 0), outline=(255, 255, 255))
-                                        log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably not rain.').format(options.weather_lat, options.weather_lon))
-                                        log.info(NAME, datetime_string() + ' ' + _('Rain detection area: {} of {} pixels ({}%) are above the threshold.').format(rain_area['rainy_pixels'], rain_area['total_pixels'], rain_area['rainy_percent']))
-                                        tempText += _('Probably not rain')
-                                        self.status['state'] = 0
+                                        tempText += _('Probably raining right now')
                                 else:
-                                    tempText += _('Location is not set!')
-                                
-                                if plugin_options['use_footer']:
-                                    if chmi_mon is not None:
-                                        chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+                                    draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(0, 0, 0), outline=(255, 255, 255))
+                                    log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably not rain.').format(options.weather_lat, options.weather_lon))
+                                    log.info(NAME, datetime_string() + ' ' + _('Rain detection area: {} of {} pixels ({}%) are above the threshold.').format(rain_area['rainy_pixels'], rain_area['total_pixels'], rain_area['rainy_percent']))
+                                    tempText += _('Probably not rain')
+                                    self.status['state'] = 0
+                            else:
+                                tempText += _('Location is not set!')
 
-                                c_img.save(corner_path)
-                                update_animation_cache()
+                            if plugin_options['use_footer']:
+                                if chmi_mon is not None:
+                                    chmi_mon.val = tempText.encode('utf8').decode('utf8')    # value on footer
+
+                            c_img.save(corner_path)
+                            update_animation_cache()
 
 
                             # We ve gone through all the cities, so well see if we have any on the list that are raining
@@ -350,7 +338,7 @@ class CHMI_Checker(Thread):
                                         log.error(NAME, datetime_string() + ' ' + _('I cannot connect to the map board of the Czech Republic at the URL http://{}/').format(plugin_options['IP_ADDR']))
                                 else:
                                     log.debug(NAME, datetime_string() + ' ' + _('Sending data to the hardware map is disabled.'))
-                            else:
+                            elif radar_source() == 'chmi':
                                 log.info(NAME, datetime_string() + ' ' + _('Looks like it is not raining in any city.'))
                             
                             log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
@@ -416,6 +404,59 @@ def radar_bounds():
         'LON_1': float(plugin_options['LON_1']),
         'LAT_1': float(plugin_options['LAT_1']),
     }
+
+def radar_pixel_xy(lat, lon, width, height, bounds=None):
+    if bounds is None:
+        bounds = radar_bounds()
+
+    if radar_source() == 'shmu':
+        def merc_y(value):
+            rad = math.radians(value)
+            return math.log(math.tan((math.pi / 4.0) + (rad / 2.0)))
+
+        lon_0 = float(bounds['LON_0'])
+        lon_1 = float(bounds['LON_1'])
+        lat_0 = float(bounds['LAT_0'])
+        lat_1 = float(bounds['LAT_1'])
+        x = int(round(((lon - lon_0) / (lon_1 - lon_0)) * width))
+        y = int(round(((merc_y(lat_0) - merc_y(lat)) / (merc_y(lat_0) - merc_y(lat_1))) * height))
+        return x, y
+
+    degree_width = float(bounds['LON_1']) - float(bounds['LON_0'])
+    degree_height = float(bounds['LAT_0']) - float(bounds['LAT_1'])
+    size_lat_pixel = degree_height / height
+    size_lon_pixel = degree_width / width
+    x = int((lon - bounds['LON_0']) / size_lon_pixel)
+    y = int((bounds['LAT_0'] - lat) / size_lat_pixel)
+    return x, y
+
+def compose_radar_image(radar_img):
+    if radar_source() == 'shmu':
+        img = radar_img.convert("RGBA")
+        base = Image.new("RGBA", img.size, (224, 229, 220, 255))
+        base.alpha_composite(img)
+        if os.path.isfile(SHMU_BORDERS_PATH):
+            borders = Image.open(SHMU_BORDERS_PATH).convert("RGBA")
+            if borders.size == img.size:
+                base.alpha_composite(borders)
+        return base
+
+    borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')
+    img = radar_img
+    ia, wa = None, None
+    if len(img.getbands()) == 4:
+        ir, ig, ib, ia = img.split()
+        img = Image.merge('RGB', (ir, ig, ib))
+    wmark = Image.open(borders_path)
+    if wmark.size == img.size:
+        if len(wmark.getbands()) == 4:
+            wa = wmark.split()[-1]
+        img.paste(wmark, (0, 0), wmark)
+        if ia:
+            if wa:
+                ia = max_alpha(wa, ia)
+            img.putalpha(ia)
+    return img
 
 def shmu_missing_dependencies():
     missing = []
@@ -511,24 +552,24 @@ def shmu_hdf_to_png(byte):
 
     dbz = data.astype('float32') * gain + offset
     valid = (data > 0) & (data < 255)
-    image = numpy.zeros((data.shape[0], data.shape[1], 3), dtype=numpy.uint8)
+    image = numpy.zeros((data.shape[0], data.shape[1], 4), dtype=numpy.uint8)
 
     color_steps = [
-        (5,  (70,  120, 255)),
-        (15, (0,   190, 255)),
-        (25, (0,   180, 60)),
-        (35, (255, 220, 0)),
-        (45, (255, 130, 0)),
-        (55, (230, 0,   0)),
-        (65, (180, 0,   180)),
-        (99, (255, 255, 255)),
+        (5,  (70,  120, 255, 180)),
+        (15, (0,   190, 255, 205)),
+        (25, (0,   180, 60,  220)),
+        (35, (255, 220, 0,   230)),
+        (45, (255, 130, 0,   235)),
+        (55, (230, 0,   0,   240)),
+        (65, (180, 0,   180, 245)),
+        (99, (255, 255, 255, 250)),
     ]
     for limit, color in color_steps:
         mask = valid & (dbz <= limit)
         image[mask] = color
         valid = valid & (dbz > limit)
 
-    radar_img = Image.fromarray(image, 'RGB')
+    radar_img = Image.fromarray(image, 'RGBA')
     output = BytesIO()
     radar_img.save(output, format='PNG')
     return True, output.getvalue()
@@ -644,24 +685,7 @@ def analyze_location_rain(bitmap, x, y):
     }
 
 def create_animation_image(byte, date_txt, frame_type, relative_minutes):
-    borders_path = os.path.join('plugins','chmi','static','images','cr_borders.png')
-    img = Image.open(BytesIO(byte))
-    ia, wa = None, None
-    if len(img.getbands()) == 4:
-        ir, ig, ib, ia = img.split()
-        img = Image.merge('RGB', (ir, ig, ib))
-    if radar_source() == 'chmi':
-        wmark = Image.open(borders_path)
-        if wmark.size == img.size:
-            if len(wmark.getbands()) == 4:
-                wa = wmark.split()[-1]
-            img.paste(wmark, (0, 0), wmark)
-            if ia:
-                if wa:
-                    ia = max_alpha(wa, ia)
-                img.putalpha(ia)
-
-    frame_img = img.convert("RGBA")
+    frame_img = compose_radar_image(Image.open(BytesIO(byte))).convert("RGBA")
     draw = ImageDraw.Draw(frame_img)
     draw.rectangle((0, 0, 680, 25), fill=(0, 0, 0), outline=(0, 0, 0))
     font_path = os.path.join('plugins', 'chmi', 'static', 'font', 'Roboto-Bold.ttf')
@@ -670,15 +694,9 @@ def create_animation_image(byte, date_txt, frame_type, relative_minutes):
 
     if options.weather_lat and options.weather_lon:
         try:
-            bounds = radar_bounds()
-            degree_width = float(bounds['LON_1']) - float(bounds['LON_0'])
-            degree_height = float(bounds['LAT_0']) - float(bounds['LAT_1'])
-            size_lat_pixel = degree_height / frame_img.height
-            size_lon_pixel = degree_width / frame_img.width
             lat = float(options.weather_lat)
             lon = float(options.weather_lon)
-            x = int((lon - bounds['LON_0']) / size_lon_pixel)
-            y = int((bounds['LAT_0'] - lat) / size_lat_pixel)
+            x, y = radar_pixel_xy(lat, lon, frame_img.width, frame_img.height)
             if 0 <= x < frame_img.width and 0 <= y < frame_img.height:
                 radius = 8
                 draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill=(255, 255, 0), outline=(0, 0, 0), width=2)
