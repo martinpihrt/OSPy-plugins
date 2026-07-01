@@ -43,6 +43,12 @@ $var page: plugins
         box-sizing: border-box;
     }
 
+    .usage-card-current {
+        border-color: #2f8525;
+        background: #eef8eb;
+        box-shadow: inset 4px 0 0 #2f8525;
+    }
+
     .usage-card-header {
         display: flex;
         gap: 6px;
@@ -141,7 +147,7 @@ $var page: plugins
                     $if status.get('records'):
                         <div class="usage-records">
                         $for record in status['records']:
-                            <section class="usage-card">
+                            <section class="$record['card_class']">
                                 <div class="usage-card-header">
                                     <div class="usage-card-title">$record['id']</div>
                                     <span class="usage-version">OSPy $record['ospy']</span>

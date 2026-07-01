@@ -31,6 +31,7 @@ class StatusChecker(Thread):
             'pageOK': _(u'Error: data cannot be downloaded from') +  ' www.pihrt.com!',
             'pageID': ' ',
             'pageOKstate': False,
+            'current_id': '',
             'records': []
             }
 
@@ -62,17 +63,32 @@ class StatusChecker(Thread):
            jsonStr = json.loads(bodytext)
            users = jsonStr.get('user', [])
            records = []
+           userID = ''
+           self.status['pageID'] = ' '
+
+           try:
+              with open("./ospy/statistics/user_id", "r") as f:
+                 userID = f.read().strip()
+              self.status['pageID'] = _(u'Your ID is: ') + str(userID)
+              self.status['current_id'] = userID
+           except:
+              self.status['current_id'] = ''
+              #log.error(NAME, _('Usage statistics plug-in') + ':\n' + traceback.format_exc())
+              pass
 
            log.clear(NAME)
            for user in users:
+              record_id = str(user.get('id', ''))
               record = {
-                 'id': str(user.get('id', '')),
+                 'id': record_id,
                  'log': str(user.get('log', '')),
                  'ospy': str(user.get('ospy', '')),
                  'cpu': str(user.get('cpu', '')),
                  'distribution': str(user.get('distribution', '')),
                  'system': str(user.get('system', '')),
-                 'python': str(user.get('python', ''))
+                 'python': str(user.get('python', '')),
+                 'current': userID != '' and record_id == userID,
+                 'card_class': 'usage-card usage-card-current' if userID != '' and record_id == userID else 'usage-card'
               }
               records.append(record)
 
@@ -84,22 +100,16 @@ class StatusChecker(Thread):
               log.info(NAME, _('System') + ': ' + record['system'])
               log.info(NAME, _('Python') + ': ' + record['python'] + '\n')
 
+           records.sort(key=lambda record: not record.get('current', False))
            self.status['pageOK'] =  _(u'The data from') +  ' www.pihrt.com ' +  _(u'was downloaded correctly.') + ' ' + datetime_string()
            self.status['pageOKstate'] = True
            self.status['records'] = records
-
-           try:
-              f = open("./ospy/statistics/user_id", "r")
-              userID = (f.read()) 
-              self.status['pageID'] = _(u'Your ID is: ') + str(userID)
-           except:
-              #log.error(NAME, _('Usage statistics plug-in') + ':\n' + traceback.format_exc())
-              pass
 
 
         except Exception:
            self.status['pageOK'] = _(u'Error: data cannot be downloaded from') +  ' www.pihrt.com!'
            self.status['pageOKstate'] = False
+           self.status['current_id'] = ''
            self.status['records'] = []
            log.clear(NAME)
            #log.error(NAME, _('Usage statistics plug-in') + ':\n' + traceback.format_exc())
