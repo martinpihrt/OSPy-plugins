@@ -82,6 +82,15 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title='$_('Show data from plugin in footer on home page').'>
+                    <label class="switch">
+                        <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Min percentage'):</td>
                 <td>
                     <input name='wl_min' type='number' min="0" max="100" value="$plugin_options['wl_min']">

@@ -12,7 +12,7 @@ import web
 from ospy.log import log
 from ospy.options import options
 from ospy.options import level_adjustments
-from ospy.webpages import ProtectedPage
+from ospy.webpages import ProtectedPage, showInFooter, clear_plugin_runtime_data
 from ospy.runonce import run_once
 from ospy.stations import stations
 from ospy.weather import weather
@@ -37,6 +37,7 @@ plugin_options = PluginOptions(
         'protect_minutes': 10,
         'protect_stations': [],
         'protect_months': [],
+        'use_footer': False,
     })
 
 
@@ -65,6 +66,20 @@ class WeatherLevelChecker(Thread):
             self._sleep_time -= 1
 
     def run(self):
+        weather_mon = None
+
+        def update_footer(message):
+            nonlocal weather_mon
+            if plugin_options['use_footer']:
+                if weather_mon is None:
+                    weather_mon = showInFooter()
+                    weather_mon.label = _(u'Water Level')
+                    weather_mon.button = "weather_based_water_level/settings"
+                weather_mon.val = message.encode('utf8').decode('utf8')
+            else:
+                clear_plugin_runtime_data('weather_based_water_level')
+                weather_mon = None
+
         weather.add_callback(self.update)
         self._sleep(10)  # Wait for weather callback before starting
         while not self._stop_event.is_set():
@@ -86,6 +101,16 @@ class WeatherLevelChecker(Thread):
                         total_info['rain_mm'] += weather.get_rain(check_date)
 
                     log.info(NAME, _(u'Using') + ' %d ' % days + _(u'days of information.'))
+
+                    if not info or days < 1:
+                        if NAME in level_adjustments:
+                            del level_adjustments[NAME]
+                        msg = _(u'No usable weather information is available yet.')
+                        log.info(NAME, msg)
+                        log.info(NAME, _(u'Water level adjustment was not changed.'))
+                        update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'No weather data'))
+                        self._sleep(3600)
+                        continue
 
                     total_info.update({
                         'temp_c': sum([val['temperature'] for val in info]) / len(info),
@@ -115,6 +140,7 @@ class WeatherLevelChecker(Thread):
                     log.info(NAME, u'_______________________________')
                     log.info(NAME, _(u'Irrigation needed') +  ': %.1fmm' % water_left)
                     log.info(NAME, _(u'Weather Adjustment') + ': %.1f%%' % water_adjustment)
+                    update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Missing') + ' %.1fmm, %.0f%%' % (water_left, water_adjustment))
 
                     level_adjustments[NAME] = water_adjustment / 100
 
@@ -143,6 +169,7 @@ class WeatherLevelChecker(Thread):
                 else:
                     log.clear(NAME)
                     log.info(NAME, _(u'Plug-in is disabled.'))
+                    update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Plug-in is disabled.'))
                     if NAME in level_adjustments:
                         del level_adjustments[NAME]
                     self._sleep(24*3600)

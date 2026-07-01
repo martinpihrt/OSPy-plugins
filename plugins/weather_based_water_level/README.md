@@ -5,6 +5,7 @@ Tested in Python 3+
 
 When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly.
 In addition, it is now able to protect plants against freezing during selected months.
+If weather data is temporarily unavailable, the plugin logs the problem and leaves the current water level adjustment unchanged.
 
 Plugin setup
 -----------
@@ -22,6 +23,9 @@ Plugin setup
 
 * Forecast days used:  
   Type forecast days (minimum is 0, maximum is 7).
+
+* Show in footer:
+  Show a short status on the OSPy home page footer with the last calculation time, missing rainfall and the current water adjustment.
 
 * Protect against freezing:  
   If checked Protect against freezing plugin monitors temperature and protects stations from freezing.
