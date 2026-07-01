@@ -1,0 +1,16 @@
+$def with()
+
+$var title: $_('Thermostat - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Thermostat - help')</div>
+    <p>$_('The thermostat plugin checks selected temperature sources and starts or stops selected OSPy programs when the configured temperature limits are reached.')</p>
+    <p>$_('Use low and high temperature values with one decimal place to create hysteresis. For example, low 22.4 C and high 22.6 C means that no action is repeated while the temperature stays between these values.')</p>
+    <p>$_('Temperature can be read from the Air Temperature DS probes, OSPy sensors, or Shelly Cloud values when the related plugin is configured.')</p>
+    <p>$_('Programs can then be used to control stations, CLI actions, or external relays such as Shelly devices.')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('thermostat.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>

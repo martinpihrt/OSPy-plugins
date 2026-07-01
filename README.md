@@ -52,6 +52,7 @@ Available plugins:
 * Pressurizer  
 * Ping monitor  
 * Temperature Switch  
+* Thermostat
 * Pool Heating  
 * E-mail Reader  
 * Weather Stations  

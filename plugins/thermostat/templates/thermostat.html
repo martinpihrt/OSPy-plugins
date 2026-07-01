@@ -1,0 +1,191 @@
+$def with(plugin_options, events, data)
+
+$var title: $_('Thermostat')
+$var page: plugins
+
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.thermostatBlock {
+    border-top: 1px solid #c8c8c8;
+}
+</style>
+
+<script>
+    jQuery(document).ready(function(){
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location="/";
+        });
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">$_('Thermostat')</div>
+    <a href=$plugins.plugin_url('thermostat.help_page') class="button upload">$_('Help')</a><br/>
+    <form id="pluginForm" action="$plugins.plugin_url('thermostat.settings_page')" method="post">
+        $:csrf_input()
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Use thermostat'):</td>
+                <td title=$:{json.dumps(_(u'When enabled, thermostats check selected temperature sources and control selected programs.'), ensure_ascii=False)}>
+                    <label class="switch">
+                        <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td title=$:{json.dumps(_(u'Show thermostat status in footer on home page.'), ensure_ascii=False)}>
+                    <label class="switch">
+                        <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Check interval'):</td>
+                <td title=$:{json.dumps(_(u'How often the temperature is checked.'), ensure_ascii=False)}>
+                    <input name='check_interval' type='number' min='5' max='3600' value='$plugin_options["check_interval"]'> $_('seconds')
+                </td>
+            </tr>
+            $for i, zone in enumerate(plugin_options['zones']):
+                <tr class="thermostatBlock">
+                    <th colspan="4">$_('Thermostat') ${i + 1}</th>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Enabled'):</td>
+                    <td>
+                        <label class="switch">
+                            <input name='enabled${i}' type='checkbox'${" checked" if zone['enabled'] else ""}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td style='text-transform: none;'>$_('Name'):</td>
+                    <td>
+                        <input name='name${i}' type='text' size='24' value='$zone["name"]'>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Temperature source'):</td>
+                    <td>
+                        <select name='source${i}'>
+                            $for source_id, source_name in data['sources']:
+                                <option value='$source_id' ${"selected" if zone['source'] == source_id else ""}>$source_name</option>
+                        </select>
+                    </td>
+                    <td style='text-transform: none;'>$_('Channel'):</td>
+                    <td>
+                        <select name='channel${i}'>
+                            $ channels = data['channels'].get(zone['source'], [])
+                            $if channels:
+                                $for channel_id, channel_name in channels:
+                                    <option value='$channel_id' ${"selected" if int(zone['channel']) == int(channel_id) else ""}>$channel_name</option>
+                            $else:
+                                <option value='$zone["channel"]'>$_('No channels available')</option>
+                        </select>
+                        <button class="execute" type="submit">$_('Refresh')</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Shelly value'):</td>
+                    <td>
+                        <select name='value_type${i}'>
+                            $for value_type in data['shelly_value_types']:
+                                <option value='$value_type' ${"selected" if zone['value_type'] == value_type else ""}>$value_type</option>
+                        </select>
+                    </td>
+                    <td style='text-transform: none;'>$_('Program'):</td>
+                    <td>
+                        <select name='program${i}'>
+                            $if data['programs']:
+                                $for program in data['programs']:
+                                    <option value='$program.index' ${"selected" if int(zone['program']) == program.index else ""}>$_('Program') ${program.index + 1}: ${program.name}</option>
+                            $else:
+                                <option value='0'>$_('No programs available')</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Low temperature'):</td>
+                    <td title=$:{json.dumps(_(u'When temperature is equal or lower than this value, the low action is executed once.'), ensure_ascii=False)}>
+                        <input name='low_temp${i}' type='number' step='0.1' min='-50' max='100' value='$zone["low_temp"]'> &deg;C
+                    </td>
+                    <td style='text-transform: none;'>$_('Low action'):</td>
+                    <td>
+                        <select name='low_action${i}'>
+                            <option value='none' ${"selected" if zone['low_action'] == 'none' else ""}>$_('Do nothing')</option>
+                            <option value='start' ${"selected" if zone['low_action'] == 'start' else ""}>$_('Start program')</option>
+                            <option value='stop' ${"selected" if zone['low_action'] == 'stop' else ""}>$_('Stop program')</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('High temperature'):</td>
+                    <td title=$:{json.dumps(_(u'When temperature is equal or higher than this value, the high action is executed once.'), ensure_ascii=False)}>
+                        <input name='high_temp${i}' type='number' step='0.1' min='-50' max='100' value='$zone["high_temp"]'> &deg;C
+                    </td>
+                    <td style='text-transform: none;'>$_('High action'):</td>
+                    <td>
+                        <select name='high_action${i}'>
+                            <option value='none' ${"selected" if zone['high_action'] == 'none' else ""}>$_('Do nothing')</option>
+                            <option value='start' ${"selected" if zone['high_action'] == 'start' else ""}>$_('Start program')</option>
+                            <option value='stop' ${"selected" if zone['high_action'] == 'stop' else ""}>$_('Stop program')</option>
+                        </select>
+                    </td>
+                </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td colspan="3">
+                    <textarea style="font-family: monospace;" rows="10" cols="90" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
