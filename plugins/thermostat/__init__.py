@@ -10,6 +10,7 @@ import web
 
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.log import log
+from ospy.options import options
 from ospy.programs import programs
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage, showInFooter, clear_plugin_runtime_data
@@ -273,6 +274,17 @@ def action_label(action):
     return labels.get(action, action)
 
 
+def shelly_value_label(value_type):
+    labels = {
+        'temperature': _('Temperature 1'),
+        'temperature_2': _('Temperature 2'),
+        'temperature_3': _('Temperature 3'),
+        'temperature_4': _('Temperature 4'),
+        'temperature_5': _('Temperature 5'),
+    }
+    return labels.get(value_type, value_type)
+
+
 def program_exists(index):
     return 0 <= index < len(programs.get())
 
@@ -280,19 +292,36 @@ def program_exists(index):
 def start_program(index):
     if not program_exists(index):
         return False
+    options.manual_mode = False
     programs.run_now_program = None
     programs.run_now(index)
     return True
+
+
+def run_now_program_matches(index):
+    if not program_exists(index) or programs.run_now_program is None:
+        return False
+    target = programs.get(index)
+    run_now = programs.run_now_program
+    return (
+        getattr(run_now, 'name', None) == getattr(target, 'name', None)
+        and list(getattr(run_now, 'stations', [])) == list(getattr(target, 'stations', []))
+        and list(getattr(run_now, 'schedule', [])) == list(getattr(target, 'schedule', []))
+    )
 
 
 def stop_program(index):
     if not program_exists(index):
         return False
 
-    programs.run_now_program = None
-    stopped = False
+    stop_run_now = run_now_program_matches(index)
+    target_run_now_name = '{} {}'.format(_('Run-Now'), programs.get(index).name)
+    if stop_run_now:
+        programs.run_now_program = None
+
+    stopped = stop_run_now
     for interval in log.active_runs():
-        if interval.get('program') == index:
+        if interval.get('program') == index or (stop_run_now and interval.get('program_name') == target_run_now_name):
             stations.deactivate(interval['station'])
             log.finish_run(interval)
             stopped = True
@@ -431,7 +460,7 @@ def template_data():
             ('ospy_sensor', source_title('ospy_sensor')),
             ('shelly_cloud', source_title('shelly_cloud')),
         ],
-        'shelly_value_types': SHELLY_VALUE_TYPES,
+        'shelly_value_types': [(value_type, shelly_value_label(value_type)) for value_type in SHELLY_VALUE_TYPES],
         'programs': programs.get(),
         'channels': {
             'air_temp': get_air_temp_channel_names(),

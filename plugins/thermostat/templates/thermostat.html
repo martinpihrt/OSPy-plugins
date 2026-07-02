@@ -53,6 +53,14 @@ input:checked + .slider:before {
 </style>
 
 <script>
+    function updateShellyValueRows() {
+        jQuery(".thermostatSource").each(function() {
+            let index = jQuery(this).data("index");
+            let showShellyValue = jQuery(this).val() === "shelly_cloud";
+            jQuery(".shellyValueCell[data-index='" + index + "']").toggle(showShellyValue);
+        });
+    }
+
     jQuery(document).ready(function(){
         jQuery("#cSubmit").click(function() {
             jQuery("#pluginForm").submit();
@@ -60,6 +68,8 @@ input:checked + .slider:before {
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+        jQuery(".thermostatSource").change(updateShellyValueRows);
+        updateShellyValueRows();
     });
 </script>
 
@@ -111,7 +121,7 @@ input:checked + .slider:before {
                 <tr>
                     <td style='text-transform: none;'>$_('Temperature source'):</td>
                     <td>
-                        <select name='source${i}'>
+                        <select name='source${i}' class="thermostatSource" data-index="${i}">
                             $for source_id, source_name in data['sources']:
                                 <option value='$source_id' ${"selected" if zone['source'] == source_id else ""}>$source_name</option>
                         </select>
@@ -130,11 +140,11 @@ input:checked + .slider:before {
                     </td>
                 </tr>
                 <tr>
-                    <td style='text-transform: none;'>$_('Shelly value'):</td>
-                    <td>
+                    <td class="shellyValueCell" data-index="${i}" style='text-transform: none;'>$_('Shelly temperature'):</td>
+                    <td class="shellyValueCell" data-index="${i}" title=$:{json.dumps(_(u'Select which Shelly temperature value is used. This matters only for Shelly devices with more temperature inputs.'), ensure_ascii=False)}>
                         <select name='value_type${i}'>
-                            $for value_type in data['shelly_value_types']:
-                                <option value='$value_type' ${"selected" if zone['value_type'] == value_type else ""}>$value_type</option>
+                            $for value_type, value_label in data['shelly_value_types']:
+                                <option value='$value_type' ${"selected" if zone['value_type'] == value_type else ""}>$value_label</option>
                         </select>
                     </td>
                     <td style='text-transform: none;'>$_('Program'):</td>

@@ -33,8 +33,8 @@ Plugin setup
 * Channel:
   Select a DS probe, OSPy sensor or Shelly device.
 
-* Shelly value:
-  Select which Shelly temperature value is used. This is useful for Shelly devices with more temperature probes.
+* Shelly temperature:
+  Select which Shelly temperature value is used. This option is shown only for the Shelly Cloud source and is useful for Shelly devices with more temperature probes. For example, Temperature 3 means the third temperature value reported by the selected Shelly device. DS probes and OSPy sensors do not use this option.
 
 * Program:
   Select the OSPy program controlled by this thermostat.
