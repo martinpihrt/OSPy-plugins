@@ -8,6 +8,17 @@ $var page: plugins
     let animationIndex = 0;
     let animationTimer = null;
     let animateSettingsPage = ${'true' if plugin_options['ANIMATE'] else 'false'};
+    let rgbLabelTemplate = $:{json.dumps(_('RGB in my location is R:{}, G:{}, B:{}'), ensure_ascii=False)};
+    let rainAreaTemplate = $:{json.dumps(_('Rain detection area: {} of {} pixels ({}%) are above the threshold.'), ensure_ascii=False)};
+
+    function formatTemplate(template, values) {
+        let index = 0;
+        return template.replace(/\{\}/g, function() {
+            let value = values[index];
+            index += 1;
+            return value;
+        });
+    }
 
     function checkIP(){
         let IPAddress = jQuery(".IPnumbersOnly").val();
@@ -94,6 +105,14 @@ $var page: plugins
         let frame = animationFrames[animationIndex];
         jQuery("#meteoMap").attr("src", frame.url + "&_=" + new Date().getTime());
         jQuery("#meteoFrameLabel").text(frame.label);
+        if (frame.rgb) {
+            let rgbText = formatTemplate(rgbLabelTemplate, [frame.rgb.red, frame.rgb.green, frame.rgb.blue]);
+            let areaText = formatTemplate(rainAreaTemplate, [frame.rgb.rainy_pixels, frame.rgb.total_pixels, frame.rgb.rainy_percent]);
+            jQuery("#meteoRgbLabel").text(rgbText + " | " + areaText);
+        }
+        else {
+            jQuery("#meteoRgbLabel").text("");
+        }
         updateTimeline();
         animationIndex = (animationIndex + 1) % animationFrames.length;
     }
@@ -218,6 +237,29 @@ input:checked + .slider:before {
   display: inline-block;
   margin-top: 4px;
   font-weight: bold;
+}
+
+.meteoRgbLabel {
+  display: inline-block;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.colorThresholds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.colorThreshold {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.colorThreshold input[type="number"] {
+  width: 72px;
 }
 
 .radarTimeline {
@@ -356,6 +398,7 @@ input:checked + .slider:before {
             <tr>
                 <td style='text-transform: none;'>$_('Meteo map'):</td>
                 <td title=$:{json.dumps(_(u'A downloaded map from the Meteo Institute is displayed here.'), ensure_ascii=False)}>
+                    <small id="meteoRgbLabel" class="meteoRgbLabel"></small><br/>
                     <a href="$plugins.plugin_url('chmi.download_page')"><img id="meteoMap" src="$plugins.plugin_url('chmi.download_page')" width="640"></a><br/>
                     <div class="radarTimeWrap">
                         <input id="radarSlider" class="radarSlider" type="range" min="0" max="0" value="0">
@@ -396,10 +439,33 @@ input:checked + .slider:before {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Intensity threshold'):</td>
-                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location. The detection logic is of the OR type. This means that when the red color exceeds the value 50, or the green value 100, or the blue value 200, for example, rain is detected.'), ensure_ascii=False)}>
-                    $_('RED')<input name='R_INTENS' type='number' min='0' max='255' value='$plugin_options["R_INTENS"]'>
-                    $_('GREEN')<input name='G_INTENS' type='number' min='0' max='255' value='$plugin_options["G_INTENS"]'>
-                    $_('BLUE')<input name='B_INTENS' type='number' min='0' max='255' value='$plugin_options["B_INTENS"]'>
+                <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location. Enabled channels are evaluated with OR logic. This means that when enabled red exceeds 50, or enabled green exceeds 100, or enabled blue exceeds 200, for example, rain is detected.'), ensure_ascii=False)}>
+                    <div class="colorThresholds">
+                        <div class="colorThreshold">
+                            <span>$_('RED')</span>
+                            <label class="switch" title=$:{json.dumps(_(u'Use red channel for rain detection.'), ensure_ascii=False)}>
+                            <input name='R_DETECT' type='checkbox'${" checked" if plugin_options['R_DETECT'] else ""}>
+                            <span class="slider"></span>
+                            </label>
+                            <input name='R_INTENS' type='number' min='0' max='255' value='$plugin_options["R_INTENS"]'>
+                        </div>
+                        <div class="colorThreshold">
+                            <span>$_('GREEN')</span>
+                            <label class="switch" title=$:{json.dumps(_(u'Use green channel for rain detection.'), ensure_ascii=False)}>
+                            <input name='G_DETECT' type='checkbox'${" checked" if plugin_options['G_DETECT'] else ""}>
+                            <span class="slider"></span>
+                            </label>
+                            <input name='G_INTENS' type='number' min='0' max='255' value='$plugin_options["G_INTENS"]'>
+                        </div>
+                        <div class="colorThreshold">
+                            <span>$_('BLUE')</span>
+                            <label class="switch" title=$:{json.dumps(_(u'Use blue channel for rain detection.'), ensure_ascii=False)}>
+                            <input name='B_DETECT' type='checkbox'${" checked" if plugin_options['B_DETECT'] else ""}>
+                            <span class="slider"></span>
+                            </label>
+                            <input name='B_INTENS' type='number' min='0' max='255' value='$plugin_options["B_INTENS"]'>
+                        </div>
+                    </div>
                 </td>
             </tr>
             <tr>

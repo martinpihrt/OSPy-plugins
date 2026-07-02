@@ -49,7 +49,7 @@ Plugin setup
   Delay time in hours.
 
 * Intensity threshold:
-  Intensity threshold for activate rain delay in my location. The detection logic is of the "or" type. This means that when the red color exceeds the value 50, or the green value 100, or the blue value 200, for example, the pixel is marked as rainy.
+  Intensity threshold for activate rain delay in my location. Each RGB channel can be enabled or disabled. Enabled channels use "or" logic. This means that when enabled red exceeds the value 50, or enabled green 100, or enabled blue 200, for example, the pixel is marked as rainy. Disabled channels are ignored completely.
 
 * Detection radius:
   Pixel radius around my location used for rain detection. The default value is 6 px. Instead of checking only one pixel, the plugin checks a circular area around the configured location.

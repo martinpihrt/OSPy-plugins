@@ -59,6 +59,9 @@ plugin_options = PluginOptions(
         'HOME_WIDGET': False,        # Show a small animated radar widget on the OSPy home page
         'IP_ADDR': '192.168.88.2',   # remote map IP address
         'HW_BOARD': '0',             # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
+        'R_DETECT': True,            # Use red channel for rain detection
+        'G_DETECT': True,            # Use green channel for rain detection
+        'B_DETECT': True,            # Use blue channel for rain detection
         'R_INTENS' : 0,              # R intensity threshold for activate rain delay
         'G_INTENS' : 0,              # G intensity threshold for activate rain delay
         'B_INTENS' : 0,              # B intensity threshold for activate rain delay
@@ -551,7 +554,7 @@ def shmu_hdf_to_png(byte):
         offset = float(hdf['dataset1/what'].attrs.get('offset', -32.5))
 
     dbz = data.astype('float32') * gain + offset
-    valid = (data > 0) & (data < 255)
+    valid = (data > 0) & (data < 255) & (dbz >= 5)
     image = numpy.zeros((data.shape[0], data.shape[1], 4), dtype=numpy.uint8)
 
     color_steps = [
@@ -634,13 +637,19 @@ def download_shmu_radar(date=None, trials=3):
 
     return False, None, shmu_date_txt(date)
 
+def pixel_matches_rain_threshold(r, g, b):
+    checks = []
+    if plugin_options.get('R_DETECT', True):
+        checks.append(r > int(plugin_options['R_INTENS']))
+    if plugin_options.get('G_DETECT', True):
+        checks.append(g > int(plugin_options['G_INTENS']))
+    if plugin_options.get('B_DETECT', True):
+        checks.append(b > int(plugin_options['B_INTENS']))
+    return any(checks)
+
 def analyze_location_rain(bitmap, x, y):
     radius = max(0, int(plugin_options['DETECTION_RADIUS']))
     min_percent = max(0, min(100, int(plugin_options['MIN_RAIN_PIXELS'])))
-    r_threshold = int(plugin_options['R_INTENS'])
-    g_threshold = int(plugin_options['G_INTENS'])
-    b_threshold = int(plugin_options['B_INTENS'])
-
     rainy_pixels = 0
     total_pixels = 0
     red_sum = 0
@@ -658,7 +667,7 @@ def analyze_location_rain(bitmap, x, y):
 
             r, g, b = bitmap.getpixel((px, py))
             total_pixels += 1
-            if (r > r_threshold) or (g > g_threshold) or (b > b_threshold):
+            if pixel_matches_rain_threshold(r, g, b):
                 rainy_pixels += 1
                 red_sum += r
                 green_sum += g
@@ -685,19 +694,23 @@ def analyze_location_rain(bitmap, x, y):
     }
 
 def create_animation_image(byte, date_txt, frame_type, relative_minutes):
-    frame_img = compose_radar_image(Image.open(BytesIO(byte))).convert("RGBA")
+    radar_img = Image.open(BytesIO(byte))
+    detection_img = radar_img.convert("RGB")
+    frame_img = compose_radar_image(radar_img).convert("RGBA")
     draw = ImageDraw.Draw(frame_img)
     draw.rectangle((0, 0, 680, 25), fill=(0, 0, 0), outline=(0, 0, 0))
     font_path = os.path.join('plugins', 'chmi', 'static', 'font', 'Roboto-Bold.ttf')
     font = ImageFont.truetype(font_path, 18)
     draw.text((5, 5), animation_label(date_txt, frame_type, relative_minutes), font=font, fill="white")
+    rgb_info = None
 
     if options.weather_lat and options.weather_lon:
         try:
             lat = float(options.weather_lat)
             lon = float(options.weather_lon)
-            x, y = radar_pixel_xy(lat, lon, frame_img.width, frame_img.height)
+            x, y = radar_pixel_xy(lat, lon, detection_img.width, detection_img.height)
             if 0 <= x < frame_img.width and 0 <= y < frame_img.height:
+                rgb_info = analyze_location_rain(detection_img, x, y)
                 radius = 8
                 draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill=(255, 255, 0), outline=(0, 0, 0), width=2)
                 draw.ellipse((x-3, y-3, x+3, y+3), fill=(0, 0, 0), outline=(255, 255, 255))
@@ -706,7 +719,7 @@ def create_animation_image(byte, date_txt, frame_type, relative_minutes):
 
     output = BytesIO()
     frame_img.save(output, format='PNG')
-    return output.getvalue()
+    return output.getvalue(), rgb_info
 
 def download_forecast_frames(base_date):
     frames = []
@@ -734,12 +747,14 @@ def download_forecast_frames(base_date):
                         continue
                     byte = extracted.read()
                     if byte.startswith(b'\x89PNG\r\n\x1a\n'):
+                        content, rgb_info = create_animation_image(byte, member_date_txt, 'forecast', relative_minutes)
                         frames.append({
                             'date': member_date_txt,
                             'label': animation_label(member_date_txt, 'forecast', relative_minutes),
                             'type': 'forecast',
                             'relative': relative_minutes,
-                            'content': create_animation_image(byte, member_date_txt, 'forecast', relative_minutes),
+                            'content': content,
+                            'rgb': rgb_info,
                         })
                 except:
                     log.debug(NAME, traceback.format_exc())
@@ -768,12 +783,14 @@ def update_animation_cache():
         ok, byte, date_txt = download_radar_frame(frame_date)
         if ok:
             try:
+                content, rgb_info = create_animation_image(byte, date_txt, 'history', -offset)
                 frames.append({
                     'date': date_txt,
                     'label': animation_label(date_txt, 'history', -offset),
                     'type': 'history',
                     'relative': -offset,
-                    'content': create_animation_image(byte, date_txt, 'history', -offset),
+                    'content': content,
+                    'rgb': rgb_info,
                 })
             except:
                 log.debug(NAME, traceback.format_exc())
@@ -1070,6 +1087,7 @@ class animation_json(ProtectedPage):
                         'label': frame['label'],
                         'type': frame['type'],
                         'relative': frame['relative'],
+                        'rgb': frame.get('rgb'),
                         'url': plugin_url(animation_frame) + '?i={}&ts={}'.format(index, frame['date']),
                     }
                     for index, frame in enumerate(animation_frames)
