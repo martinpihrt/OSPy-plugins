@@ -289,6 +289,12 @@ def program_exists(index):
     return 0 <= index < len(programs.get())
 
 
+def program_station_ids(index):
+    if not program_exists(index):
+        return set()
+    return set(programs.get(index).stations)
+
+
 def start_program(index):
     if not program_exists(index):
         return False
@@ -305,9 +311,27 @@ def run_now_program_matches(index):
     run_now = programs.run_now_program
     return (
         getattr(run_now, 'name', None) == getattr(target, 'name', None)
-        and list(getattr(run_now, 'stations', [])) == list(getattr(target, 'stations', []))
+        and set(getattr(run_now, 'stations', [])) == set(getattr(target, 'stations', []))
         and list(getattr(run_now, 'schedule', [])) == list(getattr(target, 'schedule', []))
     )
+
+
+def interval_matches_program(interval, index):
+    if not program_exists(index):
+        return False
+
+    if interval.get('program') == index:
+        return True
+
+    station_ids = program_station_ids(index)
+    if interval.get('station') not in station_ids:
+        return False
+
+    target_run_now_name = '{} {}'.format(_('Run-Now'), programs.get(index).name)
+    if interval.get('program_name') == target_run_now_name:
+        return True
+
+    return interval.get('program') == -1 and bool(interval.get('manual'))
 
 
 def stop_program(index):
@@ -315,16 +339,17 @@ def stop_program(index):
         return False
 
     stop_run_now = run_now_program_matches(index)
-    target_run_now_name = '{} {}'.format(_('Run-Now'), programs.get(index).name)
-    if stop_run_now:
+    active = log.active_runs()
+    matching_active = [interval for interval in active if interval_matches_program(interval, index)]
+
+    if stop_run_now or any(interval.get('program') == -1 for interval in matching_active):
         programs.run_now_program = None
 
     stopped = stop_run_now
-    for interval in log.active_runs():
-        if interval.get('program') == index or (stop_run_now and interval.get('program_name') == target_run_now_name):
-            stations.deactivate(interval['station'])
-            log.finish_run(interval)
-            stopped = True
+    for interval in matching_active:
+        log.finish_run(interval)
+        stations.deactivate(interval['station'])
+        stopped = True
     return stopped
 
 
@@ -370,20 +395,24 @@ class ThermostatChecker(Thread):
             self.footer = None
 
     def run(self):
-        disabled_text = True
+        last_enabled = None
         while not self._stop_event.is_set():
             try:
                 _normalize_zones()
                 if not plugin_options['enabled']:
-                    if disabled_text:
+                    if last_enabled is not False:
                         log.clear(NAME)
                         log.info(NAME, _('Thermostat plug-in is disabled.'))
                         self.update_footer(_('Disabled'))
-                        disabled_text = False
+                        last_enabled = False
                     self._sleep(60)
                     continue
 
-                disabled_text = True
+                if last_enabled is not True:
+                    log.clear(NAME)
+                    log.info(NAME, datetime_string() + ' ' + _('Thermostat plug-in is enabled.'))
+                    last_enabled = True
+
                 footer_parts = []
                 for index, zone in enumerate(plugin_options['zones']):
                     if not zone['enabled']:
