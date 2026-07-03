@@ -578,9 +578,25 @@ def stop_all(client, msg, device):
         set_devices_default_values(stationsList)
 
 
+def normalize_ha_sensor_class_and_unit(device):
+    device_class = device._devicetype
+    unit = device._unit
+
+    if device_class == "temperature":
+        unit = "\u00b0C"
+    elif device_class == "humidity" and unit != "%":
+        device_class = None
+    elif unit in ("m3", "m³") and "volume" in device._property:
+        device_class = "volume"
+        unit = "m³"
+
+    return device_class, unit
+
+
 def discovery_payload(device):
     """ Compose HASS discovery payload """
     payload = {}
+    device_type, unit = normalize_ha_sensor_class_and_unit(device)
     
     if device._type == "stations":
         payload["device"] = {
@@ -649,15 +665,15 @@ def discovery_payload(device):
         }
 
     payload["unique_id"] = 'ospy_{}{}{}_{}'.format(device._deviceclass, device._type, device._property, system_UID())
-    if device._devicetype is not None:
-        payload["device_class"] = device._devicetype
+    if device_type is not None:
+        payload["device_class"] = device_type
     payload["state_topic"] = '{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
     payload["availability_topic"] = '{}/{}/{}/availability'.format(plugin_options['mqtt_hass_topic'], device._type, device._property)
     
     if device._icon is not None:
         payload["icon"] = device._icon
-    if device._unit is not None:
-        payload["unit_of_measurement"] = device._unit
+    if unit is not None:
+        payload["unit_of_measurement"] = unit
     if device._min is not None:
         payload["min"] = device._min
     if device._max is not None:
@@ -794,7 +810,8 @@ def current_loop_tank_enabled(tank_options, index):
     return bool(tank_options['en_tank{}'.format(index + 1)])
 
 def create_water_tank_sensor(property_name, name, sensor_id, unit):
-    sensor = hass_device().createSensor(None, "sensor_WTL", property_name, name, "mdi:waves-arrow-up", unit)
+    device_type = "volume" if "volume" in property_name else None
+    sensor = hass_device().createSensor(device_type, "sensor_WTL", property_name, name, "mdi:waves-arrow-up", unit)
     sensor._id = sensor_id
     sensor._is_sonic = False
     sensor._is_current_loop = False
@@ -841,7 +858,7 @@ def discovery_publish():
             from plugins import tank_monitor
             if (tank_monitor.tank_options['use_sonic']):
                 sensor_water_tank_percent = hass_device().createSensor("humidity", "sensor_WTL", "tank_percent", _('Tank level'), "mdi:waves-arrow-up", "%")
-                sensor_water_tank_volume = hass_device().createSensor("humidity", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
+                sensor_water_tank_volume = hass_device().createSensor("volume", "sensor_WTL", "tank_volume", _('Tank volume'), "mdi:waves-arrow-up", "m³")
                 sensor_water_tank_percent._id = 400 # mqtt unique ID placeholder, 400 for water level percent, 401 for volume
                 sensor_water_tank_volume._id = 401
                 sensor_water_tank_percent._is_sonic = True
@@ -887,7 +904,7 @@ def discovery_publish():
                     sensorH._isDHT = True
                     sensorH._isDS = False 
                     sensorH._id = 500 #mqtt unique ID placeholder, 500 for humidity, 501 for temperature
-                    sensorT = hass_device().createSensor( "temperature", "sensor_THDS", "HDT_temperature", dhtName + " " + _('Temperature'), None, "°C")
+                    sensorT = hass_device().createSensor( "temperature", "sensor_THDS", "HDT_temperature", dhtName + " " + _('Temperature'), None, "\u00b0C")
                     sensorT._isDHT = True
                     sensorT._isDS = False
                     sensorT._id = 501
