@@ -298,6 +298,8 @@ def program_station_ids(index):
 def start_program(index):
     if not program_exists(index):
         return False
+    if program_is_active(index):
+        return False
     options.manual_mode = False
     programs.run_now_program = None
     programs.run_now(index)
@@ -332,6 +334,12 @@ def interval_matches_program(interval, index):
         return True
 
     return interval.get('program') == -1 and bool(interval.get('manual'))
+
+
+def program_is_active(index):
+    if run_now_program_matches(index):
+        return True
+    return any(interval_matches_program(interval, index) for interval in log.active_runs())
 
 
 def stop_program(index):
@@ -443,7 +451,13 @@ class ThermostatChecker(Thread):
 
                     footer_parts.append('{} {:.1f}C'.format(zone['name'], temperature))
 
-                    if new_state != self.zone_state[index]:
+                    should_repeat_start = (
+                        action == 'start'
+                        and new_state == self.zone_state[index]
+                        and not program_is_active(zone['program'])
+                    )
+
+                    if new_state != self.zone_state[index] or should_repeat_start:
                         self.zone_state[index] = new_state
                         if action and action != 'none':
                             ok = execute_action(action, zone['program'])
