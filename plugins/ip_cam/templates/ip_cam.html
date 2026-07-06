@@ -1,10 +1,90 @@
-$def with(plugin_options, events)
+$def with(plugin_options, events, camera_statuses)
 
 $var title: $_(u'IP cam')
 $var page: plugins
 
+<style>
+.cameraGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.cameraCard {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 12px;
+}
+
+.cameraPreview {
+    background: #eee;
+    border: 1px solid #ccc;
+    display: block;
+    height: auto;
+    max-width: 100%;
+}
+
+.cameraActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.cameraStatus {
+    border-collapse: collapse;
+    margin-top: 8px;
+    width: 100%;
+}
+
+.cameraStatus td {
+    padding: 2px 8px 2px 0;
+    vertical-align: top;
+}
+
+.cameraError {
+    color: #b00020;
+    max-width: 320px;
+    word-break: break-word;
+}
+</style>
+
 <script>
-    // Initialize behaviors
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function valueOrDash(value) {
+        return value || "-";
+    }
+
+    function updateStatus(){
+        jQuery.getJSON("/plugins/ip_cam/status_json", function(data) {
+            if (data.events) {
+                jQuery("#statusLog").val(data.events.join("\n"));
+            }
+            if (data.cameras) {
+                data.cameras.forEach(function(status) {
+                    let prefix = "#camStatus" + status.index + "_";
+                    jQuery(prefix + "last").text(valueOrDash(status.last_download));
+                    jQuery(prefix + "http").text(valueOrDash(status.http_status));
+                    jQuery(prefix + "ms").text(valueOrDash(status.response_ms));
+                    jQuery(prefix + "size").text(status.size ? status.size + " B" : "-");
+                    jQuery(prefix + "resolution").text(valueOrDash(status.resolution));
+                    jQuery(prefix + "success").text(status.success || 0);
+                    jQuery(prefix + "errors").text(status.errors || 0);
+                    jQuery(prefix + "error").text(status.error || "");
+                });
+            }
+        });
+        setTimeout(updateStatus, 3000);
+    }
+
     jQuery(document).ready(function(){
         jQuery("#cRefresh").click(function() {
             window.location="/plugins/ip_cam/settings";
@@ -12,29 +92,57 @@ $var page: plugins
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+        updateStatus();
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_(u'IP cam')</div>
-    <p><a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a><p/>
-    <p><a href=$plugins.plugin_url('ip_cam.setup_page') class="button submit">$_('CAM Settings')</a></p>
-    <table class="optionList">
+    <p>
+        <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a>
+        <a href=$plugins.plugin_url('ip_cam.setup_page') class="button submit">$_('CAM Settings')</a>
+        <a href="?delete_cache&$csrf_query()" class="button cancel danger">$_('Delete cached images')</a>
+    </p>
+    <div class="cameraGrid">
         $for c in range(0, options.output_count):
             $if plugin_options['jpg_ip'][c]:
-                <tr>
-                <td style='text-transform: none;'>$stations[c].name (${c+1})</td>
-                <td>
-                <a href="?cam=${c+1}">
-                <img id="jpeg${c+1}" src="?cam_foto=${c+1}" width="320" height="240" /></td>
-                </a>
-                <td>
-                <a href="?cam_stream=${c+1}" class="submit button">$_('Stream')</a>
-                </td>
-                </tr>
+                $ status = camera_statuses[c] if c < len(camera_statuses) else {}
+                <div class="cameraCard">
+                    <h3>$stations[c].name (${c+1})</h3>
+                    <a href="?cam=${c+1}">
+                        <img class="cameraPreview" id="jpeg${c+1}" src="$plugins.plugin_url('ip_cam.image_page')?cam=${c+1}" width="320" />
+                    </a>
+                    <div class="cameraActions">
+                        <a href="?snapshot=${c+1}&$csrf_query()" class="button download">$_('Snapshot now')</a>
+                        <a href="?test_jpeg=${c+1}&$csrf_query()" class="button upload">$_('Test JPEG')</a>
+                        $if plugin_options['mjpeg_que'][c]:
+                            <a href="?test_mjpeg=${c+1}&$csrf_query()" class="button upload">$_('Test MJPEG')</a>
+                            <a href="?cam_stream=${c+1}" class="submit button">$_('Stream')</a>
+                        <a href="?cam=${c+1}" class="button backup">$_('GIF')</a>
+                    </div>
+                    <table class="cameraStatus">
+                        <tr><td>$_('Last download'):</td><td id="camStatus${c+1}_last">${status.get('last_download', '-')}</td></tr>
+                        <tr><td>$_('HTTP status'):</td><td id="camStatus${c+1}_http">${status.get('http_status', '-')}</td></tr>
+                        <tr><td>$_('Response'):</td><td><span id="camStatus${c+1}_ms">${status.get('response_ms', '-')}</span> ms</td></tr>
+                        <tr>
+                            <td>$_('Image size'):</td>
+                            <td id="camStatus${c+1}_size">
+                                $if status.get('size'):
+                                    ${status.get('size')} B
+                                $else:
+                                    -
+                            </td>
+                        </tr>
+                        <tr><td>$_('Resolution'):</td><td id="camStatus${c+1}_resolution">${status.get('resolution', '-')}</td></tr>
+                        <tr><td>$_('Success / errors'):</td><td><span id="camStatus${c+1}_success">${status.get('success', 0)}</span> / <span id="camStatus${c+1}_errors">${status.get('errors', 0)}</span></td></tr>
+                        <tr><td>$_('Error'):</td><td id="camStatus${c+1}_error" class="cameraError">${status.get('error', '')}</td></tr>
+                    </table>
+                </div>
+    </div>
+    <table class="optionList">
         <tr>
             <td style='text-transform: none;'>$_('Status'):</td>
-            <td><textarea style="font-family: monospace;" rows="4" cols="50" readonly>$'\n'.join(events)</textarea></td>
+            <td><textarea id="statusLog" style="font-family: monospace;" rows="8" cols="90" readonly>$'\n'.join(events)</textarea></td>
         </tr>
     </table>
 </div>

@@ -2,6 +2,12 @@
 
 July 06 2026
 -----------
+martinpihrt - IP Cam<br/>
+Improved IP Cam with per-camera diagnostics, manual Snapshot/Test JPEG/Test MJPEG actions, safe MJPEG proxy streaming without exposing camera credentials in browser URLs, configurable download interval, HTTP timeout, SSL verification, maximum image size, GIF frame delay, cache cleanup, and updated setup/help documentation.
+
+martinpihrt - Label Maker<br/>
+Updated Label Maker help and README dependency text after the built-in EAN13 barcode generator change. The documentation now separates QR, QR with logo and EAN13 requirements and notes that python-barcode is no longer needed.
+
 martinpihrt - Label Maker<br/>
 Added advanced QR settings for module size, border, error correction, foreground/background color, a configurable PNG download filename, clearer preview/download controls, and client/server-side input validation.
 Stopped automatic pip installs for missing Label Maker dependencies on externally managed Python environments. The plug-in now logs apt package hints and no longer reports the normal POST redirect as an error.

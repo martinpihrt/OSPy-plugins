@@ -15,6 +15,9 @@ package manager instead of pip:
 * QR codes: `sudo apt install python3-qrcode`
 * QR with logo: `sudo apt install python3-pil`
 
+EAN-13 barcodes are generated directly by the plug-in and do not require
+`python-barcode`.
+
 If a required dependency is missing, the plug-in settings page shows an
 Install libraries button. The installation output is written to the plug-in
 status log.

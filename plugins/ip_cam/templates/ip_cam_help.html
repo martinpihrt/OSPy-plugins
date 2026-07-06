@@ -13,31 +13,41 @@ $var page: plugins
     <p>$_(u'b) moving image stream path (MJPEG)')</p>
     <p><b>$_(u'An example for a Hikvision IP camera')</b></p>
     <ul>
-        <li>http://user:password@ipaddress:port/ISAPI/Streaming/channels/101/picture</li>
-        <li>http://user:password@ipaddress:port/ISAPI/Streaming/channels/102/httpPreview</li>
+        <li>$_(u'IP address and port'): http://ipaddress:port</li>
+        <li>$_(u'JPEG query'): ISAPI/Streaming/channels/101/picture</li>
+        <li>$_(u'MJPEG query'): ISAPI/Streaming/channels/102/httpPreview</li>
     </ul>
     <p><b>$_(u'An example for a AVtech IP camera')</b></p>
     <ul>
-        <li>http://user:password@ipaddress:port/cgi-bin/guest/Video.cgi?media=JPEG&channel=1</li>
-        <li>http://user:password@ipaddress:port/cgi-bin/guest/Video.cgi?media=MJPEG&channel=1</li>
+        <li>$_(u'IP address and port'): http://ipaddress:port</li>
+        <li>$_(u'JPEG query'): cgi-bin/guest/Video.cgi?media=JPEG&channel=1</li>
+        <li>$_(u'MJPEG query'): cgi-bin/guest/Video.cgi?media=MJPEG&channel=1</li>
     </ul>
     <p><b>$_(u'An example for a Dahua IP camera')</b></p>
     <ul>
-        <li>http://user:password@ipaddress:port/TODO</li>
-        <li>http://user:password@ipaddress:port/cgi-bin/mjpg/video.cgi?subtype=1</li>
+        <li>$_(u'IP address and port'): http://ipaddress:port</li>
+        <li>$_(u'JPEG query'): cgi-bin/snapshot.cgi</li>
+        <li>$_(u'MJPEG query'): cgi-bin/mjpg/video.cgi?subtype=1</li>
     </ul>
+    <p>$_(u'Camera username and password are entered in the separate access fields, not in the camera URL.')</p>
     <p><b>$_(u'Use JPEG image downloads')</b></p>
     <p>$_(u'When this option is checked, JPEG images will be downloaded after 5 seconds to the plugin folder and these images will be previewed on the web page. This option will make it possible to see preview images even from an external IP address.')</p>
     <p><b>$_(u'Use GIF image creating')</b></p>
     <p>$_(u'When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from 10 images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.')</p>
     <p><b>$_(u'Number of frames in GIF')</b></p>
     <p>$_(u'How many images from the camera are saved and then used to create a GIF image. (The more frames, the longer the gif will be refreshed. Frames are created every 5 seconds. eg: 10 frames - gif is created in 10x5sec=50sec).')</p>
+    <p><b>$_(u'Diagnostics and tests')</b></p>
+    <p>$_(u'The main page shows camera diagnostics such as last download time, HTTP status, response time, image size, resolution and the last error. Use Snapshot now, Test JPEG and Test MJPEG to check a camera manually.')</p>
+    <p><b>$_(u'Safe stream proxy')</b></p>
+    <p>$_(u'MJPEG streams are proxied through OSPy so the camera username and password are not embedded in the browser URL.')</p>
+    <p><b>$_(u'HTTP options')</b></p>
+    <p>$_(u'The setup page allows changing the download interval, HTTP timeout, maximum image size, GIF frame delay and HTTPS certificate verification.')</p>
     <p><b>$_(u'IP address and port')</b></p>
     <p>$_(u'Example: http://12.34.56.78:88')</p>
     <p><b>$_(u'Query for get JPEG image')</b></p>
-    <p>$_(u'Example: cgi-bin/guest/Video.cgi?media=JPEG&channel=1')</p>
+    <p>$_(u'Example: cgi-bin/guest/Video.cgi?media=JPEG&channel=1. Use a relative path, not a full URL.')</p>
     <p><b>$_(u'Query for get MJPEG image')</b></p>
-    <p>$_(u'Example ISAPI/Streaming/channels/102/httpPreview')</p>
+    <p>$_(u'Example ISAPI/Streaming/channels/102/httpPreview. Use a relative path, not a full URL.')</p>
     <p><b>$_(u'Username for access')</b></p>
     <p>$_(u'Example: admin')</p>
     <p><b>$_(u'Password for access')</b></p>

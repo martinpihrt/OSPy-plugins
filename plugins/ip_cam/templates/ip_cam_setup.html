@@ -98,6 +98,34 @@ input:checked + .slider:before {
                 <td title=$:{json.dumps(_(u'How many images from the camera are saved and then used to create a GIF image. (The more frames, the longer the gif will be refreshed. Frames are created every 5 seconds. eg: 10 frames - gif is created in 10x5sec=50sec).'), ensure_ascii=False)}>
                 <input name='gif_frames' type='number' min="3" max="50" value="$plugin_options['gif_frames']"> (3-50)</td>
             </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Download interval'):</td>
+                <td title=$:{json.dumps(_(u'Seconds between automatic JPEG downloads.'), ensure_ascii=False)}>
+                <input name='download_interval' type='number' min="1" max="3600" value="$plugin_options['download_interval']"> $_('seconds')</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('HTTP timeout'):</td>
+                <td title=$:{json.dumps(_(u'Timeout for camera HTTP requests.'), ensure_ascii=False)}>
+                <input name='http_timeout' type='number' min="1" max="120" value="$plugin_options['http_timeout']"> $_('seconds')</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Maximum image size'):</td>
+                <td title=$:{json.dumps(_(u'Maximum JPEG image size downloaded from one camera.'), ensure_ascii=False)}>
+                <input name='max_image_kb' type='number' min="64" max="10240" value="$plugin_options['max_image_kb']"> KB</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('GIF frame delay'):</td>
+                <td title=$:{json.dumps(_(u'Duration of one frame in the generated GIF animation.'), ensure_ascii=False)}>
+                <input name='gif_duration' type='number' min="50" max="5000" value="$plugin_options['gif_duration']"> ms</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Verify SSL certificates'):</td>
+                <td title=$:{json.dumps(_(u'When enabled, HTTPS camera certificates are verified.'), ensure_ascii=False)}>
+                <label class="switch">
+                    <input type="checkbox" name="verify_ssl" ${"checked" if plugin_options['verify_ssl'] else ""}>
+                    <span class="slider"></span>
+                </label></td>
+            </tr>
         </table>
         <p></br></p>
         <p>$_('Assignment of IP cameras to OSPy stations.')</p>
@@ -114,13 +142,13 @@ input:checked + .slider:before {
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Query for get JPEG image'):</td>
-            <td title=$:{json.dumps(_(u'Example: cgi-bin/guest/Video.cgi?media=JPEG&channel=1'), ensure_ascii=False)}>
+            <td title=$:{json.dumps(_(u'Example: cgi-bin/guest/Video.cgi?media=JPEG&channel=1. Use a relative path, not a full URL.'), ensure_ascii=False)}>
             <input name='jpg_que${c}' type='text' size='60' value="${plugin_options['jpg_que'][c]}">
             </td>
             </tr>
             <tr>
             <td style='text-transform: none;'>$_('Query for get MJPEG image'):</td>
-            <td title=$:{json.dumps(_(u'Example ISAPI/Streaming/channels/102/httpPreview'), ensure_ascii=False)}>
+            <td title=$:{json.dumps(_(u'Example ISAPI/Streaming/channels/102/httpPreview. Use a relative path, not a full URL.'), ensure_ascii=False)}>
             <input name='mjpeg_que${c}' type='text' size='60' value="${plugin_options['mjpeg_que'][c]}">
             </td>
             </tr>
