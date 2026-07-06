@@ -40,6 +40,68 @@ plugin_options = PluginOptions(
         'use_footer': False,
     })
 
+last_detail = {
+    'calculated_at': None,
+    'enabled': False,
+    'message': _(u'No calculation has been run yet.'),
+    'days_used': 0,
+    'days_history': plugin_options['days_history'],
+    'days_forecast': plugin_options['days_forecast'],
+    'rain_mm': 0.0,
+    'water_needed': 0.0,
+    'water_left': 0.0,
+    'water_adjustment': None,
+    'raw_water_adjustment': None,
+    'limited_by_min': False,
+    'limited_by_max': False,
+    'rows': [],
+}
+
+
+def _day_name(offset):
+    if offset == -1:
+        return _(u'Yesterday')
+    if offset == 0:
+        return _(u'Today')
+    if offset == 1:
+        return _(u'Tomorrow')
+    if offset < 0:
+        return _(u'History')
+    return _(u'Forecast')
+
+
+def _day_type(offset):
+    if offset < 0:
+        return _(u'History')
+    if offset == 0:
+        return _(u'Today')
+    return _(u'Forecast')
+
+
+def _mean(values):
+    return sum(values) / len(values) if values else None
+
+
+def _day_note(hourly_data, rain_mm, avg_temp_c, avg_wind_ms, avg_humidity):
+    if not hourly_data:
+        return _(u'No usable weather data for this day.')
+
+    notes = []
+    if rain_mm > 0:
+        notes.append(_(u'rain lowers irrigation need'))
+    if avg_temp_c is not None and avg_temp_c > 25:
+        notes.append(_(u'high temperature raises irrigation need'))
+    elif avg_temp_c is not None and avg_temp_c < 10:
+        notes.append(_(u'low temperature lowers irrigation need'))
+    if avg_wind_ms is not None and avg_wind_ms > 5:
+        notes.append(_(u'wind raises irrigation need'))
+    if avg_humidity is not None and avg_humidity > 70:
+        notes.append(_(u'humidity lowers irrigation need'))
+    elif avg_humidity is not None and avg_humidity < 40:
+        notes.append(_(u'dry air raises irrigation need'))
+
+    return ', '.join(notes) if notes else _(u'normal weather influence')
+
 
 ################################################################################
 # Main function loop:                                                          #
@@ -67,6 +129,7 @@ class WeatherLevelChecker(Thread):
 
     def run(self):
         weather_mon = None
+        global last_detail
 
         def update_footer(message):
             nonlocal weather_mon
@@ -89,16 +152,38 @@ class WeatherLevelChecker(Thread):
                     log.debug(NAME,  _(u'Checking weather status') + '...')
 
                     info = []
+                    rows = []
                     days = 0
                     total_info = {'rain_mm': 0.0}
                     for day in range(-plugin_options['days_history'], plugin_options['days_forecast']+1):
                         check_date = datetime.date.today() + datetime.timedelta(days=day)
-                        hourly_data = weather.get_hourly_data(check_date)
+                        hourly_data = weather.get_hourly_data(check_date) or []
+                        rain_mm = weather.get_rain(check_date)
                         if hourly_data:
                             days += 1
                         info += hourly_data
 
-                        total_info['rain_mm'] += weather.get_rain(check_date)
+                        total_info['rain_mm'] += rain_mm
+
+                        avg_temp_c = _mean([val['temperature'] for val in hourly_data])
+                        avg_wind_ms = _mean([val['windSpeed'] for val in hourly_data])
+                        avg_humidity = _mean([val['humidity'] for val in hourly_data])
+                        avg_temp = None
+                        if avg_temp_c is not None:
+                            avg_temp = avg_temp_c if options.temp_unit == "C" else 32.0 + 9.0 / 5.0 * avg_temp_c
+                        rows.append({
+                            'offset': day,
+                            'label': _day_name(day),
+                            'type': _day_type(day),
+                            'date': check_date.strftime('%Y-%m-%d'),
+                            'hours': len(hourly_data),
+                            'rain_mm': round(rain_mm, 1),
+                            'temp': round(avg_temp, 1) if avg_temp is not None else None,
+                            'wind_ms': round(avg_wind_ms, 1) if avg_wind_ms is not None else None,
+                            'humidity': round(avg_humidity, 1) if avg_humidity is not None else None,
+                            'used': bool(hourly_data),
+                            'note': _day_note(hourly_data, rain_mm, avg_temp_c, avg_wind_ms, avg_humidity),
+                        })
 
                     log.info(NAME, _(u'Using') + ' %d ' % days + _(u'days of information.'))
 
@@ -108,6 +193,22 @@ class WeatherLevelChecker(Thread):
                         msg = _(u'No usable weather information is available yet.')
                         log.info(NAME, msg)
                         log.info(NAME, _(u'Water level adjustment was not changed.'))
+                        last_detail = {
+                            'calculated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            'enabled': True,
+                            'message': msg,
+                            'days_used': days,
+                            'days_history': plugin_options['days_history'],
+                            'days_forecast': plugin_options['days_forecast'],
+                            'rain_mm': round(total_info['rain_mm'], 1),
+                            'water_needed': 0.0,
+                            'water_left': 0.0,
+                            'water_adjustment': None,
+                            'raw_water_adjustment': None,
+                            'limited_by_min': False,
+                            'limited_by_max': False,
+                            'rows': rows,
+                        }
                         update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'No weather data'))
                         self._sleep(3600)
                         continue
@@ -130,16 +231,32 @@ class WeatherLevelChecker(Thread):
                     water_left = water_needed - total_info['rain_mm']
                     water_left = round(max(0, min(100, water_left)), 1)
 
-                    water_adjustment = round((water_left / (4 * days)) * 100, 1)
+                    raw_water_adjustment = round((water_left / (4 * days)) * 100, 1)
 
                     water_adjustment = float(
-                        max(plugin_options['wl_min'], min(plugin_options['wl_max'], water_adjustment)))
+                        max(plugin_options['wl_min'], min(plugin_options['wl_max'], raw_water_adjustment)))
 
                     log.info(NAME, _(u'Water needed') + ' %d ' % days + _('days') + ': %.1fmm' % water_needed)
                     log.info(NAME, _(u'Total rainfall') + ': %.1fmm' % total_info['rain_mm'])
                     log.info(NAME, u'_______________________________')
                     log.info(NAME, _(u'Irrigation needed') +  ': %.1fmm' % water_left)
                     log.info(NAME, _(u'Weather Adjustment') + ': %.1f%%' % water_adjustment)
+                    last_detail = {
+                        'calculated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'enabled': True,
+                        'message': _(u'Calculation finished successfully.'),
+                        'days_used': days,
+                        'days_history': plugin_options['days_history'],
+                        'days_forecast': plugin_options['days_forecast'],
+                        'rain_mm': round(total_info['rain_mm'], 1),
+                        'water_needed': water_needed,
+                        'water_left': water_left,
+                        'water_adjustment': water_adjustment,
+                        'raw_water_adjustment': raw_water_adjustment,
+                        'limited_by_min': raw_water_adjustment < plugin_options['wl_min'],
+                        'limited_by_max': raw_water_adjustment > plugin_options['wl_max'],
+                        'rows': rows,
+                    }
                     update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Missing') + ' %.1fmm, %.0f%%' % (water_left, water_adjustment))
 
                     level_adjustments[NAME] = water_adjustment / 100
@@ -172,6 +289,22 @@ class WeatherLevelChecker(Thread):
                     update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Plug-in is disabled.'))
                     if NAME in level_adjustments:
                         del level_adjustments[NAME]
+                    last_detail = {
+                        'calculated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'enabled': False,
+                        'message': _(u'Plug-in is disabled.'),
+                        'days_used': 0,
+                        'days_history': plugin_options['days_history'],
+                        'days_forecast': plugin_options['days_forecast'],
+                        'rain_mm': 0.0,
+                        'water_needed': 0.0,
+                        'water_left': 0.0,
+                        'water_adjustment': None,
+                        'raw_water_adjustment': None,
+                        'limited_by_min': False,
+                        'limited_by_max': False,
+                        'rows': [],
+                    }
                     self._sleep(24*3600)
 
             except Exception:
@@ -226,6 +359,20 @@ class help_page(ProtectedPage):
 
     def GET(self):
         return self.plugin_render.weather_based_water_level_help()        
+
+
+class details_page(ProtectedPage):
+    """Load an html page with the last weather calculation details."""
+
+    def GET(self):
+        return self.plugin_render.weather_based_water_level_details(last_detail)
+
+    def POST(self):
+        qdict = web.input()
+        verify_csrf(qdict)
+        if checker is not None:
+            checker.update()
+        raise web.seeother(plugin_url(details_page), True)
 
 
 class settings_json(ProtectedPage):

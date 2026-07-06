@@ -61,7 +61,8 @@ input:checked + .slider:before {
 
 <div id="plugin">
     <div class="title">$_('Weather-based Water Level')</div>
-    <a href=$plugins.plugin_url('weather_based_water_level.help_page') class="button upload">$_(u'Help')</a><br/>
+    <a href=$plugins.plugin_url('weather_based_water_level.help_page') class="button upload">$_(u'Help')</a>
+    <a href=$plugins.plugin_url('weather_based_water_level.details_page') class="button upload">$_(u'Forecast details')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('weather_based_water_level.settings_page')" method="post">
         $:csrf_input()
         <table class="optionList">

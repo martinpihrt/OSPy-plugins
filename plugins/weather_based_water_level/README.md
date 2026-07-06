@@ -27,6 +27,9 @@ Plugin setup
 * Show in footer:
   Show a short status on the OSPy home page footer with the last calculation time, missing rainfall and the current water adjustment.
 
+* Forecast details:
+  Opens a detail page with the last weather calculation. The page shows the used history, today and forecast days, including hourly data count, rainfall, average temperature, wind, humidity and the resulting water level adjustment.
+
 * Protect against freezing:  
   If checked Protect against freezing plugin monitors temperature and protects stations from freezing.
   
