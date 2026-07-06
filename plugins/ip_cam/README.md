@@ -3,26 +3,57 @@ IP Cam Readme
 
 Tested in Python 3+
 
-This extension allows you to display image preview and image stream from IP cameras. Each station in OSPy is assigned a camera address, optional login credentials, a JPEG image path and an optional MJPEG stream path.
+This extension displays JPEG previews, GIF animations and proxied MJPEG streams from IP cameras. Each OSPy station can have one camera address, optional login credentials, a JPEG snapshot path and an optional MJPEG stream path.
 
-Example for a Hikvision IP camera:
+Camera address and paths
+-----------
 
-* IP address and port: `http://ipaddress:port`
-* JPEG query: `ISAPI/Streaming/channels/101/picture`
-* MJPEG query: `ISAPI/Streaming/channels/102/httpPreview`
-* Username and password: set in the separate access fields.
+Enter only the camera base address in **IP address and port**, for example:
+
+* `http://192.168.1.120`
+* `http://192.168.1.120:88`
+* `https://camera.example.com`
+
+Enter only relative paths in the JPEG and MJPEG query fields. Username and password belong in the separate access fields.
+
+Common presets
+-----------
+
+The setup page has a manufacturer preset selector for each camera. Selecting a preset fills the JPEG and MJPEG query fields for the currently selected station.
+
+* Hikvision:
+  * JPEG: `ISAPI/Streaming/channels/101/picture`
+  * MJPEG: `ISAPI/Streaming/channels/102/httpPreview`
+* Dahua / Amcrest:
+  * JPEG: `cgi-bin/snapshot.cgi`
+  * MJPEG: `cgi-bin/mjpg/video.cgi?subtype=1`
+* AVtech:
+  * JPEG: `cgi-bin/guest/Video.cgi?media=JPEG&channel=1`
+  * MJPEG: `cgi-bin/guest/Video.cgi?media=MJPEG&channel=1`
+* Axis:
+  * JPEG: `axis-cgi/jpg/image.cgi`
+  * MJPEG: `axis-cgi/mjpg/video.cgi`
+* Foscam:
+  * JPEG: `cgi-bin/CGIProxy.fcgi?cmd=snapPicture2`
+  * MJPEG: `cgi-bin/CGIStream.cgi?cmd=GetMJStream`
 
 Plugin setup
 -----------
 
+* Camera enabled:
+  Enables or disables one camera without deleting its settings.
+
 * Use JPEG image downloads:
-  When this option is checked, JPEG images will be downloaded after 5 seconds to the plugin folder and these images will be previewed on the web page. This option will make it possible to see preview images even from an external IP address. 
+  Downloads JPEG snapshots to the plugin data folder. The latest snapshot is stored as `N.jpg`, where `N` is the station number.
 
 * Use GIF image creating:
-  When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from xx images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.
+  Stores each successful JPEG download as a GIF frame and creates `N.gif` from the newest frames. Failed downloads are not copied as new frames, so a GIF contains only real successful snapshots.
+
+* Allow IP Cam images on home:
+  Allows OSPy to use IP Cam images on the home page when the OSPy System option **Station picture source** is set to IP Cam JPG or IP Cam GIF.
 
 * Number of frames in GIF:
-  How many images from the camera are saved and then used to create a GIF image. (The more frames, the longer the gif will be refreshed. Frames are created every 5 seconds. eg: 10 frames - gif is created in 10x5sec=50sec).  
+  Number of successful snapshots kept for GIF generation.
 
 * Download interval:
   Seconds between automatic JPEG downloads.
@@ -39,22 +70,27 @@ Plugin setup
 * Verify SSL certificates:
   Verify HTTPS camera certificates.
 
-* IP address and port:
-  Example: http://12.34.56.78:88
+Diagnostics and test buttons
+-----------
 
-* Query for get JPEG image:
-  Example: cgi-bin/guest/Video.cgi?media=JPEG&channel=1. Use a relative path, not a full URL.
+* Snapshot now:
+  Downloads the selected camera JPEG immediately and stores it as `N.jpg` in the plugin data folder.
 
-* Query for get MJPEG image:
-  Example ISAPI/Streaming/channels/102/httpPreview. Use a relative path, not a full URL.
+* Test JPEG:
+  Tests the JPEG path and updates diagnostics. A successful test also saves the latest snapshot.
 
-* Username for access:
-  Example: admin
+* Test MJPEG:
+  Opens the MJPEG stream, reads the first available data block and closes the connection. It is only a connectivity test.
 
-* Password for access:
-  Example: 1234
+The main page shows the last download time, HTTP status and text, response time, image size, resolution, GIF frame count, success/error counters and the last error.
 
-* Status:
-  Status window from the plugin. The main page also shows the last download time, HTTP status, response time, image size, resolution, success/error counters and the last error for each configured camera.
+Troubleshooting
+-----------
 
-The main page contains manual buttons for Snapshot now, Test JPEG, Test MJPEG and Delete cached images. The MJPEG stream is proxied through OSPy so the camera username and password are not embedded in the browser image URL.
+* `401 Unauthorized` usually means wrong credentials or camera authentication mode. Check username/password and try enabling Basic or Digest authentication in the camera.
+* `403 Forbidden` usually means the user has no permission for snapshot or stream access.
+* `404 Not Found` usually means the selected path is wrong for that camera model.
+* Timeout usually means wrong IP/port, blocked network access, HTTPS certificate problems or a camera that is slow to respond.
+* If GIF has fewer frames than expected, check whether every JPEG download succeeds. Only successful downloads are used as GIF frames.
+
+The MJPEG stream is proxied through OSPy so the camera username and password are not embedded in the browser image URL.

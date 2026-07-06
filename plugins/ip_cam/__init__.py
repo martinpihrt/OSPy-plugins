@@ -6,6 +6,7 @@ import time
 import datetime
 import traceback
 import os
+from http import HTTPStatus
 from threading import Thread, Event, Lock
 from urllib.parse import urljoin, urlparse
 
@@ -14,7 +15,7 @@ import web
 from ospy.log import log
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision, datetime_string, get_input, verify_csrf
+from ospy.helpers import get_rpi_revision, datetime_string, get_input, verify_csrf, safe_image_path
 from ospy import helpers
 from ospy.options import options
 
@@ -39,8 +40,11 @@ plugin_options = PluginOptions(
         'mjpeg_que': ['']*options.output_count,    # Query for mjpeg image        
         'jpg_user': ['']*options.output_count,     # Username for access to jpeg image
         'jpg_pass': ['']*options.output_count,     # Password for access to jpeg image
+        'enabled': [True]*options.output_count,     # Enable camera
         'use_jpg': True,                           # first download jpeg from IP address to plugin folder and next show these jpg on webpage
         'use_gif': True,                           # first download jpeg from IP address to plugin folder and next create gif and show these gif on webpage
+        'show_on_home': True,                       # allow OSPy home page to use plugin images
+        'home_image_type': 'jpg',                   # jpg or gif on OSPy home page
         'gif_frames': 20,                          # s new gif will be created in 100 seconds (20 frame x 5 sec)
         'download_interval': 5,                     # seconds between camera downloads
         'http_timeout': 15,                         # HTTP timeout in seconds
@@ -69,7 +73,10 @@ def _ensure_list(name, default=''):
 def _ensure_options():
     for key in ('jpg_ip', 'jpg_que', 'mjpeg_que', 'jpg_user', 'jpg_pass'):
         _ensure_list(key)
+    _ensure_list('enabled', True)
     for key, value in {
+        'show_on_home': True,
+        'home_image_type': 'jpg',
         'download_interval': 5,
         'http_timeout': 15,
         'verify_ssl': False,
@@ -89,6 +96,9 @@ def _blank_status(index):
         'response_ms': '',
         'size': '',
         'resolution': '',
+        'http_message': '',
+        'http_hint': '',
+        'gif_frames': 0,
         'success': 0,
         'errors': 0,
         'error': '',
@@ -128,7 +138,7 @@ def _safe_int(value, default, min_value, max_value):
 
 def _camera_configured(index, stream=False):
     query_key = 'mjpeg_que' if stream else 'jpg_que'
-    return bool(plugin_options['jpg_ip'][index] and plugin_options[query_key][index])
+    return bool(plugin_options['enabled'][index] and plugin_options['jpg_ip'][index] and plugin_options[query_key][index])
 
 
 def _camera_auth(index):
@@ -157,6 +167,33 @@ def _image_info(content):
         return '{}x{}'.format(img.width, img.height)
     except Exception:
         return ''
+
+
+def _http_message(status_code):
+    try:
+        return HTTPStatus(int(status_code)).phrase
+    except Exception:
+        return ''
+
+
+def _http_hint(status_code):
+    hints = {
+        0: _('No HTTP response was received. Check camera address, port, network and timeout.'),
+        200: _('OK'),
+        301: _('Moved permanently. Check whether the camera path or protocol has changed.'),
+        302: _('Redirected. Check whether the camera redirects to another path.'),
+        400: _('Bad request. Check the JPEG or MJPEG query path.'),
+        401: _('Unauthorized. Check username/password and try enabling Basic or Digest authentication in the camera.'),
+        403: _('Forbidden. The user may not have permission to view the stream.'),
+        404: _('Not found. The camera path is probably wrong for this model.'),
+        408: _('Request timeout. Increase the timeout or check the network.'),
+        500: _('Camera/server error. Check the camera firmware and stream settings.'),
+        503: _('Service unavailable. The camera may be overloaded or already serving too many streams.'),
+    }
+    try:
+        return hints.get(int(status_code), _('Check camera address, authentication and selected path.'))
+    except Exception:
+        return hints[0]
 
 
 def _fetch_camera(index, stream=False):
@@ -204,6 +241,8 @@ def _record_camera_result(index, response=None, content=None, response_ms='', er
     }
     if response is not None:
         values['http_status'] = response.status_code
+        values['http_message'] = _http_message(response.status_code)
+        values['http_hint'] = _http_hint(response.status_code)
     if content is not None:
         values['size'] = len(content)
         values['resolution'] = _image_info(content)
@@ -220,6 +259,73 @@ def _save_snapshot(index, content):
     with open(img_path, 'wb') as fh:
         fh.write(content)
     return img_path
+
+
+def _gif_dir(index):
+    return os.path.join(plugin_data_dir(), str(index + 1))
+
+
+def _gif_frame_files(index):
+    frame_dir = _gif_dir(index)
+    if not os.path.isdir(frame_dir):
+        return []
+    files = []
+    for filename in os.listdir(frame_dir):
+        if filename.lower().endswith('.jpg'):
+            path = os.path.join(frame_dir, filename)
+            if os.path.isfile(path):
+                files.append(path)
+    return sorted(files, key=lambda item: os.path.getmtime(item))
+
+
+def _save_gif_frame(index, content):
+    frame_dir = _gif_dir(index)
+    helpers.mkdir_p(frame_dir)
+    frame_path = os.path.join(frame_dir, '{}.jpg'.format(int(time.time() * 1000)))
+    with open(frame_path, 'wb') as fh:
+        fh.write(content)
+
+    keep = _safe_int(plugin_options['gif_frames'], 20, 3, 50)
+    frame_files = _gif_frame_files(index)
+    for old_file in frame_files[:-keep]:
+        try:
+            os.remove(old_file)
+        except Exception:
+            pass
+    return frame_path
+
+
+def _create_gif(index):
+    frame_files = _gif_frame_files(index)
+    if len(frame_files) < 2:
+        _set_camera_status(index, gif_frames=len(frame_files))
+        return False
+
+    frames = []
+    for frame_file in frame_files:
+        with Image.open(frame_file) as image:
+            frames.append(image.convert("P", palette=Image.ADAPTIVE))
+
+    gif_path = os.path.join(plugin_data_dir(), '{}.gif'.format(index + 1))
+    frames[0].save(
+        gif_path,
+        save_all=True,
+        optimize=False,
+        append_images=frames[1:],
+        duration=_safe_int(plugin_options['gif_duration'], 250, 50, 5000),
+        loop=0
+    )
+    _set_camera_status(index, gif_frames=len(frames))
+    return True
+
+
+def _fallback_station_image(cam_nr, thumbnail=True):
+    station_name = 'station{}_thumbnail.png'.format(cam_nr) if thumbnail else 'station{}.png'.format(cam_nr)
+    station_path = safe_image_path(station_name, station_folder=True)
+    if station_path and os.path.isfile(station_path):
+        return station_path
+    default_name = 'no_image_thumbnail.png' if thumbnail else 'no_image.png'
+    return safe_image_path(default_name)
 
 
 def _delete_cache():
@@ -266,7 +372,6 @@ class Sender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        img_counter = 0
         while not self._stop_event.is_set():
             try:
                 if plugin_options['use_jpg']:
@@ -278,6 +383,10 @@ class Sender(Thread):
                                 res, content, response_ms = _fetch_camera(c)
                                 if res.status_code == 200:
                                     _save_snapshot(c, content)
+                                    if plugin_options['use_gif']:
+                                        _save_gif_frame(c, content)
+                                        if _create_gif(c):
+                                            log.info(NAME, _('Creating {}.gif').format(c+1))
                                     img_down_state.append('{}.jpg'.format(c+1))
                                     _record_camera_result(c, res, content, response_ms)
                                 else:
@@ -292,33 +401,6 @@ class Sender(Thread):
                     log.info(NAME, str(img_down_state)[1:-1])
 
                 self._sleep(_safe_int(plugin_options['download_interval'], 5, 1, 3600))
-
-                if plugin_options['use_gif']:
-                    for c in range(0, options.output_count):
-                        if _camera_configured(c):
-                            IMG_FILE = os.path.join(plugin_data_dir(), str(c+1), '{}.jpg'.format(img_counter))
-                            SOURCE_FILE = os.path.join(plugin_data_dir(), '{}.jpg'.format(c+1))
-                            if not os.path.isdir(os.path.dirname(IMG_FILE)):
-                                helpers.mkdir_p(os.path.dirname(IMG_FILE))
-                            if os.path.isfile(SOURCE_FILE):
-                                shutil.copy(SOURCE_FILE, IMG_FILE)
-                    
-                    img_counter += 1
-                    if img_counter >= int(plugin_options['gif_frames']):
-                        img_counter = 0
-                        for c in range(0, options.output_count):
-                            if _camera_configured(c):
-                                frames = []
-                                for i in range(0, int(plugin_options['gif_frames'])):
-                                    IMG_FILE = os.path.join(plugin_data_dir(), str(c+1), '{}.jpg'.format(i))
-                                    if os.path.isfile(IMG_FILE):
-                                        frames.append(Image.open(IMG_FILE))
-                                if len(frames) > 0:
-                                    gif = [image.convert("P", palette=Image.ADAPTIVE) for image in frames]
-                                    gif[0].save(os.path.join(plugin_data_dir(), '{}.gif'.format(c+1)), save_all=True, optimize=False, append_images=gif[1:], duration=_safe_int(plugin_options['gif_duration'], 250, 50, 5000), loop=0)
-                                    #frame_one = frames[0]
-                                    #frame_one.save('plugins/ip_cam/data/{}.gif'.format(c+1), format='GIF', append_images=frames, save_all=True, duration=100, loop=0)
-                                    log.info(NAME, _('Creating {}.gif').format(c+1))
 
                 self._sleep(1)
 
@@ -383,6 +465,8 @@ class settings_page(ProtectedPage):
                 if action_value:
                     verify_csrf(qdict)
                     cam_index = int(action_value) - 1
+                    if cam_index < 0 or cam_index >= options.output_count:
+                        raise ValueError(_('Unknown camera.'))
                     try:
                         if stream:
                             res, content, response_ms = _test_camera_stream(cam_index)
@@ -465,6 +549,42 @@ class image_page(ProtectedPage):
             return None
 
 
+class home_image_page(ProtectedPage):
+    """Returns IP Cam image for OSPy home page, with station image fallback."""
+
+    def GET(self):
+        try:
+            qdict = web.input()
+            cam_nr = int(qdict.get('cam', 1))
+            image_type = qdict.get('type', plugin_options['home_image_type'])
+            if cam_nr < 1 or cam_nr > options.output_count:
+                raise ValueError(_('Unknown camera.'))
+
+            index = cam_nr - 1
+            download_name = ''
+            if plugin_options['show_on_home'] and plugin_options['enabled'][index]:
+                if image_type == 'gif':
+                    download_name = os.path.join(plugin_data_dir(), '{}.gif'.format(cam_nr))
+                else:
+                    download_name = os.path.join(plugin_data_dir(), '{}.jpg'.format(cam_nr))
+
+            if not download_name or not os.path.isfile(download_name):
+                download_name = _fallback_station_image(cam_nr, thumbnail=True)
+
+            if not download_name or not os.path.isfile(download_name):
+                return None
+
+            content = mimetypes.guess_type(download_name)[0] or 'image/jpeg'
+            web.header('Content-type', content)
+            web.header('Content-Length', os.path.getsize(download_name))
+            web.header('Cache-Control', 'no-store')
+            with open(download_name, 'rb') as img:
+                return img.read()
+        except:
+            log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
+            return None
+
+
 class stream_page(ProtectedPage):
     """Proxies one MJPEG stream without exposing camera credentials in HTML."""
 
@@ -514,9 +634,12 @@ class setup_page(ProtectedPage):
                 plugin_options.__setitem__('mjpeg_que', ['']*options.output_count)
                 plugin_options.__setitem__('jpg_user', ['']*options.output_count)
                 plugin_options.__setitem__('jpg_pass', ['']*options.output_count)
+                plugin_options.__setitem__('enabled', [True]*options.output_count)
                 plugin_options.__setitem__('gif_frames', 20)
                 plugin_options.__setitem__('use_jpg', True)
                 plugin_options.__setitem__('use_gif', True)
+                plugin_options.__setitem__('show_on_home', True)
+                plugin_options.__setitem__('home_image_type', 'jpg')
                 plugin_options.__setitem__('download_interval', 5)
                 plugin_options.__setitem__('http_timeout', 15)
                 plugin_options.__setitem__('verify_ssl', False)
@@ -534,8 +657,9 @@ class setup_page(ProtectedPage):
         try:
             qdict = web.input()
             verify_csrf(qdict)
-            commands = {'mjpeg_que': [], 'jpg_ip': [], 'jpg_que': [], 'jpg_user': [], 'jpg_pass': []}
+            commands = {'mjpeg_que': [], 'jpg_ip': [], 'jpg_que': [], 'jpg_user': [], 'jpg_pass': [], 'enabled': []}
             for i in range(0, options.output_count):
+                commands['enabled'].append(qdict.get('enabled'+str(i)) == 'on')
                 if 'mjpeg_que'+str(i) in qdict:
                     commands['mjpeg_que'].append(qdict['mjpeg_que'+str(i)])
                 else:
@@ -563,7 +687,9 @@ class setup_page(ProtectedPage):
 
             plugin_options.__setitem__('use_jpg', qdict.get('use_jpg') == 'on')
             plugin_options.__setitem__('use_gif', qdict.get('use_gif') == 'on')
+            plugin_options.__setitem__('show_on_home', qdict.get('show_on_home') == 'on')
             plugin_options.__setitem__('verify_ssl', qdict.get('verify_ssl') == 'on')
+            plugin_options.__setitem__('home_image_type', qdict.get('home_image_type', 'jpg') if qdict.get('home_image_type') in ('jpg', 'gif') else 'jpg')
 
             if 'gif_frames' in qdict:
                 plugin_options.__setitem__('gif_frames', _safe_int(qdict['gif_frames'], 20, 3, 50))
@@ -581,6 +707,7 @@ class setup_page(ProtectedPage):
             plugin_options.__setitem__('jpg_que', commands['jpg_que'])
             plugin_options.__setitem__('jpg_user', commands['jpg_user'])
             plugin_options.__setitem__('jpg_pass', commands['jpg_pass'])
+            plugin_options.__setitem__('enabled', commands['enabled'])
 
             if sender is not None:
                 sender.update()

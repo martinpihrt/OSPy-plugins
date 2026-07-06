@@ -3,6 +3,9 @@
 July 06 2026
 -----------
 martinpihrt - IP Cam<br/>
+Improved IP Cam usability: camera settings now have a top save action, per-camera enable switches, one-camera-at-a-time selection, manufacturer presets for common JPEG/MJPEG paths, test buttons directly in setup, framed equal-size camera cards with status first, richer HTTP diagnostics with status explanations, home-page image support through OSPy source selection, more detailed help/README troubleshooting, and more reliable GIF generation from real successful snapshots.
+
+martinpihrt - IP Cam<br/>
 Improved IP Cam with per-camera diagnostics, manual Snapshot/Test JPEG/Test MJPEG actions, safe MJPEG proxy streaming without exposing camera credentials in browser URLs, configurable download interval, HTTP timeout, SSL verification, maximum image size, GIF frame delay, cache cleanup, and updated setup/help documentation.
 
 martinpihrt - Label Maker<br/>

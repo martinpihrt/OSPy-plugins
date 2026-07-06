@@ -7,53 +7,59 @@ $var page: plugins
     <div class="title">$_(u'IP Cam - help')</div>
     <table class="optionList">
     <tr>
-    <td>   
-    <p>$_(u'To use the cameras, you need to know two IP routes:')</p>
-    <p>$_(u'a) path to still image (JPEG)')</p>
-    <p>$_(u'b) moving image stream path (MJPEG)')</p>
-    <p><b>$_(u'An example for a Hikvision IP camera')</b></p>
+    <td>
+    <p>$_(u'To use a camera, enter the camera base address, a JPEG snapshot path and optionally an MJPEG stream path. Username and password are entered in separate fields, not in the URL.')</p>
+    <p><b>$_(u'Camera presets')</b></p>
+    <p>$_(u'The setup page contains a camera selector and a manufacturer preset selector. Choose a station, choose a manufacturer, and the JPEG/MJPEG query fields for that station are filled automatically. You can still edit the paths manually afterwards.')</p>
+    <p><b>Hikvision</b></p>
     <ul>
         <li>$_(u'IP address and port'): http://ipaddress:port</li>
         <li>$_(u'JPEG query'): ISAPI/Streaming/channels/101/picture</li>
         <li>$_(u'MJPEG query'): ISAPI/Streaming/channels/102/httpPreview</li>
     </ul>
-    <p><b>$_(u'An example for a AVtech IP camera')</b></p>
-    <ul>
-        <li>$_(u'IP address and port'): http://ipaddress:port</li>
-        <li>$_(u'JPEG query'): cgi-bin/guest/Video.cgi?media=JPEG&channel=1</li>
-        <li>$_(u'MJPEG query'): cgi-bin/guest/Video.cgi?media=MJPEG&channel=1</li>
-    </ul>
-    <p><b>$_(u'An example for a Dahua IP camera')</b></p>
+    <p><b>Dahua / Amcrest</b></p>
     <ul>
         <li>$_(u'IP address and port'): http://ipaddress:port</li>
         <li>$_(u'JPEG query'): cgi-bin/snapshot.cgi</li>
         <li>$_(u'MJPEG query'): cgi-bin/mjpg/video.cgi?subtype=1</li>
     </ul>
-    <p>$_(u'Camera username and password are entered in the separate access fields, not in the camera URL.')</p>
-    <p><b>$_(u'Use JPEG image downloads')</b></p>
-    <p>$_(u'When this option is checked, JPEG images will be downloaded after 5 seconds to the plugin folder and these images will be previewed on the web page. This option will make it possible to see preview images even from an external IP address.')</p>
-    <p><b>$_(u'Use GIF image creating')</b></p>
-    <p>$_(u'When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from 10 images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.')</p>
-    <p><b>$_(u'Number of frames in GIF')</b></p>
-    <p>$_(u'How many images from the camera are saved and then used to create a GIF image. (The more frames, the longer the gif will be refreshed. Frames are created every 5 seconds. eg: 10 frames - gif is created in 10x5sec=50sec).')</p>
-    <p><b>$_(u'Diagnostics and tests')</b></p>
-    <p>$_(u'The main page shows camera diagnostics such as last download time, HTTP status, response time, image size, resolution and the last error. Use Snapshot now, Test JPEG and Test MJPEG to check a camera manually.')</p>
+    <p><b>AVtech</b></p>
+    <ul>
+        <li>$_(u'JPEG query'): cgi-bin/guest/Video.cgi?media=JPEG&amp;channel=1</li>
+        <li>$_(u'MJPEG query'): cgi-bin/guest/Video.cgi?media=MJPEG&amp;channel=1</li>
+    </ul>
+    <p><b>Axis</b></p>
+    <ul>
+        <li>$_(u'JPEG query'): axis-cgi/jpg/image.cgi</li>
+        <li>$_(u'MJPEG query'): axis-cgi/mjpg/video.cgi</li>
+    </ul>
+    <p><b>$_(u'Main options')</b></p>
+    <ul>
+        <li>$_(u'Camera enabled enables or disables one configured camera without deleting its settings.')</li>
+        <li>$_(u'Use JPEG image downloads stores the latest successful snapshot as N.jpg in the plug-in data folder.')</li>
+        <li>$_(u'Use GIF image creating stores successful snapshots as frames and creates N.gif from the newest frames. Failed downloads are not copied as fake frames.')</li>
+        <li>$_(u'Allow IP Cam images on home lets OSPy use cached camera images on the home page when the OSPy System option chooses IP Cam as station picture source.')</li>
+        <li>$_(u'HTTP timeout, maximum image size and SSL verification control how strict camera downloads are.')</li>
+    </ul>
+    <p><b>$_(u'Test buttons')</b></p>
+    <ul>
+        <li>$_(u'Snapshot now downloads the selected camera JPEG immediately and saves it as N.jpg in the plug-in data folder.')</li>
+        <li>$_(u'Test JPEG checks the JPEG path and saves the snapshot when the request succeeds.')</li>
+        <li>$_(u'Test MJPEG opens the stream, reads the first available block and closes the connection. It does not save the stream.')</li>
+    </ul>
+    <p><b>$_(u'HTTP status troubleshooting')</b></p>
+    <ul>
+        <li>401 Unauthorized: $_(u'wrong username/password or unsupported authentication mode. Check credentials and try Basic or Digest authentication in the camera.')</li>
+        <li>403 Forbidden: $_(u'the user does not have permission to access snapshots or streams.')</li>
+        <li>404 Not Found: $_(u'the JPEG or MJPEG path is probably wrong for this model. Try another preset or the camera manual.')</li>
+        <li>$_(u'Timeout'): $_(u'check IP address, port, network access, SSL verification and camera load.')</li>
+    </ul>
+    <p><b>$_(u'GIF notes')</b></p>
+    <p>$_(u'A GIF is created from successful JPEG downloads. If it contains fewer frames than expected, check the JPEG test and the diagnostics counters. A camera that fails every few downloads will naturally produce fewer usable frames.')</p>
     <p><b>$_(u'Safe stream proxy')</b></p>
     <p>$_(u'MJPEG streams are proxied through OSPy so the camera username and password are not embedded in the browser URL.')</p>
-    <p><b>$_(u'HTTP options')</b></p>
-    <p>$_(u'The setup page allows changing the download interval, HTTP timeout, maximum image size, GIF frame delay and HTTPS certificate verification.')</p>
-    <p><b>$_(u'IP address and port')</b></p>
-    <p>$_(u'Example: http://12.34.56.78:88')</p>
-    <p><b>$_(u'Query for get JPEG image')</b></p>
-    <p>$_(u'Example: cgi-bin/guest/Video.cgi?media=JPEG&channel=1. Use a relative path, not a full URL.')</p>
-    <p><b>$_(u'Query for get MJPEG image')</b></p>
-    <p>$_(u'Example ISAPI/Streaming/channels/102/httpPreview. Use a relative path, not a full URL.')</p>
-    <p><b>$_(u'Username for access')</b></p>
-    <p>$_(u'Example: admin')</p>
-    <p><b>$_(u'Password for access')</b></p>
-    <p>$_(u'Example: 1234')</p>
     </td>
-    </tr> 
+    </tr>
     </table>
 </div>
 

@@ -4,24 +4,46 @@ $var title: $_(u'IP cam')
 $var page: plugins
 
 <style>
+.statusPanel {
+    margin-bottom: 14px;
+}
+
 .cameraGrid {
+    align-items: stretch;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
     margin-top: 12px;
 }
 
 .cameraCard {
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 12px;
+    border: 1px solid #cfcfcf;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 560px;
+    padding: 10px;
+}
+
+.cameraCard h3 {
+    margin: 0 0 8px 0;
+}
+
+.cameraPreviewWrap {
+    align-items: center;
+    background: #eeeeee;
+    border: 1px solid #cccccc;
+    display: flex;
+    height: 240px;
+    justify-content: center;
+    overflow: hidden;
+    width: 100%;
 }
 
 .cameraPreview {
-    background: #eee;
-    border: 1px solid #ccc;
-    display: block;
-    height: auto;
-    max-width: 100%;
+    height: 100%;
+    object-fit: contain;
+    width: 100%;
 }
 
 .cameraActions {
@@ -50,17 +72,15 @@ $var page: plugins
 </style>
 
 <script>
-    function escapeHtml(value) {
-        return String(value || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
     function valueOrDash(value) {
         return value || "-";
+    }
+
+    function formatHttp(status) {
+        if (!status.http_status) {
+            return "-";
+        }
+        return status.http_status + (status.http_message ? " " + status.http_message : "");
     }
 
     function updateStatus(){
@@ -72,10 +92,11 @@ $var page: plugins
                 data.cameras.forEach(function(status) {
                     let prefix = "#camStatus" + status.index + "_";
                     jQuery(prefix + "last").text(valueOrDash(status.last_download));
-                    jQuery(prefix + "http").text(valueOrDash(status.http_status));
+                    jQuery(prefix + "http").text(formatHttp(status)).attr("title", valueOrDash(status.http_hint));
                     jQuery(prefix + "ms").text(valueOrDash(status.response_ms));
                     jQuery(prefix + "size").text(status.size ? status.size + " B" : "-");
                     jQuery(prefix + "resolution").text(valueOrDash(status.resolution));
+                    jQuery(prefix + "gif").text(status.gif_frames || 0);
                     jQuery(prefix + "success").text(status.success || 0);
                     jQuery(prefix + "errors").text(status.errors || 0);
                     jQuery(prefix + "error").text(status.error || "");
@@ -103,14 +124,22 @@ $var page: plugins
         <a href=$plugins.plugin_url('ip_cam.setup_page') class="button submit">$_('CAM Settings')</a>
         <a href="?delete_cache&$csrf_query()" class="button cancel danger">$_('Delete cached images')</a>
     </p>
+    <div class="statusPanel">
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Status'):</td>
+                <td><textarea id="statusLog" style="font-family: monospace; width: 100%; box-sizing: border-box;" rows="8" readonly>$'\n'.join(events)</textarea></td>
+            </tr>
+        </table>
+    </div>
     <div class="cameraGrid">
         $for c in range(0, options.output_count):
             $if plugin_options['jpg_ip'][c]:
                 $ status = camera_statuses[c] if c < len(camera_statuses) else {}
                 <div class="cameraCard">
                     <h3>$stations[c].name (${c+1})</h3>
-                    <a href="?cam=${c+1}">
-                        <img class="cameraPreview" id="jpeg${c+1}" src="$plugins.plugin_url('ip_cam.image_page')?cam=${c+1}" width="320" />
+                    <a href="?cam=${c+1}" class="cameraPreviewWrap">
+                        <img class="cameraPreview" id="jpeg${c+1}" src="$plugins.plugin_url('ip_cam.image_page')?cam=${c+1}" alt="" />
                     </a>
                     <div class="cameraActions">
                         <a href="?snapshot=${c+1}&$csrf_query()" class="button download">$_('Snapshot now')</a>
@@ -121,8 +150,9 @@ $var page: plugins
                         <a href="?cam=${c+1}" class="button backup">$_('GIF')</a>
                     </div>
                     <table class="cameraStatus">
+                        <tr><td>$_('Enabled'):</td><td>${_('Yes') if plugin_options['enabled'][c] else _('No')}</td></tr>
                         <tr><td>$_('Last download'):</td><td id="camStatus${c+1}_last">${status.get('last_download', '-')}</td></tr>
-                        <tr><td>$_('HTTP status'):</td><td id="camStatus${c+1}_http">${status.get('http_status', '-')}</td></tr>
+                        <tr><td>$_('HTTP status'):</td><td id="camStatus${c+1}_http" title="${status.get('http_hint', '')}">${status.get('http_status', '-')}${' ' + status.get('http_message', '') if status.get('http_message') else ''}</td></tr>
                         <tr><td>$_('Response'):</td><td><span id="camStatus${c+1}_ms">${status.get('response_ms', '-')}</span> ms</td></tr>
                         <tr>
                             <td>$_('Image size'):</td>
@@ -134,17 +164,12 @@ $var page: plugins
                             </td>
                         </tr>
                         <tr><td>$_('Resolution'):</td><td id="camStatus${c+1}_resolution">${status.get('resolution', '-')}</td></tr>
+                        <tr><td>$_('GIF frames'):</td><td id="camStatus${c+1}_gif">${status.get('gif_frames', 0)}</td></tr>
                         <tr><td>$_('Success / errors'):</td><td><span id="camStatus${c+1}_success">${status.get('success', 0)}</span> / <span id="camStatus${c+1}_errors">${status.get('errors', 0)}</span></td></tr>
                         <tr><td>$_('Error'):</td><td id="camStatus${c+1}_error" class="cameraError">${status.get('error', '')}</td></tr>
                     </table>
                 </div>
     </div>
-    <table class="optionList">
-        <tr>
-            <td style='text-transform: none;'>$_('Status'):</td>
-            <td><textarea id="statusLog" style="font-family: monospace;" rows="8" cols="90" readonly>$'\n'.join(events)</textarea></td>
-        </tr>
-    </table>
 </div>
 <div id="controls">
     <button id="cRefresh" class="submit"><b>$_('Refresh')</b></button>

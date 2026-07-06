@@ -46,20 +46,85 @@ input:checked + .slider {
 input:checked + .slider:before {
     transform: translateX(26px);
 }
+
+.stickyActions {
+    background: #ffffff;
+    border-bottom: 1px solid #cccccc;
+    padding: 8px 0;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.cameraSelectBar {
+    margin: 10px 0;
+}
+
+.cameraSetupPanel {
+    border: 1px solid #cccccc;
+    margin-top: 10px;
+    padding: 10px;
+}
+
+.cameraPreset {
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.cameraTestActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0;
+}
 </style>
 
 <script>
     var msg = "${msg}";
-    // Initialize behaviors
+    var cameraPresets = {
+        "": {jpeg: "", mjpeg: ""},
+        "hikvision": {jpeg: "ISAPI/Streaming/channels/101/picture", mjpeg: "ISAPI/Streaming/channels/102/httpPreview"},
+        "dahua": {jpeg: "cgi-bin/snapshot.cgi", mjpeg: "cgi-bin/mjpg/video.cgi?subtype=1"},
+        "avtech": {jpeg: "cgi-bin/guest/Video.cgi?media=JPEG&channel=1", mjpeg: "cgi-bin/guest/Video.cgi?media=MJPEG&channel=1"},
+        "axis": {jpeg: "axis-cgi/jpg/image.cgi", mjpeg: "axis-cgi/mjpg/video.cgi"},
+        "foscam": {jpeg: "cgi-bin/CGIProxy.fcgi?cmd=snapPicture2", mjpeg: "cgi-bin/CGIStream.cgi?cmd=GetMJStream"},
+        "reolink": {jpeg: "cgi-bin/api.cgi?cmd=Snap&channel=0&rs=wuuPhkmUCeI9WG7C&user=USER&password=PASS", mjpeg: "flv?port=1935&app=bcs&stream=channel0_main.bcs"},
+        "amcrest": {jpeg: "cgi-bin/snapshot.cgi", mjpeg: "cgi-bin/mjpg/video.cgi?channel=1&subtype=1"},
+        "uniview": {jpeg: "LAPI/V1.0/Channels/0/Media/Video/Streams/0/Snapshot", mjpeg: "video/mjpg.cgi"},
+        "tplink_vigi": {jpeg: "stream/snapshot.jpg", mjpeg: "stream/video/mjpeg"}
+    };
+
+    function showCameraPanel(index) {
+        jQuery(".cameraSetupPanel").hide();
+        jQuery("#cameraPanel" + index).show();
+    }
+
+    function applyPreset(index) {
+        let presetName = jQuery("#preset" + index).val();
+        let preset = cameraPresets[presetName];
+        if (!preset) {
+            return;
+        }
+        if (preset.jpeg) {
+            jQuery("input[name='jpg_que" + index + "']").val(preset.jpeg);
+        }
+        if (preset.mjpeg) {
+            jQuery("input[name='mjpeg_que" + index + "']").val(preset.mjpeg);
+        }
+    }
+
     jQuery(document).ready(function(){
-        jQuery("#cSubmit").click(function() {
+        jQuery("#cSubmit, #cSubmitTop").click(function() {
             jQuery("#pluginForm").submit();
         });
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
-        jQuery("#number_pgm").click(function() {
-            jQuery("#pluginForm").submit();
+        jQuery("#cameraChooser").change(function() {
+            showCameraPanel(jQuery(this).val());
+        });
+        jQuery(".presetSelect").change(function() {
+            applyPreset(jQuery(this).attr("data-camera"));
         });
         jQuery('#msgHint').fadeIn(10);
         switch (msg) {
@@ -68,18 +133,23 @@ input:checked + .slider:before {
             break;
         }
         jQuery('#msgHint').fadeOut(4000);
+        showCameraPanel(0);
     });
 </script>
 
 <div id="plugin">
     <div class="title">$_('IP cam - settings') <span id="msgHint"></span></div>
-    <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a><br/>
+    <div class="stickyActions">
+        <button type="button" id="cSubmitTop" class="submit"><b>$_('Submit')</b></button>
+        <a href=$plugins.plugin_url('ip_cam.settings_page') class="button danger">$_('Cancel')</a>
+        <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a>
+    </div>
     <form id="pluginForm" action="$plugins.plugin_url('ip_cam.setup_page')" method="post">
         $:csrf_input()
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use JPEG image downloads'):</td>
-                <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds to the plugin folder and these images will be previewed on the web page. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'When this option is enabled, JPEG images are downloaded to the plug-in data folder and used for previews.'), ensure_ascii=False)}>
                 <label class="switch">
                     <input type="checkbox" name="use_jpg" ${"checked" if plugin_options['use_jpg'] else ""}>
                     <span class="slider"></span>
@@ -87,15 +157,31 @@ input:checked + .slider:before {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Use GIF image creating'):</td>
-                <td title=$:{json.dumps(_(u'When this option is checked, JPEG images will be downloaded after 5 seconds (after 5 seconds an image is created - a gif animation is then created from xx images) to the plugin folder and these images will be previewed on the web page as GIF animation. This option will make it possible to see preview images even from an external IP address.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'When enabled, successfully downloaded snapshots are kept as frames and used to create a GIF animation.'), ensure_ascii=False)}>
                 <label class="switch">
                     <input type="checkbox" name="use_gif" ${"checked" if plugin_options['use_gif'] else ""}>
                     <span class="slider"></span>
                 </label></td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Allow IP Cam images on home'):</td>
+                <td title=$:{json.dumps(_(u'When enabled, OSPy can use cached IP Cam images on the home page when the System option chooses IP Cam as image source.'), ensure_ascii=False)}>
+                <label class="switch">
+                    <input type="checkbox" name="show_on_home" ${"checked" if plugin_options['show_on_home'] else ""}>
+                    <span class="slider"></span>
+                </label></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Home image type'):</td>
+                <td title=$:{json.dumps(_(u'Choose whether the IP Cam home page image endpoint prefers JPEG snapshots or GIF animations.'), ensure_ascii=False)}>
+                <select name="home_image_type">
+                    <option value="jpg" ${"selected" if plugin_options['home_image_type'] == 'jpg' else ""}>JPEG</option>
+                    <option value="gif" ${"selected" if plugin_options['home_image_type'] == 'gif' else ""}>GIF</option>
+                </select></td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Number of frames in GIF'):</td>
-                <td title=$:{json.dumps(_(u'How many images from the camera are saved and then used to create a GIF image. (The more frames, the longer the gif will be refreshed. Frames are created every 5 seconds. eg: 10 frames - gif is created in 10x5sec=50sec).'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'How many successful snapshots are kept and then used to create a GIF image.'), ensure_ascii=False)}>
                 <input name='gif_frames' type='number' min="3" max="50" value="$plugin_options['gif_frames']"> (3-50)</td>
             </tr>
             <tr>
@@ -127,48 +213,84 @@ input:checked + .slider:before {
                 </label></td>
             </tr>
         </table>
-        <p></br></p>
-        <p>$_('Assignment of IP cameras to OSPy stations.')</p>
+        <div class="cameraSelectBar">
+            <label for="cameraChooser">$_('Camera'):</label>
+            <select id="cameraChooser">
+                $for c in range(0, options.output_count):
+                    <option value="${c}">${c+1} - $stations[c].name</option>
+            </select>
+        </div>
         $for c in range(0, options.output_count):
-            <table class="optionList">
-            <tr>
-            <td class="NumberCam"><b><small>$_('Station') (${c+1})</small></b></td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('IP address and port'):</td>
-            <td title=$:{json.dumps(_(u'Example: http://12.34.56.78:88'), ensure_ascii=False)}>
-            <input name='jpg_ip${c}' type='text' size='60' value="${plugin_options['jpg_ip'][c]}">
-            </td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Query for get JPEG image'):</td>
-            <td title=$:{json.dumps(_(u'Example: cgi-bin/guest/Video.cgi?media=JPEG&channel=1. Use a relative path, not a full URL.'), ensure_ascii=False)}>
-            <input name='jpg_que${c}' type='text' size='60' value="${plugin_options['jpg_que'][c]}">
-            </td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Query for get MJPEG image'):</td>
-            <td title=$:{json.dumps(_(u'Example ISAPI/Streaming/channels/102/httpPreview. Use a relative path, not a full URL.'), ensure_ascii=False)}>
-            <input name='mjpeg_que${c}' type='text' size='60' value="${plugin_options['mjpeg_que'][c]}">
-            </td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Username for access'):</td>
-            <td title=$:{json.dumps(_(u'Example: admin'), ensure_ascii=False)}>
-            <input name='jpg_user${c}' type='text' size='20' value="${plugin_options['jpg_user'][c]}">
-            </td>
-            </tr>
-            <tr>
-            <td style='text-transform: none;'>$_('Password for access'):</td>
-            <td title=$:{json.dumps(_(u'Example: 1234'), ensure_ascii=False)}>
-            <input name='jpg_pass${c}' type='password' size='20' value="${plugin_options['jpg_pass'][c]}">
-            </td>
-            </tr>
-            </table>
+            <div class="cameraSetupPanel" id="cameraPanel${c}">
+                <h3>$_('Station') ${c+1}: $stations[c].name</h3>
+                <div class="cameraTestActions">
+                    <a href="$plugins.plugin_url('ip_cam.settings_page')?snapshot=${c+1}&$csrf_query()" class="button download">$_('Snapshot now')</a>
+                    <a href="$plugins.plugin_url('ip_cam.settings_page')?test_jpeg=${c+1}&$csrf_query()" class="button upload">$_('Test JPEG')</a>
+                    <a href="$plugins.plugin_url('ip_cam.settings_page')?test_mjpeg=${c+1}&$csrf_query()" class="button upload">$_('Test MJPEG')</a>
+                </div>
+                <table class="optionList">
+                    <tr>
+                        <td style='text-transform: none;'>$_('Camera enabled'):</td>
+                        <td>
+                        <label class="switch">
+                            <input type="checkbox" name="enabled${c}" ${"checked" if plugin_options['enabled'][c] else ""}>
+                            <span class="slider"></span>
+                        </label></td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('IP address and port'):</td>
+                        <td title=$:{json.dumps(_(u'Example: http://12.34.56.78:88'), ensure_ascii=False)}>
+                        <input name='jpg_ip${c}' type='text' size='60' value="${plugin_options['jpg_ip'][c]}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Camera preset'):</td>
+                        <td>
+                            <select class="presetSelect" id="preset${c}" data-camera="${c}">
+                                <option value="">$_('Select manufacturer')</option>
+                                <option value="hikvision">Hikvision</option>
+                                <option value="dahua">Dahua</option>
+                                <option value="avtech">AVtech</option>
+                                <option value="axis">Axis</option>
+                                <option value="foscam">Foscam</option>
+                                <option value="reolink">Reolink</option>
+                                <option value="amcrest">Amcrest</option>
+                                <option value="uniview">Uniview</option>
+                                <option value="tplink_vigi">TP-Link VIGI</option>
+                            </select>
+                            <span class="cameraPreset">$_('Selecting a manufacturer fills JPEG and MJPEG paths for this camera.')</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Query for get JPEG image'):</td>
+                        <td title=$:{json.dumps(_(u'Use a relative path, not a full URL.'), ensure_ascii=False)}>
+                        <input name='jpg_que${c}' type='text' size='60' value="${plugin_options['jpg_que'][c]}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Query for get MJPEG image'):</td>
+                        <td title=$:{json.dumps(_(u'Use a relative path, not a full URL.'), ensure_ascii=False)}>
+                        <input name='mjpeg_que${c}' type='text' size='60' value="${plugin_options['mjpeg_que'][c]}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Username for access'):</td>
+                        <td title=$:{json.dumps(_(u'Example: admin'), ensure_ascii=False)}>
+                        <input name='jpg_user${c}' type='text' size='20' value="${plugin_options['jpg_user'][c]}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='text-transform: none;'>$_('Password for access'):</td>
+                        <td title=$:{json.dumps(_(u'Example: 1234'), ensure_ascii=False)}>
+                        <input name='jpg_pass${c}' type='password' size='20' value="${plugin_options['jpg_pass'][c]}">
+                        </td>
+                    </tr>
+                </table>
+            </div>
     </form>
 </div>
 
 <div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button type="button" id="cSubmit" class="submit"><b>$_('Submit')</b></button>
     <a href=$plugins.plugin_url('ip_cam.settings_page') class="button danger">$_('Cancel')</a><br/>
 </div>
