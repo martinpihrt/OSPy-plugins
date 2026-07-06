@@ -77,3 +77,4 @@ Available plugins:
 * Current Loop Tanks Monitor
 * Network Ping Monitor
 * Weather Dashboard
+* Thermostat
