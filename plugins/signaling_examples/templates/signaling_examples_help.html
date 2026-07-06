@@ -1,4 +1,4 @@
-$def with()
+$def with(signal_names)
 
 $var title: $_('Signaling Examples - Help')
 $var page: plugins
@@ -8,36 +8,8 @@ $var page: plugins
         <p>$_('This is Example signal plugin provides functions triggered by signals from core program.')</p>
     <p><b>$_('Example signals')</b></p>
     <p><ul>
-    <li>$_('signal loggedin')</li>
-    <li>$_('signal value_change')</li>
-    <li>$_('signal option_change')</li>
-    <li>$_('signal rebooted')</li>
-    <li>$_('signal restarted')</li>
-    <li>$_('signal station_names')</li>
-    <li>$_('signal program_change')</li>
-    <li>$_('signal program_deleted')</li>
-    <li>$_('signal program_toggled')</li>
-    <li>$_('signal program_runnow')</li>
-    <li>$_('signal rain_active')</li>
-    <li>$_('signal rain_not_active')</li>
-    <li>$_('signal master_one_on')</li>
-    <li>$_('signal master_one_off')</li>
-    <li>$_('signal master_two_on')</li>
-    <li>$_('signal master_two_off')</li>
-    <li>$_('signal pressurizer_master_relay_on')</li>
-    <li>$_('signal pressurizer_master_relay_off')</li>
-    <li>$_('signal poweroff')</li>
-    <li>$_('signal ospyupdate')</li>
-    <li>$_('signal station_on')</li>
-    <li>$_('signal station_off')</li>
-    <li>$_('signal station_clear')</li>
-    <li>$_('signal internet_available')</li>
-    <li>$_('signal internet_not_available')</li>
-    <li>$_('signal rain_delay_set')</li>
-    <li>$_('signal rain_delay_remove')</li>
-    <li>$_('signal hass_plugin_update')</li>
-    <li>$_('signal core_30_sec_tick')</li>
-    <li>$_('signal air_temp_humi_plugin_update')</li>
+    $for name in signal_names:
+        <li>signal('$name')</li>
     </ul></p>
 </div>
 

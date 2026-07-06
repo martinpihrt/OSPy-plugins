@@ -19,6 +19,42 @@ NAME = 'Signaling Examples'
 MENU =  _('Package: Signaling Examples')
 LINK = 'settings_page'
 
+SIGNAL_NAMES = [
+    'loggedin',
+    'value_change',
+    'option_change',
+    'rebooted',
+    'restarted',
+    'station_names',
+    'program_change',
+    'program_deleted',
+    'program_toggled',
+    'program_runnow',
+    'zone_change',
+    'rain_active',
+    'rain_not_active',
+    'master_one_on',
+    'master_one_off',
+    'master_two_on',
+    'master_two_off',
+    'pressurizer_master_relay_on',
+    'pressurizer_master_relay_off',
+    'poweroff',
+    'ospyupdate',
+    'station_on',
+    'station_off',
+    'station_clear',
+    'internet_available',
+    'internet_not_available',
+    'rain_delay_set',
+    'rain_delay_remove',
+    'hass_plugin_update',
+    'core_30_sec_tick',
+    'air_temp_humi_plugin_update',
+]
+
+SIGNAL_RECEIVERS = {}
+
 
 ################################################################################
 # Main function loop:                                                          #
@@ -50,68 +86,8 @@ class Sender(Thread):
     def run(self):   
         #while not self._stop_event.is_set(): ### delete hashtag for loop ###
             ### here is main loop for this plugin ###
-            loggedin = signal('loggedin') ### associations with signal ###
-            loggedin.connect(notify_login)### define which subroutine will be triggered in helper ###
-            value_change = signal('value_change')
-            value_change.connect(notify_value_change)
-            option_change = signal('option_change')
-            option_change.connect(notify_option_change)
-            rebooted = signal('rebooted')
-            rebooted.connect(notify_rebooted)
-            restarted = signal('restarted')
-            restarted.connect(notify_restarted)
-            station_names = signal('station_names')
-            station_names.connect(notify_station_names)
-            program_change = signal('program_change')
-            program_change.connect(notify_program_change)
-            program_deleted = signal('program_deleted')
-            program_deleted.connect(notify_program_deleted)
-            program_toggled = signal('program_toggled')
-            program_toggled.connect(notify_program_toggled)
-            program_runnow = signal('program_runnow')
-            program_runnow.connect(notify_program_runnow)
-            zone_change = signal('zone_change')
-            zone_change.connect(notify_zone_change)
-            rain_active = signal('rain_active')
-            rain_active.connect(notify_rain_active)
-            rain_not_active = signal('rain_not_active')
-            rain_not_active.connect(notify_rain_not_active)
-            master_one_on = signal('master_one_on')
-            master_one_on.connect(notify_master_one_on)
-            master_one_off = signal('master_one_off')
-            master_one_off.connect(notify_master_one_off)
-            master_two_on = signal('master_two_on')
-            master_two_on.connect(notify_master_two_on)
-            master_two_off = signal('master_two_off')
-            master_two_off.connect(notify_master_two_off)
-            pressurizer_master_relay_on = signal('pressurizer_master_relay_on')
-            pressurizer_master_relay_on.connect(notify_pressurizer_master_relay_on)
-            pressurizer_master_relay_off = signal('pressurizer_master_relay_off')
-            pressurizer_master_relay_off.connect(notify_pressurizer_master_relay_off)
-            poweroff = signal('poweroff')
-            poweroff.connect(notify_poweroff)
-            ospyupdate = signal('ospyupdate')
-            ospyupdate.connect(notify_ospyupdate)
-            station_on = signal('station_on')
-            station_on.connect(notify_station_on)
-            station_off = signal('station_off')
-            station_off.connect(notify_station_off)
-            station_clear = signal('station_clear')
-            station_clear.connect(notify_station_clear)
-            internet_available = signal('internet_available')
-            internet_available.connect(notify_internet_available)
-            internet_not_available = signal('internet_not_available')
-            internet_not_available.connect(notify_internet_not_available)
-            rain_delay_set = signal('rain_delay_set')
-            rain_delay_set.connect(notify_rain_delay_setuped) 
-            rain_delay_remove = signal('rain_delay_remove')
-            rain_delay_remove.connect(notify_rain_delay_expired)
-            hass_plugin_update = signal('hass_plugin_update')
-            hass_plugin_update.connect(notify_hass_update)
-            core_30_sec_tick = signal('core_30_sec_tick')
-            core_30_sec_tick.connect(notify_core_30_sec_tick)
-            air_temp_humi_plugin_update = signal('air_temp_humi_plugin_update')
-            air_temp_humi_plugin_update.connect(notify_air_temp_humi_plugin_update)
+            for signal_name in SIGNAL_NAMES:
+                signal(signal_name).connect(receiver_for(signal_name), weak=False)
 
 sender = None
 
@@ -132,6 +108,63 @@ def stop():
        sender.stop()
        sender.join(15)
        sender = None 
+
+
+def signal_message(signal_name, kw):
+    messages = {
+        'loggedin': _('Someone logged in'),
+        'value_change': _('Value_change'),
+        'option_change': _('Options settings changed'),
+        'rebooted': _('System rebooted'),
+        'restarted': _('System restarted'),
+        'station_names': _('Station names changed'),
+        'program_change': _('Programs changed'),
+        'program_deleted': _('Program deleted'),
+        'program_toggled': _('Program toggled on or off'),
+        'program_runnow': _('Program runnow'),
+        'zone_change': _('Zone change'),
+        'rain_active': _('Rain active'),
+        'rain_not_active': _('Rain not active'),
+        'master_one_on': _('Master one on'),
+        'master_one_off': _('Master one off'),
+        'master_two_on': _('Master two on'),
+        'master_two_off': _('Master two off'),
+        'pressurizer_master_relay_on': _('Pressurizer plugin master relay on'),
+        'pressurizer_master_relay_off': _('Pressurizer plugin master relay off'),
+        'poweroff': _('Linux system now powering off'),
+        'ospyupdate': _('OSPy system update available'),
+        'station_clear': _('OSPy all stations OFF'),
+        'internet_available': _('Internet is available (external IP)'),
+        'internet_not_available': _('Internet is not available (external IP)'),
+        'rain_delay_remove': _('Rain delay has now been removed'),
+        'hass_plugin_update': _('Home Assistant update'),
+        'core_30_sec_tick': _('Core tick interval 30 second'),
+        'air_temp_humi_plugin_update': _('Air Temperature and Humidity Monitor update'),
+    }
+    if signal_name == 'station_on':
+        return _('OSPy stations ON, index: {}').format(kw.get('txt', ''))
+    if signal_name == 'station_off':
+        return _('OSPy stations OFF, index: {}').format(kw.get('txt', ''))
+    if signal_name == 'rain_delay_set':
+        return _('Rain delay is now set a delay {} hours').format(kw.get('txt', ''))
+    return messages.get(signal_name, _('Signal received'))
+
+
+def record_signal(signal_name, name=None, **kw):
+    global sender
+    message = signal_message(signal_name, kw)
+    text = "{}: signal('{}') - {}".format(datetime_string(), signal_name, message)
+    if sender is not None:
+        sender.status['last_signal'] = text
+    log.info(NAME, text)
+
+
+def receiver_for(signal_name):
+    if signal_name not in SIGNAL_RECEIVERS:
+        def receiver(name, **kw):
+            record_signal(signal_name, name, **kw)
+        SIGNAL_RECEIVERS[signal_name] = receiver
+    return SIGNAL_RECEIVERS[signal_name]
 
 ### login ###
 def notify_login(name, **kw):
@@ -268,7 +301,7 @@ class settings_page(ProtectedPage):
     """Load an html page for entering adjustments."""
 
     def GET(self):
-        return self.plugin_render.signaling_examples()
+        return self.plugin_render.signaling_examples(SIGNAL_NAMES)
 
     def POST(self):
         verify_csrf()
@@ -281,7 +314,7 @@ class help_page(ProtectedPage):
     """Load an html page for help"""
 
     def GET(self):
-        return self.plugin_render.signaling_examples_help()
+        return self.plugin_render.signaling_examples_help(SIGNAL_NAMES)
 
 
 class settings_json(ProtectedPage):            ### return plugin_options as JSON data ###
@@ -290,7 +323,7 @@ class settings_json(ProtectedPage):            ### return plugin_options as JSON
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        return json.dumps({'signals': SIGNAL_NAMES})
 
 
 class signal_json(ProtectedPage):
@@ -300,6 +333,7 @@ class signal_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data = {}
-        data['loginfo'] = '{}'.format(log.events(NAME))
+        data['loginfo'] = log.events(NAME)
+        data['last_signal'] = sender.status.get('last_signal', '') if sender is not None else ''
         return json.dumps(data)
 

@@ -1,4 +1,4 @@
-$def with()
+$def with(signal_names)
 
 $var title: $_('Signaling Examples settings')
 $var page: plugins
@@ -6,14 +6,11 @@ $var page: plugins
 <script>
     function updateLog(){
         jQuery.getJSON("/plugins/signaling_examples/signal_json", function(_data) {
-            // replace ' to " for valid JSON
-            var jsonString = _data.loginfo.replace(/'/g, '"');
-            // convert to true array
-            var loginfoArray = JSON.parse(jsonString);
-            // reverse array
+            var loginfoArray = _data.loginfo || [];
             loginfoArray.reverse();
             jQuery("#Textarea").val(loginfoArray.join("\n"));
-        })      
+            jQuery("#LastSignal").val(_data.last_signal || "");
+        })
         setTimeout(updateLog, 1000); // 1 second
     }
 
@@ -36,9 +33,21 @@ $var page: plugins
         $:csrf_input()
         <table class="optionList">
             <tr>
+                <td style='text-transform: none;'>$_('Last signal'):</td>
+                <td>
+                    <input id="LastSignal" type="text" size="80" readonly>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
                     <textarea id="Textarea" style="font-family: monospace;" rows="10" cols="55" readonly></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none; vertical-align: top;'>$_('Signals'):</td>
+                <td>
+                    <textarea style="font-family: monospace;" rows="12" cols="55" readonly>$'\n'.join(["signal('{}')".format(name) for name in signal_names])</textarea>
                 </td>
             </tr>
         </table>
