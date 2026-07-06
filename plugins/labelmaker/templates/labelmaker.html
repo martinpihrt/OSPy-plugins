@@ -1,4 +1,4 @@
-$def with(plugin_options, events)
+$def with(plugin_options, events, missing_dependencies, dependencies_installing, missing_text)
 
 $var title: $_('Bar and QR code label maker generator')
 $var page: plugins
@@ -38,9 +38,42 @@ $var page: plugins
     gap: 8px;
     margin-top: 8px;
 }
+
+.dependencyStatus {
+    display: inline-block;
+    margin-left: 8px;
+    font-weight: bold;
+    color: #1f355e;
+}
 </style>
 
 <script>
+    function updateStatus(){
+        jQuery.getJSON("/plugins/labelmaker/status_json", function(data) {
+            if (data.events) {
+                jQuery("#statusLog").val(data.events.join("\n"));
+            }
+            let row = jQuery("#dependencyRow");
+            if (row.length) {
+                let missing = data.missing || [];
+                if (!missing.length && !data.installing) {
+                    row.hide();
+                } else {
+                    row.show();
+                    jQuery("#dependencyMissing").text(missing.join(", "));
+                    if (data.installing) {
+                        jQuery("#installDeps").hide();
+                        jQuery("#dependencyRunning").show();
+                    } else {
+                        jQuery("#installDeps").show();
+                        jQuery("#dependencyRunning").hide();
+                    }
+                }
+            }
+        });
+        setTimeout(updateStatus, 2000);
+    }
+
     function check_type() {
         let code_type = jQuery("#code_type").val(); // 0=BAR EAN13, 1=QR BW, 2=QR color, 3=QR logo
         let isQr = code_type != "0";
@@ -96,6 +129,7 @@ $var page: plugins
         jQuery("#code_type").change(check_type);
         jQuery("#msg").on("input", validateMessage);
         check_type();
+        updateStatus();
     });
 </script>
 
@@ -106,6 +140,21 @@ $var page: plugins
     <form id="pluginForm" action="$plugins.plugin_url('labelmaker.settings_page')" method="post">
         $:csrf_input()
         <table class="optionList">
+            $if missing_dependencies:
+                <tr id="dependencyRow">
+                    <td style='text-transform: none;'>$_('Required libraries'):</td>
+                    <td>
+                        <span>$_('Missing packages'): <b id="dependencyMissing">$missing_text</b></span>
+                        $if dependencies_installing:
+                            <span id="dependencyRunning" class="dependencyStatus">$_('Installing, please wait...')</span>
+                            <a id="installDeps" href="?install_deps&$csrf_query()" class="button upload" style="display:none;">$_('Install libraries')</a>
+                        $else:
+                            <span id="dependencyRunning" class="dependencyStatus" style="display:none;">$_('Installing, please wait...')</span>
+                            <a id="installDeps" href="?install_deps&$csrf_query()" class="button upload">$_('Install libraries')</a>
+                        <br/>
+                        <small>$_('The installation progress is shown in the status log.')</small>
+                    </td>
+                </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Select output format'):</td>
                 <td>
@@ -197,7 +246,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="5" cols="54" readonly>$'\n'.join(events)</textarea>
+                    <textarea id="statusLog" style="font-family: monospace;" rows="8" cols="70" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>

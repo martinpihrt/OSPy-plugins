@@ -6,7 +6,9 @@ $var page: plugins
 <div id="plugin">
 <div class="title">$_('Bar and QR code label maker generator - help')</div>
 <p>$_('This extension allows you to generate barcodes or QR codes for your use and subsequent use in the OSPy system (for example, generating flowerbed stickers with a detailed description of what is planted for the variety, the need for soil, water...)')</p><br>
-<p>$_('This extension requires the following Python packages on Linux. If they are not available for the selected code, the extension will install them by itself.')</p><br>
+<p>$_('This extension requires the following Python packages on Linux. On Raspberry Pi OS Bookworm and newer, install them with apt instead of pip.')</p>
+<p>sudo apt install python3-barcode python3-qrcode python3-pil</p><br>
+<p>$_('If a required package is missing, the settings page shows an Install libraries button and writes the installation progress to the status log.')</p><br>
 <p><b>$_('EAN13 code')</b></p>
 <p>$_('Message must have 12 digits and must contain only numbers.')</p><br>
 <a href="/plugins/labelmaker/static/images/ean_demo.png"><img src="/plugins/labelmaker/static/images/ean_demo.png" width="20%"></a>

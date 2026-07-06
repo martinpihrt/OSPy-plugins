@@ -5,6 +5,20 @@ Tested in Python 3+
 
 This extension allows you to generate barcodes or QR codes for your use and subsequent use in the OSPy system (for example, generating flowerbed stickers with a detailed description of what is planted for the variety, the need for soil, water...)
 
+Dependencies
+-----------
+
+On Raspberry Pi OS Bookworm and newer, install dependencies with the system
+package manager instead of pip:
+
+* EAN13: `sudo apt install python3-barcode`
+* QR codes: `sudo apt install python3-qrcode`
+* QR with logo: `sudo apt install python3-pil`
+
+If a required dependency is missing, the plug-in settings page shows an
+Install libraries button. The installation output is written to the plug-in
+status log.
+
 Plugin setup
 -----------
 

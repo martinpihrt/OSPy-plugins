@@ -8,12 +8,13 @@ import sys
 import os
 import mimetypes
 
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 import traceback
 import json
-import subprocess
-import shlex
 import re
+import importlib.util
+import shutil
+import subprocess
 
 import web
 from ospy.log import log
@@ -29,6 +30,8 @@ LINK = 'settings_page'
 
 colors_name = ['BLACK', 'RED', 'GREEN','BLUE','ORANGE','BROWN']
 qr_error_levels = ['L', 'M', 'Q', 'H']
+dependency_install_lock = Lock()
+dependency_install_running = False
 
 plugin_options = PluginOptions(
     NAME,
@@ -102,6 +105,96 @@ def _log_generated(kind, image_path, message):
         log.info(NAME, datetime_string() + ' ' + _('Output file') + ': {}'.format(os.path.basename(image_path)))
 
 
+def _missing_dependency(package_name, apt_package):
+    log.error(NAME, datetime_string() + ' ' + _('Missing Python package') + ': {}'.format(package_name))
+    log.info(NAME, datetime_string() + ' ' + _('Install it from the system package manager and restart this plug-in.'))
+    log.info(NAME, datetime_string() + ' sudo apt install {}'.format(apt_package))
+
+
+def labelmaker_dependency_specs(code_type=None):
+    code_type = str(code_type if code_type is not None else plugin_options['code_type'])
+    if code_type == "0":
+        return [('barcode', 'python-barcode', 'python3-barcode')]
+    if code_type in ("1", "2"):
+        return [('qrcode', 'qrcode', 'python3-qrcode')]
+    if code_type == "3":
+        return [('qrcode', 'qrcode', 'python3-qrcode'), ('PIL', 'Pillow', 'python3-pil')]
+    return []
+
+
+def labelmaker_missing_dependencies(code_type=None):
+    missing = []
+    for module_name, package_name, apt_package in labelmaker_dependency_specs(code_type):
+        if importlib.util.find_spec(module_name) is None:
+            missing.append({
+                'module': module_name,
+                'package': package_name,
+                'apt': apt_package,
+            })
+    return missing
+
+
+def labelmaker_dependencies_installing():
+    with dependency_install_lock:
+        return dependency_install_running
+
+
+def start_labelmaker_dependency_install():
+    global dependency_install_running
+    with dependency_install_lock:
+        if dependency_install_running:
+            log.info(NAME, datetime_string() + ' ' + _('Dependency installation is already running.'))
+            return
+        dependency_install_running = True
+
+    install_thread = Thread(target=install_labelmaker_dependencies)
+    install_thread.daemon = True
+    install_thread.start()
+
+
+def install_labelmaker_dependencies():
+    global dependency_install_running
+    try:
+        missing = labelmaker_missing_dependencies()
+        if not missing:
+            log.info(NAME, datetime_string() + ' ' + _('Dependencies are already installed.'))
+            return
+
+        apt_packages = sorted(set(item['apt'] for item in missing))
+        log.info(NAME, datetime_string() + ' ' + _('Installing dependencies. This operation can take several minutes.'))
+
+        if os.name != 'posix' or not shutil.which('apt-get'):
+            log.error(NAME, datetime_string() + ' ' + _('Automatic dependency installation is available only on systems with apt-get.'))
+            log.info(NAME, datetime_string() + ' sudo apt install {}'.format(' '.join(apt_packages)))
+            return
+
+        cmd = ['apt-get', 'install', '-y'] + apt_packages
+        if hasattr(os, 'geteuid') and os.geteuid() != 0:
+            if shutil.which('sudo'):
+                cmd.insert(0, 'sudo')
+            else:
+                log.error(NAME, datetime_string() + ' ' + _('Root privileges are required for installing dependencies.'))
+                log.info(NAME, datetime_string() + ' sudo apt install {}'.format(' '.join(apt_packages)))
+                return
+
+        log.info(NAME, datetime_string() + ' ' + _('Running command') + ': ' + ' '.join(cmd))
+        proc = subprocess.run(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=900)
+        output = proc.stdout.decode('utf-8', 'replace').strip()
+        if output:
+            log.info(NAME, output[-4000:])
+
+        missing = labelmaker_missing_dependencies()
+        if proc.returncode == 0 and not missing:
+            log.info(NAME, datetime_string() + ' ' + _('Dependencies were installed successfully.'))
+        else:
+            log.error(NAME, datetime_string() + ' ' + _('Dependency installation failed. Missing modules') + ': ' + ', '.join(item['package'] for item in missing))
+    except:
+        log.error(NAME, datetime_string() + ' ' + _('Label Maker plug-in') + ':\n' + traceback.format_exc())
+    finally:
+        with dependency_install_lock:
+            dependency_install_running = False
+
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -137,11 +230,7 @@ class Plugin_Checker(Thread):
                     from barcode.writer import ImageWriter
                     instaled = True
                 except:
-                    log.info(NAME, datetime_string() + ' ' + _('Barcode not instaled, installing from pip (pip install python-barcode).'))
-                    cmd = 'pip install python-barcode'
-                    install(cmd)
-                    log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
-                    pass
+                    _missing_dependency('python-barcode', 'python3-barcode')
                 if instaled is not None:
                     with open(image_path, "wb") as f:
                         EAN13(message, writer=ImageWriter()).write(f)
@@ -152,11 +241,7 @@ class Plugin_Checker(Thread):
                     import qrcode
                     instaled = True
                 except:
-                    log.info(NAME, datetime_string() + ' ' + _('QRcode not instaled, installing from pip (pip install qrcode).'))
-                    cmd = 'pip install qrcode'
-                    install(cmd)
-                    log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
-                    pass
+                    _missing_dependency('qrcode', 'python3-qrcode')
                 if instaled is not None:
                     qr = qrcode.QRCode(
                         version=None,
@@ -175,10 +260,7 @@ class Plugin_Checker(Thread):
                         try:
                             from PIL import Image
                         except:
-                            log.info(NAME, datetime_string() + ' ' + _('Pillow not instaled, installing from pip (pip install Pillow).'))
-                            cmd = 'pip install Pillow'
-                            install(cmd)
-                            log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
+                            _missing_dependency('Pillow', 'python3-pil')
                             return
 
                         logo_link = os.path.join('plugins', 'labelmaker', 'static', 'images', 'logo.png')
@@ -232,14 +314,6 @@ def stop():
         checker = None
 
 
-def install(cmd):
-    try:
-        proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
-        output = proc.stdout.decode('utf8')
-        log.info(NAME, '{}'.format(output))
-    except:
-        log.error(NAME, datetime_string() + ' ' + _('Label Maker plug-in') + ':\n' + traceback.format_exc())
-
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -248,7 +322,23 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         try:
-            return self.plugin_render.labelmaker(plugin_options, log.events(NAME))
+            qdict = web.input()
+            install_deps = qdict.get('install_deps') is not None
+            if install_deps:
+                verify_csrf(qdict)
+                start_labelmaker_dependency_install()
+                raise web.seeother(plugin_url(settings_page), True)
+
+            missing = labelmaker_missing_dependencies()
+            return self.plugin_render.labelmaker(
+                plugin_options,
+                log.events(NAME),
+                missing,
+                labelmaker_dependencies_installing(),
+                ', '.join(item['apt'] for item in missing),
+            )
+        except web.HTTPError:
+            raise
         except:
             log.error(NAME, _('Label Maker plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
@@ -263,7 +353,9 @@ class settings_page(ProtectedPage):
             if checker is not None:
                 checker.update()
             raise web.seeother(plugin_url(settings_page), True)
-        except:
+        except web.HTTPError:
+            raise
+        except Exception:
             log.error(NAME, _('Label Maker plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('labelmaker -> settings_page POST')
@@ -318,5 +410,22 @@ class settings_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         try:
             return json.dumps(plugin_options)
+        except:
+            return {}
+
+
+class status_json(ProtectedPage):
+    """Returns the current plugin status log in JSON format."""
+
+    def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Content-Type', 'application/json')
+        try:
+            missing = labelmaker_missing_dependencies()
+            return json.dumps({
+                'events': log.events(NAME),
+                'missing': [item['apt'] for item in missing],
+                'installing': labelmaker_dependencies_installing(),
+            })
         except:
             return {}
