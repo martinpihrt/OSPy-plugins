@@ -3,31 +3,98 @@ $def with(plugin_options, events)
 $var title: $_('Bar and QR code label maker generator')
 $var page: plugins
 
+<style>
+.labelmakerHint {
+    display: block;
+    margin-top: 4px;
+}
+
+.labelmakerHint.error {
+    color: #b00020;
+    font-weight: bold;
+}
+
+.labelmakerHint.ok {
+    color: #2e7d32;
+}
+
+.labelmakerPreview {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.labelmakerPreview img {
+    background: #fff;
+    border: 1px solid #ddd;
+    max-width: 260px;
+    padding: 8px;
+}
+
+.labelmakerActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+</style>
+
 <script>
     function check_type() {
         let code_type = jQuery("#code_type").val(); // 0=BAR EAN13, 1=QR BW, 2=QR color, 3=QR logo
-        if (code_type == 2 || code_type == 3) { 
-            jQuery("#color_type_1").show()
-            jQuery("#color_type_2").show()
-        } else {
-            jQuery("#color_type_1").hide()
-            jQuery("#color_type_2").hide()
-        }    
+        let isQr = code_type != "0";
+        let isColorQr = code_type == "2" || code_type == "3";
+        jQuery(".qrOption").toggle(isQr);
+        jQuery(".qrColorOption").toggle(isColorQr);
+        validateMessage();
     }
 
-    // Initialize behaviors
+    function validateMessage() {
+        let code_type = jQuery("#code_type").val();
+        let msg = jQuery("#msg").val().trim();
+        let hint = "";
+        let valid = true;
+
+        jQuery("#charCount").text(msg.length);
+        if (code_type == "0") {
+            if (msg.length != 12 || !/^[0-9]+/.test(msg)) {
+                hint = $:{json.dumps(_('EAN13 requires exactly 12 digits.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+                valid = false;
+            } else {
+                hint = $:{json.dumps(_('EAN13 input is valid.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+            }
+        } else {
+            if (msg.length < 1) {
+                hint = $:{json.dumps(_('Type text or URL for the QR code.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+                valid = false;
+            } else if (msg.length > 500) {
+                hint = $:{json.dumps(_('QR message must not be longer than 500 characters.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+                valid = false;
+            } else {
+                hint = $:{json.dumps(_('QR input is valid.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+            }
+        }
+
+        jQuery("#validationHint").text(hint).toggleClass("error", !valid).toggleClass("ok", valid);
+        return valid;
+    }
+
     jQuery(document).ready(function(){
         jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
+            if (validateMessage()) {
+                jQuery("#pluginForm").submit();
+            }
         });
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
         jQuery("button#cErase").click(function(){
-            jQuery("textarea[name=msg").val('');
-            jQuery("#pluginForm").submit();
+            jQuery("#msg").val('');
+            validateMessage();
         });
         jQuery("#code_type").change(check_type);
+        jQuery("#msg").on("input", validateMessage);
         check_type();
     });
 </script>
@@ -53,43 +120,84 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Message'):</td>
                 <td title=$:{json.dumps(_('Message embedded in the code.'), ensure_ascii=False)}>
-                    <textarea id="msg" name="msg" rows="3" cols="50" size="500">$plugin_options["msg"]</textarea>
+                    <textarea id="msg" name="msg" rows="4" cols="54" maxlength="500">$plugin_options["msg"]</textarea>
+                    <span class="labelmakerHint"><span id="charCount">0</span> / 500</span>
+                    <span id="validationHint" class="labelmakerHint"></span>
                 </td>
             </tr>
-            <tr><td>
-            <div class='option' id="color_type_1" style="display: none;">$_('QR color'):</div>
-            </td>
-            <td>
-            <div class='option' id="color_type_2" style="display: none;">
-            <select id='color' name='color' title=$:{json.dumps(_('Color used in QR code.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
-            <option value="0" ${" selected" if plugin_options['color']=="0" else ""}>$_('BLACK')</option>
-            <option value="1" ${" selected" if plugin_options['color']=="1" else ""}>$_('RED')</option>
-            <option value="2" ${" selected" if plugin_options['color']=="2" else ""}>$_('GREEN')</option>
-            <option value="3" ${" selected" if plugin_options['color']=="3" else ""}>$_('BLUE')</option>
-            <option value="4" ${" selected" if plugin_options['color']=="4" else ""}>$_('ORANGE')</option>
-            <option value="5" ${" selected" if plugin_options['color']=="5" else ""}>$_('BROWN')</option>
-            </select>
-            </div>     
-            </td>
-            </tr>            
             <tr>
+                <td style='text-transform: none;'>$_('Download filename'):</td>
                 <td>
+                    <input name='filename' type='text' maxlength="60" value="$plugin_options['filename']">
                 </td>
+            </tr>
+            <tr class="qrOption">
+                <td style='text-transform: none;'>$_('QR module size'):</td>
                 <td>
-                    <button id="cSubmit" class="submit"><b>$_('Generate')</b></button>
-                    <button id="cErase" class="cancel danger">$_('Erase')</button>
+                    <input name='qr_box_size' type='number' min="2" max="20" value="$plugin_options['qr_box_size']">
                 </td>
-            </tr>    
+            </tr>
+            <tr class="qrOption">
+                <td style='text-transform: none;'>$_('QR border'):</td>
+                <td>
+                    <input name='qr_border' type='number' min="1" max="10" value="$plugin_options['qr_border']">
+                </td>
+            </tr>
+            <tr class="qrOption">
+                <td style='text-transform: none;'>$_('QR error correction'):</td>
+                <td>
+                    <select name='qr_error_correction'>
+                        <option value="L" ${" selected" if plugin_options['qr_error_correction']=="L" else ""}>L - $_('Low')</option>
+                        <option value="M" ${" selected" if plugin_options['qr_error_correction']=="M" else ""}>M - $_('Medium')</option>
+                        <option value="Q" ${" selected" if plugin_options['qr_error_correction']=="Q" else ""}>Q - $_('Quartile')</option>
+                        <option value="H" ${" selected" if plugin_options['qr_error_correction']=="H" else ""}>H - $_('High')</option>
+                    </select>
+                </td>
+            </tr>
+            <tr class="qrColorOption">
+                <td style='text-transform: none;'>$_('QR color'):</td>
+                <td>
+                    <select id='color' name='color' title=$:{json.dumps(_('Color used in QR code.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
+                    <option value="0" ${" selected" if plugin_options['color']=="0" else ""}>$_('BLACK')</option>
+                    <option value="1" ${" selected" if plugin_options['color']=="1" else ""}>$_('RED')</option>
+                    <option value="2" ${" selected" if plugin_options['color']=="2" else ""}>$_('GREEN')</option>
+                    <option value="3" ${" selected" if plugin_options['color']=="3" else ""}>$_('BLUE')</option>
+                    <option value="4" ${" selected" if plugin_options['color']=="4" else ""}>$_('ORANGE')</option>
+                    <option value="5" ${" selected" if plugin_options['color']=="5" else ""}>$_('BROWN')</option>
+                    </select>
+                </td>
+            </tr>
+            <tr class="qrColorOption">
+                <td style='text-transform: none;'>$_('QR background color'):</td>
+                <td>
+                    <input name='qr_back_color' type='color' value="${plugin_options['qr_back_color'] if plugin_options['qr_back_color'] and plugin_options['qr_back_color'][0] == '#' else '#ffffff'}">
+                </td>
+            </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Image for download'):</td>
+                <td></td>
+                <td>
+                    <div class="labelmakerActions">
+                        <button id="cSubmit" type="button" class="submit"><b>$_('Generate')</b></button>
+                        <button id="cErase" type="button" class="cancel danger">$_('Erase')</button>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Preview and download'):</td>
                 <td title=$:{json.dumps(_(u'Your generated barcode or qr code.'), ensure_ascii=False)}>
-                    <a href="$plugins.plugin_url('labelmaker.download_page')"><img src="$plugins.plugin_url('labelmaker.download_page')" width="200"></a>
+                    <div class="labelmakerPreview">
+                        <a href="$plugins.plugin_url('labelmaker.download_page')"><img src="$plugins.plugin_url('labelmaker.download_page')?preview=${plugin_options['code_type']}-${len(plugin_options['msg'])}" width="240"></a>
+                        <div>
+                            <p>$_('Click the image to open or use the download button.')</p>
+                            <a href="$plugins.plugin_url('labelmaker.download_page')" class="button download">$_('Download PNG')</a>
+                        </div>
+                    </div>
                 </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
-                    <textarea style="font-family: monospace;" rows="2" cols="50" readonly>$'\n'.join(events)</textarea>
+                    <textarea style="font-family: monospace;" rows="5" cols="54" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>

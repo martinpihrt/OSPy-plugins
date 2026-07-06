@@ -13,6 +13,7 @@ import traceback
 import json
 import subprocess
 import shlex
+import re
 
 import web
 from ospy.log import log
@@ -27,6 +28,7 @@ MENU =  _('Package: Label Maker')
 LINK = 'settings_page'
 
 colors_name = ['BLACK', 'RED', 'GREEN','BLUE','ORANGE','BROWN']
+qr_error_levels = ['L', 'M', 'Q', 'H']
 
 plugin_options = PluginOptions(
     NAME,
@@ -34,8 +36,70 @@ plugin_options = PluginOptions(
         'code_type': '0',            # 0=BAR EAN13, 1=QR black and white, 2=QR color, 3=QR with logo
         'msg': '',                   # last inserted message
         'color': '0',                # Color for fill in QR ('BLACK', 'RED', 'GREEN','BLUE','ORANGE','BROWN')
-        'qr_back_color': 'white',    # QR back color
+        'qr_back_color': '#ffffff',  # QR back color
+        'qr_box_size': 10,           # QR module size
+        'qr_border': 5,              # QR quiet zone
+        'qr_error_correction': 'M',  # QR error correction L/M/Q/H
+        'filename': 'yourcode',      # Download filename
     })
+
+
+def _safe_int(value, default, min_value, max_value):
+    try:
+        value = int(value)
+    except Exception:
+        value = default
+    return max(min_value, min(max_value, value))
+
+
+def _safe_color_index(value):
+    return _safe_int(value, 0, 0, len(colors_name) - 1)
+
+
+def _safe_filename(value):
+    value = (value or 'yourcode').strip()
+    value = re.sub(r'[^A-Za-z0-9._-]+', '_', value)
+    value = value.strip('._-')
+    return value or 'yourcode'
+
+
+def _generated_image_path():
+    return os.path.join(plugin_data_dir(), 'yourcode.png')
+
+
+def _qr_error_correction(qrcode):
+    level = str(plugin_options['qr_error_correction']).upper()
+    if level not in qr_error_levels:
+        level = 'M'
+    return {
+        'L': qrcode.constants.ERROR_CORRECT_L,
+        'M': qrcode.constants.ERROR_CORRECT_M,
+        'Q': qrcode.constants.ERROR_CORRECT_Q,
+        'H': qrcode.constants.ERROR_CORRECT_H,
+    }[level]
+
+
+def _validate_message(code_type, message):
+    if code_type == "0":
+        if not message:
+            return _('EAN code must have 12 digits!')
+        if not message.isdigit():
+            return _('EAN code can only contain numbers!')
+        if len(message) != 12:
+            return _('EAN code must have 12 digits!')
+    else:
+        if not message:
+            return _('You have to type some text before pressing the generate button!')
+        if len(message) > 500:
+            return _('QR message must not be longer than 500 characters!')
+    return ''
+
+
+def _log_generated(kind, image_path, message):
+    log.info(NAME, datetime_string() + ' ' + kind)
+    log.info(NAME, datetime_string() + ' ' + _('Message length') + ': {}'.format(len(message)))
+    if os.path.isfile(image_path):
+        log.info(NAME, datetime_string() + ' ' + _('Output file') + ': {}'.format(os.path.basename(image_path)))
 
 
 ################################################################################
@@ -58,9 +122,16 @@ class Plugin_Checker(Thread):
     def update(self):
         try:
             log.clear(NAME)
-            image_path = os.path.join(plugin_data_dir(), 'yourcode.png')
+            image_path = _generated_image_path()
+            code_type = str(plugin_options['code_type'])
+            message = (plugin_options['msg'] or '').strip()
+            validation_error = _validate_message(code_type, message)
+            if validation_error:
+                log.error(NAME, datetime_string() + ' ' + validation_error)
+                return
+
             instaled = None
-            if plugin_options['code_type'] == "0": # EAN13 code
+            if code_type == "0": # EAN13 code
                 try:
                     from barcode import EAN13
                     from barcode.writer import ImageWriter
@@ -72,86 +143,70 @@ class Plugin_Checker(Thread):
                     log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
                     pass
                 if instaled is not None:
-                    if plugin_options['msg'].isdigit():
-                        if len(plugin_options['msg']) == 12:
-                            with open(image_path, "wb") as f:
-                                EAN13(plugin_options['msg'], writer=ImageWriter()).write(f)
-                            log.info(NAME, datetime_string() + ' ' + _('Generated EAN13 code...'))
+                    with open(image_path, "wb") as f:
+                        EAN13(message, writer=ImageWriter()).write(f)
+                    _log_generated(_('Generated EAN13 code...'), image_path, message)
+
+            if code_type in ("1", "2", "3"): # QR codes
+                try:
+                    import qrcode
+                    instaled = True
+                except:
+                    log.info(NAME, datetime_string() + ' ' + _('QRcode not instaled, installing from pip (pip install qrcode).'))
+                    cmd = 'pip install qrcode'
+                    install(cmd)
+                    log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
+                    pass
+                if instaled is not None:
+                    qr = qrcode.QRCode(
+                        version=None,
+                        error_correction=_qr_error_correction(qrcode),
+                        box_size=_safe_int(plugin_options['qr_box_size'], 10, 2, 20),
+                        border=_safe_int(plugin_options['qr_border'], 5, 1, 10)
+                    )
+                    qr.add_data(message)
+                    qr.make(fit=True)
+
+                    fill_color = 'BLACK' if code_type == "1" else colors_name[_safe_color_index(plugin_options['color'])]
+                    back_color = '#ffffff' if code_type == "1" else plugin_options['qr_back_color']
+                    img = qr.make_image(fill_color=fill_color, back_color=back_color)
+
+                    if code_type == "3":
+                        try:
+                            from PIL import Image
+                        except:
+                            log.info(NAME, datetime_string() + ' ' + _('Pillow not instaled, installing from pip (pip install Pillow).'))
+                            cmd = 'pip install Pillow'
+                            install(cmd)
+                            log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
+                            return
+
+                        logo_link = os.path.join('plugins', 'labelmaker', 'static', 'images', 'logo.png')
+                        if not os.path.isfile(logo_link):
+                            log.error(NAME, datetime_string() + ' ' + _('Logo file was not found!'))
+                            return
+
+                        logo = Image.open(logo_link)
+                        resampling = getattr(getattr(Image, 'Resampling', Image), 'LANCZOS', Image.BICUBIC)
+                        qr_img = img.convert('RGB')
+                        basewidth = max(40, min(120, qr_img.size[0] // 4))
+                        wpercent = basewidth / float(logo.size[0])
+                        hsize = int(float(logo.size[1]) * float(wpercent))
+                        logo = logo.resize((basewidth, hsize), resampling)
+                        pos = ((qr_img.size[0] - logo.size[0]) // 2, (qr_img.size[1] - logo.size[1]) // 2)
+                        if logo.mode in ('RGBA', 'LA'):
+                            qr_img.paste(logo, pos, logo)
                         else:
-                            log.error(NAME, datetime_string() + ' ' + _('EAN code must have 12 digits!'))
-                    else:
-                        log.error(NAME, datetime_string() + ' ' + _('EAN code can only contain numbers!'))
+                            qr_img.paste(logo, pos)
+                        img = qr_img
 
-            if plugin_options['code_type'] == "1": # QR BW code
-                try:
-                    import qrcode
-                    instaled = True
-                except:
-                    log.info(NAME, datetime_string() + ' ' + _('QRcode not instaled, installing from pip (pip install qrcode).'))
-                    cmd = 'pip install qrcode'
-                    install(cmd)
-                    log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
-                    pass
-                if instaled is not None:
-                    if plugin_options['msg']:
-                        img = qrcode.make(plugin_options['msg'])
-                        img.save(image_path)
-                        log.info(NAME, datetime_string() + ' ' + _('Generated QR BW code...'))
+                    img.save(image_path)
+                    if code_type == "1":
+                        _log_generated(_('Generated QR BW code...'), image_path, message)
+                    elif code_type == "2":
+                        _log_generated(_('Generated QR color code...'), image_path, message)
                     else:
-                        log.error(NAME, datetime_string() + ' ' + _('You have to type some text before pressing the generate button!'))
-
-            if plugin_options['code_type'] == "2": # QR color code
-                try:
-                    import qrcode
-                    instaled = True
-                except:
-                    log.info(NAME, datetime_string() + ' ' + _('QRcode not instaled, installing from pip (pip install qrcode).'))
-                    cmd = 'pip install qrcode'
-                    install(cmd)
-                    log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
-                    pass
-                if instaled is not None:
-                    if plugin_options['msg']:
-                        qr = qrcode.QRCode(version = 1, box_size = 10, border = 5)
-                        qr.add_data(plugin_options['msg'])
-                        qr.make(fit = True)
-                        img = qr.make_image(fill_color = colors_name[int(plugin_options['color'])], back_color = plugin_options['qr_back_color'])
-                        img.save(image_path)
-                        log.info(NAME, datetime_string() + ' ' + _('Generated QR color code...'))
-                    else:
-                        log.error(NAME, datetime_string() + ' ' + _('You have to type some text before pressing the generate button!'))
-
-            if plugin_options['code_type'] == "3": # QR inserted logo
-                try:
-                    import qrcode
-                    from PIL import Image
-                    instaled = True
-                except:
-                    log.info(NAME, datetime_string() + ' ' + _('QRcode or Pillow not instaled, installing from pip (pip install qrcode, pip install Pillow).'))
-                    cmd = 'pip install qrcode'
-                    install(cmd)
-                    cmd = 'pip install Pillow'
-                    install(cmd)
-                    log.info(NAME, datetime_string() + ' ' + _('Now restart this plugin!'))
-                    pass
-                if instaled is not None:
-                    if plugin_options['msg']:
-                        Logo_link = os.path.join('plugins','labelmaker','static','images','logo.png')
-                        logo = Image.open(Logo_link)
-                        basewidth = 100
-                        wpercent = (basewidth/float(logo.size[0]))
-                        hsize = int((float(logo.size[1])*float(wpercent)))
-                        logo = logo.resize((basewidth, hsize), Image.ANTIALIAS)
-                        QRcode = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
-                        QRcode.add_data(plugin_options['msg'])
-                        QRcode.make()
-                        QRimg = QRcode.make_image(fill_color = colors_name[int(plugin_options['color'])], back_color = plugin_options['qr_back_color']).convert('RGB')
-                        pos = ((QRimg.size[0] - logo.size[0]) // 2, (QRimg.size[1] - logo.size[1]) // 2)
-                        QRimg.paste(logo, pos)
-                        QRimg.save(image_path)
-                        log.info(NAME, datetime_string() + ' ' + _('Generated QR code with logo...'))
-                    else:
-                        log.error(NAME, datetime_string() + ' ' + _('You have to type some text before pressing the generate button!'))
+                        _log_generated(_('Generated QR code with logo...'), image_path, message)
 
         except Exception:
             log.error(NAME, datetime_string() + ' ' + _('Label Maker plug-in') + ':\n' + traceback.format_exc())
@@ -219,20 +274,21 @@ class download_page(ProtectedPage):
 
     def GET(self):
         try:
-            download_name = plugin_data_dir() + '/' + 'yourcode.png'
+            download_name = _generated_image_path()
             if os.path.isfile(download_name):     # exists image? 
-                content = mimetypes.guess_type(download_name)[0]
+                content = mimetypes.guess_type(download_name)[0] or 'image/png'
+                filename = _safe_filename(plugin_options['filename']) + '.png'
                 web.header('Content-type', content)
                 web.header('Content-Length', os.path.getsize(download_name))
-                web.header('Content-Disposition', 'attachment; filename=yourcode')
+                web.header('Content-Disposition', 'attachment; filename="{}"'.format(filename))
                 img = open(download_name,'rb')
                 return img.read()
             else:
                 download_name = os.path.join('plugins', 'labelmaker', 'static', 'images', 'nonecode.png')  
-                content = mimetypes.guess_type(download_name)[0]
+                content = mimetypes.guess_type(download_name)[0] or 'image/png'
                 web.header('Content-type', content)
                 web.header('Content-Length', os.path.getsize(download_name))
-                web.header('Content-Disposition', 'attachment; filename=none_code')
+                web.header('Content-Disposition', 'attachment; filename="none_code.png"')
                 img = open(download_name,'rb')
                 return img.read()
         except:

@@ -2,6 +2,12 @@
 
 July 06 2026
 -----------
+martinpihrt - Label Maker<br/>
+Added advanced QR settings for module size, border, error correction, foreground/background color, a configurable PNG download filename, clearer preview/download controls, and client/server-side input validation.
+
+martinpihrt - IP Scanner<br/>
+Changed the common web ports option from a checkbox to a switch-style control.
+
 martinpihrt - IP Scanner<br/>
 Improved IP Scanner with active local network discovery, network summary, structured device table, hostname and vendor hints, Gateway/This OSPy/Sensor candidate notes, and optional checks for common web ports 80, 443, 8080 and 8081.
 

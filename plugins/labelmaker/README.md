@@ -14,6 +14,21 @@ Plugin setup
 
 * Message:
   Message embedded in the code. 
+
+* Download filename:
+  File name used when downloading the generated PNG image.
+
+* QR module size:
+  Size of one QR module in pixels.
+
+* QR border:
+  Quiet zone around the QR code.
+
+* QR error correction:
+  QR error correction level. Use higher levels when the QR code contains a logo or may be damaged.
+
+* QR color and QR background color:
+  Foreground and background colors for color QR codes and QR codes with logo.
  
 * Status:  
   Status window from the plugin.
