@@ -2,6 +2,9 @@
 
 July 06 2026
 -----------
+martinpihrt - IP Scanner<br/>
+Improved IP Scanner with active local network discovery, network summary, structured device table, hostname and vendor hints, Gateway/This OSPy/Sensor candidate notes, and optional checks for common web ports 80, 443, 8080 and 8081.
+
 martinpihrt - Weather-based Water Level<br/>
 Added a Forecast details page that shows the last weather calculation input and result, including history, today and forecast rows with rainfall, average temperature, wind, humidity and the resulting water level adjustment.
 

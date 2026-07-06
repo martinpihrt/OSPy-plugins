@@ -1,20 +1,101 @@
 $var title: $_('IP Scanner Plugin')
 $var page: plugins
 
+<style>
+.scannerOptions {
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+.scannerSummary {
+    border-collapse: collapse;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.scannerSummary td {
+    padding: 4px 16px 4px 0;
+}
+
+.scannerTable {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.scannerTable th,
+.scannerTable td {
+    border-bottom: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.scannerTable th {
+    font-weight: bold;
+}
+
+.scannerTable .center {
+    text-align: center;
+}
+
+.scannerStatus {
+    margin-top: 8px;
+    font-weight: bold;
+}
+</style>
+
 <script>
+    function valueOrDash(value) {
+        return value || "-";
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function renderScan(scan) {
+        scan = scan || {};
+        jQuery("#scannerStatus").text(scan.running ? $:{json.dumps(_('Scanning...'), ensure_ascii=False).encode('utf8').decode('utf8')} : "");
+        jQuery("#scanLast").text(valueOrDash(scan.last_scan));
+        jQuery("#scanIp").text(valueOrDash(scan.os_ip));
+        jQuery("#scanInterface").text(valueOrDash(scan.interface));
+        jQuery("#scanNetwork").text(valueOrDash(scan.network));
+        jQuery("#scanGateway").text(valueOrDash(scan.gateway));
+        jQuery("#scanCount").text(scan.device_count || 0);
+        jQuery("#scanPorts").text(scan.ports_checked ? $:{json.dumps(_('Yes'), ensure_ascii=False).encode('utf8').decode('utf8')} : $:{json.dumps(_('No'), ensure_ascii=False).encode('utf8').decode('utf8')});
+        jQuery("#scanError").text(scan.error ? scan.error : "");
+
+        var rows = scan.devices || [];
+        var html = "";
+        if (!rows.length) {
+            html = "<tr><td colspan='9'>" + $:{json.dumps(_('No devices found yet.'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</td></tr>";
+        } else {
+            rows.forEach(function(device) {
+                var ports = Array.isArray(device.ports) && device.ports.length ? device.ports.join(", ") : "-";
+                html += "<tr>";
+                html += "<td>" + escapeHtml(device.ip) + "</td>";
+                html += "<td>" + escapeHtml(valueOrDash(device.mac)) + "</td>";
+                html += "<td>" + escapeHtml(valueOrDash(device.hostname)) + "</td>";
+                html += "<td>" + escapeHtml(valueOrDash(device.vendor)) + "</td>";
+                html += "<td class='center'>" + (device.online ? $:{json.dumps(_('Online'), ensure_ascii=False).encode('utf8').decode('utf8')} : $:{json.dumps(_('Unknown'), ensure_ascii=False).encode('utf8').decode('utf8')}) + "</td>";
+                html += "<td>" + escapeHtml(valueOrDash(device.state)) + "</td>";
+                html += "<td>" + escapeHtml(ports) + "</td>";
+                html += "<td>" + escapeHtml(valueOrDash(device.note)) + "</td>";
+                html += "</tr>";
+            });
+        }
+        jQuery("#scanRows").html(html);
+    }
+
     function updateMSG() {
         jQuery.getJSON("/plugins/ip_scanner/msg_json", function(data) {
-            if (Array.isArray(data.msg)) {
-                var formattedMsg = data.msg.join('\n');
-                jQuery('textarea.msg').text(formattedMsg);
-            } else if (typeof data.msg === 'string') {
-                var formattedMsg = data.msg.split(/\n/).map(function(line) {
-                    return line.replace(/^,/, '');
-                }).join('\n');
-                jQuery('textarea.msg').text(formattedMsg);
-            } else {
-                console.error("Error: The received data.msg is neither a string nor an array.", data);
-            }
+            renderScan(data.scan || {});
         }).fail(function(jqXHR, textStatus, errorThrown) {
             console.error("AJAX request failed:", textStatus, errorThrown);
         });
@@ -22,15 +103,15 @@ $var page: plugins
         setTimeout(updateMSG, 1500);
     }
 
-    // Initialize behaviors
     jQuery(document).ready(function(){
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
 
         jQuery("button#cFind").click(function(){
-            jQuery('textarea.msg').text($:{json.dumps(_('Processing...'), ensure_ascii=False).encode('utf8').decode('utf8')});
-            jQuery.get("?find&$csrf_query()", function(data) {
+            jQuery("#scannerStatus").text($:{json.dumps(_('Processing...'), ensure_ascii=False).encode('utf8').decode('utf8')});
+            var ports = jQuery("#checkPorts").is(":checked") ? "&ports=1" : "";
+            jQuery.get("?find" + ports + "&$csrf_query()", function(data) {
                 console.log(data);
             });
         });
@@ -41,8 +122,60 @@ $var page: plugins
 <div id="plugin">
     <div class="title">$_('IP Scanner Plugin')</div>
     <button id="cFind" class="cancel download">$_('Find device')</button>
-    <p>$_('This plugin prints all available network devices on same range as OSPy.')</p>
-    <p><textarea class="msg" style="font-family: monospace;" rows="15" cols="50" readonly></textarea></p>
+    <div class="scannerOptions">
+        <label>
+            <input id="checkPorts" type="checkbox">
+            $_('Check common web ports')
+        </label>
+    </div>
+    <p>$_('This plugin scans the local network range used by OSPy and shows discovered devices.')</p>
+    <div id="scannerStatus" class="scannerStatus"></div>
+    <pre id="scanError" style="color:red; white-space:pre-wrap;"></pre>
+
+    <table class="scannerSummary">
+        <tr>
+            <td><b>$_('Last scan'):</b></td>
+            <td id="scanLast">-</td>
+            <td><b>$_('Found devices'):</b></td>
+            <td id="scanCount">0</td>
+        </tr>
+        <tr>
+            <td><b>$_('My OSPy IP address'):</b></td>
+            <td id="scanIp">-</td>
+            <td><b>$_('Interface'):</b></td>
+            <td id="scanInterface">-</td>
+        </tr>
+        <tr>
+            <td><b>$_('Network'):</b></td>
+            <td id="scanNetwork">-</td>
+            <td><b>$_('Gateway'):</b></td>
+            <td id="scanGateway">-</td>
+        </tr>
+        <tr>
+            <td><b>$_('Web ports checked'):</b></td>
+            <td id="scanPorts">$_('No')</td>
+        </tr>
+    </table>
+
+    <table class="scannerTable">
+        <thead>
+            <tr>
+                <th>$_('IP Address')</th>
+                <th>$_('MAC Address')</th>
+                <th>$_('Hostname')</th>
+                <th>$_('Vendor')</th>
+                <th class="center">$_('Status')</th>
+                <th>$_('ARP state')</th>
+                <th>$_('Web ports')</th>
+                <th>$_('Note')</th>
+            </tr>
+        </thead>
+        <tbody id="scanRows">
+            <tr>
+                <td colspan="8">$_('No devices found yet.')</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 
 <div id="controls">
