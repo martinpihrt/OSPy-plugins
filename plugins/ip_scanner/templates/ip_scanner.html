@@ -3,8 +3,55 @@ $var page: plugins
 
 <style>
 .scannerOptions {
+    align-items: center;
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
     margin-bottom: 12px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    flex: 0 0 auto;
+}
+
+.switch input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
 }
 
 .scannerSummary {
@@ -123,10 +170,11 @@ $var page: plugins
     <div class="title">$_('IP Scanner Plugin')</div>
     <button id="cFind" class="cancel download">$_('Find device')</button>
     <div class="scannerOptions">
-        <label>
+        <label class="switch">
             <input id="checkPorts" type="checkbox">
-            $_('Check common web ports')
+            <span class="slider"></span>
         </label>
+        <span>$_('Check common web ports')</span>
     </div>
     <p>$_('This plugin scans the local network range used by OSPy and shows discovered devices.')</p>
     <div id="scannerStatus" class="scannerStatus"></div>
