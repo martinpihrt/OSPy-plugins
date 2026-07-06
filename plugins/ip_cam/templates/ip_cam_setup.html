@@ -119,8 +119,15 @@ input:checked + .slider:before {
         }
     }
 
+    function submitCameraAction(index, action) {
+        jQuery("#selected_camera").val(parseInt(index, 10) + 1);
+        jQuery("#form_action").val(action);
+        jQuery("#pluginForm").submit();
+    }
+
     jQuery(document).ready(function(){
         jQuery("#cSubmit, #cSubmitTop").click(function() {
+            jQuery("#form_action").val("");
             jQuery("#pluginForm").submit();
         });
         jQuery("button#cCancel").click(function(){
@@ -160,6 +167,8 @@ input:checked + .slider:before {
     </div>
     <form id="pluginForm" action="$plugins.plugin_url('ip_cam.setup_page')" method="post">
         $:csrf_input()
+        <input type="hidden" id="selected_camera" name="selected_camera" value="${selected_camera + 1}">
+        <input type="hidden" id="form_action" name="action" value="">
         <table class="optionList">
             <tr>
                 <td style='text-transform: none;'>$_('Use JPEG image downloads'):</td>
@@ -232,9 +241,9 @@ input:checked + .slider:before {
                 <h4>$_('Camera') ${c+1}: $stations[c].name</h4>
                 <div class="cameraSetupBody">
                 <div class="cameraTestActions">
-                    <a href="$plugins.plugin_url('ip_cam.settings_page')?snapshot=${c+1}&return_to=setup&$csrf_query()" class="button download">$_('Snapshot now')</a>
-                    <a href="$plugins.plugin_url('ip_cam.settings_page')?test_jpeg=${c+1}&return_to=setup&$csrf_query()" class="button upload">$_('Test JPEG')</a>
-                    <a href="$plugins.plugin_url('ip_cam.settings_page')?test_mjpeg=${c+1}&return_to=setup&$csrf_query()" class="button upload">$_('Test MJPEG')</a>
+                    <button type="button" onclick="submitCameraAction(${c}, 'snapshot')" class="download">$_('Snapshot now')</button>
+                    <button type="button" onclick="submitCameraAction(${c}, 'test_jpeg')" class="upload">$_('Test JPEG')</button>
+                    <button type="button" onclick="submitCameraAction(${c}, 'test_mjpeg')" class="upload">$_('Test MJPEG')</button>
                 </div>
                 <table class="optionList">
                     <tr>

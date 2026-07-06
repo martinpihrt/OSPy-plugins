@@ -232,6 +232,30 @@ def _test_camera_stream(index):
     return response, content, response_ms
 
 
+def _run_camera_action(action_name, cam_index):
+    stream = action_name == 'test_mjpeg'
+    msg = 'test_failed'
+    try:
+        if stream:
+            res, content, response_ms = _test_camera_stream(cam_index)
+        else:
+            res, content, response_ms = _fetch_camera(cam_index)
+        if res.status_code == 200:
+            if not stream or action_name == 'snapshot':
+                _save_snapshot(cam_index, content)
+            _record_camera_result(cam_index, res, content, response_ms)
+            log.info(NAME, datetime_string() + ' ' + _('Camera {} test OK').format(cam_index + 1))
+            msg = 'snapshot_ok' if action_name == 'snapshot' else 'test_ok'
+        else:
+            _record_camera_result(cam_index, res, b'', response_ms, _('HTTP status') + ': {}'.format(res.status_code))
+            log.error(NAME, datetime_string() + ' ' + _('Camera {} test failed').format(cam_index + 1))
+    except Exception:
+        error = traceback.format_exc()
+        _record_camera_result(cam_index, error=error.splitlines()[-1] if error else _('Unknown error'))
+        log.error(NAME, _('IP Cam plug-in') + ':\n' + error)
+    return msg
+
+
 def _record_camera_result(index, response=None, content=None, response_ms='', error=''):
     current = _camera_statuses()[index]
     values = {
@@ -274,7 +298,7 @@ def _snapshot_items():
             if os.path.isfile(path):
                 items.append({
                     'index': index + 1,
-                    'station': stations[index].name,
+                    'station': stations[index].name if index < len(stations.get()) else _('Camera') + ' {}'.format(index + 1),
                     'type': image_type.upper(),
                     'filename': os.path.basename(path),
                     'size': os.path.getsize(path),
@@ -490,25 +514,7 @@ class settings_page(ProtectedPage):
                     cam_index = int(action_value) - 1
                     if cam_index < 0 or cam_index >= options.output_count:
                         raise ValueError(_('Unknown camera.'))
-                    msg = 'test_failed'
-                    try:
-                        if stream:
-                            res, content, response_ms = _test_camera_stream(cam_index)
-                        else:
-                            res, content, response_ms = _fetch_camera(cam_index)
-                        if res.status_code == 200:
-                            if not stream or action_name == 'snapshot':
-                                _save_snapshot(cam_index, content)
-                            _record_camera_result(cam_index, res, content, response_ms)
-                            log.info(NAME, datetime_string() + ' ' + _('Camera {} test OK').format(cam_index + 1))
-                            msg = 'snapshot_ok' if action_name == 'snapshot' else 'test_ok'
-                        else:
-                            _record_camera_result(cam_index, res, b'', response_ms, _('HTTP status') + ': {}'.format(res.status_code))
-                            log.error(NAME, datetime_string() + ' ' + _('Camera {} test failed').format(cam_index + 1))
-                    except:
-                        error = traceback.format_exc()
-                        _record_camera_result(cam_index, error=error.splitlines()[-1] if error else _('Unknown error'))
-                        log.error(NAME, _('IP Cam plug-in') + ':\n' + error)
+                    msg = _run_camera_action(action_name, cam_index)
                     if return_to == 'setup':
                         raise web.seeother(plugin_url(setup_page) + '?cam={}&msg={}'.format(cam_index + 1, msg), True)
                     raise web.seeother(plugin_url(settings_page), True)
@@ -654,27 +660,8 @@ class setup_page(ProtectedPage):
             msg = qdict.get('msg', 'none')
             selected_camera = int(qdict.get('cam', 1)) - 1
             selected_camera = max(0, min(options.output_count - 1, selected_camera))
-  
-            try:
-                return self.plugin_render.ip_cam_setup(plugin_options, msg, selected_camera)
-            except:
-                plugin_options.__setitem__('jpg_ip', ['']*options.output_count)
-                plugin_options.__setitem__('jpg_que', ['']*options.output_count)
-                plugin_options.__setitem__('mjpeg_que', ['']*options.output_count)
-                plugin_options.__setitem__('jpg_user', ['']*options.output_count)
-                plugin_options.__setitem__('jpg_pass', ['']*options.output_count)
-                plugin_options.__setitem__('enabled', [True]*options.output_count)
-                plugin_options.__setitem__('gif_frames', 20)
-                plugin_options.__setitem__('use_jpg', True)
-                plugin_options.__setitem__('use_gif', True)
-                plugin_options.__setitem__('show_on_home', True)
-                plugin_options.__setitem__('home_image_type', 'jpg')
-                plugin_options.__setitem__('download_interval', 5)
-                plugin_options.__setitem__('http_timeout', 15)
-                plugin_options.__setitem__('verify_ssl', False)
-                plugin_options.__setitem__('max_image_kb', 2048)
-                plugin_options.__setitem__('gif_duration', 250)
-                return self.plugin_render.ip_cam_setup(plugin_options, msg, selected_camera)
+            _ensure_options()
+            return self.plugin_render.ip_cam_setup(plugin_options, msg, selected_camera)
         except:
             log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
@@ -742,7 +729,11 @@ class setup_page(ProtectedPage):
                 sender.update()
 
             msg = 'saved'
-            return self.plugin_render.ip_cam_setup(plugin_options, msg, 0)
+            selected_camera = _safe_int(qdict.get('selected_camera', 1), 1, 1, options.output_count) - 1
+            action = qdict.get('action', '')
+            if action in ('snapshot', 'test_jpeg', 'test_mjpeg'):
+                msg = _run_camera_action(action, selected_camera)
+            return self.plugin_render.ip_cam_setup(plugin_options, msg, selected_camera)
 
         except:
             log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())

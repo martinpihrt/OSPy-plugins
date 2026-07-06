@@ -3,6 +3,9 @@
 July 06 2026
 -----------
 martinpihrt - IP Cam<br/>
+Fixed IP Cam setup safety and snapshot handling: setup rendering no longer resets all configured cameras after a template error, camera tests in setup now submit and save the current form before testing and stay on the setup page, and snapshot previews use a separate preview response while downloads keep attachment headers.
+
+martinpihrt - IP Cam<br/>
 Added an IP Cam Snapshots management page for cached JPG/GIF previews with download and delete actions, changed setup camera sections to collapsible panels, kept setup tests on the setup page with success/failure messages, widened the status area, removed redundant station numbers from camera card titles, fixed GIF preview sizing, and documented the OSPy home-image fallback behavior.
 
 martinpihrt - IP Cam<br/>
