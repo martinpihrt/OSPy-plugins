@@ -164,6 +164,7 @@ cached_lcd = None
 cached_lcd_key = None
 last_lcd_lines = None
 LCD_WIDTH = 16
+LCD_DDRAM_LINE_WIDTH = 40
 LCD_SCROLL_DELAY = 0.25
 
 ################################################################################
@@ -239,6 +240,34 @@ def write_lcd_lines(lcd, line1, line2):
     if last_lcd_lines is None or line2 != last_lcd_lines[1]:
         try_io(lambda: lcd.lcd_puts(line2, 2))
     last_lcd_lines = lines
+
+
+def is_i2c_busy_error(error):
+    return str(error) == 'I2C bus is busy.'
+
+
+def write_lcd_buffer(lcd, line1, line2):
+    write_lcd_lines(
+        lcd,
+        line1[:LCD_DDRAM_LINE_WIDTH].ljust(LCD_DDRAM_LINE_WIDTH, b' '),
+        line2[:LCD_DDRAM_LINE_WIDTH].ljust(LCD_DDRAM_LINE_WIDTH, b' ')
+    )
+
+
+def can_use_hardware_scroll(lcd, line1, line2):
+    return (
+        hasattr(lcd, 'lcd_home') and
+        hasattr(lcd, 'lcd_shift_left') and
+        max(len(line1), len(line2)) <= LCD_DDRAM_LINE_WIDTH
+    )
+
+
+def hardware_scroll_lcd(lcd, line1, line2, max_position):
+    try_io(lambda: lcd.lcd_home())
+    write_lcd_buffer(lcd, line1, line2)
+    for position in range(max_position):
+        time.sleep(LCD_SCROLL_DELAY)
+        try_io(lambda: lcd.lcd_shift_left())
 
 
 def try_io(call, tries=10):
@@ -825,8 +854,24 @@ def update_lcd(line1, line2=None):
     max_position = max(max(len(line1), len(line2)) - LCD_WIDTH, 0)
     position = 0
 
+    try:
+        if max_position > 0 and can_use_hardware_scroll(lcd, line1, line2):
+            hardware_scroll_lcd(lcd, line1, line2, max_position)
+            return
+        if hasattr(lcd, 'lcd_home'):
+            try_io(lambda: lcd.lcd_home())
+    except IOError as e:
+        if is_i2c_busy_error(e):
+            return
+        raise
+
     while not blocker:
-        write_lcd_lines(lcd, lcd_window(line1, position), lcd_window(line2, position))
+        try:
+            write_lcd_lines(lcd, lcd_window(line1, position), lcd_window(line2, position))
+        except IOError as e:
+            if is_i2c_busy_error(e):
+                break
+            raise
         if position >= max_position:
             break
         position += 1

@@ -24,6 +24,15 @@ from time import *
 from ospy.i2c_guard import i2c_transaction
 
 LCD_I2C_SETTLE_TIME = 0.0
+LCD_I2C_TIMEOUT = 0.2
+LCD_I2C_PRIORITY = 'low'
+
+
+def lcd_i2c_transaction(timeout=LCD_I2C_TIMEOUT, settle_time=LCD_I2C_SETTLE_TIME):
+	try:
+		return i2c_transaction(timeout=timeout, settle_time=settle_time, priority=LCD_I2C_PRIORITY)
+	except TypeError:
+		return i2c_transaction(timeout=timeout, settle_time=settle_time)
 
 # General i2c device class so that other devices can be added easily
 class i2c_device:
@@ -32,15 +41,15 @@ class i2c_device:
 		self.bus = smbus.SMBus(port)
 
 	def write(self, byte):
-		with i2c_transaction(settle_time=LCD_I2C_SETTLE_TIME):
+		with lcd_i2c_transaction():
 			self.bus.write_byte(self.addr, byte)
 
 	def read(self):
-		with i2c_transaction():
+		with lcd_i2c_transaction():
 			return self.bus.read_byte(self.addr)
 
 	def read_nbytes_data(self, data, n): # For sequential reads > 1 byte
-		with i2c_transaction():
+		with lcd_i2c_transaction():
 			return self.bus.read_i2c_block_data(self.addr, data, n)
 
 		
@@ -204,12 +213,21 @@ class lcd:
 		for char in string:
 			self.lcd_putc(char)
 
+	def lcd_home(self):
+		self.lcd_write(0x2)
+		sleep(0.005) # This command takes awhile.
+
+	def lcd_shift_left(self):
+		self.lcd_write(0x18)
+
+	def lcd_shift_right(self):
+		self.lcd_write(0x1C)
+
 	# clear lcd and set to home
 	def lcd_clear(self):
 		self.lcd_write(0x1)
 		sleep(0.005) # This command takes awhile.
-		self.lcd_write(0x2)
-		sleep(0.005) # This command takes awhile.
+		self.lcd_home()
 
 	# add custom characters (0 - 7)
 	def lcd_load_custon_chars(self, fontdata):

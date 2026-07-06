@@ -68,6 +68,13 @@ wind_options = PluginOptions(
 )
 
 
+def wind_i2c_transaction(timeout=30.0, settle_time=0.02):
+    try:
+        return i2c_transaction(timeout=timeout, settle_time=settle_time, priority='high')
+    except TypeError:
+        return i2c_transaction(timeout=timeout, settle_time=settle_time)
+
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -344,7 +351,7 @@ def set_counter(i2cbus):
             addr = 0x51
         else:
             addr = 0x50
-        with i2c_transaction():
+        with wind_i2c_transaction():
             try_io(lambda: i2cbus.write_byte_data(addr, 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
             try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
             try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
@@ -364,13 +371,13 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         else:
             addr = 0x50
         # reset PCF8583
-        with i2c_transaction():
+        with wind_i2c_transaction():
             try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
             try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
             try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
         time_.sleep(10)
         # read number (pulses in counter) and translate to DEC
-        with i2c_transaction():
+        with wind_i2c_transaction():
             counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
         num1 = (counter[1] & 0x0F)             # units
         num10 = (counter[1] & 0xF0) >> 4       # dozens
