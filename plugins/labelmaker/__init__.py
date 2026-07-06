@@ -33,6 +33,58 @@ qr_error_levels = ['L', 'M', 'Q', 'H']
 dependency_install_lock = Lock()
 dependency_install_running = False
 
+EAN13_PARITY = {
+    '0': 'LLLLLL',
+    '1': 'LLGLGG',
+    '2': 'LLGGLG',
+    '3': 'LLGGGL',
+    '4': 'LGLLGG',
+    '5': 'LGGLLG',
+    '6': 'LGGGLL',
+    '7': 'LGLGLG',
+    '8': 'LGLGGL',
+    '9': 'LGGLGL',
+}
+
+EAN13_L = {
+    '0': '0001101',
+    '1': '0011001',
+    '2': '0010011',
+    '3': '0111101',
+    '4': '0100011',
+    '5': '0110001',
+    '6': '0101111',
+    '7': '0111011',
+    '8': '0110111',
+    '9': '0001011',
+}
+
+EAN13_G = {
+    '0': '0100111',
+    '1': '0110011',
+    '2': '0011011',
+    '3': '0100001',
+    '4': '0011101',
+    '5': '0111001',
+    '6': '0000101',
+    '7': '0010001',
+    '8': '0001001',
+    '9': '0010111',
+}
+
+EAN13_R = {
+    '0': '1110010',
+    '1': '1100110',
+    '2': '1101100',
+    '3': '1000010',
+    '4': '1011100',
+    '5': '1001110',
+    '6': '1010000',
+    '7': '1000100',
+    '8': '1001000',
+    '9': '1110100',
+}
+
 plugin_options = PluginOptions(
     NAME,
     {
@@ -105,6 +157,68 @@ def _log_generated(kind, image_path, message):
         log.info(NAME, datetime_string() + ' ' + _('Output file') + ': {}'.format(os.path.basename(image_path)))
 
 
+def _ean13_checksum(digits):
+    total = 0
+    for index, digit in enumerate(digits):
+        total += int(digit) * (1 if index % 2 == 0 else 3)
+    return str((10 - (total % 10)) % 10)
+
+
+def _ean13_modules(digits):
+    full_digits = digits + _ean13_checksum(digits)
+    modules = '101'
+    parity = EAN13_PARITY[full_digits[0]]
+    for digit, side in zip(full_digits[1:7], parity):
+        modules += EAN13_L[digit] if side == 'L' else EAN13_G[digit]
+    modules += '01010'
+    for digit in full_digits[7:13]:
+        modules += EAN13_R[digit]
+    modules += '101'
+    return full_digits, modules
+
+
+def _generate_ean13_png(message, image_path):
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except:
+        _missing_dependency('Pillow', 'python3-pil')
+        return False
+
+    full_digits, modules = _ean13_modules(message)
+    module_width = 3
+    quiet_modules_left = 11
+    quiet_modules_right = 7
+    barcode_height = 120
+    guard_height = 132
+    text_height = 24
+    width = (quiet_modules_left + len(modules) + quiet_modules_right) * module_width
+    height = guard_height + text_height + 12
+
+    img = Image.new('RGB', (width, height), 'white')
+    draw = ImageDraw.Draw(img)
+    x = quiet_modules_left * module_width
+    guard_ranges = ((0, 3), (45, 50), (92, 95))
+    for index, bit in enumerate(modules):
+        if bit == '1':
+            is_guard = any(start <= index < end for start, end in guard_ranges)
+            draw.rectangle(
+                (x, 6, x + module_width - 1, guard_height if is_guard else barcode_height),
+                fill='black'
+            )
+        x += module_width
+
+    try:
+        font = ImageFont.load_default()
+    except:
+        font = None
+    text = full_digits
+    text_bbox = draw.textbbox((0, 0), text, font=font) if hasattr(draw, 'textbbox') else (0, 0, len(text) * 6, 10)
+    text_width = text_bbox[2] - text_bbox[0]
+    draw.text(((width - text_width) // 2, guard_height + 4), text, fill='black', font=font)
+    img.save(image_path)
+    return True
+
+
 def _missing_dependency(package_name, apt_package):
     log.error(NAME, datetime_string() + ' ' + _('Missing Python package') + ': {}'.format(package_name))
     log.info(NAME, datetime_string() + ' ' + _('Install it from the system package manager and restart this plug-in.'))
@@ -114,7 +228,7 @@ def _missing_dependency(package_name, apt_package):
 def labelmaker_dependency_specs(code_type=None):
     code_type = str(code_type if code_type is not None else plugin_options['code_type'])
     if code_type == "0":
-        return [('barcode', 'python-barcode', 'python3-barcode')]
+        return [('PIL', 'Pillow', 'python3-pil')]
     if code_type in ("1", "2"):
         return [('qrcode', 'qrcode', 'python3-qrcode')]
     if code_type == "3":
@@ -225,15 +339,7 @@ class Plugin_Checker(Thread):
 
             instaled = None
             if code_type == "0": # EAN13 code
-                try:
-                    from barcode import EAN13
-                    from barcode.writer import ImageWriter
-                    instaled = True
-                except:
-                    _missing_dependency('python-barcode', 'python3-barcode')
-                if instaled is not None:
-                    with open(image_path, "wb") as f:
-                        EAN13(message, writer=ImageWriter()).write(f)
+                if _generate_ean13_png(message, image_path):
                     _log_generated(_('Generated EAN13 code...'), image_path, message)
 
             if code_type in ("1", "2", "3"): # QR codes

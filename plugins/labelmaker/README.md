@@ -11,7 +11,7 @@ Dependencies
 On Raspberry Pi OS Bookworm and newer, install dependencies with the system
 package manager instead of pip:
 
-* EAN13: `sudo apt install python3-barcode`
+* EAN13: `sudo apt install python3-pil`
 * QR codes: `sudo apt install python3-qrcode`
 * QR with logo: `sudo apt install python3-pil`
 
