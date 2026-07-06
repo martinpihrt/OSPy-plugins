@@ -1,4 +1,4 @@
-$def with(plugin_options, msg)
+$def with(plugin_options, msg, selected_camera=0)
 
 $var title: $_('IP cam - settings')
 $var page: plugins
@@ -56,14 +56,25 @@ input:checked + .slider:before {
     z-index: 5;
 }
 
-.cameraSelectBar {
-    margin: 10px 0;
+.cameraSetupPanel {
+    margin-top: 10px;
 }
 
-.cameraSetupPanel {
+.cameraSetupPanel h4 {
     border: 1px solid #cccccc;
-    margin-top: 10px;
+    cursor: pointer;
+    margin: 0;
+    padding: 8px;
+}
+
+.cameraSetupBody {
+    border: 1px solid #cccccc;
+    border-top: 0;
     padding: 10px;
+}
+
+.cameraSetupPanel.collapsed .cameraSetupBody {
+    display: none;
 }
 
 .cameraPreset {
@@ -94,11 +105,6 @@ input:checked + .slider:before {
         "tplink_vigi": {jpeg: "stream/snapshot.jpg", mjpeg: "stream/video/mjpeg"}
     };
 
-    function showCameraPanel(index) {
-        jQuery(".cameraSetupPanel").hide();
-        jQuery("#cameraPanel" + index).show();
-    }
-
     function applyPreset(index) {
         let presetName = jQuery("#preset" + index).val();
         let preset = cameraPresets[presetName];
@@ -120,8 +126,8 @@ input:checked + .slider:before {
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
-        jQuery("#cameraChooser").change(function() {
-            showCameraPanel(jQuery(this).val());
+        jQuery(".cameraSetupPanel h4").click(function(){
+            jQuery(this).parent(".cameraSetupPanel").toggleClass("expanded").toggleClass("collapsed");
         });
         jQuery(".presetSelect").change(function() {
             applyPreset(jQuery(this).attr("data-camera"));
@@ -131,9 +137,17 @@ input:checked + .slider:before {
             case "saved":
                 jQuery("#msgHint").text($:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
             break;
+            case "test_ok":
+                jQuery("#msgHint").text($:{json.dumps(_('Camera test OK.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+            break;
+            case "snapshot_ok":
+                jQuery("#msgHint").text($:{json.dumps(_('Snapshot saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+            break;
+            case "test_failed":
+                jQuery("#msgHint").text($:{json.dumps(_('Camera test failed. See status log.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'red');
+            break;
         }
         jQuery('#msgHint').fadeOut(4000);
-        showCameraPanel(0);
     });
 </script>
 
@@ -213,20 +227,14 @@ input:checked + .slider:before {
                 </label></td>
             </tr>
         </table>
-        <div class="cameraSelectBar">
-            <label for="cameraChooser">$_('Camera'):</label>
-            <select id="cameraChooser">
-                $for c in range(0, options.output_count):
-                    <option value="${c}">${c+1} - $stations[c].name</option>
-            </select>
-        </div>
         $for c in range(0, options.output_count):
-            <div class="cameraSetupPanel" id="cameraPanel${c}">
-                <h3>$_('Station') ${c+1}: $stations[c].name</h3>
+            <div class="cameraSetupPanel ${'expanded' if c == selected_camera else 'collapsed'}" id="cameraPanel${c}">
+                <h4>$_('Camera') ${c+1}: $stations[c].name</h4>
+                <div class="cameraSetupBody">
                 <div class="cameraTestActions">
-                    <a href="$plugins.plugin_url('ip_cam.settings_page')?snapshot=${c+1}&$csrf_query()" class="button download">$_('Snapshot now')</a>
-                    <a href="$plugins.plugin_url('ip_cam.settings_page')?test_jpeg=${c+1}&$csrf_query()" class="button upload">$_('Test JPEG')</a>
-                    <a href="$plugins.plugin_url('ip_cam.settings_page')?test_mjpeg=${c+1}&$csrf_query()" class="button upload">$_('Test MJPEG')</a>
+                    <a href="$plugins.plugin_url('ip_cam.settings_page')?snapshot=${c+1}&return_to=setup&$csrf_query()" class="button download">$_('Snapshot now')</a>
+                    <a href="$plugins.plugin_url('ip_cam.settings_page')?test_jpeg=${c+1}&return_to=setup&$csrf_query()" class="button upload">$_('Test JPEG')</a>
+                    <a href="$plugins.plugin_url('ip_cam.settings_page')?test_mjpeg=${c+1}&return_to=setup&$csrf_query()" class="button upload">$_('Test MJPEG')</a>
                 </div>
                 <table class="optionList">
                     <tr>
@@ -286,6 +294,7 @@ input:checked + .slider:before {
                         </td>
                     </tr>
                 </table>
+                </div>
             </div>
     </form>
 </div>

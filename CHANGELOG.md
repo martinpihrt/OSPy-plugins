@@ -3,6 +3,9 @@
 July 06 2026
 -----------
 martinpihrt - IP Cam<br/>
+Added an IP Cam Snapshots management page for cached JPG/GIF previews with download and delete actions, changed setup camera sections to collapsible panels, kept setup tests on the setup page with success/failure messages, widened the status area, removed redundant station numbers from camera card titles, fixed GIF preview sizing, and documented the OSPy home-image fallback behavior.
+
+martinpihrt - IP Cam<br/>
 Improved IP Cam usability: camera settings now have a top save action, per-camera enable switches, one-camera-at-a-time selection, manufacturer presets for common JPEG/MJPEG paths, test buttons directly in setup, framed equal-size camera cards with status first, richer HTTP diagnostics with status explanations, home-page image support through OSPy source selection, more detailed help/README troubleshooting, and more reliable GIF generation from real successful snapshots.
 
 martinpihrt - IP Cam<br/>

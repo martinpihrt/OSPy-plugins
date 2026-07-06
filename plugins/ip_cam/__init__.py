@@ -18,6 +18,7 @@ from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision, datetime_string, get_input, verify_csrf, safe_image_path
 from ospy import helpers
 from ospy.options import options
+from ospy.stations import stations
 
 import requests, shutil
 from requests.auth import HTTPBasicAuth
@@ -261,6 +262,27 @@ def _save_snapshot(index, content):
     return img_path
 
 
+def _camera_image_path(index, image_type):
+    return os.path.join(plugin_data_dir(), '{}.{}'.format(index + 1, image_type))
+
+
+def _snapshot_items():
+    items = []
+    for index in range(0, options.output_count):
+        for image_type in ('jpg', 'gif'):
+            path = _camera_image_path(index, image_type)
+            if os.path.isfile(path):
+                items.append({
+                    'index': index + 1,
+                    'station': stations[index].name,
+                    'type': image_type.upper(),
+                    'filename': os.path.basename(path),
+                    'size': os.path.getsize(path),
+                    'modified': datetime.datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S'),
+                })
+    return items
+
+
 def _gif_dir(index):
     return os.path.join(plugin_data_dir(), str(index + 1))
 
@@ -446,6 +468,7 @@ class settings_page(ProtectedPage):
             test_jpeg = get_input(qdict, 'test_jpeg', False, lambda x: True)
             test_mjpeg = get_input(qdict, 'test_mjpeg', False, lambda x: True)
             delete_cache = get_input(qdict, 'delete_cache', False, lambda x: True)
+            return_to = get_input(qdict, 'return_to', 'settings', lambda x: x in ('settings', 'setup'))
 
             if cam:
                 cam_nr = int(qdict['cam'])
@@ -467,6 +490,7 @@ class settings_page(ProtectedPage):
                     cam_index = int(action_value) - 1
                     if cam_index < 0 or cam_index >= options.output_count:
                         raise ValueError(_('Unknown camera.'))
+                    msg = 'test_failed'
                     try:
                         if stream:
                             res, content, response_ms = _test_camera_stream(cam_index)
@@ -477,6 +501,7 @@ class settings_page(ProtectedPage):
                                 _save_snapshot(cam_index, content)
                             _record_camera_result(cam_index, res, content, response_ms)
                             log.info(NAME, datetime_string() + ' ' + _('Camera {} test OK').format(cam_index + 1))
+                            msg = 'snapshot_ok' if action_name == 'snapshot' else 'test_ok'
                         else:
                             _record_camera_result(cam_index, res, b'', response_ms, _('HTTP status') + ': {}'.format(res.status_code))
                             log.error(NAME, datetime_string() + ' ' + _('Camera {} test failed').format(cam_index + 1))
@@ -484,6 +509,8 @@ class settings_page(ProtectedPage):
                         error = traceback.format_exc()
                         _record_camera_result(cam_index, error=error.splitlines()[-1] if error else _('Unknown error'))
                         log.error(NAME, _('IP Cam plug-in') + ':\n' + error)
+                    if return_to == 'setup':
+                        raise web.seeother(plugin_url(setup_page) + '?cam={}&msg={}'.format(cam_index + 1, msg), True)
                     raise web.seeother(plugin_url(settings_page), True)
 
             if cam_foto:
@@ -624,10 +651,12 @@ class setup_page(ProtectedPage):
     def GET(self):
         try:
             qdict = web.input()
-            msg = 'none'
+            msg = qdict.get('msg', 'none')
+            selected_camera = int(qdict.get('cam', 1)) - 1
+            selected_camera = max(0, min(options.output_count - 1, selected_camera))
   
             try:
-                return self.plugin_render.ip_cam_setup(plugin_options, msg)
+                return self.plugin_render.ip_cam_setup(plugin_options, msg, selected_camera)
             except:
                 plugin_options.__setitem__('jpg_ip', ['']*options.output_count)
                 plugin_options.__setitem__('jpg_que', ['']*options.output_count)
@@ -645,7 +674,7 @@ class setup_page(ProtectedPage):
                 plugin_options.__setitem__('verify_ssl', False)
                 plugin_options.__setitem__('max_image_kb', 2048)
                 plugin_options.__setitem__('gif_duration', 250)
-                return self.plugin_render.ip_cam_setup(plugin_options, msg)
+                return self.plugin_render.ip_cam_setup(plugin_options, msg, selected_camera)
         except:
             log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
@@ -713,7 +742,7 @@ class setup_page(ProtectedPage):
                 sender.update()
 
             msg = 'saved'
-            return self.plugin_render.ip_cam_setup(plugin_options, msg)
+            return self.plugin_render.ip_cam_setup(plugin_options, msg, 0)
 
         except:
             log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
@@ -732,6 +761,62 @@ class help_page(ProtectedPage):
             log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('ip_cam -> help_page GET')
+            return self.core_render.notice('/', msg)
+
+
+class snapshots_page(ProtectedPage):
+    """Manage cached snapshots and GIF files."""
+
+    def GET(self):
+        try:
+            qdict = web.input()
+            preview = get_input(qdict, 'preview', False, lambda x: True)
+            download = get_input(qdict, 'download', False, lambda x: True)
+            delete = get_input(qdict, 'delete', False, lambda x: True)
+            delete_all = get_input(qdict, 'delete_all', False, lambda x: True)
+            file_type = get_input(qdict, 'type', 'jpg', lambda x: x in ('jpg', 'gif'))
+
+            if delete_all:
+                verify_csrf(qdict)
+                deleted = _delete_cache()
+                log.info(NAME, datetime_string() + ' ' + _('Deleted cached camera files') + ': {}'.format(deleted))
+                raise web.seeother(plugin_url(snapshots_page), True)
+
+            if delete:
+                verify_csrf(qdict)
+                index = int(delete) - 1
+                if index < 0 or index >= options.output_count:
+                    raise ValueError(_('Unknown camera.'))
+                path = _camera_image_path(index, file_type)
+                if os.path.isfile(path):
+                    os.remove(path)
+                    log.info(NAME, datetime_string() + ' ' + _('Deleted cached camera file') + ': {}'.format(os.path.basename(path)))
+                raise web.seeother(plugin_url(snapshots_page), True)
+
+            if preview or download:
+                index = int(preview or download) - 1
+                if index < 0 or index >= options.output_count:
+                    raise ValueError(_('Unknown camera.'))
+                path = _camera_image_path(index, file_type)
+                if not os.path.isfile(path):
+                    return None
+                content = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+                web.header('Content-type', content)
+                web.header('Content-Length', os.path.getsize(path))
+                if preview:
+                    web.header('Cache-Control', 'no-store')
+                else:
+                    web.header('Content-Disposition', 'attachment; filename={}'.format(os.path.basename(path)))
+                with open(path, 'rb') as fh:
+                    return fh.read()
+
+            return self.plugin_render.ip_cam_snapshots(plugin_options, _snapshot_items())
+        except web.HTTPError:
+            raise
+        except:
+            log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
+            msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
+            msg += _('ip_cam -> snapshots_page GET')
             return self.core_render.notice('/', msg)
 
 class settings_json(ProtectedPage):

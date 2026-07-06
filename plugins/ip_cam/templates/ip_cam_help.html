@@ -47,6 +47,10 @@ $var page: plugins
         <li>$_(u'Test JPEG checks the JPEG path and saves the snapshot when the request succeeds.')</li>
         <li>$_(u'Test MJPEG opens the stream, reads the first available block and closes the connection. It does not save the stream.')</li>
     </ul>
+    <p><b>$_(u'Snapshot management')</b></p>
+    <p>$_(u'The Snapshots page lists cached JPEG snapshots and GIF animations. From this page you can preview, download or delete each cached file. Snapshot now saves the latest JPEG as N.jpg, where N is the station number.')</p>
+    <p><b>$_(u'Home page images')</b></p>
+    <p>$_(u'When OSPy is configured to show station pictures and the Station picture source is IP Cam JPG or IP Cam GIF, the core image endpoint reads cached IP Cam files. If the IP Cam plug-in is not installed or no cached file exists, OSPy falls back to the normal uploaded station image and then to the default no-image picture.')</p>
     <p><b>$_(u'HTTP status troubleshooting')</b></p>
     <ul>
         <li>401 Unauthorized: $_(u'wrong username/password or unsupported authentication mode. Check credentials and try Basic or Digest authentication in the camera.')</li>
@@ -55,7 +59,7 @@ $var page: plugins
         <li>$_(u'Timeout'): $_(u'check IP address, port, network access, SSL verification and camera load.')</li>
     </ul>
     <p><b>$_(u'GIF notes')</b></p>
-    <p>$_(u'A GIF is created from successful JPEG downloads. If it contains fewer frames than expected, check the JPEG test and the diagnostics counters. A camera that fails every few downloads will naturally produce fewer usable frames.')</p>
+    <p>$_(u'A GIF is created from successful JPEG downloads. If it contains fewer frames than expected, check the JPEG test and the diagnostics counters. A camera that fails every few downloads will naturally produce fewer usable frames. The GIF preview keeps the original aspect ratio, so it should not be distorted by the browser.')</p>
     <p><b>$_(u'Safe stream proxy')</b></p>
     <p>$_(u'MJPEG streams are proxied through OSPy so the camera username and password are not embedded in the browser URL.')</p>
     </td>

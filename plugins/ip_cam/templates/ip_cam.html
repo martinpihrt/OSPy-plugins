@@ -8,6 +8,10 @@ $var page: plugins
     margin-bottom: 14px;
 }
 
+.statusPanel .optionList {
+    width: 100%;
+}
+
 .cameraGrid {
     align-items: stretch;
     display: grid;
@@ -122,6 +126,7 @@ $var page: plugins
     <p>
         <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a>
         <a href=$plugins.plugin_url('ip_cam.setup_page') class="button submit">$_('CAM Settings')</a>
+        <a href=$plugins.plugin_url('ip_cam.snapshots_page') class="button download">$_('Snapshots')</a>
         <a href="?delete_cache&$csrf_query()" class="button cancel danger">$_('Delete cached images')</a>
     </p>
     <div class="statusPanel">
@@ -137,7 +142,7 @@ $var page: plugins
             $if plugin_options['jpg_ip'][c]:
                 $ status = camera_statuses[c] if c < len(camera_statuses) else {}
                 <div class="cameraCard">
-                    <h3>$stations[c].name (${c+1})</h3>
+                    <h3>$stations[c].name</h3>
                     <a href="?cam=${c+1}" class="cameraPreviewWrap">
                         <img class="cameraPreview" id="jpeg${c+1}" src="$plugins.plugin_url('ip_cam.image_page')?cam=${c+1}" alt="" />
                     </a>

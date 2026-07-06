@@ -84,6 +84,11 @@ Diagnostics and test buttons
 
 The main page shows the last download time, HTTP status and text, response time, image size, resolution, GIF frame count, success/error counters and the last error.
 
+Snapshot management
+-----------
+
+The main page has a **Snapshots** button. This page lists cached `N.jpg` snapshots and `N.gif` animations, shows a preview, file size and modification time, and allows downloading or deleting individual files. The **Delete cached images** action removes all cached snapshots, GIF files and GIF frame folders.
+
 Troubleshooting
 -----------
 
@@ -92,5 +97,6 @@ Troubleshooting
 * `404 Not Found` usually means the selected path is wrong for that camera model.
 * Timeout usually means wrong IP/port, blocked network access, HTTPS certificate problems or a camera that is slow to respond.
 * If GIF has fewer frames than expected, check whether every JPEG download succeeds. Only successful downloads are used as GIF frames.
+* If IP Cam JPG/GIF is selected as the OSPy home page image source and the plug-in is not installed or no cached image exists, OSPy falls back to the uploaded station image and then to the default no-image picture.
 
 The MJPEG stream is proxied through OSPy so the camera username and password are not embedded in the browser image URL.

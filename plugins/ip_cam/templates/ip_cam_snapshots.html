@@ -1,0 +1,72 @@
+$def with(plugin_options, snapshots)
+
+$var title: $_(u'IP Cam - snapshots')
+$var page: plugins
+
+<style>
+.snapshotGrid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.snapshotCard {
+    border: 1px solid #cccccc;
+    padding: 10px;
+}
+
+.snapshotPreview {
+    align-items: center;
+    background: #eeeeee;
+    display: flex;
+    height: 210px;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.snapshotPreview img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.snapshotActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+</style>
+
+<div id="plugin">
+    <div class="title">$_(u'IP Cam - snapshots')</div>
+    <p>
+        <a href=$plugins.plugin_url('ip_cam.settings_page') class="button cancel danger">$_('Back')</a>
+        <a href="?delete_all&$csrf_query()" class="button cancel danger">$_('Delete cached images')</a>
+    </p>
+    $if snapshots:
+        <div class="snapshotGrid">
+            $for item in snapshots:
+                <div class="snapshotCard">
+                    <h3>$item['station'] - $item['type']</h3>
+                    <div class="snapshotPreview">
+                        <img src="$plugins.plugin_url('ip_cam.snapshots_page')?preview=${item['index']}&type=${item['type'].lower()}" alt="" />
+                    </div>
+                    <p>
+                        $_('File'): $item['filename']<br/>
+                        $_('Size'): $item['size'] B<br/>
+                        $_('Last download'): $item['modified']
+                    </p>
+                    <div class="snapshotActions">
+                        <a href="?download=${item['index']}&type=${item['type'].lower()}" class="button download">$_('Download')</a>
+                        <a href="?delete=${item['index']}&type=${item['type'].lower()}&$csrf_query()" class="button cancel danger">$_('Delete')</a>
+                    </div>
+                </div>
+        </div>
+    $else:
+        <p>$_('No cached snapshots are available yet. Use Snapshot now or wait for the automatic camera download.')</p>
+</div>
+
+<div id="controls">
+    <a href=$plugins.plugin_url('ip_cam.settings_page') class="button danger">$_('Cancel')</a><br/>
+</div>
