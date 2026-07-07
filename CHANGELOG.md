@@ -2,6 +2,9 @@
 
 July 06 2026
 -----------
+martinpihrt - LCD Display<br/>
+Added a Wind Speed display switch that shows current and maximum wind speed from Wind Speed Monitor, and re-initializes the HD44780/PCF8574 LCD at the start of each display cycle without re-scanning the I2C address to recover from corrupted characters during long operation.
+
 martinpihrt - IP Cam<br/>
 Fixed IP Cam snapshot responses so missing cached JPG/GIF files no longer render as blank previews or a `none` download response, added colored camera setup headers for configured/missing cameras, added a local Submit button beside camera test actions, and changed GIF creation to normalize frames, resize the final animation according to Maximum image size when possible, and regenerate existing oversized GIF files from cached frames when available.
 

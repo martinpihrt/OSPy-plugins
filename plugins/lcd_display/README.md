@@ -38,6 +38,10 @@ Pressure Sensor:
 Water Tank Level:  
 Running Stations:  
 DS18B20 Temperature: </br>
+Wind Speed:
+Shows current wind speed and maximum wind speed from the Wind Speed Monitor plugin in the format `actual (max) unit`. </br>
+
+The LCD controller is re-initialized at the start of each display cycle without re-scanning the I2C address. This helps recover HD44780/PCF8574 displays that drift into corrupted characters during long running operation. </br>
 
 
 * Status:

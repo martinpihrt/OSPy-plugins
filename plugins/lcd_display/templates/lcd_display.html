@@ -233,7 +233,7 @@ jQuery(document).ready(function() {
                 </th>
             </tr>
             <tr>
-                <td style='text-transform: none;' rowspan='17'>$_('Display'):</td>
+                <td style='text-transform: none;' rowspan='18'>$_('Display'):</td>
                 <td> $_('System Name'):</td>
                 <td title=$:{json.dumps(_('If the check box is selected, the system OSPy naming is displayed.'), ensure_ascii=False)}>
                 <label class="switch">
@@ -382,6 +382,15 @@ jQuery(document).ready(function() {
                 <td title=$:{json.dumps(_('If the check box is selected, the data from 4 tanks (4-20mA tank plugin) will be displayed.'), ensure_ascii=False)}>
                 <label class="switch">
                 <input name='d_current_tanks' type='checkbox'${" checked" if plugin_options['d_current_tanks'] else ""}>
+                <span class="slider"></span>
+                </label>
+                </td>
+            </tr>
+            <tr>
+                <td> $_('Wind Speed'):</td>
+                <td title=$:{json.dumps(_('If the check box is selected, the current and maximum wind speed from Wind Speed Monitor will be displayed.'), ensure_ascii=False)}>
+                <label class="switch">
+                <input name='d_wind_speed' type='checkbox'${" checked" if plugin_options['d_wind_speed'] else ""}>
                 <span class="slider"></span>
                 </label>
                 </td>

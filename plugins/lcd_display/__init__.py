@@ -61,6 +61,7 @@ lcd_options = PluginOptions(
         "d_sensors": True,
         "hw_PCF8574": 1,              # 0-4, default is 1 LCD1602 china I2C display
         "d_current_tanks": True,
+        "d_wind_speed": True,
         "d_notify": True,
     }
 )
@@ -112,11 +113,11 @@ class LCDSender(Thread):
                     if lcd_options['debug_line']:
                         log.clear(NAME)
 
+                    if report_index == 0:
+                        reinit_lcd()
+
                     line1 = get_report(report_index)
                     line2 = get_report(report_index + 1)
-
-                    if report_index >= 33:
-                        report_index = 0
                     
                     skip_lines = False
                     if line1 is None and line2 is None:
@@ -133,6 +134,8 @@ class LCDSender(Thread):
                         self._sleep(2)
 
                     report_index += 2
+                    if report_index > LCD_LAST_REPORT_INDEX - 1:
+                        report_index = 0
 
                     time.sleep(0.1)
 
@@ -166,6 +169,7 @@ last_lcd_lines = None
 LCD_WIDTH = 16
 LCD_DDRAM_LINE_WIDTH = 40
 LCD_SCROLL_DELAY = 0.25
+LCD_LAST_REPORT_INDEX = 35
 
 ################################################################################
 # Helper functions:                                                            #
@@ -190,6 +194,15 @@ def reset_lcd_cache():
     cached_lcd = None
     cached_lcd_key = None
     last_lcd_lines = None
+
+
+def reinit_lcd():
+    """Re-send LCD init without changing the stored I2C address."""
+    global cached_lcd, cached_lcd_key, last_lcd_lines
+    cached_lcd = None
+    cached_lcd_key = None
+    last_lcd_lines = None
+    return get_lcd()
 
 
 def get_lcd():
@@ -807,6 +820,25 @@ def get_report(index):
                 result = ASCI_convert(_('Not Available'))
                 log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
         else: 
+            result = None
+    elif index == 34:
+        if lcd_options['d_wind_speed']:
+            result = ASCI_convert(_('Wind Speed') + ':')
+        else:
+            result = None
+    elif index == 35:
+        if lcd_options['d_wind_speed']:
+            try:
+                from plugins import wind_monitor
+                actual, maximum, _date_maximum = wind_monitor.get_all_values()
+                units = _('km/h') if wind_monitor.wind_options['use_kmh'] else _('m/s')
+                if actual == -1 and maximum == -1:
+                    result = ASCI_convert(_('Not Available'))
+                else:
+                    result = ASCI_convert('{:.1f} ({:.1f}) {}'.format(actual, maximum, units))
+            except Exception:
+                result = ASCI_convert(_('Not Available'))
+        else:
             result = None
 
     return result
