@@ -442,7 +442,7 @@ def _build_gif_bytes(frame_files, scale=1.0):
         try:
             first = _open_gif_frame(frame_file)
             break
-        except IOError:
+        except Exception:
             pass
     if first is None:
         return b'', 0
@@ -456,7 +456,7 @@ def _build_gif_bytes(frame_files, scale=1.0):
         try:
             frame = _open_gif_frame(frame_file, target_size)
             frames.append(frame.convert("P", palette=Image.ADAPTIVE))
-        except IOError:
+        except Exception:
             pass
 
     if len(frames) < 2:
@@ -489,12 +489,14 @@ def _create_gif(index):
         scale = 1.0
         for _ in range(12):
             gif_data, frame_count = _build_gif_bytes(frame_files, scale)
+            if frame_count < 2:
+                break
             if len(gif_data) <= max_bytes:
                 break
             scale *= 0.82
 
         if not gif_data:
-            _set_camera_status(index, gif_frames=frame_count, error=_('Could not create GIF.'))
+            _set_camera_status(index, gif_frames=frame_count)
             return False
 
         gif_path = os.path.join(plugin_data_dir(), '{}.gif'.format(index + 1))
