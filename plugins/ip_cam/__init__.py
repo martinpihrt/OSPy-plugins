@@ -295,6 +295,10 @@ def _camera_image_path(index, image_type):
 
 
 def _snapshot_file_path(filename):
+    if isinstance(filename, bytes):
+        filename = filename.decode('utf8', 'ignore')
+    if not isinstance(filename, str):
+        return ''
     filename = os.path.basename(filename or '')
     parts = filename.split('.')
     if len(parts) != 2 or not parts[0].isdigit() or parts[1].lower() not in ('jpg', 'gif'):
@@ -873,7 +877,7 @@ class snapshots_page(ProtectedPage):
             qdict = web.input()
             preview = get_input(qdict, 'preview', False, lambda x: True)
             download = get_input(qdict, 'download', False, lambda x: True)
-            file_download = get_input(qdict, 'file', False, lambda x: True)
+            file_download = qdict.get('file', '')
             delete = get_input(qdict, 'delete', False, lambda x: True)
             delete_all = get_input(qdict, 'delete_all', False, lambda x: True)
             file_type = get_input(qdict, 'type', 'jpg', lambda x: x in ('jpg', 'gif'))
