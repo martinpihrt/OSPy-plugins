@@ -8,7 +8,7 @@ import traceback
 import os
 import base64
 from http import HTTPStatus
-from threading import Thread, Event, Lock
+from threading import Thread, Event, Lock, RLock
 from urllib.parse import urljoin, urlparse
 
 import web
@@ -57,6 +57,7 @@ plugin_options = PluginOptions(
 )
 
 status_lock = Lock()
+cache_lock = RLock()
 camera_status = []
 
 
@@ -283,11 +284,12 @@ def _record_camera_result(index, response=None, content=None, response_ms='', er
 
 
 def _save_snapshot(index, content):
-    helpers.mkdir_p(plugin_data_dir())
-    img_path = os.path.join(plugin_data_dir(), '{}.jpg'.format(index + 1))
-    with open(img_path, 'wb') as fh:
-        fh.write(content)
-    return img_path
+    with cache_lock:
+        helpers.mkdir_p(plugin_data_dir())
+        img_path = os.path.join(plugin_data_dir(), '{}.jpg'.format(index + 1))
+        with open(img_path, 'wb') as fh:
+            fh.write(content)
+        return img_path
 
 
 def _camera_image_path(index, image_type):
@@ -321,27 +323,31 @@ def _ensure_cached_gif_limit(index):
 
 def _snapshot_items():
     items = []
-    for index in range(0, options.output_count):
-        for image_type in ('jpg', 'gif'):
-            if image_type == 'gif':
-                _ensure_cached_gif_limit(index)
-            path = _camera_image_path(index, image_type)
-            if os.path.isfile(path):
-                content_type = mimetypes.guess_type(path)[0] or 'application/octet-stream'
-                with open(path, 'rb') as image_file:
-                    data_uri = 'data:{};base64,{}'.format(
-                        content_type,
-                        base64.b64encode(image_file.read()).decode('ascii')
-                    )
-                items.append({
-                    'index': index + 1,
-                    'station': stations[index].name if index < len(stations.get()) else _('Camera') + ' {}'.format(index + 1),
-                    'type': image_type.upper(),
-                    'filename': os.path.basename(path),
-                    'size': os.path.getsize(path),
-                    'modified': datetime.datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S'),
-                    'data_uri': data_uri,
-                })
+    with cache_lock:
+        for index in range(0, options.output_count):
+            for image_type in ('jpg', 'gif'):
+                if image_type == 'gif':
+                    _ensure_cached_gif_limit(index)
+                path = _camera_image_path(index, image_type)
+                if os.path.isfile(path):
+                    try:
+                        content_type = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+                        with open(path, 'rb') as image_file:
+                            data_uri = 'data:{};base64,{}'.format(
+                                content_type,
+                                base64.b64encode(image_file.read()).decode('ascii')
+                            )
+                        items.append({
+                            'index': index + 1,
+                            'station': stations[index].name if index < len(stations.get()) else _('Camera') + ' {}'.format(index + 1),
+                            'type': image_type.upper(),
+                            'filename': os.path.basename(path),
+                            'size': os.path.getsize(path),
+                            'modified': datetime.datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S'),
+                            'data_uri': data_uri,
+                        })
+                    except IOError:
+                        pass
     return items
 
 
@@ -357,9 +363,12 @@ def _gif_frame_files(index):
     for filename in os.listdir(frame_dir):
         if filename.lower().endswith('.jpg'):
             path = os.path.join(frame_dir, filename)
-            if os.path.isfile(path):
-                files.append(path)
-    return sorted(files, key=lambda item: os.path.getmtime(item))
+            try:
+                if os.path.isfile(path):
+                    files.append((os.path.getmtime(path), path))
+            except OSError:
+                pass
+    return [path for _mtime, path in sorted(files)]
 
 
 def _image_limit_bytes():
@@ -399,20 +408,21 @@ def _fit_image_to_limit(content, max_bytes):
 
 
 def _save_gif_frame(index, content):
-    frame_dir = _gif_dir(index)
-    helpers.mkdir_p(frame_dir)
-    frame_path = os.path.join(frame_dir, '{}.jpg'.format(int(time.time() * 1000)))
-    with open(frame_path, 'wb') as fh:
-        fh.write(content)
+    with cache_lock:
+        frame_dir = _gif_dir(index)
+        helpers.mkdir_p(frame_dir)
+        frame_path = os.path.join(frame_dir, '{}.jpg'.format(int(time.time() * 1000)))
+        with open(frame_path, 'wb') as fh:
+            fh.write(content)
 
-    keep = _safe_int(plugin_options['gif_frames'], 20, 3, 50)
-    frame_files = _gif_frame_files(index)
-    for old_file in frame_files[:-keep]:
-        try:
-            os.remove(old_file)
-        except Exception:
-            pass
-    return frame_path
+        keep = _safe_int(plugin_options['gif_frames'], 20, 3, 50)
+        frame_files = _gif_frame_files(index)
+        for old_file in frame_files[:-keep]:
+            try:
+                os.remove(old_file)
+            except Exception:
+                pass
+        return frame_path
 
 
 def _open_gif_frame(frame_file, target_size=None):
@@ -427,15 +437,30 @@ def _build_gif_bytes(frame_files, scale=1.0):
     if not frame_files:
         return b'', 0
 
-    first = _open_gif_frame(frame_files[0])
+    first = None
+    for frame_file in frame_files:
+        try:
+            first = _open_gif_frame(frame_file)
+            break
+        except IOError:
+            pass
+    if first is None:
+        return b'', 0
+
     width = max(1, int(first.size[0] * scale))
     height = max(1, int(first.size[1] * scale))
     target_size = (width, height)
 
     frames = []
     for frame_file in frame_files:
-        frame = _open_gif_frame(frame_file, target_size)
-        frames.append(frame.convert("P", palette=Image.ADAPTIVE))
+        try:
+            frame = _open_gif_frame(frame_file, target_size)
+            frames.append(frame.convert("P", palette=Image.ADAPTIVE))
+        except IOError:
+            pass
+
+    if len(frames) < 2:
+        return b'', len(frames)
 
     output = BytesIO()
     frames[0].save(
@@ -452,33 +477,34 @@ def _build_gif_bytes(frame_files, scale=1.0):
 
 
 def _create_gif(index):
-    frame_files = _gif_frame_files(index)
-    if len(frame_files) < 2:
-        _set_camera_status(index, gif_frames=len(frame_files))
-        return False
+    with cache_lock:
+        frame_files = _gif_frame_files(index)
+        if len(frame_files) < 2:
+            _set_camera_status(index, gif_frames=len(frame_files))
+            return False
 
-    max_bytes = _image_limit_bytes()
-    gif_data = b''
-    frame_count = 0
-    scale = 1.0
-    for _ in range(12):
-        gif_data, frame_count = _build_gif_bytes(frame_files, scale)
-        if len(gif_data) <= max_bytes:
-            break
-        scale *= 0.82
+        max_bytes = _image_limit_bytes()
+        gif_data = b''
+        frame_count = 0
+        scale = 1.0
+        for _ in range(12):
+            gif_data, frame_count = _build_gif_bytes(frame_files, scale)
+            if len(gif_data) <= max_bytes:
+                break
+            scale *= 0.82
 
-    if not gif_data:
-        _set_camera_status(index, gif_frames=len(frame_files), error=_('Could not create GIF.'))
-        return False
+        if not gif_data:
+            _set_camera_status(index, gif_frames=frame_count, error=_('Could not create GIF.'))
+            return False
 
-    gif_path = os.path.join(plugin_data_dir(), '{}.gif'.format(index + 1))
-    with open(gif_path, 'wb') as fh:
-        fh.write(gif_data)
-    values = {'gif_frames': frame_count}
-    if len(gif_data) > max_bytes:
-        values['error'] = _('Generated GIF is still larger than configured maximum size.')
-    _set_camera_status(index, **values)
-    return True
+        gif_path = os.path.join(plugin_data_dir(), '{}.gif'.format(index + 1))
+        with open(gif_path, 'wb') as fh:
+            fh.write(gif_data)
+        values = {'gif_frames': frame_count}
+        if len(gif_data) > max_bytes:
+            values['error'] = _('Generated GIF is still larger than configured maximum size.')
+        _set_camera_status(index, **values)
+        return True
 
 
 def _fallback_station_image(cam_nr, thumbnail=True):
@@ -505,16 +531,17 @@ def _serve_image_file(path, attachment=False):
 
 
 def _delete_cache():
-    deleted = 0
-    for filename in os.listdir(plugin_data_dir()) if os.path.isdir(plugin_data_dir()) else []:
-        path = os.path.join(plugin_data_dir(), filename)
-        if os.path.isfile(path) and (filename.endswith('.jpg') or filename.endswith('.gif')):
-            os.remove(path)
-            deleted += 1
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
-            deleted += 1
-    return deleted
+    with cache_lock:
+        deleted = 0
+        for filename in os.listdir(plugin_data_dir()) if os.path.isdir(plugin_data_dir()) else []:
+            path = os.path.join(plugin_data_dir(), filename)
+            if os.path.isfile(path) and (filename.endswith('.jpg') or filename.endswith('.gif')):
+                os.remove(path)
+                deleted += 1
+            elif os.path.isdir(path):
+                shutil.rmtree(path)
+                deleted += 1
+        return deleted
 
 
 _ensure_options()
