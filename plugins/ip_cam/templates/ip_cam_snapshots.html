@@ -58,7 +58,7 @@ $var page: plugins
                         $_('Last download'): $item['modified']
                     </p>
                     <div class="snapshotActions">
-                        <a href="?download=${item['index']}&type=${item['type'].lower()}" class="button download">$_('Download')</a>
+                        <a href="?file=${item['filename']}" class="button download">$_('Download')</a>
                         <a href="?delete=${item['index']}&type=${item['type'].lower()}&$csrf_query()" class="button cancel danger">$_('Delete')</a>
                     </div>
                 </div>

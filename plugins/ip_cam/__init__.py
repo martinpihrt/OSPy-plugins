@@ -294,6 +294,17 @@ def _camera_image_path(index, image_type):
     return os.path.join(plugin_data_dir(), '{}.{}'.format(index + 1, image_type))
 
 
+def _snapshot_file_path(filename):
+    filename = os.path.basename(filename or '')
+    parts = filename.split('.')
+    if len(parts) != 2 or not parts[0].isdigit() or parts[1].lower() not in ('jpg', 'gif'):
+        return ''
+    index = int(parts[0])
+    if index < 1 or index > options.output_count:
+        return ''
+    return _camera_image_path(index - 1, parts[1].lower())
+
+
 def _ensure_cached_gif_limit(index):
     path = _camera_image_path(index, 'gif')
     if os.path.isfile(path) and os.path.getsize(path) > _image_limit_bytes() and len(_gif_frame_files(index)) >= 2:
@@ -703,7 +714,7 @@ class home_image_page(ProtectedPage):
 
             index = cam_nr - 1
             download_name = ''
-            if plugin_options['show_on_home'] and plugin_options['enabled'][index]:
+            if plugin_options['enabled'][index]:
                 if image_type == 'gif':
                     download_name = _ensure_cached_gif_limit(index)
                 else:
@@ -803,9 +814,8 @@ class setup_page(ProtectedPage):
 
             plugin_options.__setitem__('use_jpg', qdict.get('use_jpg') == 'on')
             plugin_options.__setitem__('use_gif', qdict.get('use_gif') == 'on')
-            plugin_options.__setitem__('show_on_home', qdict.get('show_on_home') == 'on')
+            plugin_options.__setitem__('show_on_home', True)
             plugin_options.__setitem__('verify_ssl', qdict.get('verify_ssl') == 'on')
-            plugin_options.__setitem__('home_image_type', qdict.get('home_image_type', 'jpg') if qdict.get('home_image_type') in ('jpg', 'gif') else 'jpg')
 
             if 'gif_frames' in qdict:
                 plugin_options.__setitem__('gif_frames', _safe_int(qdict['gif_frames'], 20, 3, 50))
@@ -863,6 +873,7 @@ class snapshots_page(ProtectedPage):
             qdict = web.input()
             preview = get_input(qdict, 'preview', False, lambda x: True)
             download = get_input(qdict, 'download', False, lambda x: True)
+            file_download = get_input(qdict, 'file', False, lambda x: True)
             delete = get_input(qdict, 'delete', False, lambda x: True)
             delete_all = get_input(qdict, 'delete_all', False, lambda x: True)
             file_type = get_input(qdict, 'type', 'jpg', lambda x: x in ('jpg', 'gif'))
@@ -885,6 +896,15 @@ class snapshots_page(ProtectedPage):
                     os.remove(path)
                     log.info(NAME, datetime_string() + ' ' + _('Deleted cached camera file') + ': {}'.format(os.path.basename(path)))
                 raise web.seeother(plugin_url(snapshots_page), True)
+
+            if file_download:
+                path = _snapshot_file_path(file_download)
+                if path and os.path.isfile(path):
+                    return _serve_image_file(path, attachment=True)
+                return self.core_render.notice(
+                    plugin_url(snapshots_page),
+                    _('Snapshot file is not available yet. Use Snapshot now or wait for a successful automatic camera download.')
+                )
 
             if preview or download:
                 index = int(preview or download) - 1

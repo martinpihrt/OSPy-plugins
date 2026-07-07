@@ -56,6 +56,25 @@ input:checked + .slider:before {
     z-index: 5;
 }
 
+.setupMessage {
+    border: 1px solid #cccccc;
+    display: none;
+    margin: 8px 0;
+    padding: 8px 10px;
+}
+
+.setupMessage.ok {
+    background: #eef8ef;
+    border-color: #98c79a;
+    color: #275f2c;
+}
+
+.setupMessage.error {
+    background: #fff0f0;
+    border-color: #d99b9b;
+    color: #8b1f1f;
+}
+
 .cameraSetupPanel {
     margin-top: 10px;
 }
@@ -155,32 +174,37 @@ input:checked + .slider:before {
         jQuery(".presetSelect").change(function() {
             applyPreset(jQuery(this).attr("data-camera"));
         });
-        jQuery('#msgHint').fadeIn(10);
+        let messageText = "";
+        let messageClass = "ok";
         switch (msg) {
             case "saved":
-                jQuery("#msgHint").text($:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+                messageText = $:{json.dumps(_('Settings saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
             break;
             case "test_ok":
-                jQuery("#msgHint").text($:{json.dumps(_('Camera test OK.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+                messageText = $:{json.dumps(_('Camera test OK.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
             break;
             case "snapshot_ok":
-                jQuery("#msgHint").text($:{json.dumps(_('Snapshot saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'green');
+                messageText = $:{json.dumps(_('Snapshot saved.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
             break;
             case "test_failed":
-                jQuery("#msgHint").text($:{json.dumps(_('Camera test failed. See status log.'), ensure_ascii=False).encode('utf8').decode('utf-8')}).css('color', 'red');
+                messageText = $:{json.dumps(_('Camera test failed. See status log.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+                messageClass = "error";
             break;
         }
-        jQuery('#msgHint').fadeOut(4000);
+        if (messageText) {
+            jQuery("#setupMessage").text(messageText).addClass(messageClass).fadeIn(100);
+        }
     });
 </script>
 
 <div id="plugin">
-    <div class="title">$_('IP cam - settings') <span id="msgHint"></span></div>
+    <div class="title">$_('IP cam - settings')</div>
     <div class="stickyActions">
         <button type="button" id="cSubmitTop" class="submit"><b>$_('Submit')</b></button>
         <a href=$plugins.plugin_url('ip_cam.settings_page') class="button danger">$_('Cancel')</a>
         <a href=$plugins.plugin_url('ip_cam.help_page') class="button upload">$_('Help')</a>
     </div>
+    <div id="setupMessage" class="setupMessage"></div>
     <form id="pluginForm" action="$plugins.plugin_url('ip_cam.setup_page')" method="post">
         $:csrf_input()
         <input type="hidden" id="selected_camera" name="selected_camera" value="${selected_camera + 1}">
@@ -201,22 +225,6 @@ input:checked + .slider:before {
                     <input type="checkbox" name="use_gif" ${"checked" if plugin_options['use_gif'] else ""}>
                     <span class="slider"></span>
                 </label></td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Allow IP Cam images on home'):</td>
-                <td title=$:{json.dumps(_(u'When enabled, OSPy can use cached IP Cam images on the home page when the System option chooses IP Cam as image source.'), ensure_ascii=False)}>
-                <label class="switch">
-                    <input type="checkbox" name="show_on_home" ${"checked" if plugin_options['show_on_home'] else ""}>
-                    <span class="slider"></span>
-                </label></td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Home image type'):</td>
-                <td title=$:{json.dumps(_(u'Choose whether the IP Cam home page image endpoint prefers JPEG snapshots or GIF animations.'), ensure_ascii=False)}>
-                <select name="home_image_type">
-                    <option value="jpg" ${"selected" if plugin_options['home_image_type'] == 'jpg' else ""}>JPEG</option>
-                    <option value="gif" ${"selected" if plugin_options['home_image_type'] == 'gif' else ""}>GIF</option>
-                </select></td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Number of frames in GIF'):</td>
