@@ -62,7 +62,7 @@ Plugin setup
   Timeout for camera HTTP requests.
 
 * Maximum image size:
-  Maximum JPEG image size downloaded from one camera. Generated GIF animations are resized to stay under this limit when possible.
+  Maximum cached JPEG image size from one camera. Oversized downloaded JPEG images are resized before saving when possible. Generated GIF animations are resized to stay under this limit when possible.
 
 * GIF frame delay:
   Duration of one frame in the generated GIF animation.
@@ -87,7 +87,7 @@ The main page shows the last download time, HTTP status and text, response time,
 Snapshot management
 -----------
 
-The main page has a **Snapshots** button. This page lists cached `N.jpg` snapshots and `N.gif` animations, shows a preview, file size and modification time, and allows downloading or deleting individual files. If a requested cached file does not exist yet, the preview uses the normal station fallback image and downloads show a clear notice instead of an empty `none` response. The **Delete cached images** action removes all cached snapshots, GIF files and GIF frame folders.
+The main page has a **Snapshots** button. This page lists cached `N.jpg` snapshots and `N.gif` animations, shows a preview, file size and modification time, and allows downloading or deleting individual files. The page only shows real IP Cam cached files. If a requested cached file does not exist yet, downloads show a clear notice instead of an empty `none` response. The **Delete cached images** action removes all cached snapshots, GIF files and GIF frame folders.
 
 Troubleshooting
 -----------

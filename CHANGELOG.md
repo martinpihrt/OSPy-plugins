@@ -2,6 +2,9 @@
 
 July 06 2026
 -----------
+martinpihrt - IP Cam<br/>
+Fixed IP Cam snapshot management so missing cached files no longer preview normal station fallback images, and oversized downloaded JPEG snapshots are resized before saving when possible so `N.jpg` cache files can still be created for the Snapshots page and OSPy home images.
+
 martinpihrt - LCD Display<br/>
 Added a Wind Speed display switch that shows current and maximum wind speed from Wind Speed Monitor, and re-initializes the HD44780/PCF8574 LCD at the start of each display cycle without re-scanning the I2C address to recover from corrupted characters during long operation.
 

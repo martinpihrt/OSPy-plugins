@@ -39,7 +39,7 @@ $var page: plugins
         <li>$_(u'Use JPEG image downloads stores the latest successful snapshot as N.jpg in the plug-in data folder.')</li>
         <li>$_(u'Use GIF image creating stores successful snapshots as frames and creates N.gif from the newest frames. Failed downloads are not copied as fake frames.')</li>
         <li>$_(u'Allow IP Cam images on home lets OSPy use cached camera images on the home page when the OSPy System option chooses IP Cam as station picture source.')</li>
-        <li>$_(u'HTTP timeout, maximum image size and SSL verification control how strict camera downloads are. Maximum image size also limits generated GIF animations when possible.')</li>
+        <li>$_(u'HTTP timeout, maximum image size and SSL verification control camera downloads. Oversized JPEG images are resized before saving when possible. Maximum image size also limits generated GIF animations when possible.')</li>
     </ul>
     <p><b>$_(u'Test buttons')</b></p>
     <ul>
@@ -48,7 +48,7 @@ $var page: plugins
         <li>$_(u'Test MJPEG opens the stream, reads the first available block and closes the connection. It does not save the stream.')</li>
     </ul>
     <p><b>$_(u'Snapshot management')</b></p>
-    <p>$_(u'The Snapshots page lists cached JPEG snapshots and GIF animations. From this page you can preview, download or delete each cached file. If the requested file does not exist yet, preview uses the station fallback image and download shows a clear notice instead of an empty response. Snapshot now saves the latest JPEG as N.jpg, where N is the station number.')</p>
+    <p>$_(u'The Snapshots page lists cached JPEG snapshots and GIF animations. From this page you can preview, download or delete each cached file. It only shows real IP Cam cached files, not normal station fallback images. If the requested file does not exist yet, download shows a clear notice instead of an empty response. Snapshot now saves the latest JPEG as N.jpg, where N is the station number.')</p>
     <p><b>$_(u'Home page images')</b></p>
     <p>$_(u'When OSPy is configured to show station pictures and the Station picture source is IP Cam JPG or IP Cam GIF, the core image endpoint reads cached IP Cam files. If the IP Cam plug-in is not installed or no cached file exists, OSPy falls back to the normal uploaded station image and then to the default no-image picture.')</p>
     <p><b>$_(u'HTTP status troubleshooting')</b></p>

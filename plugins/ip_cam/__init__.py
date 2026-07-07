@@ -201,7 +201,8 @@ def _fetch_camera(index, stream=False):
     url = _camera_url(index, stream)
     timeout = _safe_int(plugin_options['http_timeout'], 15, 1, 120)
     verify = bool(plugin_options['verify_ssl'])
-    max_bytes = _safe_int(plugin_options['max_image_kb'], 2048, 64, 10240) * 1024
+    max_bytes = _image_limit_bytes()
+    hard_limit = max(max_bytes * 8, 25 * 1024 * 1024)
     started = time.time()
     response = requests.get(url, stream=True, verify=verify, auth=_camera_auth(index), timeout=timeout)
     response_ms = int((time.time() - started) * 1000)
@@ -209,8 +210,10 @@ def _fetch_camera(index, stream=False):
     for chunk in response.iter_content(chunk_size=64 * 1024):
         if chunk:
             content += chunk
-            if len(content) > max_bytes:
+            if len(content) > hard_limit:
                 raise ValueError(_('Downloaded image is larger than configured maximum size.'))
+    if not stream:
+        content = _fit_image_to_limit(content, max_bytes)
     return response, content, response_ms
 
 
@@ -338,6 +341,38 @@ def _gif_frame_files(index):
 
 def _image_limit_bytes():
     return _safe_int(plugin_options['max_image_kb'], 2048, 64, 10240) * 1024
+
+
+def _save_jpeg_to_bytes(image, quality=85):
+    output = BytesIO()
+    image.save(output, format='JPEG', quality=quality, optimize=True)
+    return output.getvalue()
+
+
+def _fit_image_to_limit(content, max_bytes):
+    if len(content) <= max_bytes:
+        return content
+
+    with Image.open(BytesIO(content)) as image:
+        image = image.convert('RGB')
+
+        for quality in (90, 82, 74, 66, 58, 50):
+            resized = _save_jpeg_to_bytes(image, quality=quality)
+            if len(resized) <= max_bytes:
+                return resized
+
+        scale = 0.85
+        for _ in range(14):
+            width = max(1, int(image.size[0] * scale))
+            height = max(1, int(image.size[1] * scale))
+            resized_image = image.resize((width, height), Image.LANCZOS)
+            for quality in (82, 74, 66, 58, 50):
+                resized = _save_jpeg_to_bytes(resized_image, quality=quality)
+                if len(resized) <= max_bytes:
+                    return resized
+            scale *= 0.85
+
+    raise ValueError(_('Downloaded image is larger than configured maximum size.'))
 
 
 def _save_gif_frame(index, content):
@@ -850,7 +885,7 @@ class snapshots_page(ProtectedPage):
                 path = _camera_image_path(index, file_type)
                 if not os.path.isfile(path):
                     if preview:
-                        return _serve_image_file(_fallback_station_image(index + 1, thumbnail=True))
+                        raise web.notfound(_('Snapshot file is not available yet.'))
                     return self.core_render.notice(
                         plugin_url(snapshots_page),
                         _('Snapshot file is not available yet. Use Snapshot now or wait for a successful automatic camera download.')
