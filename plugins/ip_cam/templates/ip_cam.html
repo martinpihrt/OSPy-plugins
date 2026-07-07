@@ -98,7 +98,7 @@ $var page: plugins
                     jQuery(prefix + "last").text(valueOrDash(status.last_download));
                     jQuery(prefix + "http").text(formatHttp(status)).attr("title", valueOrDash(status.http_hint));
                     jQuery(prefix + "ms").text(valueOrDash(status.response_ms));
-                    jQuery(prefix + "size").text(status.size ? status.size + " B" : "-");
+                    jQuery(prefix + "size").text(status.size ? (parseFloat(status.size) / 1024).toFixed(1) + " KB" : "-");
                     jQuery(prefix + "resolution").text(valueOrDash(status.resolution));
                     jQuery(prefix + "gif").text(status.gif_frames || 0);
                     jQuery(prefix + "success").text(status.success || 0);
@@ -163,7 +163,7 @@ $var page: plugins
                             <td>$_('Image size'):</td>
                             <td id="camStatus${c+1}_size">
                                 $if status.get('size'):
-                                    ${status.get('size')} B
+                                    ${'%.1f' % (float(status.get('size')) / 1024.0)} KB
                                 $else:
                                     -
                             </td>

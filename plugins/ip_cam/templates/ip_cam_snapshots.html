@@ -50,7 +50,7 @@ $var page: plugins
                 <div class="snapshotCard">
                     <h3>$item['station'] - $item['type']</h3>
                     <div class="snapshotPreview">
-                        <img src="$plugins.plugin_url('ip_cam.snapshots_page')?preview=${item['index']}&type=${item['type'].lower()}" alt="" />
+                        <img src="$item['data_uri']" alt="" />
                     </div>
                     <p>
                         $_('File'): $item['filename']<br/>

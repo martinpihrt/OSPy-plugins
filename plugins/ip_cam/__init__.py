@@ -6,6 +6,7 @@ import time
 import datetime
 import traceback
 import os
+import base64
 from http import HTTPStatus
 from threading import Thread, Event, Lock
 from urllib.parse import urljoin, urlparse
@@ -311,6 +312,12 @@ def _snapshot_items():
                 _ensure_cached_gif_limit(index)
             path = _camera_image_path(index, image_type)
             if os.path.isfile(path):
+                content_type = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+                with open(path, 'rb') as image_file:
+                    data_uri = 'data:{};base64,{}'.format(
+                        content_type,
+                        base64.b64encode(image_file.read()).decode('ascii')
+                    )
                 items.append({
                     'index': index + 1,
                     'station': stations[index].name if index < len(stations.get()) else _('Camera') + ' {}'.format(index + 1),
@@ -318,6 +325,7 @@ def _snapshot_items():
                     'filename': os.path.basename(path),
                     'size': os.path.getsize(path),
                     'modified': datetime.datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S'),
+                    'data_uri': data_uri,
                 })
     return items
 
