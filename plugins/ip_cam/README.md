@@ -62,7 +62,7 @@ Plugin setup
   Timeout for camera HTTP requests.
 
 * Maximum image size:
-  Maximum JPEG image size downloaded from one camera.
+  Maximum JPEG image size downloaded from one camera. Generated GIF animations are resized to stay under this limit when possible.
 
 * GIF frame delay:
   Duration of one frame in the generated GIF animation.
@@ -87,7 +87,7 @@ The main page shows the last download time, HTTP status and text, response time,
 Snapshot management
 -----------
 
-The main page has a **Snapshots** button. This page lists cached `N.jpg` snapshots and `N.gif` animations, shows a preview, file size and modification time, and allows downloading or deleting individual files. The **Delete cached images** action removes all cached snapshots, GIF files and GIF frame folders.
+The main page has a **Snapshots** button. This page lists cached `N.jpg` snapshots and `N.gif` animations, shows a preview, file size and modification time, and allows downloading or deleting individual files. If a requested cached file does not exist yet, the preview uses the normal station fallback image and downloads show a clear notice instead of an empty `none` response. The **Delete cached images** action removes all cached snapshots, GIF files and GIF frame folders.
 
 Troubleshooting
 -----------
@@ -97,6 +97,7 @@ Troubleshooting
 * `404 Not Found` usually means the selected path is wrong for that camera model.
 * Timeout usually means wrong IP/port, blocked network access, HTTPS certificate problems or a camera that is slow to respond.
 * If GIF has fewer frames than expected, check whether every JPEG download succeeds. Only successful downloads are used as GIF frames.
+* If GIF files become too large for the OSPy home page, lower **Maximum image size** or **Number of frames in GIF**. The GIF generator resizes frames and the final animation to stay below the configured maximum size when possible. Existing oversized GIF files are regenerated from cached frames when they are used and frames are available.
 * If IP Cam JPG/GIF is selected as the OSPy home page image source and the plug-in is not installed or no cached image exists, OSPy falls back to the uploaded station image and then to the default no-image picture.
 
 The MJPEG stream is proxied through OSPy so the camera username and password are not embedded in the browser image URL.

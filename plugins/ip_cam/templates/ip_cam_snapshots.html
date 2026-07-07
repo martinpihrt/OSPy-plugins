@@ -54,7 +54,7 @@ $var page: plugins
                     </div>
                     <p>
                         $_('File'): $item['filename']<br/>
-                        $_('Size'): $item['size'] B<br/>
+                        $_('Size'): ${'%.1f' % (float(item['size']) / 1024.0)} KB<br/>
                         $_('Last download'): $item['modified']
                     </p>
                     <div class="snapshotActions">

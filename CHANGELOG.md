@@ -3,6 +3,9 @@
 July 06 2026
 -----------
 martinpihrt - IP Cam<br/>
+Fixed IP Cam snapshot responses so missing cached JPG/GIF files no longer render as blank previews or a `none` download response, added colored camera setup headers for configured/missing cameras, added a local Submit button beside camera test actions, and changed GIF creation to normalize frames, resize the final animation according to Maximum image size when possible, and regenerate existing oversized GIF files from cached frames when available.
+
+martinpihrt - IP Cam<br/>
 Fixed IP Cam setup safety and snapshot handling: setup rendering no longer resets all configured cameras after a template error, camera tests in setup now submit and save the current form before testing and stay on the setup page, and snapshot previews use a separate preview response while downloads keep attachment headers.
 
 martinpihrt - IP Cam<br/>

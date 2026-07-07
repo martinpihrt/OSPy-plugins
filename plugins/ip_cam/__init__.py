@@ -290,10 +290,22 @@ def _camera_image_path(index, image_type):
     return os.path.join(plugin_data_dir(), '{}.{}'.format(index + 1, image_type))
 
 
+def _ensure_cached_gif_limit(index):
+    path = _camera_image_path(index, 'gif')
+    if os.path.isfile(path) and os.path.getsize(path) > _image_limit_bytes() and len(_gif_frame_files(index)) >= 2:
+        try:
+            _create_gif(index)
+        except Exception:
+            log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
+    return path
+
+
 def _snapshot_items():
     items = []
     for index in range(0, options.output_count):
         for image_type in ('jpg', 'gif'):
+            if image_type == 'gif':
+                _ensure_cached_gif_limit(index)
             path = _camera_image_path(index, image_type)
             if os.path.isfile(path):
                 items.append({
@@ -324,6 +336,10 @@ def _gif_frame_files(index):
     return sorted(files, key=lambda item: os.path.getmtime(item))
 
 
+def _image_limit_bytes():
+    return _safe_int(plugin_options['max_image_kb'], 2048, 64, 10240) * 1024
+
+
 def _save_gif_frame(index, content):
     frame_dir = _gif_dir(index)
     helpers.mkdir_p(frame_dir)
@@ -341,27 +357,69 @@ def _save_gif_frame(index, content):
     return frame_path
 
 
+def _open_gif_frame(frame_file, target_size=None):
+    with Image.open(frame_file) as image:
+        frame = image.convert("RGB")
+        if target_size and frame.size != target_size:
+            frame = frame.resize(target_size, Image.LANCZOS)
+        return frame
+
+
+def _build_gif_bytes(frame_files, scale=1.0):
+    if not frame_files:
+        return b'', 0
+
+    first = _open_gif_frame(frame_files[0])
+    width = max(1, int(first.size[0] * scale))
+    height = max(1, int(first.size[1] * scale))
+    target_size = (width, height)
+
+    frames = []
+    for frame_file in frame_files:
+        frame = _open_gif_frame(frame_file, target_size)
+        frames.append(frame.convert("P", palette=Image.ADAPTIVE))
+
+    output = BytesIO()
+    frames[0].save(
+        output,
+        format='GIF',
+        save_all=True,
+        optimize=True,
+        append_images=frames[1:],
+        duration=_safe_int(plugin_options['gif_duration'], 250, 50, 5000),
+        loop=0,
+        disposal=2
+    )
+    return output.getvalue(), len(frames)
+
+
 def _create_gif(index):
     frame_files = _gif_frame_files(index)
     if len(frame_files) < 2:
         _set_camera_status(index, gif_frames=len(frame_files))
         return False
 
-    frames = []
-    for frame_file in frame_files:
-        with Image.open(frame_file) as image:
-            frames.append(image.convert("P", palette=Image.ADAPTIVE))
+    max_bytes = _image_limit_bytes()
+    gif_data = b''
+    frame_count = 0
+    scale = 1.0
+    for _ in range(12):
+        gif_data, frame_count = _build_gif_bytes(frame_files, scale)
+        if len(gif_data) <= max_bytes:
+            break
+        scale *= 0.82
+
+    if not gif_data:
+        _set_camera_status(index, gif_frames=len(frame_files), error=_('Could not create GIF.'))
+        return False
 
     gif_path = os.path.join(plugin_data_dir(), '{}.gif'.format(index + 1))
-    frames[0].save(
-        gif_path,
-        save_all=True,
-        optimize=False,
-        append_images=frames[1:],
-        duration=_safe_int(plugin_options['gif_duration'], 250, 50, 5000),
-        loop=0
-    )
-    _set_camera_status(index, gif_frames=len(frames))
+    with open(gif_path, 'wb') as fh:
+        fh.write(gif_data)
+    values = {'gif_frames': frame_count}
+    if len(gif_data) > max_bytes:
+        values['error'] = _('Generated GIF is still larger than configured maximum size.')
+    _set_camera_status(index, **values)
     return True
 
 
@@ -372,6 +430,20 @@ def _fallback_station_image(cam_nr, thumbnail=True):
         return station_path
     default_name = 'no_image_thumbnail.png' if thumbnail else 'no_image.png'
     return safe_image_path(default_name)
+
+
+def _serve_image_file(path, attachment=False):
+    if not path or not os.path.isfile(path):
+        return None
+    content = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+    web.header('Content-type', content)
+    web.header('Content-Length', os.path.getsize(path))
+    if attachment:
+        web.header('Content-Disposition', 'attachment; filename={}'.format(os.path.basename(path)))
+    else:
+        web.header('Cache-Control', 'no-store')
+    with open(path, 'rb') as fh:
+        return fh.read()
 
 
 def _delete_cache():
@@ -569,14 +641,7 @@ class image_page(ProtectedPage):
             if cam_nr < 1 or cam_nr > options.output_count:
                 raise ValueError(_('Unknown camera.'))
             download_name = os.path.join(plugin_data_dir(), '{}.jpg'.format(cam_nr))
-            if not os.path.isfile(download_name):
-                return None
-            content = mimetypes.guess_type(download_name)[0] or 'image/jpeg'
-            web.header('Content-type', content)
-            web.header('Content-Length', os.path.getsize(download_name))
-            web.header('Cache-Control', 'no-store')
-            with open(download_name, 'rb') as img:
-                return img.read()
+            return _serve_image_file(download_name)
         except:
             log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
             return None
@@ -597,22 +662,14 @@ class home_image_page(ProtectedPage):
             download_name = ''
             if plugin_options['show_on_home'] and plugin_options['enabled'][index]:
                 if image_type == 'gif':
-                    download_name = os.path.join(plugin_data_dir(), '{}.gif'.format(cam_nr))
+                    download_name = _ensure_cached_gif_limit(index)
                 else:
                     download_name = os.path.join(plugin_data_dir(), '{}.jpg'.format(cam_nr))
 
             if not download_name or not os.path.isfile(download_name):
                 download_name = _fallback_station_image(cam_nr, thumbnail=True)
 
-            if not download_name or not os.path.isfile(download_name):
-                return None
-
-            content = mimetypes.guess_type(download_name)[0] or 'image/jpeg'
-            web.header('Content-type', content)
-            web.header('Content-Length', os.path.getsize(download_name))
-            web.header('Cache-Control', 'no-store')
-            with open(download_name, 'rb') as img:
-                return img.read()
+            return _serve_image_file(download_name)
         except:
             log.error(NAME, _('IP Cam plug-in') + ':\n' + traceback.format_exc())
             return None
@@ -778,6 +835,8 @@ class snapshots_page(ProtectedPage):
                 index = int(delete) - 1
                 if index < 0 or index >= options.output_count:
                     raise ValueError(_('Unknown camera.'))
+                if file_type == 'gif':
+                    _ensure_cached_gif_limit(index)
                 path = _camera_image_path(index, file_type)
                 if os.path.isfile(path):
                     os.remove(path)
@@ -790,16 +849,13 @@ class snapshots_page(ProtectedPage):
                     raise ValueError(_('Unknown camera.'))
                 path = _camera_image_path(index, file_type)
                 if not os.path.isfile(path):
-                    return None
-                content = mimetypes.guess_type(path)[0] or 'application/octet-stream'
-                web.header('Content-type', content)
-                web.header('Content-Length', os.path.getsize(path))
-                if preview:
-                    web.header('Cache-Control', 'no-store')
-                else:
-                    web.header('Content-Disposition', 'attachment; filename={}'.format(os.path.basename(path)))
-                with open(path, 'rb') as fh:
-                    return fh.read()
+                    if preview:
+                        return _serve_image_file(_fallback_station_image(index + 1, thumbnail=True))
+                    return self.core_render.notice(
+                        plugin_url(snapshots_page),
+                        _('Snapshot file is not available yet. Use Snapshot now or wait for a successful automatic camera download.')
+                    )
+                return _serve_image_file(path, attachment=bool(download))
 
             return self.plugin_render.ip_cam_snapshots(plugin_options, _snapshot_items())
         except web.HTTPError:

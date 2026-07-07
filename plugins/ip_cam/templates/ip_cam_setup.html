@@ -67,6 +67,16 @@ input:checked + .slider:before {
     padding: 8px;
 }
 
+.cameraSetupPanel.configured h4 {
+    background: #e9f7e9;
+    border-color: #9ac79a;
+}
+
+.cameraSetupPanel.missing h4 {
+    background: #fdeaea;
+    border-color: #dfa3a3;
+}
+
 .cameraSetupBody {
     border: 1px solid #cccccc;
     border-top: 0;
@@ -122,6 +132,12 @@ input:checked + .slider:before {
     function submitCameraAction(index, action) {
         jQuery("#selected_camera").val(parseInt(index, 10) + 1);
         jQuery("#form_action").val(action);
+        jQuery("#pluginForm").submit();
+    }
+
+    function saveCamera(index) {
+        jQuery("#selected_camera").val(parseInt(index, 10) + 1);
+        jQuery("#form_action").val("");
         jQuery("#pluginForm").submit();
     }
 
@@ -219,7 +235,7 @@ input:checked + .slider:before {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Maximum image size'):</td>
-                <td title=$:{json.dumps(_(u'Maximum JPEG image size downloaded from one camera.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'Maximum JPEG image size downloaded from one camera. Generated GIF animations are resized to stay under this limit when possible.'), ensure_ascii=False)}>
                 <input name='max_image_kb' type='number' min="64" max="10240" value="$plugin_options['max_image_kb']"> KB</td>
             </tr>
             <tr>
@@ -237,13 +253,14 @@ input:checked + .slider:before {
             </tr>
         </table>
         $for c in range(0, options.output_count):
-            <div class="cameraSetupPanel ${'expanded' if c == selected_camera else 'collapsed'}" id="cameraPanel${c}">
+            <div class="cameraSetupPanel ${'expanded' if c == selected_camera else 'collapsed'} ${'configured' if plugin_options['enabled'][c] and plugin_options['jpg_ip'][c] and plugin_options['jpg_que'][c] else 'missing'}" id="cameraPanel${c}">
                 <h4>$_('Camera') ${c+1}: $stations[c].name</h4>
                 <div class="cameraSetupBody">
                 <div class="cameraTestActions">
                     <button type="button" onclick="submitCameraAction(${c}, 'snapshot')" class="download">$_('Snapshot now')</button>
                     <button type="button" onclick="submitCameraAction(${c}, 'test_jpeg')" class="upload">$_('Test JPEG')</button>
                     <button type="button" onclick="submitCameraAction(${c}, 'test_mjpeg')" class="upload">$_('Test MJPEG')</button>
+                    <button type="button" onclick="saveCamera(${c})" class="submit"><b>$_('Submit')</b></button>
                 </div>
                 <table class="optionList">
                     <tr>
