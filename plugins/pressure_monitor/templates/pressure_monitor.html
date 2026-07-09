@@ -250,7 +250,7 @@ function updatePress(){
     jQuery.getJSON("/plugins/pressure_monitor/press_json", function(_data) {
         jQuery("#press span.press").text(_data.press);
     })
-    setTimeout(updatePress, 1000); // 1 second
+    setTimeout(updatePress, 5000);
 }
 
 // Initialize behaviors

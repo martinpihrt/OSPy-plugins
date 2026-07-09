@@ -30,6 +30,10 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 NAME = 'Pressure Monitor'
 MENU =  _('Package: Pressure Monitor')
 LINK = 'settings_page'
+MAIN_LOOP_SLEEP = 2
+PRESS_STATUS_POLL_MS = 5000
+COUNTDOWN_LOG_INTERVAL = 10
+ERROR_LOG_THROTTLE = 300
 
 pressure_options = PluginOptions(
     NAME,
@@ -54,6 +58,15 @@ pressure_options = PluginOptions(
 
 global master
 master = False
+_last_error_log = {}
+
+
+def log_pressure_problem(key, message):
+    now = time.time()
+    last = _last_error_log.get(key, 0)
+    if now - last >= ERROR_LOG_THROTTLE:
+        _last_error_log[key] = now
+        log.error(NAME, message)
 
 ################################################################################
 # GPIO input pullup:                                                           #
@@ -116,6 +129,7 @@ class PressureSender(Thread):
         last_msg = ""
         now_msg = ""
         tempText = ""
+        last_countdown_log = 0
 
         press_mon = None
 
@@ -136,8 +150,10 @@ class PressureSender(Thread):
                                     last_msg = 1
                             actual_time = int(time.time())
                             count_val = int(pressure_options['time'])
-                            log.info(NAME, _('Time to test pressure sensor') + ': ' + str(
-                                count_val - (actual_time - last_time)) + ' ' + _('sec') + '.')
+                            if actual_time - last_countdown_log >= COUNTDOWN_LOG_INTERVAL:
+                                last_countdown_log = actual_time
+                                log.info(NAME, _('Time to test pressure sensor') + ': ' + str(
+                                    max(0, count_val - (actual_time - last_time))) + ' ' + _('sec') + '.')
                             if actual_time - last_time > int(pressure_options['time']):# wait for activated pressure sensor (time delay)
                                 last_time = actual_time
                                 if get_check_pressure():                               # if pressure sensor is actual on
@@ -173,7 +189,7 @@ class PressureSender(Thread):
                             send = False
                         except Exception:
                             log.info(NAME, _('E-mail not send! The Email Notifications plug-in is not found in OSPy or not correctly setuped.'))
-                            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+                            log_pressure_problem('send_email', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
                             send = False
                             self._sleep(5)
                             pass
@@ -195,10 +211,10 @@ class PressureSender(Thread):
                         if press_mon is not None:
                             press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
 
-                self._sleep(2)
+                self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
-                log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+                log_pressure_problem('run_loop', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
                 self._sleep(60)
 
 
@@ -235,8 +251,8 @@ def get_check_pressure():
                 press = 0
         return press
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
-        pass
+        log_pressure_problem('gpio_read', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+        return 1
 
 
 ### master 1 on ###
@@ -249,7 +265,7 @@ def notify_master_on(name, **kw):
             update_log(2)
         master = True
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('master_on', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 ### master 1 off ###
 def notify_master_off(name, **kw):
@@ -258,7 +274,7 @@ def notify_master_off(name, **kw):
         master = False
         log.info(NAME, datetime_string() + ' ' + _('Master station 1 is OFF.'))
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('master_off', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 ### master 2 on ###
 def notify_master_two_on(name, **kw):
@@ -270,7 +286,7 @@ def notify_master_two_on(name, **kw):
             update_log(2)
         master = True
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('master_two_on', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 ### master 2 off ###
 def notify_master_two_off(name, **kw):
@@ -279,7 +295,7 @@ def notify_master_two_off(name, **kw):
         master = False
         log.info(NAME, datetime_string() + ' ' + _('Master station 2 is OFF.'))
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('master_two_off', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 ### all stations off ###
 def notify_station_clear(name, **kw):
@@ -288,7 +304,7 @@ def notify_station_clear(name, **kw):
         master = False
         log.info(NAME, datetime_string() + ' ' + _('All stations set to OFF.'))
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('station_clear', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def set_stations_in_scheduler_off():
     """Stoping selected station in scheduler."""
@@ -305,9 +321,16 @@ def set_stations_in_scheduler_off():
     ending = False
 
     # active stations
+    used_station_ids = []
+    for used_station in pressure_options['used_stations']:
+        try:
+            used_station_ids.append(int(used_station))
+        except Exception:
+            pass
+
     for entry in active:
-        for used_stations in pressure_options['used_stations']: # selected stations for stoping
-            if entry['station'] == used_stations:               # is this station in selected stations? 
+        for used_stations in used_station_ids:                  # selected stations for stoping
+            if entry['station'] == used_stations:               # is this station in selected stations?
                 log.finish_run(entry)                           # save end in log 
                 stations.deactivate(entry['station'])           # stations to OFF
                 ending = True   
@@ -343,7 +366,7 @@ def read_sql_log():
         sql = "SELECT * FROM pressmonitor ORDER BY id DESC"
         data = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,ds1,ds2,ds3,ds4,ds5,ds6,dhttemp,dhthumi,dhtstate
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('read_sql_log', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         pass
 
     return data
@@ -372,7 +395,7 @@ def read_graph_sql_log():
         data = graph_data
 
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('read_graph_sql_log', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         pass
 
     return data
@@ -384,7 +407,7 @@ def write_log(json_data):
         with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
             json.dump(json_data, outfile)
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('write_log', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def write_graph_log(json_data):
     """Write data to graph json file."""
@@ -392,7 +415,7 @@ def write_graph_log(json_data):
         with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
             json.dump(json_data, outfile)
     except:
-        log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+        log_pressure_problem('write_graph_log', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def update_log(status):
     """Update data in json files."""
@@ -447,7 +470,7 @@ def update_log(status):
             execute_db(sql, test=False, commit=True)  # yes commit inserted data
             log.info(NAME, _('Saving to SQL database.'))
         except:
-            log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
+            log_pressure_problem('update_sql_log', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
             pass
 
 def create_default_graph():
@@ -502,7 +525,8 @@ class settings_page(ProtectedPage):
                 except:
                     log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
 
-            return self.plugin_render.pressure_monitor(pressure_options, pressure_sender.status, log.events(NAME))
+            status = pressure_sender.status if pressure_sender is not None else {}
+            return self.plugin_render.pressure_monitor(pressure_options, status, log.events(NAME))
 
         except:
             log.error(NAME, _('Pressure monitor plug-in') + ':\n' + traceback.format_exc())
