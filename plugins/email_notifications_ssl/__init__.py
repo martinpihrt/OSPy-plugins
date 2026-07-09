@@ -37,6 +37,11 @@ from blinker import signal
 NAME = 'E-mail Notifications SSL'
 MENU =  _('Package: E-mail Notifications SSL')
 LINK = 'settings_page'
+SMTP_TIMEOUT = 10
+QUEUE_RETRY_INTERVAL = 10000
+QUEUE_FAILURE_INTERVAL = 60000
+QUEUE_FAILURE_INTERVAL_MAX = 300000
+MAIN_LOOP_SLEEP = 5
 
 email_options = PluginOptions(
     NAME,
@@ -110,8 +115,9 @@ class EmailSender(Thread):
             randint(3, 10)
         )  # Sleep some time to prevent printing before startup information 
 
-        send_interval = 10000 # default time for sending between e-mails (ms)
+        send_interval = QUEUE_RETRY_INTERVAL # default time for sending between e-mails (ms)
         last_millis   = 0     # timer for repeating sending e-mails (ms)
+        queue_failures = 0
         body    = ''
         logtext = ''
         finished_count = len([run for run in log.finished_runs() if not run['blocked']])
@@ -616,8 +622,9 @@ class EmailSender(Thread):
                                     sendtext = '%s' % saved_emails[0]["text"]
                                     sendsubject = '%s' % (saved_emails[0]["subject"] + '-' + _('sending from queue.'))
                                     sendattachment = '%s' % saved_emails[0]["attachment"]
-                                    email(sendtext, sendsubject, sendattachment) # send e-mail  
-                                    send_interval = 10000               # repetition of 10 seconds
+                                    email(sendtext, sendsubject, sendattachment) # send e-mail
+                                    queue_failures = 0
+                                    send_interval = QUEUE_RETRY_INTERVAL
                                     del saved_emails[0]                 # delete sent email in file
                                     write_email(saved_emails)           # save to file after deleting an item
                                     if len(saved_emails) == 0:
@@ -626,11 +633,13 @@ class EmailSender(Thread):
 
                                 except Exception:
                                     #print traceback.format_exc()
-                                    send_interval = 60000               # repetition of 60 seconds
+                                    queue_failures += 1
+                                    send_interval = min(QUEUE_FAILURE_INTERVAL_MAX, QUEUE_FAILURE_INTERVAL * queue_failures)
+                                    log.info(NAME, _('E-mail queue send failed. Next retry later.'))
                     except:
                         log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
 
-                self._sleep(2)
+                self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
                 log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
@@ -791,7 +800,7 @@ def email(text, subject=None, attach=None):
                 msg.attach(part)
             # Create a secure SSL context
             context = ssl.create_default_context()
-            with smtplib.SMTP_SSL(SMTP_server, SMTP_port, context=context) as server:
+            with smtplib.SMTP_SSL(SMTP_server, SMTP_port, timeout=SMTP_TIMEOUT, context=context) as server:
                 server.login(mail_from, SMTP_pwd)
                 server.sendmail(mail_from, recipients_list, msg.as_string())
     else:
