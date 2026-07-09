@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Weather-based Water Level<br/>
+Hardened Weather-based Water Level settings normalization. Water level min/max, history/forecast day counts, freeze protection temperature/minutes, station list, and month list are now clamped before calculations and after saving settings so web form values cannot break the hourly calculation loop.
+
 (Martin Pihrt) - Weather-based Rain Delay<br/>
 Hardened Weather-based Rain Delay and Netatmo handling. Netatmo credentials are now read from current settings instead of stale import-time defaults, Netatmo secret/password are masked in settings JSON, delay/Netatmo intervals are clamped before use, repeated runtime/API errors are throttled, empty Netatmo measure responses are handled safely, and footer text no longer depends on precipitation data always being present.
 

@@ -158,6 +158,7 @@ class WeatherLevelChecker(Thread):
         disabled_logged = False
         while not self._stop_event.is_set():
             try:
+                normalize_options()
                 if plugin_options['enabled']:
                     disabled_logged = False
                     now = time.time()
@@ -370,6 +371,31 @@ def log_weather_problem(message):
         log.error(NAME, message)
 
 
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_options():
+    plugin_options['wl_min'] = max(0, min(200, safe_int(plugin_options.get('wl_min', 0), 0)))
+    plugin_options['wl_max'] = max(plugin_options['wl_min'], min(200, safe_int(plugin_options.get('wl_max', 200), 200)))
+    plugin_options['days_history'] = max(0, min(14, safe_int(plugin_options.get('days_history', 3), 3)))
+    plugin_options['days_forecast'] = max(0, min(14, safe_int(plugin_options.get('days_forecast', 3), 3)))
+    plugin_options['protect_temp'] = safe_float(plugin_options.get('protect_temp', 2.0), 2.0)
+    plugin_options['protect_minutes'] = max(1, min(240, safe_int(plugin_options.get('protect_minutes', 10), 10)))
+    plugin_options['protect_stations'] = [safe_int(station, -1) for station in plugin_options.get('protect_stations', []) if safe_int(station, -1) >= 0]
+    plugin_options['protect_months'] = [safe_int(month, -1) for month in plugin_options.get('protect_months', []) if 1 <= safe_int(month, -1) <= 12]
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -377,12 +403,14 @@ class settings_page(ProtectedPage):
     """Load an html page for entering weather-based irrigation adjustments"""
 
     def GET(self):
+        normalize_options()
         return self.plugin_render.weather_based_water_level(plugin_options, log.events(NAME))
 
     def POST(self):
         qdict = web.input(**plugin_options)
         verify_csrf(qdict)
         plugin_options.web_update(qdict)
+        normalize_options()
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)
