@@ -26,6 +26,10 @@ from . import speedtest as st          # https://github.com/sivel/speedtest-cli
 NAME = 'Speed Monitor'
 MENU =  _(u'Package: Internet Speed Monitor')
 LINK = 'settings_page'
+ERROR_LOG_THROTTLE = 300
+MIN_TEST_INTERVAL = 1
+MIN_LOG_INTERVAL = 1
+MAX_LOG_RECORDS = 100000
 
 speed_options = PluginOptions(
     NAME,
@@ -56,6 +60,7 @@ class Sender(Thread):
         self.status['down'] = 0
         self.status['up'] = 0
         self.status['ping'] = 0        
+        self._last_error_log = 0
 
         self._sleep_time = 0
         self.start()
@@ -71,6 +76,12 @@ class Sender(Thread):
         while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
+
+    def log_problem(self):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, _('Speed Monitor plug-in') + ':\n' + traceback.format_exc())
+            self._last_error_log = now
 
     def run(self):
         last_millis = 0              # timer for save log
@@ -97,6 +108,7 @@ class Sender(Thread):
 
         while not self._stop_event.is_set():
             try:
+                normalize_options(speed_options)
                 if speed_options['use_monitor']:
                     millis = int(round(time.time() * 1000))
                     test_interval = (speed_options['test_interval'] * 60000)
@@ -104,14 +116,14 @@ class Sender(Thread):
                         last_test_millis = millis
                         try:
                             new_speeds = get_new_speeds()
-                            tempText = _('Ping {} ms, Download {} Mb/s, Upload {} Mb/s').format(self.status['ping'], self.status['down'], self.status['up'])
                         except:
                             new_speeds = 0,0,0
                             tempText = _('Cannot be loaded')
-                            pass    
                         self.status['ping'] = new_speeds[0] # Ping (ms)
                         self.status['down'] = new_speeds[1] # Download (Mb/s)
                         self.status['up'] = new_speeds[2]   # Upload (Mb/s)
+                        if new_speeds != (0, 0, 0):
+                            tempText = _('Ping {} ms, Download {} Mb/s, Upload {} Mb/s').format(self.status['ping'], self.status['down'], self.status['up'])
                         footText = tempText + ' (' + datetime_string() + ' )'
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + '\n' + tempText)
@@ -129,8 +141,7 @@ class Sender(Thread):
                 self._sleep(1)
 
             except Exception:
-                log.clear(NAME)
-                log.error(NAME, _('Speed Monitor plug-in') + ':\n' + traceback.format_exc())
+                self.log_problem()
                 self._sleep(60)
 
 sender = None
@@ -169,6 +180,21 @@ def get_new_speeds():
     return (ping, download_mbs, upload_mbs)
 
 
+def normalize_options(values):
+    values['test_interval'] = max(MIN_TEST_INTERVAL, to_int(values.get('test_interval'), MIN_TEST_INTERVAL))
+    values['log_interval'] = max(MIN_LOG_INTERVAL, to_int(values.get('log_interval'), MIN_LOG_INTERVAL))
+    values['log_records'] = max(0, min(MAX_LOG_RECORDS, to_int(values.get('log_records'), 0)))
+    values['history'] = max(0, min(4, to_int(values.get('history'), 0)))
+    return values
+
+
+def to_int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def read_log():
     """Read log data from json file."""
 
@@ -176,6 +202,8 @@ def read_log():
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             return json.load(logf)
     except IOError:
+        return []
+    except ValueError:
         return []
 
 
@@ -186,6 +214,8 @@ def read_graph_log():
         with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
             return json.load(logf)
     except IOError:
+        return []
+    except ValueError:
         return []
 
 
@@ -304,15 +334,15 @@ class settings_page(ProtectedPage):
             try:
                 new_speeds = get_new_speeds()
                 sender._sleep(2)
-                tempText = _('Ping {} ms, Download {} Mb/s, Upload {} Mb/s').format(sender.status['ping'], sender.status['down'], sender.status['up'])
             except:
                 new_speeds = 0,0,0
                 tempText = _('Cannot be loaded')
                 log.error(NAME, _('Speed Monitor plug-in') + ':\n' + traceback.format_exc())
-                pass    
             sender.status['ping'] = new_speeds[0] # Ping (ms)
             sender.status['down'] = new_speeds[1] # Download (Mb/s)
             sender.status['up'] = new_speeds[2]   # Upload (Mb/s)
+            if new_speeds != (0, 0, 0):
+                tempText = _('Ping {} ms, Download {} Mb/s, Upload {} Mb/s').format(sender.status['ping'], sender.status['down'], sender.status['up'])
             log.info(NAME, datetime_string() + ' ' + _('Test button') + '\n' + tempText) 
             raise web.seeother(plugin_url(settings_page), True)
 
@@ -329,6 +359,7 @@ class settings_page(ProtectedPage):
     def POST(self):
         qdict = web.input(**speed_options)
         verify_csrf(qdict)
+        normalize_options(qdict)
         speed_options.web_update(qdict) #for save multiple select
 
         if sender is not None:
@@ -407,7 +438,7 @@ class graph_json(ProtectedPage):
                         temp_balances = {}
                         for key in json_data[i]['balances']:
                             try:
-                                find_key = int(key.encode('utf8'))
+                                find_key = int(key)
                             except:
                                 find_key = key
                             if find_key >= log_start and find_key <= log_end:
@@ -446,7 +477,7 @@ class graph_json(ProtectedPage):
                 temp_balances = {}
                 try:
                     for key in json_data[i]['balances']:
-                        find_key =  int(key.encode('utf8'))                        # key is in unicode ex: u'1601347000' -> find_key is int number
+                        find_key = int(key)
                         if find_key >= log_start:                                  # timestamp interval 
                             temp_balances[key] = json_data[i]['balances'][key]
                     data.append({ 'station': json_data[i]['station'], 'balances': temp_balances })

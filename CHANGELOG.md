@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Speed Monitor<br/>
+Reduced Speed Monitor error noise and hardened settings/log handling. Test and log intervals are clamped before use, repeated runtime errors are throttled, corrupted JSON log files return an empty data set instead of crashing the page, graph timestamp parsing was updated for Python 3, and the manual test button now logs the newly measured values instead of the previous status.
+
 (Martin Pihrt) - SMS Modem<br/>
 Hardened SMS Modem background handling. The plug-in no longer runs apt installs automatically from its polling thread; missing Gammu dependencies are reported with the fixed apt command instead. Repeated runtime/modem errors are throttled, Gammu config writes use a context manager and report failures cleanly, missing gammu waits longer before retrying, run-now SMS commands validate the program number before use, and settings saving no longer fails when the sender thread is not running.
 
