@@ -31,6 +31,8 @@ import urllib.parse, urllib.request
 NAME = 'Weather-based Water Level Netatmo'
 MENU =  _(u'Package: Weather-based Water Level Netatmo')
 LINK = 'settings_page'
+NETATMO_TIMEOUT = 10
+ERROR_LOG_THROTTLE = 900
 
 plugin_options = PluginOptions(
     NAME,
@@ -62,6 +64,7 @@ class WeatherLevelChecker(Thread):
         self._stop_event = Event()
 
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -76,11 +79,18 @@ class WeatherLevelChecker(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
+
     def run(self):
         weather.add_callback(self.update)
         self._sleep(10)  # Wait for weather callback before starting        
         while not self._stop_event.is_set():
             try:
+                normalize_options()
                 log.clear(NAME)
                 if plugin_options['enabled']:
                     log.debug(NAME, _(u'Checking weather status') + '...')
@@ -92,13 +102,10 @@ class WeatherLevelChecker(Thread):
                         begin = now - (plugin_options['days_history']) * 24 * 3600
                         mac2 = plugin_options['netatmomac']
                         rainmac2 = plugin_options['netatmorain']
-                        resp =  (devList.getMeasure (mac2, '1hour', 'sum_rain', rainmac2, date_begin=begin, date_end=now, limit=None, optimize=False) )
-                        result = [(time.ctime(int(k)),v[0]) for k,v in resp['body'].items()]
+                        resp = devList.getMeasure(mac2, '1hour', 'sum_rain', rainmac2, date_begin=begin, date_end=now, limit=None, optimize=False)
+                        result = [(time.ctime(int(k)), v[0]) for k, v in resp.get('body', {}).items()]
                         result.sort()
-                        xdate, xrain = zip(*result)
-                        zrain = 0
-                        for yrain in xrain:
-                            zrain = zrain + yrain
+                        zrain = sum([yrain for _xdate, yrain in result])
                     else:
                         zrain = 0
 
@@ -107,7 +114,7 @@ class WeatherLevelChecker(Thread):
                     total_info = {'rain_mm': 0.0}
                     for day in range(-plugin_options['days_history'], plugin_options['days_forecast']+1):
                         check_date = datetime.date.today() + datetime.timedelta(days=day)
-                        hourly_data = weather.get_hourly_data(check_date)
+                        hourly_data = weather.get_hourly_data(check_date) or []
                         if hourly_data:
                             days += 1
                         info += hourly_data
@@ -115,6 +122,13 @@ class WeatherLevelChecker(Thread):
                         total_info['rain_mm'] += weather.get_rain(check_date)
 
                     log.info(NAME, _(u'Using') + ' %d ' % days + _(u'days of information.'))
+
+                    if not info or days < 1:
+                        if NAME in level_adjustments:
+                            del level_adjustments[NAME]
+                        log.info(NAME, _(u'No usable weather information is available yet.'))
+                        self._sleep(3600)
+                        continue
 
                     total_info.update({
                         'temp_c': sum([val['temperature'] for val in info]) / len(info),
@@ -169,7 +183,7 @@ class WeatherLevelChecker(Thread):
                     self._sleep(24*3600)
 
             except Exception:
-                log.error(NAME, _(u'Weather-based water level plug-in') + ':\n' + traceback.format_exc())
+                self._log_problem(_(u'Weather-based water level plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(3600)
         weather.remove_callback(self.update)
 
@@ -193,6 +207,29 @@ def stop():
         del level_adjustments[NAME]
 
 
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_options():
+    plugin_options['wl_min'] = max(0, min(200, safe_int(plugin_options.get('wl_min', 0), 0)))
+    plugin_options['wl_max'] = max(plugin_options['wl_min'], min(200, safe_int(plugin_options.get('wl_max', 200), 200)))
+    plugin_options['days_history'] = max(0, min(14, safe_int(plugin_options.get('days_history', 3), 3)))
+    plugin_options['days_forecast'] = max(0, min(14, safe_int(plugin_options.get('days_forecast', 3), 3)))
+    plugin_options['netatmo_days'] = max(1, min(30, safe_int(plugin_options.get('netatmo_days', 3), 3)))
+    plugin_options['netatmo_level'] = max(0.1, min(1000, safe_float(plugin_options.get('netatmo_level', 4), 4)))
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -200,12 +237,14 @@ class settings_page(ProtectedPage):
     """Load an html page for entering weather-based irrigation adjustments"""
 
     def GET(self):
+        normalize_options()
         return self.plugin_render.weather_based_water_level_netatmo(plugin_options, log.events(NAME))
 
     def POST(self):
         qdict = web.input()
         verify_csrf(qdict)
         plugin_options.web_update(qdict)
+        normalize_options()
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)
@@ -224,7 +263,10 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        return json.dumps(plugin_options)
+        data = dict(plugin_options)
+        data['netatmo_secret'] = ''
+        data['netatmo_pass'] = ''
+        return json.dumps(data)
 
 
 #########################################################################
@@ -267,11 +309,15 @@ class ClientAuth:
             Several value can be used at the same time, ie: 'read_station read_camera'
     """
 
-    def __init__(self, clientId=_CLIENT_ID,
-                       clientSecret=_CLIENT_SECRET,
-                       username=_USERNAME,
-                       password=_PASSWORD,
+    def __init__(self, clientId=None,
+                       clientSecret=None,
+                       username=None,
+                       password=None,
                        scope="read_station"):
+        clientId = plugin_options['netatmo_id'] if clientId is None else clientId
+        clientSecret = plugin_options['netatmo_secret'] if clientSecret is None else clientSecret
+        username = plugin_options['netatmo_user'] if username is None else username
+        password = plugin_options['netatmo_pass'] if password is None else password
         postParams = {
                 "grant_type" : "password",
                 "client_id" : clientId,
@@ -479,7 +525,7 @@ def postRequest(url, params, json_resp=True, body_size=65535):
     req = urllib.request.Request(url)
     req.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
     params = urllib.parse.urlencode(params).encode('utf-8')
-    resp = urllib.request.urlopen(req, params, timeout=10).read(body_size).decode("utf-8")
+    resp = urllib.request.urlopen(req, params, timeout=NETATMO_TIMEOUT).read(body_size).decode("utf-8")
                 
     if json_resp:
         return json.loads(resp)

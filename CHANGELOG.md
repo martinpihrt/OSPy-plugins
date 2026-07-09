@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Weather-based Water Level Netatmo<br/>
+Hardened Weather-based Water Level Netatmo. Netatmo credentials are now read from current settings instead of stale import-time defaults, Netatmo secret/password are masked in settings JSON, water level/weather/Netatmo numeric settings are clamped before use, empty weather or Netatmo measure data no longer causes division/unpack errors, and repeated runtime/API errors are throttled.
+
 (Martin Pihrt) - Weather-based Water Level<br/>
 Hardened Weather-based Water Level settings normalization. Water level min/max, history/forecast day counts, freeze protection temperature/minutes, station list, and month list are now clamped before calculations and after saving settings so web form values cannot break the hourly calculation loop.
 
