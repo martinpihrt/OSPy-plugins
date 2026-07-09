@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Voltage and Temperature Monitor<br/>
+Hardened Voltage and Temperature Monitor I2C handling. PCF8591 access now uses low-priority guarded I2C transactions with a short timeout, the ADC bus is reopened after failures instead of staying disabled, repeated runtime/I2C errors are throttled, numeric settings are clamped before use, corrupted local JSON logs return empty data, and the settings page can render even when the background thread is not running.
+
 (Martin Pihrt) - Voice Station<br/>
 Hardened Voice Station audio playback and file handling. External audio/conversion commands now have timeouts, repeated runtime errors are throttled, ON/OFF station sound indexes and time/volume settings are clamped before use, damaged song queue JSON returns an empty queue, queue length is bounded, sound uploads strip path components and enforce mp3/wav plus a maximum file size, and delete/test actions validate selected indexes.
 

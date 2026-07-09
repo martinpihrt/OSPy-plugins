@@ -21,6 +21,9 @@ from ospy.i2c_guard import i2c_transaction
 NAME = 'Voltage and Temperature Monitor'
 MENU =  _(u'Package: Voltage and Temperature Monitor')
 LINK = 'settings_page'
+ERROR_LOG_THROTTLE = 300
+I2C_TIMEOUT = 2.0
+I2C_PRIORITY = 'low'
 
 pcf_options = PluginOptions(
     NAME,
@@ -63,6 +66,7 @@ class PCFSender(Thread):
             self.status['ad%d' % i] = 0
 
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -77,18 +81,34 @@ class PCFSender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
-    def run(self):
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
+
+    def _open_adc(self):
         try:
             import smbus  # for PCF 8591
-
             self.adc = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
         except ImportError:
             log.warning(NAME, _(u'Could not import smbus.'))
+            self.adc = None
+        except Exception:
+            self.adc = None
+            self._log_problem(_(u'Voltage and Temperature Monitor plug-in') + ':\n' + traceback.format_exc())
+
+    def run(self):
+        self._open_adc()
 
         while not self._stop_event.is_set():
-            log.clear(NAME)
             try:
+                normalize_options()
+                if self.adc is None:
+                    self._open_adc()
+
                 if self.adc is not None and pcf_options['enabled']:  # if pcf plugin is enabled
+                    log.clear(NAME)
                     for i in range(4):
                         val = read_AD(self.adc, i + 1)
                         self.status['ad%d_raw' % i] = val
@@ -111,7 +131,7 @@ class PCFSender(Thread):
 
             except Exception:
                 self.adc = None
-                log.error(NAME, _(u'Voltage and Temperature Monitor plug-in') + ':\n' + traceback.format_exc())
+                self._log_problem(_(u'Voltage and Temperature Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -141,6 +161,27 @@ def get_volt(data):
     return volt
 
 
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_options():
+    pcf_options['log_interval'] = max(1, min(1440, safe_int(pcf_options.get('log_interval', 1), 1)))
+    pcf_options['log_records'] = max(0, min(10000, safe_int(pcf_options.get('log_records', 0), 0)))
+    pcf_options['voltage'] = max(0.1, min(15.0, safe_float(pcf_options.get('voltage', 5.0), 5.0)))
+    pcf_options['da_value'] = max(0, min(255, safe_int(pcf_options.get('da_value', 0), 0)))
+
+
 def get_temp(data):
     """Return temperature 0-100C from data"""
     """ 255 is 2^8, value where the analog value can be represented by PCD A/D converter. The actual voltage obtained by VOLTAGE_ON_AD_INPUT/ 255."""
@@ -163,7 +204,7 @@ def read_AD(adc, pin):
     """Return number 0-255 from A/D PCF8591 to webpage."""
     result = 0
     if adc is not None:
-        with i2c_transaction():
+        with i2c_transaction(timeout=I2C_TIMEOUT, priority=I2C_PRIORITY):
             adc.write_byte_data(0x48, (0x40 + pin), pin)
             result = adc.read_byte(0x48)
     return result
@@ -172,7 +213,7 @@ def read_AD(adc, pin):
 def write_DA(adc, value):  # PCF8591 D/A converter Y=(0-255) for future use
     """Write analog voltage to output"""
     if adc is not None:
-        with i2c_transaction():
+        with i2c_transaction(timeout=I2C_TIMEOUT, priority=I2C_PRIORITY):
             adc.write_byte_data(0x48, 0x40, value)
 
 
@@ -181,7 +222,7 @@ def read_log():
     try:
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             return json.load(logf)
-    except IOError:
+    except (IOError, ValueError):
         return []
 
 
@@ -210,12 +251,15 @@ class settings_page(ProtectedPage):
     """Load an html page for entering pcf adjustments."""
 
     def GET(self):
-        return self.plugin_render.volt_temp_da(pcf_options, pcf_sender.status, log.events(NAME))
+        normalize_options()
+        status = pcf_sender.status if pcf_sender is not None else {'ad0_raw': 0, 'ad1_raw': 0, 'ad2_raw': 0, 'ad3_raw': 0, 'ad0': 0, 'ad1': 0, 'ad2': 0, 'ad3': 0}
+        return self.plugin_render.volt_temp_da(pcf_options, status, log.events(NAME))
 
     def POST(self):
         qdict = web.input()
         verify_csrf(qdict)
         pcf_options.web_update(qdict)
+        normalize_options()
 
         if pcf_sender is not None:
             pcf_sender.update()                
