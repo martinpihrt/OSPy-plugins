@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - E-mail Notifications<br/>
+Added an SMTP connection timeout and reduced retry load when the mail server is unavailable. The unsent e-mail queue now backs off repeated failed sends instead of retrying at a fixed short interval, and SMTP connections are closed reliably after send attempts.
+
 (Martin Pihrt) - Door Opening<br/>
 Audited Door Opening. The plug-in does not run a background loop; opening is started only from the web form. Added validation for selected output and open time, prevented duplicate Door Opening runs on the same output, refreshed footer data after settings changes, and cleared the one-shot sender thread after it finishes.
 
