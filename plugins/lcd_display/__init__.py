@@ -260,7 +260,10 @@ def write_lcd_lines(lcd, line1, line2):
 
 
 def is_i2c_busy_error(error):
-    return str(error) == 'I2C bus is busy.'
+    if not isinstance(error, (IOError, OSError)):
+        return False
+
+    return 'I2C bus is busy' in str(error)
 
 
 def log_i2c_busy():
