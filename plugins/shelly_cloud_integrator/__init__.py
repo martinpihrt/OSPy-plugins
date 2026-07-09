@@ -16,7 +16,7 @@ from ospy.webpages import ProtectedPage                          # For check use
 
 from ospy.webpages import showInFooter                           # Enable plugin to display readings in UI footer
 
-from requests import get, exceptions
+from requests import Session, exceptions
 from json.decoder import JSONDecodeError
 
 import datetime
@@ -69,6 +69,11 @@ class Sender(Thread):
         self._stop_event = Event()
         self.devices = []
         self._sleep_time = 0
+        self._session = Session()
+        self._next_request_time = {}
+        self._request_failures = {}
+        self._last_msg_info = None
+        self._last_msg_log = 0
         self.start()
 
     def stop(self):
@@ -83,6 +88,26 @@ class Sender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
+    def _backoff_remaining(self, key):
+        return max(0, self._next_request_time.get(key, 0) - time.time())
+
+    def _mark_request_success(self, key):
+        self._next_request_time.pop(key, None)
+        self._request_failures.pop(key, None)
+
+    def _mark_request_failure(self, key, base_delay=60):
+        failures = self._request_failures.get(key, 0) + 1
+        self._request_failures[key] = failures
+        delay = min(600, base_delay * (2 ** (failures - 1)))
+        self._next_request_time[key] = time.time() + delay
+
+    def _write_status(self, msg_info):
+        now_time = time.time()
+        if msg_info and (msg_info != self._last_msg_info or now_time - self._last_msg_log >= 60):
+            log.info(NAME, datetime_string() + '\n{}'.format(msg_info))
+            self._last_msg_info = msg_info
+            self._last_msg_log = now_time
+
     def run(self):
         # Exmple data in footer
         in_footer = None
@@ -96,13 +121,14 @@ class Sender(Thread):
 
         while not self._stop_event.is_set():                      # Plugin repeating loop
             try:                                                  # It is a good idea to use try and except because it is possible to debug any errors encountered in the plugin.
-                log.clear(NAME)
                 msg = ''
                 msg_info = ''
                 if len(plugin_options['auth_key']) > 5 and len(plugin_options['server_uri']) > 5:
                     for i in range(0, plugin_options['number_sensors']):
                         id = plugin_options['sensor_id'][i]
                         if len(id) > 5 and plugin_options['use_sensor'][i]:
+                            if self._backoff_remaining(id) > 0:
+                                continue
                             self._sleep(2)                                  # client has sent too many requests in a given amount of time. 2 second is optimal waiting.
                             if plugin_options['reading_type'][i] == 1:      # 0=Locally via IP, 1=Shelly cloud API
                                 url = 'https://{}/device/status?auth_key={}&id={}'.format(plugin_options['server_uri'], plugin_options['auth_key'], id)
@@ -112,30 +138,47 @@ class Sender(Thread):
                                 else:                                       # gen2+ device. url=http://IP/rpc/Shelly.GetStatus
                                     url = 'http://{}/rpc/Shelly.GetStatus'.format(plugin_options['sensor_ip'][i])
                             try:
-                                response = get(url, timeout=5)
+                                response = self._session.get(url, timeout=5)
                                 if response.status_code == 401:
                                     if plugin_options['reading_type'][i] == 1:
                                         log.error(NAME, _('Shelly Cloud Bad Login'))
                                     else:
                                         log.error(NAME, _('Locally Bad Login to device'))
+                                    self._mark_request_failure(id, 300)
+                                    msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
+                                    msg_info += _('{}: Error: HTTP 401\n').format(plugin_options['sensor_label'][i])
+                                    continue
                                 elif response.status_code == 404:
                                     if plugin_options['reading_type'][i] == 1:
                                         log.error(NAME, _('Shelly Cloud Not Found'))
                                     else:
                                         log.error(NAME, _('Device Not Found'))
+                                    self._mark_request_failure(id, 300)
+                                    msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
+                                    msg_info += _('{}: Error: HTTP 404\n').format(plugin_options['sensor_label'][i])
+                                    continue
                                 elif response.status_code == 429:
                                     if plugin_options['reading_type'][i] == 1:
                                         log.error(NAME, _('Shelly Cloud Too Many Requests'))
                                     else:
                                         log.error(NAME, _('Device Not Found'))
+                                    self._mark_request_failure(id, 120)
+                                    msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
+                                    msg_info += _('{}: Error: HTTP 429\n').format(plugin_options['sensor_label'][i])
+                                    continue
                                 elif response.status_code == 200:
                                     if plugin_options['reading_type'][i] == 0:
                                         log.debug(NAME, _('Device Response'))
                                 else:
                                     log.debug(NAME, _('Response from Shelly cloud: {}'.format(response.status_code)))
+                                    self._mark_request_failure(id, 60)
+                                    msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
+                                    msg_info += _('{}: Error: HTTP {}\n').format(plugin_options['sensor_label'][i], response.status_code)
+                                    continue
 
                                 try:
                                     response_data = response.json()
+                                    self._mark_request_success(id)
                                     # typ: 0 = Shelly Plus HT, 
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 0:
@@ -1346,9 +1389,12 @@ class Sender(Thread):
                                                 update_or_add_device(self, payload)
 
                                 except JSONDecodeError:
-                                    raise BadResponse(_('Bad JSON'))
+                                    self._mark_request_failure(id, 60)
+                                    msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
+                                    msg_info += _('{}: Error: Bad JSON\n').format(plugin_options['sensor_label'][i])
 
                             except exceptions.InvalidURL as e:
+                                self._mark_request_failure(id, 300)
                                 if "No host supplied" in str(e):
                                     response = None
                                     msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
@@ -1358,11 +1404,12 @@ class Sender(Thread):
                                     msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
                                     msg_info += _('{}: Error: {}\n').format(plugin_options['sensor_label'][i], e)
                             except exceptions.RequestException as e:
+                                self._mark_request_failure(id, 60)
                                 response = None
                                 msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
                                 msg_info += _('{}: Error: {}\n').format(plugin_options['sensor_label'][i], e)
 
-                    log.info(NAME, datetime_string() + '\n{}'.format(msg_info))
+                    self._write_status(msg_info)
                     if plugin_options['use_footer']:
                         if in_footer is not None:
                             in_footer.val = msg.encode('utf8').decode('utf8')
@@ -1390,6 +1437,7 @@ def stop():                                                       # This functio
     if sender is not None:
         sender.stop()
         sender.join(15)
+        sender._session.close()
         sender = None
 
 
