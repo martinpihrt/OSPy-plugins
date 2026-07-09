@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Modbus Stations<br/>
+Reduced Modbus Stations blocking during RS485/USB failures by using shorter serial timeouts, throttled serial error logging and a shared serial write lock. The command log is now bounded to the latest entries, missing log files no longer create traceback noise, and address/firmware reads handle short responses without crashing.
+
 (Martin Pihrt) - E-mail Reader<br/>
 Added IMAP connection timeouts, a minimum mail check interval, safer logout handling and throttled error logging. Missing sender/folder results now return an empty message list instead of causing follow-up loop errors, reducing load and log spam when the mail server or account settings are unavailable.
 

@@ -16,7 +16,7 @@ from ospy.options import options
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers 
 from ospy.log import log
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 
@@ -24,6 +24,15 @@ from ospy.webpages import ProtectedPage
 NAME = 'Modbus Stations'     ### name for plugin in plugin manager ###
 MENU =  _('Package: Modbus Stations')
 LINK = 'settings_page'       ### link for page in plugin manager ###
+SERIAL_TIMEOUT = 1
+SERIAL_WRITE_TIMEOUT = 1
+MODBUS_RESPONSE_DELAY = 0.2
+MODBUS_COMMAND_DELAY = 0.05
+MAX_LOG_ENTRIES = 200
+ERROR_LOG_THROTTLE = 300
+
+serial_lock = Lock()
+_last_error_log = {}
 
 plugin_options = PluginOptions(
     NAME,
@@ -127,6 +136,35 @@ def Compute_address_and_out(station_nr):
     return adr, out
 
 
+def log_modbus_problem(key, message):
+    now = time.time()
+    last = _last_error_log.get(key, 0)
+    if now - last >= ERROR_LOG_THROTTLE:
+        _last_error_log[key] = now
+        log.error(NAME, message)
+
+
+def open_serial_port():
+    if not ser_test:
+        return None
+    try:
+        try:
+            return serial.Serial(
+                plugin_options['port'],
+                plugin_options['baud'],
+                timeout=SERIAL_TIMEOUT,
+                write_timeout=SERIAL_WRITE_TIMEOUT
+            )
+        except TypeError:
+            return serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=SERIAL_TIMEOUT)
+    except Exception as err:
+        log_modbus_problem(
+            'serial_open',
+            _('Unable to open serial port') + ' {}: {}'.format(plugin_options['port'], err)
+        )
+        return None
+
+
 def on_station_on(name, **kw):
     """ Send CMD to ON when core program signals in station state."""
     try:
@@ -139,7 +177,7 @@ def on_station_on(name, **kw):
             adr, out = Compute_address_and_out(index)
             Send_data(address=adr, command=0x05, relay_nr=int(out), state='on')
     except:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+        log_modbus_problem('station_on', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 
 def on_station_off(name, **kw):
@@ -154,7 +192,7 @@ def on_station_off(name, **kw):
             adr, out = Compute_address_and_out(index)
             Send_data(address=adr, command=0x05, relay_nr=int(out), state='off')
     except:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+        log_modbus_problem('station_off', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 
 def on_station_clear(name, **kw):
@@ -165,18 +203,21 @@ def on_station_clear(name, **kw):
         for i in range(plugin_options['nr_boards']*8):
             adr, out = Compute_address_and_out(i)
             Send_data(address=adr, command=0x05, relay_nr=int(out), state='off')
-            time.sleep(0.1)
+            time.sleep(MODBUS_COMMAND_DELAY)
     except:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+        log_modbus_problem('station_clear', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 
 def read_log():
     """Read log data from json file."""
+    log_path = os.path.join(plugin_data_dir(), 'log.json')
+    if not os.path.exists(log_path):
+        return []
     try:
-        with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
+        with open(log_path) as logf:
             return json.load(logf)
-    except IOError:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+    except Exception:
+        log_modbus_problem('read_log', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         return []
 
 
@@ -206,9 +247,10 @@ def update_log(cmd, status):
         data['datetime'] = datetime_string()
 
         log_data.insert(0, data)
+        log_data = log_data[:MAX_LOG_ENTRIES]
         write_log(log_data)
     except:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
+        log_modbus_problem('update_log', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 
 """ Table of CRC values for highâ€“order byte """
@@ -279,7 +321,7 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
         s = None
         try:
             if ser_test:
-                s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
+                s = open_serial_port()
         except:
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
 
@@ -302,15 +344,16 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
             crc = ModbusCRC(cmd[0:6]) # CRC from first 6 byte
             cmd[6] = crc & 0xFF
             cmd[7] = crc >> 8
-            s.write(cmd)
+            with serial_lock:
+                s.write(cmd)
             status = _('Addr: {} Out: {} To: {}.').format(address, relay_nr, msg)
             update_log(cmd, status)
             s.close()
-            time.sleep(0.1)
+            time.sleep(MODBUS_COMMAND_DELAY)
 
     except Exception:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-        status = _('Error: {}').format(traceback.format_exc())
+        log_modbus_problem('send_data', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+        status = _('Error: {}').format(traceback.format_exc().splitlines()[-1])
         update_log(cmd, status)
         pass
 
@@ -327,7 +370,7 @@ def Read_address():
         s = None
         try:
             if ser_test:
-                s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
+                s = open_serial_port()
         except Exception:
             log.info(NAME, _('No such file or directory'))
             pass
@@ -347,8 +390,9 @@ def Read_address():
             cmd[7] = crc >> 8
             status = _('Address request...')
             update_log(cmd, status)
-            s.write(cmd)
-            time.sleep(1)
+            with serial_lock:
+                s.write(cmd)
+            time.sleep(MODBUS_RESPONSE_DELAY)
             
             # reading
             rx_raw = s.read(7)                    # read 7 byte from serial
@@ -359,7 +403,7 @@ def Read_address():
                 crc = ModbusCRC(rx_list[0:5])     # CRC from first 6 byte
                 cmd[6] = crc & 0xFF
                 cmd[7] = crc >> 8
-                if rx_list[5] == cmd[6] and rx_list[6] == cmd[7]: # crc check
+                if len(rx_list) >= 7 and rx_list[5] == cmd[6] and rx_list[6] == cmd[7]: # crc check
                     status = _('Found address') + ': {}.'.format(rx_list[0])
                     update_log(rx_list, status)
                     s.close()
@@ -374,8 +418,8 @@ def Read_address():
             return -1
 
     except Exception:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-        status = _('Error: {}').format(traceback.format_exc())
+        log_modbus_problem('read_address', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+        status = _('Error: {}').format(traceback.format_exc().splitlines()[-1])
         update_log(cmd, status)
         pass
         return -1
@@ -387,7 +431,7 @@ def Read_firmware_version(address=0x01):
     try:
         s = None
         try:
-            s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
+            s = open_serial_port()
         except:
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
             pass
@@ -406,8 +450,9 @@ def Read_firmware_version(address=0x01):
             cmd[7] = crc >> 8
             status = _('Firmware request...')
             update_log(cmd, status)
-            s.write(cmd)
-            time.sleep(1)
+            with serial_lock:
+                s.write(cmd)
+                time.sleep(MODBUS_RESPONSE_DELAY)
 
             # reading
             rx_raw = s.read(7)                    # read 7 byte from serial
@@ -416,10 +461,12 @@ def Read_firmware_version(address=0x01):
                 status = _('Incomming data...')
                 update_log(rx_list, status)
                 # for example: 0 x 00C8 = 200 = V2.00
+                if len(rx_list) < 5:
+                    s.close()
+                    return -1
                 fw = (rx_list[3] + rx_list[4]) / 100
                 status = _('Firmware is') + ': {}.'.format(fw)
                 s.close()
-                time.sleep(1)
                 return fw
 
             s.close()
@@ -428,8 +475,8 @@ def Read_firmware_version(address=0x01):
             return -1
 
     except Exception:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-        status = _('Error: {}').format(traceback.format_exc())
+        log_modbus_problem('firmware_version', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+        status = _('Error: {}').format(traceback.format_exc().splitlines()[-1])
         update_log(cmd, status)
         pass
         return -1
@@ -447,10 +494,11 @@ def Write_address(address):
     try:
         s = None
         try:
-            s = serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=4)
+            s = open_serial_port()
         except:
             log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
-            s.close()
+            if s is not None:
+                s.close()
 
         if s is not None:
             # writing  
@@ -465,13 +513,14 @@ def Write_address(address):
             cmd[7] = crc >> 8
             status = _('Set device address {}.').format(address)
             update_log(cmd, status)
-            s.write(cmd)
+            with serial_lock:
+                s.write(cmd)
             s.close()
-            time.sleep(1)
+            time.sleep(MODBUS_RESPONSE_DELAY)
 
     except Exception:
-        log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-        status = _('Error: {}').format(traceback.format_exc())
+        log_modbus_problem('write_address', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+        status = _('Error: {}').format(traceback.format_exc().splitlines()[-1])
         update_log(cmd, status)
         pass
 
