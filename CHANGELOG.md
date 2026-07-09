@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Relay Test<br/>
+Hardened Relay Test execution. The relay pulse now runs in a short background thread instead of blocking the web request, the relay output is always forced off in a finally block, repeated starts are ignored while a test is already running, stop() also forces the relay off, and the redirect no longer gets logged as an internal error.
+
 (Martin Pihrt) - Pulse Output Test<br/>
 Hardened Pulse Output Test runtime handling. Test output and duration are clamped before use, the duration field now exposes the allowed range, the pulse loop can stop promptly through the thread stop event, and the selected output is forced back to a safe state unless an existing scheduler run still needs it active.
 

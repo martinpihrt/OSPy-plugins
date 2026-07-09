@@ -1,4 +1,4 @@
-$def with()
+$def with(events)
 
 $var title: $_('Relay Test')
 $var page: plugins
@@ -9,5 +9,8 @@ $var page: plugins
         $:csrf_input()
         <button type="submit" class="button submit">$_('Test relay')</button>
         <a href="/" class="button cancel danger">$_('Cancel')</a>
+        <p>
+            <textarea style="font-family: monospace;" rows="5" cols="45" readonly>$'\n'.join(events)</textarea>
+        </p>
     </form>
 </div>
