@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 09 2026
+-----------
+(Martin Pihrt) - LCD Display<br/>
+Changed LCD Display logging for normal low-priority I2C contention: when the bus is busy, the plug-in now logs a short throttled warning and retries later instead of filling the log with repeated tracebacks.
+
 July 07 2026
 -----------
 (Martin Pihrt) - IP Cam<br/>

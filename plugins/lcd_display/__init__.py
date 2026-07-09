@@ -28,10 +28,11 @@ from ospy.sensors import sensors
 
 from blinker import signal
 
-global blocker, L1web, L2web
+global blocker, L1web, L2web, last_i2c_busy_log
 blocker = False
 L1web = ''
 L2web = ''
+last_i2c_busy_log = 0
 
 NAME = 'LCD Display'
 MENU =  _('Package: LCD Display')
@@ -139,8 +140,11 @@ class LCDSender(Thread):
 
                     time.sleep(0.1)
 
-            except Exception:
-                log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+            except Exception as e:
+                if is_i2c_busy_error(e):
+                    log_i2c_busy()
+                else:
+                    log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
                 self._sleep(5)
 
 
@@ -257,6 +261,17 @@ def write_lcd_lines(lcd, line1, line2):
 
 def is_i2c_busy_error(error):
     return str(error) == 'I2C bus is busy.'
+
+
+def log_i2c_busy():
+    global last_i2c_busy_log
+
+    now = time.time()
+    if now - last_i2c_busy_log < 60:
+        return
+
+    last_i2c_busy_log = now
+    log.warning(NAME, _('I2C bus is busy; LCD update skipped and will retry.'))
 
 
 def write_lcd_buffer(lcd, line1, line2):
@@ -930,8 +945,11 @@ def notify_rebooted(name, **kw):
             try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
             L1web = ASCI_convert(_('System Linux'))
             L2web = ASCI_convert(_('Rebooting'))
-        except:
-            log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+        except Exception as e:
+            if is_i2c_busy_error(e):
+                log_i2c_busy()
+            else:
+                log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
 
 def notify_restarted(name, **kw):
     ### Restarted OSPy ###
@@ -954,8 +972,11 @@ def notify_restarted(name, **kw):
             try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Rebooting')), 2))
             L1web = ASCI_convert(_('System OSPy'))
             L2web = ASCI_convert(_('Rebooting'))
-        except:
-            log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+        except Exception as e:
+            if is_i2c_busy_error(e):
+                log_i2c_busy()
+            else:
+                log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
 
 def notify_poweroff(name, **kw):
     ### Power off Linux HW ###
@@ -978,8 +999,11 @@ def notify_poweroff(name, **kw):
             try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Power off')), 2))
             L1web = ASCI_convert(_('System Linux'))
             L2web = ASCI_convert(_('Power off'))
-        except:
-            log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+        except Exception as e:
+            if is_i2c_busy_error(e):
+                log_i2c_busy()
+            else:
+                log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
 
 def notify_ospyupdate(name, **kw):
     ### OSPy new version available ###
@@ -1002,8 +1026,11 @@ def notify_ospyupdate(name, **kw):
             try_io(lambda: lcd.lcd_puts(ASCI_convert(_('Has Update')), 2))
             L1web = ASCI_convert(_('System OSPy'))
             L2web = ASCI_convert(_('Has Update'))
-        except:
-            log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
+        except Exception as e:
+            if is_i2c_busy_error(e):
+                log_i2c_busy()
+            else:
+                log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
 
 ################################################################################
 # Web pages:                                                                   #
