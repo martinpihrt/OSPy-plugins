@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - MQTT<br/>
+Hardened the base MQTT plug-in. Missing paho-mqtt no longer triggers an automatic pip install; settings now show an Install libraries button that installs the fixed apt package python3-paho-mqtt. MQTT broker connection attempts use a shorter timeout and reconnect backoff, publish failures and repeated errors are throttled, the client is stopped more cleanly, and the settings JSON output no longer exposes the broker password.
+
 (Martin Pihrt) - Modbus Stations<br/>
 Reduced Modbus Stations blocking during RS485/USB failures by using shorter serial timeouts, throttled serial error logging and a shared serial write lock. The command log is now bounded to the latest entries, missing log files no longer create traceback noise, and address/firmware reads handle short responses without crashing.
 

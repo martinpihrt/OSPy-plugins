@@ -6,10 +6,11 @@ import time
 import traceback
 import os
 import subprocess
-import shlex
+import shutil
+import socket
 
 import datetime
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 
 import web
 
@@ -31,6 +32,11 @@ import ssl
 NAME = 'MQTT'
 MENU =  _('Package: MQTT')
 LINK = 'settings_page'
+MQTT_CONNECT_TIMEOUT = 10
+MQTT_RECONNECT_MIN_DELAY = 5
+MQTT_RECONNECT_MAX_DELAY = 120
+ERROR_LOG_THROTTLE = 300
+PAHO_APT_PACKAGE = 'python3-paho-mqtt'
 
 plugin_options = PluginOptions(
     NAME,
@@ -64,10 +70,22 @@ plugin_options = PluginOptions(
 
 _client = None
 _subscriptions = {}
+paho = None
 mqtt = None
+mqtt_is_installed = False
+dependency_install_lock = Lock()
+dependency_install_running = False
 last_status = '-'
 flag_connected = 0
 last_stations = []
+_last_error_log = {}
+
+try:
+    import paho.mqtt.client as paho
+    from paho import mqtt
+    mqtt_is_installed = True
+except ImportError:
+    mqtt_is_installed = False
 
 ################################################################################
 # Main function:                                                               #
@@ -105,7 +123,7 @@ class Sender(Thread):
                         publish_status()
                         atexit.register(on_stop)
                 except Exception:
-                    log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+                    log_mqtt_problem('sender_run', _('MQTT plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
             else:
                 log.clear(NAME)
                 log.info(NAME, _('MQTT plug-in is disabled.'))
@@ -124,16 +142,90 @@ def start():
 def stop():
     global sender
     if sender is not None:
+        on_stop()
         sender.stop()
         sender.join(15)
         sender = None 
 
 
-def proc_install(cmd):
-    """installation"""
-    proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
-    output = proc.stdout.decode('utf8')
-    log.info(NAME, output)
+def log_mqtt_problem(key, message):
+    now = time.time()
+    last = _last_error_log.get(key, 0)
+    if now - last >= ERROR_LOG_THROTTLE:
+        _last_error_log[key] = now
+        log.error(NAME, message)
+
+
+def refresh_mqtt_dependency_status():
+    global paho, mqtt, mqtt_is_installed
+    try:
+        import paho.mqtt.client as paho_module
+        from paho import mqtt as mqtt_module
+        paho = paho_module
+        mqtt = mqtt_module
+        mqtt_is_installed = True
+    except ImportError:
+        paho = None
+        mqtt = None
+        mqtt_is_installed = False
+    return mqtt_is_installed
+
+
+def mqtt_dependencies_installing():
+    with dependency_install_lock:
+        return dependency_install_running
+
+
+def start_mqtt_dependency_install():
+    global dependency_install_running
+    with dependency_install_lock:
+        if dependency_install_running:
+            log.info(NAME, datetime_string() + ' ' + _('Dependency installation is already running.'))
+            return
+        dependency_install_running = True
+
+    install_thread = Thread(target=install_mqtt_dependencies)
+    install_thread.daemon = True
+    install_thread.start()
+
+
+def install_mqtt_dependencies():
+    global dependency_install_running
+    try:
+        log.clear(NAME)
+        if refresh_mqtt_dependency_status():
+            log.info(NAME, datetime_string() + ' ' + _('Dependencies are already installed.'))
+            return
+
+        log.info(NAME, datetime_string() + ' ' + _('Installing dependencies. This operation can take several minutes.'))
+        if os.name != 'posix' or not shutil.which('apt-get'):
+            log.error(NAME, datetime_string() + ' ' + _('Automatic dependency installation is available only on systems with apt-get.'))
+            log.info(NAME, datetime_string() + ' sudo apt install {}'.format(PAHO_APT_PACKAGE))
+            return
+
+        if hasattr(os, 'geteuid') and os.geteuid() != 0:
+            log.error(NAME, datetime_string() + ' ' + _('Root privileges are required for installing dependencies.'))
+            log.info(NAME, datetime_string() + ' sudo apt install {}'.format(PAHO_APT_PACKAGE))
+            return
+
+        cmd = ['apt-get', 'install', '-y', PAHO_APT_PACKAGE]
+        log.info(NAME, datetime_string() + ' ' + _('Running command') + ': ' + ' '.join(cmd))
+        proc = subprocess.run(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=300)
+        output = proc.stdout.decode('utf8', errors='replace').strip()
+        if output:
+            log.info(NAME, output)
+
+        if proc.returncode == 0 and refresh_mqtt_dependency_status():
+            log.info(NAME, datetime_string() + ' ' + _('Dependencies were installed successfully.'))
+            log.info(NAME, datetime_string() + ' ' + _('Now restart this plug-in.'))
+        else:
+            log.error(NAME, datetime_string() + ' ' + _('Dependency installation failed. Missing modules') + ': paho-mqtt')
+            log.info(NAME, datetime_string() + ' sudo apt install {}'.format(PAHO_APT_PACKAGE))
+    except Exception:
+        log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+    finally:
+        with dependency_install_lock:
+            dependency_install_running = False
 
 
 def validateJSON(jsonData):
@@ -160,15 +252,26 @@ def on_log(client, userdata, level, buf):
     log.debug(NAME, datetime_string() + ' log: {}'.format(buf))
 
 
+def safe_publish(client, topic, payload='', qos=0, retain=False):
+    if client is None or not topic:
+        return False
+    try:
+        client.publish(topic, payload, qos=qos, retain=retain)
+        return True
+    except Exception:
+        log_mqtt_problem('publish', _('MQTT publish failed') + ': ' + traceback.format_exc().splitlines()[-1])
+        return False
+
+
 def on_message(client, userdata, message):
     log.clear(NAME)
-    log.info(NAME, datetime_string() + ' ' + _('Message received') + ': {}'.format(message.payload.decode("utf-8")))
+    payload = message.payload.decode("utf-8", errors="replace")
+    log.info(NAME, datetime_string() + ' ' + _('Message received') + ': {}'.format(payload))
     log.info(NAME, datetime_string() + ' ' + _('Message topic') + ': {}'.format(message.topic))
     log.info(NAME, datetime_string() + ' ' + _('Message qos') + ': {}'.format(message.qos))
     log.info(NAME, datetime_string() + ' ' + _('Message retain flag') + ': {}'.format(message.retain))
 
     cmd = []
-    payload = message.payload.decode("utf-8")
 
     isValid = validateJSON(payload)
     if isValid:
@@ -217,12 +320,12 @@ def on_message(client, userdata, message):
                         log.error(NAME, _('MQTT plug-in') + ':\n' + _('Setup stations count is smaler! Set correct first station and station count.'))
 
                 status = "Manual command was processed OK"
-                client.publish(plugin_options['control_topic'], status)
+                safe_publish(client, plugin_options['control_topic'], status)
 
             else:
                 log.info(NAME, datetime_string() + ' ' + _('You must this OSPy switch to manual mode!'))
                 status = "Manual command was not processed! You must OSPy switch to manual mode!"
-                client.publish(plugin_options['control_topic'], status)
+                safe_publish(client, plugin_options['control_topic'], status)
 
         ### run-once ###
         if plugin_options["use_runonce"] and isValid and message.topic == plugin_options["runonce_topic"]:
@@ -230,7 +333,7 @@ def on_message(client, userdata, message):
             if options.manual_mode:
                 log.info(NAME, datetime_string() + ' ' + _('You must this OSPy switch to scheduler mode!'))
                 status = "Run-once command was not processed! You must OSPy switch to scheduler mode!"
-                client.publish(plugin_options['runonce_topic'], status)
+                safe_publish(client, plugin_options['runonce_topic'], status)
             else:    
                 num_sta = options.output_count
                 if type(cmd) is list:            # cmd is list
@@ -239,12 +342,12 @@ def on_message(client, userdata, message):
                         rovals = cmd + ([0] * (num_sta - len(cmd)))
                         status =  "Run-once command was not processed!" + " "
                         status += "Not enough stations specified, assuming first {} of {}".format(len(cmd), num_sta)
-                        client.publish(plugin_options['runonce_topic'], status)
+                        safe_publish(client, plugin_options['runonce_topic'], status)
                     elif len(cmd) > num_sta:
                         log.info(NAME, datetime_string() + ' ' + _('Too many stations specified, truncating to {}').format(num_sta))
                         status =  "Run-once command was not processed!" + " "
                         status += "Too many stations specified, truncating to {}".format(num_sta)
-                        client.publish(plugin_options['runonce_topic'], status)
+                        safe_publish(client, plugin_options['runonce_topic'], status)
                         rovals = cmd[0:num_sta]
                     else:
                         rovals = cmd
@@ -265,7 +368,7 @@ def on_message(client, userdata, message):
                     rovals = None
                     status =  "Run-once command was not processed!" + " "
                     status += "Unexpected command {}".format(cmd)
-                    client.publish(plugin_options['runonce_topic'], status)
+                    safe_publish(client, plugin_options['runonce_topic'], status)
 
                 if rovals is not None and any(rovals):
                     for i in range(0, len(rovals)):
@@ -275,10 +378,10 @@ def on_message(client, userdata, message):
                             end = datetime.datetime.now() + datetime.timedelta(seconds=int(rovals[i]))
                         except:
                             end = datetime.datetime.now()
-                            log.error(NAME, _('MQTT Run-once plug-in') + ':\n' + traceback.format_exc())
+                            log_mqtt_problem('runonce_command', _('MQTT Run-once plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
                             status =  "Run-once command was not processed!" + " "
                             status += "The command is not valid!"
-                            client.publish(plugin_options['runonce_topic'], status)
+                            safe_publish(client, plugin_options['runonce_topic'], status)
                             pass
 
                         new_schedule = {
@@ -308,41 +411,24 @@ def on_message(client, userdata, message):
                                 if interval['station'] == sid:
                                     log.finish_run(interval)
                     status = "Run-once command was processed OK"
-                    client.publish(plugin_options['runonce_topic'], status)
+                    safe_publish(client, plugin_options['runonce_topic'], status)
  
     except Exception:
-        log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+        log_mqtt_problem('message', _('MQTT plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         status =  "Command was not processed!" + " "
         status += "The command is probably invalid or there was some processing error in the plugin!"
-        client.publish(plugin_options['runonce_topic'], status)
+        safe_publish(client, plugin_options['runonce_topic'], status)
         pass
 
 
 def get_client():
-    if not os.path.exists("/usr/lib/python3/dist-packages/pip"):
+    if not refresh_mqtt_dependency_status():
         log.clear(NAME)
-        log.info(NAME, _('PIP3 is not installed.'))
-        log.info(NAME, _('Please wait installing python3-pip...'))
-        log.info(NAME, _('This operation takes longer (minutes)...'))
-        cmd = "sudo apt-get install python3-pip -y"
-        proc_install(cmd)
-
-    try:
-        import paho.mqtt.client as paho
-        from paho import mqtt
-    except ImportError:
         log.error(NAME, _('MQTT Plugin requires paho mqtt.'))
         log.info(NAME, _('Paho-mqtt is not installed.'))
-        log.info(NAME, _('Please wait installing paho-mqtt...'))
-        log.info(NAME, _('This operation takes longer (minutes)...'))
-        cmd = "sudo pip3 install paho-mqtt"
-        proc_install(cmd)
-        try:
-            import paho.mqtt.client as paho
-            from paho import mqtt
-        except ImportError:
-            mqtt = None
-            log.error(NAME, _('Error try install paho-mqtt manually.'))
+        log.info(NAME, _('Install it from the system package manager and restart this plug-in.'))
+        log.info(NAME, 'sudo apt install {}'.format(PAHO_APT_PACKAGE))
+        return None
  
     if mqtt is not None and plugin_options["use_mqtt"]:  
         try:
@@ -355,6 +441,7 @@ def get_client():
             _client.on_message = on_message                                                    # Attach function to callback
             if plugin_options["use_mqtt_log"]:
                 _client.on_log = on_log                                                        # debug MQTT communication log
+            _client.reconnect_delay_set(min_delay=MQTT_RECONNECT_MIN_DELAY, max_delay=MQTT_RECONNECT_MAX_DELAY)
             if plugin_options["use_tls"]:
                 _client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLSv1_2,
                                 ciphers=None, 
@@ -365,23 +452,30 @@ def get_client():
             log.clear(NAME)
             log.info(NAME, datetime_string() + ' ' + _('Connecting to broker') + '...')
             _client.username_pw_set(plugin_options['user_name'], plugin_options['user_password'])
-            _client.connect(plugin_options['broker_host'], plugin_options['broker_port'], 60)
+            old_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(MQTT_CONNECT_TIMEOUT)
+            try:
+                _client.connect(plugin_options['broker_host'], int(plugin_options['broker_port']), 60)
+            finally:
+                socket.setdefaulttimeout(old_timeout)
             _client.loop_start()
             log.info(NAME, datetime_string() + ' ' + _('OK'))
             return _client
             
         except Exception:
-            log.error(NAME, _('MQTT plugin couldnot initalize client') + ':\n' + traceback.format_exc())
+            log_mqtt_problem('client_init', _('MQTT plugin couldnot initalize client') + ': ' + traceback.format_exc().splitlines()[-1])
             return None
 
 
 def publish_status(status="UP"):
     global last_status, flag_connected, sender
+    if sender is None:
+        return
     client = sender.client
     if client and plugin_options["use_mqtt"] and flag_connected:  # Publish message
         if status != last_status:
             last_status = status
-            client.publish(plugin_options['publish_up_down'], status)
+            safe_publish(client, plugin_options['publish_up_down'], status)
 
 
 def subscribe(topic, callback, qos=0):
@@ -423,13 +517,18 @@ def on_disconnect(client, userdata, rc, properties=None):
 
 def on_stop():
     global sender
+    if sender is None:
+        return
     client = sender.client
     if client is not None:
-        publish_status("DOWN")
-        client.disconnect()
-        client.loop_stop()
-        client = None
-        log.info(NAME, datetime_string() + ' ' +  _('MQTT Client stop'))
+        try:
+            publish_status("DOWN")
+            client.disconnect()
+            client.loop_stop()
+            sender.client = None
+            log.info(NAME, datetime_string() + ' ' +  _('MQTT Client stop'))
+        except Exception:
+            log_mqtt_problem('client_stop', _('MQTT plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 
 ### System value change ###
@@ -453,12 +552,12 @@ def notify_value_change(name, **kw):
         if plugin_options["use_get_val"]:
             client = sender.client
             if client:
-                client.publish(plugin_options["get_val_topic"], json.dumps(payload), qos=1, retain=True)
+                safe_publish(client, plugin_options["get_val_topic"], json.dumps(payload), qos=1, retain=True)
                 log.clear(NAME)
                 log.info(NAME, datetime_string() + ' ' +  _('Posting to topic {} because OSPy change the settings.').format(plugin_options["get_val_topic"]))
     
     except Exception:
-        log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+        log_mqtt_problem('value_change', _('MQTT plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         pass
 
 value = signal("value_change")
@@ -499,12 +598,12 @@ def notify_zone_change(name, **kw):
                 last_stations = statuslist
                 client = sender.client
                 if client:
-                    client.publish(plugin_options["zone_topic"], json.dumps(statuslist), qos=1, retain=True)
+                    safe_publish(client, plugin_options["zone_topic"], json.dumps(statuslist), qos=1, retain=True)
                     log.clear(NAME)
                     log.info(NAME, datetime_string() + ' ' +  _('Posting to topic {} because OSPy change stations state.').format(plugin_options["zone_topic"]))
 
     except Exception:
-        log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
+        log_mqtt_problem('zone_change', _('MQTT plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         pass
 
 value = signal("zone_change")
@@ -519,7 +618,23 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         try:
-            return self.plugin_render.mqtt(plugin_options, log.events(NAME), options.name)
+            qdict = web.input()
+            install_deps = qdict.get('install_deps') is not None
+            if install_deps:
+                verify_csrf(qdict)
+                start_mqtt_dependency_install()
+                raise web.seeother(plugin_url(settings_page), True)
+
+            refresh_mqtt_dependency_status()
+            return self.plugin_render.mqtt(
+                plugin_options,
+                log.events(NAME),
+                options.name,
+                not mqtt_is_installed,
+                mqtt_dependencies_installing()
+            )
+        except web.HTTPError:
+            raise
         except:
             log.error(NAME, _('MQTT plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
@@ -560,6 +675,9 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         try:
-            return json.dumps(plugin_options)
+            settings = dict(plugin_options)
+            if settings.get('user_password'):
+                settings['user_password'] = '********'
+            return json.dumps(settings)
         except:
             return {}

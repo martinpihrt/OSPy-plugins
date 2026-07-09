@@ -1,4 +1,4 @@
-$def with(plugin_options, events, client_id)
+$def with(plugin_options, events, client_id, missing_dependencies, dependencies_installing)
 
 $var title: $_('MQTT settings')
 $var page: plugins
@@ -65,6 +65,14 @@ input:checked + .slider:before {
 <div id="plugin">
     <div class="title">$_('MQTT settings')</div>
     <a href=$plugins.plugin_url('mqtt.help_page') class="button upload">$_('Help')</a><br/>
+    $if missing_dependencies:
+        <p>
+            $if dependencies_installing:
+                <a class="button upload disabled">$_('Installing libraries')</a>
+            $else:
+                <a href="?install_deps&$csrf_query()" class="button upload">$_('Install libraries')</a>
+            <small>$_('The installation progress is shown in the status log.')</small>
+        </p>
     <form id="pluginForm" action="$plugins.plugin_url('mqtt.settings_page')" method="post">
         $:csrf_input()
         <table class="optionList" style="width:80%">
