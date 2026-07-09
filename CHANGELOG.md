@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Weather-based Rain Delay<br/>
+Hardened Weather-based Rain Delay and Netatmo handling. Netatmo credentials are now read from current settings instead of stale import-time defaults, Netatmo secret/password are masked in settings JSON, delay/Netatmo intervals are clamped before use, repeated runtime/API errors are throttled, empty Netatmo measure responses are handled safely, and footer text no longer depends on precipitation data always being present.
+
 (Martin Pihrt) - Water Meter<br/>
 Hardened Water Meter I2C/runtime handling. PCF8583 access now uses guarded I2C transactions with a short timeout and fewer retries, the bus is reopened after failures, repeated runtime/I2C errors are throttled, pulse and total settings are clamped before use to avoid division by zero or invalid totals, and JSON status works even when the background thread is not running.
 
