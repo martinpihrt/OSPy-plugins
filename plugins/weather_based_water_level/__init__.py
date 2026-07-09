@@ -23,6 +23,9 @@ from ospy.helpers import verify_csrf
 NAME = 'Weather-based Water Level'
 MENU =  _(u'Package: Weather-based Water Level')
 LINK = 'settings_page'
+WEATHER_CALC_INTERVAL = 3600
+WEATHER_ERROR_RETRY_INTERVAL = 900
+WEATHER_ERROR_LOG_THROTTLE = 900
 
 plugin_options = PluginOptions(
     NAME,
@@ -113,12 +116,19 @@ class WeatherLevelChecker(Thread):
         self._stop_event = Event()
 
         self._sleep_time = 0
+        self._force_update = True
+        self._last_calculation = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
         self._stop_event.set()
 
     def update(self):
+        self._force_update = True
+        self._sleep_time = 0
+
+    def weather_update(self):
         self._sleep_time = 0
 
     def _sleep(self, secs):
@@ -143,12 +153,21 @@ class WeatherLevelChecker(Thread):
                 clear_plugin_runtime_data('weather_based_water_level')
                 weather_mon = None
 
-        weather.add_callback(self.update)
+        weather.add_callback(self.weather_update)
         self._sleep(10)  # Wait for weather callback before starting
+        disabled_logged = False
         while not self._stop_event.is_set():
             try:
-                log.clear(NAME)
                 if plugin_options['enabled']:
+                    disabled_logged = False
+                    now = time.time()
+                    if not self._force_update and self._last_calculation and now - self._last_calculation < WEATHER_CALC_INTERVAL:
+                        self._sleep(min(WEATHER_CALC_INTERVAL - (now - self._last_calculation), WEATHER_CALC_INTERVAL))
+                        continue
+
+                    self._force_update = False
+                    self._last_calculation = now
+                    log.clear(NAME)
                     log.debug(NAME,  _(u'Checking weather status') + '...')
 
                     info = []
@@ -210,7 +229,7 @@ class WeatherLevelChecker(Thread):
                             'rows': rows,
                         }
                         update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'No weather data'))
-                        self._sleep(3600)
+                        self._sleep(WEATHER_CALC_INTERVAL)
                         continue
 
                     total_info.update({
@@ -262,31 +281,37 @@ class WeatherLevelChecker(Thread):
                     level_adjustments[NAME] = water_adjustment / 100
 
                     if plugin_options['protect_enabled']:
-                        current_data = weather.get_current_data()
-                        temp_local_unit = current_data['temperature'] if options.temp_unit == "C" else 32.0 + 9.0 / 5.0 * current_data['temperature']
-                        log.debug(NAME, _(u'Temperature') + ': %.1f %s' % (temp_local_unit, options.temp_unit))                       
-                        month = time.localtime().tm_mon  # Current month.
-                        if temp_local_unit < plugin_options['protect_temp'] and month in plugin_options['protect_months']:
-                            station_seconds = {}
-                            for station in stations.enabled_stations():
-                                if station.index in plugin_options['protect_stations']:
-                                    station_seconds[station.index] = plugin_options['protect_minutes'] * 60
+                        current_data = weather.get_current_data() or {}
+                        if 'temperature' in current_data:
+                            temp_local_unit = current_data['temperature'] if options.temp_unit == "C" else 32.0 + 9.0 / 5.0 * current_data['temperature']
+                            log.debug(NAME, _(u'Temperature') + ': %.1f %s' % (temp_local_unit, options.temp_unit))
+                            month = time.localtime().tm_mon  # Current month.
+                            if temp_local_unit < plugin_options['protect_temp'] and month in plugin_options['protect_months']:
+                                station_seconds = {}
+                                for station in stations.enabled_stations():
+                                    if station.index in plugin_options['protect_stations']:
+                                        station_seconds[station.index] = plugin_options['protect_minutes'] * 60
+                                    else:
+                                        station_seconds[station.index] = 0
+
+                                for station in stations.enabled_stations():
+                                    if run_once.is_active(datetime.datetime.now(), station.index):
+                                        break
                                 else:
-                                    station_seconds[station.index] = 0
+                                    log.debug(NAME, _(u'Protection activated.'))
+                                    run_once.set(station_seconds)
+                        else:
+                            log_weather_problem(_(u'Protection skipped because current weather temperature is not available.'))
 
-                            for station in stations.enabled_stations():
-                                if run_once.is_active(datetime.datetime.now(), station.index):
-                                    break
-                            else:
-                                log.debug(NAME, _(u'Protection activated.'))
-                                run_once.set(station_seconds)
-
-                    self._sleep(3600)
+                    self._sleep(WEATHER_CALC_INTERVAL)
 
                 else:
-                    log.clear(NAME)
-                    log.info(NAME, _(u'Plug-in is disabled.'))
-                    update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Plug-in is disabled.'))
+                    if self._force_update or not disabled_logged:
+                        self._force_update = False
+                        disabled_logged = True
+                        log.clear(NAME)
+                        log.info(NAME, _(u'Plug-in is disabled.'))
+                        update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Plug-in is disabled.'))
                     if NAME in level_adjustments:
                         del level_adjustments[NAME]
                     last_detail = {
@@ -308,9 +333,10 @@ class WeatherLevelChecker(Thread):
                     self._sleep(24*3600)
 
             except Exception:
-                log.error(NAME, _(u'Weather-based water level plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(3600)
-        weather.remove_callback(self.update)
+                log_weather_problem(_(u'Weather-based water level plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                self._last_calculation = time.time() - WEATHER_CALC_INTERVAL + WEATHER_ERROR_RETRY_INTERVAL
+                self._sleep(WEATHER_ERROR_RETRY_INTERVAL)
+        weather.remove_callback(self.weather_update)
 
 
 checker = None
@@ -334,6 +360,14 @@ def stop():
         checker = None
     if NAME in level_adjustments:
         del level_adjustments[NAME]
+
+
+def log_weather_problem(message):
+    now = time.time()
+    if checker is None or now - checker._last_error_log >= WEATHER_ERROR_LOG_THROTTLE:
+        if checker is not None:
+            checker._last_error_log = now
+        log.error(NAME, message)
 
 
 ################################################################################
