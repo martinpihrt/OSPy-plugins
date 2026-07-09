@@ -36,6 +36,9 @@ from blinker import signal
 NAME = 'Water Tank Monitor'
 MENU =  _('Package: Water Tank Monitor')
 LINK = 'settings_page'
+ERROR_LOG_THROTTLE = 300
+I2C_TRIES = 3
+I2C_RETRY_DELAY = 0.1
 
 tank_options = PluginOptions(
     NAME,
@@ -90,6 +93,7 @@ status['minlevel'] = tank_options['saved_min']
 status['maxlevel'] = tank_options['saved_max']
 status['maxlevel_datetime'] = datetime_string()
 status['minlevel_datetime'] = datetime_string()
+_last_error_logs = {}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -104,6 +108,7 @@ class Sender(Thread):
         global status, avg_lst, avg_cnt, avg_rdy
 
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -117,6 +122,12 @@ class Sender(Thread):
         while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
+
+    def log_problem(self):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            self._last_error_log = now
 
     def run(self):
         last_millis = int(round(time.time() * 1000))   # timer for save log
@@ -151,6 +162,7 @@ class Sender(Thread):
 
         while not self._stop_event.is_set():
             try:
+                normalize_options(tank_options)
                 if tank_options['use_sonic']: 
                     if two_text:
                         log.clear(NAME)
@@ -357,8 +369,7 @@ class Sender(Thread):
 
 
             except Exception:
-                log.clear(NAME)
-                log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+                self.log_problem()
                 self._sleep(60)
 
 sender = None
@@ -388,7 +399,14 @@ def average_list(lst):
         log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
         return -1
 
-def try_io(call, tries=10):
+def log_problem_once(key):
+    now = time.time()
+    if now - _last_error_logs.get(key, 0) >= ERROR_LOG_THROTTLE:
+        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        _last_error_logs[key] = now
+
+
+def try_io(call, tries=I2C_TRIES):
     assert tries > 0
     error = None
     result = None
@@ -399,7 +417,7 @@ def try_io(call, tries=10):
         except IOError as e:
             error = e
             tries -= 1
-            time.sleep(0.1) #wait here to avoid 121 IO Error
+            time.sleep(I2C_RETRY_DELAY) # wait here to avoid 121 IO Error
         else:
             break
 
@@ -472,10 +490,10 @@ def get_sonic_cm():
                 return -1       
 
         except:
-            log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+            log_problem_once('sonic_read')
             return -1
     except:
-        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
+        log_problem_once('sonic_import')
         return -1
 
 
@@ -537,15 +555,52 @@ def get_all_values():
     return status['level'], status['percent'], status['ping'], status['volume'], status['minlevel'], status['maxlevel'], status['minlevel_datetime'], status['maxlevel_datetime'], tank_options['check_liters']
 
 
+def to_int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def clamp(value, low, high):
+    return max(low, min(high, value))
+
+
+def normalize_options(values):
+    int_ranges = {
+        'distance_bottom': (1, 10000),
+        'distance_top': (0, 9999),
+        'water_minimum': (0, 10000),
+        'water_unblocking': (0, 10000),
+        'diameter': (1, 10000),
+        'address_ping': (1, 127),
+        'log_interval': (1, 10080),
+        'log_records': (0, 100000),
+        'avg_samples': (1, 500),
+        'reg_output': (0, max(0, len(stations.get()) - 1)),
+        'reg_mm': (0, 1440),
+        'reg_ss': (0, 59),
+        'delay_duration': (0, 168),
+        'eplug': (0, 1),
+        'type_log': (0, 1),
+    }
+    for key, (low, high) in int_ranges.items():
+        values[key] = clamp(to_int(values.get(key), tank_options.get(key, low)), low, high)
+    if values['distance_top'] >= values['distance_bottom']:
+        values['distance_top'] = max(0, values['distance_bottom'] - 1)
+    return values
+
+
 def read_log():
     """Read log data from json file."""
     data = []
     try:
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             data = json.load(logf)
+    except (IOError, ValueError):
+        data = []
     except:
-        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
-        pass
+        log_problem_once('read_log')
 
     return data
 
@@ -558,9 +613,10 @@ def read_sql_log():
         from plugins.database_connector import execute_db
         sql = "SELECT * FROM `tankmonitor` ORDER BY id DESC"
         data = execute_db(sql, test=False, commit=False, fetch=True) # fetch=true return data from table in format: id,datetime,min,max,actual,volume
+    except (IOError, ValueError):
+        data = []
     except:
-        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
-        pass
+        log_problem_once('read_debug_log')
 
     return data
 
@@ -572,9 +628,10 @@ def read_debug_log():
     try:
         with open(os.path.join(plugin_data_dir(), 'debug_log.json')) as logf:
             data = json.load(logf)
+    except (IOError, ValueError):
+        data = []
     except:
-        log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
-        pass
+        log_problem_once('read_graph_log')
 
     return data        
 
@@ -916,6 +973,7 @@ class settings_page(ProtectedPage):
             global sender, avg_lst, avg_cnt, avg_rdy
             qdict = web.input(**tank_options)
             verify_csrf(qdict)
+            normalize_options(qdict)
             tank_options.web_update(qdict) #for save multiple select
             
             if tank_options['use_sonic']:
@@ -1115,7 +1173,7 @@ class graph_json(ProtectedPage):
                     temp_balances = {}
                     for key in json_data[i]['balances']:
                         try:
-                            find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
+                            find_key = int(key)
                         except:
                             find_key = key      
                         if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to

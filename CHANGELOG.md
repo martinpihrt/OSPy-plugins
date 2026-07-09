@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Water Tank Monitor<br/>
+Reduced Water Tank Monitor error noise and hardened sensor/log handling. Repeated runtime and I2C read errors are throttled, I2C retry count is lower to avoid long bus blocking, corrupted local JSON log files return empty data instead of repeatedly logging tracebacks, graph timestamp parsing was updated for Python 3, and key numeric settings are clamped before use.
+
 (Martin Pihrt) - System Watchdog<br/>
 Hardened System Watchdog status handling. The background checker now refreshes install/service state on every cycle, service state is read via systemctl is-active with a short timeout instead of parsing ps output, repeated status errors are throttled, /etc/modules entries are no longer duplicated, command output decoding is tolerant of invalid bytes, the status page handles a missing checker thread, and the help page now states that Watchdog installation is started explicitly from the button.
 
