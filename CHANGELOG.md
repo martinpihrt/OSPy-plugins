@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Ping Monitor<br/>
+Reduced Ping Monitor blocking and log noise. Ping command timeout is shorter, ping and e-mail intervals are clamped to safe minimums, address availability is logged on state changes instead of every cycle, regular ping cycles no longer clear the status log, and repeated runtime/log/CSV/graph errors are throttled.
+
 (Martin Pihrt) - Photovoltaic Boiler<br/>
 Reduced Photovoltaic Boiler background load by refreshing Air Temperature plug-in probe data at a fixed interval instead of every loop and by throttling status log rewrites. Repeated runtime/probe errors are now throttled, the settings page works even when the background thread is not available, selected output is validated, and stopping the plug-in only deactivates a station run created by this plug-in.
 

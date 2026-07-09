@@ -34,6 +34,10 @@ from ospy.helpers import datetime_string
 NAME = 'Ping Monitor'
 MENU =  _('Package: Ping Monitor')
 LINK = 'settings_page'
+PING_TIMEOUT = 2
+MIN_PING_INTERVAL = 5
+MIN_EMAIL_INTERVAL_HOURS = 1
+ERROR_LOG_THROTTLE = 300
 
 plugin_options = PluginOptions(
     NAME,
@@ -60,6 +64,29 @@ plugin_options = PluginOptions(
 )
 
 status = { }
+_last_error_log = {}
+
+
+def log_ping_problem(key, message):
+    now = time.time()
+    last = _last_error_log.get(key, 0)
+    if now - last >= ERROR_LOG_THROTTLE:
+        _last_error_log[key] = now
+        log.error(NAME, message)
+
+
+def ping_interval_ms():
+    try:
+        return max(MIN_PING_INTERVAL, int(plugin_options['ping_interval'])) * 1000
+    except Exception:
+        return MIN_PING_INTERVAL * 1000
+
+
+def email_interval_ms():
+    try:
+        return max(MIN_EMAIL_INTERVAL_HOURS, int(plugin_options['send_interval'])) * 3600000
+    except Exception:
+        return MIN_EMAIL_INTERVAL_HOURS * 3600000
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -113,8 +140,8 @@ class Sender(Thread):
         en_fault = False         # enable count in ping counter
 
         while not self._stop_event.is_set():
-            email_interval = plugin_options['send_interval']*3600000  # time for sending between e-mails (ms) -> 1 hour = 1000ms*60*60
-            ping_interval  = plugin_options['ping_interval']*1000     # time for ping (ms) -> 1sec = 1000ms
+            email_interval = email_interval_ms()
+            ping_interval  = ping_interval_ms()
 
             try:
                 if plugin_options['use_ping']: 
@@ -122,33 +149,38 @@ class Sender(Thread):
 
                     if(millis - last_ping_millis) >= ping_interval:   # is time for pinging?
                         last_ping_millis = millis
-                        log.clear(NAME)
                         if plugin_options['address_1'] != '':
                             if ping_ip(plugin_options['address_1']):
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is available.'))
+                                if status['last_ping1'] != 1:
+                                    log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is available.'))
                                 status['ping1'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is not available.'))
+                                if status['last_ping1'] != 0:
+                                    log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_1']) + ' ' +  _('is not available.'))
                                 status['ping1'] = 0
                         else:
                             status['ping1'] = 0
 
                         if plugin_options['address_2'] != '':
                             if ping_ip(plugin_options['address_2']):
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is available.'))
+                                if status['last_ping2'] != 1:
+                                    log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is available.'))
                                 status['ping2'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is not available.'))
+                                if status['last_ping2'] != 0:
+                                    log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_2']) + ' ' +  _('is not available.'))
                                 status['ping2'] = 0
                         else:
                             status['ping2'] = 0
 
                         if plugin_options['address_3'] != '':
                             if ping_ip(plugin_options['address_3']) and plugin_options['address_3']!='':
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is available.'))
+                                if status['last_ping3'] != 1:
+                                    log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is available.'))
                                 status['ping3'] = 1
                             else:
-                                log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is not available.'))
+                                if status['last_ping3'] != 0:
+                                    log.info(NAME, datetime_string() + ' ' + str(plugin_options['address_3']) + ' ' +  _('is not available.'))
                                 status['ping3'] = 0
                         else:
                             status['ping3'] = 0
@@ -215,13 +247,12 @@ class Sender(Thread):
                                         os.remove(log_csv_file)
 
                                 except Exception:
-                                    log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+                                    log_ping_problem('send_email', _('Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
                 self._sleep(1)
 
             except Exception:
-                log.clear(NAME)
-                log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+                log_ping_problem('run_loop', _('Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
                 self._sleep(60)
 
 
@@ -246,7 +277,7 @@ def stop():
 
 def ping_ip(current_ip_address):
     try:
-        output = subprocess.check_output(['ping', '-c', '1', current_ip_address], universal_newlines=True, timeout=10)
+        output = subprocess.check_output(['ping', '-c', '1', current_ip_address], universal_newlines=True, timeout=PING_TIMEOUT)
         if 'unreachable' in output:
             return False
         else:
@@ -276,7 +307,7 @@ def write_log(json_data):
         with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
             json.dump(json_data, outfile)
     except:
-        log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+        log_ping_problem('write_log', _('Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def write_graph_log(json_data):
     """Write data to graph json file."""
@@ -284,7 +315,7 @@ def write_graph_log(json_data):
         with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
             json.dump(json_data, outfile)
     except:
-        log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+        log_ping_problem('write_graph_log', _('Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def two_digits(n):
     return '%02d' % int(n)
@@ -423,8 +454,7 @@ def create_csv_file():
                 writer.writerow(data)
 
     except Exception:
-        log.clear(NAME)
-        log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+        log_ping_problem('create_csv', _('Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 
 ################################################################################
@@ -638,7 +668,7 @@ class graph_json(ProtectedPage):
             return json.dumps(data)
 
         except:
-            log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+            log_ping_problem('graph_json', _('Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
             return data
 
 
@@ -667,7 +697,7 @@ class log_csv(ProtectedPage):  # save log file from web as csv file type
             return data
 
         except:
-            log.error(NAME, _('Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+            log_ping_problem('log_csv', _('Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('ping_monitor -> log_csv GET')
             return self.core_render.notice('/', msg)
