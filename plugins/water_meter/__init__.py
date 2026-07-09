@@ -21,6 +21,9 @@ from ospy.i2c_guard import i2c_transaction
 NAME = 'Water Meter'
 MENU =  _(u'Package: Water Meter')
 LINK = 'settings_page'
+ERROR_LOG_THROTTLE = 300
+I2C_TIMEOUT = 2.0
+I2C_PRIORITY = 'normal'
 
 options = PluginOptions(
     NAME,
@@ -49,6 +52,7 @@ class WaterSender(Thread):
         self.status['meter'] = 0.0
 
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -63,16 +67,28 @@ class WaterSender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
-    def run(self):
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
+
+    def _open_bus(self):
         try:
             import smbus  # for PCF 8583
             self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
-
+            self.pcf = set_counter(self.bus)
         except ImportError:
             log.warning(NAME, _(u'Could not import smbus.'))
+            self.bus = None
+            self.pcf = None
+        except Exception:
+            self.bus = None
+            self.pcf = None
+            self._log_problem(_(u'Water Meter plug-in') + ':\n' + traceback.format_exc())
 
-        if self.bus is not None:
-            self.pcf = set_counter(self.bus)     # set pcf8583 as counter
+    def run(self):
+        self._open_bus()
 
         log.clear(NAME)
         once_text = True  # text enabled plugin
@@ -89,6 +105,10 @@ class WaterSender(Thread):
 
         while not self._stop_event.is_set():
             try:
+                normalize_options()
+                if self.bus is None and options['enabled']:
+                    self._open_bus()
+
                 if self.bus is not None and options['enabled']:  # if water meter plugin is enabled
                     val = counter(self.bus) / options['pulses']
                     self.status['meter'] = round(val, 2)
@@ -145,7 +165,8 @@ class WaterSender(Thread):
 
             except Exception:
                 self.bus = None
-                log.error(NAME, _(u'Water Meter plug-in') + ':\n' + traceback.format_exc())
+                self.pcf = None
+                self._log_problem(_(u'Water Meter plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -169,7 +190,7 @@ def stop():
         water_sender = None
 
 
-def try_io(call, tries=10):
+def try_io(call, tries=3):
     assert tries > 0
     error = None
     result = None
@@ -190,6 +211,18 @@ def try_io(call, tries=10):
     return result        
 
 
+def safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_options():
+    options['pulses'] = max(0.001, min(1000000.0, safe_float(options.get('pulses', 10.0), 10.0)))
+    options['sum'] = max(0, safe_float(options.get('sum', 0), 0))
+
+
 def set_counter(i2cbus):
     try:
         if options['address']:
@@ -200,16 +233,16 @@ def set_counter(i2cbus):
         #i2cbus.write_byte_data(addr, 0x01, 0x00) # reset LSB
         #i2cbus.write_byte_data(addr, 0x02, 0x00) # reset midle Byte
         #i2cbus.write_byte_data(addr, 0x03, 0x00) # reset MSB
-        with i2c_transaction():
+        with i2c_transaction(timeout=I2C_TIMEOUT, priority=I2C_PRIORITY):
             try_io(lambda: i2cbus.write_byte_data(addr, 0x00, 0x20)) # status registr setup to "EVENT COUNTER"
             try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
             try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
             try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB        
         log.debug(NAME, _(u'Setup PCF8583 as event counter is OK'))
         return 1  
-    except:
-        log.error(NAME, _(u'Water Meter plug-in') + ':\n' + _(u'Setup PCF8583 as event counter - FAULT'))
-        log.error(NAME, _(u'Water Meter plug-in') + traceback.format_exc())
+    except Exception:
+        log.debug(NAME, _(u'Water Meter plug-in') + ':\n' + _(u'Setup PCF8583 as event counter - FAULT'))
+        log.debug(NAME, _(u'Water Meter plug-in') + traceback.format_exc())
         return None
 
 def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses per second
@@ -222,14 +255,14 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         #i2cbus.write_byte_data(addr, 0x01, 0x00) # reset LSB
         #i2cbus.write_byte_data(addr, 0x02, 0x00) # reset midle Byte
         #i2cbus.write_byte_data(addr, 0x03, 0x00) # reset MSB
-        with i2c_transaction():
+        with i2c_transaction(timeout=I2C_TIMEOUT, priority=I2C_PRIORITY):
             try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
             try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
             try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB        
         time.sleep(1)
         # read number (pulses in counter) and translate to DEC
         #counter = i2cbus.read_i2c_block_data(addr, 0x00)
-        with i2c_transaction():
+        with i2c_transaction(timeout=I2C_TIMEOUT, priority=I2C_PRIORITY):
             counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
         num1 = (counter[1] & 0x0F)             # units
         num10 = (counter[1] & 0xF0) >> 4       # dozens
@@ -239,8 +272,8 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
         num100000 = (counter[3] & 0xF0) >> 4   # hundreds of thousands
         pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
         return pulses
-    except:
-        log.error(NAME, _(u'Water Meter plug-in') + traceback.format_exc())
+    except Exception:
+        log.debug(NAME, _(u'Water Meter plug-in') + traceback.format_exc())
         return 0
 
 def get_all_values():
@@ -256,6 +289,7 @@ class settings_page(ProtectedPage):
     def GET(self):
         global water_sender
 
+        normalize_options()
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
 
@@ -281,6 +315,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         verify_csrf(qdict)
         options.web_update(qdict)
+        normalize_options()
 
         if water_sender is not None:
             water_sender.update()
@@ -311,5 +346,5 @@ class water_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data = {}
-        data['sec_water'] = water_sender.status['meter']
+        data['sec_water'] = water_sender.status['meter'] if water_sender is not None else 0.0
         return json.dumps(data)        

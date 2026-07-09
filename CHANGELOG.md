@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Water Meter<br/>
+Hardened Water Meter I2C/runtime handling. PCF8583 access now uses guarded I2C transactions with a short timeout and fewer retries, the bus is reopened after failures, repeated runtime/I2C errors are throttled, pulse and total settings are clamped before use to avoid division by zero or invalid totals, and JSON status works even when the background thread is not running.
+
 (Martin Pihrt) - Water Consumption Counter<br/>
 Hardened Water Consumption Counter settings and event handling. Flow rates, totals, e-mail subject, and selected e-mail plug-in are normalized before use, numeric conversion now safely falls back to zero without traceback spam, repeated signal setup errors are throttled, and master OFF calculations use validated values before updating totals or sending notifications.
 
