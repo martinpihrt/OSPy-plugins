@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - SMS Modem<br/>
+Hardened SMS Modem background handling. The plug-in no longer runs apt installs automatically from its polling thread; missing Gammu dependencies are reported with the fixed apt command instead. Repeated runtime/modem errors are throttled, Gammu config writes use a context manager and report failures cleanly, missing gammu waits longer before retrying, run-now SMS commands validate the program number before use, and settings saving no longer fails when the sender thread is not running.
+
 (Martin Pihrt) - Remote Notifications<br/>
 Hardened Remote Notifications event sending. Runtime errors and failed sends are throttled, remote URL/API settings are normalized before use, the API key is hidden with a show/hide button and masked in settings JSON and send logs, successful settings redirects are no longer logged as internal errors, and finished-run handling no longer references the run variable before it exists.
 

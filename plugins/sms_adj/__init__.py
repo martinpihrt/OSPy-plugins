@@ -5,11 +5,8 @@ __author__ = u'Martin Pihrt'
 from threading import Thread, Event
 import json
 import time
-from datetime import datetime
 import traceback
 import os
-import subprocess
-import shlex
 
 import web
 from ospy import helpers
@@ -19,7 +16,7 @@ from ospy.options import options
 from ospy.log import log
 from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import reboot, poweroff, is_python2, verify_csrf
+from ospy.helpers import reboot, poweroff, verify_csrf
 from ospy.programs import programs
 from ospy.stations import stations
 from ospy.helpers import datetime_string
@@ -28,6 +25,8 @@ from ospy.helpers import datetime_string
 NAME = 'SMS Modem'
 MENU =  _(u'Package: SMS Modem')
 LINK = 'settings_page'
+ERROR_LOG_THROTTLE = 300
+MISSING_DEPENDENCY_SLEEP = 300
 
 sms_options = PluginOptions(
     NAME,
@@ -63,6 +62,7 @@ class SMSSender(Thread):
         Thread.__init__(self)
         self.daemon = True
         self._stop_event = Event()
+        self._last_error_log = 0
 
         self._sleep_time = 0
         self.start()
@@ -79,6 +79,12 @@ class SMSSender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
+    def log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message + '\n' + traceback.format_exc())
+            self._last_error_log = now
+
     def run(self):
         once_text = True
         two_text = True
@@ -92,35 +98,24 @@ class SMSSender(Thread):
                         once_text = True
                         two_text = False
                         if not os.path.exists("/usr/bin/gammu"):
-                            #http://askubuntu.com/questions/448358/automating-apt-get-install-with-assume-yes
-                            #sudo apt-get install -y gammu
-                            #sudo apt-get install -y python-gammu
-                            #sudo apt-get install python3-gammu
                             log.clear(NAME)
                             log.info(NAME, _(u'Gammu is not installed.'))
-                            log.info(NAME, _(u'Please wait installing Gammu...'))
-                            cmd = "sudo apt-get install -y gammu"
-                            proc_install(self, cmd)
-                            if is_python2():
-                                log.info(NAME, _(u'Please wait installing Python-Gammu...'))
-                                cmd = "sudo apt-get install -y python-gammu"
-                            else:
-                                log.info(NAME, _(u'Please wait installing Python3-Gammu...'))
-                                cmd = "sudo apt-get install -y python3-gammu"                                    
-                            proc_install(self, cmd)
-                            log.info(NAME, _(u'Testing attached GSM ttyUSB...'))
-                            cmd = "sudo dmesg | grep tty"
-                            proc_install(self, cmd)
+                            log.info(NAME, _(u'Install required packages from the system package manager and restart this plug-in.'))
+                            log.info(NAME, 'sudo apt install gammu python3-gammu')
+                            self._sleep(MISSING_DEPENDENCY_SLEEP)
+                            continue
                         if not os.path.exists("/root/.gammurc"):
                             log.info(NAME, _(u'Saving Gammu config to /root/.gammurc...'))
-                            f = open("/root/.gammurc","w")
-                            f.write("[gammu]\n")
-                            f.write("port = /dev/ttyUSB0\n")
-                            f.write("model = \n")
-                            f.write("connection = at19200\n")
-                            f.write("synchronizetime = yes\n")
-                            f.write("logfile =\n")
-                            f.close()
+                            try:
+                                with open("/root/.gammurc", "w") as f:
+                                    f.write("[gammu]\n")
+                                    f.write("port = /dev/ttyUSB0\n")
+                                    f.write("model = \n")
+                                    f.write("connection = at19200\n")
+                                    f.write("synchronizetime = yes\n")
+                                    f.write("logfile =\n")
+                            except Exception:
+                                self.log_problem(_(u'Could not save Gammu config.'))
                     sms_check(self)  # Check SMS command from modem
 
                 else:
@@ -133,7 +128,7 @@ class SMSSender(Thread):
                 self._sleep(10)
 
             except Exception:
-                log.error(NAME, _(u'SMS Modem plug-in') + ':\n' + traceback.format_exc())
+                self.log_problem(_(u'SMS Modem plug-in') + ':')
                 self._sleep(60)
 
 
@@ -155,22 +150,13 @@ def stop():
         sms_sender.join(15)
         sms_sender = None
 
-def proc_install(self, cmd):
-    """installation"""
-    proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
-    output = proc.stdout.decode('utf-8')
-    log.info(NAME, output)
-
 def sms_check(self):
     """Control and processing SMS"""
     try:
         import gammu
     except Exception:
-        log.clear(NAME)
-        #log.error(NAME, _(u'SMS Modem plug-in') + ':\n' + traceback.format_exc())
         log.debug(NAME, _(u'Error: No module named gammu'))
-        pass
-        self._sleep(60)
+        self._sleep(MISSING_DEPENDENCY_SLEEP)
         return
         
     tel1 = sms_options['tel1']
@@ -190,10 +176,8 @@ def sms_check(self):
     try:
         sm.Init()
         log.debug(NAME, datetime_string() + ': ' + _(u'Checking SMS...'))
-    except:
-        #log.error(NAME, _(u'SMS Modem plug-in') + ':\n' + traceback.format_exc())
+    except Exception:
         log.debug(NAME, _(u'Error: Phone (modem) not connected.'))
-        pass
         self._sleep(60)
         return
 
@@ -399,8 +383,8 @@ def sms_check(self):
                 elif m['Text'][0:len(comm9)] == comm9:        # If command = lenght char comm9 (run now program xx)
                     num = m['Text'][len(comm9):]              # number from sms text example: run36 -> num=36
                     log.info(NAME, _(u'Command') + ' ' + comm9 + ' ' + _(u'is processed'))
-                    index = int(num)
-                    if index <= programs.count():             # if program number from sms text exists in program db
+                    index = int(num) if num.isdigit() else 0
+                    if 1 <= index <= programs.count():             # if program number from sms text exists in program db
                         log.finish_run(None)
                         stations.clear()
                         prog = int(index - 1)
@@ -461,7 +445,8 @@ class settings_page(ProtectedPage):
         verify_csrf(qdict)
         sms_options.web_update(qdict)
 
-        sms_sender.update()
+        if sms_sender is not None:
+            sms_sender.update()
         raise web.seeother(plugin_url(settings_page), True)
 
 
