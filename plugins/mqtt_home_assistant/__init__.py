@@ -40,6 +40,10 @@ from blinker import signal                                       # To receive st
 NAME = 'Home Assistant'                                          # The unique name of the plugin listed in the plugin manager
 MENU =  _('Package: MQTT Home Assistant')                        # The name of the plugin that will be visible in the running plugins tab and will be translated
 LINK = 'settings_page'                                           # The default webpage when loading the plugin will be the settings page class
+MQTT_CONNECT_TIMEOUT = 10
+MQTT_RECONNECT_MIN_DELAY = 5
+MQTT_RECONNECT_MAX_DELAY = 120
+ERROR_LOG_THROTTLE = 300
 
 plugin_options = PluginOptions(
     NAME,
@@ -69,6 +73,7 @@ mqtt = None
 _client = None
 _subscriptions = {}
 _is_connected = False
+_last_error_log = {}
 
 
 def plugin_is_running(module):
@@ -91,6 +96,25 @@ try:
     mqtt_is_installed = True
 except ImportError:
     pass
+
+
+def log_hass_problem(key, message):
+    now = time.time()
+    last = _last_error_log.get(key, 0)
+    if now - last >= ERROR_LOG_THROTTLE:
+        _last_error_log[key] = now
+        log.error(NAME, message)
+
+
+def safe_publish(client, topic, payload='', qos=0, retain=True):
+    if client is None or not topic:
+        return False
+    try:
+        client.publish(topic, payload, qos=qos, retain=retain)
+        return True
+    except Exception:
+        log_hass_problem('publish', _('MQTT Home Assistant publish failed') + ': ' + traceback.format_exc().splitlines()[-1])
+        return False
 
 
 
@@ -149,7 +173,7 @@ class Sender(Thread):
                         in_footer.val = msg.encode('utf8').decode('utf8')
 
             except Exception:
-                log.error(NAME, _('MQTT Home Assistant') + ':\n' + traceback.format_exc())
+                log_hass_problem('startup', _('MQTT Home Assistant') + ': ' + traceback.format_exc().splitlines()[-1])
                 
         while not self._stop_event.is_set():                                                    # main data update loop, with addition to signals
             try:
@@ -159,7 +183,7 @@ class Sender(Thread):
                     update_tank_level(self.sensors_tanks)                                       # update water tank plugin only if devices exist
                 self._sleep(plugin_options['measurement_refresh_interval'])
             except Exception:
-                log.error(NAME, _('MQTT Home Assistant') + ':\n' + traceback.format_exc())
+                log_hass_problem('update_loop', _('MQTT Home Assistant') + ': ' + traceback.format_exc().splitlines()[-1])
 
 sender = None
 
@@ -189,6 +213,7 @@ def get_client():
             _client.on_message = on_message
             if plugin_options['use_mqtt_log']:
                 _client.on_log = on_log                    # debug MQTT communication log
+            _client.reconnect_delay_set(min_delay=MQTT_RECONNECT_MIN_DELAY, max_delay=MQTT_RECONNECT_MAX_DELAY)
             if plugin_options['use_tls']:
                 _client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLSv1_2,
                                 ciphers=None, 
@@ -199,14 +224,18 @@ def get_client():
             log.clear(NAME)
             log.info(NAME, datetime_string() + ' ' + _('Connecting to broker') + '...')
             _client.username_pw_set(plugin_options['mqtt_user_name'], plugin_options['mqtt_user_password'])
-            _client.connect(plugin_options['mqtt_broker_host'], plugin_options['mqtt_broker_port'], 60)
-            time.sleep(5)
+            old_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(MQTT_CONNECT_TIMEOUT)
+            try:
+                _client.connect(plugin_options['mqtt_broker_host'], int(plugin_options['mqtt_broker_port']), 60)
+            finally:
+                socket.setdefaulttimeout(old_timeout)
             _client.loop_start()
             log.info(NAME, datetime_string() + ' ' + _('OK'))
             return _client
 
         except Exception as e:
-            log.error(NAME, _('Plugin could not initalize client:') + '{}'.format(e))
+            log_hass_problem('client_init', _('Plugin could not initalize client:') + '{}'.format(e))
             return None
 
 
@@ -239,8 +268,11 @@ def on_restart():
     global sender, _is_connected
     if sender is not None:
         if sender.client is not None:
-            sender.client.disconnect()
-            sender.client.loop_stop()
+            try:
+                sender.client.disconnect()
+                sender.client.loop_stop()
+            except Exception:
+                log_hass_problem('restart', _('MQTT Home Assistant') + ': ' + traceback.format_exc().splitlines()[-1])
             sender.client = None
         _is_connected = False
 
@@ -271,15 +303,21 @@ def stop():
     remove_hass_ospy()
     if sender is not None:
         if sender.client is not None:
-            sender.client.disconnect()
-            sender.client.loop_stop()
+            try:
+                sender.client.disconnect()
+                sender.client.loop_stop()
+            except Exception:
+                log_hass_problem('stop_client', _('MQTT Home Assistant') + ': ' + traceback.format_exc().splitlines()[-1])
             sender.client = None
         sender.stop()
         sender.join(15)
         sender = None
     if _client is not None:
-        _client.disconnect()
-        _client.loop_stop()
+        try:
+            _client.disconnect()
+            _client.loop_stop()
+        except Exception:
+            log_hass_problem('stop_global_client', _('MQTT Home Assistant') + ': ' + traceback.format_exc().splitlines()[-1])
         _client = None
 
 
@@ -382,13 +420,13 @@ def publish(topic, payload=''):
         if isinstance(payload, dict):
             payload = json.dumps(payload, sort_keys=True)
         log.debug(NAME, datetime_string() + ' ' + _('Publish to topic') + ': {}, '.format(topic) + _('payload') + ': {}'.format(payload))
-        client.publish(topic, payload, qos=0, retain=True)
+        safe_publish(client, topic, payload, qos=0, retain=True)
 
 
 def removeTopic(topic):
     client = _mqtt_client()
     if client:
-        client.publish(topic, None, 0, False)
+        safe_publish(client, topic, None, qos=0, retain=False)
 
 
 class hass_device:
@@ -484,23 +522,23 @@ class hass_device:
 
 
 def rain_delay_set(client, msg, device):
-    payload = msg.payload.decode("utf-8")
+    payload = msg.payload.decode("utf-8", errors="replace")
     publish('{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property), payload)
     rain_blocks['hass'] = datetime.datetime.now() + datetime.timedelta(hours=float(int(payload)))
     stop_onrain()
 
 def water_level_set(client, msg, device):
-    payload = msg.payload.decode("utf-8")
+    payload = msg.payload.decode("utf-8", errors="replace")
     publish('{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property), payload)
     options.level_adjustment = int(payload) / 100
 
 def scheduler_enable_set(client, msg, device):
-    payload = msg.payload.decode("utf-8")
+    payload = msg.payload.decode("utf-8", errors="replace")
     publish('{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property), payload)
     options.scheduler_enabled = True if payload == "True" else False
 
 def manual_mode_set(client, msg, device):
-    payload = msg.payload.decode("utf-8")
+    payload = msg.payload.decode("utf-8", errors="replace")
     publish('{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property), payload)
     options.manual_mode = True if payload == "True" else False
     if payload == "True":
@@ -509,7 +547,7 @@ def manual_mode_set(client, msg, device):
         publish('{}/{}/{}/availability'.format(plugin_options['mqtt_hass_topic'], "system", "scheduler_enabled"), "online")
     
 def station_set(client, msg, device):
-    payload = msg.payload.decode("utf-8")
+    payload = msg.payload.decode("utf-8", errors="replace")
     publish('{}/{}/{}/state'.format(plugin_options['mqtt_hass_topic'], device._type, device._property), payload)
     if payload == "True":
         start = datetime.datetime.now()
@@ -544,7 +582,7 @@ def report_program_runnow():
     program_runnow.send()
 
 def program_set(client, msg, device):
-    payload = msg.payload.decode("utf-8")
+    payload = msg.payload.decode("utf-8", errors="replace")
     if payload == device._type:
         # first stop stations
         # log.finish_run(None)
@@ -1239,6 +1277,8 @@ def update_device_plugin_settings(name, **kw):
     discovery_publish()
     
 def remove_hass_ospy():
+    if sender is None or sender.devices is None:
+        return
     for device in sender.devices:
         remove_device(device)
         
@@ -1320,9 +1360,9 @@ class settings_page(ProtectedPage):
         global mqtt_is_installed
         msg = ''
         if not slugify_is_installed:
-            msg = _('Error: slugify not installed. Install it to system. sudo apt install python3 slugify.')
+            msg = _('Error: slugify not installed. Install it to system. sudo apt install python3-slugify.')
         elif not mqtt_is_installed:
-            msg += ' ' + _('Error: paho-mqtt is not installed. Install it to system. sudo pip3 install paho-mqtt.')
+            msg += ' ' + _('Error: paho-mqtt is not installed. Install it to system. sudo apt install python3-paho-mqtt.')
         else:
             msg = ''
         return self.plugin_render.mqtt_home_assistant(plugin_options, log.events(NAME), msg, is_connected())
@@ -1350,6 +1390,9 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         try:
-            return json.dumps(plugin_options)
+            settings = dict(plugin_options)
+            if settings.get('mqtt_user_password'):
+                settings['mqtt_user_password'] = '********'
+            return json.dumps(settings)
         except:
             return {}
