@@ -30,6 +30,7 @@ from ospy.webpages import showInFooter
 NAME = 'Telegram Bot'
 MENU =  _(u'Package: Telegram Bot')
 LINK = 'settings_page'
+ERROR_LOG_THROTTLE = 300
 
 plugin_options = PluginOptions(
     NAME,
@@ -117,6 +118,7 @@ class Sender(Thread):
         self._zone_connected = False
         self._loop = None
         self._last_station_states = self._station_states()
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -144,6 +146,12 @@ class Sender(Thread):
                 self._footer.button = "telegram_bot/settings"
                 self._footer.label = _(u'Telegram Bot')
             self._footer.val = text.encode('utf8').decode('utf8')
+
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
 
     def _authorized(self, chat_id):
         return str(chat_id) in [str(chat) for chat in plugin_options['currentChats']]
@@ -429,14 +437,14 @@ class Sender(Thread):
                 await self._poll()
             except (urllib.error.URLError, TimeoutError, RuntimeError) as exc:
                 txt = _(u'Telegram Bot has connection error: {}').format(exc)
-                log.error(NAME, txt)
+                self._log_problem(txt)
                 self._footer_text(_(u'Telegram Bot has error, check in plugin status!'))
                 self._api = None
                 await self._async_sleep(30)
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 err_string = u"".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-                log.error(NAME, _(u'Telegram Bot plug-in') + ':\n' + err_string)
+                self._log_problem(_(u'Telegram Bot plug-in') + ':\n' + err_string)
                 self._footer_text(_(u'Telegram Bot has error, check in plugin status!'))
                 self._api = None
                 await self._async_sleep(30)
@@ -479,6 +487,13 @@ def notify_zone_change(name, **kw):
             asyncio.run_coroutine_threadsafe(sender._announce(txt, parse_mode='HTML'), sender._loop)
 
 
+def normalize_options(values):
+    values['botToken'] = str(values.get('botToken') or '').strip().replace('\r', '').replace('\n', '')
+    for key in ('help_cmd', 'info_cmd', 'enable_cmd', 'disable_cmd', 'runOnce_cmd', 'stop_cmd'):
+        values[key] = str(values.get(key) or '').strip().lstrip('/') or plugin_options[key]
+    return values
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -493,6 +508,7 @@ class settings_page(ProtectedPage):
         global sender
         qdict = web.input()
         verify_csrf(qdict)
+        normalize_options(qdict)
         plugin_options.web_update(qdict)
 
         if sender is not None:

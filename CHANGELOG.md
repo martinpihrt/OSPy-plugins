@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Telegram Bot<br/>
+Reduced Telegram Bot retry noise and hardened settings input. Repeated connection/runtime errors are throttled, bot token input is stripped of newline characters before saving, and command names are normalized so users can enter them with or without a leading slash.
+
 (Martin Pihrt) - Water Tank Monitor<br/>
 Reduced Water Tank Monitor error noise and hardened sensor/log handling. Repeated runtime and I2C read errors are throttled, I2C retry count is lower to avoid long bus blocking, corrupted local JSON log files return empty data instead of repeatedly logging tracebacks, graph timestamp parsing was updated for Python 3, and key numeric settings are clamped before use.
 
