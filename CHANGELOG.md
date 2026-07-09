@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - OSPy package Backup<br/>
+Hardened backup file handling. Backup creation now prepares missing data/temp/archive folders before creating the zip, the Backup now action includes a CSRF token, and delete/download requests validate the selected backup index and resolved file path before touching files.
+
 (Martin Pihrt) - Network Ping Monitor<br/>
 Reduced Network Ping Monitor log and retry noise. Disabled monitoring now writes its status only once instead of every loop, summary and log intervals are clamped to safe minimums, repeated runtime/local-log/SQL-log errors are throttled, and server definitions are rebuilt immediately after saving settings even when the background thread is not currently running.
 

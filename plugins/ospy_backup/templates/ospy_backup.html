@@ -30,7 +30,7 @@ $code:
         <tr>
             <td style='text-transform: none;'>$_('Backup'):</td>
             <td title=$:{json.dumps(_('After pressing the button, the current backup is created.'), ensure_ascii=False)}>
-            <a href="?bkp" class="button backup">$_('Backup now')</a>
+            <a href="?bkp&$csrf_query()" class="button backup">$_('Backup now')</a>
             </td>
         </tr>
         <tr>

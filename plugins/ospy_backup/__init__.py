@@ -89,16 +89,21 @@ def get_backup():
     try:
         filestamp = time.strftime('%Y.%m.%d_%H-%M-%S')
         bkp_name = '{}_{}'.format(filestamp, 'PluginsBackup')
-        data_folder = os.path.join('plugins', 'ospy_backup', 'data')
+        data_folder = plugin_data_dir()
         backup_folder = os.path.join('plugins', 'ospy_backup', 'backup')
         temp_folder = os.path.join('plugins', 'ospy_backup', 'temp')
 
         from plugins import plugin_names, plugin_dir
 
         log.debug(NAME, _('Deleting folder in ospy_backup/temp'))
-        shutil.rmtree(temp_folder, onerror=del_rw)                                                     # remove folder "temp" in ospy_backup
+        if os.path.isdir(temp_folder):
+            shutil.rmtree(temp_folder, onerror=del_rw)                                                 # remove folder "temp" in ospy_backup
         log.debug(NAME, _('Deleting folder in ospy_backup/backup'))
-        shutil.rmtree(backup_folder, onerror=del_rw)                                                   # remove folder "temp" in ospy_backup        
+        if os.path.isdir(backup_folder):
+            shutil.rmtree(backup_folder, onerror=del_rw)                                               # remove folder "backup" in ospy_backup
+        mkdir_p(temp_folder)
+        mkdir_p(backup_folder)
+        mkdir_p(data_folder)
 
         for module, name in plugin_names().items():
             if name != 'OSPy package Backup':                                                          # skip ospy_backup plugin data dir
@@ -119,6 +124,24 @@ def get_backup():
         log.debug(NAME, _('OSPy package Backup') + ':\n' + traceback.format_exc())
         pass
         return False
+
+
+def backup_file_from_index(index_value):
+    try:
+        index = int(index_value)
+        read_bkp_folder()
+        if index < 0 or index >= len(plugin_options['bkp_name']):
+            return None, None
+        filename = os.path.basename(plugin_options['bkp_name'][index])
+        path = os.path.abspath(os.path.join(plugin_data_dir(), filename))
+        data_dir = os.path.abspath(plugin_data_dir())
+        if not path.startswith(data_dir + os.sep):
+            return None, None
+        if not os.path.isfile(path):
+            return None, None
+        return filename, path
+    except Exception:
+        return None, None
 
 
 ### Read all sql files in data folder ###
@@ -168,30 +191,24 @@ class settings_page(ProtectedPage):
 
             if 'delete' in qdict and sender is not None:
                 verify_csrf(qdict)
-                delete = qdict['delete']
-                if len(plugin_options['bkp_name']) > 0:
-                    del_file = os.path.join(plugin_data_dir(), plugin_options['bkp_name'][int(delete)] )
-                    if os.path.isfile(del_file):
-                        os.remove(del_file)
-                        log.debug(NAME, datetime_string() + '\n' + _('Deleting file has sucesfully.'))
-                    else:
-                        log.error(NAME, datetime_string() + '\n' + _('File for deleting not found!'))
+                _, del_file = backup_file_from_index(qdict['delete'])
+                if del_file:
+                    os.remove(del_file)
+                    log.debug(NAME, datetime_string() + '\n' + _('Deleting file has sucesfully.'))
+                else:
+                    log.error(NAME, datetime_string() + '\n' + _('File for deleting not found!'))
 
             if 'download' in qdict and sender is not None:
-                download = qdict['download']
-                if len(plugin_options['bkp_name']) > 0:
-                    down_name = plugin_options['bkp_name'][int(download)]
-                    down_path = os.path.join(plugin_data_dir(), down_name)
-                    if os.path.isfile(down_path):
-                        _file = os.path.join(plugin_data_dir(), down_name)
-                        _content = mimetypes.guess_type(down_path)[0]                                     
-                        log.debug(NAME, _('Download file: {} type: {}.').format(_file, _content))
-                        web.header('Access-Control-Allow-Origin', '*')                                    
-                        web.header('Content-type', _content)
-                        web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))
-                        #return web.output(open(down_path, 'rb').read())
-                        with open(down_path, 'rb') as f:
-                            return f.read()
+                down_name, down_path = backup_file_from_index(qdict['download'])
+                if down_path:
+                    _content = mimetypes.guess_type(down_path)[0] or 'application/zip'
+                    log.debug(NAME, _('Download file: {} type: {}.').format(down_path, _content))
+                    web.header('Access-Control-Allow-Origin', '*')
+                    web.header('Content-type', _content)
+                    web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))
+                    with open(down_path, 'rb') as f:
+                        return f.read()
+                log.error(NAME, datetime_string() + '\n' + _('Backup file not found!'))
 
             read_bkp_folder()
             return self.plugin_render.ospy_backup(plugin_options, log.events(NAME))
