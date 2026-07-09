@@ -252,6 +252,13 @@ jQuery(document).ready(function(){
                     </td>
                 </tr>
 
+                <tr>
+                    <td>$_('Measurement interval'):</td>
+                    <td title=$:{json.dumps(_('Tank measurement interval in seconds. A longer interval lowers CPU and I2C bus load.'), ensure_ascii=False)}>
+                        <input name='measurement_interval' type='number' min='1' step='1' value='$plugin_options["measurement_interval"]'>
+                    </td>
+                </tr>
+
                 <!-- display and graphics -->
                 <tr>
                     <td colspan="6"><hr></td>

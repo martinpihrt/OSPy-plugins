@@ -174,7 +174,6 @@ function updateAllWells() {
                     var level = tank.level !== undefined ? tank.level : 0;
                     var voltage = tank.voltage !== undefined ? tank.voltage : 0;
                     var tankEnabled = tank.use !== undefined ? tank.use : 0;
-                    console.log('Tank ' + i + ': ', tank);
                     updateWell(i, level, maxHeightCm, maxVolume, voltage, name, tankEnabled);
                 }
             }).fail(function() {

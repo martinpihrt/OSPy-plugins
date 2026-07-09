@@ -63,6 +63,7 @@ plugin_options = PluginOptions(
         'maxVolt3': 4.096,                       # AIN2 max input value
         'maxVolt4': 4.096,                       # AIN3 max input value
         'i2c': 0,                                # I2C for ADC converter ADS1115 (0x48 default)
+        'measurement_interval': 5,               # interval for tank measuring in seconds
         'use_footer': True,                      # msg on footer on homepage
         'use_script': True,                      # enable script injection on homepage
         # logs
@@ -193,6 +194,7 @@ tanks['label']          = [plugin_options['label1'], plugin_options['label2'], p
 tanks['use']            = [plugin_options['en_tank1'], plugin_options['en_tank2'], plugin_options['en_tank3'], plugin_options['en_tank4']]
 tanks['io_error']       = False
 tanks['channel_error']  = [False, False, False, False]
+status_cache = {'message': None, 'time': 0}
 
 if plugin_options['use_script']:
     script_path = "current_loop_tanks_monitor/script/tank.js"
@@ -261,10 +263,9 @@ class Sender(Thread):
             try:
                 millis = int(round(time.time() * 1000))
 
-                ### periodically measuring after 5 seconds
-                if (millis - last_millis_2) >= 5000:
+                ### periodically measuring
+                if (millis - last_millis_2) >= measurement_interval_ms():
                     last_millis_2 = millis
-                    log.clear(NAME)
                     get_data()
 
                 ### periodically logging (xx minute interval)
@@ -519,6 +520,30 @@ def try_io(call, tries=10):
     return result
 
 
+def measurement_interval_ms():
+    return max(1, int(plugin_options.get('measurement_interval', 5))) * 1000
+
+
+def tank_requires_measurement(channel):
+    tank_no = channel + 1
+    return (
+        plugin_options.get('en_tank{}'.format(tank_no), False)
+        or plugin_options.get('en_stop_tank{}'.format(tank_no), False)
+        or plugin_options.get('en_reg_tank{}'.format(tank_no), False)
+        or plugin_options.get('mini_en_reg_tank{}'.format(tank_no), False)
+        or plugin_options.get('en_eml_tank{}_low'.format(tank_no), False)
+    )
+
+
+def write_status(message, force=False):
+    now_time = time.time()
+    if force or message != status_cache['message'] or now_time - status_cache['time'] >= 60:
+        log.clear(NAME)
+        log.info(NAME, message)
+        status_cache['message'] = message
+        status_cache['time'] = now_time
+
+
 # Functions to read ADC on a specific channel
 def read_adc(bus, channel):
     if channel == 0:
@@ -570,12 +595,20 @@ def read_adc(bus, channel):
 def get_data():
     global tanks
 
+    tanks['use'] = [plugin_options['en_tank1'], plugin_options['en_tank2'], plugin_options['en_tank3'], plugin_options['en_tank4']]
+    active_channels = [channel for channel in range(4) if tank_requires_measurement(channel)]
+    if not active_channels:
+        tanks['io_error'] = False
+        tanks['channel_error'] = [False, False, False, False]
+        write_status(_('The measurement of all tanks is switched off.'))
+        return
+
     try:
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
     except FileNotFoundError:
         tanks['io_error'] = True
         tanks['channel_error'] = [True, True, True, True]
-        log.error(NAME, _('Error: the I2C bus is not available.'))
+        write_status(_('Error: the I2C bus is not available.'))
         return
     
     # Definition for the tank level for each channel (minimum and maximum voltage)
@@ -599,7 +632,7 @@ def get_data():
     adc_values = []
     channel_error = [False, False, False, False]
 
-    for channel in range(4):
+    for channel in active_channels:
         try:
             adc_value = try_io(lambda: read_adc(bus, channel))
             adc_values.append(adc_value)
@@ -631,13 +664,13 @@ def get_data():
     tanks['channel_error'] = channel_error
 
     if IO_error:    
-        log.error(NAME, _('Error: I/O.'))
+        write_status(_('Error: I/O.'))
 
     if VAL_error:
-        log.error(NAME, _('Error: ADC value.'))
+        write_status(_('Error: ADC value.'))
 
     if not IO_error and not VAL_error:
-        log.info(NAME, _('No problems (measurement works as it should).'))
+        write_status(_('No problems (measurement works as it should).'))
 
 
 def scan_i2c():

@@ -208,7 +208,6 @@ function updateAllWells() {
             var level = tank.level !== undefined ? tank.level : 0;
             var voltage = tank.voltage !== undefined ? tank.voltage : 0;
 
-            console.log(name, maxHeightCm, maxVolume, level, voltage);
             updateWell(i, level, maxHeightCm, maxVolume, voltage);
         }
 
