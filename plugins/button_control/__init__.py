@@ -30,6 +30,7 @@ from blinker import signal
 NAME = 'Button Control'
 MENU =  _('Package: Button Control')
 LINK = 'settings_page'
+last_led_output = None
 
 plugin_options = PluginOptions(
     NAME,
@@ -244,6 +245,13 @@ def try_io(call, tries=10):
 
     return result
 
+
+def button_i2c_transaction():
+    try:
+        return i2c_transaction(priority='normal')
+    except TypeError:
+        return i2c_transaction()
+
 def read_buttons():
     try:
         import smbus  
@@ -251,14 +259,14 @@ def read_buttons():
         bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1) 
         
         # Set 8 GPA pins as input pull-UP
-        with i2c_transaction():
+        with button_i2c_transaction():
             try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x0C,0xFF)) #bus.write_byte_data(0x27,0x0C,0xFF)  
      
         # Wait for device
         time.sleep(0.2) 
 
         # Read state of GPIOA register
-        with i2c_transaction():
+        with button_i2c_transaction():
             MySwitch = try_io(lambda: bus.read_byte_data(plugin_options['i2c_addr'],0x12))  # MySwitch = bus.read_byte_data(0x27,0x12)
                
         inBut = 255-MySwitch; # inversion number for led off if button is not pressed
@@ -311,6 +319,11 @@ def read_buttons():
         return -1
 
 def led_outputs(led):
+    global last_led_output
+
+    if led == last_led_output:
+        return
+
     try:
         import smbus  
 
@@ -324,6 +337,8 @@ def led_outputs(led):
         
         with i2c_transaction():
             try_io(lambda: bus.write_byte_data(plugin_options['i2c_addr'],0x13,led))  # bus.write_byte_data(0x27,0x13,led)
+
+        last_led_output = led
               
     except IOError as e:
         if str(e) == 'I2C bus is busy.':
