@@ -58,6 +58,12 @@ input:checked + .slider:before {
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+        jQuery("#toggleMqttPassword").click(function() {
+            var password = jQuery("#mqttUserPassword");
+            var isHidden = password.attr("type") === "password";
+            password.attr("type", isHidden ? "text" : "password");
+            jQuery(this).text(isHidden ? "$_('Hide')" : "$_('Show')");
+        });
 
     });
 </script>
@@ -107,7 +113,10 @@ input:checked + .slider:before {
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Broker Password'):</td>
-                <td><input style='width:60%' type="password" name="user_password" value="${plugin_options['user_password']}"></td>
+                <td>
+                    <input id="mqttUserPassword" style='width:60%' type="password" name="user_password" value="${plugin_options['user_password']}">
+                    <button id="toggleMqttPassword" type="button" class="button backup">$_('Show')</button>
+                </td>
             </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Broker Port'):</td>
