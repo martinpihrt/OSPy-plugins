@@ -24,6 +24,12 @@ from plugins.network_ping_monitor.pythonping import ping
 NAME = 'Network Ping Monitor'
 MENU = _('Package: Network Ping Monitor')
 LINK = 'settings_page'
+MAIN_LOOP_SLEEP = 5
+MIN_SUMMARY_INTERVAL = 30
+MIN_LOG_INTERVAL_MINUTES = 1
+ERROR_LOG_THROTTLE = 300
+
+_last_error_log = {}
 
 plugin_options = PluginOptions(
     NAME,
@@ -62,6 +68,37 @@ servers = {
 }
 
 
+def log_ping_problem(key, message):
+    now = time.time()
+    last = _last_error_log.get(key, 0)
+    if now - last >= ERROR_LOG_THROTTLE:
+        _last_error_log[key] = now
+        log.error(NAME, message)
+
+
+def rebuild_servers():
+    global servers
+    servers = {
+        plugin_options["label_1"]: {"ip": plugin_options["address_1"], "status": None, "last_change": None},
+        plugin_options["label_2"]: {"ip": plugin_options["address_2"], "status": None, "last_change": None},
+        plugin_options["label_3"]: {"ip": plugin_options["address_3"], "status": None, "last_change": None}
+    }
+
+
+def summary_interval():
+    try:
+        return max(MIN_SUMMARY_INTERVAL, int(plugin_options['SUMMARY_INTERVAL']))
+    except Exception:
+        return MIN_SUMMARY_INTERVAL
+
+
+def log_interval_seconds():
+    try:
+        return max(MIN_LOG_INTERVAL_MINUTES, int(plugin_options.get('log_interval', 1))) * 60
+    except Exception:
+        return MIN_LOG_INTERVAL_MINUTES * 60
+
+
 class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -87,15 +124,19 @@ class Sender(Thread):
         last_all_status = None
         last_all_change = None
         last_summary = time.time()
-        last_periodic_log = time.time() - (plugin_options['log_interval'] * 60)
+        last_periodic_log = time.time() - log_interval_seconds()
+        disabled_logged = False
         while not self._stop_event.is_set():
             if not plugin_options['use_ping']:
-                log.clear(NAME)
-                msg = _('Plug-in is not enabled.')
-                log.info(NAME, datetime_string() + ' ' + msg)
-                self._sleep(5)
+                if not disabled_logged:
+                    log.clear(NAME)
+                    msg = _('Plug-in is not enabled.')
+                    log.info(NAME, datetime_string() + ' ' + msg)
+                    disabled_logged = True
+                self._sleep(MAIN_LOOP_SLEEP)
             else:
                 try:
+                    disabled_logged = False
                     all_statuses = []
                     all_times = []
 
@@ -164,10 +205,7 @@ class Sender(Thread):
                         last_all_status = False
                         last_all_change = datetime.now()
 
-                    try:
-                        interval_secs = int(plugin_options.get('log_interval', 1)) * 60
-                    except Exception:
-                        interval_secs = 60
+                    interval_secs = log_interval_seconds()
 
                     if time.time() - last_periodic_log >= interval_secs:
                         status_list = []
@@ -181,7 +219,7 @@ class Sender(Thread):
                             update_log_if_enabled(msg)
                         last_periodic_log = time.time()
 
-                    if time.time() - last_summary >= plugin_options['SUMMARY_INTERVAL']:
+                    if time.time() - last_summary >= summary_interval():
                         log.clear(NAME)
                         summary = []
                         available_times = []
@@ -193,11 +231,10 @@ class Sender(Thread):
                         avg_rtt = round(sum(all_times)/len(all_times), 2) if all_times else 0
                         log.info(NAME, datetime_string() + ' ' + _('Summary of statuses:') + '\n{}'.format(',\n'.join(summary)) + '\n' + _('Average RTT:') + f' {avg_rtt} ms')
                         last_summary = time.time()
-                    self._sleep(5)
+                    self._sleep(MAIN_LOOP_SLEEP)
 
                 except Exception:
-                    log.clear(NAME)
-                    log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+                    log_ping_problem('run_loop', _('Network Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
                     self._sleep(60)
 
 sender = None
@@ -215,7 +252,7 @@ def write_log(json_data):
         with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
             json.dump(json_data, outfile)
     except Exception:
-        log.error(NAME, _('Error writing to local log file') + ':\n' + traceback.format_exc())
+        log_ping_problem('write_log', _('Error writing to local log file') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def update_log(event):
     if not plugin_options['enable_log']:
@@ -244,7 +281,7 @@ def update_log(event):
         write_log(log_data)
         log.info(NAME, _('Saving to local log files OK'))
     except Exception:
-        log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+        log_ping_problem('update_log', _('Network Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def create_sql_table():
     try:
@@ -262,7 +299,7 @@ def create_sql_table():
         execute_db(sql, test=False, commit=False)
         log.debug(NAME, _('Creating SQL table netping OK'))
     except Exception:
-        log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+        log_ping_problem('create_sql_table', _('Network Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def update_sql_log(event):
     if not plugin_options['en_sql_log']:
@@ -281,17 +318,17 @@ def update_sql_log(event):
         execute_db(sql, test=False, commit=True)
         log.info(NAME, _('Saving to SQL database.'))
     except Exception:
-        log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+        log_ping_problem('update_sql_log', _('Network Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def update_log_if_enabled(event):
     try:
         update_log(event)
     except Exception:
-        log.error(NAME, _('Error updating local log') + ':\n' + traceback.format_exc())
+        log_ping_problem('update_local_log', _('Error updating local log') + ': ' + traceback.format_exc().splitlines()[-1])
     try:
         update_sql_log(event)
     except Exception:
-        log.error(NAME, _('Error updating SQL log') + ':\n' + traceback.format_exc())
+        log_ping_problem('update_sql_log_wrapper', _('Error updating SQL log') + ': ' + traceback.format_exc().splitlines()[-1])
 
 def read_sql_log():
     """Read log data from database table `netping` and return rows ordered desc."""
@@ -301,7 +338,7 @@ def read_sql_log():
         data = execute_db(sql, test=False, commit=False, fetch=True)
         return data or []
     except Exception:
-        log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+        log_ping_problem('read_sql_log', _('Network Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         return []
 
 def parse_graph_datetime(value):
@@ -368,22 +405,17 @@ class settings_page(ProtectedPage):
                 execute_db(sql, test=False, commit=False)
                 log.info(NAME, _('Deleted SQL table netping OK'))
             except Exception:
-                log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+                log_ping_problem('settings_drop_sql', _('Network Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
         return self.plugin_render.network_ping_monitor(plugin_options, log.events(NAME), state)
 
     def POST(self):
-        global servers
         qdict = web.input()
         verify_csrf(qdict)
         plugin_options.web_update(qdict)
+        rebuild_servers()
         if sender is not None:
             sender.update()
-            servers = {
-                plugin_options["label_1"]: {"ip": plugin_options["address_1"], "status": None, "last_change": None},
-                plugin_options["label_2"]: {"ip": plugin_options["address_2"], "status": None, "last_change": None},
-                plugin_options["label_3"]: {"ip": plugin_options["address_3"], "status": None, "last_change": None}
-            }
         raise web.seeother(plugin_url(settings_page), True)
 
 class help_page(ProtectedPage):
@@ -416,7 +448,7 @@ class log_page(ProtectedPage):
                 execute_db(sql, test=False, commit=False)
                 log.info(NAME, _('Deleted SQL table netping OK'))
             except Exception:
-                log.error(NAME, _('Network Ping Monitor plug-in') + ':\n' + traceback.format_exc())
+                log_ping_problem('log_drop_sql', _('Network Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
 
         # prepare records based on type_log
         records = []
@@ -477,7 +509,7 @@ class csv_download(ProtectedPage):
             return '\n'.join(out)
 
         except Exception:
-            log.error(NAME, _('Error creating CSV') + ':\n' + traceback.format_exc())
+            log_ping_problem('csv_download', _('Error creating CSV') + ': ' + traceback.format_exc().splitlines()[-1])
             web.internalerror()
 
 class settings_json(ProtectedPage):

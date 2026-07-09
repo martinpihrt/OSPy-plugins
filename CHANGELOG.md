@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Network Ping Monitor<br/>
+Reduced Network Ping Monitor log and retry noise. Disabled monitoring now writes its status only once instead of every loop, summary and log intervals are clamped to safe minimums, repeated runtime/local-log/SQL-log errors are throttled, and server definitions are rebuilt immediately after saving settings even when the background thread is not currently running.
+
 (Martin Pihrt) - Home Assistant<br/>
 Hardened MQTT Home Assistant broker handling. Broker connection attempts now use a shorter timeout and reconnect backoff, publish failures and repeated loop errors are throttled, MQTT payload decoding is tolerant of invalid UTF-8, stopping the plug-in handles missing discovery devices cleanly, settings JSON masks the broker password, and dependency hints now use fixed apt packages instead of pip.
 
