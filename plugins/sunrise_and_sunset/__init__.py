@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
 
-from threading import Thread, Event, Condition
+from threading import Thread, Event, Condition, Lock
 import time
 import subprocess
 import shlex
 import sys
 import traceback
 import json
+import os
+import shutil
 
 import web
 from datetime import datetime
@@ -27,6 +29,11 @@ from ospy.webpages import showInFooter  # Enable plugin to display readings in U
 NAME = 'Astro Sunrise and Sunset'
 MENU =  _('Package: Astro Sunrise and Sunset')
 LINK = 'status_page'
+ASTRO_CALC_INTERVAL = 300
+MAIN_LOOP_SLEEP = 1
+ERROR_BACKOFF = 60
+ERROR_LOG_THROTTLE = 60
+ASTRAL_APT_PACKAGE = 'python3-astral'
 
 plugin_options = PluginOptions(
     NAME, 
@@ -57,6 +64,9 @@ if plugin_options['use_script']:
 
 stats = {}
 last_millis = 0
+_last_error_log = {'message': None, 'time': 0}
+dependency_install_lock = Lock()
+dependency_install_running = False
 
 city_table = [
     _('Not selected'),
@@ -479,12 +489,8 @@ class StatusChecker(Thread):
         try:
             from astral.geocoder import database
         except ImportError:
-            log.clear(NAME)
-            log.info(NAME, _('Astral is not installed.'))
-            log.info(NAME, _('Please wait installing astral...'))
-            cmd = "pip3 install astral"
-            run_command(cmd)
-            log.info(NAME, _('Astral is now installed.'))
+            log_astral_missing()
+            self._sleep(ERROR_BACKOFF)
 
         millis = 0                                           # timer for computing astro state
         last_millis = 0            
@@ -497,7 +503,7 @@ class StatusChecker(Thread):
             try:
                 if plugin_options['use_astro']:
                     millis = int(round(time.time() * 1000))
-                    if (millis - last_millis) > 60000:       # 60 second interval
+                    if (millis - last_millis) > (ASTRO_CALC_INTERVAL * 1000):
                         last_millis = millis
                         log.clear(NAME)
                         found_name = ''
@@ -550,6 +556,8 @@ class StatusChecker(Thread):
                                 _year = int(today.strftime("%Y"))
                                 
                                 s = compute_sunrise_sunset()
+                                if s is None:
+                                    raise ValueError(_('Sunrise and sunset calculation failed.'))
 
                                 log.info(NAME, '_______________ ' + '{}'.format(today) + ' _______________')
                                 log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"].strftime("%H:%M:%S")))
@@ -584,8 +592,10 @@ class StatusChecker(Thread):
 
                         except Exception:
                             self.started.set()
-                            log.error(NAME, _('Astro plug-in') + ':\n' + traceback.format_exc())
-                            self._sleep(20)
+                            city = None
+                            run_now_pgm_list = {}
+                            log_astro_error(_('Astro plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                            self._sleep(ERROR_BACKOFF)
 
                         ### compute starting datetime for selected programs
                         if city is not None:
@@ -617,7 +627,7 @@ class StatusChecker(Thread):
                             if pgmlen > 0:
                                 msg += ', ' + _('{} programs scheduled').format(pgmlen)                    
 
-                        log.info(NAME, datetime_string() + ' ' + _('Another calculation will take place in one minute...'))
+                        log.info(NAME, datetime_string() + ' ' + _('Another calculation will take place later.'))
 
                     ### start run now of the program if the program exists and there is a start time 
                     for pgm_name, start_time in run_now_pgm_list.items():
@@ -642,12 +652,12 @@ class StatusChecker(Thread):
                     else:
                         log.error(NAME, _('Error: restart this plugin! Show in homepage footer have enabled.'))
 
-                self._sleep(1)
+                self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
                 self.started.set()
-                log.error(NAME, _('Astro plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(60)
+                log_astro_error(_('Astro plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                self._sleep(ERROR_BACKOFF)
 
 checker = None
 
@@ -675,6 +685,87 @@ def run_command(cmd):
 
     except Exception:
         log.error(NAME, _('Astral plug-in') + ':\n' + traceback.format_exc())        
+
+
+def astral_is_available():
+    try:
+        from astral.geocoder import database
+        return True
+    except ImportError:
+        return False
+
+
+def log_astral_missing():
+    log.clear(NAME)
+    log.info(NAME, _('Astral is not installed.'))
+    log.info(NAME, _('Install it from the system package manager or from a virtual environment, then restart this plug-in.'))
+    log.info(NAME, _('For Raspberry Pi OS try') + ': sudo apt install {}'.format(ASTRAL_APT_PACKAGE))
+
+
+def astral_dependencies_installing():
+    with dependency_install_lock:
+        return dependency_install_running
+
+
+def start_astral_dependency_install():
+    global dependency_install_running
+    with dependency_install_lock:
+        if dependency_install_running:
+            log.info(NAME, datetime_string() + ' ' + _('Dependency installation is already running.'))
+            return
+        dependency_install_running = True
+
+    install_thread = Thread(target=install_astral_dependency)
+    install_thread.daemon = True
+    install_thread.start()
+
+
+def install_astral_dependency():
+    global dependency_install_running
+    try:
+        log.clear(NAME)
+        if astral_is_available():
+            log.info(NAME, datetime_string() + ' ' + _('Dependencies are already installed.'))
+            return
+
+        if os.name != 'posix' or not shutil.which('apt-get'):
+            log.error(NAME, datetime_string() + ' ' + _('Automatic dependency installation is available only on systems with apt-get.'))
+            log.info(NAME, datetime_string() + ' sudo apt install {}'.format(ASTRAL_APT_PACKAGE))
+            return
+
+        cmd = ['apt-get', 'install', '-y', ASTRAL_APT_PACKAGE]
+        if hasattr(os, 'geteuid') and os.geteuid() != 0:
+            cmd.insert(0, 'sudo')
+
+        log.info(NAME, datetime_string() + ' ' + _('Installing dependencies. This operation can take several minutes.'))
+        log.info(NAME, datetime_string() + ' ' + _('Running command') + ': ' + ' '.join(cmd))
+        process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=600)
+        if process.stdout:
+            log.info(NAME, process.stdout)
+
+        if process.returncode == 0 and astral_is_available():
+            log.info(NAME, datetime_string() + ' ' + _('Dependencies were installed successfully.'))
+            if checker is not None:
+                checker.update()
+        else:
+            log.error(NAME, datetime_string() + ' ' + _('Dependency installation failed. Missing modules') + ': astral')
+            log.info(NAME, datetime_string() + ' sudo apt install {}'.format(ASTRAL_APT_PACKAGE))
+    except subprocess.TimeoutExpired:
+        log.error(NAME, datetime_string() + ' ' + _('Dependency installation timed out.'))
+        log.info(NAME, datetime_string() + ' sudo apt install {}'.format(ASTRAL_APT_PACKAGE))
+    except Exception:
+        log.error(NAME, _('Astral plug-in') + ':\n' + traceback.format_exc())
+    finally:
+        with dependency_install_lock:
+            dependency_install_running = False
+
+
+def log_astro_error(message):
+    now = time.time()
+    if message != _last_error_log['message'] or now - _last_error_log['time'] >= ERROR_LOG_THROTTLE:
+        _last_error_log['message'] = message
+        _last_error_log['time'] = now
+        log.error(NAME, message)
 
 
 def compute_sunrise_sunset(_year = None, _month = None, _day = None):
@@ -755,9 +846,22 @@ class status_page(ProtectedPage):
     def GET(self):
         global last_millis
         try:
+            qdict = web.input()
+            install_deps = qdict.get('install_deps') is not None
+            if install_deps:
+                verify_csrf(qdict)
+                start_astral_dependency_install()
+
             last_millis = 0
             checker.started.wait(4)    # Make sure we are initialized 
-            return self.plugin_render.sunrise_and_sunset(plugin_options, log.events(NAME), checker.status, city_table)
+            return self.plugin_render.sunrise_and_sunset(
+                plugin_options,
+                log.events(NAME),
+                checker.status,
+                city_table,
+                not astral_is_available(),
+                astral_dependencies_installing()
+            )
         except:
             log.error(NAME, _('Astro plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '

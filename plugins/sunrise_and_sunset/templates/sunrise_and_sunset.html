@@ -1,4 +1,4 @@
-$def with(plugin_options, events, stat, city_table)
+$def with(plugin_options, events, stat, city_table, astral_missing, astral_installing)
 
 $var title: $_('Astro Sunrise and Sunset')
 $var page: plugins
@@ -156,6 +156,13 @@ input:checked + .slider:before {
             <tr>
                 <td style='text-transform: none;'>$_('Status'):</td>
                 <td>
+                    $if astral_missing or astral_installing:
+                        $if astral_installing:
+                            <a href="?install_deps&$csrf_query()" class="button upload" style="display:none;">$_('Install libraries')</a>
+                            <small>$_('Dependency installation is running. The installation progress is shown in the status log.')</small><br/>
+                        $else:
+                            <a href="?install_deps&$csrf_query()" class="button upload">$_('Install libraries')</a>
+                            <small>$_('The installation progress is shown in the status log.')</small><br/>
                     <textarea style="font-family: monospace;" rows="25" cols="65" readonly>$'\n'.join(events)</textarea><br/>
                     <a href="$plugins.plugin_url('sunrise_and_sunset.refresh_page')" class="button refresh">$_('Refresh')</a>
                 </td>

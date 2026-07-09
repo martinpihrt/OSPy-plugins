@@ -3,6 +3,12 @@ Sunrise and Sunset Readme
 
 Only for Python 3+
 
+This extension requires the Astral Python package. If Astral is missing, the status page shows an Install libraries button and writes the installation progress to the status log. On Raspberry Pi OS install it with:
+
+```
+sudo apt install python3-astral
+```
+
 This extension allows you to run a specific program depending on sunrise or sunset. This extension calculate the following astronomical data.
 
 * Dawn
