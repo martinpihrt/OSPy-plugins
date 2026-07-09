@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Weather Dashboard<br/>
+Renamed the plug-in from weather dashboard to Weather Dashboard and hardened dashboard settings. Gauge count, size/font values, source/type/channel selections, names, units, tick labels, and colored ranges are now normalized before saving/rendering so malformed form data cannot break the dashboard JSON or canvas page.
+
 (Martin Pihrt) - Weather-based Water Level Netatmo<br/>
 Hardened Weather-based Water Level Netatmo. Netatmo credentials are now read from current settings instead of stale import-time defaults, Netatmo secret/password are masked in settings JSON, water level/weather/Netatmo numeric settings are clamped before use, empty weather or Netatmo measure data no longer causes division/unpack errors, and repeated runtime/API errors are throttled.
 

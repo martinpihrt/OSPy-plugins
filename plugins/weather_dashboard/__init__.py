@@ -46,7 +46,7 @@ SHELLY_VALUE_TYPES = [
 ################################################################################
 # Plugin name, translated name, link for web page in init, plugin options      #
 ################################################################################
-NAME = 'weather dashboard'                                       # The unique name of the plugin listed in the plugin manager
+NAME = 'Weather Dashboard'                                       # The unique name of the plugin listed in the plugin manager
 MENU =  _('Package: Weather Dashboard')                          # The name of the plugin that will be visible in the running plugins tab and will be translated
 LINK = 'canvas_page'                                             # The default webpage when loading the plugin will be the settings page class
 
@@ -196,13 +196,45 @@ def default_gauge():
         'green_to': 100
     }
 
-try:
-    gauges = plugin_options['gauges']
-except:
-    gauges = []
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
-if not gauges:
-    plugin_options['gauges'] = [default_gauge()]
+
+def normalize_gauge(gauge):
+    data = default_gauge()
+    if isinstance(gauge, dict):
+        data.update(gauge)
+    data['enabled'] = bool(data.get('enabled', True))
+    data['name'] = str(data.get('name') or _('Gauge'))[:80]
+    data['unit'] = str(data.get('unit') or '')[:20]
+    if data['source'] not in SOURCE_REGISTRY:
+        data['source'] = 'current_loop'
+    data['channel'] = max(0, safe_int(data.get('channel'), 0))
+    if data['value_type'] not in SOURCE_REGISTRY[data['source']]['types'] and data['value_type'] not in SHELLY_VALUE_TYPES:
+        data['value_type'] = SOURCE_REGISTRY[data['source']]['types'][0]
+    data['canvas_size_xy'] = max(120, min(800, safe_int(plugin_options.get('canvas_size_xy', 250), 250)))
+    for key in ('red_from', 'red_to', 'blue_from', 'blue_to', 'green_from', 'green_to'):
+        data[key] = safe_int(data.get(key), safe_int(default_gauge().get(key), 0))
+    data['tick'] = str(data.get('tick') or '0,25,50,75,100')[:120]
+    data['min'] = str(data.get('min') or '0')[:20]
+    data['max'] = str(data.get('max') or '100')[:20]
+    return data
+
+
+def normalize_options():
+    plugin_options['dashboard_mode'] = plugin_options.get('dashboard_mode') if plugin_options.get('dashboard_mode') in ('canvas', 'text') else 'canvas'
+    plugin_options['canvas_size_xy'] = max(120, min(800, safe_int(plugin_options.get('canvas_size_xy', 250), 250)))
+    plugin_options['txt_size_font'] = max(10, min(120, safe_int(plugin_options.get('txt_size_font', 40), 40)))
+    gauges = plugin_options.get('gauges', [])
+    if not isinstance(gauges, list) or not gauges:
+        gauges = [default_gauge()]
+    plugin_options['gauges'] = [normalize_gauge(gauge) for gauge in gauges[:32]]
+
+
+normalize_options()
 
 def get_value(source, channel, value_type):
     if source == 'current_loop':
@@ -380,10 +412,12 @@ def get_shelly_value(device, value_type):
 class canvas_page(ProtectedPage):
     """Load an html page for canvas wieving."""
     def GET(self):
+        normalize_options()
         return self.plugin_render.weather_dashboard_canvas_page(plugin_options)
 
 class settings_page(ProtectedPage):
     def GET(self):
+        normalize_options()
         return self.plugin_render.weather_dashboard_page(
             plugin_options,
             log.events(NAME),
@@ -395,29 +429,30 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         verify_csrf(qdict)
         gauges = []
-        count = int(qdict['gauge_count'])
-        plugin_options['dashboard_mode'] = qdict['dashboard_mode']
-        plugin_options['canvas_size_xy'] = int(qdict['canvas_size_xy'])
-        plugin_options['txt_size_font'] = int(qdict['txt_size_font'])
+        count = max(0, min(32, safe_int(qdict.get('gauge_count'), 0)))
+        plugin_options['dashboard_mode'] = qdict.get('dashboard_mode', 'canvas')
+        plugin_options['canvas_size_xy'] = safe_int(qdict.get('canvas_size_xy'), 250)
+        plugin_options['txt_size_font'] = safe_int(qdict.get('txt_size_font'), 40)
         for i in range(count):
-            gauges.append({
+            gauges.append(normalize_gauge({
                 'enabled': ('enabled{}'.format(i) in qdict),
-                'name': qdict['name{}'.format(i)],
-                'unit': qdict['unit{}'.format(i)],
-                'source': qdict['source{}'.format(i)],
-                'channel': int(qdict['channel{}'.format(i)]),
-                'value_type': qdict['value_type{}'.format(i)],
-                'tick': qdict['tick{}'.format(i)],
-                'min': qdict['min{}'.format(i)],
-                'max': qdict['max{}'.format(i)],
-                'red_from': int(qdict['red_from{}'.format(i)]),
-                'red_to': int(qdict['red_to{}'.format(i)]),
-                'blue_from': int(qdict['blue_from{}'.format(i)]),
-                'blue_to': int(qdict['blue_to{}'.format(i)]),
-                'green_from': int(qdict['green_from{}'.format(i)]),
-                'green_to': int(qdict['green_to{}'.format(i)])
-            })
+                'name': qdict.get('name{}'.format(i), ''),
+                'unit': qdict.get('unit{}'.format(i), ''),
+                'source': qdict.get('source{}'.format(i), 'current_loop'),
+                'channel': safe_int(qdict.get('channel{}'.format(i)), 0),
+                'value_type': qdict.get('value_type{}'.format(i), 'percent'),
+                'tick': qdict.get('tick{}'.format(i), '0,25,50,75,100'),
+                'min': qdict.get('min{}'.format(i), '0'),
+                'max': qdict.get('max{}'.format(i), '100'),
+                'red_from': safe_int(qdict.get('red_from{}'.format(i)), 0),
+                'red_to': safe_int(qdict.get('red_to{}'.format(i)), 20),
+                'blue_from': safe_int(qdict.get('blue_from{}'.format(i)), 20),
+                'blue_to': safe_int(qdict.get('blue_to{}'.format(i)), 60),
+                'green_from': safe_int(qdict.get('green_from{}'.format(i)), 60),
+                'green_to': safe_int(qdict.get('green_to{}'.format(i)), 100)
+            }))
         save_gauges(gauges)
+        normalize_options()
         raise web.seeother(plugin_url(settings_page), True)
 
 class help_page(ProtectedPage):
@@ -456,6 +491,7 @@ class add_gauge(ProtectedPage):
         gauges = plugin_options['gauges']
         gauges.append(default_gauge())
         save_gauges(gauges)
+        normalize_options()
         raise web.seeother(plugin_url(settings_page),True)
 
 
@@ -472,6 +508,7 @@ class delete_gauge(ProtectedPage):
         if idx >= 0 and idx < len(gauges):
             del gauges[idx]
         save_gauges(gauges)
+        normalize_options()
         raise web.seeother(plugin_url(settings_page),True)
 
 
@@ -482,6 +519,7 @@ class data_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
 
         data = []
+        normalize_options()
         for idx, gauge in enumerate(plugin_options['gauges']):
 
             if not gauge['enabled']:
