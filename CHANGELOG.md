@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Direct 16 Relay Outputs<br/>
+Hardened Direct 16 Relay Outputs runtime handling. Relay count and trigger level are normalized before use, unsupported platforms now stop GPIO processing cleanly instead of retrying every loop, station-to-relay access is bounded to the configured GPIO list, loop sleeping now responds promptly to plug-in stop, and repeated runtime errors are throttled.
+
 (Martin Pihrt) - Relay Test<br/>
 Hardened Relay Test execution. The relay pulse now runs in a short background thread instead of blocking the web request, the relay output is always forced off in a finally block, repeated starts are ignored while a test is already running, stop() also forces the relay off, and the redirect no longer gets logged as an internal error.
 
