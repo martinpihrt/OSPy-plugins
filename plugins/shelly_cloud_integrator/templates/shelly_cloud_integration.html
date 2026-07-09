@@ -4,10 +4,16 @@ $var title: $_('Shelly Cloud Integration')
 $var page: plugins
 
 <script>
+    var statusRefreshTimer = null;
+
     function refreshStatus() {
-        jQuery.getJSON("$plugins.plugin_url('shelly_cloud_integrator.status_json')", function(data) {
+        jQuery.getJSON("/plugins/shelly_cloud_integrator/status_json", {_: new Date().getTime()}, function(data) {
             if (data && data.events) {
-                jQuery("#statusEvents").val(data.events.join("\\n"));
+                var statusText = data.events.join("\n");
+                var statusBox = jQuery("#statusEvents");
+                if (!statusBox.is(":focus") && statusBox.val() !== statusText) {
+                    statusBox.val(statusText);
+                }
             }
         });
     }
@@ -18,7 +24,13 @@ $var page: plugins
             window.location="/";
         });
         refreshStatus();
-        setInterval(refreshStatus, 5000);
+        statusRefreshTimer = setInterval(refreshStatus, 5000);
+    });
+
+    jQuery(window).on("beforeunload", function() {
+        if (statusRefreshTimer) {
+            clearInterval(statusRefreshTimer);
+        }
     });
 </script>
 

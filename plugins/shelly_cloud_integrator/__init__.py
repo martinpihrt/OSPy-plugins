@@ -104,6 +104,7 @@ class Sender(Thread):
     def _write_status(self, msg_info):
         now_time = time.time()
         if msg_info and (msg_info != self._last_msg_info or now_time - self._last_msg_log >= 60):
+            log.clear(NAME)
             log.info(NAME, datetime_string() + '\n{}'.format(msg_info))
             self._last_msg_info = msg_info
             self._last_msg_log = now_time
@@ -1634,6 +1635,8 @@ class status_json(ProtectedPage):
     """Returns the current status log in JSON format."""
 
     def GET(self):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Cache-Control', 'no-store')
         web.header('Content-Type', 'application/json')
         try:
             return json.dumps({'events': log.events(NAME)})
