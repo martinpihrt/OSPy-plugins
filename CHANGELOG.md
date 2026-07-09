@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - CHMI<br/>
+Reduced unnecessary CHMI load during radar service/network failures: failed downloads or bitmap processing errors now wait for the normal 10-minute update interval instead of retrying almost immediately. Radar HTTP requests now reuse one session for downloads and hardware map posts.
+
 (Martin Pihrt) - Shelly Cloud Integration<br/>
 Reduced unnecessary Shelly Cloud Integrator load by reusing one HTTP session for device requests, throttling repeated status log writes, adding per-device retry backoff after HTTP/request errors, and handling bad JSON responses without raising an undefined exception. The status window now keeps only the latest written status block instead of accumulating repeated history entries.
 

@@ -81,6 +81,8 @@ SHMU_BOUNDS = {
 }
 SHMU_BORDERS_PATH = os.path.join(PLUGIN_DIR, 'static', 'images', 'shmu_borders.png')
 RADAR_HEADERS = {'User-Agent': 'OSPy CHMI radar monitor/1.0'}
+RADAR_RETRY_SLEEP = 60 * 10
+radar_session = requests.Session()
 animation_lock = Lock()
 animation_frames = []
 dependency_install_lock = Lock()
@@ -157,6 +159,8 @@ class CHMI_Checker(Thread):
                     ok, byte, txt_date = download_radar()
                     if not ok:
                         log.info(NAME, datetime_string() + ' ' + _('Failed to download radar data.'))
+                        log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
+                        self._sleep(RADAR_RETRY_SLEEP)
                     else:
                         # We will create a bitmap object in PIL/Pillow format from the HTTP data
                         try:
@@ -330,7 +334,7 @@ class CHMI_Checker(Thread):
                                     try:
                                         addr = 'http://{}/'.format(plugin_options['IP_ADDR'])
                                         log.debug(NAME, datetime_string() + ' ' + _('I will try to send to {} post data {}').format(addr, form_data))
-                                        r = requests.post(addr, data=form_data, timeout=10)
+                                        r = radar_session.post(addr, data=form_data, timeout=10)
                                         if r.status_code == 200:
                                             log.debug(NAME, datetime_string() + ' ' + _('HTTP {}').format(r.text))
                                         else:
@@ -349,6 +353,8 @@ class CHMI_Checker(Thread):
 
                         except:
                             log.info(NAME, datetime_string() + ' ' + _('Failed to load rain radar bitmap.') + ':\n' + traceback.format_exc())
+                            log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
+                            self._sleep(RADAR_RETRY_SLEEP)
                             pass
 
                 else:
@@ -532,7 +538,7 @@ def download_radar_frame(date):
 
     date_txt = radar_date_txt(date)
     url = RADAR_URL.format(date_txt)
-    r = requests.get(url, timeout=15, headers=RADAR_HEADERS)
+    r = radar_session.get(url, timeout=15, headers=RADAR_HEADERS)
     if r and r.status_code == 200 and r.content.startswith(b'\x89PNG\r\n\x1a\n'):
         return True, r.content, date_txt
     return False, None, date_txt
@@ -582,7 +588,7 @@ def shmu_latest_hdf_url(date, product=SHMU_DEFAULT_PRODUCT):
     index_url = SHMU_RADAR_URL.format(product=product, day=day)
     log.debug(NAME, datetime_string() + ' ' + _('Downloading a file: {}').format(index_url))
     requests.packages.urllib3.disable_warnings()
-    r = requests.get(index_url, timeout=15, headers=RADAR_HEADERS, verify=False)
+    r = radar_session.get(index_url, timeout=15, headers=RADAR_HEADERS, verify=False)
     if not r or r.status_code != 200:
         return None, None
 
@@ -619,7 +625,7 @@ def download_shmu_radar(date=None, trials=3):
 
             log.debug(NAME, datetime_string() + ' ' + _('Downloading a file: {}').format(url))
             requests.packages.urllib3.disable_warnings()
-            r = requests.get(url, timeout=20, headers=RADAR_HEADERS, verify=False)
+            r = radar_session.get(url, timeout=20, headers=RADAR_HEADERS, verify=False)
             if r and r.status_code == 200 and r.content.startswith(b'\x89HDF\r\n\x1a\n'):
                 ok, content = shmu_hdf_to_png(r.content)
                 return ok, content, date_txt
@@ -731,7 +737,7 @@ def download_forecast_frames(base_date):
         date_txt = forecast_date_txt(forecast_date - timedelta(minutes=attempt))
         url = FORECAST_URL.format(date_txt)
         try:
-            r = requests.get(url, timeout=15, headers=RADAR_HEADERS)
+            r = radar_session.get(url, timeout=15, headers=RADAR_HEADERS)
             if not r or r.status_code != 200:
                 continue
             forecast_tar = tarfile.open(fileobj=BytesIO(r.content), mode='r:*')
@@ -824,7 +830,7 @@ def download_radar(date=None, trials=3):
         try:
             url = RADAR_URL.format(date_txt)
             log.debug(NAME,datetime_string() + ' ' + _('Downloading a file: {}').format(url))
-            r = requests.get(url, timeout=15, headers=RADAR_HEADERS)
+            r = radar_session.get(url, timeout=15, headers=RADAR_HEADERS)
             if r and r.status_code == 200 and r.content.startswith(b'\x89PNG\r\n\x1a\n'):
                 return True, r.content, date_txt
             else:
