@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Venetian blind<br/>
+Reduced Venetian blind background blocking and hardened web actions. Blind status polling now uses a shorter HTTP timeout and a less aggressive refresh interval, repeated runtime errors are throttled, blind indexes and blind count are validated before commands/tests run, invalid or damaged local JSON logs return empty data, log history is bounded, CSV export uses the correct content type, and status JSON works even when the background thread is not running.
+
 (Martin Pihrt) - Usage Statistics<br/>
 Hardened Usage Statistics data loading. External statistics are downloaded with a timeout and maximum response size, page opens reuse cached data instead of downloading on every request, repeated download errors are throttled, the status log now records only a short summary instead of every user record, and the page has a CSRF-protected Refresh action.
 

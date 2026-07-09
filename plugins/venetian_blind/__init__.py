@@ -5,11 +5,9 @@ import json
 import time
 import traceback
 import web
-import subprocess
 import os
 import mimetypes
 
-from ospy.options import options
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers 
 from ospy.log import log
@@ -26,6 +24,10 @@ from urllib.parse import urlparse
 NAME = 'Venetian blind'      ### name for plugin in plugin manager ###
 MENU =  _(u'Package: Venetian blind')
 LINK = 'home_page'           ### link for page in plugin manager ###
+HTTP_TIMEOUT = 5
+STATUS_INTERVAL = 10
+ERROR_LOG_THROTTLE = 300
+MAX_LOG_RECORDS = 200
 
 plugin_options = PluginOptions(
     NAME,
@@ -59,6 +61,7 @@ class Sender(Thread):
         self.status['bstatus'] = {}
 
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -72,6 +75,12 @@ class Sender(Thread):
         while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
+
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
 
     def run(self):
         last_msg = ''
@@ -100,11 +109,11 @@ class Sender(Thread):
                             if ven_blind is not None:
                                 ven_blind.val = act_msg.encode('utf8').decode('utf8')    # value on footer                            
                 
-                self._sleep(2)
+                self._sleep(STATUS_INTERVAL)
 
             except Exception:
-                log.error(NAME, _('Venetian blind plug-in') + ':\n' + traceback.format_exc())
-                pass
+                self._log_problem(_('Venetian blind plug-in') + ':\n' + traceback.format_exc())
+                self._sleep(60)
 
 sender = None
 
@@ -129,13 +138,18 @@ def stop():
 def uri_validator(x):
     try:
         result = urlparse(x)
-        return all([result.scheme, result.netloc])
-    except:
+        return result.scheme in ('http', 'https') and bool(result.netloc)
+    except Exception:
         return False
+
+def valid_blind_index(index):
+    return 0 <= index < plugin_options['number_blinds']
 
 def send_cmd_to_blind(button, position):
     """Send command via REST API to blinds."""
     try:
+        if not valid_blind_index(button):
+            return _('Blind index is invalid.')
         url = None
         if position == -1:
             url = plugin_options['close'][button]
@@ -152,13 +166,12 @@ def send_cmd_to_blind(button, position):
         if url is not None:
             if uri_validator(url):
                 try:
-                    data = urlopen(url, timeout=10)
+                    data = urlopen(url, timeout=HTTP_TIMEOUT)
                     data = json.loads(data.read().decode(data.info().get_content_charset('utf-8')))
                     msg_log = '{}: {}'.format(_('Answer ok'), data)
                     update_log(pos_msg, msg_log)
                     return _('The command has been executed.')
                 except OSError:
-                    pass
                     update_log(pos_msg, _('No route to host {}.').format(url))
                     log.debug(NAME, _('No route to host {}.').format(url))
                     return _('No route to host {}.').format(url) 
@@ -166,8 +179,7 @@ def send_cmd_to_blind(button, position):
                 log.error(NAME, _('URL {} is invalid.').format(url))
                 update_log(pos_msg, _('URL {} is invalid.').format(url))
                 return _('URL {} is invalid.').format(url)
-    except:
-        pass
+    except Exception:
         log.error(NAME, _('Venetian blind plug-in') + ':\n' + traceback.format_exc())
         return _('Any error.')
 
@@ -180,12 +192,13 @@ def read_blinds_status():
         today =  datetime.today()
         footer_msg += '{} '.format(today.strftime("%H:%M:%S"))
 
+        normalize_options()
         for i in range(0, plugin_options['number_blinds']):
             if plugin_options['status'][i] != '':
                 if uri_validator(plugin_options['status'][i]):
                     try:
                         url = plugin_options['status'][i]
-                        data = urlopen(url, timeout=10)
+                        data = urlopen(url, timeout=HTTP_TIMEOUT)
                         data = json.loads(data.read().decode(data.info().get_content_charset('utf-8')))
                         if len(data) > 0:
                             # eg: data [{'state': 'stop', 'source': 'input', 'power': 0.0, 'is_valid': True, 'safety_switch': False, 'overtemperature': False, 'stop_reason': 'normal', 'last_direction': 'close', 'current_pos': 0, 'calibrating': False, 'positioning': True}]
@@ -220,7 +233,6 @@ def read_blinds_status():
                         log.debug(NAME, _('No route to host {}.').format(url))
                         sender.status['bstatus'][int(i)] = '{}'.format(_('No route to host.'))
                         footer_msg += '{}: {} '.format(plugin_options['label'][i], sender.status['bstatus'][int(i)])
-                        pass
                 else:
                     url = plugin_options['status'][i]
                     log.error(NAME, _('URL {} is invalid.').format(url))
@@ -234,7 +246,6 @@ def read_blinds_status():
 
     except Exception:
         log.error(NAME, _('Venetian blind plug-in') + ':\n' + traceback.format_exc())
-        pass
         return _('Any error.')
 
 def read_log():
@@ -242,7 +253,7 @@ def read_log():
     try:
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             return json.load(logf)
-    except IOError:
+    except (IOError, ValueError):
         return []
 
 def write_log(json_data):
@@ -266,8 +277,25 @@ def update_log(cmd, status):
     data['datetime'] = datetime_string()
 
     log_data.insert(0, data)
+    log_data = log_data[:MAX_LOG_RECORDS]
     write_log(log_data)
-    log.info(NAME, _('Saving to log files OK'))
+    if plugin_options['use_log']:
+        log.info(NAME, _('Saving to log files OK'))
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+def normalize_options():
+    count = max(1, min(16, safe_int(plugin_options.get('number_blinds', 1), 1)))
+    plugin_options['number_blinds'] = count
+    for key in ('open', 'stop', 'close', 'label', 'status', 'label0', 'label100'):
+        values = list(plugin_options.get(key, []))
+        while len(values) < count:
+            values.append('')
+        plugin_options[key] = values[:count]
 
 ################################################################################
 # Web pages:                                                                   #
@@ -278,14 +306,17 @@ class home_page(ProtectedPage):
 
     def GET(self):
         global sender
+        normalize_options()
         qdict = web.input()
         position = None
         button = helpers.get_input(qdict, 'btn', False, lambda x: True)
         if sender is not None and button:
             verify_csrf(qdict)
             if 'pos' in qdict:
-                position = int(qdict['pos'])
-                button = int(qdict['btn'])
+                position = safe_int(qdict['pos'], 0)
+                button = safe_int(qdict['btn'], -1)
+                if not valid_blind_index(button):
+                    return self.plugin_render.venetian_blind(plugin_options)
                 if position is not None and position == -1:
                     pos_msg =  _('close')
                 elif position is not None and position == 0:
@@ -308,6 +339,7 @@ class setup_page(ProtectedPage):
 
     def GET(self):
         global sender
+        normalize_options()
         qdict = web.input()
         delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
         test = helpers.get_input(qdict, 'test', False, lambda x: True)
@@ -323,8 +355,10 @@ class setup_page(ProtectedPage):
         if sender is not None and test:
             verify_csrf(qdict)
             if 'pos' in qdict:
-                position = int(qdict['pos'])
-            test_btn = int(qdict['test'])
+                position = safe_int(qdict['pos'], 0)
+            test_btn = safe_int(qdict['test'], -1)
+            if not valid_blind_index(test_btn):
+                return self.plugin_render.venetian_blind_setup(plugin_options, _('Blind index is invalid.'))
             if position is not None and position == -1:
                 pos_msg =  _('close')
             elif position is not None and position == 0:
@@ -364,7 +398,7 @@ class setup_page(ProtectedPage):
                 plugin_options.__setitem__('use_footer', False)
 
             if 'number_blinds' in qdict:
-                plugin_options.__setitem__('number_blinds', int(qdict['number_blinds']))
+                plugin_options.__setitem__('number_blinds', max(1, min(16, safe_int(qdict['number_blinds'], 1))))
 
             commands = {'open': [], 'stop': [], 'close': [], 'label': [], 'status': [], 'label0': [], 'label100': []}
 
@@ -390,7 +424,6 @@ class setup_page(ProtectedPage):
 
         except Exception:
             log.debug(NAME, _('Venetian blind plug-in') + ':\n' + traceback.format_exc())
-            pass
 
         msg = 'saved'
         return self.plugin_render.venetian_blind_setup(plugin_options, msg)
@@ -436,7 +469,7 @@ class log_csv(ProtectedPage):
                 u'{}'.format(interval['status']),
             ]) + '\n'
 
-        content = mimetypes.guess_type(os.path.join(plugin_data_dir(), 'log.json')[0])
+        content = mimetypes.guess_type('log.csv')[0] or 'text/csv'
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-type', content) 
         web.header('Content-Disposition', 'attachment; filename="log.csv"')
@@ -450,10 +483,12 @@ class blind_status_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data=[]
+        normalize_options()
         for i in range(0, plugin_options['number_blinds']):
             try:
+                if sender is None:
+                    raise KeyError()
                 data.append(sender.status['bstatus'][i])
-            except:
+            except Exception:
                 data.append(_('unkown state'))
-                pass    
         return json.dumps(data)        
