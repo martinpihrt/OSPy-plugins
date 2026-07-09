@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Usage Statistics<br/>
+Hardened Usage Statistics data loading. External statistics are downloaded with a timeout and maximum response size, page opens reuse cached data instead of downloading on every request, repeated download errors are throttled, the status log now records only a short summary instead of every user record, and the page has a CSRF-protected Refresh action.
+
 (Martin Pihrt) - Thermostat<br/>
 Hardened Thermostat runtime handling. Check interval and temperature/program settings are clamped before use, repeated runtime errors are throttled, missing temperature/setup warnings are logged only on state change instead of every cycle, temperature read failures no longer write debug tracebacks repeatedly, and stopping a thermostat program no longer treats unrelated manual runs on the same stations as thermostat-owned runs.
 
