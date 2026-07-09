@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Pool Heating<br/>
+Reduced Pool Heating background load by refreshing Air Temperature plug-in probe data at a fixed interval and throttling status log rewrites. Repeated runtime/probe/e-mail errors are throttled, settings render safely when the background thread is unavailable, selected output is validated, safety e-mail now respects the Send E-mail switch, and regulation stops only station runs created by this plug-in.
+
 (Martin Pihrt) - Ping Monitor<br/>
 Reduced Ping Monitor blocking and log noise. Ping command timeout is shorter, ping and e-mail intervals are clamped to safe minimums, address availability is logged on state changes instead of every cycle, regular ping cycles no longer clear the status log, and repeated runtime/log/CSV/graph errors are throttled.
 

@@ -28,6 +28,10 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 NAME = 'Pool Heating'
 MENU =  _('Package: Pool Heating')
 LINK = 'settings_page'
+MAIN_LOOP_SLEEP = 2
+SENSOR_REFRESH_INTERVAL = 30
+STATUS_LOG_INTERVAL = 30
+ERROR_LOG_THROTTLE = 300
 
 
 plugin_options = PluginOptions(
@@ -56,12 +60,43 @@ plugin_options = PluginOptions(
 
 
 global status
+_last_error_log = {}
 
 def plugin_is_running(module):
     try:
         return module in plugin_manager.running()
     except Exception:
         return False
+
+
+def log_pool_problem(key, message):
+    now = time.time()
+    last = _last_error_log.get(key, 0)
+    if now - last >= ERROR_LOG_THROTTLE:
+        _last_error_log[key] = now
+        log.error(NAME, message)
+
+
+def selected_station():
+    try:
+        index = int(plugin_options['control_output_A'])
+        if index < 0 or index >= stations.count():
+            return None
+        return stations.get(index)
+    except Exception:
+        return None
+
+
+def stop_pool_run(station):
+    sid = station.index
+    stopped = False
+    active = log.active_runs()
+    for interval in active:
+        if interval['station'] == sid and interval.get('program_name') == _('Pool Heating'):
+            stations.deactivate(sid)
+            log.finish_run(interval)
+            stopped = True
+    return stopped
 
 ################################################################################
 # Main function loop:                                                          #
@@ -104,6 +139,7 @@ class Sender(Thread):
         msg_a_on = True
         msg_a_off = True
         last_text = ''
+        last_sensor_refresh = 0
 
         send = False
  
@@ -134,8 +170,9 @@ class Sender(Thread):
 
         while not self._stop_event.is_set():
             try:
-                if plugin_options["sensor_probe"] == 2:                                        # loading probe name from plugin air_temp_humi
+                if plugin_options["sensor_probe"] == 2 and time.time() - last_sensor_refresh >= SENSOR_REFRESH_INTERVAL: # loading probe name from plugin air_temp_humi
                     try:
+                        last_sensor_refresh = time.time()
                         if not plugin_is_running('air_temp_humi'):
                             raise Exception(_('The plug-in is not running.'))
                         from plugins.air_temp_humi import plugin_options as air_temp_data
@@ -151,7 +188,7 @@ class Sender(Thread):
                         temperature_ds = [DS18B20_read_probe(0), DS18B20_read_probe(1), DS18B20_read_probe(2), DS18B20_read_probe(3), DS18B20_read_probe(4), DS18B20_read_probe(5)]
 
                     except:
-                        log.error(NAME, _('Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
+                        log_pool_problem('air_temp_humi', _('Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
                         self.status['ds_count'] = 0
                         pass
 
@@ -190,7 +227,9 @@ class Sender(Thread):
                         ds_a_on = temperature_ds[plugin_options['probe_A_on']]           #  pool  
                         ds_a_off = temperature_ds[plugin_options['probe_A_off']]         #  solar
                         
-                    station_a = stations.get(plugin_options['control_output_A'])
+                    station_a = selected_station()
+                    if station_a is None:
+                        raise Exception(_('Selected output is not available.'))
 
                     # only for testing... without airtemp plugin or sensors
                     #ds_a_on = 15
@@ -201,15 +240,10 @@ class Sender(Thread):
                         probes_ok = False
                         a_state = -2
                         # The station switches off if the sensors has a fault
-                        sid = station_a.index
-                        active = log.active_runs()
-                        for interval in active:
-                            if interval['station'] == sid:
-                                stations.deactivate(sid)
-                                log.finish_run(interval)
-                                regulation_text = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
-                                log.clear(NAME)
-                                log.info(NAME, regulation_text)
+                        if stop_pool_run(station_a):
+                            regulation_text = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
+                            log.clear(NAME)
+                            log.info(NAME, regulation_text)
                         # release msg_a_on and msg_a_off to true for future regulation (after probes is ok)
                         msg_a_on = True
                         msg_a_off = True
@@ -255,12 +289,7 @@ class Sender(Thread):
                             regulation_text = datetime_string() + ' ' + _('Regulation set OFF.') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').'
                             log.clear(NAME)
                             log.info(NAME, regulation_text)
-                            sid = station_a.index
-                            stations.deactivate(sid)
-                            active = log.active_runs()
-                            for interval in active:
-                                if interval['station'] == sid:
-                                    log.finish_run(interval)
+                            stop_pool_run(station_a)
 
                             if plugin_options['enabled_safety']:                              # safety check
                                 safety_end = datetime.datetime.now() + datetime.timedelta(minutes=plugin_options['safety_mm'])
@@ -283,13 +312,8 @@ class Sender(Thread):
                                 regulation_text = datetime_string() + ' ' + _('Safety shutdown!') + ' ' + ' (' + _('Output') + ' ' +  str(station_a.index+1) + ').\n' + _('Regulation disabled!')
                                 log.clear(NAME)
                                 log.info(NAME, regulation_text)
-                                sid = station_a.index
-                                stations.deactivate(sid)
-                                active = log.active_runs()
-                                for interval in active:                 # stop stations
-                                    if interval['station'] == sid:
-                                        log.finish_run(interval)
-                                send = True                             # send e-mail
+                                stop_pool_run(station_a)
+                                send = plugin_options['sendeml']        # send e-mail
                                 plugin_options['enabled_a'] = False     # disabling plugin
 
                 else:
@@ -316,10 +340,10 @@ class Sender(Thread):
                     if temp_sw is not None:
                         temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
-                self._sleep(2)
+                self._sleep(MAIN_LOOP_SLEEP)
 
                 millis = int(round(time.time() * 1000))
-                if (millis - last_millis) > 5000:        # 5 second to clearing status on the webpage
+                if (millis - last_millis) > STATUS_LOG_INTERVAL * 1000:
                     last_millis = millis
                     log.clear(NAME)
                     if plugin_options["sensor_probe"] == 1:
@@ -351,11 +375,11 @@ class Sender(Thread):
                             try_mail(msg, msglog, attachment=None, subject=plugin_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                     except Exception:
-                        log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
-                        self._sleep(2)
+                        log_pool_problem('send_email', _('Pool Heating plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                        self._sleep(MAIN_LOOP_SLEEP)
  
             except Exception:
-                log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
+                log_pool_problem('run_loop', _('Pool Heating plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
                 self._sleep(60)
           
 sender = None
@@ -389,7 +413,8 @@ class settings_page(ProtectedPage):
             global sender
             if sender is not None:
                 sender.update()
-            return self.plugin_render.pool_heating(plugin_options, log.events(NAME), sender.status)
+            status = sender.status if sender is not None else {}
+            return self.plugin_render.pool_heating(plugin_options, log.events(NAME), status)
         except:
             log.error(NAME, _('Pool Heating plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '

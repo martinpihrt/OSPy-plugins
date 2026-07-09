@@ -3,6 +3,9 @@ $def with(plugin_options, events, status)
 $var title: $_('Pool Heating')
 $var page: plugins
 
+$code:
+    ds_count = status.get("ds_count", 0)
+
 <style>
 .switch {
     position: relative;
@@ -112,8 +115,8 @@ input:checked + .slider:before {
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     $if plugin_options["sensor_probe"]==2:
                         <select id="probe_A_on" name="probe_A_on">
-                        $for i in range(status["ds_count"]):
-                            <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${status["ds_name_%d" % i]}</option>
+                        $for i in range(ds_count):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_on"]==i else ""}>${status.get("ds_name_%d" % i, "")}</option>
                         </select>
                     $elif plugin_options["sensor_probe"]==1:
                         <select id="probe_A_on" name="probe_A_on_sens">
@@ -130,8 +133,8 @@ input:checked + .slider:before {
                 <td title=$:{json.dumps(_(u'Select the temperature sensor (its name) you want to use.'), ensure_ascii=False)}>
                     $if plugin_options["sensor_probe"]==2:
                         <select id="probe_A_off" name="probe_A_off">
-                        $for i in range(status["ds_count"]):
-                            <option value="${i}" ${"selected" if plugin_options["probe_A_off"]==i else ""}>${status["ds_name_%d" % i]}</option>
+                        $for i in range(ds_count):
+                            <option value="${i}" ${"selected" if plugin_options["probe_A_off"]==i else ""}>${status.get("ds_name_%d" % i, "")}</option>
                         </select>
                     $elif plugin_options["sensor_probe"]==1:
                         <select id="probe_A_off" name="probe_A_off_sens">
