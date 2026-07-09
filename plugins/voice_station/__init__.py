@@ -8,7 +8,6 @@ from threading import Thread, Event
 import traceback
 import json
 import os
-import sys
 import subprocess
 import web
 
@@ -27,6 +26,10 @@ from blinker import signal
 NAME = 'Voice Station'
 MENU =  _('Package: Voice Station')
 LINK = 'settings_page'
+MAX_UPLOAD_SIZE = 20 * 1024 * 1024
+MAX_QUEUE_ITEMS = 100
+COMMAND_TIMEOUT = 60
+ERROR_LOG_THROTTLE = 300
 
 plugin_options = PluginOptions(
     NAME,
@@ -53,6 +56,7 @@ class VoiceChecker(Thread):
         self._stop_event = Event()
 
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -66,6 +70,12 @@ class VoiceChecker(Thread):
         while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
+
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
 
     def run(self):
         station_on = signal('station_on')
@@ -89,7 +99,7 @@ class VoiceChecker(Thread):
                     self._sleep(1)
 
             except Exception:
-                log.error(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
+                self._log_problem(_('Voice Station plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 checker = None
@@ -103,13 +113,19 @@ def notify_station_on(name, **kw):
     if plugin_options['enabled']:
         current_time  = datetime.datetime.now()
         try:
+            normalize_options()
             if int(current_time.hour) >= int(plugin_options['start_hour']) and int(current_time.hour) <= int(plugin_options['stop_hour']):
-                st_nr = int(kw["txt"])
+                st_nr = safe_int(kw.get("txt"), -1)
+                if st_nr < 0 or st_nr >= options.output_count:
+                    return
                 log.clear(NAME)
                 log.info(NAME, datetime_string() + ': ' + _('Stations {} ON').format(str(st_nr + 1)))
                 data = {}
                 if len(plugin_options['sounds']) > 0:
-                    data['song'] = plugin_options['sounds'][int(plugin_options['on'][st_nr])]
+                    sound_index = safe_int(plugin_options['on'][st_nr], -1)
+                    if sound_index < 0 or sound_index >= len(plugin_options['sounds']):
+                        return
+                    data['song'] = plugin_options['sounds'][sound_index]
                     path = os.path.join(plugin_data_dir(), data['song'])
                     if os.path.isfile(path):
                         update_song_queue(data) # save song name to song queue
@@ -123,13 +139,19 @@ def notify_station_off(name, **kw):
     if plugin_options['enabled']:
         current_time  = datetime.datetime.now()
         try:
+            normalize_options()
             if int(current_time.hour) >= int(plugin_options['start_hour']) and int(current_time.hour) <= int(plugin_options['stop_hour']):
-                st_nr = int(kw["txt"])
+                st_nr = safe_int(kw.get("txt"), -1)
+                if st_nr < 0 or st_nr >= options.output_count:
+                    return
                 log.clear(NAME)
                 log.info(NAME, datetime_string() + ': ' + _('Stations {} OFF').format(str(st_nr + 1)))
                 data = {}
                 if len(plugin_options['sounds']) > 0:
-                    data['song'] = plugin_options['sounds'][int(plugin_options['off'][st_nr])]
+                    sound_index = safe_int(plugin_options['off'][st_nr], -1)
+                    if sound_index < 0 or sound_index >= len(plugin_options['sounds']):
+                        return
+                    data['song'] = plugin_options['sounds'][sound_index]
                     path = os.path.join(plugin_data_dir(), data['song'])
                     if os.path.isfile(path):
                         update_song_queue(data) # save song name to song queue
@@ -149,6 +171,24 @@ def stop():
         checker.stop()
         checker.join(15)
         checker = None
+
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_options():
+    plugin_options['volume'] = max(0, min(100, safe_int(plugin_options.get('volume', 95), 95)))
+    plugin_options['start_hour'] = max(0, min(23, safe_int(plugin_options.get('start_hour', 6), 6)))
+    plugin_options['stop_hour'] = max(0, min(23, safe_int(plugin_options.get('stop_hour', 20), 20)))
+    for key in ('on', 'off'):
+        values = list(plugin_options.get(key, []))
+        while len(values) < options.output_count:
+            values.append(-1)
+        plugin_options[key] = values[:options.output_count]
 
 ### Read all songs in folder ###
 def read_folder():
@@ -179,14 +219,14 @@ def read_folder():
         plugin_options.__setitem__('sounds_size', g)
 
     except Exception:
-        log.error(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
+        log.debug(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
 
 ### Read song queue from json file ###
 def read_song_queue():
     try:
         with open(os.path.join(plugin_data_dir(), 'json', 'song_queue.json')) as song_queue:
             return json.load(song_queue)
-    except IOError:
+    except (IOError, ValueError):
         return []
 
 ### Write song queue to json file ###
@@ -212,6 +252,7 @@ def update_song_queue(data):
         song_queue = read_song_queue()
 
     song_queue.insert(0, data)
+    song_queue = song_queue[:MAX_QUEUE_ITEMS]
     write_song_queue(song_queue)
 
 
@@ -221,23 +262,23 @@ def play_audio(path):
         if path.endswith('.wav'):
             log.info(NAME, datetime_string() + ': ' + _('Playing WAV file.'))
             log.info(NAME, datetime_string() + ': ' + _('Set master volume to {}%').format(str(plugin_options['volume'])))
-            subprocess.run(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])])
+            subprocess.run(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])], timeout=10)
             cmd = ["aplay", path]
-            subprocess.run(cmd)
+            subprocess.run(cmd, timeout=COMMAND_TIMEOUT)
         elif path.endswith('.mp3'):
             wav_path = os.path.splitext(path)[0] + '.wav'
             if not os.path.exists(wav_path):
                 log.info(NAME, datetime_string() + ': ' + _('Converting mp3 to wav.'))
                 ffmpeg_cmd = ["ffmpeg", "-i", path, wav_path]
-                subprocess.run(ffmpeg_cmd)
+                subprocess.run(ffmpeg_cmd, timeout=COMMAND_TIMEOUT)
             else:
                 log.info(NAME, datetime_string() + ': ' + _('WAV file already exists, skipping conversion.'))
 
             log.info(NAME, datetime_string() + ': ' + _('Playing WAV file.'))
             log.info(NAME, datetime_string() + ': ' + _('Set master volume to {}%').format(str(plugin_options['volume'])))
-            subprocess.run(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])])
+            subprocess.run(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])], timeout=10)
             cmd = ["aplay", wav_path]
-            subprocess.run(cmd)
+            subprocess.run(cmd, timeout=COMMAND_TIMEOUT)
         else:
             log.info(NAME, datetime_string() + ': ' + _('File {} not suported.').format(path))
     else:
@@ -264,7 +305,7 @@ def play_voice():
                     log.info(NAME, datetime_string() + ': ' + _('Loading: {}').format(song))
                     play_audio(path)
                 except Exception:
-                    log.error(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
+                    log.debug(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
             else:
                 del song_queue[0]
                 write_song_queue(song_queue)
@@ -274,7 +315,7 @@ def play_voice():
             write_song_queue(song_queue)        # save to file after deleting an item
 
     except Exception:
-        log.error(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
+        log.debug(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
 
 
 ################################################################################
@@ -284,6 +325,7 @@ class settings_page(ProtectedPage):
     """Load an html page for entering voice station adjustments"""
 
     def GET(self):
+        normalize_options()
         qdict = web.input()
 
         if checker is not None:
@@ -293,12 +335,13 @@ class settings_page(ProtectedPage):
                 verify_csrf(qdict)
                 command = -1
                 data = {}
-                if 'state' in qdict and int(qdict['state']) == 1:
-                    command = plugin_options['on'][int(qdict['test'])]
-                if 'state' in qdict and int(qdict['state']) == 0:
-                    command = plugin_options['off'][int(qdict['test'])]
+                test_index = safe_int(qdict.get('test'), -1)
+                if 'state' in qdict and safe_int(qdict['state'], 0) == 1 and 0 <= test_index < len(plugin_options['on']):
+                    command = safe_int(plugin_options['on'][test_index], -1)
+                if 'state' in qdict and safe_int(qdict['state'], 0) == 0 and 0 <= test_index < len(plugin_options['off']):
+                    command = safe_int(plugin_options['off'][test_index], -1)
 
-                if len(plugin_options['sounds']) > 0 and command != -1:
+                if len(plugin_options['sounds']) > 0 and 0 <= command < len(plugin_options['sounds']):
                     data['song'] = plugin_options['sounds'][command]
                     path = os.path.join(plugin_data_dir(), data['song'])
                     if os.path.isfile(path):
@@ -336,27 +379,28 @@ class settings_page(ProtectedPage):
                 plugin_options.__setitem__('enabled', False)
 
             if 'volume' in qdict:
-                plugin_options.__setitem__('volume', int(qdict['volume']))
+                plugin_options.__setitem__('volume', safe_int(qdict['volume'], 95))
 
             if 'start_hour' in qdict:
-                plugin_options.__setitem__('start_hour', int(qdict['start_hour']))
+                plugin_options.__setitem__('start_hour', safe_int(qdict['start_hour'], 6))
 
             if 'stop_hour' in qdict:
-                plugin_options.__setitem__('stop_hour', int(qdict['stop_hour']))
+                plugin_options.__setitem__('stop_hour', safe_int(qdict['stop_hour'], 20))
 
             commands = {'on': [], 'off': []} 
             for i in range(0, options.output_count):
                 if 'con'+str(i) in qdict:
-                    commands['on'].append(int(qdict['con'+str(i)]))
+                    commands['on'].append(safe_int(qdict['con'+str(i)], -1))
                 else:
                     commands['on'].append(-1)
                 if 'coff'+str(i) in qdict: 
-                    commands['off'].append(int(qdict['coff'+str(i)]))
+                    commands['off'].append(safe_int(qdict['coff'+str(i)], -1))
                 else:
                     commands['off'].append(-1)
 
             plugin_options.__setitem__('on', commands['on'])
             plugin_options.__setitem__('off', commands['off'])
+            normalize_options()
 
             if checker is not None:
                 checker.update()
@@ -382,17 +426,21 @@ class upload_page(ProtectedPage):
         #web.debug(qdict['myfile'].file.read()) # Or use a file(-like) object
 
         try:
-            fname = qdict['myfile'].filename
-            upload_type = fname[-4:len(fname)]
+            fname = os.path.basename((qdict['myfile'].filename or '').replace('\\', '/'))
+            upload_type = os.path.splitext(fname)[1].lower()
             types = ['.mp3','.wav']
-            if upload_type not in types:        # check file type is ok
+            upload_data = qdict['myfile'].file.read(MAX_UPLOAD_SIZE + 1)
+            if upload_type not in types or not fname:        # check file type is ok
                 log.info(NAME, datetime_string() + ': ' + _('Error. File must be in mp3 or wav format!'))
                 errorCode = qdict.get('errorCode', 'Etype')
                 return self.plugin_render.voice_station_sounds(plugin_options, errorCode)
+            elif len(upload_data) > MAX_UPLOAD_SIZE:
+                log.info(NAME, datetime_string() + ': ' + _('Uploaded file is too large.'))
+                errorCode = qdict.get('errorCode', 'Eupl')
+                return self.plugin_render.voice_station_sounds(plugin_options, errorCode)
             else:
-                fout = open(os.path.join(plugin_data_dir(), fname),'wb') # ASCI_convert(fname)
-                fout.write(qdict['myfile'].file.read()) 
-                fout.close() 
+                with open(os.path.join(plugin_data_dir(), fname), 'wb') as fout:
+                    fout.write(upload_data)
                 log.info(NAME, datetime_string() + ': ' + _('Uploading file sucesfully.'))
                 errorCode = qdict.get('errorCode', 'UplOK')
                 read_folder()
@@ -421,9 +469,9 @@ class sound_page(ProtectedPage):
 
         if 'delete' in qdict:
             verify_csrf(qdict)
-            delete = qdict['delete']
-            if len(plugin_options['sounds']) > 0:
-                del_file = os.path.join(plugin_data_dir(), plugin_options['sounds'][int(delete)] )
+            delete = safe_int(qdict['delete'], -1)
+            if 0 <= delete < len(plugin_options['sounds']):
+                del_file = os.path.join(plugin_data_dir(), plugin_options['sounds'][delete])
                 if os.path.isfile(del_file):
                     os.remove(del_file)
                     errorCode = qdict.get('errorCode', 'DelOK')

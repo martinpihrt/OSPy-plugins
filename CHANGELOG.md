@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Voice Station<br/>
+Hardened Voice Station audio playback and file handling. External audio/conversion commands now have timeouts, repeated runtime errors are throttled, ON/OFF station sound indexes and time/volume settings are clamped before use, damaged song queue JSON returns an empty queue, queue length is bounded, sound uploads strip path components and enforce mp3/wav plus a maximum file size, and delete/test actions validate selected indexes.
+
 (Martin Pihrt) - Voice Notification<br/>
 Hardened Voice Notification playback and file handling. Missing pygame no longer triggers automatic apt installation; the plug-in now logs the fixed apt command instead. Playback waiting no longer busy-spins the CPU, repeated runtime errors are throttled, settings values and station sound indexes are clamped before use, damaged song queue JSON returns an empty queue, queue length is bounded, sound uploads strip path components and enforce mp3/wav plus a maximum file size, and delete/test actions validate selected indexes.
 
