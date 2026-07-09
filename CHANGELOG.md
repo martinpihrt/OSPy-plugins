@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Thermostat<br/>
+Hardened Thermostat runtime handling. Check interval and temperature/program settings are clamped before use, repeated runtime errors are throttled, missing temperature/setup warnings are logged only on state change instead of every cycle, temperature read failures no longer write debug tracebacks repeatedly, and stopping a thermostat program no longer treats unrelated manual runs on the same stations as thermostat-owned runs.
+
 (Martin Pihrt) - Temperature Switch<br/>
 Reduced Temperature Switch background load and made output control safer. DS18B20 values from Air Temperature and Humidity Monitor are refreshed at a fixed interval instead of every loop, repeated runtime/probe errors are throttled, numeric settings are clamped before use, duplicate Temperature Switch runs on the same output are avoided, and output OFF now finishes only runs created by this plug-in instead of stopping unrelated scheduler/plugin runs on the same station.
 

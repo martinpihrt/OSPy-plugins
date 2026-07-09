@@ -28,6 +28,9 @@ LINK = 'settings_page'
 
 THERMOSTAT_COUNT = 3
 INVALID_TEMPERATURE = -127
+MIN_CHECK_INTERVAL = 5
+MAX_CHECK_INTERVAL = 3600
+ERROR_LOG_THROTTLE = 300
 SHELLY_VALUE_TYPES = [
     'temperature',
     'temperature_2',
@@ -100,6 +103,10 @@ def _safe_float(value, default=0.0):
         return default
 
 
+def _clamp(value, minimum, maximum):
+    return max(minimum, min(maximum, value))
+
+
 def _normalize_zones():
     zones = plugin_options.get('zones', [])
     if not isinstance(zones, list):
@@ -119,15 +126,15 @@ def _normalize_zones():
         base['value_type'] = str(base.get('value_type') or 'temperature')
         if base['value_type'] not in SHELLY_VALUE_TYPES:
             base['value_type'] = 'temperature'
-        base['low_temp'] = _safe_float(base.get('low_temp'), 22.4)
-        base['high_temp'] = _safe_float(base.get('high_temp'), 22.6)
+        base['low_temp'] = _clamp(_safe_float(base.get('low_temp'), 22.4), -50, 100)
+        base['high_temp'] = _clamp(_safe_float(base.get('high_temp'), 22.6), -50, 100)
         base['low_action'] = str(base.get('low_action') or 'start')
         base['high_action'] = str(base.get('high_action') or 'stop')
         if base['low_action'] not in ('none', 'start', 'stop'):
             base['low_action'] = 'start'
         if base['high_action'] not in ('none', 'start', 'stop'):
             base['high_action'] = 'stop'
-        base['program'] = max(0, _safe_int(base.get('program'), 0))
+        base['program'] = _clamp(_safe_int(base.get('program'), 0), 0, max(0, len(programs.get()) - 1))
         normalized.append(base)
 
     if normalized != zones:
@@ -253,7 +260,7 @@ def get_temperature(source, channel, value_type):
             if channel < len(devices):
                 return float(get_shelly_value(devices[channel], value_type))
     except Exception:
-        log.debug(NAME, traceback.format_exc())
+        pass
     return INVALID_TEMPERATURE
 
 
@@ -333,7 +340,7 @@ def interval_matches_program(interval, index):
     if interval.get('program_name') == target_run_now_name:
         return True
 
-    return interval.get('program') == -1 and bool(interval.get('manual'))
+    return False
 
 
 def program_is_active(index):
@@ -356,7 +363,8 @@ def stop_program(index):
     stopped = stop_run_now
     for interval in matching_active:
         log.finish_run(interval)
-        stations.deactivate(interval['station'])
+        if not any(active_interval.get('station') == interval['station'] for active_interval in log.active_runs()):
+            stations.deactivate(interval['station'])
         stopped = True
     return stopped
 
@@ -377,6 +385,7 @@ class ThermostatChecker(Thread):
         self._sleep_time = 0
         self.zone_state = ['unknown'] * THERMOSTAT_COUNT
         self.footer = None
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -402,11 +411,18 @@ class ThermostatChecker(Thread):
             clear_plugin_runtime_data('thermostat')
             self.footer = None
 
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
+
     def run(self):
         last_enabled = None
         while not self._stop_event.is_set():
             try:
                 _normalize_zones()
+                plugin_options['check_interval'] = _clamp(_safe_int(plugin_options.get('check_interval'), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL)
                 if not plugin_options['enabled']:
                     if last_enabled is not False:
                         log.clear(NAME)
@@ -428,13 +444,17 @@ class ThermostatChecker(Thread):
                         continue
 
                     if zone['low_temp'] >= zone['high_temp']:
-                        log.info(NAME, datetime_string() + ' ' + _('{} has invalid temperature limits. Low temperature must be lower than high temperature.').format(zone['name']))
+                        if self.zone_state[index] != 'setup_error':
+                            log.info(NAME, datetime_string() + ' ' + _('{} has invalid temperature limits. Low temperature must be lower than high temperature.').format(zone['name']))
+                        self.zone_state[index] = 'setup_error'
                         footer_parts.append('{} {}'.format(zone['name'], _('setup error')))
                         continue
 
                     temperature = get_temperature(zone['source'], zone['channel'], zone['value_type'])
                     if temperature == INVALID_TEMPERATURE:
-                        log.info(NAME, datetime_string() + ' ' + _('{} temperature is not available.').format(zone['name']))
+                        if self.zone_state[index] != 'missing':
+                            log.info(NAME, datetime_string() + ' ' + _('{} temperature is not available.').format(zone['name']))
+                        self.zone_state[index] = 'missing'
                         footer_parts.append('{} ---'.format(zone['name']))
                         continue
 
@@ -471,9 +491,9 @@ class ThermostatChecker(Thread):
                 else:
                     self.update_footer(_('No active thermostat'))
 
-                self._sleep(max(5, int(plugin_options['check_interval'])))
+                self._sleep(_clamp(_safe_int(plugin_options.get('check_interval'), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL))
             except Exception:
-                log.error(NAME, _('Thermostat plug-in') + ':\n' + traceback.format_exc())
+                self._log_problem(_('Thermostat plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -539,7 +559,7 @@ class settings_page(ProtectedPage):
 
         plugin_options['enabled'] = 'enabled' in qdict
         plugin_options['use_footer'] = 'use_footer' in qdict
-        plugin_options['check_interval'] = max(5, _safe_int(qdict.get('check_interval', plugin_options['check_interval']), 30))
+        plugin_options['check_interval'] = _clamp(_safe_int(qdict.get('check_interval', plugin_options['check_interval']), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL)
         plugin_options['zones'] = zones
         _normalize_zones()
         if checker is not None:
