@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Wind Speed Monitor<br/>
+Hardened Wind Speed Monitor without changing its high-priority I2C measurement path. Numeric wind/log/event settings and selected stations/programs are clamped before use, repeated runtime/e-mail errors are throttled, damaged local JSON logs return empty data, settings/status JSON works when the background thread is not running, and graph timestamp parsing was updated for Python 3.
+
 (Martin Pihrt) - Webcam Monitor<br/>
 Hardened Webcam Monitor capture/download handling. Missing fswebcam no longer triggers automatic apt installation; the plug-in now logs the fixed apt command instead. Camera resolution is validated before use, fswebcam is executed with an argument list instead of a string-built command, and downloaded snapshots are served from the file in binary mode with a safe fallback content type.
 

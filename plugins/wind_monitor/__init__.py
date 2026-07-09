@@ -92,6 +92,7 @@ class WindSender(Thread):
         self.status['log_date_maxspeed'] = datetime_string()
 
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -105,6 +106,12 @@ class WindSender(Thread):
         while self._sleep_time > 0 and not self._stop_event.is_set():
             time_.sleep(1)
             self._sleep_time -= 1
+
+    def _log_problem(self, message):
+        now = time_.time()
+        if now - self._last_error_log >= 300:
+            log.error(NAME, message)
+            self._last_error_log = now
 
     def run(self):
         millis = int(round(time_.time() * 1000))
@@ -135,6 +142,7 @@ class WindSender(Thread):
 
         while not self._stop_event.is_set():
             try:
+                normalize_options()
                 if wind_options['use_wind_monitor']:    # if wind plugin is enabled
                     disable_text = True
                     try:
@@ -296,11 +304,11 @@ class WindSender(Thread):
                             try_mail(msg, msglog, attachment=None, subject=wind_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
 
                     except Exception:
-                        log.error(NAME, _('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc()) 
+                        self._log_problem(_('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
 
             except Exception:
                 log.clear(NAME)
-                log.error(NAME, _('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
+                self._log_problem(_('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
 
@@ -342,6 +350,37 @@ def try_io(call, tries=10):
         raise error
 
     return result
+
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_options():
+    wind_options['pulses'] = max(0.001, min(1000000.0, safe_float(wind_options.get('pulses', 2), 2)))
+    wind_options['metperrot'] = max(0.001, min(1000000.0, safe_float(wind_options.get('metperrot', 1.492), 1.492)))
+    wind_options['maxspeed'] = max(0, min(1000, safe_float(wind_options.get('maxspeed', 20), 20)))
+    wind_options['m_speed_trig'] = max(0, min(1000, safe_float(wind_options.get('m_speed_trig', 10), 10)))
+    wind_options['log_interval'] = max(1, min(1440, safe_int(wind_options.get('log_interval', 1), 1)))
+    wind_options['log_records'] = max(0, min(10000, safe_int(wind_options.get('log_records', 0), 0)))
+    wind_options['event_repetitions'] = max(1, min(100, safe_int(wind_options.get('event_repetitions', 3), 3)))
+    wind_options['event_interval'] = max(1, min(1440, safe_int(wind_options.get('event_interval', 1), 1)))
+    wind_options['ignore_interval'] = max(1, min(8760, safe_int(wind_options.get('ignore_interval', 24), 24)))
+    wind_options['eplug'] = 1 if safe_int(wind_options.get('eplug', 0), 0) == 1 else 0
+    wind_options['used_stations'] = [safe_int(station, -1) for station in wind_options.get('used_stations', []) if safe_int(station, -1) >= 0]
+    wind_options['used_program'] = [safe_int(program, -1) for program in wind_options.get('used_program', []) if safe_int(program, -1) >= 0]
+    if not wind_options['used_program']:
+        wind_options['used_program'] = [-1]
 
 
 def set_counter(i2cbus):
@@ -442,7 +481,7 @@ def read_log():
     try:
         with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
             return json.load(logf)
-    except IOError:
+    except (IOError, ValueError):
         return []
 
 
@@ -452,7 +491,7 @@ def read_graph_log():
     try:
         with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
             return json.load(logf)
-    except IOError:
+    except (IOError, ValueError):
         return []
 
 
@@ -559,6 +598,7 @@ class settings_page(ProtectedPage):
         global wind_sender
 
         qdict = web.input()
+        normalize_options()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
         delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
@@ -600,12 +640,14 @@ class settings_page(ProtectedPage):
                 log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + traceback.format_exc())
                 pass            
 
-        return self.plugin_render.wind_monitor(wind_options, wind_sender.status, log.events(NAME))
+        status = wind_sender.status if wind_sender is not None else {'meter': 0.0, 'kmeter': 0.0, 'max_meter': 0, 'log_date_maxspeed': datetime_string()}
+        return self.plugin_render.wind_monitor(wind_options, status, log.events(NAME))
 
     def POST(self):
         qdict = web.input(used_stations=[])
         verify_csrf(qdict)
         wind_options.web_update(qdict) #for save multiple select
+        normalize_options()
 
         if wind_sender is not None:
             wind_sender.update()
@@ -664,6 +706,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
+        normalize_options()
         return json.dumps(wind_options)
 
 
@@ -675,9 +718,9 @@ class data_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         data =  {
-          'log_maxspeed': round(wind_sender.status['max_meter'], 2),    # in m/sec
-          'log_speed': round(wind_sender.status['meter'],2),          # in m/sec
-          'log_date_maxspeed': wind_sender.status['log_date_maxspeed'],
+          'log_maxspeed': round(wind_sender.status['max_meter'], 2) if wind_sender is not None else 0,    # in m/sec
+          'log_speed': round(wind_sender.status['meter'],2) if wind_sender is not None else 0,          # in m/sec
+          'log_date_maxspeed': wind_sender.status['log_date_maxspeed'] if wind_sender is not None else datetime_string(),
           'label': wind_options['emlsubject']
         }
 
@@ -778,7 +821,7 @@ class graph_json(ProtectedPage):
                     temp_balances = {}
                     for key in json_data[i]['balances']:
                         try:
-                            find_key = int(key.encode('utf8'))                     # key is in unicode ex: u'1601347000' -> find_key is int number
+                            find_key = int(key)
                         except:
                             find_key = key   
                         if find_key >= log_start and find_key <= log_end:          # timestamp interval from <-> to
