@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - System Information<br/>
+Verified that System Information does not run a background thread. Reduced page-open I2C load by scanning the bus once at low priority and reusing the detected address list for plug-in hardware hints instead of probing the same addresses repeatedly.
+
 (Martin Pihrt) - Weather-based Water Level<br/>
 Reduced Weather-based Water Level recalculation load by separating normal weather callbacks from forced settings updates. Weather callbacks no longer trigger a full recalculation more often than the hourly calculation interval, calculation errors retry with backoff and throttled logging, and freeze protection now skips cleanly when current temperature data is unavailable.
 

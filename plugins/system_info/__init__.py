@@ -22,6 +22,8 @@ import web
 NAME = 'System Information'
 MENU =  _('Package: System Information')
 LINK = 'status_page'
+I2C_SCAN_TIMEOUT = 0.2
+I2C_SCAN_SETTLE_TIME = 0.0
 
 
 ################################################################################
@@ -78,42 +80,44 @@ def get_overview():
         except:
             pass    
         result.append(_('I2C HEX Adress') + ': ')
+        i2c_addresses = set()
         try:
-            result.append(get_all_addr())
+            i2c_addresses = scan_i2c_addresses()
+            result.append(format_i2c_addresses(i2c_addresses))
         except Exception:
             result.append(_('Could not open any i2c device!'))
 
         # I2C test for Air Temperature and Humidity Monitor plugin
-        if find_address(0x03):
+        if 0x03 in i2c_addresses:
             result.append(_('Found ATMEGA328 for Air Temperature and Humidity Monitor plugin (0x03).'))
 
         # I2C test for Water Tank Monitor plugin
-        if find_address(0x04):
+        if 0x04 in i2c_addresses:
             result.append(_('Found ATMEGA328 for Water Tank Monitor plugin (0x04).'))
 
         # I2C test for Humidity Monitor plugin
-        if find_address(0x05):
+        if 0x05 in i2c_addresses:
             result.append(_('Found ATMEGA328 for Humidity Monitor plugin (0x05).'))
 
         # I2C test for Button Control plugin
-        if find_address(0x27):
+        if 0x27 in i2c_addresses:
             result.append(_('Found MCP23017 for Button Control plugin (0x27).'))
 
         # I2C test for LCD Display plugin
         search_range = {addr: 'PCF8574' for addr in range(32, 40)}
         search_range.update({addr: 'PCF8574A' for addr in range(56, 63)})    
-        if find_address(search_range, range=True):
-            if find_address(0x27):
+        if any(addr in i2c_addresses for addr in search_range):
+            if 0x27 in i2c_addresses:
                 result.append(_('Warning: MCP23017 found for Button Control plugin (0x27). The address for PCF8574 must be different, not 0x27! If it is the same, change it on the LCD display board.'))
             result.append(_('Found PCF8574 for LCD Display plugin (0x20-0x28, 0x38-0x3F).'))
 
         # I2C test for Wind Speed Monitor/ Water Meter meter plugin
         search_range = {addr: 'PCF8583' for addr in range(80, 81)}
-        if find_address(search_range, range=True):
+        if any(addr in i2c_addresses for addr in search_range):
             result.append(_('Found PCF8583 for Wind Speed Monitor or Water Meter plugin (0x50-0x51).'))
 
         # I2C test for Real Time and NTP time plugin
-        if find_address(0x68):
+        if 0x68 in i2c_addresses:
             result.append(_('Found DS1307 for Real Time and NTP time plugin (0x68).'))
 
     except Exception:
@@ -208,7 +212,7 @@ def find_address(search_range, range=False):
         if range:
            for addr, type in search_range.items():
                try:
-                   with i2c_transaction():
+                   with system_info_i2c_transaction():
                        bus.read_byte(addr) 
                    return True
                    break
@@ -218,7 +222,7 @@ def find_address(search_range, range=False):
                    return False
         else:
            try:
-               with i2c_transaction():
+               with system_info_i2c_transaction():
                    bus.read_byte(search_range) 
                return True
            except Exception:
@@ -228,25 +232,54 @@ def find_address(search_range, range=False):
 
     except ImportError:
         log.warning(NAME, _('Could not import smbus.'))
+    finally:
+        try:
+            bus.close()
+        except Exception:
+            pass
 
-def get_all_addr():
-    find_adr = ''
+
+def system_info_i2c_transaction():
     try:
-        import smbus
-        bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
-        find_adr += _('Available addresses') + '\n' 
+        return i2c_transaction(timeout=I2C_SCAN_TIMEOUT, settle_time=I2C_SCAN_SETTLE_TIME, priority='low')
+    except TypeError:
+        return i2c_transaction(timeout=I2C_SCAN_TIMEOUT, settle_time=I2C_SCAN_SETTLE_TIME)
+
+
+def scan_i2c_addresses():
+    addresses = set()
+    import smbus
+    bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
+    try:
         for addr in range(128):
             try:
-                with i2c_transaction():
+                with system_info_i2c_transaction():
                     bus.read_byte(addr)
-                find_adr += '0x{:02x}\n'.format(addr) 
+                addresses.add(addr)
             except Exception:
                 pass
+    finally:
+        try:
+            bus.close()
+        except Exception:
+            pass
+    return addresses
+
+
+def format_i2c_addresses(addresses):
+    find_adr = _('Available addresses') + '\n'
+    for addr in sorted(addresses):
+        find_adr += '0x{:02x}\n'.format(addr)
+    return find_adr
+
+def get_all_addr():
+    try:
+        return format_i2c_addresses(scan_i2c_addresses())
 
     except ImportError:
         log.warning(NAME, _('Could not import smbus.'))
 
-    return find_adr       
+    return ''
 
 
 def process(cmd):
