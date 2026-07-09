@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Voice Notification<br/>
+Hardened Voice Notification playback and file handling. Missing pygame no longer triggers automatic apt installation; the plug-in now logs the fixed apt command instead. Playback waiting no longer busy-spins the CPU, repeated runtime errors are throttled, settings values and station sound indexes are clamped before use, damaged song queue JSON returns an empty queue, queue length is bounded, sound uploads strip path components and enforce mp3/wav plus a maximum file size, and delete/test actions validate selected indexes.
+
 (Martin Pihrt) - Venetian blind<br/>
 Reduced Venetian blind background blocking and hardened web actions. Blind status polling now uses a shorter HTTP timeout and a less aggressive refresh interval, repeated runtime errors are throttled, blind indexes and blind count are validated before commands/tests run, invalid or damaged local JSON logs return empty data, log history is bounded, CSV export uses the correct content type, and status JSON works even when the background thread is not running.
 
