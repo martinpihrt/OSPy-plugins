@@ -22,6 +22,7 @@ from ospy.options import options
 NAME = 'Water Consumption Counter'  ### name for plugin in plugin manager ###
 MENU =  _(u'Package: Water Consumption Counter')
 LINK = 'settings_page'              ### link for page in plugin manager ###
+ERROR_LOG_THROTTLE = 300
  
 plugin_options = PluginOptions(
     NAME,
@@ -50,6 +51,7 @@ class Sender(Thread):
         self.daemon = True
         self._stop_event = Event()
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -64,6 +66,12 @@ class Sender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
+
     def run(self):
         try:
             master_one_on = signal('master_one_on')
@@ -77,7 +85,7 @@ class Sender(Thread):
 
         except Exception:
             log.clear(NAME)
-            log.error(NAME, _(u'Water Consumption Counter plug-in') + traceback.format_exc())
+            self._log_problem(_(u'Water Consumption Counter plug-in') + traceback.format_exc())
             self._sleep(60)
 
 sender = None
@@ -106,22 +114,36 @@ def to_decimal(number):
     try:
         import decimal
         return decimal.Decimal(float(number))
-    
-    except decimal.InvalidOperation:
-        log.clear(NAME)
-        log.error(NAME, _(u'Water Consumption Counter plug-in') + traceback.format_exc()) 
-        pass
+
+    except Exception:
         return decimal.Decimal('0.0')
+
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_options():
+    plugin_options['liter_per_sec_master_one'] = max(0, float(to_decimal(plugin_options.get('liter_per_sec_master_one', 0.45))))
+    plugin_options['liter_per_sec_master_two'] = max(0, float(to_decimal(plugin_options.get('liter_per_sec_master_two', 0.01))))
+    plugin_options['sum_one'] = max(0, float(to_decimal(plugin_options.get('sum_one', 0))))
+    plugin_options['sum_two'] = max(0, float(to_decimal(plugin_options.get('sum_two', 0))))
+    plugin_options['eplug'] = 1 if safe_int(plugin_options.get('eplug', 0), 0) == 1 else 0
+    plugin_options['emlsubject'] = str(plugin_options.get('emlsubject') or _('Report from OSPy Water Consumption Counter plugin')).strip()
 
 ### send email ###
 def send_email(msg, msglog):
+    normalize_options()
     message = datetime_string() + ': ' + msg
     Subject = plugin_options['emlsubject']
     try:
         email = None
-        if plugin_options['eplug']==0: # email_notifications
+        if plugin_options['eplug'] == 0: # email_notifications
             from plugins.email_notifications import email
-        if plugin_options['eplug']==1: # email_notifications SSL
+        if plugin_options['eplug'] == 1: # email_notifications SSL
             from plugins.email_notifications_ssl import email
         if email is not None:        
             email(message, subject=Subject)
@@ -149,6 +171,7 @@ def notify_master_one_on(name, **kw):
 
 ### master one off ###
 def notify_master_one_off(name, **kw):
+    normalize_options()
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 1 stopped, counter finished...')) 
     master_one_stop  = datetime.datetime.now()
     master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() # run time in seconds
@@ -174,6 +197,7 @@ def notify_master_two_on(name, **kw):
 
 ### master two off ###
 def notify_master_two_off(name, **kw):
+    normalize_options()
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 2 stopped, counter finished...')) 
     master_two_stop  = datetime.datetime.now()
     master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
@@ -206,6 +230,7 @@ class settings_page(ProtectedPage):
     def GET(self):
         global sender, status
 
+        normalize_options()
         qdict = web.input()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
         if sender is not None and reset:
@@ -224,6 +249,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         verify_csrf(qdict)
         plugin_options.web_update(qdict) ### update options from web ###
+        normalize_options()
 
         if sender is not None:
             sender.update()

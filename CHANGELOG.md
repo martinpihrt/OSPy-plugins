@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Water Consumption Counter<br/>
+Hardened Water Consumption Counter settings and event handling. Flow rates, totals, e-mail subject, and selected e-mail plug-in are normalized before use, numeric conversion now safely falls back to zero without traceback spam, repeated signal setup errors are throttled, and master OFF calculations use validated values before updating totals or sending notifications.
+
 (Martin Pihrt) - Voltage and Temperature Monitor<br/>
 Hardened Voltage and Temperature Monitor I2C handling. PCF8591 access now uses low-priority guarded I2C transactions with a short timeout, the ADC bus is reopened after failures instead of staying disabled, repeated runtime/I2C errors are throttled, numeric settings are clamped before use, corrupted local JSON logs return empty data, and the settings page can render even when the background thread is not running.
 
