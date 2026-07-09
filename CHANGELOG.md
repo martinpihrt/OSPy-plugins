@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Webcam Monitor<br/>
+Hardened Webcam Monitor capture/download handling. Missing fswebcam no longer triggers automatic apt installation; the plug-in now logs the fixed apt command instead. Camera resolution is validated before use, fswebcam is executed with an argument list instead of a string-built command, and downloaded snapshots are served from the file in binary mode with a safe fallback content type.
+
 (Martin Pihrt) - Weather Stations<br/>
 Hardened Weather Stations settings and data JSON. Canvas/text sizes are clamped, all 30 sensor configuration lists are normalized to consistent lengths and safe value types before rendering/saving, malformed form numbers fall back to defaults, and per-sensor read failures in data_json return -127 without repeatedly writing tracebacks.
 

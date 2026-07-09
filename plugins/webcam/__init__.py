@@ -10,8 +10,6 @@ import traceback
 import re
 import os
 import mimetypes
-import datetime
-import shlex
 
 import web
 from ospy.log import log
@@ -49,28 +47,23 @@ def get_image_location():
     return os.path.join(plugin_data_dir(), 'image.jpg')
 
 
+def normalize_options():
+    resolution = str(cam_options.get('resolution', '1280x720')).strip().lower()
+    if not re.match(r'^\d{2,5}x\d{2,5}$', resolution):
+        resolution = '1280x720'
+    cam_options['resolution'] = resolution
+
+
 def get_run_cam():
     try:
+        normalize_options()
         if cam_options['enabled']:                  # if cam plugin is enabled
-            if cam_options['flip_h']:
-                flip_img_h = ' --flip h'
-            else:
-                flip_img_h = ''
-
-            if cam_options['flip_v']:
-                flip_img_v = ' --flip v'
-            else:
-                flip_img_v = ''
-
             if os.path.exists('/dev/video0'):              # if usb cam exists
                 if not os.path.exists("/usr/bin/fswebcam"): # if fswebcam is installed
                     log.clear(NAME)
                     log.info(NAME, _(u'Fswebcam is not installed.'))
-                    log.info(NAME, _(u'Please wait installing....'))
-                    cmd = "sudo apt-get install fswebcam"
-                    proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=120)
-                    output = proc.stdout.decode('utf-8', errors='replace')
-                    log.info(NAME, output)
+                    log.info(NAME, _(u'Install it from the system package manager and restart this plug-in.'))
+                    log.info(NAME, 'sudo apt install fswebcam')
                     cam_options['installed_fswebcam'] = False
 
                 else:
@@ -78,9 +71,13 @@ def get_run_cam():
                     log.clear(NAME)
                     log.info(NAME, _(u'Please wait...'))
 
-                    cmd = "fswebcam -r " + cam_options[
-                        'resolution'] + flip_img_h + flip_img_v + " --info OSPyCAM -S 3 --save " + get_image_location()
-                    proc = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=60)
+                    cmd = ["fswebcam", "-r", cam_options['resolution']]
+                    if cam_options['flip_h']:
+                        cmd.extend(["--flip", "h"])
+                    if cam_options['flip_v']:
+                        cmd.extend(["--flip", "v"])
+                    cmd.extend(["--info", "OSPyCAM", "-S", "3", "--save", get_image_location()])
+                    proc = subprocess.run(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=60)
                     output = proc.stdout.decode('utf-8', errors='replace')
                     text = re.sub('\x1b[^m]*m', '', output) # remove color character from communication in text
                     log.info(NAME, text)
@@ -116,6 +113,7 @@ class settings_page(ProtectedPage):
         qdict = web.input()
         verify_csrf(qdict)
         cam_options.web_update(qdict)
+        normalize_options()
         raise web.seeother(plugin_url(settings_page), True)
 
 
@@ -141,10 +139,10 @@ class download_page(ProtectedPage):
     def GET(self):
         try:
             web.header('Access-Control-Allow-Origin', '*')
-            content = mimetypes.guess_type(get_image_location())[0]
+            content = mimetypes.guess_type(get_image_location())[0] or 'image/jpeg'
             web.header('Content-type', content)
             web.header('Content-Disposition', 'attachment; filename=' + u'OSPy camera {}.jpg'.format(options.name))
-            with open(get_image_location()) as f:
+            with open(get_image_location(), 'rb') as f:
                 return f.read()
         except:
             log.info(NAME, _(u'No image file from downloading. Retry'))
