@@ -27,6 +27,10 @@ from ospy.inputs import inputs
 NAME = 'Remote FTP Control'
 MENU =  _('Package: Remote FTP Control')
 LINK = 'settings_page'
+FTP_TIMEOUT = 10
+FTP_INTERVAL = 30
+ERROR_LOG_THROTTLE = 300
+RAMDISK_PATH = '/home/pi/ramdisk'
 
 plugin_options = PluginOptions(
     NAME,
@@ -51,6 +55,8 @@ class PluginSender(Thread):
         self._stop_event = Event()
         
         self.bus = None
+        self.ftp = None
+        self._last_error_log = 0
         
         self._sleep_time = 0
         self.start()
@@ -67,59 +73,78 @@ class PluginSender(Thread):
           time.sleep(1)
           self._sleep_time -= 1
 
+    def log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.info(NAME, message + ':\n' + traceback.format_exc())
+            self._last_error_log = now
+
+    def close_ftp(self):
+        if self.ftp is not None:
+            try:
+                self.ftp.quit()
+            except Exception:
+                try:
+                    self.ftp.close()
+                except Exception:
+                    pass
+            self.ftp = None
+
     def run(self):
         log.clear(NAME)    
         try:
-            ramdiskpatch = '/home/pi/ramdisk'
+            ramdiskpatch = RAMDISK_PATH
 
             if not os.path.exists(ramdiskpatch): # checking whether there ramdisk
               os.mkdir(ramdiskpatch)
               log.info(NAME, _('Creating ramdisk into') + ': ' + str(ramdiskpatch))
        
         except Exception:
-           log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+           self.log_problem(_('Remote FTP control settings'))
                   
         try:
             fstabdata = 'tmpfs       /home/pi/ramdisk    tmpfs    defaults,size=4m    0    0'
             fstabpatch = '/etc/fstab'
 
-            if not fstabdata in open(fstabpatch).read():  # checking and adding a ramdisk to fstab
+            with open(fstabpatch) as fstab_file:
+              fstab_content = fstab_file.read()
+            if not fstabdata in fstab_content:  # checking and adding a ramdisk to fstab
               log.info(NAME, _('Adding into fstab') + ': ' + str(fstabdata))
               log.info(NAME, _('Saving config to') + ': ' + str(fstabpatch))
-              f = open(fstabpatch,"a")  
-              f.write(fstabdata)
-              f.close()
+              with open(fstabpatch, "a") as f:
+                f.write('\n' + fstabdata + '\n')
               # reboot os system
               log.info(NAME, _('Now please restart your operating system!'))
 
         except Exception:
-            log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
-                
-        smyckyFTP = 30  
+            self.log_problem(_('Remote FTP control settings'))
+
+        smyckyFTP = FTP_INTERVAL
         while not self._stop_event.is_set():
             try:                    
+                normalize_options(plugin_options)
                 if plugin_options['use']:  # if plugin is enabled               
-                  if (smyckyFTP > 29):      # every 30 second FTP download and upload
+                  if (smyckyFTP >= FTP_INTERVAL):      # every 30 second FTP download and upload
                     smyckyFTP = 0   
                     log.clear(NAME)
                     try:
-                        self.ftp = FTP(plugin_options['ftpaddress'], plugin_options['ftpname'], plugin_options['ftppass'])    
+                        self.ftp = FTP(plugin_options['ftpaddress'], plugin_options['ftpname'], plugin_options['ftppass'], timeout=FTP_TIMEOUT)
                         log.info(NAME, _('FTP connection established.')) 
 
                         FTP_download(self)  # downloaded from server data.txt and save to ramdisk
                         FTP_upload(self)    # uploaded to the server data stavy.php from the ramdisk
 
                     except Exception:
-                        log.clear(NAME)
-                        log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+                        self.log_problem(_('Remote FTP control settings'))
+                    finally:
+                        self.close_ftp()
                        
                   smyckyFTP += 1 # counter for FTP transmit and reiceive                           
                   
                 self._sleep(1)  
 
             except Exception:
-                log.clear(NAME)
-                log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+                self.log_problem(_('Remote FTP control settings'))
                 self._sleep(60)
                 
 plugin_sender = None
@@ -141,12 +166,32 @@ def stop():
         plugin_sender = None
 
 
+def normalize_options(values):
+    loc = (values.get('loc') or '/').replace('\\', '/').replace('\r', '').replace('\n', '')
+    parts = [part for part in loc.split('/') if part and part != '..']
+    loc = '/' + '/'.join(parts)
+    if not loc.endswith('/'):
+        loc += '/'
+    values['loc'] = loc
+    values['ftpaddress'] = (values.get('ftpaddress') or '').strip().replace('\r', '').replace('\n', '')
+    values['ftpname'] = (values.get('ftpname') or '').strip().replace('\r', '').replace('\n', '')
+    return values
+
+
+def safe_settings_json():
+    data = dict(plugin_options)
+    if data.get('ftppass'):
+        data['ftppass'] = '********'
+    return data
+
+
 def FTP_download(self):     
     try:  # read command file and save to ramdisk   
-        self.ftp.retrbinary("RETR " + plugin_options['loc'] + "data.txt" , open("/home/pi/ramdisk/data.txt", 'wb').write) 
-        fs = file("/home/pi/ramdisk/data.txt",'r')          
-        obsahaut = fs.readline() 
-        fs.close()     
+        data_path = os.path.join(RAMDISK_PATH, 'data.txt')
+        with open(data_path, 'wb') as fs:
+          self.ftp.retrbinary("RETR " + plugin_options['loc'] + "data.txt", fs.write)
+        with open(data_path, 'r') as fs:
+          obsahaut = fs.readline().strip()
 
         log.debug(NAME, _('FTP received data from file data.txt') + ': ' + str(obsahaut))
 
@@ -205,9 +250,8 @@ def FTP_download(self):
             change = True
 
         if (change): # delete data.txt command now is OK
-          fs= open('/home/pi/ramdisk/data.txt','w')      
-          fs.write('OK') 
-          fs.close()
+          with open(os.path.join(RAMDISK_PATH, 'data.txt'), 'w') as fs:
+            fs.write('OK')
           FTP_upload(self) # send to server actual data
        
      
@@ -215,9 +259,7 @@ def FTP_download(self):
 
                                                        
     except Exception: 
-      log.clear(NAME)
-      log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
-      pass
+      self.log_problem(_('Remote FTP control settings'))
 
 def FTP_upload(self):   
     try:      
@@ -252,7 +294,7 @@ def FTP_upload(self):
 
       namestations = []
       for num in range(0,options.output_count): # stations name as array
-        namestations.append(unicodedata.normalize('NFKD', stations.get(num).name).encode('ascii','ignore'))
+        namestations.append(unicodedata.normalize('NFKD', stations.get(num).name).encode('ascii','ignore').decode('ascii'))
       text += "$name" + " = array"  
       text += str(namestations) + ";\r\n"
  
@@ -264,7 +306,7 @@ def FTP_upload(self):
 
       progrname = []
       for program in programs.get():          # program name as array
-        progrname.append(unicodedata.normalize('NFKD', program.name).encode('ascii','ignore'))
+        progrname.append(unicodedata.normalize('NFKD', program.name).encode('ascii','ignore').decode('ascii'))
       text += "$progname" + " = array"  
       text += str(progrname) + ";\r\n"
  
@@ -367,24 +409,23 @@ def FTP_upload(self):
       ------------------------------- """                     
   
       try:
-        fs=file("/home/pi/ramdisk/stavy.php",'w')      
-        fs.write(text) 
-        fs.close()
+        with open(os.path.join(RAMDISK_PATH, 'stavy.php'), 'w') as fs:
+          fs.write(text)
 
-      except:
+      except Exception:
         log.error(NAME, _('Could not save stavy.php to ramdisk!'))
         pass     
 
-      self.ftp.storbinary("STOR " + plugin_options['loc'] + 'stavy.php'  , open("/home/pi/ramdisk/stavy.php", 'rb'))   
+      with open(os.path.join(RAMDISK_PATH, 'stavy.php'), 'rb') as fs:
+        self.ftp.storbinary("STOR " + plugin_options['loc'] + 'stavy.php', fs)
       log.info(NAME, _('Data file stavy.php has send on to FTP server') + ': ' + str(cas))
       
-      self.ftp.storbinary("STOR " + plugin_options['loc'] + 'data.txt'  , open("/home/pi/ramdisk/data.txt", 'rb'))   
+      with open(os.path.join(RAMDISK_PATH, 'data.txt'), 'rb') as fs:
+        self.ftp.storbinary("STOR " + plugin_options['loc'] + 'data.txt', fs)
       log.info(NAME, _('Data file data.txt has send on to FTP server') + ': ' + str(cas))
 
-      self.ftp.close       # FTP end
-         
     except Exception:
-      log.info(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
+      self.log_problem(_('Remote FTP control settings'))
 
 
     
@@ -409,15 +450,16 @@ class settings_page(ProtectedPage):
         try: 
             qdict = web.input()
             verify_csrf(qdict)
+            normalize_options(qdict)
             plugin_options.web_update(qdict)
             if plugin_sender is not None:
                 plugin_sender.update()
-            raise web.seeother(plugin_url(settings_page), True)
         except:
             log.error(NAME, _('Remote FTP control settings') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('remote_ftp_control -> settings_page POST')
             return self.core_render.notice('/', msg)
+        raise web.seeother(plugin_url(settings_page), True)
 
 
 class help_page(ProtectedPage):
@@ -440,6 +482,6 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         try:
-            return json.dumps(plugin_options)        
+            return json.dumps(safe_settings_json())
         except:
             return {}

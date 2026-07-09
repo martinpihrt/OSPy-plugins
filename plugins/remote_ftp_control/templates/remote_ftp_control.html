@@ -57,6 +57,12 @@ input:checked + .slider:before {
         jQuery("button#cCancel").click(function(){
             window.location="/";
         });
+        jQuery("#toggleFtpPassword").click(function() {
+            var password = jQuery("#ftpPassword");
+            var isHidden = password.attr("type") === "password";
+            password.attr("type", isHidden ? "text" : "password");
+            jQuery(this).text(isHidden ? "$_(u'Hide')" : "$_(u'Show')");
+        });
     });
 </script>
 
@@ -90,7 +96,8 @@ input:checked + .slider:before {
              <tr>
                 <td style='text-transform: none;'>$_(u'The FTP user password'):</td>
                 <td>
-                    <input name='ftppass' type='text' value='$plugin_options["ftppass"]'>
+                    <input id="ftpPassword" name='ftppass' type='password' value='$plugin_options["ftppass"]'>
+                    <button id="toggleFtpPassword" type="button" class="button backup">$_(u'Show')</button>
                 </td>
             </tr>
             <tr>

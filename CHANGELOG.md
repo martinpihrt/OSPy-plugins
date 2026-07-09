@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Remote FTP Control<br/>
+Updated Remote FTP Control for Python 3 and safer FTP operation. Legacy file() calls were replaced with context-managed open() calls, FTP connections now use a timeout and are closed reliably, repeated FTP/runtime errors are throttled, remote path/user/server settings are normalized before use, the FTP password field is hidden with a show/hide button, settings JSON masks the password, and successful settings redirects are no longer logged as internal errors.
+
 (Martin Pihrt) - Direct 16 Relay Outputs<br/>
 Hardened Direct 16 Relay Outputs runtime handling. Relay count and trigger level are normalized before use, unsupported platforms now stop GPIO processing cleanly instead of retrying every loop, station-to-relay access is bounded to the configured GPIO list, loop sleeping now responds promptly to plug-in stop, and repeated runtime errors are throttled.
 
