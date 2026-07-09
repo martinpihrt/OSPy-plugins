@@ -24,6 +24,9 @@ from ospy.webpages import showOnTimeline                         # Enable plugin
 NAME = 'Proto'                                                   # The unique name of the plugin listed in the plugin manager
 MENU =  _('Package: Prototype default example')                  # The name of the plugin that will be visible in the running plugins tab and will be translated
 LINK = 'settings_page'                                           # The default webpage when loading the plugin will be the settings page class
+LOOP_INTERVAL = 3                                                # Keep the example loop light; the footer refreshes every few seconds.
+LOG_INTERVAL = 30                                                # Do not write the same example status every loop.
+ERROR_LOG_THROTTLE = 300                                         # Throttle repeated tracebacks.
 
 plugin_options = PluginOptions(
     NAME,
@@ -88,6 +91,8 @@ class Sender(Thread):
         # Available is: log.info, debug, error
 
         example_counter = 0
+        last_log = 0
+        last_error_log = 0
 
         while not self._stop_event.is_set():                      # Plugin repeating loop
             try:                                                  # It is a good idea to use try and except because it is possible to debug any errors encountered in the plugin.
@@ -97,19 +102,23 @@ class Sender(Thread):
                         in_footer.val = msg.encode('utf8').decode('utf8')
                         in_footer.unit = ' sec'
                 
-                example_counter += 1
+                example_counter += LOOP_INTERVAL
                 if example_counter > 10:
                     example_counter = 0                           # Clear example counter after number 10
-                    log.clear(NAME)                               # Clear events window on webpage
 
 
 
-                log.info(NAME, datetime_string() + ' ' + _('Example counter {}').format(example_counter))
-                self._sleep(1)                                    # The loop is executed every second
+                now = time.time()
+                if now - last_log >= LOG_INTERVAL:
+                    log.info(NAME, datetime_string() + ' ' + _('Example counter {}').format(example_counter))
+                    last_log = now
+                self._sleep(LOOP_INTERVAL)                        # The loop is executed every few seconds
 
             except Exception:                                     # In the event of an error (the try did not turn out correctly), a callback is used to write where the error is
-                log.clear(NAME)
-                log.error(NAME, _('Proto plugin') + ':\n' + traceback.format_exc())
+                now = time.time()
+                if now - last_error_log >= ERROR_LOG_THROTTLE:
+                    log.error(NAME, _('Proto plugin') + ':\n' + traceback.format_exc())
+                    last_error_log = now
                 self._sleep(60)                                   # In case of an error, it is advisable to wait longer than 1 second
 
 sender = None

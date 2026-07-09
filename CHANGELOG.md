@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Proto<br/>
+Reduced Proto example background load. The demonstration loop now runs at a lighter interval, status messages are logged only periodically instead of every loop, repeated traceback logging is throttled, and the event window is no longer cleared repeatedly while the plug-in is running.
+
 (Martin Pihrt) - Pressurizer<br/>
 Hardened Pressurizer station selection and relay shutdown. Selected station IDs are normalized before schedule matching and rendered correctly after saving, disabled/scheduler-off messages and runtime errors are throttled, missing master-station warnings are logged once per condition, and stopping the plug-in forces the pressurizer relay signal/output off.
 
