@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - E-mail Reader<br/>
+Added IMAP connection timeouts, a minimum mail check interval, safer logout handling and throttled error logging. Missing sender/folder results now return an empty message list instead of causing follow-up loop errors, reducing load and log spam when the mail server or account settings are unavailable.
+
 (Martin Pihrt) - E-mail Notifications<br/>
 Added an SMTP connection timeout and reduced retry load when the mail server is unavailable. The unsent e-mail queue now backs off repeated failed sends instead of retrying at a fixed short interval, and SMTP connections are closed reliably after send attempts.
 

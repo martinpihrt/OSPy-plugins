@@ -35,6 +35,11 @@ import sys
 NAME = 'E-mail Reader'
 MENU =  _('Package: E-mail Reader')
 LINK = 'settings_page'
+IMAP_TIMEOUT = 10
+MIN_CHECK_INTERVAL = 30
+MAIN_LOOP_SLEEP = 5
+ERROR_RETRY_INTERVAL = 300
+ERROR_LOG_THROTTLE = 300
 
 plugin_options = PluginOptions(
     NAME,
@@ -93,6 +98,7 @@ class Sender(Thread):
         self.daemon = True
         self._stop_event = Event()
         self._sleep_time = 0
+        self._last_error_log = 0
         self.start()
 
     def stop(self):
@@ -116,7 +122,7 @@ class Sender(Thread):
                 msglog = ''
                 attachment = None
                 if plugin_options['use_reader']: 
-                    email_interval = plugin_options['check_int']*1000   # time for reading E-mails (ms) -> 1 minute = 1000ms*60s -> 60000ms
+                    email_interval = normalized_check_interval()*1000   # time for reading E-mails in ms
                     millis = int(round(time.time() * 1000))             # actual time in ms
                     if(millis - last_email_millis) >= email_interval:   # is time for reading?
                         last_email_millis = millis
@@ -126,7 +132,7 @@ class Sender(Thread):
                         log.info(NAME, datetime_string() + ' ' + _('Try-ing login to E-mail.'))
                         is_login_ok = imap.login()     
                         if is_login_ok:
-                            messages = imap.get_messages(sender=plugin_options['sender']) # retrieve messages from a given sender
+                            messages = imap.get_messages(sender=plugin_options['sender']) or [] # retrieve messages from a given sender
                             log.info(NAME, datetime_string() + ' ' + _('Reading messages in inbox.'))   
                             # Do something with the messages                 
                             for msg in messages:               # msg is a dict of {'num': num, 'body': body, 'subj': subj} 
@@ -679,14 +685,13 @@ class Sender(Thread):
                                     imap.delete_message(msg['num'])
                                     self._sleep(1)
                         
-                            imap.logout()                                # when done, you should log out
+                        imap.logout()                                    # when done, you should log out
    
-                self._sleep(1)  
+                self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
-                log.clear(NAME)
-                log.error(NAME, _('E-mail Reader plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(60)
+                log_reader_problem(_('E-mail Reader plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                self._sleep(ERROR_RETRY_INTERVAL)
 
 
 sender = None
@@ -706,6 +711,21 @@ def stop():
         sender.stop()
         sender.join(15)
         sender = None
+
+
+def normalized_check_interval():
+    try:
+        return max(MIN_CHECK_INTERVAL, int(plugin_options['check_int']))
+    except:
+        return MIN_CHECK_INTERVAL
+
+
+def log_reader_problem(message):
+    now = time.time()
+    if sender is None or now - sender._last_error_log >= ERROR_LOG_THROTTLE:
+        if sender is not None:
+            sender._last_error_log = now
+        log.error(NAME, message)
 
 
 def station_names():
@@ -1023,19 +1043,28 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
             log.error(NAME, datetime_string() + ' ' + _('You must provide recipient folder.'))
             return              
 
+        self._logged_out = False
         self.recipient = recipient
         self.user_password = user_password
         self.use_ssl = use_ssl
         self.move_to_trash = move_to_trash
         self.recipient_folder = recipient_folder
 
-        if self.use_ssl:
-            self.imap = imaplib.IMAP4_SSL(server)
-        else:
-            self.imap = imaplib.IMAP4(server)
+        try:
+            if self.use_ssl:
+                self.imap = imaplib.IMAP4_SSL(server, timeout=IMAP_TIMEOUT)
+            else:
+                self.imap = imaplib.IMAP4(server, timeout=IMAP_TIMEOUT)
+        except TypeError:
+            if self.use_ssl:
+                self.imap = imaplib.IMAP4_SSL(server)
+            else:
+                self.imap = imaplib.IMAP4(server)
 
     def login(self):
         try:
+            if self.imap is None:
+                return False
             rv, data = self.imap.login(self.recipient, self.user_password) 
             log.info(NAME, datetime_string() + ' ' + _('Login OK.'))
             return True
@@ -1044,9 +1073,24 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
             return False
 
     def logout(self):
-        self.imap.close()
-        self.imap.logout()
-        log.info(NAME, datetime_string() + ' ' + _('Logout OK.'))
+        try:
+            if getattr(self, '_logged_out', False):
+                return
+            if self.imap is None:
+                return
+            try:
+                self.imap.close()
+            except Exception:
+                pass
+            self.imap.logout()
+            log.info(NAME, datetime_string() + ' ' + _('Logout OK.'))
+        except Exception:
+            pass
+        finally:
+            self._logged_out = True
+
+    def __del__(self):
+        self.logout()
 
     def select_folder(self, folder):
         """
@@ -1082,13 +1126,13 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
         """
         if not sender:
             log.error(NAME, datetime_string() + ' ' + _('You must provide a sender E-mail address!'))
-            return
+            return []
 
         # select the folder, by default INBOX
         resp, _ = self.imap.select(self.recipient_folder)
         if resp != 'OK':
             log.error(NAME, datetime_string() + ' ' + _('ERROR: Unable to open the folder') + ': ' + self.recipient_folder)
-            return
+            return []
 
         messages = []
 
