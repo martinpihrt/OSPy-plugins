@@ -27,6 +27,9 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 NAME = 'UPS Monitor'
 MENU =  _('Package: UPS Monitor')
 LINK = 'settings_page'
+MAIN_LOOP_SLEEP = 2
+COUNTDOWN_LOG_STEP = 60
+COUNTDOWN_FINAL_LOG_STEP = 10
 
 ups_options = PluginOptions(
     NAME,
@@ -80,6 +83,7 @@ class UPSSender(Thread):
 
         self.status = {}
         self.status['power%d'] = 0
+        self.status['countdown_remaining'] = None
 
         self._sleep_time = 0
         self.start()
@@ -100,7 +104,8 @@ class UPSSender(Thread):
         reboot_time = False
         once = True
         once_two = True
-        once_three = True
+        once_three = False
+        last_countdown_log = None
 
         last_time = int(time.time())
 
@@ -128,6 +133,9 @@ class UPSSender(Thread):
 
                     if not test:
                         last_time = int(time.time())
+                        reboot_time = False
+                        self.status['countdown_remaining'] = None
+                        last_countdown_log = None
 
                     if test:                                               # if power line is not active
                         reboot_time = True                                 # start countdown timer
@@ -156,8 +164,13 @@ class UPSSender(Thread):
                     if reboot_time and test:
                         count_val = int(ups_options['time']) * 60             # value for countdown
                         actual_time = int(time.time())
-                        log.clear(NAME)
-                        log.info(NAME, _('Time to shutdown') + ': ' + str(count_val - (actual_time - last_time)) + ' ' + _('sec'))
+                        remaining = max(0, count_val - (actual_time - last_time))
+                        self.status['countdown_remaining'] = remaining
+                        countdown_log = countdown_log_marker(remaining)
+                        if countdown_log != last_countdown_log:
+                            last_countdown_log = countdown_log
+                            log.clear(NAME)
+                            log.info(NAME, _('Time to shutdown') + ': ' + format_seconds(remaining))
                         if ((actual_time - last_time) >= count_val):        # if countdown is 0
                             last_time = actual_time
                             test = get_check_power()
@@ -210,10 +223,13 @@ class UPSSender(Thread):
                             once = True
                             once_two = True
                             once_three = False
+                            reboot_time = False
+                            self.status['countdown_remaining'] = None
+                            last_countdown_log = None
                             if ups_options['enable_log'] or ups_options['en_sql_log']:
                                 update_log(1)
 
-                self._sleep(2)
+                self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
                 log.error(NAME, _('UPS plug-in') + ': \n' + traceback.format_exc())
@@ -265,7 +281,13 @@ def get_power_state_data():
     fault = True if get_check_power() else False
     if fault:
         text = _('FAULT')
-        message = _('Detected fault on power line!')
+        remaining = None
+        if ups_sender is not None:
+            remaining = ups_sender.status.get('countdown_remaining')
+        if remaining is not None:
+            message = _('Detected fault on power line!') + ' ' + _('Time to shutdown') + ': ' + format_seconds(remaining)
+        else:
+            message = _('Detected fault on power line!')
         css = 'fault'
     else:
         text = _('OK')
@@ -278,8 +300,25 @@ def get_power_state_data():
         'power_fault': fault,
         'state': 0 if fault else 1,
         'state_text': message,
+        'countdown_remaining': remaining if fault else None,
         'state_class': css
     }
+
+
+def format_seconds(seconds):
+    seconds = max(0, int(seconds))
+    minutes, sec = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return '{}:{:02d}:{:02d}'.format(hours, minutes, sec)
+    return '{}:{:02d}'.format(minutes, sec)
+
+
+def countdown_log_marker(seconds):
+    seconds = max(0, int(seconds))
+    if seconds <= 60:
+        return seconds // COUNTDOWN_FINAL_LOG_STEP
+    return seconds // COUNTDOWN_LOG_STEP
 
 
 def read_log():
