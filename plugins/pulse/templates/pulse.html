@@ -35,7 +35,7 @@ $var page: plugins
             <tr>
                 <td style='text-transform: none;'>$_('Time to test'):</td>
                 <td>
-                    <input name='test_time' type='number' value='$plugin_options["test_time"]'>
+                    <input name='test_time' type='number' min='1' max='3600' value='$plugin_options["test_time"]'>
                 </td>
             </tr>
             <tr>
