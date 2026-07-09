@@ -5,18 +5,15 @@ import json
 import time
 import datetime
 import traceback
-import os
 from threading import Thread, Event
 
 import web
 import plugins as plugin_manager
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url
 from ospy.webpages import ProtectedPage
-from ospy.helpers import get_rpi_revision
 from ospy.helpers import datetime_string, verify_csrf
-from ospy import helpers
 from ospy.stations import stations
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
@@ -25,6 +22,13 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 NAME = 'Temperature Switch'
 MENU =  _(u'Package: Temperature Switch')
 LINK = 'settings_page'
+ERROR_LOG_THROTTLE = 300
+PROBE_REFRESH_INTERVAL = 10
+OWN_RUN_NAMES = (
+    _('Temperature Switch A'),
+    _('Temperature Switch B'),
+    _('Temperature Switch C'),
+)
 
 
 plugin_options = PluginOptions(
@@ -84,6 +88,8 @@ class Sender(Thread):
         self._stop_event = Event()
 
         self._sleep_time = 0
+        self._last_error_log = 0
+        self._last_air_error_log = 0
         self.start()
 
     def stop(self):
@@ -97,6 +103,79 @@ class Sender(Thread):
         while self._sleep_time > 0 and not self._stop_event.is_set():
             time.sleep(1)
             self._sleep_time -= 1
+
+    def _log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_error_log = now
+
+    def _log_air_problem(self, message):
+        now = time.time()
+        if now - self._last_air_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message)
+            self._last_air_error_log = now
+
+    def _own_active_run(self, sid):
+        for interval in log.active_runs():
+            if interval.get('station') == sid and interval.get('program_name') in OWN_RUN_NAMES:
+                return interval
+        return None
+
+    def _finish_own_runs(self, sid):
+        for interval in list(log.active_runs()):
+            if interval.get('station') == sid and interval.get('program_name') in OWN_RUN_NAMES:
+                log.finish_run(interval)
+
+    def _station_has_other_run(self, sid):
+        for interval in log.active_runs():
+            if interval.get('station') == sid and interval.get('program_name') not in OWN_RUN_NAMES:
+                return True
+        return False
+
+    def _read_temperatures(self):
+        if not plugin_is_running('air_temp_humi'):
+            raise RuntimeError(_(u'The plug-in is not running.'))
+
+        from plugins.air_temp_humi import plugin_options as air_temp_data
+        from plugins.air_temp_humi import DS18B20_read_probe
+
+        for index in range(6):
+            plugin_options['ds_name_{}'.format(index)] = air_temp_data.get('label_ds{}'.format(index), '')
+        plugin_options['ds_count'] = clamp_int(air_temp_data.get('ds_used', 0), 0, 6)
+        return [DS18B20_read_probe(index) for index in range(6)]
+
+    def _start_output(self, station, minutes, seconds, program_name):
+        sid = station.index
+        if self._own_active_run(sid) is not None:
+            return
+
+        start = datetime.datetime.now()
+        end = start + datetime.timedelta(seconds=seconds, minutes=minutes)
+        new_schedule = {
+            'active': True,
+            'program': -1,
+            'station': sid,
+            'program_name': program_name,
+            'fixed': True,
+            'cut_off': 0,
+            'manual': True,
+            'blocked': False,
+            'start': start,
+            'original_start': start,
+            'end': end,
+            'uid': '%s-%s-%d' % (str(start), "Manual", sid),
+            'usage': stations.get(sid).usage
+        }
+
+        log.start_run(new_schedule)
+        stations.activate(new_schedule['station'])
+
+    def _stop_output(self, station):
+        sid = station.index
+        self._finish_own_runs(sid)
+        if not self._station_has_other_run(sid):
+            stations.deactivate(sid)
 
     def run(self):
         temperature_ds = [-127,-127,-127,-127,-127,-127]
@@ -122,28 +201,21 @@ class Sender(Thread):
         c_state = -1
 
         helper_text = ''
+        next_probe_refresh = 0
 
         while not self._stop_event.is_set():
             try:
-                try:
-                    if not plugin_is_running('air_temp_humi'):
-                        raise Exception(_(u'The plug-in is not running.'))
-                    from plugins.air_temp_humi import plugin_options as air_temp_data
-                    plugin_options['ds_name_0'] = air_temp_data['label_ds0']
-                    plugin_options['ds_name_1'] = air_temp_data['label_ds1']
-                    plugin_options['ds_name_2'] = air_temp_data['label_ds2']
-                    plugin_options['ds_name_3'] = air_temp_data['label_ds3']
-                    plugin_options['ds_name_4'] = air_temp_data['label_ds4']
-                    plugin_options['ds_name_5'] = air_temp_data['label_ds5']
-                    plugin_options['ds_count'] = air_temp_data['ds_used']
+                normalize_options()
 
-                    from plugins.air_temp_humi import DS18B20_read_probe
-                    temperature_ds = [DS18B20_read_probe(0), DS18B20_read_probe(1), DS18B20_read_probe(2), DS18B20_read_probe(3), DS18B20_read_probe(4), DS18B20_read_probe(5)]
-                    
-                except:
-                    log.error(NAME, _(u'Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
-                    plugin_options['ds_count'] = 0
-                    self._sleep(60)
+                if time.time() >= next_probe_refresh:
+                    try:
+                        temperature_ds = self._read_temperatures()
+                    except Exception:
+                        self._log_air_problem(_(u'Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
+                        plugin_options['ds_count'] = 0
+                        next_probe_refresh = time.time() + 60
+                    else:
+                        next_probe_refresh = time.time() + PROBE_REFRESH_INTERVAL
 
                 # regulation A
                 if plugin_options['enabled_a']:  
@@ -157,27 +229,7 @@ class Sender(Thread):
                             msg_a_on = False
                             msg_a_off = True
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_a.name + ' ' + _(u'was turned on.'))
-                            start = datetime.datetime.now()
-                            sid = station_a.index
-                            end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss_a'], minutes=plugin_options['reg_mm_a'])                            
-                            new_schedule = {
-                                'active': True,
-                                'program': -1,
-                                'station': sid,
-                                'program_name': _('Temperature Switch A'),
-                                'fixed': True,
-                                'cut_off': 0,
-                                'manual': True,
-                                'blocked': False,
-                                'start': start,
-                                'original_start': start,
-                                'end': end,
-                                'uid': '%s-%s-%d' % (str(start), "Manual", sid),
-                                'usage': stations.get(sid).usage
-                            }
-
-                            log.start_run(new_schedule)
-                            stations.activate(new_schedule['station'])  
+                            self._start_output(station_a, plugin_options['reg_mm_a'], plugin_options['reg_ss_a'], _('Temperature Switch A'))
 
                     if ds_a_off < plugin_options['temp_a_off']:  # if DSxx < temperature AOFF
                         a_state = 0
@@ -185,12 +237,7 @@ class Sender(Thread):
                             msg_a_off = False
                             msg_a_on = True
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_a.name + ' ' + _(u'was turned off.'))
-                            sid = station_a.index
-                            stations.deactivate(sid)
-                            active = log.active_runs()
-                            for interval in active:
-                                if interval['station'] == sid:
-                                    log.finish_run(interval)
+                            self._stop_output(station_a)
  
                 else:
                     a_state = -1    
@@ -206,27 +253,7 @@ class Sender(Thread):
                             msg_b_on = False
                             msg_b_off = True
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_b.name + ' ' + _(u'was turned on.'))
-                            start = datetime.datetime.now()
-                            sid = station_b.index
-                            end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss_b'], minutes=plugin_options['reg_mm_b'])
-                            new_schedule = {
-                                'active': True,
-                                'program': -1,
-                                'station': sid,
-                                'program_name': _('Temperature Switch B'),
-                                'fixed': True,
-                                'cut_off': 0,
-                                'manual': True,
-                                'blocked': False,
-                                'start': start,
-                                'original_start': start,
-                                'end': end,
-                                'uid': '%s-%s-%d' % (str(start), "Manual", sid),
-                                'usage': stations.get(sid).usage
-                            }
-
-                            log.start_run(new_schedule)
-                            stations.activate(new_schedule['station'])
+                            self._start_output(station_b, plugin_options['reg_mm_b'], plugin_options['reg_ss_b'], _('Temperature Switch B'))
 
                     if ds_b_off < plugin_options['temp_b_off']:  # if DSxx < temperature BOFF
                         b_state = 0
@@ -234,12 +261,7 @@ class Sender(Thread):
                             msg_b_off = False
                             msg_b_on = True
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_b.name + ' ' + _(u'was turned off.'))
-                            sid = station_b.index
-                            stations.deactivate(sid)
-                            active = log.active_runs()
-                            for interval in active:
-                                if interval['station'] == sid:
-                                    log.finish_run(interval)
+                            self._stop_output(station_b)
   
                 else:
                     b_state = -1
@@ -256,27 +278,7 @@ class Sender(Thread):
                             msg_c_on = False
                             msg_c_off = True
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_c.name + ' ' + _(u'was turned on.'))
-                            start = datetime.datetime.now()
-                            sid = station_c.index
-                            end = datetime.datetime.now() + datetime.timedelta(seconds=plugin_options['reg_ss_c'], minutes=plugin_options['reg_mm_c'])
-                            new_schedule = {
-                                'active': True,
-                                'program': -1,
-                                'station': sid,
-                                'program_name': _('Temperature Switch C'),
-                                'fixed': True,
-                                'cut_off': 0,
-                                'manual': True,
-                                'blocked': False,
-                                'start': start,
-                                'original_start': start,
-                                'end': end,
-                                'uid': '%s-%s-%d' % (str(start), "Manual", sid),
-                                'usage': stations.get(sid).usage
-                            }
-
-                            log.start_run(new_schedule)
-                            stations.activate(new_schedule['station'])
+                            self._start_output(station_c, plugin_options['reg_mm_c'], plugin_options['reg_ss_c'], _('Temperature Switch C'))
 
                     if ds_c_off < plugin_options['temp_c_off']:  # if DSxx < temperature COFF
                         c_state = 0
@@ -284,12 +286,7 @@ class Sender(Thread):
                             msg_c_off = False
                             msg_c_on = True
                             log.info(NAME, datetime_string() + ' ' + u'%s' % station_c.name + ' ' + _(u'was turned off.')) 
-                            sid = station_c.index
-                            stations.deactivate(sid)
-                            active = log.active_runs()
-                            for interval in active:
-                                if interval['station'] == sid:
-                                    log.finish_run(interval)
+                            self._stop_output(station_c)
  
                 else:
                     c_state = -1
@@ -326,7 +323,7 @@ class Sender(Thread):
                     log.clear(NAME)
  
             except Exception:
-                log.error(NAME, _(u'Temperature Switch plug-in') + ':\n' + traceback.format_exc())
+                self._log_problem(_(u'Temperature Switch plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
           
 sender = None
@@ -343,9 +340,44 @@ def start():
 def stop():
     global sender
     if sender is not None:
-       sender.stop()
-       sender.join(15)
-       sender = None 
+        sender.stop()
+        sender.join(15)
+        sender = None
+
+
+def clamp_int(value, minimum, maximum):
+    try:
+        value = int(value)
+    except (TypeError, ValueError):
+        value = minimum
+    return max(minimum, min(maximum, value))
+
+
+def clamp_float(value, minimum, maximum):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        value = minimum
+    return max(minimum, min(maximum, value))
+
+
+def normalize_options(values=None):
+    opts = values if values is not None else plugin_options
+    station_count = max(1, len(stations.get()))
+    ds_count = clamp_int(plugin_options.get('ds_count', 0), 0, 6)
+    max_probe = max(0, ds_count - 1)
+
+    for key in ('probe_A_on', 'probe_B_on', 'probe_C_on', 'probe_A_off', 'probe_B_off', 'probe_C_off'):
+        opts[key] = clamp_int(opts.get(key, 0), 0, max_probe)
+    for key in ('control_output_A', 'control_output_B', 'control_output_C'):
+        opts[key] = clamp_int(opts.get(key, 0), 0, station_count - 1)
+    for key in ('temp_a_on', 'temp_b_on', 'temp_c_on', 'temp_a_off', 'temp_b_off', 'temp_c_off'):
+        opts[key] = clamp_float(opts.get(key, 0), -100, 100)
+    for key in ('reg_mm_a', 'reg_mm_b', 'reg_mm_c'):
+        opts[key] = clamp_int(opts.get(key, 0), 0, 999)
+    for key in ('reg_ss_a', 'reg_ss_b', 'reg_ss_c'):
+        opts[key] = clamp_int(opts.get(key, 0), 0, 59)
+    return opts
 
 
 ################################################################################
@@ -361,6 +393,7 @@ class settings_page(ProtectedPage):
     def POST(self):
         qdict = web.input()
         verify_csrf(qdict)
+        normalize_options(qdict)
         plugin_options.web_update(qdict)
 
         if sender is not None:

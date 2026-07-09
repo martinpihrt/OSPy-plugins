@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Temperature Switch<br/>
+Reduced Temperature Switch background load and made output control safer. DS18B20 values from Air Temperature and Humidity Monitor are refreshed at a fixed interval instead of every loop, repeated runtime/probe errors are throttled, numeric settings are clamped before use, duplicate Temperature Switch runs on the same output are avoided, and output OFF now finishes only runs created by this plug-in instead of stopping unrelated scheduler/plugin runs on the same station.
+
 (Martin Pihrt) - Telegram Bot<br/>
 Reduced Telegram Bot retry noise and hardened settings input. Repeated connection/runtime errors are throttled, bot token input is stripped of newline characters before saving, and command names are normalized so users can enter them with or without a leading slash.
 
