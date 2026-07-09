@@ -26,6 +26,9 @@ from ospy.webpages import ProtectedPage
 NAME = 'Database Connector'
 MENU =  _('Package: Database Connector')
 LINK = 'settings_page'
+DB_CONNECT_TIMEOUT = 5
+DB_ERROR_LOG_THROTTLE = 60
+DB_COMMAND_LOG_THROTTLE = 60
 
 plugin_options = PluginOptions(
     NAME,
@@ -41,16 +44,9 @@ plugin_options = PluginOptions(
     }
 )
 
-config = {
-  'user': plugin_options['user'],
-  'password': plugin_options['pass'],
-  'host': plugin_options['host'],
-  #'database': plugin_options['database'],
-  'port': plugin_options['port'],
-  'raise_on_warnings': True
-}
-
 is_installed_ok = False
+_last_error_log = {'message': None, 'time': 0}
+_last_command_log = 0
 
 ################################################################################
 # Main function loop:                                                          #
@@ -136,6 +132,34 @@ def run_command(cmd, return_text = None):
         log.error(NAME, _('Database Connector plug-in') + ':\n' + traceback.format_exc())
 
 
+def db_config():
+    return {
+      'user': plugin_options['user'],
+      'password': plugin_options['pass'],
+      'host': plugin_options['host'],
+      'port': int(plugin_options['port']),
+      'connection_timeout': DB_CONNECT_TIMEOUT,
+      'raise_on_warnings': True
+    }
+
+
+def log_db_error(message):
+    now = time.time()
+    if message != _last_error_log['message'] or now - _last_error_log['time'] >= DB_ERROR_LOG_THROTTLE:
+        _last_error_log['message'] = message
+        _last_error_log['time'] = now
+        log.error(NAME, message)
+
+
+def should_log_command(test=False):
+    global _last_command_log
+    now = time.time()
+    if test or now - _last_command_log >= DB_COMMAND_LOG_THROTTLE:
+        _last_command_log = now
+        return True
+    return False
+
+
 def execute_db(sql = "", commit = False, test = False, fetch = False):
     global is_installed_ok
     if is_installed_ok:
@@ -144,8 +168,10 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
 
         msg = None
         result = None
+        cnx = None
+        cur = None
         try:
-            cnx = mysql.connector.connect(**config)
+            cnx = mysql.connector.connect(**db_config())
             if cnx and cnx.is_connected():
                 cur = cnx.cursor()
                 if not test:
@@ -154,8 +180,9 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
                 rows = cur.execute(sql)
                 if rows is not None:
                     msg = cur.fetchall()
-                log.clear(NAME)
-                log.info(NAME, datetime_string() + '\n' + _('Command being executed') + ': {}'.format(sql))
+                if should_log_command(test):
+                    log.clear(NAME)
+                    log.info(NAME, datetime_string() + '\n' + _('Command being executed') + ': {}'.format(sql))
             
                 if commit:
                     cnx.commit()
@@ -177,24 +204,38 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
                 if fetch and not test:
                     msg = cur.fetchall()
             
-                cur.close()
             return -1 if msg is None else msg
 
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                log.error(NAME, _('Something is wrong with your user name or password'))
+                log_db_error(_('Something is wrong with your user name or password'))
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                log.error(NAME, _('Database does not exist'))
+                log_db_error(_('Database does not exist'))
             elif err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                log.error(NAME, _('Table already exists'))
+                log_db_error(_('Table already exists'))
             else:
-                log.error(NAME, err)
+                log_db_error(_('Database connection/query failed') + ': {}'.format(err))
             return None
 
-        else:
-            cnx.close()
+        except Exception as err:
+            log_db_error(_('Database connection/query failed') + ': {}'.format(err))
+            return None
+
+        finally:
+            if cur is not None:
+                try:
+                    cur.close()
+                except Exception:
+                    pass
+            if cnx is not None:
+                try:
+                    cnx.close()
+                except Exception:
+                    pass
 
         return None
+
+    return None
 
 
 def get_dump():
@@ -204,6 +245,7 @@ def get_dump():
         path = os.path.join(plugin_data_dir(), bkp_name)
         cmd = [
             'mysqldump',
+            '--connect-timeout={}'.format(DB_CONNECT_TIMEOUT),
             '-h', str(plugin_options['host']),
             '-P', str(plugin_options['port']),
             '-u', str(plugin_options['user']),
@@ -217,6 +259,9 @@ def get_dump():
             return False
         log.info(NAME, 'Database dumped to' + ' ' + bkp_name)
         return True
+    except subprocess.TimeoutExpired:
+        log.error(NAME, _('Database backup timed out.'))
+        return False
     except:
         log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
         pass
