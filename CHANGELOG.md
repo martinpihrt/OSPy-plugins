@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - System Watchdog<br/>
+Hardened System Watchdog status handling. The background checker now refreshes install/service state on every cycle, service state is read via systemctl is-active with a short timeout instead of parsing ps output, repeated status errors are throttled, /etc/modules entries are no longer duplicated, command output decoding is tolerant of invalid bytes, the status page handles a missing checker thread, and the help page now states that Watchdog installation is started explicitly from the button.
+
 (Martin Pihrt) - Speed Monitor<br/>
 Reduced Speed Monitor error noise and hardened settings/log handling. Test and log intervals are clamped before use, repeated runtime errors are throttled, corrupted JSON log files return an empty data set instead of crashing the page, graph timestamp parsing was updated for Python 3, and the manual test button now logs the newly measured values instead of the previous status.
 

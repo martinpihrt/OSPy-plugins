@@ -7,14 +7,11 @@ from threading import Thread, Event
 import time
 import subprocess
 import os
-import sys
 import traceback
 import shlex
 
 import web
-from ospy import helpers
-from ospy.options import options
-from ospy.helpers import restart, reboot, ASCI_convert, verify_csrf
+from ospy.helpers import restart, reboot, verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.log import log
 from plugins import plugin_url
@@ -23,6 +20,9 @@ from plugins import plugin_url
 NAME = 'System Watchdog'
 MENU =  _(u'Package: System Watchdog')
 LINK = 'status_page'
+COMMAND_TIMEOUT = 60
+STATUS_TIMEOUT = 15
+ERROR_LOG_THROTTLE = 300
 
 
 class StatusChecker(Thread):
@@ -36,6 +36,7 @@ class StatusChecker(Thread):
         self.status = {
             'service_install': False,
             'service_state': False}
+        self._last_error_log = 0
 
         self._sleep_time = 0
         self.start()
@@ -52,44 +53,53 @@ class StatusChecker(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
+    def log_problem(self):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, _('System watchdog plug-in') + ':\n' + traceback.format_exc())
+            self._last_error_log = now
+
     def _is_installed(self):
         """Returns watchdog is instaled."""
         if not os.path.exists("/usr/sbin/watchdog"):       # if watchdog is not installed
            log.info(NAME, _('Watchdog is not installed. For continue press button install watchdog.'))
-           self._sleep(10)
+           self.status['service_install'] = False
         else:
            self.status['service_install'] = True
 
     def _is_started(self):
         """Returns true if watchdog is started."""
         try: 
-            cmd = "sudo service watchdog status"
-            run_process(cmd)
-            output = subprocess.getoutput('ps -A')    
-            if 'running' in output:
-                self.status['service_state'] = True
-            else:
-                self.status['service_state'] = False      
+            result = subprocess.run(
+                shlex.split("systemctl is-active watchdog"),
+                stderr=subprocess.STDOUT,
+                stdout=subprocess.PIPE,
+                timeout=STATUS_TIMEOUT)
+            self.status['service_state'] = result.stdout.decode('utf8', errors='replace').strip() == 'active'
 
         except Exception:
+                self.status['service_state'] = False
                 self.started.set()
-                log.error(NAME, _('System watchodg plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(60) 
+                self.log_problem()
+                self._sleep(60)
    
        
     def run(self):
         log.clear(NAME)
-        self._is_installed()
-        self._is_started()
 
         while not self._stop_event.is_set():
             try:
+                self._is_installed()
+                if self.status['service_install']:
+                    self._is_started()
+                else:
+                    self.status['service_state'] = False
                 self.started.set()
                 self._sleep(60)
 
             except Exception:
                 self.started.set()
-                log.error(NAME, _('System watchodg plug-in') + ':\n' + traceback.format_exc())
+                self.log_problem()
                 self._sleep(60)
 
 
@@ -112,25 +122,32 @@ def stop():
         checker.join(15)
         checker = None
 
-def run_process(cmd):
+def run_process(cmd, timeout=COMMAND_TIMEOUT):
     try:
         proc = subprocess.run(
             shlex.split(cmd),
             stderr=subprocess.STDOUT, # merge stdout and stderr
             stdout=subprocess.PIPE,
-            timeout=120)
-        output = proc.stdout.decode('utf8')
-        log.info(NAME, _('System watchodg plug-in') + ':\n' + output)
+            timeout=timeout)
+        output = proc.stdout.decode('utf8', errors='replace')
+        log.info(NAME, _('System watchdog plug-in') + ':\n' + output)
+        return proc.returncode == 0
 
-    except:
-        log.info(NAME, _('System watchodg plug-in') + ':\n' + traceback.format_exc())
+    except Exception:
+        log.info(NAME, _('System watchdog plug-in') + ':\n' + traceback.format_exc())
+        return False
 
 def add_module(module):
     try:
-        with open('/etc/modules', 'a') as module_file:
-            module_file.write(module + '\n')
-    except:
-        log.info(NAME, _('System watchodg plug-in') + ':\n' + traceback.format_exc())
+        existing = ''
+        if os.path.exists('/etc/modules'):
+            with open('/etc/modules', 'r') as module_file:
+                existing = module_file.read()
+        if module not in existing.splitlines():
+            with open('/etc/modules', 'a') as module_file:
+                module_file.write(module + '\n')
+    except Exception:
+        log.info(NAME, _('System watchdog plug-in') + ':\n' + traceback.format_exc())
 
 ################################################################################
 # Web pages:                                                                   #
@@ -141,8 +158,9 @@ class status_page(ProtectedPage):
     def GET(self):  
         log.clear(NAME)
         cmd = "sudo systemctl status watchdog"
-        run_process(cmd)
-        return self.plugin_render.system_watchdog(checker.status, log.events(NAME))
+        run_process(cmd, timeout=STATUS_TIMEOUT)
+        status = checker.status if checker is not None else {'service_install': False, 'service_state': False}
+        return self.plugin_render.system_watchdog(status, log.events(NAME))
 
 
 class help_page(ProtectedPage):
@@ -179,7 +197,7 @@ class install_page(ProtectedPage):
 
         cmd = "sudo apt-get install -y watchdog chkconfig"
         log.debug(NAME, cmd)
-        run_process(cmd)
+        run_process(cmd, timeout=300)
         cmd = "sudo chkconfig watchdog on"
         log.debug(NAME, cmd)
         run_process(cmd)
@@ -194,7 +212,6 @@ class install_page(ProtectedPage):
             f.write(b"priority = 1\n")
             f.write(b"interval = 4\n")
             f.write(b"max-load-1 = 24\n")
-            f.close()
 
         cmd = "sudo systemctl enable watchdog"
         log.debug(NAME, cmd)
