@@ -28,6 +28,10 @@ from ospy.webpages import showInFooter # Enable plugin to display readings in UI
 NAME = 'Photovoltaic Boiler'
 MENU =  _('Package: Photovoltaic Boiler')
 LINK = 'settings_page'
+MAIN_LOOP_SLEEP = 1
+SENSOR_REFRESH_INTERVAL = 30
+STATUS_LOG_INTERVAL = 30
+ERROR_LOG_THROTTLE = 300
 
 
 plugin_options = PluginOptions(
@@ -54,12 +58,31 @@ plugin_options = PluginOptions(
 
 
 global status
+_last_error_log = {}
 
 def plugin_is_running(module):
     try:
         return module in plugin_manager.running()
     except Exception:
         return False
+
+
+def log_boiler_problem(key, message):
+    now = time.time()
+    last = _last_error_log.get(key, 0)
+    if now - last >= ERROR_LOG_THROTTLE:
+        _last_error_log[key] = now
+        log.error(NAME, message)
+
+
+def selected_station():
+    try:
+        index = int(plugin_options['control_output_A'])
+        if index < 0 or index >= stations.count():
+            return None
+        return stations.get(index)
+    except Exception:
+        return None
 
 ################################################################################
 # Main function loop:                                                          #
@@ -112,6 +135,7 @@ class Sender(Thread):
 
         millis = 0                                 # timer for clearing status on the web pages after 5 sec
         last_millis = int(round(time.time() * 1000))
+        last_sensor_refresh = 0
 
         a_state = -3                               # for state in footer "Waiting."
         regulation_text = _('Waiting to turned on or off.')
@@ -124,8 +148,9 @@ class Sender(Thread):
 
         while not self._stop_event.is_set():
             try:
-                if plugin_options["sensor_probe"] == 2:                                # loading probe name from plugin air_temp_humi
+                if plugin_options["sensor_probe"] == 2 and time.time() - last_sensor_refresh >= SENSOR_REFRESH_INTERVAL: # loading probe name from plugin air_temp_humi
                     try:
+                        last_sensor_refresh = time.time()
                         if not plugin_is_running('air_temp_humi'):
                             raise Exception(_('The plug-in is not running.'))
                         from plugins.air_temp_humi import plugin_options as air_temp_data
@@ -141,7 +166,7 @@ class Sender(Thread):
                         temperature_ds = [DS18B20_read_probe(0), DS18B20_read_probe(1), DS18B20_read_probe(2), DS18B20_read_probe(3), DS18B20_read_probe(4), DS18B20_read_probe(5)]
 
                     except:
-                        log.error(NAME, _('Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
+                        log_boiler_problem('air_temp_humi', _('Unable to load settings from Air Temperature and Humidity Monitor plugin! Is the plugin Air Temperature and Humidity Monitor installed and set up?'))
                         self.status['ds_count'] = 0
                         pass
 
@@ -168,7 +193,9 @@ class Sender(Thread):
                     elif plugin_options["sensor_probe"] == 2:
                         ds_a_on = temperature_ds[plugin_options['probe_A_on']]         # air temp sensor
                         
-                    station_a = stations.get(plugin_options['control_output_A'])
+                    station_a = selected_station()
+                    if station_a is None:
+                        raise Exception(_('Selected output is not available.'))
 
                     # only for testing!
                     #ds_a_on = 22.0
@@ -291,7 +318,7 @@ class Sender(Thread):
                         temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
                 millis = int(round(time.time() * 1000))
-                if (millis - last_millis) > 2000:        # 2 second to clearing status on the webpage
+                if (millis - last_millis) > STATUS_LOG_INTERVAL * 1000:
                     last_millis = millis
                     log.clear(NAME)
                     if plugin_options["sensor_probe"] == 1:
@@ -306,10 +333,10 @@ class Sender(Thread):
                         log.info(NAME, datetime_string() + '\n' + _('Boiler') + ' %.1f \u2103 \n' % ds_a_on)
                     log.info(NAME, tempText)
 
-                self._sleep(1)
+                self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
-                log.error(NAME, _('Photovoltaic Boiler plug-in') + ':\n' + traceback.format_exc())
+                log_boiler_problem('run_loop', _('Photovoltaic Boiler plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
                 self._sleep(60)
 
 sender = None
@@ -329,12 +356,14 @@ def stop():
         sender.join(15)
         sender = None
         ### we stop the running output if the plugin exits
-        station_a = stations.get(plugin_options['control_output_A'])
+        station_a = selected_station()
+        if station_a is None:
+            return
         sid = station_a.index
-        stations.deactivate(sid)
         active = log.active_runs()
         for interval in active:
-            if interval['station'] == sid:
+            if interval['station'] == sid and interval.get('program_name') == _('Photovoltaic Boiler'):
+                stations.deactivate(sid)
                 log.finish_run(interval)
 
 
@@ -350,7 +379,8 @@ class settings_page(ProtectedPage):
             global sender
             if sender is not None:
                 sender.update()
-            return self.plugin_render.photovoltaic_boiler(plugin_options, log.events(NAME), sender.status)
+            status = sender.status if sender is not None else {}
+            return self.plugin_render.photovoltaic_boiler(plugin_options, log.events(NAME), status)
         except:
             log.error(NAME, _('Photovoltaic Boiler plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
