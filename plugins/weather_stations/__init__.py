@@ -107,6 +107,40 @@ def set_to_default():
     log.clear(NAME)
     log.info(NAME, _(u'Weather stations plug-in has any error, clear plugin settings to default.'))
 
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_list(key, default, cast=None):
+    values = list(plugin_options.get(key, []))
+    while len(values) < 30:
+        values.append(default)
+    values = values[:30]
+    if cast is not None:
+        values = [cast(value) for value in values]
+    plugin_options[key] = values
+
+
+def normalize_options():
+    plugin_options['can_size_xy'] = max(150, min(850, safe_int(plugin_options.get('can_size_xy', 250), 250)))
+    plugin_options['txt_size_font'] = max(15, min(800, safe_int(plugin_options.get('txt_size_font', 40), 40)))
+    normalize_list('s_use', False, bool)
+    normalize_list('s_unit', '', lambda value: str(value or '')[:20])
+    normalize_list('s_name', '', lambda value: str(value or '')[:80])
+    normalize_list('s_tick', '0,10,20,30', lambda value: str(value or '0,10,20,30')[:120])
+    normalize_list('s_min', '0', lambda value: str(value or '0')[:20])
+    normalize_list('s_max', '30', lambda value: str(value or '30')[:20])
+    for key, default in (
+        ('s_a_high_fr', 5), ('s_a_high_to', 10),
+        ('s_b_high_fr', 10), ('s_b_high_to', 20),
+        ('s_c_high_fr', 20), ('s_c_high_to', 30),
+    ):
+        normalize_list(key, default, lambda value, default=default: safe_int(value, default))
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -115,6 +149,7 @@ class canvas_page(ProtectedPage):
     """Load an html page for canvas wieving."""
 
     def GET(self):
+        normalize_options()
         try:
             return self.plugin_render.canvas_page(plugin_options)
         except:
@@ -132,6 +167,7 @@ class settings_page(ProtectedPage):
     """Load an html settings page for canvas options."""
 
     def GET(self):
+        normalize_options()
         try:
             return self.plugin_render.settings_page(plugin_options)
         except:
@@ -166,10 +202,10 @@ class settings_page(ProtectedPage):
                 plugin_options.__setitem__('can_or_txt', False)
 
             if 'can_size_xy' in qdict:
-                plugin_options.__setitem__('can_size_xy', qdict['can_size_xy'])
+                plugin_options.__setitem__('can_size_xy', safe_int(qdict['can_size_xy'], 250))
 
             if 'txt_size_font' in qdict:
-                plugin_options.__setitem__('txt_size_font', qdict['txt_size_font'])
+                plugin_options.__setitem__('txt_size_font', safe_int(qdict['txt_size_font'], 40))
 
             plug_air_temp  = 6
             plug_tank_moni = 2
@@ -212,7 +248,7 @@ class settings_page(ProtectedPage):
                 else:
                     commands['s_a_high_to'].append(10)    
                 if 's_b_high_fr'+str(i) in qdict:
-                	commands['s_b_high_fr'].append(qdict['s_b_high_fr'+str(i)])
+                    commands['s_b_high_fr'].append(qdict['s_b_high_fr'+str(i)])
                 else:
                     commands['s_b_high_fr'].append(10)    
                 if 's_b_high_to'+str(i) in qdict:
@@ -240,6 +276,7 @@ class settings_page(ProtectedPage):
             plugin_options.__setitem__('s_b_high_to', commands['s_b_high_to'])
             plugin_options.__setitem__('s_c_high_fr', commands['s_c_high_fr'])
             plugin_options.__setitem__('s_c_high_to', commands['s_c_high_to'])
+            normalize_options()
             
             if sender is not None:
                 sender.update()
@@ -258,6 +295,7 @@ class settings_json(ProtectedPage):
     def GET(self):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
+        normalize_options()
         return json.dumps(plugin_options)
 
 
@@ -336,8 +374,6 @@ class data_json(ProtectedPage):
                     else:                                                    # any errors
                         data.append(-127)
                 except:
-                    log.error(NAME, _(u'Weather stations plug-in') + ':\n' + traceback.format_exc())
                     data.append(-127)                                        # any errors
-                    pass
 
         return json.dumps(data) # example data list [-127, -127, -127, -127, -127, -127, -127, -127, -127, 25]

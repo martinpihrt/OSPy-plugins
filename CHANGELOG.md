@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Weather Stations<br/>
+Hardened Weather Stations settings and data JSON. Canvas/text sizes are clamped, all 30 sensor configuration lists are normalized to consistent lengths and safe value types before rendering/saving, malformed form numbers fall back to defaults, and per-sensor read failures in data_json return -127 without repeatedly writing tracebacks.
+
 (Martin Pihrt) - Weather Dashboard<br/>
 Renamed the plug-in from weather dashboard to Weather Dashboard and hardened dashboard settings. Gauge count, size/font values, source/type/channel selections, names, units, tick labels, and colored ranges are now normalized before saving/rendering so malformed form data cannot break the dashboard JSON or canvas page.
 
