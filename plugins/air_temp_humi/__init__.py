@@ -47,8 +47,13 @@ DS18B20_READ_RETRIES = 6
 DS18B20_RETRY_DELAY = 0.4
 DS18B20_I2C_LOCK_TIMEOUT = 5.0
 DS18B20_I2C_SETTLE_TIME = 0.05
+DS18B20_FAILURE_BACKOFF = 30
+DS18B20_FAILED_READ_ATTEMPTS = 2
+DS18B20_LOG_THROTTLE = 60
 DS18B20_LAST_VALID = [None, None, None, None, None, None]
 DS18B20_LAST_VALID_TS = [0, 0, 0, 0, 0, 0]
+DS18B20_NEXT_READ_TS = 0
+DS18B20_LAST_LOG_TS = 0
 
 try:
     from ospy.i2c_guard import i2c_transaction
@@ -78,6 +83,13 @@ except Exception:
             yield
         finally:
             _LOCAL_I2C_LOCK.release()
+
+
+def air_temp_i2c_transaction(timeout=DS18B20_I2C_LOCK_TIMEOUT, settle_time=DS18B20_I2C_SETTLE_TIME):
+    try:
+        return i2c_transaction(timeout=timeout, settle_time=settle_time, priority='normal')
+    except TypeError:
+        return i2c_transaction(timeout=timeout, settle_time=settle_time)
 
 plugin_options = PluginOptions(
     NAME,
@@ -463,40 +475,68 @@ def DS18B20_apply_reading(teplota):
 
 
 def DS18B20_read_data():
+    global DS18B20_NEXT_READ_TS
     import smbus
     best_read = None
+    now = time.time()
+    if now < DS18B20_NEXT_READ_TS:
+       DS18B20_apply_reading(None)
+       return tempDS
+
+    bus = None
     try:
        bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
+       max_attempts = max(1, min(DS18B20_READ_RETRIES, DS18B20_FAILED_READ_ATTEMPTS))
 
-       for attempt in range(0, DS18B20_READ_RETRIES):
+       for attempt in range(0, max_attempts):
           try:
-             with i2c_transaction(timeout=DS18B20_I2C_LOCK_TIMEOUT, settle_time=DS18B20_I2C_SETTLE_TIME):
-                i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0), tries=3)
+             with air_temp_i2c_transaction():
+                i2c_data = try_io(lambda: bus.read_i2c_block_data(0x03, 0), tries=1)
              teplota = DS18B20_decode_i2c_data(i2c_data)
-          except Exception:
+          except Exception as e:
              teplota = None
+             DS18B20_log_read_problem(_('Data is not correct. Please try again later.') + ' ' + str(e))
+             break
 
           if teplota is None:
-             log.debug(NAME, _('Data is not correct. Please try again later.'))
+             DS18B20_log_read_problem(_('Data is not correct. Please try again later.'))
+             break
           else:
              if best_read is None or not DS18B20_has_error(teplota):
                 best_read = teplota
              if not DS18B20_has_error(teplota):
+                DS18B20_NEXT_READ_TS = 0
                 DS18B20_apply_reading(teplota)
                 return teplota                 # data is ok
-             log.debug(NAME, _('DS18B20 returned error value. Reading again.'))
+             DS18B20_log_read_problem(_('DS18B20 returned error value. Reading again.'))
 
-          if attempt < DS18B20_READ_RETRIES - 1:
+          if attempt < max_attempts - 1:
              time.sleep(DS18B20_RETRY_DELAY)
 
        DS18B20_apply_reading(best_read)
+       DS18B20_NEXT_READ_TS = time.time() + DS18B20_FAILURE_BACKOFF
        return tempDS
 
     except Exception:
-      log.debug(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
+      DS18B20_log_read_problem(_('Air Temperature and Humidity Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
       time.sleep(0.5)
       DS18B20_apply_reading(None)
+      DS18B20_NEXT_READ_TS = time.time() + DS18B20_FAILURE_BACKOFF
       return tempDS # try data has error
+    finally:
+      if bus is not None:
+         try:
+            bus.close()
+         except Exception:
+            pass
+
+
+def DS18B20_log_read_problem(message):
+    global DS18B20_LAST_LOG_TS
+    now = time.time()
+    if now - DS18B20_LAST_LOG_TS >= DS18B20_LOG_THROTTLE:
+       DS18B20_LAST_LOG_TS = now
+       log.debug(NAME, message)
 
 
 def DS18B20_read_string_data():

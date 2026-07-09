@@ -25,6 +25,7 @@ from plugins import PluginOptions, plugin_url
 NAME = 'Real Time and NTP time'
 MENU =  _('Package: Real Time and NTP time')
 LINK = 'settings_page'
+NTP_TIMEOUT = 3.0
 
 plugin_options = PluginOptions(
     NAME,
@@ -80,17 +81,7 @@ class RealTimeChecker(Thread):
                        log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
                     if plugin_options['use_ntp']:
-                       try:
-                           ntp_time = getNTPtime(plugin_options['ntp_server'])          # try read NTP time from web: server 1
-                           log.info(NAME, _('NTP time') + ': ' + str(plugin_options['ntp_server']) + ': ' + str(ntp_time))
-                       except:
-                           log.info(NAME, _('Primary NTP server has fault, now trying secondary NTP server.')) 
-
-                           try:
-                              ntp_time = getNTPtime(plugin_options['ntp_server_two'])   # try read NTP time from web: server 2
-                              log.info(NAME, _('NTP time') + ': ' + str(plugin_options['ntp_server_two']) + ': ' + str(ntp_time))
-                           except:
-                              log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
+                       ntp_time = read_ntp_time()
 
                     if ds1307 is not None:
                        try:
@@ -169,12 +160,29 @@ def try_io(call, tries=10):
     return result
 
 
+def read_ntp_time():
+    for index, server in enumerate((plugin_options['ntp_server'], plugin_options['ntp_server_two'])):
+        if not server:
+            continue
+        try:
+            ntp_time = getNTPtime(server)
+            if ntp_time is not None:
+                log.info(NAME, _('NTP time') + ': ' + str(server) + ': ' + str(ntp_time))
+                return ntp_time
+        except (socket.timeout, socket.gaierror, OSError, ValueError) as e:
+            if index == 0 and plugin_options['ntp_server_two']:
+                log.info(NAME, _('Primary NTP server has fault, now trying secondary NTP server.'))
+            else:
+                log.info(NAME, _('NTP time is not available') + ': ' + str(e))
+    return None
+
+
 def getNTPtime(server_address):
     """Return NTP time as datetime"""
     buf = 1024
     REF_TIME_1970 = 2208988800  # Reference time (in seconds since 1900-01-01 00:00:00)
     client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    client.settimeout(10)
+    client.settimeout(NTP_TIMEOUT)
     try:
         data = b'\x1b' + 47 * b'\0'
         client.sendto(data, (server_address, int(plugin_options['ntp_port'])))

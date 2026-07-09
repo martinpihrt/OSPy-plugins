@@ -41,6 +41,13 @@ except Exception:
             _LOCAL_I2C_LOCK.release()
 
 
+def rtc_i2c_transaction(timeout=5.0, settle_time=0.05):
+    try:
+        return i2c_transaction(timeout=timeout, settle_time=settle_time, priority='low')
+    except TypeError:
+        return i2c_transaction(timeout=timeout, settle_time=settle_time)
+
+
 def _bcd_to_int(bcd):
     """Decode a 2x4bit BCD to a integer.
     """
@@ -86,11 +93,11 @@ class rtc_DS1307():
 
     def _write(self, register, data):
         #print "addr =0x%x register = 0x%x data = 0x%x %i " % (self._addr, register, data,_bcd_to_int(data))
-        with i2c_transaction():
+        with rtc_i2c_transaction():
             self._bus.write_byte_data(self._addr, register, data)
 
     def _read(self, data):
-        with i2c_transaction():
+        with rtc_i2c_transaction():
             returndata = self._bus.read_byte_data(self._addr, data)
         #print "addr = 0x%x data = 0x%x %i returndata = 0x%x %i " % (self._addr, data, data, returndata, _bcd_to_int(returndata))
         return returndata
