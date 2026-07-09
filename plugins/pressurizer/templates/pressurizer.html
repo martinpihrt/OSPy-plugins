@@ -51,6 +51,7 @@ input:checked + .slider:before {
 		// Initialize behaviors
 jQuery(document).ready(function(){
 		jQuery("#cSubmit").click(function() {
+                var anything = false;
 				var hours = jQuery("input[id^='mm']").map(function() {
 						return jQuery(this).attr("id");
 				}).get();
@@ -122,7 +123,7 @@ jQuery(document).ready(function(){
                     <td title=$:{json.dumps(_(u'These marked stations will be used and the pressurizer will respond to them.'), ensure_ascii=False)}>
                     <select multiple name="ignore_stations" width="350" style="width: 350px" size="12">
                     $for station in [station for station in stations if station.enabled]:
-                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['ignore_stations'] else ""}>${station.name}</option>
+                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['ignore_stations'] or str(station.index) in plugin_options['ignore_stations'] else ""}>${station.name}</option>
                     </select>
                 </td>
                 </tr>

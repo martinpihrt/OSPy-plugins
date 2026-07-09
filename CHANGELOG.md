@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Pressurizer<br/>
+Hardened Pressurizer station selection and relay shutdown. Selected station IDs are normalized before schedule matching and rendered correctly after saving, disabled/scheduler-off messages and runtime errors are throttled, missing master-station warnings are logged once per condition, and stopping the plug-in forces the pressurizer relay signal/output off.
+
 (Martin Pihrt) - Pressure Monitor<br/>
 Reduced Pressure Monitor load and log spam. The pressure countdown is logged at a throttled interval, the web pressure polling interval is less aggressive, repeated GPIO/runtime/log/SQL/e-mail errors are throttled, selected station IDs are normalized before stopping scheduler runs, GPIO read failures return a safe inactive state, and settings render safely when the background thread is unavailable.
 
