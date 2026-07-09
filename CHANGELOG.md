@@ -2,6 +2,9 @@
 
 July 09 2026
 -----------
+(Martin Pihrt) - Remote Notifications<br/>
+Hardened Remote Notifications event sending. Runtime errors and failed sends are throttled, remote URL/API settings are normalized before use, the API key is hidden with a show/hide button and masked in settings JSON and send logs, successful settings redirects are no longer logged as internal errors, and finished-run handling no longer references the run variable before it exists.
+
 (Martin Pihrt) - Remote FTP Control<br/>
 Updated Remote FTP Control for Python 3 and safer FTP operation. Legacy file() calls were replaced with context-managed open() calls, FTP connections now use a timeout and are closed reliably, repeated FTP/runtime errors are throttled, remote path/user/server settings are normalized before use, the FTP password field is hidden with a show/hide button, settings JSON masks the password, and successful settings redirects are no longer logged as internal errors.
 

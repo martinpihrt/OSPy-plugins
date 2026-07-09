@@ -62,6 +62,12 @@ input:checked + .slider:before {
             jQuery("#pluginForm").attr('action', "$plugins.plugin_url('remote_notifications.settings_page')?test&$csrf_query()")
             jQuery("#pluginForm").submit();
         });
+        jQuery("#toggleApi").click(function() {
+            var api = jQuery("#remoteApi");
+            var isHidden = api.attr("type") === "password";
+            api.attr("type", isHidden ? "text" : "password");
+            jQuery(this).text(isHidden ? "$_('Hide')" : "$_('Show')");
+        });
 
     });
 </script>
@@ -90,7 +96,8 @@ input:checked + .slider:before {
             <tr>
                 <td style='text-transform: none;'>$_('API for access'):</td>
                 <td>
-                    <input name='api' type='text' value='$plugin_options["api"]'>
+                    <input id="remoteApi" name='api' type='password' value='$plugin_options["api"]'>
+                    <button id="toggleApi" type="button" class="button backup">$_('Show')</button>
                 </td>
             </tr>
             <tr>

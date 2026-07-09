@@ -23,6 +23,8 @@ from ospy.helpers import datetime_string, get_input, verify_csrf
 NAME = 'Remote Notifications'
 MENU =  _('Package: Remote Notifications')
 LINK = 'settings_page'
+HTTP_TIMEOUT = 10
+ERROR_LOG_THROTTLE = 300
 
 remote_options = PluginOptions(
     NAME,
@@ -42,6 +44,7 @@ class RemoteSender(Thread):
         Thread.__init__(self)
         self.daemon = True
         self._stop_event = Event()
+        self._last_error_log = 0
 
         self._sleep_time = 0
         self.start()
@@ -62,9 +65,15 @@ class RemoteSender(Thread):
         log.clear(NAME)
         try:
             send_data(text)  # send get data
-            log.info(NAME, _('Remote was sent') + ':\n' + text)
+            log.info(NAME, _('Remote was sent') + ':\n' + mask_api(text))
         except Exception:
-            log.error(NAME, _('Remote was not sent') + '!\n' + traceback.format_exc())
+            self.log_problem(_('Remote was not sent') + '!')
+
+    def log_problem(self, message):
+        now = time.time()
+        if now - self._last_error_log >= ERROR_LOG_THROTTLE:
+            log.error(NAME, message + '\n' + traceback.format_exc())
+            self._last_error_log = now
 
     def run(self):
         send_msg = False  # send get data if change (rain, end program ....
@@ -99,6 +108,7 @@ class RemoteSender(Thread):
                
                 # Send data if rain detected, power line state a new finished run is found
                 if remote_options["use"]:   
+                    normalize_options(remote_options)
                     ### water tank level ###
                     try:
                         from plugins import tank_monitor
@@ -153,13 +163,14 @@ class RemoteSender(Thread):
                     ### program and station ###
                     finished = [run for run in log.finished_runs() if not run['blocked']]
                     if len(finished) > finished_count:
+                        last_finished = finished[-1]
                         las = datetime_string()
                         lastrun = re.sub(" ", "_", las) # eliminate gap in the title to _
                         send_msg = True
                         ### humidity in station ###
                         try:
                             from plugins import humi_monitor
-                            humi = int(humi_monitor.get_humidity((stations.get(run['station']).index)+1)) # 0-7 to 1-8 humidity  
+                            humi = int(humi_monitor.get_humidity((stations.get(last_finished['station']).index)+1)) # 0-7 to 1-8 humidity
                             if humi < 0:
                                humi = "" 
 
@@ -224,7 +235,7 @@ class RemoteSender(Thread):
                 self._sleep(2)
 
             except Exception:
-                log.error(NAME, _('Remote plug-in') + ':\n' + traceback.format_exc())
+                self.log_problem(_('Remote plug-in') + ':')
                 self._sleep(60)
 
 
@@ -253,14 +264,35 @@ def sanity_msg(msg):
      return msg
 
 
+def normalize_options(values):
+    values['rem_adr'] = (values.get('rem_adr') or '').strip().replace('\r', '').replace('\n', '')
+    if values['rem_adr'] and not values['rem_adr'].endswith('/'):
+        values['rem_adr'] += '/'
+    values['api'] = (values.get('api') or '').strip().replace('\r', '').replace('\n', '')
+    return values
+
+
+def mask_api(text):
+    api = remote_options.get('api')
+    if api:
+        return text.replace('api=' + api, 'api=********')
+    return text
+
+
+def safe_settings_json():
+    data = dict(remote_options)
+    if data.get('api'):
+        data['api'] = '********'
+    return data
+
+
 def send_data(text):
     """Send GET data"""
     if remote_options['use'] != '' and remote_options['api'] != '' and remote_options['rem_adr'] != '':
         from urllib.request import urlopen
-        from urllib.parse import quote_plus 
 
         url = remote_options['rem_adr'] + 'save.php/?' + text 
-        data = urlopen(url, timeout=10)
+        data = urlopen(url, timeout=HTTP_TIMEOUT)
         log.info(NAME, _('Remote server reply') + ':\n' + data.read().decode('utf-8'))
     else:
         raise Exception(_('Remote plug-in is not properly configured') + '!')
@@ -286,9 +318,8 @@ class settings_page(ProtectedPage):
         try:
             qdict = web.input()
             verify_csrf(qdict)
+            normalize_options(qdict)
             remote_options.web_update(qdict)
-            qdict = web.input()
-            verify_csrf(qdict)
             test = get_input(qdict, 'test', False, lambda x: True)
 
             if remote_sender is not None:
@@ -318,13 +349,12 @@ class settings_page(ProtectedPage):
 
                     remote_sender.try_send(body)
 
-            raise web.seeother(plugin_url(settings_page), True)
-
         except:
             log.error(NAME, _('Remote plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('remote_notifications -> settings_page POST')
             return self.core_render.notice('/', msg)
+        raise web.seeother(plugin_url(settings_page), True)
 
 
 class help_page(ProtectedPage):
@@ -348,6 +378,6 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         try:
-            return json.dumps(remote_options)
+            return json.dumps(safe_settings_json())
         except:
             return {}
