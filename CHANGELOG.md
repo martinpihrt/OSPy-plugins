@@ -2,6 +2,12 @@
 
 July 10 2026
 -----------
+(Martin Pihrt) - LCD Display<br/>
+Fixed a condition where LCD notifications could leave the plug-in blocked and spinning without sleep, causing near-100% CPU until the plug-in was restarted. Temporary LCD notification blocks now sleep and automatically expire, so normal display updates resume without manual restart.
+
+(Martin Pihrt) - OSPy package Backup<br/>
+Improved backup ZIP downloads for larger files. Backup downloads now include Content-Length and stream the ZIP in chunks instead of loading the whole file into memory before sending it to the browser.
+
 (Martin Pihrt) - Home Assistant<br/>
 Adjusted the Home Assistant status output for DS1-DS6 sensors. The plug-in no longer writes the initial all--127 DS block that can appear before the Air Temperature and Humidity Monitor has completed its first successful read, while real later values are still shown. Signal updates now also return quietly until Home Assistant devices are initialized.
 

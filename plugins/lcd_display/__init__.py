@@ -28,8 +28,9 @@ from ospy.sensors import sensors
 
 from blinker import signal
 
-global blocker, L1web, L2web, last_i2c_busy_log
+global blocker, blocker_until, L1web, L2web, last_i2c_busy_log
 blocker = False
+blocker_until = 0
 L1web = ''
 L2web = ''
 last_i2c_busy_log = 0
@@ -93,7 +94,7 @@ class LCDSender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        global blocker
+        global blocker, blocker_until
         report_index = 0
         
         rebooted = signal('rebooted')
@@ -110,6 +111,14 @@ class LCDSender(Thread):
         
         while not self._stop_event.is_set():
             try:
+                if blocker:
+                    if blocker_until and time.time() >= blocker_until:
+                        blocker = False
+                        blocker_until = 0
+                    else:
+                        self._sleep(1)
+                        continue
+
                 if lcd_options['use_lcd']  and not blocker:  # if LCD plugin is enabled
                     if lcd_options['debug_line']:
                         log.clear(NAME)
@@ -198,6 +207,12 @@ def reset_lcd_cache():
     cached_lcd = None
     cached_lcd_key = None
     last_lcd_lines = None
+
+
+def block_lcd_updates(seconds=15):
+    global blocker, blocker_until
+    blocker = True
+    blocker_until = time.time() + seconds
 
 
 def reinit_lcd():
@@ -931,8 +946,8 @@ def notify_rebooted(name, **kw):
     ### Reboot Linux HW software ###
     if lcd_options['d_notify']:
         try:
-            global blocker, L1web, L2web
-            blocker = True
+            global L1web, L2web
+            block_lcd_updates(60)
             log.info(NAME, datetime_string() + ': ' + _('System rebooting'))
             if lcd_options['address'] == 0:
                 find_lcd_address()
@@ -958,8 +973,8 @@ def notify_restarted(name, **kw):
     ### Restarted OSPy ###
     if lcd_options['d_notify']:
         try:
-            global blocker, L1web, L2web
-            blocker = True
+            global L1web, L2web
+            block_lcd_updates(15)
             log.info(NAME, datetime_string() + ': ' + _('System restarting'))
             if lcd_options['address'] == 0:
                 find_lcd_address()
@@ -985,8 +1000,8 @@ def notify_poweroff(name, **kw):
     ### Power off Linux HW ###
     if lcd_options['d_notify']:    
         try:
-            global blocker, L1web, L2web
-            blocker = True
+            global L1web, L2web
+            block_lcd_updates(60)
             log.info(NAME, datetime_string() + ': ' + _('System poweroff'))
             if lcd_options['address'] == 0:
                 find_lcd_address()
@@ -1012,8 +1027,8 @@ def notify_ospyupdate(name, **kw):
     ### OSPy new version available ###
     if lcd_options['d_notify']:
         try:
-            global blocker, L1web, L2web
-            blocker = True
+            global L1web, L2web
+            block_lcd_updates(15)
             log.info(NAME, datetime_string() + ': ' + _('System OSPy Has Update'))
             if lcd_options['address'] == 0:
                 find_lcd_address()

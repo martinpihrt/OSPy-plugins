@@ -144,6 +144,15 @@ def backup_file_from_index(index_value):
         return None, None
 
 
+def stream_file(path, chunk_size=64 * 1024):
+    with open(path, 'rb') as source:
+        while True:
+            chunk = source.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
+
+
 ### Read all sql files in data folder ###
 def read_bkp_folder():
     try:
@@ -205,9 +214,9 @@ class settings_page(ProtectedPage):
                     log.debug(NAME, _('Download file: {} type: {}.').format(down_path, _content))
                     web.header('Access-Control-Allow-Origin', '*')
                     web.header('Content-type', _content)
+                    web.header('Content-Length', os.path.getsize(down_path))
                     web.header('Content-Disposition', 'attachment; filename="{}"'.format(down_name))
-                    with open(down_path, 'rb') as f:
-                        return f.read()
+                    return stream_file(down_path)
                 log.error(NAME, datetime_string() + '\n' + _('Backup file not found!'))
 
             read_bkp_folder()
