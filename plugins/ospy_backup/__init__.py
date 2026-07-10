@@ -191,7 +191,7 @@ class settings_page(ProtectedPage):
 
             if 'delete' in qdict and sender is not None:
                 verify_csrf(qdict)
-                _, del_file = backup_file_from_index(qdict['delete'])
+                del_name, del_file = backup_file_from_index(qdict['delete'])
                 if del_file:
                     os.remove(del_file)
                     log.debug(NAME, datetime_string() + '\n' + _('Deleting file has sucesfully.'))

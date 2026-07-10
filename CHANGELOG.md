@@ -1,5 +1,13 @@
 # OSPy-plugins Changelog
 
+July 10 2026
+-----------
+(Martin Pihrt) - OSPy package Backup<br/>
+Fixed the backup page actions after the file-handling hardening. Backup, delete, download, and error notices can again use the translation helper correctly, so pressing the backup/delete buttons no longer breaks the settings page.
+
+(Martin Pihrt) - Database Connector<br/>
+Restored database backup compatibility with MariaDB/MySQL dump tools that do not accept the connect-timeout option. The backup command now uses the same mysqldump argument set as before, while the Python process timeout remains in place to prevent a stuck backup.
+
 July 09 2026
 -----------
 (Martin Pihrt) - Wind Speed Monitor<br/>

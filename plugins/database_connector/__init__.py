@@ -245,7 +245,6 @@ def get_dump():
         path = os.path.join(plugin_data_dir(), bkp_name)
         cmd = [
             'mysqldump',
-            '--connect-timeout={}'.format(DB_CONNECT_TIMEOUT),
             '-h', str(plugin_options['host']),
             '-P', str(plugin_options['port']),
             '-u', str(plugin_options['user']),
