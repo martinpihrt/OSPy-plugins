@@ -2,6 +2,9 @@
 
 July 10 2026
 -----------
+(Martin Pihrt) - Home Assistant<br/>
+Adjusted the Home Assistant status output for DS1-DS6 sensors. The plug-in no longer writes the initial all--127 DS block that can appear before the Air Temperature and Humidity Monitor has completed its first successful read, while real later values are still shown. Signal updates now also return quietly until Home Assistant devices are initialized.
+
 (Martin Pihrt) - OSPy package Backup<br/>
 Fixed the backup page actions after the file-handling hardening. Backup, delete, download, and error notices can again use the translation helper correctly, so pressing the backup/delete buttons no longer breaks the settings page.
 

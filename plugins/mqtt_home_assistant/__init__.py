@@ -829,6 +829,12 @@ def air_temp_ds_value(air_temp_humi, index):
             return air_temp_humi.sender.status.get('DS{}'.format(index), -127)
     return -127
 
+def air_temp_ds_is_error(value):
+    try:
+        return float(value) == -127
+    except (TypeError, ValueError):
+        return True
+
 def air_temp_dht_value(air_temp_humi, key):
     if key == 'temp':
         try:
@@ -969,12 +975,15 @@ def discovery_publish():
             if plugin_options['ext_ds1-6']:
                 body = '<br><b>' + _('Temperature DS1-DS6') + '</b><ul>'
                 logtext = _('Temperature DS1-DS6') + '-> \n'
+                values = []
                 for i in air_temp_active_ds_indexes(air_temp_humi):
                     value = air_temp_ds_value(air_temp_humi, i)
+                    values.append(value)
                     body += '<li>' + '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103' % value + '\n</li>'
                     logtext += '%s' % air_temp_humi.plugin_options['label_ds%d' % i] + ': ' + '%.1f \u2103\n' % value
                 body += '</ul>'   
-                log.info(NAME, logtext) 
+                if values and not all(air_temp_ds_is_error(value) for value in values):
+                    log.info(NAME, logtext)
 
     except Exception:
         log.debug(NAME, _('Cannot import plugin: air temp humi.'))
@@ -1151,6 +1160,8 @@ def set_devices_default_values(devices):
             pass
 
 def update_device_values(name, **kw):
+    if sender is None or sender.devices is None:
+        return
     try:
         for device in sender.devices:
             set_devices_online(device)
