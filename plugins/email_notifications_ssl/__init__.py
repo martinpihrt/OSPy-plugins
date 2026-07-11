@@ -807,6 +807,29 @@ def email(text, subject=None, attach=None):
         raise Exception(_('E-mail plug-in is not properly configured!'))
 
 
+def is_configured():
+    """Return whether the plug-in has the minimum settings needed to send mail."""
+    return bool(
+        email_sender is not None
+        and email_options['emlserver']
+        and email_options['emlport']
+        and email_options['emlusr']
+        and email_options['emlpwd']
+        and email_options['emladr0']
+    )
+
+
+def send_2fa_code(code, expires_minutes=5):
+    """Send a login code immediately; never enqueue a time-sensitive message."""
+    if not is_configured():
+        raise RuntimeError(_('E-mail plug-in is not properly configured!'))
+    body = _(
+        'Your OSPy verification code is <b>{}</b>. The code expires in {} minutes. '
+        'If you did not try to sign in, change your password.'
+    ).format(code, expires_minutes)
+    email(body, _('OSPy login verification code'))
+
+
 def read_saved_emails():
     ### Read saved emails from json file ###
     try:

@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 11 2026
+-----------
+(Martin Pihrt) - E-mail Notifications SSL<br/>
+Added a small two-factor authentication interface for OSPy. The plug-in can now report whether its SMTP configuration is ready and send time-sensitive login verification codes immediately without placing failed or expired codes into the normal retry queue.
+
 July 10 2026
 -----------
 (Martin Pihrt) - LCD Display<br/>
