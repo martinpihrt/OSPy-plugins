@@ -5,6 +5,7 @@ __author__ = u'Martin Pihrt'
 from threading import Thread, Event
 
 import json
+import hashlib
 import time
 import traceback
 import urllib.request
@@ -29,6 +30,17 @@ ERROR_LOG_THROTTLE = 300
 
 def _normalize_id(value):
     return str(value or '').strip().lower()
+
+
+def _id_matches(record_id, local_id):
+    """Accept legacy plain UUIDs and new SHA-256 anonymized identifiers."""
+    record_id = _normalize_id(record_id)
+    local_id = _normalize_id(local_id)
+    if not record_id or not local_id:
+        return False
+    if record_id == local_id:
+        return True
+    return record_id == hashlib.sha256(local_id.encode('utf-8')).hexdigest()
 
 
 class StatusChecker(Thread):
@@ -108,7 +120,7 @@ class StatusChecker(Thread):
                 if not isinstance(user, dict):
                     continue
                 record_id = str(user.get('id', '')).strip()
-                record_current = userID_compare != '' and _normalize_id(record_id) == userID_compare
+                record_current = _id_matches(record_id, userID_compare)
                 records.append({
                     'id': record_id,
                     'log': str(user.get('log', '')),

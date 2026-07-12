@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 12 2026
+-----------
+(Martin Pihrt) - Usage Statistics<br/>
+Updated Usage Statistics for the anonymized public data format. The public statistics feed now uses SHA-256 installation identifiers, and the plug-in hashes its local UUID before comparison so it can still recognize and highlight the current installation without publishing the original UUID.
+
 July 11 2026
 -----------
 (Martin Pihrt) - E-mail Notifications SSL<br/>
