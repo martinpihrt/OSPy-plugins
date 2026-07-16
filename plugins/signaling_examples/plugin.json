@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "signaling_examples",
+  "name": "Signaling Examples",
+  "menu": "Package: Signaling Examples",
+  "version": "1.0.0",
+  "description": "Demonstrates OSPy and plug-in signal subscriptions and records received events.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/signaling_examples",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "blinker",
+      "package": "blinker",
+      "required": true
+    }
+  ],
+  "permissions": [
+    "system"
+  ]
+}

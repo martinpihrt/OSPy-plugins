@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Signaling Examples<br/>
+Updated Signaling Examples for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring its Blinker dependency and system event access, removes the unnecessary one-shot startup thread, registers receivers directly during startup, disconnects every receiver during shutdown, and reports receiver count and the latest signal through `health()`.
+
 (Martin Pihrt) - Relay Test<br/>
 Updated Relay Test for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring relay-output control, registers and clears its bounded test worker through the shared runtime, stops without a completion race, forces the relay off during shutdown, and reports worker, relay command and duration through `health()`. Corrected the README test duration to three seconds.
 

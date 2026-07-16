@@ -6,6 +6,11 @@ Tested in Python 3+
 This is Example signal plugin provides functions triggered by signals from core program.  
 Example signals from: webpages.py, scheduler.py, stations.py, plugins:  
 
+The plug-in includes an OSPy `plugin.json` manifest and implements `health()`.
+Signal receivers are registered directly during plug-in startup and fully
+disconnected during shutdown; no background thread is required. Diagnostics
+reports the registered receiver count and last received signal.
+
 * signal('loggedin')<br>
 * signal('value_change')<br>
 * signal('option_change')<br>

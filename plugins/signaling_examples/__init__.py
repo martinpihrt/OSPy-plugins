@@ -2,8 +2,6 @@
 __author__ = 'Martin Pihrt'
 
 import json
-import time
-import traceback
 import web
 
 
@@ -11,7 +9,6 @@ from blinker import signal ### for this example ###
 
 from ospy.helpers import datetime_string, verify_csrf 
 from ospy.log import log
-from threading import Thread, Event
 from plugins import plugin_url
 from ospy.webpages import ProtectedPage
 
@@ -54,42 +51,8 @@ SIGNAL_NAMES = [
 ]
 
 SIGNAL_RECEIVERS = {}
-
-
-################################################################################
-# Main function loop:                                                          #
-################################################################################
-
-class Sender(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-        self.daemon = True
-        self._stop_event = Event()
-
-        self.status = {}
-
-        self._sleep_time = 0
-        self.start()
-
-    def stop(self):
-        self._stop_event.set()
-
-    def update(self):
-        self._sleep_time = 0
-
-    def _sleep(self, secs):
-        self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop_event.is_set():
-            time.sleep(1)
-            self._sleep_time -= 1
-
-    def run(self):   
-        #while not self._stop_event.is_set(): ### delete hashtag for loop ###
-            ### here is main loop for this plugin ###
-            for signal_name in SIGNAL_NAMES:
-                signal(signal_name).connect(receiver_for(signal_name), weak=False)
-
-sender = None
+connected_signals = set()
+last_signal = ''
 
 ################################################################################
 # Helper functions:                                                            #
@@ -97,17 +60,36 @@ sender = None
 
 ### start ###
 def start():
-    global sender
-    if sender is None:
-        sender = Sender()
+    for signal_name in SIGNAL_NAMES:
+        signal(signal_name).connect(receiver_for(signal_name), weak=False)
+        connected_signals.add(signal_name)
  
 ### stop ###
 def stop():
-    global sender
-    if sender is not None:
-       sender.stop()
-       sender.join(15)
-       sender = None 
+    for signal_name in list(connected_signals):
+        signal(signal_name).disconnect(receiver_for(signal_name))
+        connected_signals.discard(signal_name)
+
+
+def health():
+    """Return signal receiver registration and latest activity."""
+    details = {
+        _('Registered signals'): '{}/{}'.format(
+            len(connected_signals), len(SIGNAL_NAMES)
+        ),
+        _('Last signal'): last_signal or _('None'),
+    }
+    if len(connected_signals) != len(SIGNAL_NAMES):
+        return {
+            'status': 'error',
+            'summary': _('Signal receivers are not fully registered.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Signal receivers are registered.'),
+        'details': details,
+    }
 
 
 def signal_message(signal_name, kw):
@@ -151,11 +133,10 @@ def signal_message(signal_name, kw):
 
 
 def record_signal(signal_name, name=None, **kw):
-    global sender
+    global last_signal
     message = signal_message(signal_name, kw)
     text = "{}: signal('{}') - {}".format(datetime_string(), signal_name, message)
-    if sender is not None:
-        sender.status['last_signal'] = text
+    last_signal = text
     log.info(NAME, text)
 
 
@@ -305,8 +286,6 @@ class settings_page(ProtectedPage):
 
     def POST(self):
         verify_csrf()
-        if sender is not None:
-            sender.update()                
         raise web.seeother(plugin_url(settings_page), True)
 
 
@@ -334,6 +313,6 @@ class signal_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         data = {}
         data['loginfo'] = log.events(NAME)
-        data['last_signal'] = sender.status.get('last_signal', '') if sender is not None else ''
+        data['last_signal'] = last_signal
         return json.dumps(data)
 
