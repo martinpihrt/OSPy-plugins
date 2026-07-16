@@ -5,6 +5,13 @@ Tested in Python 3+
 
 This extension allows you to retrieve data from a configured E-mail box and respond to incoming messages that arrive in the mailbox. This extension requires the email_notification extension to be installed and set up correctly. We will send receive messages using the set account. After receiving and processing the message in the E-mail, a confirmation of the message processing will be sent.  
 
+The plug-in includes an OSPy `plugin.json` manifest, registers its IMAP polling
+worker with the shared plug-in runtime, uses the common stop signal, and
+implements `health()`. Diagnostics reports worker and non-secret IMAP
+configuration, last successful mailbox check, message count, and the latest
+connection or login error. Passwords and control-sender addresses are not
+exposed.
+
 Plugin setup
 -----------
 

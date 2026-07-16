@@ -8,7 +8,7 @@ import json
 import time
 import datetime
 import traceback
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
@@ -16,7 +16,7 @@ import web
 from ospy import helpers
 from ospy.options import options
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, reboot, restart, poweroff, verify_csrf
 from ospy.stations import stations
@@ -87,6 +87,14 @@ plugin_options = PluginOptions(
        'send_state_wind': _('send_wind')
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+    'last_message_count': 0,
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -96,7 +104,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
@@ -115,6 +123,7 @@ class Sender(Thread):
 
     def run(self):
         last_email_millis = 0    # timer for reading E-mails (ms)
+        imap = None
         
         while not self._stop_event.is_set():
             try:
@@ -133,6 +142,7 @@ class Sender(Thread):
                         is_login_ok = imap.login()     
                         if is_login_ok:
                             messages = imap.get_messages(sender=plugin_options['sender']) or [] # retrieve messages from a given sender
+                            record_reader_success(len(messages))
                             log.info(NAME, datetime_string() + ' ' + _('Reading messages in inbox.'))   
                             # Do something with the messages                 
                             for msg in messages:               # msg is a dict of {'num': num, 'body': body, 'subj': subj} 
@@ -686,11 +696,17 @@ class Sender(Thread):
                                     self._sleep(1)
                         
                         imap.logout()                                    # when done, you should log out
+                        imap = None
    
                 self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
-                log_reader_problem(_('E-mail Reader plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                message = _('E-mail Reader plug-in') + ': ' + traceback.format_exc().splitlines()[-1]
+                record_reader_error(message)
+                log_reader_problem(message)
+                if imap is not None:
+                    imap.logout()
+                    imap = None
                 self._sleep(ERROR_RETRY_INTERVAL)
 
 
@@ -703,14 +719,93 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
+        runtime.register_thread(sender)
 
 
 def stop():
     global sender
-    if sender is not None:
-        sender.stop()
-        sender.join(15)
-        sender = None
+    worker = sender
+    if worker is not None:
+        worker.stop()
+        worker.join(15)
+        if sender is worker and not worker.is_alive():
+            sender = None
+
+
+def record_reader_success(message_count):
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+        health_state['last_message_count'] = int(message_count)
+
+
+def record_reader_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return IMAP configuration, worker and latest mailbox check state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_alive = sender is not None and sender.is_alive()
+    configured = all([
+        plugin_options['recipient'],
+        plugin_options['user_password'],
+        plugin_options['server'],
+        plugin_options['recipient_folder'],
+        plugin_options['sender'],
+    ])
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('IMAP server'): plugin_options['server'],
+        _('SSL'): _('Enabled') if plugin_options['use_ssl'] else _('Disabled'),
+        _('Mailbox folder'): plugin_options['recipient_folder'],
+        _('Check interval'): '{} {}'.format(normalized_check_interval(), _('seconds')),
+        _('Messages in last check'): state['last_message_count'],
+        _('Last successful mailbox check'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not plugin_options['use_reader']:
+        return {
+            'status': 'unknown',
+            'summary': _('E-mail Reader is disabled.'),
+            'details': details,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('E-mail Reader worker is stopped.'),
+            'details': details,
+        }
+    if not configured:
+        return {
+            'status': 'warning',
+            'summary': _('E-mail Reader is not properly configured.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first mailbox check.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('The IMAP mailbox is responding.'),
+        'details': details,
+    }
 
 
 def normalized_check_interval():
@@ -722,6 +817,7 @@ def normalized_check_interval():
 
 def log_reader_problem(message):
     now = time.time()
+    record_reader_error(message)
     if sender is None or now - sender._last_error_log >= ERROR_LOG_THROTTLE:
         if sender is not None:
             sender._last_error_log = now
@@ -1069,7 +1165,9 @@ class ImapClient: # https://www.timpoulsen.com/2018/reading-email-with-python.ht
             log.info(NAME, datetime_string() + ' ' + _('Login OK.'))
             return True
         except:
-            log.error(NAME, datetime_string() + ' ' + _('Mail account login details are not filled in correctly!'))
+            message = _('Mail account login details are not filled in correctly!')
+            record_reader_error(message)
+            log.error(NAME, datetime_string() + ' ' + message)
             return False
 
     def logout(self):

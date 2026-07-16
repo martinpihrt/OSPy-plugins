@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "email_reader",
+  "name": "E-mail Reader",
+  "menu": "Package: E-mail Reader",
+  "version": "1.0.0",
+  "description": "Reads authenticated IMAP commands and controls OSPy programs, stations and system functions.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/email_reader",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "permissions": [
+    "email",
+    "files",
+    "network",
+    "system"
+  ]
+}

@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - E-mail Reader<br/>
+Updated E-mail Reader for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring IMAP network, e-mail, file and system-control access, registers its mailbox polling worker with the shared runtime, uses the common stop signal with bounded shutdown, closes an active IMAP session after worker errors, and reports non-secret configuration, latest mailbox check, message count and recent IMAP errors through `health()`.
+
 (Martin Pihrt) - E-mail Notifications SSL<br/>
 Updated E-mail Notifications SSL for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Blinker, SMTP SSL, e-mail and queue-file access, registers its notification and retry worker with the shared runtime, uses the common stop signal, manages five system signal receivers through start and stop to prevent duplicate notifications, and reports receiver, SMTP, queue and delivery state through `health()` without exposing credentials or recipients.
 
