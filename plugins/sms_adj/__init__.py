@@ -2,7 +2,7 @@
 __author__ = u'Martin Pihrt'
 # this plugins send and check SMS data for modem to control your OSPy
 
-from threading import Thread, Event
+from threading import Thread, Lock
 import json
 import time
 import traceback
@@ -14,7 +14,7 @@ from ospy import version
 from ospy.inputs import inputs
 from ospy.options import options
 from ospy.log import log
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import reboot, poweroff, verify_csrf
 from ospy.programs import programs
@@ -46,6 +46,16 @@ sms_options = PluginOptions(
         u'txt9': u'run'
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_check': 0,
+    'modem_connected': False,
+    'signal_percent': None,
+    'last_command': '',
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 # Plugin system will catch the following error and disable the plugin automatically:
 # import gammu  # for SMS modem import gammu
@@ -61,11 +71,12 @@ class SMSSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._last_error_log = 0
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -81,6 +92,10 @@ class SMSSender(Thread):
 
     def log_problem(self, message):
         now = time.time()
+        error_message = traceback.format_exc().splitlines()[-1]
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = error_message
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message + '\n' + traceback.format_exc())
             self._last_error_log = now
@@ -148,7 +163,68 @@ def stop():
     if sms_sender is not None:
         sms_sender.stop()
         sms_sender.join(15)
-        sms_sender = None
+        if sms_sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sms_sender = None
+
+
+def health():
+    """Return modem and worker state without exposing telephone numbers."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sms_sender is not None and sms_sender.is_alive()
+    admin_count = sum(
+        1 for value in (sms_options['tel1'], sms_options['tel2'])
+        if value and value != '+xxxyyyyyyyyy'
+    )
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('SMS modem enabled'): _('Yes') if sms_options['use_sms'] else _('No'),
+        _('Configured administrators'): admin_count,
+        _('Gammu executable available'): _('Yes') if os.path.exists('/usr/bin/gammu') else _('No'),
+        _('Modem connected'): _('Yes') if state['modem_connected'] else _('No'),
+        _('Signal strength'): (
+            '{} %'.format(state['signal_percent'])
+            if state['signal_percent'] is not None else _('Not available')
+        ),
+        _('Last modem check'): (
+            datetime_string(time.localtime(state['last_check']))
+            if state['last_check'] else _('Not available')
+        ),
+        _('Last command'): state['last_command'] or _('Not available'),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('SMS Modem worker is not running.'),
+            'details': details,
+        }
+    if not sms_options['use_sms']:
+        return {
+            'status': 'unknown',
+            'summary': _('SMS modem control is disabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_check']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['modem_connected']:
+        return {
+            'status': 'error',
+            'summary': _('SMS modem is not connected.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('SMS Modem is responding.'),
+        'details': details,
+    }
 
 def sms_check(self):
     """Control and processing SMS"""
@@ -156,6 +232,9 @@ def sms_check(self):
         import gammu
     except Exception:
         log.debug(NAME, _(u'Error: No module named gammu'))
+        with health_lock:
+            health_state['last_error'] = time.time()
+            health_state['last_error_message'] = _('Python Gammu module is not available.')
         self._sleep(MISSING_DEPENDENCY_SLEEP)
         return
         
@@ -178,11 +257,21 @@ def sms_check(self):
         log.debug(NAME, datetime_string() + ': ' + _(u'Checking SMS...'))
     except Exception:
         log.debug(NAME, _(u'Error: Phone (modem) not connected.'))
+        with health_lock:
+            health_state['last_error'] = time.time()
+            health_state['last_error_message'] = _('Phone modem is not connected.')
+            health_state['modem_connected'] = False
         self._sleep(60)
         return
+    with health_lock:
+        health_state['last_check'] = time.time()
+        health_state['modem_connected'] = True
+        health_state['last_error_message'] = ''
 
     if sms_options["use_strength"]:    # print strength signal in status Window every check SMS
         signal = sm.GetSignalQuality() # list: SignalPercent, SignalStrength, BitErrorRate
+        with health_lock:
+            health_state['signal_percent'] = signal['SignalPercent']
         log.info(NAME, datetime_string() + ': ' + _(u'Signal') + ': ' + str(signal['SignalPercent']) + u'% ' + str(signal['SignalStrength']) + u'dB')
     
     status = sm.GetSMSStatus()
@@ -208,6 +297,8 @@ def sms_check(self):
         if (m['Number'] == tel1) or (m['Number'] == tel2):  # If telephone is admin 1 or admin 2
             log.info(NAME, datetime_string() + ': ' + _(u'SMS from admin'))
             if m['State'] == "UnRead":          # If SMS is unread
+                with health_lock:
+                    health_state['last_command'] = str(m['Text'])
                 log.clear(NAME)
                 if m['Text'] == comm1:           # If command = comm1 (info - send SMS to admin phone1 and phone2)
                     log.info(NAME, _('Command') + ' ' + comm1 + ' ' + _(u'is processed'))
@@ -354,7 +445,7 @@ def sms_check(self):
                         get_run_cam() # process save foto to ./data/image.jpg
                         msg = _(u'SMS plug-in send image file from webcam.')
 
-                        send_email(msg, attach=get_image_location())
+                        send_email(msg, attachments=get_image_location())
 
                     except ImportError:
                         log.info(NAME, _(u'Received SMS was deleted, but could not send email with photo from webcam'))

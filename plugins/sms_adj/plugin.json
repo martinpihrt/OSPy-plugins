@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "sms_adj",
+  "name": "SMS Modem",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "gammu",
+      "package": "python3-gammu",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "requires": [
+      "serial_modem"
+    ]
+  },
+  "permissions": [
+    "files",
+    "email",
+    "system"
+  ]
+}

@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - SMS Modem<br/>
+Updated SMS Modem for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Python Gammu, serial-modem, configuration-file, e-mail and system-control requirements, registers its polling worker with the shared runtime, observes the common stop request with bounded shutdown, corrects the webcam e-mail attachment call, keeps administrator telephone numbers out of diagnostics, and reports worker, Gammu, modem, administrator count, signal, latest check, command and errors through `health()`.
+
 (Martin Pihrt) - Shelly Cloud Integration<br/>
 Updated Shelly Cloud Integration for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Requests and cloud/local network access, registers its polling worker with the shared runtime, closes each HTTP response and its session before bounded shutdown, excludes the cloud authorization key from diagnostics and the settings JSON endpoint, and reports worker, server, configured, loaded and online devices, retry state, latest request and errors through `health()`.
 
