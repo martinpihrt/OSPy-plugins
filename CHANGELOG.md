@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Weather Dashboard<br/>
+Updated Weather Dashboard for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring OSPy sensor, plug-in reading and local settings access, registers its service with the shared runtime instead of leaving a completed thread behind, observes bounded shutdown, and reports mode, configured gauges, latest refresh and unavailable values through `health()`.
+
 (Martin Pihrt) - Weather-based Water Level Netatmo<br/>
 Updated Weather-based Water Level Netatmo for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring OSPy weather, Netatmo-network and irrigation-adjustment access, registers its calculation worker with the shared runtime, closes Netatmo HTTP responses, removes its callback and adjustment during bounded shutdown, applies the final Netatmo-aware adjustment instead of the earlier weather-only intermediate value, keeps credentials out of diagnostics, and reports rainfall, days, adjustment and errors through `health()`.
 

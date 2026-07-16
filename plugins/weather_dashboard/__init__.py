@@ -8,9 +8,9 @@ import json                                                      # For working w
 import copy                                                      # For working with copy of source registry
 import traceback                                                 # For Errors listing via callback where the event occurred
 import time                                                      # For working with time, see the def _sleep function
-from threading import Thread, Event                              # For use a separate thread in which the plugin is running
+from threading import Thread, Lock                              # For use a separate thread in which the plugin is running
 
-from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime   # For access to settings, address and plugin data folder
 from ospy.log import log                                         # For events logs printing (debug, error, info)
 from ospy.helpers import datetime_string, verify_csrf            # For using date time in events logs
 from ospy.webpages import ProtectedPage                          # For check user login permissions
@@ -60,6 +60,13 @@ plugin_options = PluginOptions(
         'gauges': []
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_refresh': 0,
+    'values_returned': 0,
+    'unavailable_values': 0,
+}
 
 
 SOURCE_REGISTRY = {
@@ -135,12 +142,13 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -157,6 +165,8 @@ class Sender(Thread):
     def run(self):
         log.clear(NAME)
         log.info(NAME, _('Weather Dashboard plug-in is enabled.'))
+        while not self._stop_event.wait(1):
+            pass
 
 sender = None
 
@@ -173,8 +183,10 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
+        runtime.request_stop()
         sender.join(15)
-        sender = None
+        if not sender.is_alive():
+            sender = None
 
 
 def default_gauge():
@@ -543,4 +555,39 @@ class data_json(ProtectedPage):
                 'timestamp': int(time.time())
             })
 
+        with health_lock:
+            health_state['last_refresh'] = time.time()
+            health_state['values_returned'] = len(data)
+            health_state['unavailable_values'] = sum(1 for item in data if item['value'] == -127)
         return json.dumps(data)
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = sender is not None and sender.is_alive()
+    normalize_options()
+    enabled_gauges = [gauge for gauge in plugin_options['gauges'] if gauge['enabled']]
+    with health_lock:
+        state = dict(health_state)
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'mode': plugin_options.get('dashboard_mode', 'canvas'),
+        'configured_gauges': len(plugin_options.get('gauges', [])),
+        'enabled_gauges': len(enabled_gauges),
+        'last_refresh': state['last_refresh'],
+        'values_returned': state['values_returned'],
+        'unavailable_values': state['unavailable_values'],
+    }
+    if not worker_alive:
+        status = 'error'
+        summary = _('Weather Dashboard service is not running.')
+    elif not enabled_gauges:
+        status = 'unknown'
+        summary = _('Weather Dashboard has no enabled gauges.')
+    elif state['last_refresh'] and state['unavailable_values']:
+        status = 'warning'
+        summary = _('Some dashboard values are unavailable.')
+    else:
+        status = 'ok'
+        summary = _('Weather Dashboard is ready.')
+    return {'status': status, 'summary': summary, 'details': details}

@@ -6,6 +6,8 @@ Tested in Python 3+
 This plugin displays selected values from other OSPy plugins and OSPy sensors on one dashboard.
 Each value is configured as one gauge. The dashboard can show gauges as round canvas meters or as simple text values.
 
+The plug-in includes a manifest declaring access to OSPy sensors and other plug-in readings, uses the shared OSPy lifecycle, and reports configured gauges, refreshes and unavailable values through the Diagnostics health interface.
+
 
 Plugin setup
 -----------
