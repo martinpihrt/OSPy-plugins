@@ -3,6 +3,10 @@ System Watchdog Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its monitoring worker,
+watchdog package, service, device, latest check and errors through the OSPy
+system health interface.
+
 Attention: it depends on the version of Raspberry Pi! whether it is version 2, 3, 4... (version 4 is not stable).
 
 This plugin enable or disable HW Watchdog daemon in OSPy system. On the Raspberry Pi is hardware watchdog - Broadcom BCM2708 chip. This can be very useful if your Raspberry Pi is located remotely and locks up. However, this would not the preferred method of restarting the unit and in extreme cases this can result in file-system damage that could prevent the Raspberry Pi from booting. If this occurs regularly you better find the root cause of the problem rather than fight the symptoms.

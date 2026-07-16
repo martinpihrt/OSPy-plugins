@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "id": "system_watchdog",
+  "name": "System Watchdog",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "hardware": {
+    "platforms": [
+      "raspberry_pi"
+    ],
+    "requires": [
+      "hardware_watchdog"
+    ]
+  },
+  "permissions": [
+    "network",
+    "files",
+    "subprocess",
+    "system"
+  ]
+}

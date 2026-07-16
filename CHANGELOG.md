@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - System Watchdog<br/>
+Updated System Watchdog for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Raspberry Pi hardware-watchdog, package-network, system-file, subprocess and service-control access, registers its service monitor with the shared runtime, observes the common stop request with bounded shutdown, and reports worker, package, service, watchdog device, latest check and errors through `health()`.
+
 (Martin Pihrt) - Astro Sunrise and Sunset<br/>
 Updated Astro Sunrise and Sunset for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring optional Astral and pytz plus dependency-installation and scheduler-control access, registers both its calculation and dependency-installation workers with the shared runtime, observes the common stop request with bounded shutdown, and reports worker, Astral availability, location, sunrise, sunset, scheduled programs, dependency installation, latest calculation and errors through `health()`.
 

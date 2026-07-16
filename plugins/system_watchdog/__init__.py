@@ -3,7 +3,7 @@ __author__ = u'Martin Pihrt'
 # help: https://www.raspberrypi.org/forums/viewtopic.php?f=29&t=147501
 # testing: :(){ :|:&};:
 
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 import time
 import subprocess
 import os
@@ -14,7 +14,7 @@ import web
 from ospy.helpers import restart, reboot, verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.log import log
-from plugins import plugin_url
+from plugins import plugin_url, get_runtime
 
 
 NAME = 'System Watchdog'
@@ -23,6 +23,13 @@ LINK = 'status_page'
 COMMAND_TIMEOUT = 60
 STATUS_TIMEOUT = 15
 ERROR_LOG_THROTTLE = 300
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_check': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 class StatusChecker(Thread):
@@ -31,7 +38,7 @@ class StatusChecker(Thread):
         self.daemon = True
         self.started = Event()
         
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {
             'service_install': False,
@@ -40,6 +47,7 @@ class StatusChecker(Thread):
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -55,6 +63,10 @@ class StatusChecker(Thread):
 
     def log_problem(self):
         now = time.time()
+        error_message = traceback.format_exc().splitlines()[-1]
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = error_message
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, _('System watchdog plug-in') + ':\n' + traceback.format_exc())
             self._last_error_log = now
@@ -94,6 +106,9 @@ class StatusChecker(Thread):
                     self._is_started()
                 else:
                     self.status['service_state'] = False
+                with health_lock:
+                    health_state['last_check'] = time.time()
+                    health_state['last_error_message'] = ''
                 self.started.set()
                 self._sleep(60)
 
@@ -120,7 +135,62 @@ def stop():
     if checker is not None:
         checker.stop()
         checker.join(15)
-        checker = None
+        if checker.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            checker = None
+
+
+def health():
+    """Return watchdog package, service and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = checker is not None and checker.is_alive()
+    status = checker.status if checker is not None else {
+        'service_install': False,
+        'service_state': False,
+    }
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Watchdog installed'): _('Yes') if status['service_install'] else _('No'),
+        _('Watchdog service active'): _('Yes') if status['service_state'] else _('No'),
+        _('Watchdog device available'): _('Yes') if os.path.exists('/dev/watchdog') else _('No'),
+        _('Last service check'): (
+            time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(state['last_check']))
+            if state['last_check'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('System Watchdog worker is not running.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_check']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not status['service_install']:
+        return {
+            'status': 'warning',
+            'summary': _('Watchdog is not installed.'),
+            'details': details,
+        }
+    if not status['service_state']:
+        return {
+            'status': 'warning',
+            'summary': _('Watchdog service is not active.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('System Watchdog is active.'),
+        'details': details,
+    }
 
 def run_process(cmd, timeout=COMMAND_TIMEOUT):
     try:
