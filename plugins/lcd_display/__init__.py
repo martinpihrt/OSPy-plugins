@@ -2,7 +2,7 @@
 
 __author__ = 'Martin Pihrt'
 # This plugin sends data to I2C for LCD 16x2 char with PCF8574.
-# Visit for more: https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2.
+# Visit for more: https://pihrt.com/clanky/arduino-uno-deska-i2c-lcd-16x2.
 # This plugin requires python pylcd.py library
 
 

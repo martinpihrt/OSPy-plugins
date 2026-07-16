@@ -44,4 +44,4 @@ Plugin setup
 The hardware should be connected as follows:  
 <a href="/plugins/pressure_monitor/static/images/schematics.png"><img src="/plugins/pressure_monitor/static/images/schematics.png" width="100%"></a>  
 
-Recommend using optocoupler between GPIO and sensor. Visit [Martin Pihrt's blog](http://www.pihrt.com/elektronika/248-moje-rapsberry-pi-zavlazovani-zahrady). for more information.
+Recommend using optocoupler between GPIO and sensor. Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-rapsberry-pi-zavlazovani-zahrady). for more information.

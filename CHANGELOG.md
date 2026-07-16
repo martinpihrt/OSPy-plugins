@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 16 2026
+-----------
+(Martin Pihrt) - Documentation<br/>
+Updated active pihrt.com links in plug-in README files, help templates, and source comments after the website migration. Former `/elektronika/` article paths now use their verified `/clanky/` addresses, and the removed AutomatOSPy demonstration page now links to the related irrigation article.
+
 July 12 2026
 -----------
 (Martin Pihrt) - Usage Statistics<br/>

@@ -49,7 +49,7 @@ sms_options = PluginOptions(
 
 # Plugin system will catch the following error and disable the plugin automatically:
 # import gammu  # for SMS modem import gammu
-# if no install modem and gammu visit: http://www.pihrt.com/elektronika/259-moje-rapsberry-pi-sms-ovladani-rpi
+# if no install modem and gammu visit: https://pihrt.com/clanky/moje-rapsberry-pi-sms-ovladani-rpi
 # USB modem HUAWEI E303 + SIM card with telephone provider
 
 ################################################################################

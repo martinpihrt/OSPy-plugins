@@ -42,4 +42,4 @@ Output pulse on GPIO 24 - pin 18 (via optocoupler open colector and ground) to U
 The hardware should be connected as follows:  
 <a href="/plugins/ups_adj/static/images/schematics.png"><img src="/plugins/ups_adj/static/images/schematics.png" width="100%"></a>
 
-Recommend using optocoupler between GPIO and UPS. Visit [Martin Pihrt's blog](http://www.pihrt.com/elektronika/248-moje-rapsberry-pi-zavlazovani-zahrady). for more information.
+Recommend using optocoupler between GPIO and UPS. Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-rapsberry-pi-zavlazovani-zahrady). for more information.

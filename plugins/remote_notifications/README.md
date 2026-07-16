@@ -24,7 +24,7 @@ Plugin setup
 * Status:
   Status window from the plugin.  
   
-Visit [Martin Pihrt's blog](https://pihrt.com/automatOSPy/). for to demonstrate the function of watering my flowers.  
+Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-rapsberry-pi-zavlazovani-zahrady). for to demonstrate the function of watering my flowers.
 
 Note: For this plugin we need a public web server with PHP support and access to SQL database into which data is written from this plugin.
 

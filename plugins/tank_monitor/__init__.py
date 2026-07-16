@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # this plugin check water level in tank via ultrasonic sensor.
-# for more use this hardware: https://pihrt.com/elektronika/339-moje-raspberry-pi-plugin-ospy-vlhkost-pudy-a-mozstvi-vody-v-tankua
+# for more use this hardware: https://pihrt.com/clanky/moje-raspberry-pi-plugin-ospy-vlhkost-pudy-a-mozstvi-vody-v-tankua
 # HW Atmega328 has 30sec timeout for reboot if not accesing via I2C bus.
 
 __author__ = 'Martin Pihrt' # www.pihrt.com

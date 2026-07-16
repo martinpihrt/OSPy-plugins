@@ -18,7 +18,7 @@ Plugin setup
   b) Top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for LCD1602 board)  
   c) Top 4 bits of expander are commands bits AND P0-6 P1-5 P2-4  
   d) LCD1602 board where lower 4 are commands, but backlight is pin 3  
-  e) LCD board (https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2)  </br>
+  e) LCD board (https://pihrt.com/clanky/arduino-uno-deska-i2c-lcd-16x2)  </br>
 
 * Check Use print lines to debug files:  
   If checked use print lines to debug files line 1 or line 2 print to debug files.  
@@ -85,4 +85,4 @@ The LCD controller is re-initialized at the start of each display cycle without 
 ## PCF8574 address map
 [![](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/lcd_display/static/images/pcf8574_map.png?raw=true)](https://github.com/martinpihrt/OSPy-plugins/blob/master/plugins/lcd_display/static/images/pcf8574_map.png)    
 
-Visit [Martin Pihrt's blog](https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2). for more information.
+Visit [Martin Pihrt's blog](https://pihrt.com/clanky/arduino-uno-deska-i2c-lcd-16x2). for more information.

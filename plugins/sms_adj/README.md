@@ -64,4 +64,4 @@ Plugin setup
 * Status:
   Status window from the plugin.  
 
-Visit [Martin Pihrt's blog](http://www.pihrt.com/elektronika/259-moje-rapsberry-pi-sms-ovladani-rpi). for more information.
+Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-rapsberry-pi-sms-ovladani-rpi). for more information.

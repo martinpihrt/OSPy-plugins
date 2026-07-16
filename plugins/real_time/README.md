@@ -31,6 +31,6 @@ Plugin setup
 The hardware should be connected as follows:
 <a href="/plugins/real_time/static/images/schematics.png"><img src="/plugins/real_time/static/images/schematics.png" width="100%"></a>
 
-Visit [Martin Pihrt's blog](http://pihrt.com/elektronika/249-moje-rapsberry-pi-gpio-a-i2c-periferie). for more information.  
+Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-rapsberry-pi-gpio-a-i2c-periferie). for more information.
 
 Note: For this plugin neaded enabled I2C bus and SMBus in system.

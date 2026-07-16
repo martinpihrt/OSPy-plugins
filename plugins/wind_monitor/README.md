@@ -101,4 +101,4 @@ Plugin setup
 The hardware should be connected as follows:  
 <a href="/plugins/wind_monitor/static/images/schematics.png"><img src="/plugins/wind_monitor/static/images/schematics.png" width="100%"></a>
 
-Visit [Martin Pihrt's blog](http://pihrt.com/elektronika/298-moje-raspberry-pi-plugin-prutokomer). for more information.
+Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer). for more information.

@@ -63,7 +63,7 @@ class lcd:
 	1: top 4 bits of expander are commands bits AND P0-4 P1-5 P2-6 (Use for "LCD2004" board)
 	2: top 4 bits of expander are commands bits AND P0-6 P1-5 P2-4
 	3: LCD2004 board where lower 4 are commands, but backlight is pin 3
-	4: www.pihrt.com 16x2 LCD board: "https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2"	
+	4: www.pihrt.com 16x2 LCD board: "https://pihrt.com/clanky/arduino-uno-deska-i2c-lcd-16x2"
 	"""
 	def __init__(self, addr, port, reverse=0, backlight_pin=-1, en_pin=-1, rw_pin=-1, rs_pin=-1, d4_pin=-1, d5_pin=-1, d6_pin=-1, d7_pin=-1):
 		self.reverse = reverse
@@ -102,7 +102,7 @@ class lcd:
 			self.pins[6]=2 		# EN Pin
 			self.pins[7]=3 		# Backlight Pin	
 
-		elif self.reverse==4: # 4: www.pihrt.com LCD board: "https://pihrt.com/elektronika/315-arduino-uno-deska-i2c-lcd-16x2"
+		elif self.reverse==4: # 4: www.pihrt.com LCD board: "https://pihrt.com/clanky/arduino-uno-deska-i2c-lcd-16x2"
 			self.pins[0]=0	 	# D4 Pin
 			self.pins[1]=1 		# D5 Pin
 			self.pins[2]=2 		# D6 Pin

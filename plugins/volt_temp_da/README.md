@@ -49,4 +49,4 @@ The hardware should be connected as follows (with separate I2C Bus for higher vo
 <a href="/plugins/volt_temp_da/static/images/schematics2.png"><img src="/plugins/volt_temp_da/static/images/schematics2.png" width="100%"></a>
 
 
-Visit [Martin Pihrt's blog](http://www.pihrt.com/elektronika/289-pcf-8591-4xad-1xda-na-i2c-arduino-raspberry-pi). for more information.
+Visit [Martin Pihrt's blog](https://pihrt.com/clanky/pcf-8591-4xad-1xda-na-i2c-arduino-raspberry-pi). for more information.
