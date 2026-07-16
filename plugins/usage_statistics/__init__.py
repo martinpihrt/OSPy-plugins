@@ -13,7 +13,7 @@ import urllib.request
 import web
 from ospy.webpages import ProtectedPage
 from ospy.log import log
-from plugins import PluginOptions, plugin_url
+from plugins import plugin_url, get_runtime
 from ospy.helpers import datetime_string, verify_csrf
 
 
@@ -26,6 +26,7 @@ MAX_DOWNLOAD_BYTES = 1024 * 1024
 REFRESH_INTERVAL = 3600
 MANUAL_REFRESH_INTERVAL = 60
 ERROR_LOG_THROTTLE = 300
+runtime = get_runtime()
 
 
 def _normalize_id(value):
@@ -48,7 +49,7 @@ class StatusChecker(Thread):
         Thread.__init__(self)
         self.daemon = True
         self.started = Event()
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {
             'pageOK': _(u'Error: data cannot be downloaded from') +  ' www.pihrt.com!',
@@ -166,22 +167,55 @@ def start():
     global checker
     if checker is None:
         checker = StatusChecker()
+        runtime.register_thread(checker)
 
 
 def stop():
     global checker
-    if checker is not None:
-        checker.stop()
-        checker.join(15)
-        checker = None
+    worker = checker
+    if worker is not None:
+        worker.stop()
+        worker.join(5)
+        if checker is worker and not worker.is_alive():
+            checker = None
 
 
 def get_checker():
     global checker
     if checker is None:
         checker = StatusChecker()
+        runtime.register_thread(checker)
     checker.started.wait(2)
     return checker
+
+
+def health():
+    """Return worker and public statistics download state."""
+    worker_alive = checker is not None and checker.is_alive()
+    status = checker.status if checker is not None else {}
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Statistics URL'): STATISTICS_URL,
+        _('Records'): len(status.get('records', [])),
+        _('Last update'): status.get('updated') or _('Not available'),
+    }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('Usage statistics worker is stopped.'),
+            'details': details,
+        }
+    if not status.get('pageOKstate'):
+        return {
+            'status': 'warning',
+            'summary': _('Usage statistics data is not available.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Usage statistics data is available.'),
+        'details': details,
+    }
 
 ################################################################################
 # Web pages:                                                                   #

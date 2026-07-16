@@ -10,5 +10,9 @@ Last downloaded data from server. Or Error: data cannot be downloaded from www.p
   *  Your ID is: xxxxxx-xxxxxx-xxxxxx  
 Your specific anonymous ID in table on the server.
 
+The plug-in includes an OSPy `plugin.json` manifest, registers its refresh
+worker with the shared plug-in runtime, uses the common stop signal, and
+implements `health()`. Diagnostics reports worker state, source URL, record
+count, and the last successful refresh.
 
 

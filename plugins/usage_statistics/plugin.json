@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "usage_statistics",
+  "name": "Usage Statistics",
+  "menu": "Package: Usage Statistics",
+  "version": "1.0.0",
+  "description": "Downloads and displays anonymized public OSPy usage statistics.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/usage_statistics",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "permissions": [
+    "files",
+    "network"
+  ]
+}

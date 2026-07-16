@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Usage Statistics<br/>
+Updated Usage Statistics for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring file and network access, registers its hourly refresh worker with the shared runtime, uses the common stop signal with bounded shutdown, and reports worker, source URL, record count and latest successful data refresh through `health()`.
+
 (Martin Pihrt) - Signaling Examples<br/>
 Updated Signaling Examples for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring its Blinker dependency and system event access, removes the unnecessary one-shot startup thread, registers receivers directly during startup, disconnects every receiver during shutdown, and reports receiver count and the latest signal through `health()`.
 
