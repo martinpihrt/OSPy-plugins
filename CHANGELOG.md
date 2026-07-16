@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Photovoltaic Boiler<br/>
+Updated Photovoltaic Boiler for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring scheduler and station-control access, registers its regulation worker with the shared runtime, observes the common stop request with bounded shutdown, continues safely releasing its controlled output during stop, and reports worker, regulation, output, temperature, latest control cycle and errors through `health()`.
+
 (Martin Pihrt) - OSPy Backup<br/>
 Updated OSPy Backup for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring plug-in data file access, removes its unnecessary one-shot worker in favor of explicit lifecycle handling, prevents concurrent archive creation, observes the common stop request between copied plug-ins, and reports active operation, latest archive, size, success, cancellation and errors through `health()`.
 

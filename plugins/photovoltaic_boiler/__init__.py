@@ -6,14 +6,14 @@ import time
 import datetime
 import traceback
 import os
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 import plugins as plugin_manager
 
 from ospy.options import options
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision, verify_csrf
 from ospy.helpers import datetime_string
@@ -59,6 +59,17 @@ plugin_options = PluginOptions(
 
 global status
 _last_error_log = {}
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_temperature': None,
+    'regulation_enabled': False,
+    'output': '',
+    'state': '',
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 def plugin_is_running(module):
     try:
@@ -94,12 +105,13 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -317,6 +329,17 @@ class Sender(Thread):
                     if temp_sw is not None:
                         temp_sw.val = tempText.encode('utf8').decode('utf8')    # value on footer
 
+                station_a = selected_station()
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
+                    health_state['last_temperature'] = None if ds_a_on == -127.0 else ds_a_on
+                    health_state['regulation_enabled'] = bool(plugin_options['enabled_a'])
+                    health_state['output'] = (
+                        str(station_a.index + 1) if station_a is not None else ''
+                    )
+                    health_state['state'] = tempText.strip()
+                    health_state['last_error_message'] = ''
+
                 millis = int(round(time.time() * 1000))
                 if (millis - last_millis) > STATUS_LOG_INTERVAL * 1000:
                     last_millis = millis
@@ -336,7 +359,11 @@ class Sender(Thread):
                 self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
-                log_boiler_problem('run_loop', _('Photovoltaic Boiler plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = message
+                log_boiler_problem('run_loop', _('Photovoltaic Boiler plug-in') + ': ' + message)
                 self._sleep(60)
 
 sender = None
@@ -354,7 +381,10 @@ def stop():
     if sender is not None:
         sender.stop()
         sender.join(15)
-        sender = None
+        if sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sender = None
         ### we stop the running output if the plugin exits
         station_a = selected_station()
         if station_a is None:
@@ -365,6 +395,58 @@ def stop():
             if interval['station'] == sid and interval.get('program_name') == _('Photovoltaic Boiler'):
                 stations.deactivate(sid)
                 log.finish_run(interval)
+
+
+def health():
+    """Return regulation, temperature and worker state for diagnostics."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Regulation enabled'): _('Yes') if state['regulation_enabled'] else _('No'),
+        _('Selected output'): state['output'] or _('Not available'),
+        _('Temperature'): (
+            '{:.1f}'.format(state['last_temperature'])
+            if state['last_temperature'] is not None else _('Not available')
+        ),
+        _('Regulation state'): state['state'] or _('Not available'),
+        _('Last successful cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Photovoltaic Boiler worker is not running.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_cycle']:
+        return {
+            'status': 'unknown',
+            'summary': _('Photovoltaic Boiler is waiting for its first control cycle.'),
+            'details': details,
+        }
+    if state['regulation_enabled'] and state['last_temperature'] is None:
+        return {
+            'status': 'warning',
+            'summary': _('The configured boiler temperature is not available.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Photovoltaic Boiler is responding.'),
+        'details': details,
+    }
 
 
 ################################################################################
