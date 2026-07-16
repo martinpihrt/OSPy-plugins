@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "voice_notification",
+  "name": "Voice Notification",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8",
+    "dependencies": [
+      {
+        "name": "pygame",
+        "optional": true
+      }
+    ]
+  },
+  "permissions": [
+    "files",
+    "subprocess"
+  ],
+  "hardware": {
+    "optional": [
+      "audio-output"
+    ]
+  }
+}

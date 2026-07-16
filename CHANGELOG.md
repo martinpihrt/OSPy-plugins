@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Voice Notification<br/>
+Updated Voice Notification for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring optional Pygame, audio-output, local sound-file and mixer-command access, registers its playback worker with the shared runtime, stops active playback during bounded shutdown, and reports worker, Pygame, sound queue, latest cycle, playback and errors through `health()`.
+
 (Martin Pihrt) - Venetian Blind<br/>
 Updated Venetian Blind for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring blind REST-network and local command-log access, registers its status worker with the shared runtime, closes all HTTP responses, observes the common stop request with bounded shutdown, and reports worker, configured and reachable blinds, latest status update, command and errors through `health()`.
 

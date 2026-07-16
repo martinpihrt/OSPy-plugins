@@ -4,7 +4,7 @@ __author__ = u'Martin Pihrt' # www.pihrt.com
 # System imports
 import datetime
 import time
-from threading import Thread, Event
+from threading import Thread, Lock
 import traceback
 import json
 import os
@@ -20,7 +20,7 @@ from ospy.scheduler import predicted_schedule
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_input, datetime_string, verify_csrf
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 
 
 NAME = 'Voice Notification'
@@ -47,6 +47,14 @@ plugin_options = PluginOptions(
     })
 
 must_stop = False                         # stopping play from webpage
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_playback': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -55,11 +63,12 @@ class VoiceChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -75,6 +84,9 @@ class VoiceChecker(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -156,6 +168,8 @@ class VoiceChecker(Thread):
                 if is_installed:
                     play_voice()
 
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
                 self._sleep(1)                   
                                              
             except Exception:
@@ -175,11 +189,21 @@ def start():
 
 
 def stop():
-    global checker
+    global checker, must_stop
     if checker is not None:
+        must_stop = True
         checker.stop()
+        runtime.request_stop()
+        try:
+            from pygame import mixer
+            if mixer.get_init():
+                mixer.music.stop()
+                mixer.quit()
+        except (ImportError, RuntimeError):
+            pass
         checker.join(15)
-        checker = None
+        if not checker.is_alive():
+            checker = None
 
 
 ### Run any cmd ###
@@ -319,13 +343,15 @@ def play_voice():
                 del song_queue[0]
                 write_song_queue(song_queue)
 
-            while mixer.music.get_busy() == True and not must_stop:
+            while mixer.music.get_busy() == True and not must_stop and not runtime.stop_event.is_set():
                 time.sleep(0.1)
 
             mixer.music.stop()
             log.info(NAME, datetime_string() + u': ' + _(u'Stopping.'))
             del song_queue[0]                   # delete song queue in file
             write_song_queue(song_queue)        # save to file after deleting an item
+            with health_lock:
+                health_state['last_playback'] = time.time()
             must_stop = False
 
     except Exception:
@@ -520,3 +546,59 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = checker is not None and checker.is_alive()
+    try:
+        import pygame  # noqa: F401
+        pygame_available = True
+    except ImportError:
+        pygame_available = False
+
+    with health_lock:
+        state = dict(health_state)
+
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(plugin_options.get('enabled', False)),
+        'pygame': _('Available') if pygame_available else _('Not available'),
+        'sound_files': len(plugin_options.get('sounds', [])),
+        'queued_sounds': len(read_song_queue()),
+        'last_cycle': state['last_cycle'],
+        'last_playback': state['last_playback'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('Voice notification worker is not running.'),
+            'details': details,
+        }
+    if plugin_options.get('enabled', False) and not pygame_available:
+        return {
+            'status': 'error',
+            'summary': _('Pygame is not available.'),
+            'details': details,
+        }
+    if not plugin_options.get('enabled', False):
+        return {
+            'status': 'unknown',
+            'summary': _('Voice notification is disabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] > state['last_cycle']:
+        return {
+            'status': 'warning',
+            'summary': _('Voice notification reported an error.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Voice notification is ready.'),
+        'details': details,
+    }
