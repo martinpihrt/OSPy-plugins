@@ -9,13 +9,14 @@ import time
 import datetime
 import traceback
 import os
-from threading import Thread, Event
+import importlib.util
+from threading import Thread, Lock
 from contextlib import contextmanager
 
 import web
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision, datetime_string, verify_csrf
 from ospy import helpers
@@ -38,6 +39,13 @@ instance22 = dht22.DHT22(pin=19) # DHT on GPIO 10 pin
 NAME = 'Air Temperature and Humidity Monitor'
 MENU =  _('Package: Air Temperature and Humidity Monitor')
 LINK = 'settings_page'
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_sample': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 tempDS = [-127,-127,-127,-127,-127,-127]
 tempDHT = 0
@@ -186,7 +194,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
         self.status['temp'] = 0
@@ -259,6 +267,7 @@ class Sender(Thread):
 
                           tempDHT = Temperature
                           humiDHT = Humidity
+                          record_sensor_success()
 
                       except:
                         log.clear(NAME)
@@ -327,6 +336,8 @@ class Sender(Thread):
                     if plugin_options['ds_enabled']:  # if in plugin is enabled DS18B20
                        DS18B20_read_data()            # get read DS18B20 temperature data to global tempDS[xx]
                        active_ds = DS18B20_active_indexes()
+                       if active_ds and all(DS18B20_value_is_valid(tempDS[i]) for i in active_ds):
+                          record_sensor_success()
                        if active_ds:
                           tempText +=  _('DS') + ': '
                        for i in active_ds:
@@ -351,6 +362,7 @@ class Sender(Thread):
                 self._sleep(5)
 
             except Exception:
+                record_sensor_error(traceback.format_exc().splitlines()[-1])
                 log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
@@ -363,14 +375,90 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
+        runtime.register_thread(sender)
 
 
 def stop():
     global sender
-    if sender is not None:
-       sender.stop()
-       sender.join(15)
-       sender = None 
+    worker = sender
+    if worker is not None:
+       worker.stop()
+       worker.join(5)
+       if sender is worker and not worker.is_alive():
+          sender = None
+
+
+def record_sensor_success():
+    with health_lock:
+        health_state['last_sample'] = time.time()
+        health_state['last_error_message'] = ''
+
+
+def record_sensor_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return configured sensor, worker and latest sample state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_alive = sender is not None and sender.is_alive()
+    dht_enabled = bool(plugin_options['enable_dht'])
+    ds_indexes = DS18B20_active_indexes()
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('DHT sensor'): _('Enabled') if dht_enabled else _('Disabled'),
+        _('DS18B20 sensors'): len(ds_indexes),
+        _('Last successful sample'): (
+            datetime_string(time.localtime(state['last_sample']))
+            if state['last_sample'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not plugin_options['enabled']:
+        return {
+            'status': 'unknown',
+            'summary': _('Air temperature monitoring is disabled.'),
+            'details': details,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('Air temperature worker is stopped.'),
+            'details': details,
+        }
+    if not dht_enabled and not ds_indexes:
+        return {
+            'status': 'warning',
+            'summary': _('No temperature sensor is enabled.'),
+            'details': details,
+        }
+    if ds_indexes and importlib.util.find_spec('smbus') is None:
+        return {
+            'status': 'error',
+            'summary': _('SMBus is required for enabled DS18B20 sensors.'),
+            'details': details,
+        }
+    if state['last_error'] > state['last_sample']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_sample']:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first sensor sample.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Temperature sensors are responding.'),
+        'details': details,
+    }
 
 
 def try_io(call, tries=10):
@@ -537,6 +625,7 @@ def DS18B20_log_read_problem(message):
     if now - DS18B20_LAST_LOG_TS >= DS18B20_LOG_THROTTLE:
        DS18B20_LAST_LOG_TS = now
        log.debug(NAME, message)
+    record_sensor_error(message)
 
 
 def DS18B20_read_string_data():
