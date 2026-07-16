@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Weather-based Rain Delay<br/>
+Updated Weather-based Rain Delay for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring OSPy weather, Netatmo-network and rain-delay control access, registers its monitor with the shared runtime, closes Netatmo HTTP responses, removes its own rain block during bounded shutdown, keeps credentials out of diagnostics, and reports source, checks, rain detection, active delay and errors through `health()`.
+
 (Martin Pihrt) - Water Meter<br/>
 Updated Water Meter for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C addresses 0x50/0x51 and local settings access, registers its PCF8583 worker with the shared runtime, closes the I²C handle after errors and during bounded shutdown, and reports worker, counter, address, flow, total, latest reading and errors through `health()`.
 

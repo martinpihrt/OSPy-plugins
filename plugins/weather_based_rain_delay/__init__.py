@@ -2,7 +2,7 @@
 # first author: Martin Pihrt
 __author__ = u'Vaclav Hrabe' # Add netatmo function 
 
-from threading import Thread, Event
+from threading import Thread, Lock
 import traceback
 import json
 import time
@@ -13,7 +13,7 @@ from ospy.log import log
 from ospy.options import options, rain_blocks
 from ospy.webpages import ProtectedPage
 from ospy.weather import weather
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from time import strftime
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
@@ -47,6 +47,15 @@ plugin_options = PluginOptions(
         'use_cleanup': False,
         'use_footer': False
     })
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_check': 0,
+    'last_rain': 0,
+    'source': '',
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -55,11 +64,12 @@ class weather_to_delay(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -75,6 +85,9 @@ class weather_to_delay(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -109,11 +122,16 @@ class weather_to_delay(Thread):
                     log.clear(NAME)
                     log.info(NAME, _(u'Checking rain status') + '...')
                     current_data = weather.get_current_data()
+                    with health_lock:
+                        health_state['last_check'] = time.time()
+                        health_state['source'] = 'Netatmo' if plugin_options['use_netatmo'] else 'OSPy weather'
 
                     delaytime = int(plugin_options['delay_duration'])   
                     delaytimeAtmo = int(plugin_options['netatmo_interval'])*60                
 
                     if zrain > 0:
+                        with health_lock:
+                            health_state['last_rain'] = time.time()
                         log.info(NAME, _(u'Netatmo detected Rain') + ': %.1f ' % zrain + _(u'mm') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') + '.')
                         tempText = ""
                         tempText += _(u'Netatmo detected Rain') + u' %.1f ' % zrain + _(u'mm') + '. ' + _(u'Adding delay of') + ' ' + str(delaytime) + ' ' + _(u'hours') 
@@ -129,6 +147,8 @@ class weather_to_delay(Thread):
                         tempText = ''
                         if 'precipitation' in current_data:
                             if current_data['precipitation'] > 0.75:
+                                with health_lock:
+                                    health_state['last_rain'] = time.time()
                                 log.info(NAME, _(u'Weather detected Rain') + '. ' + _(u'Adding delay of') + ' ' + str(plugin_options['delay_duration']) + '.')
                                 rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(plugin_options['delay_duration']))
                                 stop_onrain()
@@ -180,8 +200,10 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
+        runtime.request_stop()
         checker.join(15)
-        checker = None
+        if not checker.is_alive():
+            checker = None
     if NAME in rain_blocks:
         del rain_blocks[NAME]
 
@@ -501,7 +523,8 @@ def postRequest(url, params, json_resp=True, body_size=65535):
     req = urllib.request.Request(url)
     req.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
     params = urllib.parse.urlencode(params).encode('utf-8')
-    resp = urllib.request.urlopen(req, params, timeout=NETATMO_TIMEOUT).read(body_size).decode("utf-8")
+    with urllib.request.urlopen(req, params, timeout=NETATMO_TIMEOUT) as response:
+        resp = response.read(body_size).decode("utf-8")
         
     if json_resp:
         return json.loads(resp)
@@ -541,3 +564,41 @@ def getStationMinMaxTH(station=None, module=None):
         else : result = [lastD[mname]['Temperature'], lastD[mname]['Humidity']]
         result.extend(devList.MinMaxTH(station, mname))
     return result
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = checker is not None and checker.is_alive()
+    with health_lock:
+        state = dict(health_state)
+    block_end = rain_blocks.get(NAME)
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(plugin_options.get('enabled', False)),
+        'source': state['source'],
+        'netatmo_enabled': bool(plugin_options.get('use_netatmo', False)),
+        'netatmo_credentials': all(bool(plugin_options.get(key)) for key in
+                                   ('netatmo_id', 'netatmo_secret', 'netatmo_user', 'netatmo_pass')),
+        'rain_delay_until': block_end.isoformat() if block_end else '',
+        'last_check': state['last_check'],
+        'last_rain': state['last_rain'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+    if not worker_alive:
+        status = 'error'
+        summary = _('Weather-based rain delay worker is not running.')
+    elif not plugin_options.get('enabled', False):
+        status = 'unknown'
+        summary = _('Weather-based rain delay is disabled.')
+    elif plugin_options.get('use_netatmo', False) and not details['netatmo_credentials']:
+        status = 'warning'
+        summary = _('Netatmo credentials are incomplete.')
+    elif state['last_error'] and state['last_error'] > state['last_check']:
+        status = 'warning'
+        summary = _('Weather-based rain delay reported an error.')
+    else:
+        status = 'ok'
+        summary = _('Weather-based rain delay is monitoring conditions.')
+    return {'status': status, 'summary': summary, 'details': details}

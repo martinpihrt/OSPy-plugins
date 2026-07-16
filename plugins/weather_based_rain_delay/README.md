@@ -50,6 +50,8 @@ This plugin checked weather forecast.
 When weather-based rain delay is enabled, the weather will be checked for rain every hour.  
 If the weather reports any condition suggesting rain, a rain delay is automatically issued using the below set delay duration.
 
+The plug-in includes a manifest declaring weather/Netatmo network and rain-delay control access, uses the shared OSPy worker lifecycle, closes Netatmo HTTP responses, and reports data source, checks, active delay and errors through the Diagnostics health interface.
+
 Plugin setup
 -----------
 
