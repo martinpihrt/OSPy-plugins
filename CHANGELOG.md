@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Voice Station<br/>
+Updated Voice Station for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring audio-output, local sound-file and subprocess access, registers its playback worker with the shared runtime, disconnects station signals and terminates active audio commands during bounded shutdown, and reports worker, queue, playback, station-event and error state through `health()`.
+
 (Martin Pihrt) - Voice Notification<br/>
 Updated Voice Notification for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring optional Pygame, audio-output, local sound-file and mixer-command access, registers its playback worker with the shared runtime, stops active playback during bounded shutdown, and reports worker, Pygame, sound queue, latest cycle, playback and errors through `health()`.
 

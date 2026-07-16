@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "voice_station",
+  "name": "Voice Station",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "permissions": [
+    "files",
+    "subprocess"
+  ],
+  "hardware": {
+    "optional": [
+      "audio-output"
+    ]
+  }
+}

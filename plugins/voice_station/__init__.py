@@ -4,7 +4,7 @@ __author__ = 'Martin Pihrt' # www.pihrt.com
 # System imports
 import datetime
 import time
-from threading import Thread, Event
+from threading import Thread, Lock
 import traceback
 import json
 import os
@@ -17,7 +17,7 @@ from ospy.options import options
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
 from ospy import helpers
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.helpers import verify_csrf
 
 from blinker import signal
@@ -44,6 +44,17 @@ plugin_options = PluginOptions(
         'sounds_inserted': [],            # date time inserted songs (sorted by last upload)
         'sounds_size': [],                # songs size in bytes
     })
+runtime = get_runtime()
+process_lock = Lock()
+health_lock = Lock()
+active_process = None
+health_state = {
+    'last_cycle': 0,
+    'last_playback': 0,
+    'last_station_event': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 ################################################################################
@@ -53,11 +64,12 @@ class VoiceChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -73,6 +85,9 @@ class VoiceChecker(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -92,15 +107,21 @@ class VoiceChecker(Thread):
 
         read_folder()                             # read name from file in data folder and add to plugin_options "sound"
 
-        while not self._stop_event.is_set():
-            try: 
-                if plugin_options['enabled']:     # plugin is enabled
-                    play_voice()
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    if plugin_options['enabled']:     # plugin is enabled
+                        play_voice()
+                    with health_lock:
+                        health_state['last_cycle'] = time.time()
                     self._sleep(1)
 
-            except Exception:
-                self._log_problem(_('Voice Station plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(60)
+                except Exception:
+                    self._log_problem(_('Voice Station plug-in') + ':\n' + traceback.format_exc())
+                    self._sleep(60)
+        finally:
+            station_on.disconnect(notify_station_on)
+            station_off.disconnect(notify_station_off)
 
 checker = None
 
@@ -118,6 +139,8 @@ def notify_station_on(name, **kw):
                 st_nr = safe_int(kw.get("txt"), -1)
                 if st_nr < 0 or st_nr >= options.output_count:
                     return
+                with health_lock:
+                    health_state['last_station_event'] = time.time()
                 log.clear(NAME)
                 log.info(NAME, datetime_string() + ': ' + _('Stations {} ON').format(str(st_nr + 1)))
                 data = {}
@@ -144,6 +167,8 @@ def notify_station_off(name, **kw):
                 st_nr = safe_int(kw.get("txt"), -1)
                 if st_nr < 0 or st_nr >= options.output_count:
                     return
+                with health_lock:
+                    health_state['last_station_event'] = time.time()
                 log.clear(NAME)
                 log.info(NAME, datetime_string() + ': ' + _('Stations {} OFF').format(str(st_nr + 1)))
                 data = {}
@@ -169,8 +194,11 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
+        runtime.request_stop()
+        terminate_active_process()
         checker.join(15)
-        checker = None
+        if not checker.is_alive():
+            checker = None
 
 
 def safe_int(value, default=0):
@@ -256,29 +284,66 @@ def update_song_queue(data):
     write_song_queue(song_queue)
 
 
+def run_audio_command(command, timeout):
+    global active_process
+    process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    with process_lock:
+        active_process = process
+    try:
+        deadline = time.time() + timeout
+        while process.poll() is None:
+            if runtime.stop_event.wait(0.1):
+                process.terminate()
+                try:
+                    process.wait(3)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                return False
+            if time.time() >= deadline:
+                process.kill()
+                raise subprocess.TimeoutExpired(command, timeout)
+        if process.returncode:
+            raise subprocess.CalledProcessError(process.returncode, command)
+        return True
+    finally:
+        with process_lock:
+            if active_process is process:
+                active_process = None
+
+
+def terminate_active_process():
+    with process_lock:
+        process = active_process
+    if process is not None and process.poll() is None:
+        process.terminate()
+
+
 def play_audio(path):
     read_folder()
     if os.path.exists(path):
         if path.endswith('.wav'):
             log.info(NAME, datetime_string() + ': ' + _('Playing WAV file.'))
             log.info(NAME, datetime_string() + ': ' + _('Set master volume to {}%').format(str(plugin_options['volume'])))
-            subprocess.run(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])], timeout=10)
+            if not run_audio_command(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])], 10):
+                return
             cmd = ["aplay", path]
-            subprocess.run(cmd, timeout=COMMAND_TIMEOUT)
+            run_audio_command(cmd, COMMAND_TIMEOUT)
         elif path.endswith('.mp3'):
             wav_path = os.path.splitext(path)[0] + '.wav'
             if not os.path.exists(wav_path):
                 log.info(NAME, datetime_string() + ': ' + _('Converting mp3 to wav.'))
                 ffmpeg_cmd = ["ffmpeg", "-i", path, wav_path]
-                subprocess.run(ffmpeg_cmd, timeout=COMMAND_TIMEOUT)
+                if not run_audio_command(ffmpeg_cmd, COMMAND_TIMEOUT):
+                    return
             else:
                 log.info(NAME, datetime_string() + ': ' + _('WAV file already exists, skipping conversion.'))
 
             log.info(NAME, datetime_string() + ': ' + _('Playing WAV file.'))
             log.info(NAME, datetime_string() + ': ' + _('Set master volume to {}%').format(str(plugin_options['volume'])))
-            subprocess.run(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])], timeout=10)
+            if not run_audio_command(["/usr/bin/amixer", "sset", "PCM,0", "{}%".format(plugin_options['volume'])], 10):
+                return
             cmd = ["aplay", wav_path]
-            subprocess.run(cmd, timeout=COMMAND_TIMEOUT)
+            run_audio_command(cmd, COMMAND_TIMEOUT)
         else:
             log.info(NAME, datetime_string() + ': ' + _('File {} not suported.').format(path))
     else:
@@ -313,6 +378,8 @@ def play_voice():
             log.info(NAME, datetime_string() + ': ' + _('Stopping.'))
             del song_queue[0]                   # delete song queue in file
             write_song_queue(song_queue)        # save to file after deleting an item
+            with health_lock:
+                health_state['last_playback'] = time.time()
 
     except Exception:
         log.debug(NAME, _('Voice Station plug-in') + ':\n' + traceback.format_exc())
@@ -491,3 +558,40 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = checker is not None and checker.is_alive()
+    with process_lock:
+        playing = active_process is not None and active_process.poll() is None
+    with health_lock:
+        state = dict(health_state)
+
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(plugin_options.get('enabled', False)),
+        'sound_files': len(plugin_options.get('sounds', [])),
+        'queued_sounds': len(read_song_queue()),
+        'playing': playing,
+        'last_cycle': state['last_cycle'],
+        'last_playback': state['last_playback'],
+        'last_station_event': state['last_station_event'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+
+    if not worker_alive:
+        status = 'error'
+        summary = _('Voice Station worker is not running.')
+    elif not plugin_options.get('enabled', False):
+        status = 'unknown'
+        summary = _('Voice Station is disabled.')
+    elif state['last_error'] and state['last_error'] > state['last_cycle']:
+        status = 'warning'
+        summary = _('Voice Station reported an error.')
+    else:
+        status = 'ok'
+        summary = _('Voice Station is ready.')
+    return {'status': status, 'summary': summary, 'details': details}
