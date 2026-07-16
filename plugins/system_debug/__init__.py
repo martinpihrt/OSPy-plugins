@@ -6,6 +6,7 @@ from ospy.webpages import ProtectedPage
 from ospy import log
 from ospy import helpers
 from ospy.helpers import verify_csrf
+from ospy.options import options
 
 from plugins import plugin_url
 from plugins import PluginOptions
@@ -40,7 +41,41 @@ def start():
     pass
 
 
-stop = start
+def stop():
+    pass
+
+
+def health():
+    """Return debug-log configuration and file availability."""
+    log_exists = os.path.isfile(log.EVENT_FILE)
+    details = {
+        _('Debug logging'): _('Enabled') if options.debug_log else _('Disabled'),
+        _('Log file'): os.path.abspath(log.EVENT_FILE),
+    }
+    if log_exists:
+        try:
+            details[_('Log file size')] = '{} B'.format(
+                os.path.getsize(log.EVENT_FILE)
+            )
+        except OSError:
+            log_exists = False
+    if not options.debug_log:
+        return {
+            'status': 'unknown',
+            'summary': _('Debug logging is disabled.'),
+            'details': details,
+        }
+    if not log_exists:
+        return {
+            'status': 'warning',
+            'summary': _('Debug log file is not available yet.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Debug log file is available.'),
+        'details': details,
+    }
 
 def tail(f, lines=20):
     total_lines_wanted = lines

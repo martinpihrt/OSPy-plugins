@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - System Debug Information<br/>
+Updated System Debug Information for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest, declares debug-log file access, provides an explicit lifecycle stop function, and reports debug logging and log-file availability through `health()`.
+
 (Martin Pihrt) - System Information<br/>
 Updated System Information for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest, declares its optional Linux and I2C data sources and permissions, provides an explicit lifecycle stop function, and reports optional system-information source availability through `health()`.
 

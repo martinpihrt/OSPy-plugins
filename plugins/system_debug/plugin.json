@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "system_debug",
+  "name": "System Debug Information",
+  "menu": "Package: System Debug Information",
+  "version": "1.0.0",
+  "description": "Displays, downloads and clears the OSPy technical debug log.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/system_debug",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "permissions": [
+    "files"
+  ]
+}

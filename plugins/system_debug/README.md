@@ -20,3 +20,7 @@ Event type
 * error message  
 
 For download event-log file as txt click on to txt. 
+
+The plug-in includes an OSPy `plugin.json` manifest and implements `health()`.
+Diagnostics reports whether debug logging is enabled and whether its log file
+is available.
