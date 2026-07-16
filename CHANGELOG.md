@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Real Time and NTP time<br/>
+Updated Real Time and NTP time for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C address 0x68, NTP network and system-time subprocess access, registers its hourly synchronization worker with the shared runtime, observes the common stop request with bounded shutdown, and reports worker, NTP configuration, latest NTP and RTC values, synchronization cycle and errors through `health()`.
+
 (Martin Pihrt) - Proto<br/>
 Updated the Proto example for the new OSPy plug-in interfaces. It now includes a minimal `plugin.json` manifest, registers its example worker with the shared runtime, observes the common stop request with bounded shutdown, documents the manifest in the example structure, and demonstrates worker, counter, latest-cycle and error reporting through `health()`.
 

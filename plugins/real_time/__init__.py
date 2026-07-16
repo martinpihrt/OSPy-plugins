@@ -10,7 +10,7 @@ import time
 
 from . import rtc_DS1307
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import traceback
 import json
@@ -19,7 +19,7 @@ import web
 from ospy.log import log
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 
 
 NAME = 'Real Time and NTP time'
@@ -36,6 +36,15 @@ plugin_options = PluginOptions(
         'ntp_server_two': 'tak.cesnet.cz',       # Secondary
         'ntp_port': 123
     })
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_ntp_time': None,
+    'last_rtc_time': None,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 ################################################################################
@@ -45,10 +54,11 @@ class RealTimeChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -120,6 +130,11 @@ class RealTimeChecker(Thread):
                        except:
                           log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
 
+                    with health_lock:
+                        health_state['last_cycle'] = time.time()
+                        health_state['last_ntp_time'] = ntp_time
+                        health_state['last_rtc_time'] = rtc_time
+                        health_state['last_error_message'] = ''
                     log.info(NAME, _('Waiting one hour for the next update.'))
                     self._sleep(3600)
 
@@ -130,6 +145,10 @@ class RealTimeChecker(Thread):
                         dis_text = False
 
             except Exception:
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = message
                 log.error(NAME, _('Real Time plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
@@ -208,7 +227,77 @@ def stop():
     if checker is not None:
         checker.stop()
         checker.join(15)
-        checker = None
+        if checker.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            checker = None
+
+
+def health():
+    """Return RTC, NTP and worker state for diagnostics."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = checker is not None and checker.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Time synchronization enabled'): _('Yes') if plugin_options['enabled'] else _('No'),
+        _('NTP enabled'): _('Yes') if plugin_options['use_ntp'] else _('No'),
+        _('Primary NTP server'): plugin_options['ntp_server'] or _('Not configured'),
+        _('Secondary NTP server'): plugin_options['ntp_server_two'] or _('Not configured'),
+        _('Last NTP time'): (
+            str(state['last_ntp_time']) if state['last_ntp_time'] else _('Not available')
+        ),
+        _('Last RTC time'): (
+            str(state['last_rtc_time']) if state['last_rtc_time'] else _('Not available')
+        ),
+        _('Last successful synchronization cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Real Time worker is not running.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not plugin_options['enabled']:
+        return {
+            'status': 'unknown',
+            'summary': _('Time synchronization is disabled.'),
+            'details': details,
+        }
+    if not state['last_cycle']:
+        return {
+            'status': 'unknown',
+            'summary': _('Real Time is waiting for its first synchronization cycle.'),
+            'details': details,
+        }
+    if plugin_options['use_ntp'] and state['last_ntp_time'] is None:
+        return {
+            'status': 'warning',
+            'summary': _('NTP time is not available.'),
+            'details': details,
+        }
+    if state['last_rtc_time'] is None:
+        return {
+            'status': 'warning',
+            'summary': _('RTC time is not available.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Real Time synchronization is responding.'),
+        'details': details,
+    }
 
 ################################################################################
 # Web pages:                                                                   #

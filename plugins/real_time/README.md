@@ -3,6 +3,10 @@ RTC (real time) and NTP time synchronization Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, NTP
+configuration, latest NTP and RTC values, synchronization cycle and errors
+through the OSPy system health interface.
+
 When is enabled synchronization RTC Time and NTP time, system time adjusted every hour from NTP server (is posible) or RTC time (if exists). Time from NTP server is saved to real time DS 1307 (on I2C bus 0x68) as HW time.  
 
 RTC Clocks:  
