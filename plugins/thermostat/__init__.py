@@ -4,7 +4,7 @@ __author__ = 'Martin Pihrt'
 import json
 import time
 import traceback
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
@@ -14,7 +14,7 @@ from ospy.options import options
 from ospy.programs import programs
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage, showInFooter, clear_plugin_runtime_data
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 
 try:
     from ospy.sensors import sensors
@@ -87,6 +87,13 @@ plugin_options = PluginOptions(
         'zones': [dict(zone) for zone in DEFAULT_ZONES],
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 def _safe_int(value, default=0):
@@ -381,12 +388,14 @@ class ThermostatChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self.zone_state = ['unknown'] * THERMOSTAT_COUNT
+        self.zone_temperatures = [None] * THERMOSTAT_COUNT
         self.footer = None
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -413,6 +422,9 @@ class ThermostatChecker(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -441,12 +453,14 @@ class ThermostatChecker(Thread):
                 for index, zone in enumerate(plugin_options['zones']):
                     if not zone['enabled']:
                         self.zone_state[index] = 'disabled'
+                        self.zone_temperatures[index] = None
                         continue
 
                     if zone['low_temp'] >= zone['high_temp']:
                         if self.zone_state[index] != 'setup_error':
                             log.info(NAME, datetime_string() + ' ' + _('{} has invalid temperature limits. Low temperature must be lower than high temperature.').format(zone['name']))
                         self.zone_state[index] = 'setup_error'
+                        self.zone_temperatures[index] = None
                         footer_parts.append('{} {}'.format(zone['name'], _('setup error')))
                         continue
 
@@ -455,8 +469,10 @@ class ThermostatChecker(Thread):
                         if self.zone_state[index] != 'missing':
                             log.info(NAME, datetime_string() + ' ' + _('{} temperature is not available.').format(zone['name']))
                         self.zone_state[index] = 'missing'
+                        self.zone_temperatures[index] = None
                         footer_parts.append('{} ---'.format(zone['name']))
                         continue
+                    self.zone_temperatures[index] = temperature
 
                     new_state = self.zone_state[index]
                     action = None
@@ -491,6 +507,9 @@ class ThermostatChecker(Thread):
                 else:
                     self.update_footer(_('No active thermostat'))
 
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
+                    health_state['last_error_message'] = ''
                 self._sleep(_clamp(_safe_int(plugin_options.get('check_interval'), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL))
             except Exception:
                 self._log_problem(_('Thermostat plug-in') + ':\n' + traceback.format_exc())
@@ -511,8 +530,90 @@ def stop():
     if checker is not None:
         checker.stop()
         checker.join(15)
-        checker = None
+        if checker.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            checker = None
     clear_plugin_runtime_data('thermostat')
+
+
+def health():
+    """Return thermostat zones, temperature sources and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = checker is not None and checker.is_alive()
+    zones = _normalize_zones()
+    enabled_indexes = [index for index, zone in enumerate(zones) if zone['enabled']]
+    zone_states = checker.zone_state if checker is not None else ['unknown'] * THERMOSTAT_COUNT
+    temperatures = (
+        checker.zone_temperatures if checker is not None else [None] * THERMOSTAT_COUNT
+    )
+    missing = sum(
+        1 for index in enabled_indexes
+        if zone_states[index] in ('missing', 'setup_error')
+    )
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Thermostat enabled'): _('Yes') if plugin_options['enabled'] else _('No'),
+        _('Enabled zones'): len(enabled_indexes),
+        _('Zones with unavailable temperature or setup error'): missing,
+        _('Active program actions'): sum(
+            1 for index in enabled_indexes
+            if program_is_active(zones[index]['program'])
+        ),
+        _('Last successful cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+    }
+    for index in enabled_indexes:
+        details[zones[index]['name']] = (
+            '{:.1f} C ({})'.format(temperatures[index], zone_states[index])
+            if temperatures[index] is not None else zone_states[index]
+        )
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Thermostat worker is not running.'),
+            'details': details,
+        }
+    if not plugin_options['enabled']:
+        return {
+            'status': 'unknown',
+            'summary': _('Thermostat is disabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not enabled_indexes:
+        return {
+            'status': 'warning',
+            'summary': _('No thermostat zone is enabled.'),
+            'details': details,
+        }
+    if missing:
+        return {
+            'status': 'warning',
+            'summary': _('One or more thermostat zones cannot read a valid temperature.'),
+            'details': details,
+        }
+    if not state['last_cycle']:
+        return {
+            'status': 'unknown',
+            'summary': _('Thermostat is waiting for its first control cycle.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Thermostat is responding.'),
+        'details': details,
+    }
 
 
 def template_data():

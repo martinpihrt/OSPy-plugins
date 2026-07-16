@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Thermostat<br/>
+Updated Thermostat for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring temperature-source and program/station-control access, registers its control worker with the shared runtime, observes the common stop request with bounded shutdown, preserves the ownership-safe existing program-control behavior, and reports worker, enabled zones, current temperatures, unavailable sources or setup errors, active program actions, latest cycle and errors through `health()`.
+
 (Martin Pihrt) - Temperature Switch<br/>
 Updated Temperature Switch for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring temperature-source and station-control requirements, registers its regulation worker with the shared runtime, observes the common stop request with bounded shutdown, releases only its own A/B/C station runs during stop, and reports worker, enabled channels, source availability, configured probes, valid readings, active runs and errors through `health()`.
 

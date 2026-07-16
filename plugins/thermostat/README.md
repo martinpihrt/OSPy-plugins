@@ -3,6 +3,10 @@ Thermostat Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, enabled
+zones, current temperatures, unavailable sources or setup errors, active program
+actions, latest cycle and errors through the OSPy system health interface.
+
 The thermostat plugin checks selected temperature sources and starts or stops selected OSPy programs when the configured temperature limits are reached.
 
 Each thermostat has a low temperature, a high temperature and one selected program. The low and high limits create hysteresis. For example, low 22.4 C and high 22.6 C means that no action is repeated while the temperature stays between these values.
