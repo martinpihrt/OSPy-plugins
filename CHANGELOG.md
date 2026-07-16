@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Remote FTP Control<br/>
+Updated Remote FTP Control for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring FTP network, ramdisk/file and scheduler-control access, registers its polling worker with the shared runtime, closes an active FTP connection before bounded shutdown, keeps credentials out of diagnostics, and reports worker, server, directory, connection, latest command, successful transfer and errors through `health()`.
+
 (Martin Pihrt) - Direct 16 Relay Outputs<br/>
 Updated Direct 16 Relay Outputs for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring RPi.GPIO, Raspberry Pi and all sixteen physical header pins, registers its output worker with the shared runtime, observes the common stop request with bounded shutdown, drives configured outputs to their inactive level during stop, and reports worker, configured and active relays, GPIO readiness, trigger level and errors through `health()`.
 

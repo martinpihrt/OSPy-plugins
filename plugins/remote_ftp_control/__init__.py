@@ -7,12 +7,12 @@ import os
 import web
 
 from ftplib import FTP     
-from threading import Thread, Event
+from threading import Thread, Lock
 
 from ospy import helpers
 from ospy import version
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision, datetime_string, uptime, verify_csrf
 from ospy.stations import stations
@@ -42,6 +42,15 @@ plugin_options = PluginOptions(
      'loc':        '/',
      }
 )       
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'connected': False,
+    'last_transfer': 0,
+    'last_command': '',
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 ################################################################################
@@ -52,7 +61,7 @@ class PluginSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         
         self.bus = None
         self.ftp = None
@@ -60,6 +69,7 @@ class PluginSender(Thread):
         
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -75,6 +85,10 @@ class PluginSender(Thread):
 
     def log_problem(self, message):
         now = time.time()
+        error_message = traceback.format_exc().splitlines()[-1]
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = error_message
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.info(NAME, message + ':\n' + traceback.format_exc())
             self._last_error_log = now
@@ -89,6 +103,8 @@ class PluginSender(Thread):
                 except Exception:
                     pass
             self.ftp = None
+        with health_lock:
+            health_state['connected'] = False
 
     def run(self):
         log.clear(NAME)    
@@ -129,6 +145,8 @@ class PluginSender(Thread):
                     log.clear(NAME)
                     try:
                         self.ftp = FTP(plugin_options['ftpaddress'], plugin_options['ftpname'], plugin_options['ftppass'], timeout=FTP_TIMEOUT)
+                        with health_lock:
+                            health_state['connected'] = True
                         log.info(NAME, _('FTP connection established.')) 
 
                         FTP_download(self)  # downloaded from server data.txt and save to ramdisk
@@ -162,8 +180,62 @@ def stop():
     global plugin_sender
     if plugin_sender is not None:
         plugin_sender.stop()
+        plugin_sender.close_ftp()
         plugin_sender.join(15)
-        plugin_sender = None
+        if plugin_sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            plugin_sender = None
+
+
+def health():
+    """Return FTP connection, transfer and worker state without credentials."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = plugin_sender is not None and plugin_sender.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Remote control enabled'): _('Yes') if plugin_options['use'] else _('No'),
+        _('FTP server'): plugin_options['ftpaddress'] or _('Not configured'),
+        _('Remote directory'): plugin_options['loc'],
+        _('Connected'): _('Yes') if state['connected'] else _('No'),
+        _('Last successful transfer'): (
+            datetime_string(time.localtime(state['last_transfer']))
+            if state['last_transfer'] else _('Not available')
+        ),
+        _('Last command'): state['last_command'] or _('Not available'),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Remote FTP Control worker is not running.'),
+            'details': details,
+        }
+    if not plugin_options['use']:
+        return {
+            'status': 'unknown',
+            'summary': _('Remote FTP control is disabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_transfer']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_transfer']:
+        return {
+            'status': 'unknown',
+            'summary': _('Remote FTP Control is waiting for its first transfer.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Remote FTP Control is responding.'),
+        'details': details,
+    }
 
 
 def normalize_options(values):
@@ -192,6 +264,8 @@ def FTP_download(self):
           self.ftp.retrbinary("RETR " + plugin_options['loc'] + "data.txt", fs.write)
         with open(data_path, 'r') as fs:
           obsahaut = fs.readline().strip()
+        with health_lock:
+          health_state['last_command'] = obsahaut
 
         log.debug(NAME, _('FTP received data from file data.txt') + ': ' + str(obsahaut))
 
@@ -423,6 +497,9 @@ def FTP_upload(self):
       with open(os.path.join(RAMDISK_PATH, 'data.txt'), 'rb') as fs:
         self.ftp.storbinary("STOR " + plugin_options['loc'] + 'data.txt', fs)
       log.info(NAME, _('Data file data.txt has send on to FTP server') + ': ' + str(cas))
+      with health_lock:
+        health_state['last_transfer'] = time.time()
+        health_state['last_error_message'] = ''
 
     except Exception:
       self.log_problem(_('Remote FTP control settings'))

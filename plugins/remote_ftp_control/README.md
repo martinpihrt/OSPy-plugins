@@ -1,7 +1,11 @@
 Remote FTP Control Readme
 ====  
 
-Old extension for Python 2 (for future using in Python 3 not patched and suported)
+This legacy remote-control plug-in is available for Python 3.
+
+It includes a `plugin.json` manifest and reports its worker, non-secret FTP
+configuration, connection state, latest command, transfer and errors through the
+OSPy system health interface.
 
 This plug-in makes downloading and uploading text file on the remotely via FTP for remotely control OSPy system every 60 seconds. When you first start the plug-in detects whether ramdisk is present, otherwise it creates and writes fstab.
 If plug-in says: "restart your linux os system!" You must manual reboot os via options/reboot os. This plugin required Webserver with PHP and FTP.
