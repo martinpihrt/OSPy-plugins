@@ -2,7 +2,6 @@
 __author__ = 'Martin Pihrt'
 
 import json
-import time
 import traceback
 import web
 import subprocess
@@ -16,7 +15,6 @@ from ospy.options import options
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers 
 from ospy.log import log
-from threading import Thread, Event
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 
@@ -33,53 +31,12 @@ plugin_options = PluginOptions(
     }
 )
 
-
-################################################################################
-# Main function loop:                                                          #
-################################################################################
-
-class Sender(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-        self.daemon = True
-        self._stop_event = Event()
-
-        self.status = {}
-
-        self._sleep_time = 0
-        self.start()
-
-    def stop(self):
-        self._stop_event.set()
-
-    def update(self):
-        self._sleep_time = 0
-
-    def _sleep(self, secs):
-        self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop_event.is_set():
-            time.sleep(1)
-            self._sleep_time -= 1
-
-    def run(self):
-        if plugin_options['use_control']:  # if plugin is enabled
-            log.clear(NAME)
-            log.info(NAME, _('CLI Control is enabled.'))
-            try:
-                station_on = signal('station_on')
-                station_on.connect(on_station_on)
-                station_off = signal('station_off')
-                station_off.connect(on_station_off)
-                station_clear = signal('station_clear')
-                station_clear.connect(on_station_clear)
-            except Exception:
-                log.error(NAME, _('CLI Control plug-in') + ':\n' + traceback.format_exc())
-                pass
-        else:
-            log.clear(NAME)
-            log.info(NAME, _('CLI Control is disabled.'))
-
-sender = None
+connected_signals = set()
+command_state = {
+    'last_command': '',
+    'last_result': '',
+    'last_run': '',
+}
 
 ################################################################################
 # Helper functions:                                                            #
@@ -87,21 +44,75 @@ sender = None
 
 ### start ###
 def start():
-    global sender
-    if sender is None:
-        sender = Sender()
+    handlers = {
+        'station_on': on_station_on,
+        'station_off': on_station_off,
+        'station_clear': on_station_clear,
+    }
+    for signal_name, handler in handlers.items():
+        signal(signal_name).connect(handler, weak=False)
+        connected_signals.add(signal_name)
+    log.clear(NAME)
+    log.info(
+        NAME,
+        _('CLI Control is enabled.')
+        if plugin_options['use_control'] else _('CLI Control is disabled.')
+    )
  
 ### stop ###
 def stop():
-    global sender
-    if sender is not None:
-        sender.stop()
-        sender.join(15)
-        sender = None
+    handlers = {
+        'station_on': on_station_on,
+        'station_off': on_station_off,
+        'station_clear': on_station_clear,
+    }
+    for signal_name, handler in handlers.items():
+        signal(signal_name).disconnect(handler)
+        connected_signals.discard(signal_name)
+
+
+def health():
+    """Return signal registration, command configuration and last result."""
+    configured = sum(
+        1 for command in list(plugin_options['on']) + list(plugin_options['off'])
+        if str(command).strip()
+    )
+    details = {
+        _('Registered signals'): '{}/3'.format(len(connected_signals)),
+        _('Configured commands'): configured,
+        _('Last command'): command_state['last_command'] or _('None'),
+        _('Last result'): command_state['last_result'] or _('Not available'),
+        _('Last run'): command_state['last_run'] or _('Not available'),
+    }
+    if len(connected_signals) != 3:
+        return {
+            'status': 'error',
+            'summary': _('CLI signal receivers are not fully registered.'),
+            'details': details,
+        }
+    if not plugin_options['use_control']:
+        return {
+            'status': 'unknown',
+            'summary': _('CLI Control is disabled.'),
+            'details': details,
+        }
+    if command_state['last_result'] == 'error':
+        return {
+            'status': 'error',
+            'summary': _('The last CLI command failed.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('CLI Control is ready.'),
+        'details': details,
+    }
 
 def run_command(cmd):
     """run command"""
     if plugin_options['use_control']:
+        command_state['last_command'] = str(cmd)
+        command_state['last_run'] = datetime_string()
         try:
             msg_ok =  _('Command OK')
             msg_err = _('Command failed')
@@ -111,14 +122,17 @@ def run_command(cmd):
             output = output.decode('utf-8', errors='replace')
             ret = proc.returncode
             if ret != 0:
+                command_state['last_result'] = 'error'
                 log.error(NAME, msg_err + f" ({ret})\n{output}")
                 if plugin_options['use_log']:
                     update_log(cmd, msg_err + f" ({ret})\n{output}")
             else:
+                command_state['last_result'] = 'ok'
                 log.info(NAME, msg_ok + f" ({ret})\n{output}")
                 if plugin_options['use_log']:
                     update_log(cmd, msg_ok + f" ({ret})\n{output}")
         except subprocess.TimeoutExpired:
+            command_state['last_result'] = 'error'
             proc.kill()
             output, _stderr = proc.communicate()
             output = output.decode('utf-8', errors='replace')
@@ -127,6 +141,7 @@ def run_command(cmd):
             if plugin_options['use_log']:
                 update_log(cmd, msg_err + ' (timeout)\n' + output)
         except:
+            command_state['last_result'] = 'error'
             log.error(NAME, datetime_string() + ':\n' + traceback.format_exc())
             pass
     else:
@@ -238,7 +253,7 @@ class settings_page(ProtectedPage):
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
         state = helpers.get_input(qdict, 'state', False, lambda x: True)
 
-        if sender is not None and 'test' in qdict:
+        if connected_signals and 'test' in qdict:
             verify_csrf(qdict)
             test = qdict['test']
             index = int(test)
@@ -261,13 +276,13 @@ class settings_page(ProtectedPage):
                 else:
                     log.info(NAME, _('No OFF command set for station {}').format(index + 1))
 
-        if sender is not None and delete:
+        if connected_signals and delete:
             verify_csrf(qdict)
             write_log([])
             log.info(NAME, _('Deleted all log files successfully.'))
             raise web.seeother(plugin_url(settings_page), True)
 
-        if sender is not None and show:
+        if connected_signals and show:
             raise web.seeother(plugin_url(log_page), True)
 
         return self.plugin_render.cli_control(plugin_options, log.events(NAME))
@@ -294,9 +309,6 @@ class settings_page(ProtectedPage):
 
         plugin_options.__setitem__('on', commands['on']) 
         plugin_options.__setitem__('off', commands['off'])
-
-        if sender is not None:
-            sender.update()
 
         log.clear(NAME)
         log.info(NAME, _('CLI Control settings updated successfully.'))

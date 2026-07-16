@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - CLI Control<br/>
+Updated CLI Control for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Blinker, file, network, subprocess and system access, removes the unnecessary one-shot startup thread, registers station receivers directly, disconnects them during shutdown, tracks command outcomes, and reports enablement, receiver count, configured commands and the latest result through `health()`.
+
 (Martin Pihrt) - Usage Statistics<br/>
 Updated Usage Statistics for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring file and network access, registers its hourly refresh worker with the shared runtime, uses the common stop signal with bounded shutdown, and reports worker, source URL, record count and latest successful data refresh through `health()`.
 

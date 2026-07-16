@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "cli_control",
+  "name": "CLI Control",
+  "menu": "Package: CLI Control",
+  "version": "1.0.0",
+  "description": "Runs administrator-configured shell commands when OSPy station states change.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/cli_control",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "blinker",
+      "package": "blinker",
+      "required": true
+    }
+  ],
+  "permissions": [
+    "files",
+    "network",
+    "subprocess",
+    "system"
+  ]
+}

@@ -8,6 +8,12 @@ Enter command line commands to be issued when a station is to be started or stop
 For example a command might look like: wget http://xxx.xxx.xxx.xxx/relay1on
 Leave fields blank for any stations not to be controlled from the command line.
 
+The plug-in includes an OSPy `plugin.json` manifest and implements `health()`.
+Station signal receivers are registered directly during startup and disconnected
+during shutdown; no background thread is required. Diagnostics reports whether
+control is enabled, receiver registration, configured command count, and the
+latest command result.
+
 Plugin setup
 -----------
 
