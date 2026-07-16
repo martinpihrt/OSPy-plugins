@@ -3,6 +3,10 @@ Prototype Readme
 
 Tested in Python 3+
 
+The example now includes a `plugin.json` manifest, uses the shared OSPy plug-in
+runtime for its worker, and demonstrates a `health()` report with lifecycle,
+counter, latest cycle and error information.
+
 The proto plugin is designed as a starting point for creating new plugin for OSPy. It does not perform any useful action but contains the basic components necessary for a functioning plugin. More detailed information can be found directly in the plugin on the help page.
 
 The basic structure is as follows:
@@ -14,6 +18,7 @@ The basic structure is as follows:
       + static
       + templates
       + __init__.py
+      + plugin.json
       \ README.md
 
 The static files will be made accessible automatically at the following location:

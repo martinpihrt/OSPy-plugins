@@ -7,9 +7,9 @@ import web                                                       # Framework web
 import json                                                      # For working with json file
 import traceback                                                 # For Errors listing via callback where the event occurred
 import time                                                      # For working with time, see the def _sleep function
-from threading import Thread, Event                              # For use a separate thread in which the plugin is running
+from threading import Thread, Lock                              # For use a separate thread in which the plugin is running
 
-from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.log import log                                         # For events logs printing (debug, error, info)
 from ospy.helpers import datetime_string, verify_csrf            # For using date time in events logs
 from ospy.webpages import ProtectedPage                          # For check user login permissions
@@ -40,6 +40,14 @@ plugin_options = PluginOptions(
         'use_footer': True,                                      # Show data from plugin in footer on home page
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'counter': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -48,9 +56,10 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -106,7 +115,10 @@ class Sender(Thread):
                 if example_counter > 10:
                     example_counter = 0                           # Clear example counter after number 10
 
-
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
+                    health_state['counter'] = example_counter
+                    health_state['last_error_message'] = ''
 
                 now = time.time()
                 if now - last_log >= LOG_INTERVAL:
@@ -116,6 +128,10 @@ class Sender(Thread):
 
             except Exception:                                     # In the event of an error (the try did not turn out correctly), a callback is used to write where the error is
                 now = time.time()
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = now
+                    health_state['last_error_message'] = message
                 if now - last_error_log >= ERROR_LOG_THROTTLE:
                     log.error(NAME, _('Proto plugin') + ':\n' + traceback.format_exc())
                     last_error_log = now
@@ -137,7 +153,51 @@ def stop():                                                       # This functio
     if sender is not None:
         sender.stop()
         sender.join(15)
-        sender = None
+        if sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sender = None
+
+
+def health():
+    """Return example counter and worker state for diagnostics."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Footer enabled'): _('Yes') if plugin_options['use_footer'] else _('No'),
+        _('Example counter'): state['counter'],
+        _('Last successful cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Proto worker is not running.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_cycle']:
+        return {
+            'status': 'unknown',
+            'summary': _('Proto is waiting for its first example cycle.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Proto is responding.'),
+        'details': details,
+    }
 
 
 ################################################################################

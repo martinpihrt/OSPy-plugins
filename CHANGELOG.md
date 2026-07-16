@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Proto<br/>
+Updated the Proto example for the new OSPy plug-in interfaces. It now includes a minimal `plugin.json` manifest, registers its example worker with the shared runtime, observes the common stop request with bounded shutdown, documents the manifest in the example structure, and demonstrates worker, counter, latest-cycle and error reporting through `health()`.
+
 (Martin Pihrt) - Pressurizer<br/>
 Updated Pressurizer for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring scheduler, station and master-relay control, registers its scheduler worker with the shared runtime, observes the common stop request with bounded shutdown, guarantees relay release during stop, and reports worker, scheduler, master station, selected stations, relay state, latest activation and errors through `health()`.
 
