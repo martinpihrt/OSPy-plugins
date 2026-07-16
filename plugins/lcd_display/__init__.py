@@ -11,7 +11,7 @@ import time
 import traceback
 from datetime import datetime
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 from ospy import helpers
@@ -19,7 +19,7 @@ from ospy import version
 from ospy.inputs import inputs
 from ospy.options import options
 from ospy.log import log
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import ASCI_convert, datetime_string, verify_csrf
 from ospy.i2c_guard import i2c_transaction
@@ -34,6 +34,16 @@ blocker_until = 0
 L1web = ''
 L2web = ''
 last_i2c_busy_log = 0
+runtime = get_runtime()
+_health_lock = Lock()
+_health_state = {
+    'started': 0,
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+    'last_error_busy': False,
+    'last_address_found': 0,
+}
 
 NAME = 'LCD Display'
 MENU =  _('Package: LCD Display')
@@ -76,7 +86,7 @@ class LCDSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self.start()
@@ -151,8 +161,10 @@ class LCDSender(Thread):
 
             except Exception as e:
                 if is_i2c_busy_error(e):
+                    record_lcd_error(_('I2C bus is busy.'), busy=True)
                     log_i2c_busy()
                 else:
+                    record_lcd_error(str(e))
                     log.error(NAME, _('LCD display plug-in:') + '\n' + traceback.format_exc())
                 self._sleep(5)
 
@@ -190,14 +202,19 @@ LCD_LAST_REPORT_INDEX = 35
 def start():
     global lcd_sender
     if lcd_sender is None:
+        with _health_lock:
+            _health_state['started'] = time.time()
+            _health_state['last_error_message'] = ''
+            _health_state['last_error_busy'] = False
         lcd_sender = LCDSender()
+        runtime.register_thread(lcd_sender)
 
 
 def stop():
     global lcd_sender
     if lcd_sender is not None:
         lcd_sender.stop()
-        lcd_sender.join(15)
+        lcd_sender.join(5)
         lcd_sender = None
     reset_lcd_cache()
 
@@ -207,6 +224,20 @@ def reset_lcd_cache():
     cached_lcd = None
     cached_lcd_key = None
     last_lcd_lines = None
+
+
+def record_lcd_success():
+    with _health_lock:
+        _health_state['last_success'] = time.time()
+        _health_state['last_error_message'] = ''
+        _health_state['last_error_busy'] = False
+
+
+def record_lcd_error(message, busy=False):
+    with _health_lock:
+        _health_state['last_error'] = time.time()
+        _health_state['last_error_message'] = str(message).splitlines()[-1]
+        _health_state['last_error_busy'] = bool(busy)
 
 
 def block_lcd_updates(seconds=15):
@@ -894,14 +925,18 @@ def find_lcd_address():
                     try_io(lambda: bus.read_byte(addr)) #bus.read_byte(addr) # DF - write_quick doesn't work on BBB
                 log.info(NAME, _('Found {} on address {}').format(pcf_type, hex(addr)))
                 lcd_options['address'] = addr
+                with _health_lock:
+                    _health_state['last_address_found'] = time.time()
                 break
             except Exception:
                 pass
         else:
+            record_lcd_error(_('Could not find any PCF8574 controller.'))
             log.clear(NAME)
             log.warning(NAME, _('Could not find any PCF8574 controller.'))
 
-    except:
+    except Exception:
+        record_lcd_error(_('Could not import smbus.'))
         log.clear(NAME)
         log.warning(NAME, _('Could not import smbus.'))
 
@@ -922,6 +957,8 @@ def update_lcd(line1, line2=None):
     try:
         if max_position > 0 and can_use_hardware_scroll(lcd, line1, line2):
             hardware_scroll_lcd(lcd, line1, line2, max_position)
+            if lcd_options['address'] != 0:
+                record_lcd_success()
             return
         if hasattr(lcd, 'lcd_home'):
             try_io(lambda: lcd.lcd_home())
@@ -941,6 +978,76 @@ def update_lcd(line1, line2=None):
             break
         position += 1
         time.sleep(LCD_SCROLL_DELAY)
+    if lcd_options['address'] != 0:
+        record_lcd_success()
+
+
+def health():
+    """Return LCD and I2C state for OSPy Diagnostics."""
+    with _health_lock:
+        state = dict(_health_state)
+
+    worker_alive = lcd_sender is not None and lcd_sender.is_alive()
+    address = int(lcd_options['address'])
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('I2C address'): hex(address) if address else _('Not found'),
+        _('Display type'): str(lcd_options['hw_PCF8574']),
+    }
+    if state['last_success']:
+        details[_('Last successful update')] = datetime_string(
+            time.localtime(state['last_success'])
+        )
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+
+    updated = max(
+        state['started'],
+        state['last_success'],
+        state['last_error'],
+        state['last_address_found'],
+    )
+    if not lcd_options['use_lcd']:
+        return {
+            'status': 'unknown',
+            'summary': _('LCD display plug-in is disabled.'),
+            'details': details,
+            'updated': updated,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('Stopped'),
+            'details': details,
+            'updated': updated,
+        }
+    if not address:
+        return {
+            'status': 'warning',
+            'summary': _('Could not find any PCF8574 controller.'),
+            'details': details,
+            'updated': updated,
+        }
+    if state['last_error'] > state['last_success']:
+        return {
+            'status': 'warning' if state['last_error_busy'] else 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+            'updated': updated,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first LCD update.'),
+            'details': details,
+            'updated': updated,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('LCD display is responding.'),
+        'details': details,
+        'updated': updated,
+    }
 
 def notify_rebooted(name, **kw):
     ### Reboot Linux HW software ###

@@ -11,6 +11,8 @@ MQTT core
 This MQTT plugin adds an MQTT client to the OSPy daemon for other plugins to use to publish information and or receive commands over MQTT. On this page, the shared client is configured. Having a shared MQTT client simplifies configuration and lowers overhead on the OSPy process, network and broker. 
 This plugin needs paho-mqtt. On Raspberry Pi OS Bookworm and newer, install it from apt with `sudo apt install python3-paho-mqtt`, or use the Install libraries button when it is shown in settings. We can use a public Broker server to test: http://www.hivemq.com/demos/websocket-client/.
 
+The plug-in implements the OSPy `health()` interface. Diagnostics reports whether the dependency is installed, the MQTT function is enabled, the MQTT client is initialized, the broker is connected, and when the last connection, disconnection, publish, or error occurred. Its sender startup thread is registered with the shared OSPy plug-in runtime and responds to the common stop signal.
+
 MQTT manual control
 -----------
 

@@ -10,12 +10,12 @@ import shutil
 import socket
 
 import datetime
-from threading import Thread, Event, Lock
+from threading import Thread, Lock
 
 import web
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.options import options, rain_blocks
 from ospy.helpers import datetime_string, get_cpu_temp, uptime, verify_csrf
@@ -79,6 +79,16 @@ last_status = '-'
 flag_connected = 0
 last_stations = []
 _last_error_log = {}
+_health_lock = Lock()
+_health_state = {
+    'started': 0,
+    'last_connected': 0,
+    'last_disconnected': 0,
+    'last_publish': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
+runtime = get_runtime()
 
 try:
     import paho.mqtt.client as paho
@@ -95,7 +105,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self.client = None
@@ -136,7 +146,11 @@ sender = None
 def start():
     global sender
     if sender is None:
+        with _health_lock:
+            _health_state['started'] = time.time()
+            _health_state['last_error_message'] = ''
         sender = Sender()
+        runtime.register_thread(sender)
 
       
 def stop():
@@ -144,12 +158,15 @@ def stop():
     if sender is not None:
         on_stop()
         sender.stop()
-        sender.join(15)
+        sender.join(5)
         sender = None 
 
 
 def log_mqtt_problem(key, message):
     now = time.time()
+    with _health_lock:
+        _health_state['last_error'] = now
+        _health_state['last_error_message'] = str(message).splitlines()[-1]
     last = _last_error_log.get(key, 0)
     if now - last >= ERROR_LOG_THROTTLE:
         _last_error_log[key] = now
@@ -256,7 +273,15 @@ def safe_publish(client, topic, payload='', qos=0, retain=False):
     if client is None or not topic:
         return False
     try:
-        client.publish(topic, payload, qos=qos, retain=retain)
+        result = client.publish(topic, payload, qos=qos, retain=retain)
+        if getattr(result, 'rc', 0) != 0:
+            log_mqtt_problem(
+                'publish_result',
+                _('MQTT publish failed') + ': rc={}'.format(result.rc)
+            )
+            return False
+        with _health_lock:
+            _health_state['last_publish'] = time.time()
         return True
     except Exception:
         log_mqtt_problem('publish', _('MQTT publish failed') + ': ' + traceback.format_exc().splitlines()[-1])
@@ -494,7 +519,20 @@ def subscribe(topic, callback, qos=0):
 
 def on_connect(client, userdata, flags, rc, properties=None):
     global flag_connected
-    flag_connected = 1
+    try:
+        connected = int(rc) == 0
+    except (TypeError, ValueError):
+        connected = str(rc).lower() in ('0', 'success')
+    flag_connected = 1 if connected else 0
+    if not connected:
+        log_mqtt_problem(
+            'connect_result',
+            _('MQTT connection failed') + ': {}'.format(rc)
+        )
+        return
+    with _health_lock:
+        _health_state['last_connected'] = time.time()
+        _health_state['last_error_message'] = ''
     ### mqtt core ###  
     log.info(NAME, datetime_string() + ' ' + _('Subscribing to topic') + ': ' + str(plugin_options['publish_up_down']))
     client.subscribe(plugin_options['publish_up_down'])
@@ -512,6 +550,8 @@ def on_connect(client, userdata, flags, rc, properties=None):
 def on_disconnect(client, userdata, rc, properties=None):
     global flag_connected
     flag_connected = 0
+    with _health_lock:
+        _health_state['last_disconnected'] = time.time()
     #log.debug(NAME, datetime_string() + ' ' + _('Disconnected from broker!'))
 
 
@@ -529,6 +569,84 @@ def on_stop():
             log.info(NAME, datetime_string() + ' ' +  _('MQTT Client stop'))
         except Exception:
             log_mqtt_problem('client_stop', _('MQTT plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+
+
+def health():
+    """Return the operational MQTT state for OSPy Diagnostics."""
+    with _health_lock:
+        state = dict(_health_state)
+
+    sender_ready = sender is not None
+    client_ready = sender_ready and sender.client is not None
+    details = {
+        _('Broker'): '{}:{}'.format(
+            plugin_options['broker_host'], plugin_options['broker_port']
+        ),
+        _('MQTT client'): _('Running') if client_ready else _('Stopped'),
+    }
+    if state['last_connected']:
+        details[_('Last connected')] = datetime_string(
+            time.localtime(state['last_connected'])
+        )
+    if state['last_disconnected']:
+        details[_('Last disconnected')] = datetime_string(
+            time.localtime(state['last_disconnected'])
+        )
+    if state['last_publish']:
+        details[_('Last publish')] = datetime_string(
+            time.localtime(state['last_publish'])
+        )
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+
+    updated = max(
+        state['started'],
+        state['last_connected'],
+        state['last_disconnected'],
+        state['last_publish'],
+        state['last_error'],
+    )
+    if not mqtt_is_installed:
+        return {
+            'status': 'error',
+            'summary': _('Paho-mqtt is not installed.'),
+            'details': details,
+            'updated': updated,
+        }
+    if not plugin_options['use_mqtt']:
+        return {
+            'status': 'unknown',
+            'summary': _('MQTT plug-in is disabled.'),
+            'details': details,
+            'updated': updated,
+        }
+    if not sender_ready:
+        return {
+            'status': 'error',
+            'summary': _('Stopped'),
+            'details': details,
+            'updated': updated,
+        }
+    if flag_connected:
+        return {
+            'status': 'ok',
+            'summary': _('Connected to broker.'),
+            'details': details,
+            'updated': updated,
+        }
+    if state['last_error_message']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+            'updated': updated,
+        }
+    return {
+        'status': 'warning',
+        'summary': _('Disconnected from broker!'),
+        'details': details,
+        'updated': updated,
+    }
 
 
 ### System value change ###

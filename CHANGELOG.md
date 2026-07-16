@@ -2,6 +2,12 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - MQTT<br/>
+Updated MQTT as the first reference plug-in for the new OSPy lifecycle and diagnostics interfaces. It now includes a `plugin.json` manifest, registers its sender startup thread with the shared plug-in runtime, uses the common stop signal, and provides `health()` information for dependency availability, configuration, MQTT client state, broker connection, recent publishing and the last runtime error.
+
+(Martin Pihrt) - LCD Display<br/>
+Updated LCD Display for the new OSPy plug-in lifecycle and diagnostics interfaces. It now includes a `plugin.json` manifest declaring its I2C dependency, registers its display thread with the shared runtime, uses the common stop signal, and provides `health()` information for worker state, detected PCF8574 address, successful display writes and recent I2C errors.
+
 (Martin Pihrt) - Documentation<br/>
 Updated active pihrt.com links in plug-in README files, help templates, and source comments after the website migration. Former `/elektronika/` article paths now use their verified `/clanky/` addresses, and the removed AutomatOSPy demonstration page now links to the related irrigation article.
 

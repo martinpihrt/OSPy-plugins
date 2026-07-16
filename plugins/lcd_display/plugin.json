@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "lcd_display",
+  "name": "LCD Display",
+  "menu": "Package: LCD Display",
+  "version": "1.0.0",
+  "description": "Displays OSPy status information on a 16x2 HD44780 LCD through a PCF8574 I2C expander.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/lcd_display",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "smbus",
+      "package": "python3-smbus",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi",
+      "beaglebone",
+      "linux"
+    ],
+    "requires": [
+      "i2c"
+    ]
+  },
+  "permissions": [
+    "i2c"
+  ]
+}

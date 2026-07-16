@@ -7,6 +7,8 @@ This plugin shows information on 16x2 character LCD with PCF8574.
 Automatically detects the display at the following I2C addresses: 0x20-0x27, 0x38-0x3F.  
 Compatible with the HD44780 controller.  
 
+The plug-in includes an OSPy `plugin.json` manifest, uses the shared plug-in runtime and implements `health()`. Diagnostics reports whether the display function and worker are running, the detected I2C address, the last successful LCD update and the most recent I2C error. A temporarily busy shared I2C bus is reported as a warning; a persistent write error is reported as an error.
+
 Plugin setup
 -----------
 * Check Use I2C LCD:  
