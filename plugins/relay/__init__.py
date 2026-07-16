@@ -9,13 +9,14 @@ from ospy.log import log
 from ospy.helpers import verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.outputs import outputs
-from plugins import plugin_url
+from plugins import plugin_url, get_runtime
 
 
 NAME = 'Relay Test'
 MENU =  _('Package: Relay Test')
 LINK = 'test_page'
 TEST_SECONDS = 3
+runtime = get_runtime()
 
 
 class RelaySender(Thread):
@@ -29,6 +30,7 @@ class RelaySender(Thread):
         self._stop_event.set()
 
     def run(self):
+        global sender
         try:
             log.clear(NAME)
             outputs.relay_output = True
@@ -39,6 +41,8 @@ class RelaySender(Thread):
         finally:
             outputs.relay_output = False
             log.info(NAME, _('Relay Test: OFF'))
+            if sender is self:
+                sender = None
 
 
 sender = None
@@ -56,6 +60,7 @@ class test_page(ProtectedPage):
             verify_csrf()
             if sender is None or not sender.is_alive():
                 sender = RelaySender()
+                runtime.register_thread(sender)
             else:
                 log.info(NAME, _('Relay test is already running.'))
         except Exception:
@@ -70,8 +75,28 @@ def start():
 
 def stop():
     global sender
-    if sender is not None:
-        sender.stop()
-        sender.join(5)
-        sender = None
+    worker = sender
+    if worker is not None:
+        worker.stop()
+        worker.join(5)
+        if sender is worker and not worker.is_alive():
+            sender = None
     outputs.relay_output = False
+
+
+def health():
+    """Return relay-test worker and output state."""
+    worker_alive = sender is not None and sender.is_alive()
+    relay_active = bool(outputs.relay_output)
+    return {
+        'status': 'ok',
+        'summary': (
+            _('Relay test is running.')
+            if worker_alive else _('Relay test is ready.')
+        ),
+        'details': {
+            _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+            _('Relay output'): _('ON') if relay_active else _('OFF'),
+            _('Test duration'): '{} s'.format(TEST_SECONDS),
+        },
+    }

@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Relay Test<br/>
+Updated Relay Test for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring relay-output control, registers and clears its bounded test worker through the shared runtime, stops without a completion race, forces the relay off during shutdown, and reports worker, relay command and duration through `health()`. Corrected the README test duration to three seconds.
+
 (Martin Pihrt) - Pulse Output Test<br/>
 Updated Pulse Output Test for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring station-output control, registers its test worker with the shared runtime, responds separately to the manual test stop and common plug-in stop signals, clears completed workers, and reports the selected output, duration, worker and output state through `health()`.
 
