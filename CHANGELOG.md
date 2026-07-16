@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - IP Cam<br/>
+Updated IP Cam for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Requests, Pillow, network and cache-file access, registers its automatic snapshot worker with the shared runtime, uses the common stop signal with bounded shutdown, closes completed HTTP responses, and aggregates its existing per-camera diagnostics into a credential-free `health()` report.
+
 (Martin Pihrt) - CHMI<br/>
 Updated CHMI for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Requests, Pillow, optional SHMU libraries, network, file, subprocess and system access, registers both radar and dependency-installation workers with the shared runtime, uses the common stop signal with bounded shutdown, closes its HTTP session, and reports source, location, optional dependencies, radar timestamp, latest successful update and errors through `health()`.
 

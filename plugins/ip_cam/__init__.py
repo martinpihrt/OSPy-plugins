@@ -8,13 +8,13 @@ import traceback
 import os
 import base64
 from http import HTTPStatus
-from threading import Thread, Event, Lock, RLock
+from threading import Thread, Lock, RLock
 from urllib.parse import urljoin, urlparse
 
 import web
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision, datetime_string, get_input, verify_csrf, safe_image_path
 from ospy import helpers
@@ -59,6 +59,7 @@ plugin_options = PluginOptions(
 status_lock = Lock()
 cache_lock = RLock()
 camera_status = []
+runtime = get_runtime()
 
 
 def _ensure_list(name, default=''):
@@ -213,7 +214,9 @@ def _fetch_camera(index, stream=False):
         if chunk:
             content += chunk
             if len(content) > hard_limit:
+                response.close()
                 raise ValueError(_('Downloaded image is larger than configured maximum size.'))
+    response.close()
     if not stream:
         content = _fit_image_to_limit(content, max_bytes)
     return response, content, response_ms
@@ -560,7 +563,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self.start()
 
@@ -622,13 +625,92 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
+        runtime.register_thread(sender)
 
 def stop():
     global sender
-    if sender is not None:
-       sender.stop()
-       sender.join(15)
-       sender = None 
+    worker = sender
+    if worker is not None:
+       worker.stop()
+       worker.join(15)
+       if sender is worker and not worker.is_alive():
+           sender = None
+
+
+def health():
+    """Return aggregate camera configuration, worker and download state."""
+    statuses = _camera_statuses()
+    worker_alive = sender is not None and sender.is_alive()
+    configured = [
+        item for item in statuses
+        if item.get('configured')
+    ]
+    responding = [
+        item for item in configured
+        if item.get('success', 0) and not item.get('error')
+    ]
+    failing = [
+        item for item in configured
+        if item.get('error')
+    ]
+    latest = max(
+        (item.get('last_download', '') for item in configured),
+        default='',
+    )
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Configured cameras'): len(configured),
+        _('Responding cameras'): len(responding),
+        _('Cameras with errors'): ', '.join(
+            str(item.get('index')) for item in failing
+        ) or _('None'),
+        _('Automatic JPEG downloads'): (
+            _('Enabled') if plugin_options['use_jpg'] else _('Disabled')
+        ),
+        _('GIF creation'): _('Enabled') if plugin_options['use_gif'] else _('Disabled'),
+        _('Last camera result'): latest or _('Not available'),
+    }
+    if not plugin_options['use_jpg']:
+        return {
+            'status': 'unknown',
+            'summary': _('Automatic IP camera downloads are disabled.'),
+            'details': details,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('IP Cam worker is stopped.'),
+            'details': details,
+        }
+    if not configured:
+        return {
+            'status': 'warning',
+            'summary': _('No IP cameras are configured.'),
+            'details': details,
+        }
+    if failing and not responding:
+        return {
+            'status': 'error',
+            'summary': _('No configured IP camera is responding.'),
+            'details': details,
+        }
+    if failing:
+        return {
+            'status': 'warning',
+            'summary': _('Some configured IP cameras are not responding.'),
+            'details': details,
+        }
+    if not responding:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first IP camera download.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Configured IP cameras are responding.'),
+        'details': details,
+    }
 
 
 ################################################################################

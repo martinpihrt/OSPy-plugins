@@ -5,6 +5,13 @@ Tested in Python 3+
 
 This extension displays JPEG previews, GIF animations and proxied MJPEG streams from IP cameras. Each OSPy station can have one camera address, optional login credentials, a JPEG snapshot path and an optional MJPEG stream path.
 
+The plug-in includes an OSPy `plugin.json` manifest, registers its automatic
+snapshot worker with the shared plug-in runtime, uses the common stop signal,
+and implements `health()`. Diagnostics aggregates the existing per-camera
+status into configured, responding and failing camera counts without exposing
+camera addresses, usernames or passwords. Completed HTTP responses are closed
+after their image data has been consumed.
+
 Camera address and paths
 -----------
 
