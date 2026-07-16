@@ -6,12 +6,12 @@ import json
 import time
 import traceback
 import os
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import get_rpi_revision
 from ospy.helpers import datetime_string, verify_csrf
@@ -46,6 +46,13 @@ pcf_options = PluginOptions(
      'da_value': 0
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_reading': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 ################################################################################
@@ -57,7 +64,7 @@ class PCFSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.adc = None
         self.status = {}
@@ -68,6 +75,7 @@ class PCFSender(Thread):
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -83,6 +91,9 @@ class PCFSender(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -98,41 +109,51 @@ class PCFSender(Thread):
             self.adc = None
             self._log_problem(_(u'Voltage and Temperature Monitor plug-in') + ':\n' + traceback.format_exc())
 
+    def close_adc(self):
+        adc = self.adc
+        self.adc = None
+        if adc is not None:
+            try:
+                adc.close()
+            except (AttributeError, OSError):
+                pass
+
     def run(self):
         self._open_adc()
 
-        while not self._stop_event.is_set():
-            try:
-                normalize_options()
-                if self.adc is None:
-                    self._open_adc()
-
-                if self.adc is not None and pcf_options['enabled']:  # if pcf plugin is enabled
-                    log.clear(NAME)
-                    for i in range(4):
-                        val = read_AD(self.adc, i + 1)
-                        self.status['ad%d_raw' % i] = val
-                        self.status['ad%d' % i] = get_temp(val) if pcf_options['ad%d_temp' % i] else get_volt(val)
-
-                    log.info(NAME, datetime_string())
-                    for i in range(4):
-                        log.info(NAME, pcf_options['ad%d_label' % i] + ': ' + format(self.status['ad%d' % i],
-                                                                                     pcf_options['ad%d_temp' % i]))
-
-                    if pcf_options['enable_log']:
-                        update_log(self.status)
-
+        try:
+            while not self._stop_event.is_set():
                 try:
-                    write_DA(self.adc, pcf_options['da_value'])
-                except Exception:
-                    self.adc = None
-                    
-                self._sleep(max(60, pcf_options['log_interval'] * 60))
+                    normalize_options()
+                    if self.adc is None:
+                        self._open_adc()
 
-            except Exception:
-                self.adc = None
-                self._log_problem(_(u'Voltage and Temperature Monitor plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(60)
+                    if self.adc is not None and pcf_options['enabled']:  # if pcf plugin is enabled
+                        log.clear(NAME)
+                        for i in range(4):
+                            val = read_AD(self.adc, i + 1)
+                            self.status['ad%d_raw' % i] = val
+                            self.status['ad%d' % i] = get_temp(val) if pcf_options['ad%d_temp' % i] else get_volt(val)
+
+                        with health_lock:
+                            health_state['last_reading'] = time.time()
+                        log.info(NAME, datetime_string())
+                        for i in range(4):
+                            log.info(NAME, pcf_options['ad%d_label' % i] + ': ' + format(self.status['ad%d' % i],
+                                                                                         pcf_options['ad%d_temp' % i]))
+
+                        if pcf_options['enable_log']:
+                            update_log(self.status)
+
+                    write_DA(self.adc, pcf_options['da_value'])
+                    self._sleep(max(60, pcf_options['log_interval'] * 60))
+
+                except Exception:
+                    self.close_adc()
+                    self._log_problem(_(u'Voltage and Temperature Monitor plug-in') + ':\n' + traceback.format_exc())
+                    self._sleep(60)
+        finally:
+            self.close_adc()
 
 
 pcf_sender = None
@@ -150,8 +171,11 @@ def stop():
     global pcf_sender
     if pcf_sender is not None:
         pcf_sender.stop()
+        runtime.request_stop()
+        pcf_sender.close_adc()
         pcf_sender.join(15)
-        pcf_sender = None
+        if not pcf_sender.is_alive():
+            pcf_sender = None
 
 
 def get_volt(data):
@@ -319,5 +343,43 @@ class delete_log_page(ProtectedPage):  # delete log file from web
         write_log([])
         log.info(NAME, _('Deleted log file'))
         raise web.seeother(plugin_url(settings_page), True)
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = pcf_sender is not None and pcf_sender.is_alive()
+    adc_open = pcf_sender is not None and pcf_sender.adc is not None
+    with health_lock:
+        state = dict(health_state)
+
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(pcf_options.get('enabled', False)),
+        'i2c_address': '0x48',
+        'i2c_device': _('Open') if adc_open else _('Unavailable'),
+        'last_reading': state['last_reading'],
+        'last_error': state['last_error'],
+    }
+    if pcf_sender is not None:
+        details['channels'] = [pcf_sender.status['ad%d' % i] for i in range(4)]
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+
+    if not worker_alive:
+        status = 'error'
+        summary = _('Voltage and temperature worker is not running.')
+    elif not pcf_options.get('enabled', False):
+        status = 'unknown'
+        summary = _('Voltage and temperature monitoring is disabled.')
+    elif not adc_open:
+        status = 'error'
+        summary = _('PCF8591 is not available.')
+    elif state['last_error'] and state['last_error'] > state['last_reading']:
+        status = 'warning'
+        summary = _('Voltage and temperature monitoring reported an error.')
+    else:
+        status = 'ok'
+        summary = _('PCF8591 is responding.')
+    return {'status': status, 'summary': summary, 'details': details}
 
 

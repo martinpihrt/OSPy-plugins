@@ -6,6 +6,8 @@ Tested in Python 3+
 This plugin needs an enabled I2C bus and connected I2C A/D converter PCF8591 on I2C address 0x48.
 For measuring temperature use temp probe LM35D (0-100 &deg;C) on AD0-3 converter.  
 
+The plug-in includes a manifest declaring its SMBus and I2C requirements, uses the shared OSPy worker lifecycle, closes the I2C handle during errors and shutdown, and reports converter availability and readings through the Diagnostics health interface.
+
 Plugin setup
 -----------
 

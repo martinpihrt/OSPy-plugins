@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Voltage and Temperature Monitor<br/>
+Updated Voltage and Temperature Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C address 0x48 and local log-file access, registers its PCF8591 worker with the shared runtime, closes the I²C handle after errors and during bounded shutdown, and reports worker, converter, channels, latest reading and errors through `health()`.
+
 (Martin Pihrt) - Voice Station<br/>
 Updated Voice Station for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring audio-output, local sound-file and subprocess access, registers its playback worker with the shared runtime, disconnects station signals and terminates active audio commands during bounded shutdown, and reports worker, queue, playback, station-event and error state through `health()`.
 
