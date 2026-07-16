@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Direct 16 Relay Outputs<br/>
+Updated Direct 16 Relay Outputs for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring RPi.GPIO, Raspberry Pi and all sixteen physical header pins, registers its output worker with the shared runtime, observes the common stop request with bounded shutdown, drives configured outputs to their inactive level during stop, and reports worker, configured and active relays, GPIO readiness, trigger level and errors through `health()`.
+
 (Martin Pihrt) - Real Time and NTP time<br/>
 Updated Real Time and NTP time for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C address 0x68, NTP network and system-time subprocess access, registers its hourly synchronization worker with the shared runtime, observes the common stop request with bounded shutdown, and reports worker, NTP configuration, latest NTP and RTC values, synchronization cycle and errors through `health()`.
 

@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "id": "relay_16",
+  "name": "Direct 16 Relay Outputs",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "RPi.GPIO",
+      "package": "python3-rpi.gpio",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi"
+    ],
+    "requires": [
+      "gpio"
+    ],
+    "gpio": [
+      "22",
+      "24",
+      "26",
+      "32",
+      "36",
+      "38",
+      "40",
+      "21",
+      "23",
+      "29",
+      "31",
+      "33",
+      "35",
+      "37",
+      "18",
+      "19"
+    ]
+  },
+  "permissions": [
+    "gpio",
+    "system"
+  ]
+}

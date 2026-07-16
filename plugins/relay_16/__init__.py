@@ -3,7 +3,7 @@ __author__ = 'Martin Pihrt'
 
 import time
 
-from threading import Thread, Event
+from threading import Thread, Lock
 import traceback
 import json
 
@@ -12,7 +12,7 @@ from ospy.log import log
 from ospy.webpages import ProtectedPage
 from ospy.helpers import determine_platform, get_rpi_revision, datetime_string, verify_csrf
 from ospy.stations import stations
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 
 
 NAME = 'Direct 16 Relay Outputs'
@@ -29,6 +29,17 @@ plugin_options = PluginOptions(
         'relays': 1,       # default 1 relay
         'active': 'high'   # default is normal logic   
     })
+runtime = get_runtime()
+health_lock = Lock()
+gpio_driver = None
+health_state = {
+    'last_cycle': 0,
+    'configured_relays': 0,
+    'active_relays': 0,
+    'hardware_ready': False,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 ################################################################################
@@ -38,10 +49,11 @@ class Relay16Checker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -56,6 +68,7 @@ class Relay16Checker(Thread):
             self._sleep_time -= 1
 
     def run(self):
+        global gpio_driver
         log.clear(NAME)
         error_check = False # error signature
         relay_pins = GPIO_PINS
@@ -83,6 +96,7 @@ class Relay16Checker(Thread):
                     try:
                         if determine_platform() == 'pi': # If this will run on Raspberry Pi:
                             import RPi.GPIO as GPIO  # RPi hardware
+                            gpio_driver = GPIO
                             GPIO.setmode(GPIO.BOARD) #IO channels are identified by header connector pin numbers. Pin numbers are
 
                             if get_rpi_revision() >= 2:
@@ -146,6 +160,19 @@ class Relay16Checker(Thread):
                                   msg_debug_off[station.index] = False
                                   msg_debug_on[station.index] = True
 
+                active_relays = sum(
+                    1 for station in stations.get()
+                    if station.index < plugin_options['relays'] and station.active
+                )
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
+                    health_state['configured_relays'] = plugin_options['relays']
+                    health_state['active_relays'] = active_relays
+                    health_state['hardware_ready'] = (
+                        bool(plugin_options['enabled']) and not error_check
+                    )
+                    health_state['last_error_message'] = ''
+
                 if self._stop_event.wait(LOOP_INTERVAL):
                     break
 
@@ -160,6 +187,11 @@ class Relay16Checker(Thread):
 
             except Exception:
                 now = time.time()
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = now
+                    health_state['last_error_message'] = message
+                    health_state['hardware_ready'] = False
                 if now - last_error_log >= ERROR_LOG_THROTTLE:
                     log.error(NAME, _('Relay 16 plug-in') + ':\n' + traceback.format_exc())
                     last_error_log = now
@@ -184,7 +216,75 @@ def stop():
     if checker is not None:
         checker.stop()
         checker.join(15)
-        checker = None
+        if checker.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            checker = None
+    release_relays()
+
+
+def release_relays():
+    """Drive configured relay outputs to their inactive level."""
+    if gpio_driver is None:
+        return
+    inactive = gpio_driver.LOW if plugin_options['active'] == 'high' else gpio_driver.HIGH
+    for pin in GPIO_PINS[:plugin_options['relays']]:
+        try:
+            gpio_driver.output(pin, inactive)
+        except Exception:
+            log.error(NAME, _('Unable to release relay output') + ': ' + str(pin))
+    with health_lock:
+        health_state['active_relays'] = 0
+
+
+def health():
+    """Return GPIO relay and worker state for diagnostics."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = checker is not None and checker.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Relay outputs enabled'): _('Yes') if plugin_options['enabled'] else _('No'),
+        _('Configured relays'): state['configured_relays'],
+        _('Active relays'): state['active_relays'],
+        _('Hardware ready'): _('Yes') if state['hardware_ready'] else _('No'),
+        _('Trigger level'): str(plugin_options['active']).upper(),
+        _('Last successful cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Direct 16 Relay Outputs worker is not running.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not plugin_options['enabled']:
+        return {
+            'status': 'unknown',
+            'summary': _('Direct relay outputs are disabled.'),
+            'details': details,
+        }
+    if not state['hardware_ready']:
+        return {
+            'status': 'error',
+            'summary': _('Relay GPIO hardware is not ready.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Direct relay outputs are responding.'),
+        'details': details,
+    }
 
 
 def to_int(value, default):
