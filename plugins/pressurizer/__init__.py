@@ -4,7 +4,7 @@ __author__ = 'Martin Pihrt' # www.pihrt.com
 # System imports
 import datetime
 import time
-from threading import Thread, Event
+from threading import Thread, Lock
 import traceback
 import json
 import web
@@ -18,7 +18,7 @@ from ospy.inputs import inputs
 from ospy.outputs import outputs
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 
 from blinker import signal
 
@@ -49,6 +49,15 @@ plugin_options = PluginOptions(
     })
 
 _last_error_log = {}
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_activation': 0,
+    'relay_active': False,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 def log_pressurizer_problem(key, message):
@@ -76,10 +85,11 @@ class Checker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -181,6 +191,9 @@ class Checker(Thread):
                             pressurizer_master_relay_on.send()                  # send signal relay on from this plugin
                             self._sleep(0.5) 
                             outputs.relay_output = True                         # activate relay
+                            with health_lock:
+                                health_state['relay_active'] = True
+                                health_state['last_activation'] = time.time()
                             log.info(NAME,  _('Activating relay.')) 
                             log.start_run(_entry) 
  
@@ -194,6 +207,8 @@ class Checker(Thread):
                             pressurizer_master_relay_off.send()                 # send signal relay off from this plugin
                             self._sleep(0.5)
                             outputs.relay_output = False                        # deactivate relay 
+                            with health_lock:
+                                health_state['relay_active'] = False
                             log.info(NAME, _('Deactivating relay.')) 
                             log.finish_run(_entry)
 
@@ -220,9 +235,16 @@ class Checker(Thread):
                     self._sleep(5)
 
                 self._sleep(1)
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
+                    health_state['last_error_message'] = ''
 
             except Exception:
-                log_pressurizer_problem('run_loop', _('Pressurizer plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = message
+                log_pressurizer_problem('run_loop', _('Pressurizer plug-in') + ': ' + message)
                 self._sleep(60)
 
 
@@ -244,12 +266,78 @@ def stop():
     if checker is not None:
         checker.stop()
         checker.join(15)
-        checker = None
+        if checker.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            checker = None
     try:
         pressurizer_master_relay_off.send()
         outputs.relay_output = False
+        with health_lock:
+            health_state['relay_active'] = False
     except Exception:
         log_pressurizer_problem('stop_relay', _('Pressurizer plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+
+
+def health():
+    """Return scheduler, relay activation and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = checker is not None and checker.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Pressurizer enabled'): _('Yes') if plugin_options['enabled'] else _('No'),
+        _('Scheduler enabled'): _('Yes') if options.scheduler_enabled else _('No'),
+        _('Master station configured'): _('Yes') if stations.master is not None else _('No'),
+        _('Relay control enabled'): _('Yes') if plugin_options['relay'] else _('No'),
+        _('Relay active'): _('Yes') if state['relay_active'] else _('No'),
+        _('Selected stations'): len(selected_station_ids()),
+        _('Last successful cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+        _('Last activation'): (
+            datetime_string(time.localtime(state['last_activation']))
+            if state['last_activation'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Pressurizer worker is not running.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not plugin_options['enabled']:
+        return {
+            'status': 'unknown',
+            'summary': _('Pressurizer is disabled.'),
+            'details': details,
+        }
+    if stations.master is None:
+        return {
+            'status': 'warning',
+            'summary': _('Pressurizer requires a configured master station.'),
+            'details': details,
+        }
+    if not state['last_cycle']:
+        return {
+            'status': 'unknown',
+            'summary': _('Pressurizer is waiting for its first scheduler check.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Pressurizer is responding.'),
+        'details': details,
+    }
 
 
 ################################################################################

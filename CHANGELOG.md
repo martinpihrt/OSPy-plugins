@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Pressurizer<br/>
+Updated Pressurizer for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring scheduler, station and master-relay control, registers its scheduler worker with the shared runtime, observes the common stop request with bounded shutdown, guarantees relay release during stop, and reports worker, scheduler, master station, selected stations, relay state, latest activation and errors through `health()`.
+
 (Martin Pihrt) - Pressure Monitor<br/>
 Updated Pressure Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Raspberry Pi GPIO 18, logging, e-mail and scheduler-control requirements, registers its monitoring worker with the shared runtime, manages and disconnects all five station signal receivers, performs bounded shutdown, and reports worker, configuration, pressure input, master state, latest check, safety shutdown and errors through `health()`.
 
