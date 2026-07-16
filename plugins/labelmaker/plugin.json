@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "labelmaker",
+  "name": "Label Maker",
+  "menu": "Package: Label Maker",
+  "version": "1.0.0",
+  "description": "Generates EAN13 barcodes and configurable QR code images.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/labelmaker",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "PIL",
+      "package": "Pillow",
+      "required": false
+    },
+    {
+      "module": "qrcode",
+      "package": "qrcode",
+      "required": false
+    }
+  ],
+  "permissions": [
+    "files",
+    "subprocess"
+  ]
+}

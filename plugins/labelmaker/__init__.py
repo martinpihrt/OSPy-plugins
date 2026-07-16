@@ -8,7 +8,7 @@ import sys
 import os
 import mimetypes
 
-from threading import Thread, Event, Lock
+from threading import Thread, Lock
 import traceback
 import json
 import re
@@ -21,7 +21,7 @@ from ospy.log import log
 from ospy.options import options
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 
 
 NAME = 'Label Maker'
@@ -32,6 +32,15 @@ colors_name = ['BLACK', 'RED', 'GREEN','BLUE','ORANGE','BROWN']
 qr_error_levels = ['L', 'M', 'Q', 'H']
 dependency_install_lock = Lock()
 dependency_install_running = False
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+    'last_code_type': '',
+}
+started = False
 
 EAN13_PARITY = {
     '0': 'LLLLLL',
@@ -151,6 +160,7 @@ def _validate_message(code_type, message):
 
 
 def _log_generated(kind, image_path, message):
+    record_generation_success()
     log.info(NAME, datetime_string() + ' ' + kind)
     log.info(NAME, datetime_string() + ' ' + _('Message length') + ': {}'.format(len(message)))
     if os.path.isfile(image_path):
@@ -220,6 +230,7 @@ def _generate_ean13_png(message, image_path):
 
 
 def _missing_dependency(package_name, apt_package):
+    record_generation_error(_('Missing Python package') + ': {}'.format(package_name))
     log.error(NAME, datetime_string() + ' ' + _('Missing Python package') + ': {}'.format(package_name))
     log.info(NAME, datetime_string() + ' ' + _('Install it from the system package manager and restart this plug-in.'))
     log.info(NAME, datetime_string() + ' sudo apt install {}'.format(apt_package))
@@ -264,6 +275,7 @@ def start_labelmaker_dependency_install():
     install_thread = Thread(target=install_labelmaker_dependencies)
     install_thread.daemon = True
     install_thread.start()
+    runtime.register_thread(install_thread)
 
 
 def install_labelmaker_dependencies():
@@ -312,18 +324,11 @@ def install_labelmaker_dependencies():
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
-class Plugin_Checker(Thread):
+class Plugin_Checker:
     def __init__(self):
-        Thread.__init__(self)
-        self.daemon = True
-        self._stop_event = Event()
-        self.start()
+        log.info(NAME, datetime_string() + ' ' + _('Ready. Select code type and message.'))
 
     def stop(self):
-        self._stop_event.set()
-
-    def run(self):
-        log.info(NAME, datetime_string() + ' ' + _('Ready. Select code type and message.'))
         pass
 
     def update(self):
@@ -334,6 +339,7 @@ class Plugin_Checker(Thread):
             message = (plugin_options['msg'] or '').strip()
             validation_error = _validate_message(code_type, message)
             if validation_error:
+                record_generation_error(validation_error)
                 log.error(NAME, datetime_string() + ' ' + validation_error)
                 return
 
@@ -371,6 +377,7 @@ class Plugin_Checker(Thread):
 
                         logo_link = os.path.join('plugins', 'labelmaker', 'static', 'images', 'logo.png')
                         if not os.path.isfile(logo_link):
+                            record_generation_error(_('Logo file was not found!'))
                             log.error(NAME, datetime_string() + ' ' + _('Logo file was not found!'))
                             return
 
@@ -397,6 +404,7 @@ class Plugin_Checker(Thread):
                         _log_generated(_('Generated QR code with logo...'), image_path, message)
 
         except Exception:
+            record_generation_error(traceback.format_exc())
             log.error(NAME, datetime_string() + ' ' + _('Label Maker plug-in') + ':\n' + traceback.format_exc())
 
 
@@ -407,17 +415,97 @@ checker = None
 # Helper functions:                                                            #
 ################################################################################
 def start():
-    global checker
+    global checker, started
+    started = True
     if checker is None:
         checker = Plugin_Checker()
 
 
 def stop():
-    global checker
+    global checker, started
+    started = False
     if checker is not None:
         checker.stop()
-        checker.join(15)
         checker = None
+
+
+def record_generation_success():
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+        health_state['last_code_type'] = str(plugin_options['code_type'])
+
+
+def record_generation_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+        health_state['last_code_type'] = str(plugin_options['code_type'])
+
+
+def health():
+    """Return lifecycle, selected dependencies and generated-file state."""
+    with health_lock:
+        state = dict(health_state)
+    code_names = {
+        '0': 'EAN13',
+        '1': 'QR',
+        '2': _('Color QR'),
+        '3': _('QR with logo'),
+    }
+    code_type = str(plugin_options['code_type'])
+    missing = labelmaker_missing_dependencies(code_type)
+    image_path = _generated_image_path()
+    image_exists = os.path.isfile(image_path)
+    details = {
+        _('Lifecycle'): _('Started') if started else _('Stopped'),
+        _('Selected code type'): code_names.get(code_type, code_type),
+        _('Dependency installation'): (
+            _('Running') if labelmaker_dependencies_installing() else _('Stopped')
+        ),
+        _('Generated image'): _('Available') if image_exists else _('Not available'),
+        _('Last successful generation'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if image_exists:
+        details[_('Generated image size')] = os.path.getsize(image_path)
+    if missing:
+        details[_('Missing Python modules')] = ', '.join(
+            item['package'] for item in missing
+        )
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not started:
+        return {
+            'status': 'error',
+            'summary': _('Label Maker is stopped.'),
+            'details': details,
+        }
+    if missing:
+        return {
+            'status': 'error',
+            'summary': _('Required libraries for the selected code type are missing.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'unknown',
+            'summary': _('No label has been generated yet.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('The last label was generated successfully.'),
+        'details': details,
+    }
 
 
 ################################################################################

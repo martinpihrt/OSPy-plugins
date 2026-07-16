@@ -22,6 +22,13 @@ If a required dependency is missing, the plug-in settings page shows an
 Install libraries button. The installation output is written to the plug-in
 status log.
 
+The plug-in includes an OSPy `plugin.json` manifest and implements the common
+lifecycle and `health()` interfaces. Its former one-shot background thread was
+removed because labels are generated synchronously from the settings page. The
+real dependency-installation worker is registered with the shared runtime.
+Diagnostics reports the selected code type, only its required libraries,
+installation state, generated output file, and the latest generation result.
+
 Plugin setup
 -----------
 

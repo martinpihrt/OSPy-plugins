@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Label Maker<br/>
+Updated Label Maker for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring optional Pillow and QR libraries plus file and subprocess access, removes its unnecessary one-shot worker in favor of explicit lifecycle handling, registers the real dependency-installation worker with the shared runtime, and reports selected type, relevant dependencies, generated output and latest generation result through `health()`.
+
 (Martin Pihrt) - IP Scanner<br/>
 Updated IP Scanner for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring local-network and subprocess access, registers its scanning worker with the shared runtime, propagates the common stop signal into queued host scans while retaining command timeouts, performs bounded shutdown, and reports worker, scan, interface, network, device, port-check and error state through `health()`.
 
