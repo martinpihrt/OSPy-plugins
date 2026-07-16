@@ -10,13 +10,13 @@ import os
 import traceback
 import mimetypes
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 from ospy.stations import stations
 from ospy.options import options
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers
@@ -59,6 +59,15 @@ pressure_options = PluginOptions(
 global master
 master = False
 _last_error_log = {}
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'sensor_active': None,
+    'last_shutdown': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 def log_pressure_problem(key, message):
@@ -90,13 +99,14 @@ class PressureSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         
         self.status = {}
         self.status['Pstate%d'] = 0
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -111,16 +121,15 @@ class PressureSender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        master_one_on = signal('master_one_on')
-        master_one_on.connect(notify_master_on)
-        master_one_off = signal('master_one_off')
-        master_one_off.connect(notify_master_off)
-        master_two_on = signal('master_two_on')
-        master_two_on.connect(notify_master_two_on)
-        master_two_off = signal('master_two_off')
-        master_two_off.connect(notify_master_two_off)
-        station_clear = signal('station_clear')
-        station_clear.connect(notify_station_clear)
+        receivers = [
+            (signal('master_one_on'), notify_master_on),
+            (signal('master_one_off'), notify_master_off),
+            (signal('master_two_on'), notify_master_two_on),
+            (signal('master_two_off'), notify_master_two_off),
+            (signal('station_clear'), notify_station_clear),
+        ]
+        for source, receiver in receivers:
+            source.connect(receiver)
 
         send = False
 
@@ -158,6 +167,8 @@ class PressureSender(Thread):
                                 last_time = actual_time
                                 if get_check_pressure():                               # if pressure sensor is actual on
                                     set_stations_in_scheduler_off()
+                                    with health_lock:
+                                        health_state['last_shutdown'] = time.time()
                                     log.clear(NAME)
                                     log.info(NAME, _('Pressure sensor is not activated in time, stoping all stations in scheduler.'))
                                     if pressure_options['sendeml']:                    # if enabled send email
@@ -211,11 +222,25 @@ class PressureSender(Thread):
                         if press_mon is not None:
                             press_mon.val = tempText.encode('utf8').decode('utf8')          # value on footer
 
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
+                    health_state['sensor_active'] = (
+                        not get_check_pressure()
+                        if pressure_options['use_press_monitor'] else None
+                    )
+                    health_state['last_error_message'] = ''
+
                 self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
-                log_pressure_problem('run_loop', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = message
+                log_pressure_problem('run_loop', _('Pressure monitor plug-in') + ': ' + message)
                 self._sleep(60)
+        for source, receiver in receivers:
+            source.disconnect(receiver)
 
 
 pressure_sender = None
@@ -234,7 +259,71 @@ def stop():
     if pressure_sender is not None:
         pressure_sender.stop()
         pressure_sender.join(15)
-        pressure_sender = None
+        if pressure_sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            pressure_sender = None
+
+
+def health():
+    """Return pressure sensor, safety action and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = pressure_sender is not None and pressure_sender.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Monitoring enabled'): _('Yes') if pressure_options['use_press_monitor'] else _('No'),
+        _('Master active'): _('Yes') if master else _('No'),
+        _('Pressure sensor'): (
+            _('Active') if state['sensor_active'] else _('Inactive')
+            if state['sensor_active'] is not None else _('Not available')
+        ),
+        _('Last successful cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+        _('Last safety shutdown'): (
+            datetime_string(time.localtime(state['last_shutdown']))
+            if state['last_shutdown'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Pressure Monitor worker is not running.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not pressure_options['use_press_monitor']:
+        return {
+            'status': 'unknown',
+            'summary': _('Pressure monitoring is disabled.'),
+            'details': details,
+        }
+    if not state['last_cycle']:
+        return {
+            'status': 'unknown',
+            'summary': _('Pressure Monitor is waiting for its first check.'),
+            'details': details,
+        }
+    if master and state['sensor_active'] is False:
+        return {
+            'status': 'warning',
+            'summary': _('The pressure sensor is inactive while a master station is active.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Pressure Monitor is responding.'),
+        'details': details,
+    }
 
 
 def get_check_pressure():
@@ -251,7 +340,11 @@ def get_check_pressure():
                 press = 0
         return press
     except:
-        log_pressure_problem('gpio_read', _('Pressure monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+        message = traceback.format_exc().splitlines()[-1]
+        with health_lock:
+            health_state['last_error'] = time.time()
+            health_state['last_error_message'] = message
+        log_pressure_problem('gpio_read', _('Pressure monitor plug-in') + ': ' + message)
         return 1
 
 

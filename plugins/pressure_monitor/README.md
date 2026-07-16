@@ -3,6 +3,10 @@ Pressure Monitor Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, monitoring
+configuration, pressure input, master state, latest check, safety shutdown and
+errors through the OSPy system health interface.
+
 This plugin checked pressure in pipe, if master station is switched on must be activated pressure sensor.  
 If is not sensor activated in a certain time, switches off all station  and sends E-mail with error. Prevent safety for master station pump.  
 

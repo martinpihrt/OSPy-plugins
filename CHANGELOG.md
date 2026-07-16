@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Pressure Monitor<br/>
+Updated Pressure Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Raspberry Pi GPIO 18, logging, e-mail and scheduler-control requirements, registers its monitoring worker with the shared runtime, manages and disconnects all five station signal receivers, performs bounded shutdown, and reports worker, configuration, pressure input, master state, latest check, safety shutdown and errors through `health()`.
+
 (Martin Pihrt) - Pool Heating<br/>
 Updated Pool Heating for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring e-mail and scheduler/station-control access, registers its regulation worker with the shared runtime, observes the common stop request with bounded shutdown, safely releases its controlled pool output during stop, and reports worker, regulation, temperatures, selected output, safety shutdown and errors through `health()`.
 
