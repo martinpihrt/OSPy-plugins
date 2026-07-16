@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
-from threading import Thread, Event
+from threading import Thread, Lock
 import datetime
 import traceback
 
@@ -9,8 +9,8 @@ import web
 from ospy.log import log
 from ospy.options import level_adjustments
 from ospy.webpages import ProtectedPage
-from plugins import PluginOptions, plugin_url
-from ospy.helpers import verify_csrf
+from plugins import PluginOptions, plugin_url, get_runtime
+from ospy.helpers import datetime_string, verify_csrf
 
 
 NAME = 'Monthly Water Level'
@@ -22,6 +22,15 @@ plugin_options = PluginOptions(
     {
         key: 100 for key in range(12)
     })
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+    'month': -1,
+    'percent': 0,
+}
 
 
 def _sleep_time():
@@ -34,7 +43,7 @@ class MonthChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self.start()
@@ -56,10 +65,12 @@ class MonthChecker(Thread):
             try:
                 month = time.localtime().tm_mon - 1  # Current month.
                 level_adjustments[NAME] = plugin_options[month] / 100.0  # Set the water level% (levels list is zero based).
+                record_adjustment_success(month, plugin_options[month])
                 log.debug(NAME, _('Monthly Adjust: Setting water level to') + '%d%%' % plugin_options[month])
 
                 self._sleep(_sleep_time())
             except:
+                record_adjustment_error(traceback.format_exc())
                 log.error(NAME, _('Monthly water level plug-in') + ':\n' + traceback.format_exc())
 
 checker = None
@@ -69,16 +80,79 @@ def start():
     global checker
     if checker is None:
         checker = MonthChecker()
+        runtime.register_thread(checker)
 
 
 def stop():
     global checker
-    if checker is not None:
-        checker.stop()
-        checker.join(15)
-        checker = None
+    worker = checker
+    if worker is not None:
+        worker.stop()
+        worker.join(5)
+        if checker is worker and not worker.is_alive():
+            checker = None
     if NAME in level_adjustments:
         del level_adjustments[NAME]
+
+
+def record_adjustment_success(month, percent):
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+        health_state['month'] = int(month)
+        health_state['percent'] = int(percent)
+
+
+def record_adjustment_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return worker and current monthly scheduler adjustment state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_alive = checker is not None and checker.is_alive()
+    current_month = time.localtime().tm_mon - 1
+    percent = int(plugin_options[current_month])
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Current month'): current_month + 1,
+        _('Configured adjustment'): '{}%'.format(percent),
+        _('Applied water level factor'): (
+            level_adjustments.get(NAME, _('Not available'))
+        ),
+        _('Last successful adjustment'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('Monthly Water Level worker is stopped.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if NAME not in level_adjustments or not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the monthly water level adjustment.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Monthly water level adjustment is applied.'),
+        'details': details,
+    }
 
 
 class settings_page(ProtectedPage):

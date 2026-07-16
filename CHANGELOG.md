@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Monthly Water Level<br/>
+Updated Monthly Water Level for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring scheduler-control access, registers its daily adjustment worker with the shared runtime, uses the common stop signal with bounded shutdown, continues removing its global adjustment during stop, and reports month, configured percentage, applied factor, latest update and errors through `health()`.
+
 (Martin Pihrt) - Modbus Stations<br/>
 Updated Modbus Stations for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring pyserial, Blinker, serial relay hardware, file and system access, replaces its unnecessary one-shot worker with explicit lifecycle management of three station signal receivers, prevents duplicate commands after restart, closes command serial handles, and reports dependency, receiver and communication state through `health()`.
 
