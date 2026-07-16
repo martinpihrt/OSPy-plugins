@@ -11,8 +11,8 @@ import mimetypes
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers 
 from ospy.log import log
-from threading import Thread, Event
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from threading import Thread, Lock
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
@@ -45,6 +45,14 @@ plugin_options = PluginOptions(
         'label100': [_('Open blind')],
      }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_status': 0,
+    'last_command': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 ################################################################################
@@ -55,7 +63,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
         self.status['bstatus'] = {}
@@ -63,6 +71,7 @@ class Sender(Thread):
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -78,6 +87,9 @@ class Sender(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -133,7 +145,82 @@ def stop():
     if sender is not None:
         sender.stop()
         sender.join(15)
-        sender = None
+        if sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sender = None
+
+
+def health():
+    """Return configured blind, reachability and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    statuses = sender.status.get('bstatus', {}) if sender is not None else {}
+    reachable = sum(
+        1 for value in statuses.values()
+        if _('No route to host.') not in str(value)
+        and _('URL invalid.') not in str(value)
+        and _('URL is not setuped.') not in str(value)
+    )
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Blind control enabled'): _('Yes') if plugin_options['use_control'] else _('No'),
+        _('Configured blinds'): plugin_options['number_blinds'],
+        _('Reachable blinds'): reachable,
+        _('Last successful status update'): (
+            datetime_string(time.localtime(state['last_status']))
+            if state['last_status'] else _('Not available')
+        ),
+        _('Last command sent'): (
+            datetime_string(time.localtime(state['last_command']))
+            if state['last_command'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Venetian Blind worker is not running.'),
+            'details': details,
+        }
+    if not plugin_options['use_control']:
+        return {
+            'status': 'unknown',
+            'summary': _('Venetian blind control is disabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= max(
+            state['last_status'], state['last_command']):
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_status']:
+        return {
+            'status': 'unknown',
+            'summary': _('Venetian Blind is waiting for its first status update.'),
+            'details': details,
+        }
+    if reachable < plugin_options['number_blinds']:
+        return {
+            'status': 'warning',
+            'summary': _('One or more configured blinds are not reachable.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Venetian Blind is responding.'),
+        'details': details,
+    }
+
+
+def fetch_json(url):
+    with urlopen(url, timeout=HTTP_TIMEOUT) as response:
+        charset = response.info().get_content_charset('utf-8')
+        return json.loads(response.read().decode(charset))
 
 def uri_validator(x):
     try:
@@ -166,8 +253,10 @@ def send_cmd_to_blind(button, position):
         if url is not None:
             if uri_validator(url):
                 try:
-                    data = urlopen(url, timeout=HTTP_TIMEOUT)
-                    data = json.loads(data.read().decode(data.info().get_content_charset('utf-8')))
+                    data = fetch_json(url)
+                    with health_lock:
+                        health_state['last_command'] = time.time()
+                        health_state['last_error_message'] = ''
                     msg_log = '{}: {}'.format(_('Answer ok'), data)
                     update_log(pos_msg, msg_log)
                     return _('The command has been executed.')
@@ -198,8 +287,7 @@ def read_blinds_status():
                 if uri_validator(plugin_options['status'][i]):
                     try:
                         url = plugin_options['status'][i]
-                        data = urlopen(url, timeout=HTTP_TIMEOUT)
-                        data = json.loads(data.read().decode(data.info().get_content_charset('utf-8')))
+                        data = fetch_json(url)
                         if len(data) > 0:
                             # eg: data [{'state': 'stop', 'source': 'input', 'power': 0.0, 'is_valid': True, 'safety_switch': False, 'overtemperature': False, 'stop_reason': 'normal', 'last_direction': 'close', 'current_pos': 0, 'calibrating': False, 'positioning': True}]
                             rol_state = data['rollers'][0]['state']
@@ -228,8 +316,14 @@ def read_blinds_status():
                             else:
                                 rol_pos_msg = ''
                                 footer_msg += '{}: {} '.format(plugin_options['label'][i], sender.status['bstatus'][int(i)])
+                        with health_lock:
+                            health_state['last_status'] = time.time()
+                            health_state['last_error_message'] = ''
                     except OSError:
                         url = plugin_options['status'][i]
+                        with health_lock:
+                            health_state['last_error'] = time.time()
+                            health_state['last_error_message'] = _('No route to a configured blind.')
                         log.debug(NAME, _('No route to host {}.').format(url))
                         sender.status['bstatus'][int(i)] = '{}'.format(_('No route to host.'))
                         footer_msg += '{}: {} '.format(plugin_options['label'][i], sender.status['bstatus'][int(i)])

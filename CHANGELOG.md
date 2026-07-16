@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Venetian Blind<br/>
+Updated Venetian Blind for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring blind REST-network and local command-log access, registers its status worker with the shared runtime, closes all HTTP responses, observes the common stop request with bounded shutdown, and reports worker, configured and reachable blinds, latest status update, command and errors through `health()`.
+
 (Martin Pihrt) - UPS Monitor<br/>
 Updated UPS Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring RPi.GPIO, Raspberry Pi physical pins 16 and 18, local/SQL logging, e-mail and system-shutdown access, registers its power worker with the shared runtime, observes the common stop request with bounded shutdown, returns the UPS shutdown output low during stop, and reports worker, power input, shutdown countdown and delay, latest check and errors through `health()`.
 
