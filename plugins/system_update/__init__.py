@@ -9,9 +9,9 @@ import json
 import os
 import shlex
 import web
-from ospy.webpages import ProtectedPage
+from ospy.webpages import ProtectedPage, clear_plugin_runtime_data
 from ospy.log import log, logEM, logEV
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy import version
 from ospy.helpers import datetime_string, restart, verify_csrf
 from ospy.webpages import showInFooter
@@ -44,6 +44,16 @@ stats = {
 
 PLUGIN_DIR = os.path.dirname(__file__)
 ROLLBACK_FILE = os.path.join(PLUGIN_DIR, 'rollback_commit.txt')
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_check': 0,
+    'last_update': 0,
+    'last_rollback': 0,
+    'last_email': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 class StatusChecker(Thread):
@@ -51,7 +61,7 @@ class StatusChecker(Thread):
         Thread.__init__(self)
         self.daemon = True
         self.started = Event()
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._refresh_lock = Lock()
         self._refresh_thread = None
 
@@ -68,6 +78,7 @@ class StatusChecker(Thread):
         }
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def _sleep(self, secs):
         self._sleep_time = secs
@@ -89,12 +100,16 @@ class StatusChecker(Thread):
             log.clear(NAME)
             self._refresh_thread = Thread(target=self._manual_refresh, daemon=True)
             self._refresh_thread.start()
+            runtime.register_thread(self._refresh_thread)
             return True
 
     def _manual_refresh(self):
         try:
             self._update_rev_data()
         except Exception:
+            with health_lock:
+                health_state['last_error'] = time.time()
+                health_state['last_error_message'] = traceback.format_exc().splitlines()[-1]
             log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
 
     def _update_rev_data(self):
@@ -151,8 +166,13 @@ class StatusChecker(Thread):
                     })
             self.status['commits'] = commits
             self.status['can_error'] = False
+            with health_lock:
+                health_state['last_check'] = time.time()
 
         except Exception:
+            with health_lock:
+                health_state['last_error'] = time.time()
+                health_state['last_error_message'] = traceback.format_exc().splitlines()[-1]
             log.error(NAME, _('Error while updating revision data:\n') + traceback.format_exc())
             self.status['can_error'] = True
             self.status['checking'] = False
@@ -185,6 +205,8 @@ class StatusChecker(Thread):
                         from plugins.email_notifications_ssl import try_mail
                     if try_mail is not None:
                         try_mail(msg, msglog, attachment=None, subject=plugin_options['eml_subject']) # try_mail(text, logtext, attachment=None, subject=None)
+                        with health_lock:
+                            health_state['last_email'] = time.time()
                 except Exception:
                     log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc()) 
 
@@ -242,6 +264,9 @@ class StatusChecker(Thread):
 
             except Exception:
                 self.started.set()
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = traceback.format_exc().splitlines()[-1]
                 log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
@@ -276,6 +301,8 @@ def perform_update():
         run_command("git config core.filemode false")
         run_command("git reset --hard", timeout=120)
         run_command("git pull", timeout=300)
+        with health_lock:
+            health_state['last_update'] = time.time()
 
         msg = _('OSPy updated successfully. Please wait while restarting...')
         log.info(NAME, msg)
@@ -303,6 +330,8 @@ def perform_rollback_selected(commit_hash):
             log.error(NAME, _('No commit hash provided for rollback.'))
             return
         run_command(f'git reset --hard {commit_hash}')
+        with health_lock:
+            health_state['last_rollback'] = time.time()
         log.info(NAME, _('Rolled back to commit: ') + commit_hash)
         restart(wait=4)
     except Exception:
@@ -319,8 +348,14 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
+        runtime.request_stop()
         checker.join(15)
-        checker = None
+        refresh_thread = checker._refresh_thread
+        if refresh_thread is not None and refresh_thread.is_alive():
+            refresh_thread.join(15)
+        if not checker.is_alive() and (refresh_thread is None or not refresh_thread.is_alive()):
+            checker = None
+    clear_plugin_runtime_data('system_update')
 
 def get_all_values():
     global stats
@@ -502,3 +537,47 @@ class test_page(ProtectedPage):
             return json.dumps(data)
         except:
             return {}
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = checker is not None and checker.is_alive()
+    checker_status = checker.status if checker is not None else {}
+    with health_lock:
+        state = dict(health_state)
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(plugin_options.get('use_update', False)),
+        'automatic_update': bool(plugin_options.get('auto_update', False)),
+        'checking': bool(checker_status.get('checking', False)),
+        'update_available': bool(checker_status.get('can_update', False)),
+        'current_version': version.ver_str,
+        'current_commit': checker_status.get('local_hash', ''),
+        'upstream_branch': checker_status.get('remote_branch', ''),
+        'last_check': state['last_check'],
+        'last_update': state['last_update'],
+        'last_rollback': state['last_rollback'],
+        'last_email': state['last_email'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+    if not worker_alive:
+        status = 'error'
+        summary = _('System Update worker is not running.')
+    elif not plugin_options.get('use_update', False):
+        status = 'unknown'
+        summary = _('System Update checks are disabled.')
+    elif checker_status.get('can_error', False):
+        status = 'error'
+        summary = _('System Update could not check the repository.')
+    elif checker_status.get('checking', False):
+        status = 'unknown'
+        summary = _('System Update is checking the repository.')
+    elif checker_status.get('can_update', False):
+        status = 'warning'
+        summary = _('A newer OSPy version is available.')
+    else:
+        status = 'ok'
+        summary = _('OSPy is up to date.')
+    return {'status': status, 'summary': summary, 'details': details}

@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - System Update<br/>
+Updated System Update for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring repository-network, Git subprocess, OSPy-file, restart and e-mail access, registers its periodic checker and manual refresh worker with the shared runtime, observes bounded shutdown and clears its footer, and reports current version and commit, upstream branch, checks, update availability, updates, rollbacks, e-mail and errors through `health()`. The existing update and rollback workflow itself remains unchanged for later hardening.
+
 (Martin Pihrt) - Wind Speed Monitor<br/>
 Updated Wind Speed Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C addresses 0x50/0x51, local/SQL logging, e-mail and scheduler/program-control access, registers its monitor with the shared runtime, reuses one SMBus handle instead of leaking a new handle each cycle, interrupts the ten-second measurement and closes I²C during bounded shutdown, clears its footer, and reports worker, counter, speed, maximum, actions, e-mail and errors through `health()`.
 

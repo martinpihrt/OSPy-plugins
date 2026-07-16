@@ -8,6 +8,8 @@ For check new version OSPy click on update status button.
 If new version is posible click on update OSPy button. Plugin downloading and installing new version OSPy. Next restarting OSPy service.  
 This plugin allows update itself automatically the system, while allowing send an E-mail to the system administrator.
 
+The plug-in includes a manifest declaring repository-network, Git subprocess, OSPy-file, restart and e-mail access, uses the shared OSPy lifecycle for its checker and manual refresh worker, and reports repository checks, update availability, updates and rollback state through the Diagnostics health interface.
+
 Plugin setup
 -----------
 
