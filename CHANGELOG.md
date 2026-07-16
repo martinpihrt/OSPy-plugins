@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - OSPy Backup<br/>
+Updated OSPy Backup for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring plug-in data file access, removes its unnecessary one-shot worker in favor of explicit lifecycle handling, prevents concurrent archive creation, observes the common stop request between copied plug-ins, and reports active operation, latest archive, size, success, cancellation and errors through `health()`.
+
 (Martin Pihrt) - Network Ping Monitor<br/>
 Updated Network Ping Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring ICMP network, file and system access, registers its polling worker with the shared runtime, propagates the common stop signal between timeout-bounded target checks, performs bounded shutdown, and reports worker, per-target reachability, completed cycles, partial or total outages and internal errors through `health()`.
 

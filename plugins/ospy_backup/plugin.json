@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "ospy_backup",
+  "name": "OSPy package Backup",
+  "menu": "Package: OSPy package Backup",
+  "version": "1.0.0",
+  "description": "Creates downloadable ZIP archives of installed plug-in data directories.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/ospy_backup",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "permissions": [
+    "files"
+  ]
+}

@@ -7,11 +7,11 @@ import shutil
 import web
 import traceback
 import time
-from threading import Thread, Event
+from threading import Lock
 import os
 import mimetypes
 
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.log import log
 from ospy.helpers import datetime_string, get_input, mkdir_p, del_rw, verify_csrf
 from ospy.webpages import ProtectedPage
@@ -31,40 +31,31 @@ plugin_options = PluginOptions(
         'bkp_size': [],                                          # bkp size in bytes 
     }
 )
+runtime = get_runtime()
+backup_lock = Lock()
+health_lock = Lock()
+health_state = {
+    'running': False,
+    'last_success': 0,
+    'last_file': '',
+    'last_size': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
-class Sender(Thread):
+class Sender:
     def __init__(self):
-        Thread.__init__(self)
-        self.daemon = True
-        self._stop_event = Event()
-        self._sleep_time = 0
-        self.start()
-
-    def stop(self):
-        self._stop_event.set()
-
-    def update(self):
-        self._sleep_time = 0
-
-    def _sleep(self, secs):
-        self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop_event.is_set():
-            time.sleep(1)
-            self._sleep_time -= 1
-
-    def run(self):
         log.clear(NAME)
         log.info(NAME, _('Plugin is started.'))
-        if not self._stop_event.is_set():
-            try:
-                self._sleep(1)
 
-            except Exception:
-                log.clear(NAME)
-                log.error(NAME, _('OSPy package Backup') + ':\n' + traceback.format_exc())
+    def stop(self):
+        runtime.request_stop()
+
+    def update(self):
+        pass
 
 sender = None
 
@@ -81,12 +72,71 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
-        sender.join(15)
         sender = None
 
 
+def record_backup_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return lifecycle and latest plug-in data backup state."""
+    with health_lock:
+        state = dict(health_state)
+    details = {
+        _('Lifecycle'): _('Started') if sender is not None else _('Stopped'),
+        _('Backup in progress'): _('Yes') if state['running'] else _('No'),
+        _('Last successful backup'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+        _('Last backup file'): state['last_file'] or _('Not available'),
+        _('Last backup size'): state['last_size'],
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if sender is None:
+        return {
+            'status': 'error',
+            'summary': _('OSPy Backup is stopped.'),
+            'details': details,
+        }
+    if state['running']:
+        return {
+            'status': 'warning',
+            'summary': _('A plug-in data backup is in progress.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'unknown',
+            'summary': _('No plug-in data backup has been created yet.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('The last plug-in data backup completed successfully.'),
+        'details': details,
+    }
+
+
 def get_backup():
+    if not backup_lock.acquire(False):
+        record_backup_error(_('A plug-in data backup is already running.'))
+        return False
+    with health_lock:
+        health_state['running'] = True
     try:
+        if runtime.stop_event.is_set():
+            raise RuntimeError(_('Backup was cancelled because the plug-in is stopping.'))
         filestamp = time.strftime('%Y.%m.%d_%H-%M-%S')
         bkp_name = '{}_{}'.format(filestamp, 'PluginsBackup')
         data_folder = plugin_data_dir()
@@ -106,6 +156,8 @@ def get_backup():
         mkdir_p(data_folder)
 
         for module, name in plugin_names().items():
+            if runtime.stop_event.is_set():
+                raise RuntimeError(_('Backup was cancelled because the plug-in is stopping.'))
             if name != 'OSPy package Backup':                                                          # skip ospy_backup plugin data dir
                 src_plugin_data_dir = os.path.join(os.path.abspath(plugin_dir(module)), 'data')        # ex: /home/pi/OSPy/plugins/wind_monitor/data
                 dst_plugin_dir = os.path.join(temp_folder, name)
@@ -117,13 +169,23 @@ def get_backup():
         shutil.make_archive(backup_folder + '/' + bkp_name, format='zip', root_dir=temp_folder)        # create zip file
 
         log.debug(NAME, _('Moving file: {}.zip to ospy_backup/data.').format(bkp_name))
-        shutil.move(backup_folder + '/' + bkp_name + '.zip', data_folder)                              # move zip from to
+        backup_path = shutil.move(backup_folder + '/' + bkp_name + '.zip', data_folder)                # move zip from to
+
+        with health_lock:
+            health_state['last_success'] = time.time()
+            health_state['last_file'] = os.path.basename(backup_path)
+            health_state['last_size'] = os.path.getsize(backup_path)
+            health_state['last_error_message'] = ''
 
         return True
-    except:
+    except Exception:
+        record_backup_error(traceback.format_exc())
         log.debug(NAME, _('OSPy package Backup') + ':\n' + traceback.format_exc())
-        pass
         return False
+    finally:
+        with health_lock:
+            health_state['running'] = False
+        backup_lock.release()
 
 
 def backup_file_from_index(index_value):
