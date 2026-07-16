@@ -3,6 +3,10 @@ Tank Monitor Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, configured
+I²C address, water level, fill, sensor distance, volume, regulation, watering
+block, latest reading and errors through the OSPy system health interface.
+
 This plugin measures the water level in the tank. If water level is small, this plugin stop irigation system (stop runing stations in scheduler) and sends E-mail with error Safety for master station pump if no water.
 
 

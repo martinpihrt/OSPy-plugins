@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "tank_monitor",
+  "name": "Water Tank Monitor",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "smbus",
+      "package": "python3-smbus",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi"
+    ],
+    "requires": [
+      "i2c"
+    ]
+  },
+  "permissions": [
+    "files",
+    "i2c",
+    "email",
+    "system"
+  ]
+}

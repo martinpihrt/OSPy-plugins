@@ -13,14 +13,14 @@ import sys
 import traceback
 import os
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
 from ospy import helpers
 from ospy.options import options, rain_blocks
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
@@ -94,6 +94,14 @@ status['maxlevel'] = tank_options['saved_max']
 status['maxlevel_datetime'] = datetime_string()
 status['minlevel_datetime'] = datetime_string()
 _last_error_logs = {}
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_read': 0,
+    'sensor_error': False,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -103,13 +111,14 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         global status, avg_lst, avg_cnt, avg_rdy
 
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -125,6 +134,10 @@ class Sender(Thread):
 
     def log_problem(self):
         now = time.time()
+        error_message = traceback.format_exc().splitlines()[-1]
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = error_message
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, _('Water Tank Monitor plug-in') + ':\n' + traceback.format_exc())
             self._last_error_log = now
@@ -204,6 +217,10 @@ class Sender(Thread):
                         status['ping']    = sonic_cm
                         status['volume']  = get_volume(level_in_tank)
                         status['percent'] = get_tank(level_in_tank)
+                        with health_lock:
+                            health_state['last_read'] = time.time()
+                            health_state['sensor_error'] = False
+                            health_state['last_error_message'] = ''
 
                         ### printing information
                         log.clear(NAME)
@@ -308,6 +325,8 @@ class Sender(Thread):
                     elif level_in_tank == -1 and sonic_cm == 0:     # waiting for samples
                         tempText =  _('Waiting for samples')
                     else:                                           # error probe
+                        with health_lock:
+                            health_state['sensor_error'] = True
                         tempText =  _('FAULT')
                         log.clear(NAME)
                         log.info(NAME, datetime_string() + ' ' + _('Water level: Error.'))
@@ -388,7 +407,94 @@ def stop():
     if sender is not None:
         sender.stop()
         sender.join(15)
-        sender = None
+        if sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sender = None
+    stop_tank_regulation()
+
+
+def stop_tank_regulation():
+    """Release a station run created by tank-level regulation."""
+    try:
+        sid = int(tank_options['reg_output'])
+        for interval in log.active_runs():
+            if interval['station'] == sid and interval.get('program_name') == _('Tank Monitor'):
+                stations.deactivate(sid)
+                log.finish_run(interval)
+    except Exception:
+        log.error(NAME, _('Unable to release the tank regulation output.'))
+
+
+def health():
+    """Return tank level, sensor and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Tank monitoring enabled'): _('Yes') if tank_options['use_sonic'] else _('No'),
+        _('I2C address'): '0x{:02X}'.format(int(tank_options['address_ping'])),
+        _('Water level'): (
+            '{} cm'.format(status['level']) if status['level'] >= 0 else _('Not available')
+        ),
+        _('Tank fill'): (
+            '{} %'.format(status['percent']) if status['percent'] >= 0 else _('Not available')
+        ),
+        _('Sensor distance'): (
+            '{} cm'.format(status['ping']) if status['ping'] >= 0 else _('Not available')
+        ),
+        _('Volume'): status['volume'] if status['volume'] >= 0 else _('Not available'),
+        _('Regulation enabled'): _('Yes') if tank_options['enable_reg'] else _('No'),
+        _('Watering blocked'): _('Yes') if NAME in rain_blocks else _('No'),
+        _('Last successful sensor reading'): (
+            datetime_string(time.localtime(state['last_read']))
+            if state['last_read'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Water Tank Monitor worker is not running.'),
+            'details': details,
+        }
+    if not tank_options['use_sonic']:
+        return {
+            'status': 'unknown',
+            'summary': _('Water tank monitoring is disabled.'),
+            'details': details,
+        }
+    if state['sensor_error']:
+        return {
+            'status': 'error',
+            'summary': _('The water-level sensor is not responding.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_read']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_read']:
+        return {
+            'status': 'unknown',
+            'summary': _('Water Tank Monitor is waiting for its first sensor reading.'),
+            'details': details,
+        }
+    if status['level'] <= int(tank_options['water_minimum']):
+        return {
+            'status': 'warning',
+            'summary': _('Water in the tank is at or below the configured minimum.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Water Tank Monitor is responding.'),
+        'details': details,
+    }
 
 def average_list(lst):
     ### Average of a list ###
@@ -492,6 +598,11 @@ def get_sonic_cm():
         except:
             log_problem_once('sonic_read')
             return -1
+        finally:
+            try:
+                bus.close()
+            except Exception:
+                pass
     except:
         log_problem_once('sonic_import')
         return -1

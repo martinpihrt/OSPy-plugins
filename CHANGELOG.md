@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Water Tank Monitor<br/>
+Updated Water Tank Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C, local/SQL logging, e-mail and scheduler/station-control access, registers its sensor worker with the shared runtime, closes the SMBus handle after every reading, observes the common stop request with bounded shutdown, releases tank-regulation runs during stop, and reports worker, I²C address, level, fill, distance, volume, regulation, watering block, latest reading and errors through `health()`.
+
 (Martin Pihrt) - System Watchdog<br/>
 Updated System Watchdog for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Raspberry Pi hardware-watchdog, package-network, system-file, subprocess and service-control access, registers its service monitor with the shared runtime, observes the common stop request with bounded shutdown, and reports worker, package, service, watchdog device, latest check and errors through `health()`.
 
