@@ -6,12 +6,12 @@ import json
 import time
 import traceback
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers
@@ -34,6 +34,13 @@ options = PluginOptions(
      'log_date_last_reset':  datetime_string()  # last summary reset
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_reading': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -44,7 +51,7 @@ class WaterSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.bus = None
         self.pcf = None
@@ -54,6 +61,7 @@ class WaterSender(Thread):
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -69,6 +77,9 @@ class WaterSender(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -87,6 +98,16 @@ class WaterSender(Thread):
             self.pcf = None
             self._log_problem(_(u'Water Meter plug-in') + ':\n' + traceback.format_exc())
 
+    def close_bus(self):
+        bus = self.bus
+        self.bus = None
+        self.pcf = None
+        if bus is not None:
+            try:
+                bus.close()
+            except (AttributeError, OSError):
+                pass
+
     def run(self):
         self._open_bus()
 
@@ -103,71 +124,73 @@ class WaterSender(Thread):
         last_hour_time = int(time.time())
         actual_time = int(time.time())
 
-        while not self._stop_event.is_set():
-            try:
-                normalize_options()
-                if self.bus is None and options['enabled']:
-                    self._open_bus()
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    normalize_options()
+                    if self.bus is None and options['enabled']:
+                        self._open_bus()
 
-                if self.bus is not None and options['enabled']:  # if water meter plugin is enabled
-                    val = counter(self.bus) / options['pulses']
-                    self.status['meter'] = round(val, 2)
+                    if self.bus is not None and options['enabled']:  # if water meter plugin is enabled
+                        val = counter(self.bus) / options['pulses']
+                        self.status['meter'] = round(val, 2)
+                        with health_lock:
+                            health_state['last_reading'] = time.time()
 
-                    if once_text:
-                        log.clear(NAME)
-                        log.info(NAME, _(u'Water Meter plug-in is enabled.'))
-                        once_text = False
-                        two_text = True
-                        if self.pcf is None:
-                            log.warning(NAME, _(u'Could not find PCF8583.'))
-                        else:
-                            log.info(NAME, _(u'Please wait for minutes/hours data...'))
-                            log.info(NAME, '________________________________')
-                            log.info(NAME, _(u'Measured from') + ' {}'.format(options['log_date_last_reset']) + u'\n'+ _(u'Total sum') + u': {}'.format(round(sum_water, 2)) + u' ' + _(u'liters'))
-
-                    if self.pcf is not None:
-                        sum_water = sum_water + val
-                        minute_water = minute_water + val
-                        hour_water = hour_water + val
-
-                        actual_time = int(time.time())
-                        if actual_time - last_minute_time >= 60:          # minute counter
-                            last_minute_time = actual_time
+                        if once_text:
                             log.clear(NAME)
-                            log.info(NAME, _(u'Water per minutes') + ': {}'.format(round(minute_water, 2)) + u' ' + _(u'liters'))
-                            log.info(NAME, _(u'Water per hours') + ': {}'.format(round(hour_water, 2)) + u' ' + _(u'liters'))
-                            log.info(NAME, _(u'Measured from') + ' {}'.format(options['log_date_last_reset']) + u'\n'+ _(u'Total sum') + u': {}'.format(round(sum_water, 2)) + u' ' + _(u'liters'))
-                            minute_water = 0
+                            log.info(NAME, _(u'Water Meter plug-in is enabled.'))
+                            once_text = False
+                            two_text = True
+                            if self.pcf is None:
+                                log.warning(NAME, _(u'Could not find PCF8583.'))
+                            else:
+                                log.info(NAME, _(u'Please wait for minutes/hours data...'))
+                                log.info(NAME, '________________________________')
+                                log.info(NAME, _(u'Measured from') + ' {}'.format(options['log_date_last_reset']) + u'\n'+ _(u'Total sum') + u': {}'.format(round(sum_water, 2)) + u' ' + _(u'liters'))
 
-                            # save summary water to options only 1 minutes
-                            # options.__setitem__('sum', sum_water)  
-                            qdict = {}       
-                            if options['enabled']:
-                                qdict['enabled'] = u'on' 
-                            if options['address']:
-                                qdict['address']  = u'on'
-                            qdict['sum'] = round(sum_water, 2)
-                            options.web_update(qdict)   
+                        if self.pcf is not None:
+                            sum_water = sum_water + val
+                            minute_water = minute_water + val
+                            hour_water = hour_water + val
 
-                        if actual_time - last_hour_time >= 3600:          # hour counter
-                            last_hour_time = actual_time
-                            hour_water = 0
+                            actual_time = int(time.time())
+                            if actual_time - last_minute_time >= 60:          # minute counter
+                                last_minute_time = actual_time
+                                log.clear(NAME)
+                                log.info(NAME, _(u'Water per minutes') + ': {}'.format(round(minute_water, 2)) + u' ' + _(u'liters'))
+                                log.info(NAME, _(u'Water per hours') + ': {}'.format(round(hour_water, 2)) + u' ' + _(u'liters'))
+                                log.info(NAME, _(u'Measured from') + ' {}'.format(options['log_date_last_reset']) + u'\n'+ _(u'Total sum') + u': {}'.format(round(sum_water, 2)) + u' ' + _(u'liters'))
+                                minute_water = 0
 
-                else:
-                    if two_text:
-                        self.status['meter'] = '0.0'
-                        log.clear(NAME)
-                        log.info(NAME, _(u'Water Meter plug-in is disabled.'))
-                        two_text = False
-                        once_text = True
+                                qdict = {}
+                                if options['enabled']:
+                                    qdict['enabled'] = u'on'
+                                if options['address']:
+                                    qdict['address'] = u'on'
+                                qdict['sum'] = round(sum_water, 2)
+                                options.web_update(qdict)
 
-                self._sleep(1)
+                            if actual_time - last_hour_time >= 3600:          # hour counter
+                                last_hour_time = actual_time
+                                hour_water = 0
 
-            except Exception:
-                self.bus = None
-                self.pcf = None
-                self._log_problem(_(u'Water Meter plug-in') + ':\n' + traceback.format_exc())
-                self._sleep(60)
+                    else:
+                        if two_text:
+                            self.status['meter'] = '0.0'
+                            log.clear(NAME)
+                            log.info(NAME, _(u'Water Meter plug-in is disabled.'))
+                            two_text = False
+                            once_text = True
+
+                    self._sleep(1)
+
+                except Exception:
+                    self.close_bus()
+                    self._log_problem(_(u'Water Meter plug-in') + ':\n' + traceback.format_exc())
+                    self._sleep(60)
+        finally:
+            self.close_bus()
 
 
 water_sender = None
@@ -186,8 +209,11 @@ def stop():
     global water_sender
     if water_sender is not None:
         water_sender.stop()
+        runtime.request_stop()
+        water_sender.close_bus()
         water_sender.join(15)
-        water_sender = None
+        if not water_sender.is_alive():
+            water_sender = None
 
 
 def try_io(call, tries=3):
@@ -348,3 +374,41 @@ class water_json(ProtectedPage):
         data = {}
         data['sec_water'] = water_sender.status['meter'] if water_sender is not None else 0.0
         return json.dumps(data)        
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = water_sender is not None and water_sender.is_alive()
+    bus_open = water_sender is not None and water_sender.bus is not None
+    counter_ready = water_sender is not None and water_sender.pcf is not None
+    with health_lock:
+        state = dict(health_state)
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(options.get('enabled', False)),
+        'i2c_address': '0x51' if options.get('address', False) else '0x50',
+        'i2c_bus': _('Open') if bus_open else _('Unavailable'),
+        'counter': _('Ready') if counter_ready else _('Unavailable'),
+        'liters_per_second': water_sender.status['meter'] if water_sender is not None else 0.0,
+        'total_liters': options.get('sum', 0),
+        'last_reading': state['last_reading'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+    if not worker_alive:
+        status = 'error'
+        summary = _('Water Meter worker is not running.')
+    elif not options.get('enabled', False):
+        status = 'unknown'
+        summary = _('Water Meter is disabled.')
+    elif not bus_open or not counter_ready:
+        status = 'error'
+        summary = _('PCF8583 is not available.')
+    elif state['last_error'] and state['last_error'] > state['last_reading']:
+        status = 'warning'
+        summary = _('Water Meter reported an error.')
+    else:
+        status = 'ok'
+        summary = _('Water Meter is reading pulses.')
+    return {'status': status, 'summary': summary, 'details': details}

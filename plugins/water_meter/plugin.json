@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "water_meter",
+  "name": "Water Meter",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "smbus",
+      "package": "python3-smbus",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi"
+    ],
+    "requires": [
+      "i2c"
+    ],
+    "i2c": [
+      "0x50",
+      "0x51"
+    ]
+  },
+  "permissions": [
+    "files",
+    "i2c"
+  ]
+}
