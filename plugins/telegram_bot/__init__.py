@@ -10,14 +10,14 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
 from blinker import signal
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import verify_csrf
 from ospy.options import options
@@ -52,6 +52,15 @@ plugin_options = PluginOptions(
      'use_footer': True
      }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'connected': False,
+    'last_poll': 0,
+    'last_message': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 class TelegramApi(object):
@@ -109,7 +118,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._currentChats = []
         self._sleep_time = 0
         self._api = None
@@ -120,6 +129,7 @@ class Sender(Thread):
         self._last_station_states = self._station_states()
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -149,6 +159,10 @@ class Sender(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['connected'] = False
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -383,6 +397,8 @@ class Sender(Thread):
 
         log.info(NAME, temp_text)
         self._footer_text(temp_text)
+        with health_lock:
+            health_state['last_message'] = time.time()
 
     async def _connect(self):
         self._api = TelegramApi(plugin_options['botToken'])
@@ -399,11 +415,18 @@ class Sender(Thread):
             plugin_options['botFirstName']
         ))
         self._footer_text(_(u'Hi connect is OK my Name: {}.').format(plugin_options['botUsername']))
+        with health_lock:
+            health_state['connected'] = True
+            health_state['last_error_message'] = ''
         await self._announce(_(u'Bot on {} has just started!').format(options.name))
 
     async def _poll(self):
         last_update_id = int(plugin_options.get('lastUpdateID', 0) or 0)
         updates = await self._api.get_updates(offset=last_update_id + 1 if last_update_id else None)
+        with health_lock:
+            health_state['last_poll'] = time.time()
+            health_state['connected'] = True
+            health_state['last_error_message'] = ''
         for update in updates:
             update_id = int(update.get('update_id', 0) or 0)
             if update_id:
@@ -456,6 +479,11 @@ class Sender(Thread):
         try:
             loop.run_until_complete(self._main())
         finally:
+            if self._zone_connected:
+                signal('zone_change').disconnect(notify_zone_change)
+                self._zone_connected = False
+            with health_lock:
+                health_state['connected'] = False
             self._loop = None
             loop.close()
 
@@ -477,7 +505,71 @@ def stop():
     if sender is not None:
        sender.stop()
        sender.join(15)
-       sender = None
+       if sender.is_alive():
+           log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+       else:
+           sender = None
+
+
+def health():
+    """Return Telegram connection and worker state without secrets."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Telegram Bot enabled'): _('Yes') if plugin_options['use_plugin'] else _('No'),
+        _('Bot token configured'): _('Yes') if plugin_options['botToken'] else _('No'),
+        _('Bot username'): plugin_options['botUsername'] or _('Not available'),
+        _('Subscribed chats'): len(plugin_options['currentChats']),
+        _('Connected'): _('Yes') if state['connected'] else _('No'),
+        _('Zone-change notifications'): _('Yes') if plugin_options['zoneChange'] else _('No'),
+        _('Last successful poll'): (
+            time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(state['last_poll']))
+            if state['last_poll'] else _('Not available')
+        ),
+        _('Last received message'): (
+            time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(state['last_message']))
+            if state['last_message'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Telegram Bot worker is not running.'),
+            'details': details,
+        }
+    if not plugin_options['use_plugin']:
+        return {
+            'status': 'unknown',
+            'summary': _('Telegram Bot is disabled.'),
+            'details': details,
+        }
+    if not plugin_options['botToken']:
+        return {
+            'status': 'warning',
+            'summary': _('Telegram Bot is waiting for a token.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_poll']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['connected']:
+        return {
+            'status': 'warning',
+            'summary': _('Telegram Bot is not connected.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Telegram Bot is responding.'),
+        'details': details,
+    }
 
 
 def notify_zone_change(name, **kw):

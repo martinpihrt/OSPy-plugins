@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Telegram Bot<br/>
+Updated Telegram Bot for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Telegram network and scheduler/station-control access, registers its asynchronous polling worker with the shared runtime, manages and disconnects its zone-change receiver, observes the common stop request with bounded shutdown, keeps tokens and chat identifiers out of diagnostics, and reports worker, token presence, connection, username, subscribed count, polling, received messages and errors through `health()`.
+
 (Martin Pihrt) - Water Tank Monitor<br/>
 Updated Water Tank Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C, local/SQL logging, e-mail and scheduler/station-control access, registers its sensor worker with the shared runtime, closes the SMBus handle after every reading, observes the common stop request with bounded shutdown, releases tank-regulation runs during stop, and reports worker, I²C address, level, fill, distance, volume, regulation, watering block, latest reading and errors through `health()`.
 

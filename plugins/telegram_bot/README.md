@@ -8,6 +8,11 @@ The plugin uses the official Telegram Bot API directly. It does not install or
 upgrade `python-telegram-bot`, because current versions of that library use a
 new asynchronous API and older plugin code is not compatible with it.
 
+It includes a `plugin.json` manifest and reports its worker, token presence,
+connection, bot username, subscribed chat count, polling, received messages and
+errors through the OSPy system health interface. Tokens and chat identifiers are
+not included in diagnostics.
+
 Setup
 -----------
 
