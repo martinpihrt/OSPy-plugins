@@ -5,6 +5,8 @@ Tested in Python 3+
 
 This plugin Displays data probes DS18B20 (DS1-6) from Air Temperature and Humidity Monitor plugin and volume, percent from Water Tank Monitor plugin and more sensors.
 
+The plug-in includes a manifest declaring access to OSPy sensors and other plug-in readings, uses the shared OSPy lifecycle, and reports configured channels, refreshes and unavailable values through the Diagnostics health interface.
+
 Plugin setup
 -----------
 * Canvas or Text mode for showing data:  

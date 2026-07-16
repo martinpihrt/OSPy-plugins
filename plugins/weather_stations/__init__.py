@@ -7,8 +7,8 @@ import traceback
 import web
 
 from ospy.log import log
-from threading import Thread, Event
-from plugins import PluginOptions, plugin_url
+from threading import Thread, Lock
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.sensors import sensors
 from ospy.helpers import verify_csrf
@@ -39,6 +39,13 @@ plugin_options = PluginOptions(
     's_c_high_to': [30]*30,                 # sensor green color on highlights to
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_refresh': 0,
+    'values_returned': 0,
+    'unavailable_values': 0,
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -48,12 +55,13 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -70,6 +78,8 @@ class Sender(Thread):
     def run(self):
         log.clear(NAME)
         log.info(NAME, _(u'Weather stations plug-in is enabled.'))
+        while not self._stop_event.wait(1):
+            pass
          
 sender = None
 
@@ -87,8 +97,10 @@ def stop():
     global sender
     if sender is not None:
        sender.stop()
+       runtime.request_stop()
        sender.join(15)
-       sender = None 
+       if not sender.is_alive():
+           sender = None
 
 ### clear plugin settings to default ###
 def set_to_default():
@@ -376,4 +388,39 @@ class data_json(ProtectedPage):
                 except:
                     data.append(-127)                                        # any errors
 
+        with health_lock:
+            health_state['last_refresh'] = time.time()
+            health_state['values_returned'] = len(data)
+            health_state['unavailable_values'] = sum(1 for value in data if value == -127)
         return json.dumps(data) # example data list [-127, -127, -127, -127, -127, -127, -127, -127, -127, 25]
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = sender is not None and sender.is_alive()
+    normalize_options()
+    enabled_channels = sum(1 for enabled in plugin_options.get('s_use', []) if enabled)
+    with health_lock:
+        state = dict(health_state)
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'mode': _('Text') if plugin_options.get('can_or_txt', False) else _('Canvas'),
+        'configured_channels': enabled_channels,
+        'ospy_sensors': sensors.count(),
+        'last_refresh': state['last_refresh'],
+        'values_returned': state['values_returned'],
+        'unavailable_values': state['unavailable_values'],
+    }
+    if not worker_alive:
+        status = 'error'
+        summary = _('Weather Stations service is not running.')
+    elif not enabled_channels:
+        status = 'unknown'
+        summary = _('Weather Stations has no enabled channels.')
+    elif state['last_refresh'] and state['unavailable_values']:
+        status = 'warning'
+        summary = _('Some weather-station values are unavailable.')
+    else:
+        status = 'ok'
+        summary = _('Weather Stations is ready.')
+    return {'status': status, 'summary': summary, 'details': details}
