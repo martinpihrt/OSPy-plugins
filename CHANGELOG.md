@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Pool Heating<br/>
+Updated Pool Heating for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring e-mail and scheduler/station-control access, registers its regulation worker with the shared runtime, observes the common stop request with bounded shutdown, safely releases its controlled pool output during stop, and reports worker, regulation, temperatures, selected output, safety shutdown and errors through `health()`.
+
 (Martin Pihrt) - Ping Monitor<br/>
 Updated Ping Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring ICMP network, log-file, e-mail, subprocess and optional system-restart access, registers its monitoring worker with the shared runtime, replaces its uninterruptible startup delay with the common stop signal, performs bounded shutdown, and reports worker, configuration, latest check, address availability and errors through `health()`.
 
