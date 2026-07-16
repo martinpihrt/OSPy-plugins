@@ -8,11 +8,11 @@ import os
 import os.path
 import traceback
 import re
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 from ospy.webpages import ProtectedPage
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.options import options
 from ospy.stations import stations
 from ospy.inputs import inputs
@@ -34,6 +34,15 @@ remote_options = PluginOptions(
         'api': '123456789'
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_send': 0,
+    'last_reply': '',
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 ################################################################################
@@ -43,11 +52,12 @@ class RemoteSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._last_error_log = 0
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -64,13 +74,21 @@ class RemoteSender(Thread):
     def try_send(self, text):
         log.clear(NAME)
         try:
-            send_data(text)  # send get data
+            reply = send_data(text)  # send get data
+            with health_lock:
+                health_state['last_send'] = time.time()
+                health_state['last_reply'] = reply[:200]
+                health_state['last_error_message'] = ''
             log.info(NAME, _('Remote was sent') + ':\n' + mask_api(text))
         except Exception:
             self.log_problem(_('Remote was not sent') + '!')
 
     def log_problem(self, message):
         now = time.time()
+        error_message = traceback.format_exc().splitlines()[-1]
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = error_message
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message + '\n' + traceback.format_exc())
             self._last_error_log = now
@@ -233,6 +251,8 @@ class RemoteSender(Thread):
                     send_msg = False                           # Disable send data    
                     
                 self._sleep(2)
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
 
             except Exception:
                 self.log_problem(_('Remote plug-in') + ':')
@@ -256,7 +276,63 @@ def stop():
     if remote_sender is not None:
         remote_sender.stop()
         remote_sender.join(15)
-        remote_sender = None
+        if remote_sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            remote_sender = None
+
+
+def health():
+    """Return remote notification state without exposing the API key."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = remote_sender is not None and remote_sender.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Remote notifications enabled'): _('Yes') if remote_options['use'] else _('No'),
+        _('Remote server'): remote_options['rem_adr'] or _('Not configured'),
+        _('API key configured'): _('Yes') if remote_options['api'] else _('No'),
+        _('Last successful cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+        _('Last successful notification'): (
+            datetime_string(time.localtime(state['last_send']))
+            if state['last_send'] else _('Not available')
+        ),
+        _('Last server reply'): state['last_reply'] or _('Not available'),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Remote Notifications worker is not running.'),
+            'details': details,
+        }
+    if not remote_options['use']:
+        return {
+            'status': 'unknown',
+            'summary': _('Remote notifications are disabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_send']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_send']:
+        return {
+            'status': 'unknown',
+            'summary': _('Remote Notifications is waiting for a state change to send.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Remote Notifications is responding.'),
+        'details': details,
+    }
 
 
 def sanity_msg(msg):
@@ -292,8 +368,10 @@ def send_data(text):
         from urllib.request import urlopen
 
         url = remote_options['rem_adr'] + 'save.php/?' + text 
-        data = urlopen(url, timeout=HTTP_TIMEOUT)
-        log.info(NAME, _('Remote server reply') + ':\n' + data.read().decode('utf-8'))
+        with urlopen(url, timeout=HTTP_TIMEOUT) as data:
+            reply = data.read().decode('utf-8')
+        log.info(NAME, _('Remote server reply') + ':\n' + reply)
+        return reply
     else:
         raise Exception(_('Remote plug-in is not properly configured') + '!')
 

@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Remote Notifications<br/>
+Updated Remote Notifications for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring HTTP network and system-state access, registers its event-monitoring worker with the shared runtime, observes the common stop request with bounded shutdown, closes HTTP responses, keeps the API key out of diagnostics, and reports worker, server, API-key presence, latest cycle, successful notification, reply and errors through `health()`.
+
 (Martin Pihrt) - Remote FTP Control<br/>
 Updated Remote FTP Control for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring FTP network, ramdisk/file and scheduler-control access, registers its polling worker with the shared runtime, closes an active FTP connection before bounded shutdown, keeps credentials out of diagnostics, and reports worker, server, directory, connection, latest command, successful transfer and errors through `health()`.
 

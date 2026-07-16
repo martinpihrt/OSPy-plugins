@@ -3,6 +3,11 @@ Remote Notifications Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, remote
+server, API-key presence, latest state cycle, notification, server reply and
+errors through the OSPy system health interface. The API key is never included
+in diagnostics.
+
 This plugin can send Notifications on the Remote Webserver. This plugin requre SQL server and Webserver with PHP.  
 This plugin send data as get command to remote PHP web pages.  
 This plugin requred correct settings this plugins: UPS Monitor, Tank Humi Monitor.  
