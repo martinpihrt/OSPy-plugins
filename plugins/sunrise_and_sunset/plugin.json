@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "sunrise_and_sunset",
+  "name": "Astro Sunrise and Sunset",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "astral",
+      "package": "astral",
+      "required": false
+    },
+    {
+      "module": "pytz",
+      "package": "pytz",
+      "required": false
+    }
+  ],
+  "permissions": [
+    "network",
+    "subprocess",
+    "system"
+  ]
+}

@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Astro Sunrise and Sunset<br/>
+Updated Astro Sunrise and Sunset for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring optional Astral and pytz plus dependency-installation and scheduler-control access, registers both its calculation and dependency-installation workers with the shared runtime, observes the common stop request with bounded shutdown, and reports worker, Astral availability, location, sunrise, sunset, scheduled programs, dependency installation, latest calculation and errors through `health()`.
+
 (Martin Pihrt) - Speed Monitor<br/>
 Updated Speed Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring speed-test network and local log-file access, registers its monitoring worker with the shared runtime, removes the unprotected speed test that previously ran before the worker loop, observes the common stop request with bounded shutdown, and reports worker, active test, ping, download, upload, latest successful test and errors through `health()`.
 

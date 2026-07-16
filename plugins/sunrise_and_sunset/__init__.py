@@ -15,7 +15,7 @@ import web
 from datetime import datetime
 from ospy.webpages import ProtectedPage
 from ospy.log import log, logEM, logEV
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.options import options, rain_blocks
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.programs import programs
@@ -67,6 +67,14 @@ last_millis = 0
 _last_error_log = {'message': None, 'time': 0}
 dependency_install_lock = Lock()
 dependency_install_running = False
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_calculation': 0,
+    'scheduled_programs': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 city_table = [
     _('Not selected'),
@@ -447,7 +455,7 @@ class StatusChecker(Thread):
         self.daemon = True
         self.started = Event()
         self._done = Condition()
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
         self.sunrise = None
@@ -456,6 +464,7 @@ class StatusChecker(Thread):
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -558,6 +567,11 @@ class StatusChecker(Thread):
                                 s = compute_sunrise_sunset()
                                 if s is None:
                                     raise ValueError(_('Sunrise and sunset calculation failed.'))
+                                self.sunrise = s['sunrise']
+                                self.sunset = s['sunset']
+                                with health_lock:
+                                    health_state['last_calculation'] = time.time()
+                                    health_state['last_error_message'] = ''
 
                                 log.info(NAME, '_______________ ' + '{}'.format(today) + ' _______________')
                                 log.info(NAME, _('Dawn') + ': {}'.format(s["dawn"].strftime("%H:%M:%S")))
@@ -624,6 +638,8 @@ class StatusChecker(Thread):
                                                 log.info(NAME, _('The "{}" will be launched at {} hours.').format(programs[plugin_options['pgm_run'][int(i)]].name, start_time.strftime("%d.%m.%Y %H:%M:%S")))
                                                 # example in list {'Program 01': datetime.datetime(2022, 8, 1, 6, 31, 39, 859458, tzinfo=<DstTzInfo 'Europe/Prague' CEST+2:00:00 DST>), 'Program 02': datetime.datetime(2022, 8, 1, 19, 45, 11, 806923, tzinfo=<DstTzInfo 'Europe/Prague' CEST+2:00:00 DST>)}
                             pgmlen = len(run_now_pgm_list)
+                            with health_lock:
+                                health_state['scheduled_programs'] = pgmlen
                             if pgmlen > 0:
                                 msg += ', ' + _('{} programs scheduled').format(pgmlen)                    
 
@@ -675,7 +691,78 @@ def stop():
     if checker is not None:
         checker.stop()
         checker.join(15)
-        checker = None
+        runtime.join(15)
+        if checker.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            checker = None
+
+
+def health():
+    """Return Astral calculation, schedule and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = checker is not None and checker.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Astro scheduling enabled'): _('Yes') if plugin_options['use_astro'] else _('No'),
+        _('Astral available'): _('Yes') if astral_is_available() else _('No'),
+        _('Location'): (
+            checker.mycity.name
+            if checker is not None and checker.mycity is not None else _('Not available')
+        ),
+        _('Sunrise'): (
+            str(checker.sunrise) if checker is not None and checker.sunrise else _('Not available')
+        ),
+        _('Sunset'): (
+            str(checker.sunset) if checker is not None and checker.sunset else _('Not available')
+        ),
+        _('Scheduled programs'): state['scheduled_programs'],
+        _('Dependency installation running'): (
+            _('Yes') if astral_dependencies_installing() else _('No')
+        ),
+        _('Last successful calculation'): (
+            datetime_string(time.localtime(state['last_calculation']))
+            if state['last_calculation'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Astro Sunrise and Sunset worker is not running.'),
+            'details': details,
+        }
+    if not plugin_options['use_astro']:
+        return {
+            'status': 'unknown',
+            'summary': _('Astro scheduling is disabled.'),
+            'details': details,
+        }
+    if not astral_is_available():
+        return {
+            'status': 'error',
+            'summary': _('Astral is not installed.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_calculation']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_calculation']:
+        return {
+            'status': 'unknown',
+            'summary': _('Astro Sunrise and Sunset is waiting for its first calculation.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Astro Sunrise and Sunset is responding.'),
+        'details': details,
+    }
 
 def run_command(cmd):
     try:
@@ -718,6 +805,7 @@ def start_astral_dependency_install():
     install_thread = Thread(target=install_astral_dependency)
     install_thread.daemon = True
     install_thread.start()
+    runtime.register_thread(install_thread)
 
 
 def install_astral_dependency():
@@ -762,6 +850,9 @@ def install_astral_dependency():
 
 def log_astro_error(message):
     now = time.time()
+    with health_lock:
+        health_state['last_error'] = now
+        health_state['last_error_message'] = message
     if message != _last_error_log['message'] or now - _last_error_log['time'] >= ERROR_LOG_THROTTLE:
         _last_error_log['message'] = message
         _last_error_log['time'] = now

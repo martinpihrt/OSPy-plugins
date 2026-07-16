@@ -3,6 +3,10 @@ Sunrise and Sunset Readme
 
 Only for Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, Astral
+availability, location, sunrise, sunset, scheduled programs, dependency
+installation and calculation errors through the OSPy system health interface.
+
 This extension requires the Astral Python package. If Astral is missing, the status page shows an Install libraries button and writes the installation progress to the status log. On Raspberry Pi OS install it with:
 
 ```
