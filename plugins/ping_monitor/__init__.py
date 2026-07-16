@@ -18,14 +18,14 @@ import os
 import subprocess
 import mimetypes
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
 from ospy import helpers
 from ospy.options import options
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.helpers import reboot, verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string
@@ -65,6 +65,13 @@ plugin_options = PluginOptions(
 
 status = { }
 _last_error_log = {}
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 def log_ping_problem(key, message):
@@ -95,7 +102,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         global status
 
@@ -114,6 +121,7 @@ class Sender(Thread):
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -129,9 +137,8 @@ class Sender(Thread):
 
     def run(self):
         log.clear(NAME)
-        time.sleep(
-            randint(3, 10)
-        )  # Sleep some time to prevent printing before startup information
+        if self._stop_event.wait(randint(3, 10)):
+            return  # Sleep some time to prevent printing before startup information
 
         last_email_millis = 0    # timer for sending e-mails (ms)
         last_ping_millis  = 0    # timer for sending ping (ms)
@@ -190,6 +197,10 @@ class Sender(Thread):
                             en_fault = True
                         else:
                             status['state'] = "-"
+
+                        with health_lock:
+                            health_state['last_cycle'] = time.time()
+                            health_state['last_error_message'] = ''
 
                         if status['ping1'] != status['last_ping1']:
                             status['last_ping1'] = status['ping1']
@@ -252,7 +263,11 @@ class Sender(Thread):
                 self._sleep(1)
 
             except Exception:
-                log_ping_problem('run_loop', _('Ping Monitor plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = message
+                log_ping_problem('run_loop', _('Ping Monitor plug-in') + ': ' + message)
                 self._sleep(60)
 
 
@@ -272,7 +287,77 @@ def stop():
     if sender is not None:
         sender.stop()
         sender.join(15)
-        sender = None
+        if sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sender = None
+
+
+def health():
+    """Return worker and monitored-address availability for diagnostics."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    configured = [
+        (str(plugin_options['address_1']).strip(), status.get('ping1', 0)),
+        (str(plugin_options['address_2']).strip(), status.get('ping2', 0)),
+        (str(plugin_options['address_3']).strip(), status.get('ping3', 0)),
+    ]
+    configured = [(address, value) for address, value in configured if address]
+    available = sum(1 for address, value in configured if value == 1)
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Monitoring enabled'): _('Yes') if plugin_options['use_ping'] else _('No'),
+        _('Configured addresses'): len(configured),
+        _('Available addresses'): available,
+        _('Last completed check'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Ping Monitor worker is not running.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not plugin_options['use_ping']:
+        return {
+            'status': 'unknown',
+            'summary': _('Ping monitoring is disabled.'),
+            'details': details,
+        }
+    if not state['last_cycle']:
+        return {
+            'status': 'unknown',
+            'summary': _('Ping Monitor is waiting for its first check.'),
+            'details': details,
+        }
+    if available == 0:
+        return {
+            'status': 'error',
+            'summary': _('None of the configured addresses is available.'),
+            'details': details,
+        }
+    if available < len(configured):
+        return {
+            'status': 'warning',
+            'summary': _('Some configured addresses are not available.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('All configured addresses are available.'),
+        'details': details,
+    }
 
 
 def ping_ip(current_ip_address):

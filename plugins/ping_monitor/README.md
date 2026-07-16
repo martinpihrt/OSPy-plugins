@@ -3,6 +3,10 @@ Ping Monitor Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, monitoring
+configuration, latest check, address availability and errors through the OSPy
+system health interface.
+
 This extension allows you to ping addresses. All pings are recorded in a file (always the first successful and the first unsuccessful).
 The log file (pings) can be sent by E-mail after a certain time. At the same time, we can restart the device after a certain number of unsuccessful attempts. 
 
