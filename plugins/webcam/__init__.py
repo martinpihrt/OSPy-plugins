@@ -10,6 +10,7 @@ import traceback
 import re
 import os
 import mimetypes
+import shutil
 
 import web
 from ospy.log import log
@@ -40,7 +41,52 @@ def start():
     pass
 
 
-stop = start
+def stop():
+    pass
+
+
+def health():
+    """Return USB camera, capture utility and snapshot availability."""
+    enabled = bool(cam_options['enabled'])
+    camera_available = os.path.exists('/dev/video0')
+    fswebcam_path = shutil.which('fswebcam')
+    image_location = get_image_location()
+    image_available = os.path.isfile(image_location)
+    details = {
+        _('Capture enabled'): _('Yes') if enabled else _('No'),
+        _('Camera device'): '/dev/video0' if camera_available else _('Not found'),
+        'fswebcam': fswebcam_path or _('Not found'),
+        _('Snapshot'): image_location if image_available else _('Not available'),
+    }
+    if not enabled:
+        return {
+            'status': 'unknown',
+            'summary': _('Webcam capture is disabled.'),
+            'details': details,
+        }
+    if not camera_available:
+        return {
+            'status': 'error',
+            'summary': _('USB camera is not available.'),
+            'details': details,
+        }
+    if not fswebcam_path:
+        return {
+            'status': 'error',
+            'summary': _('Fswebcam is not installed.'),
+            'details': details,
+        }
+    if not image_available:
+        return {
+            'status': 'warning',
+            'summary': _('No webcam snapshot is available yet.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Webcam snapshot is available.'),
+        'details': details,
+    }
 
 
 def get_image_location():

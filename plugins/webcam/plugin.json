@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "webcam",
+  "name": "Webcam Monitor",
+  "menu": "Package: Webcam Monitor",
+  "version": "1.0.0",
+  "description": "Captures and serves snapshots from a Linux USB webcam using fswebcam.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/webcam",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "hardware": {
+    "platforms": [
+      "raspberry_pi",
+      "beaglebone",
+      "linux"
+    ],
+    "requires": [
+      "usb_camera"
+    ]
+  },
+  "permissions": [
+    "files",
+    "subprocess",
+    "system"
+  ]
+}
