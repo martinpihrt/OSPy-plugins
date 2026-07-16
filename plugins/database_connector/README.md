@@ -5,6 +5,11 @@ Tested in Python 3+
 This extension uses a database connection via the interface: mysql-connector-python to install use: sudo pip install mysql-connector-python.
 https://dev.mysql.com/doc/connector-python/en/connector-python-installation.html
 
+The plug-in includes an OSPy `plugin.json` manifest and implements the common
+lifecycle and `health()` interfaces. Diagnostics reports whether the connector
+is enabled and available, its version, configured server and database, and the
+result of the latest real database operation. Database connections and cursors
+are closed after every operation.
 
 Plugin setup
 -----------

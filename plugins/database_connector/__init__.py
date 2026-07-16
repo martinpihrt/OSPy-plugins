@@ -12,7 +12,7 @@ import os
 import mimetypes
 import shlex
 
-from threading import Thread, Event
+from threading import Lock
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.log import log
@@ -47,67 +47,112 @@ plugin_options = PluginOptions(
 is_installed_ok = False
 _last_error_log = {'message': None, 'time': 0}
 _last_command_log = 0
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+    'connector_version': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
-class Sender(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-        self.daemon = True
-        self._stop_event = Event()
-        self._sleep_time = 0
-        self.start()
-
-    def stop(self):
-        self._stop_event.set()
-
-    def update(self):
-        self._sleep_time = 0
-
-    def _sleep(self, secs):
-        self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop_event.is_set():
-            time.sleep(1)
-            self._sleep_time -= 1
-
-    def run(self):
-        global is_installed_ok
-        log.clear(NAME)
-        if not self._stop_event.is_set():
-            try:
-                if plugin_options['use']:
-                    try:
-                        import mysql.connector
-                        version = mysql.connector.__version_info__
-                        log.info(NAME, _('Installed version mysql-connector-python:') + ' {}.{}.{}'.format(version[0], version[1], version[2]))
-                        is_installed_ok = True
-                    except ImportError:
-                        log.info(NAME, _('Mysql-connector-python is not installed or any error.'))
-                        log.info(NAME, _('Error') + ':\n' + traceback.format_exc())
-
-            except Exception:
-                log.clear(NAME)
-                log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
-                self._sleep(1)
-
-sender = None
+started = False
 
 ################################################################################
 # Helper functions:                                                            #
 ################################################################################
 def start():
-    global sender
-    if sender is None:
-        sender = Sender()
+    global is_installed_ok, started
+    started = True
+    log.clear(NAME)
+    if not plugin_options['use']:
+        return
+    try:
+        import mysql.connector
+        version = mysql.connector.__version_info__
+        version_text = '.'.join(str(part) for part in version[:3])
+        with health_lock:
+            health_state['connector_version'] = version_text
+            health_state['last_error_message'] = ''
+        is_installed_ok = True
+        log.info(NAME, _('Installed version mysql-connector-python:') + ' ' + version_text)
+    except Exception as error:
+        is_installed_ok = False
+        record_db_error(error)
+        log.info(NAME, _('Mysql-connector-python is not installed or any error.'))
+        log.info(NAME, _('Error') + ':\n' + traceback.format_exc())
 
 
 def stop():
-    global sender
-    if sender is not None:
-        sender.stop()
-        sender.join(15)
-        sender = None
+    global started
+    started = False
+
+
+def record_db_success():
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+
+
+def record_db_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return connector dependency, configuration and last query state."""
+    with health_lock:
+        state = dict(health_state)
+    details = {
+        _('Lifecycle'): _('Started') if started else _('Stopped'),
+        _('Host'): '{}:{}'.format(plugin_options['host'], plugin_options['port']),
+        _('Database'): plugin_options['database'],
+        _('Connector version'): state['connector_version'] or _('Not available'),
+        _('Last successful database operation'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not plugin_options['use']:
+        return {
+            'status': 'unknown',
+            'summary': _('Database Connector is disabled.'),
+            'details': details,
+        }
+    if not started:
+        return {
+            'status': 'error',
+            'summary': _('Database Connector is stopped.'),
+            'details': details,
+        }
+    if not is_installed_ok:
+        return {
+            'status': 'error',
+            'summary': _('Mysql-connector-python is not installed or any error.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('Database connection has not been tested yet.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Database connection is responding.'),
+        'details': details,
+    }
 
 
 def install_db():
@@ -145,6 +190,7 @@ def db_config():
 
 def log_db_error(message):
     now = time.time()
+    record_db_error(message)
     if message != _last_error_log['message'] or now - _last_error_log['time'] >= DB_ERROR_LOG_THROTTLE:
         _last_error_log['message'] = message
         _last_error_log['time'] = now
@@ -203,7 +249,12 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
 
                 if fetch and not test:
                     msg = cur.fetchall()
-            
+
+                record_db_success()
+            else:
+                log_db_error(_('Database connection/query failed') + ': ' + _('Not connected'))
+                return None
+
             return -1 if msg is None else msg
 
         except mysql.connector.Error as err:

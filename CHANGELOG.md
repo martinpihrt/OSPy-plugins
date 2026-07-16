@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Database Connector<br/>
+Updated Database Connector for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring MySQL Connector, network, file and subprocess access, replaces its unnecessary one-shot worker with explicit lifecycle handling, and reports enablement, connector availability and version, configured target, and the latest real database operation through `health()`.
+
 (Martin Pihrt) - Current Loop Tanks Monitor<br/>
 Updated Current Loop Tanks Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring ADS1115 I2C, file, e-mail and system-control access, registers its measurement worker with the shared runtime, uses the common stop signal with bounded shutdown, closes the SMBus handle after measurements, and reports configured tanks, worker, address, latest successful measurement and I2C or ADC errors through `health()`.
 
