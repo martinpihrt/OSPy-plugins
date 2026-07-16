@@ -16,7 +16,7 @@ from ospy.options import options
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers 
 from ospy.log import log
-from threading import Thread, Event, Lock
+from threading import Lock
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.webpages import ProtectedPage
 
@@ -32,7 +32,14 @@ MAX_LOG_ENTRIES = 200
 ERROR_LOG_THROTTLE = 300
 
 serial_lock = Lock()
+health_lock = Lock()
 _last_error_log = {}
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+    'last_command': '',
+}
 
 plugin_options = PluginOptions(
     NAME,
@@ -56,30 +63,17 @@ except:
 # Main function loop:                                                          #
 ################################################################################
 
-class Sender(Thread):
+class Sender:
     def __init__(self):
-        Thread.__init__(self)
-        self.daemon = True
-        self._stop_event = Event()
-
         self.status = {}
-
-        self._sleep_time = 0
-        self.start()
+        self.receivers = []
+        self.update()
 
     def stop(self):
-        self._stop_event.set()
+        self._disconnect()
 
     def update(self):
-        self._sleep_time = 0
-
-    def _sleep(self, secs):
-        self._sleep_time = secs
-        while self._sleep_time > 0 and not self._stop_event.is_set():
-            time.sleep(1)
-            self._sleep_time -= 1
-
-    def run(self):
+        self._disconnect()
         if plugin_options['use_control']:  # if plugin is enabled
             log.clear(NAME)
             if not ser_test:
@@ -87,18 +81,24 @@ class Sender(Thread):
             else:    
                 log.info(NAME, _('Modbus Stations enabled.'))
             try:
-                station_on = signal('station_on')
-                station_on.connect(on_station_on)
-                station_off = signal('station_off')
-                station_off.connect(on_station_off)
-                station_clear = signal('station_clear')
-                station_clear.connect(on_station_clear)
+                self.receivers = [
+                    (signal('station_on'), on_station_on),
+                    (signal('station_off'), on_station_off),
+                    (signal('station_clear'), on_station_clear),
+                ]
+                for event_signal, receiver in self.receivers:
+                    event_signal.connect(receiver)
             except Exception:
+                record_serial_error(traceback.format_exc())
                 log.error(NAME, _('Modbus Stations plug-in') + ':\n' + traceback.format_exc())
-                pass
         else:
             log.clear(NAME)
             log.info(NAME, _('Modbus Stations is disabled.'))
+
+    def _disconnect(self):
+        for event_signal, receiver in self.receivers:
+            event_signal.disconnect(receiver)
+        self.receivers = []
 
 sender = None
 
@@ -117,8 +117,83 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
-        sender.join(15)
         sender = None
+
+
+def record_serial_success(command):
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+        health_state['last_command'] = command
+
+
+def record_serial_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return serial dependency, receiver and latest Modbus command state."""
+    with health_lock:
+        state = dict(health_state)
+    receiver_count = len(sender.receivers) if sender is not None else 0
+    details = {
+        _('Lifecycle'): _('Started') if sender is not None else _('Stopped'),
+        _('Serial port'): plugin_options['port'],
+        _('Baud rate'): plugin_options['baud'],
+        _('Relay boards'): plugin_options['nr_boards'],
+        _('Signal receivers'): receiver_count,
+        _('Last successful command'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if state['last_command']:
+        details[_('Last command')] = state['last_command']
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not plugin_options['use_control']:
+        return {
+            'status': 'unknown',
+            'summary': _('Modbus Stations is disabled.'),
+            'details': details,
+        }
+    if sender is None:
+        return {
+            'status': 'error',
+            'summary': _('Modbus Stations is stopped.'),
+            'details': details,
+        }
+    if not ser_test:
+        return {
+            'status': 'error',
+            'summary': _('Serial not found. Requires to be installed in to the Linux system. Use: sudo apt install python3-serial and restart ospy!'),
+            'details': details,
+        }
+    if receiver_count != 3:
+        return {
+            'status': 'error',
+            'summary': _('Modbus station signal receivers are disconnected.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first Modbus station command.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Modbus station commands are being sent successfully.'),
+        'details': details,
+    }
 
 
 def Compute_address_and_out(station_nr):
@@ -158,10 +233,9 @@ def open_serial_port():
         except TypeError:
             return serial.Serial(plugin_options['port'], plugin_options['baud'], timeout=SERIAL_TIMEOUT)
     except Exception as err:
-        log_modbus_problem(
-            'serial_open',
-            _('Unable to open serial port') + ' {}: {}'.format(plugin_options['port'], err)
-        )
+        message = _('Unable to open serial port') + ' {}: {}'.format(plugin_options['port'], err)
+        record_serial_error(message)
+        log_modbus_problem('serial_open', message)
         return None
 
 
@@ -317,13 +391,13 @@ def ModbusCRC(data):
 
 def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
     cmd = [0]*8
+    s = None
     try:
-        s = None
-        try:
-            if ser_test:
-                s = open_serial_port()
-        except:
-            log.info(NAME, _('No such file or directory') + ': {}'.format(plugin_options['port']))
+        if not ser_test:
+            message = _('Serial not found. Use: sudo apt install python3-serial.')
+            record_serial_error(message)
+            return False
+        s = open_serial_port()
 
         if s is not None:    
             cmd[0] = address  # 0 x 00 is broadcast addressďĽ› 0x01-0xFF are device addresses (Device address is 01 by default)
@@ -348,14 +422,24 @@ def Send_data(address=0x01, command=0x05, relay_nr=0, state='off'):
                 s.write(cmd)
             status = _('Addr: {} Out: {} To: {}.').format(address, relay_nr, msg)
             update_log(cmd, status)
-            s.close()
+            record_serial_success(status)
             time.sleep(MODBUS_COMMAND_DELAY)
+            return True
+        return False
 
     except Exception:
-        log_modbus_problem('send_data', _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
+        message = _('Modbus Stations plug-in') + ': ' + traceback.format_exc().splitlines()[-1]
+        record_serial_error(message)
+        log_modbus_problem('send_data', message)
         status = _('Error: {}').format(traceback.format_exc().splitlines()[-1])
         update_log(cmd, status)
-        pass
+        return False
+    finally:
+        if s is not None:
+            try:
+                s.close()
+            except Exception:
+                pass
 
 def Read_address():
     # https://www.waveshare.com/wiki/Modbus_RTU_Relay

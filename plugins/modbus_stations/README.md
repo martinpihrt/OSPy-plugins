@@ -6,6 +6,14 @@ Tested in Python 3
 This plugin can be used to control devices via modbus protocol (8ch relay boards).
 Requires to be installed in to the Linux system. Use: sudo apt install python3-serial and restart ospy!
 
+The plug-in includes an OSPy `plugin.json` manifest and implements the common
+lifecycle and `health()` interfaces. Its former one-shot thread was replaced by
+explicit registration and removal of the three station signal receivers, which
+prevents duplicate Modbus commands after a plug-in restart. Diagnostics reports
+pyserial availability, non-secret serial settings, receiver count, and the
+latest successful command or communication error. Serial handles are closed
+after every station command.
+
 Plugin setup
 -----------
 

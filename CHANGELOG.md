@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Modbus Stations<br/>
+Updated Modbus Stations for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring pyserial, Blinker, serial relay hardware, file and system access, replaces its unnecessary one-shot worker with explicit lifecycle management of three station signal receivers, prevents duplicate commands after restart, closes command serial handles, and reports dependency, receiver and communication state through `health()`.
+
 (Martin Pihrt) - Label Maker<br/>
 Updated Label Maker for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring optional Pillow and QR libraries plus file and subprocess access, removes its unnecessary one-shot worker in favor of explicit lifecycle handling, registers the real dependency-installation worker with the shared runtime, and reports selected type, relevant dependencies, generated output and latest generation result through `health()`.
 

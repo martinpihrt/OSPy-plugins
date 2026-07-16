@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "modbus_stations",
+  "name": "Modbus Stations",
+  "menu": "Package: Modbus Stations",
+  "version": "1.0.0",
+  "description": "Controls OSPy station outputs through Modbus RTU serial relay boards.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/modbus_stations",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "serial",
+      "package": "pyserial",
+      "required": true
+    },
+    {
+      "module": "blinker",
+      "package": "blinker",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi",
+      "beaglebone",
+      "linux"
+    ],
+    "requires": [
+      "serial"
+    ]
+  },
+  "permissions": [
+    "files",
+    "system"
+  ]
+}
