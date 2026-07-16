@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "current_loop_tanks_monitor",
+  "name": "Current Loop Tanks Monitor",
+  "menu": "Package: Current Loop Tanks Monitor",
+  "version": "1.0.0",
+  "description": "Monitors up to four water tanks through an ADS1115 and 4-20 mA pressure sensors.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/current_loop_tanks_monitor",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "smbus",
+      "package": "python3-smbus",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi",
+      "linux"
+    ],
+    "requires": [
+      "i2c"
+    ]
+  },
+  "permissions": [
+    "email",
+    "files",
+    "i2c",
+    "system"
+  ]
+}

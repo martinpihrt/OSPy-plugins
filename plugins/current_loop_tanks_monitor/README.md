@@ -7,3 +7,8 @@ This plug-in module measures the water level in 4 tanks. A differential pressure
 Visit [Martin Pihrt's blog](https://pihrt.com/clanky/mereni-vysky-tl136) for more information.
 
 The measurement interval is configurable in seconds. Longer intervals reduce CPU usage and I2C bus load. The plug-in reads only tanks that are enabled or needed by regulation, stop-station or e-mail rules.
+
+The plug-in includes an OSPy `plugin.json` manifest, registers its measurement
+worker with the shared plug-in runtime, uses the common stop signal, and
+implements `health()`. Diagnostics reports configured tanks, worker state,
+ADS1115 address, latest successful measurement, and I2C or ADC errors.

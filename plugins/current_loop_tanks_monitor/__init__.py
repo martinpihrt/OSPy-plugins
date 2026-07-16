@@ -10,7 +10,7 @@ import sys
 import traceback
 import os
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 import smbus
@@ -18,7 +18,7 @@ import smbus
 from ospy import helpers
 from ospy.options import options, rain_blocks
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.helpers import get_rpi_revision
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
@@ -195,6 +195,13 @@ tanks['use']            = [plugin_options['en_tank1'], plugin_options['en_tank2'
 tanks['io_error']       = False
 tanks['channel_error']  = [False, False, False, False]
 status_cache = {'message': None, 'time': 0}
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 if plugin_options['use_script']:
     script_path = "current_loop_tanks_monitor/script/tank.js"
@@ -211,7 +218,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self.start()
 
@@ -461,14 +468,80 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
+        runtime.register_thread(sender)
 
 
 def stop():
     global sender
-    if sender is not None:
-        sender.stop()
-        sender.join(15)
-        sender = None
+    worker = sender
+    if worker is not None:
+        worker.stop()
+        worker.join(15)
+        if sender is worker and not worker.is_alive():
+            sender = None
+
+
+def record_measurement_success():
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+
+
+def record_measurement_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return worker, configuration and ADS1115 measurement state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_alive = sender is not None and sender.is_alive()
+    active_channels = [
+        channel + 1 for channel in range(4) if tank_requires_measurement(channel)
+    ]
+    i2c_addresses = [0x48, 0x49, 0x4A, 0x4B]
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Enabled tanks'): ', '.join(str(channel) for channel in active_channels) or _('None'),
+        _('I2C address'): '0x{:02x}'.format(i2c_addresses[int(plugin_options['i2c'])]),
+        _('Last successful measurement'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not active_channels:
+        return {
+            'status': 'unknown',
+            'summary': _('The measurement of all tanks is switched off.'),
+            'details': details,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('Current Loop Tanks Monitor worker is stopped.'),
+            'details': details,
+        }
+    if state['last_error'] > state['last_success']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first tank measurement.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Tank measurements are available.'),
+        'details': details,
+    }
 
 
 def set_stations_in_scheduler_off():
@@ -605,10 +678,12 @@ def get_data():
 
     try:
         bus = smbus.SMBus(1 if get_rpi_revision() >= 2 else 0)
-    except FileNotFoundError:
+    except (FileNotFoundError, OSError) as error:
         tanks['io_error'] = True
         tanks['channel_error'] = [True, True, True, True]
-        write_status(_('Error: the I2C bus is not available.'))
+        message = _('Error: the I2C bus is not available.')
+        record_measurement_error(error or message)
+        write_status(message)
         return
     
     # Definition for the tank level for each channel (minimum and maximum voltage)
@@ -664,13 +739,20 @@ def get_data():
     tanks['channel_error'] = channel_error
 
     if IO_error:    
+        record_measurement_error(_('Error: I/O.'))
         write_status(_('Error: I/O.'))
 
     if VAL_error:
+        record_measurement_error(_('Error: ADC value.'))
         write_status(_('Error: ADC value.'))
 
     if not IO_error and not VAL_error:
+        record_measurement_success()
         write_status(_('No problems (measurement works as it should).'))
+
+    close_bus = getattr(bus, 'close', None)
+    if callable(close_bus):
+        close_bus()
 
 
 def scan_i2c():

@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Current Loop Tanks Monitor<br/>
+Updated Current Loop Tanks Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring ADS1115 I2C, file, e-mail and system-control access, registers its measurement worker with the shared runtime, uses the common stop signal with bounded shutdown, closes the SMBus handle after measurements, and reports configured tanks, worker, address, latest successful measurement and I2C or ADC errors through `health()`.
+
 (Martin Pihrt) - Air Temperature and Humidity Monitor<br/>
 Updated Air Temperature and Humidity Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Raspberry Pi GPIO, optional SMBus and sensor access, registers its polling worker with the shared runtime, uses the common stop signal with bounded shutdown, and reports configured DHT/DS18B20 sensors, worker, latest sample and sensor errors through `health()`.
 
