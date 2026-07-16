@@ -8,14 +8,14 @@ import traceback
 import mimetypes
 import os
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
 from ospy import helpers
 from ospy.options import options
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
 
@@ -45,6 +45,14 @@ speed_options = PluginOptions(
         'dt_to': '2024-01-01T00:00',   # for graph history
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'testing': False,
+    'last_test': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -54,7 +62,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
         self.status['down'] = 0
@@ -64,6 +72,7 @@ class Sender(Thread):
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -79,6 +88,11 @@ class Sender(Thread):
 
     def log_problem(self):
         now = time.time()
+        error_message = traceback.format_exc().splitlines()[-1]
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = error_message
+            health_state['testing'] = False
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, _('Speed Monitor plug-in') + ':\n' + traceback.format_exc())
             self._last_error_log = now
@@ -90,9 +104,6 @@ class Sender(Thread):
         speed_mon = None
         footText = ""
         tempText = _('Has not been loaded yet')
-
-        if speed_options['use_monitor']:
-            new_speeds = get_new_speeds()
 
         if speed_options['use_footer']:
             speed_mon = showInFooter() #  instantiate class to enable data in footer
@@ -115,10 +126,17 @@ class Sender(Thread):
                     if (millis - last_test_millis) > test_interval:
                         last_test_millis = millis
                         try:
+                            with health_lock:
+                                health_state['testing'] = True
                             new_speeds = get_new_speeds()
+                            with health_lock:
+                                health_state['testing'] = False
+                                health_state['last_test'] = time.time()
+                                health_state['last_error_message'] = ''
                         except:
                             new_speeds = 0,0,0
                             tempText = _('Cannot be loaded')
+                            self.log_problem()
                         self.status['ping'] = new_speeds[0] # Ping (ms)
                         self.status['down'] = new_speeds[1] # Download (Mb/s)
                         self.status['up'] = new_speeds[2]   # Upload (Mb/s)
@@ -160,7 +178,67 @@ def stop():
     if sender is not None:
         sender.stop()
         sender.join(15)
-        sender = None
+        if sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sender = None
+
+
+def health():
+    """Return latest speed test and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    values = sender.status if sender is not None else {'ping': 0, 'down': 0, 'up': 0}
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Speed monitoring enabled'): _('Yes') if speed_options['use_monitor'] else _('No'),
+        _('Test in progress'): _('Yes') if state['testing'] else _('No'),
+        _('Ping'): '{} ms'.format(values['ping']),
+        _('Download'): '{} Mb/s'.format(values['down']),
+        _('Upload'): '{} Mb/s'.format(values['up']),
+        _('Last successful speed test'): (
+            datetime_string(time.localtime(state['last_test']))
+            if state['last_test'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Speed Monitor worker is not running.'),
+            'details': details,
+        }
+    if not speed_options['use_monitor']:
+        return {
+            'status': 'unknown',
+            'summary': _('Internet speed monitoring is disabled.'),
+            'details': details,
+        }
+    if state['testing']:
+        return {
+            'status': 'warning',
+            'summary': _('An Internet speed test is in progress.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_test']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_test']:
+        return {
+            'status': 'unknown',
+            'summary': _('Speed Monitor is waiting for its first successful test.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Speed Monitor is responding.'),
+        'details': details,
+    }
 
 
 def get_new_speeds():

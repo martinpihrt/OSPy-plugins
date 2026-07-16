@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Speed Monitor<br/>
+Updated Speed Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring speed-test network and local log-file access, registers its monitoring worker with the shared runtime, removes the unprotected speed test that previously ran before the worker loop, observes the common stop request with bounded shutdown, and reports worker, active test, ping, download, upload, latest successful test and errors through `health()`.
+
 (Martin Pihrt) - SMS Modem<br/>
 Updated SMS Modem for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Python Gammu, serial-modem, configuration-file, e-mail and system-control requirements, registers its polling worker with the shared runtime, observes the common stop request with bounded shutdown, corrects the webcam e-mail attachment call, keeps administrator telephone numbers out of diagnostics, and reports worker, Gammu, modem, administrator count, signal, latest check, command and errors through `health()`.
 
