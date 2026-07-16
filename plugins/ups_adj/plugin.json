@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "ups_adj",
+  "name": "UPS Monitor",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.211"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "RPi.GPIO",
+      "package": "python3-rpi.gpio",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi"
+    ],
+    "requires": [
+      "gpio"
+    ],
+    "gpio": [
+      "16",
+      "18"
+    ]
+  },
+  "permissions": [
+    "files",
+    "gpio",
+    "email",
+    "system"
+  ]
+}

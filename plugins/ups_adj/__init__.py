@@ -10,12 +10,12 @@ import os
 import traceback
 import mimetypes
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 from ospy.helpers import poweroff
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.options import options
@@ -48,6 +48,14 @@ ups_options = PluginOptions(
         'dt_to' : '2024-01-01T00:00',                 # for graph history (to date time ex: 2024-03-17T12:00)
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_check': 0,
+    'power_fault': None,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # GPIO input pullup and output:                                                #
@@ -79,7 +87,7 @@ class UPSSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
         self.status['power%d'] = 0
@@ -87,6 +95,7 @@ class UPSSender(Thread):
 
         self._sleep_time = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -120,6 +129,10 @@ class UPSSender(Thread):
             try:
                 if ups_options['ups']:                                     # if ups plugin is enabled
                     test = get_check_power()
+                    with health_lock:
+                        health_state['last_check'] = time.time()
+                        health_state['power_fault'] = bool(test)
+                        health_state['last_error_message'] = ''
                 
                     if not test:
                         text = _(u'OK')
@@ -232,6 +245,10 @@ class UPSSender(Thread):
                 self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = message
                 log.error(NAME, _('UPS plug-in') + ': \n' + traceback.format_exc())
                 self._sleep(60)
 
@@ -254,7 +271,77 @@ def stop():
     if ups_sender is not None:
         ups_sender.stop()
         ups_sender.join(15)
-        ups_sender = None
+        if ups_sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            ups_sender = None
+    try:
+        GPIO.output(pin_ups_down, GPIO.LOW)
+    except Exception:
+        log.error(NAME, _('Unable to release the UPS shutdown output.'))
+
+
+def health():
+    """Return power input, shutdown countdown and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = ups_sender is not None and ups_sender.is_alive()
+    countdown = (
+        ups_sender.status.get('countdown_remaining') if ups_sender is not None else None
+    )
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('UPS monitoring enabled'): _('Yes') if ups_options['ups'] else _('No'),
+        _('Power line'): (
+            _('Fault') if state['power_fault'] else _('OK')
+            if state['power_fault'] is not None else _('Not available')
+        ),
+        _('Shutdown countdown'): (
+            format_seconds(countdown) if countdown is not None else _('Not active')
+        ),
+        _('Shutdown delay'): '{} min'.format(ups_options['time']),
+        _('Last power-line check'): (
+            datetime_string(time.localtime(state['last_check']))
+            if state['last_check'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('UPS Monitor worker is not running.'),
+            'details': details,
+        }
+    if not ups_options['ups']:
+        return {
+            'status': 'unknown',
+            'summary': _('UPS monitoring is disabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_check']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if state['power_fault']:
+        return {
+            'status': 'error',
+            'summary': _('A power-line fault is active.'),
+            'details': details,
+        }
+    if not state['last_check']:
+        return {
+            'status': 'unknown',
+            'summary': _('UPS Monitor is waiting for its first power-line check.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('UPS Monitor is responding.'),
+        'details': details,
+    }
 
 
 def get_check_power_str():

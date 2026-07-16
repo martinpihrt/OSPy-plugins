@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - UPS Monitor<br/>
+Updated UPS Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring RPi.GPIO, Raspberry Pi physical pins 16 and 18, local/SQL logging, e-mail and system-shutdown access, registers its power worker with the shared runtime, observes the common stop request with bounded shutdown, returns the UPS shutdown output low during stop, and reports worker, power input, shutdown countdown and delay, latest check and errors through `health()`.
+
 (Martin Pihrt) - Thermostat<br/>
 Updated Thermostat for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring temperature-source and program/station-control access, registers its control worker with the shared runtime, observes the common stop request with bounded shutdown, preserves the ownership-safe existing program-control behavior, and reports worker, enabled zones, current temperatures, unavailable sources or setup errors, active program actions, latest cycle and errors through `health()`.
 

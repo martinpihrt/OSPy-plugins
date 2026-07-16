@@ -3,6 +3,11 @@ UPS Monitor Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, power-line
+input, shutdown countdown and delay, latest check and errors through the OSPy
+system health interface. The UPS shutdown output is returned low when the
+plug-in stops.
+
 UPS Uninterruptible Power Supply (Source)
 This plugin checked power line for system.  
 If is error with power line in a certain time, sends plugin email with error and shutdown system (and generate pulse to GPIO for shutdown Your UPS).</p>
