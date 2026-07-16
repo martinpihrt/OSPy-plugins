@@ -6,6 +6,13 @@ Only for Python 3+
 This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider.
 This extension is a more modern variant of the original E-mail notifications extension (Connection via SSL layer)
 
+The plug-in includes an OSPy `plugin.json` manifest, registers its notification
+and retry worker with the shared plug-in runtime, manages system signal
+receivers through the common lifecycle, and implements `health()`. Diagnostics
+reports worker, signal receiver and SMTP configuration state, queued message
+count, latest successful SSL delivery, and recent errors without exposing
+credentials or recipients.
+
 Plugin setup
 -----------
 * Check Send E-mail after power on for send E-mail:  
