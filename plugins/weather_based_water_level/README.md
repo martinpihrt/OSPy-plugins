@@ -7,6 +7,8 @@ When weather-based water level is enabled, the weather will be checked every hou
 In addition, it is now able to protect plants against freezing during selected months.
 If weather data is temporarily unavailable, the plugin logs the problem and leaves the current water level adjustment unchanged.
 
+The plug-in includes a manifest declaring weather-network, irrigation-adjustment and freeze-protection access, uses the shared OSPy worker lifecycle, removes its callback, footer and adjustment during shutdown, and reports its latest calculation through the Diagnostics health interface.
+
 Plugin setup
 -----------
 * Check Use Automatic Water Level Adjustment:  

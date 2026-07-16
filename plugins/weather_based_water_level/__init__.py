@@ -3,7 +3,7 @@ __author__ = u'Rimco'
 # Martin Pihrt add i18n language support
 
 import datetime
-from threading import Thread, Event
+from threading import Thread, Lock
 import traceback
 import json
 import time
@@ -16,7 +16,7 @@ from ospy.webpages import ProtectedPage, showInFooter, clear_plugin_runtime_data
 from ospy.runonce import run_once
 from ospy.stations import stations
 from ospy.weather import weather
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.helpers import verify_csrf
 
 
@@ -58,6 +58,13 @@ last_detail = {
     'limited_by_min': False,
     'limited_by_max': False,
     'rows': [],
+}
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
 }
 
 
@@ -113,13 +120,14 @@ class WeatherLevelChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self._force_update = True
         self._last_calculation = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -277,6 +285,8 @@ class WeatherLevelChecker(Thread):
                         'limited_by_max': raw_water_adjustment > plugin_options['wl_max'],
                         'rows': rows,
                     }
+                    with health_lock:
+                        health_state['last_success'] = time.time()
                     update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Missing') + ' %.1fmm, %.0f%%' % (water_left, water_adjustment))
 
                     level_adjustments[NAME] = water_adjustment / 100
@@ -357,14 +367,20 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
+        runtime.request_stop()
         checker.join(15)
-        checker = None
+        if not checker.is_alive():
+            checker = None
     if NAME in level_adjustments:
         del level_adjustments[NAME]
+    clear_plugin_runtime_data('weather_based_water_level')
 
 
 def log_weather_problem(message):
     now = time.time()
+    with health_lock:
+        health_state['last_error'] = now
+        health_state['last_error_message'] = str(message).splitlines()[-1]
     if checker is None or now - checker._last_error_log >= WEATHER_ERROR_LOG_THROTTLE:
         if checker is not None:
             checker._last_error_log = now
@@ -444,3 +460,42 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = checker is not None and checker.is_alive()
+    with health_lock:
+        state = dict(health_state)
+    adjustment = level_adjustments.get(NAME)
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(plugin_options.get('enabled', False)),
+        'days_used': last_detail.get('days_used', 0),
+        'rain_mm': last_detail.get('rain_mm', 0),
+        'water_needed_mm': last_detail.get('water_needed', 0),
+        'water_adjustment_percent': last_detail.get('water_adjustment'),
+        'active_adjustment': adjustment,
+        'freeze_protection': bool(plugin_options.get('protect_enabled', False)),
+        'last_calculation': last_detail.get('calculated_at'),
+        'last_success': state['last_success'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+    if not worker_alive:
+        status = 'error'
+        summary = _('Weather-based water level worker is not running.')
+    elif not plugin_options.get('enabled', False):
+        status = 'unknown'
+        summary = _('Weather-based water level is disabled.')
+    elif last_detail.get('water_adjustment') is None:
+        status = 'warning'
+        summary = _('No usable weather calculation is available.')
+    elif state['last_error'] and state['last_error'] > state['last_success']:
+        status = 'warning'
+        summary = _('Weather-based water level reported an error.')
+    else:
+        status = 'ok'
+        summary = _('Weather-based water level is active.')
+    return {'status': status, 'summary': summary, 'details': details}
