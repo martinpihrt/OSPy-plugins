@@ -5,13 +5,13 @@ import json
 import time
 import datetime
 import traceback
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 import plugins as plugin_manager
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.stations import stations
@@ -67,6 +67,15 @@ plugin_options = PluginOptions(
      'use_footer': True    # show data from plugin in footer on home page
      }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_read': 0,
+    'temperatures': [],
+    'source_available': False,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 def plugin_is_running(module):
     try:
@@ -85,12 +94,13 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self._last_error_log = 0
         self._last_air_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -106,12 +116,18 @@ class Sender(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
 
     def _log_air_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['source_available'] = False
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_air_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_air_error_log = now
@@ -215,6 +231,11 @@ class Sender(Thread):
                         plugin_options['ds_count'] = 0
                         next_probe_refresh = time.time() + 60
                     else:
+                        with health_lock:
+                            health_state['last_read'] = time.time()
+                            health_state['temperatures'] = list(temperature_ds)
+                            health_state['source_available'] = True
+                            health_state['last_error_message'] = ''
                         next_probe_refresh = time.time() + PROBE_REFRESH_INTERVAL
 
                 # regulation A
@@ -342,7 +363,89 @@ def stop():
     if sender is not None:
         sender.stop()
         sender.join(15)
-        sender = None
+        if sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sender = None
+    stop_temperature_runs()
+
+
+def stop_temperature_runs():
+    """Release station runs created by this plug-in."""
+    for interval in list(log.active_runs()):
+        if interval.get('program_name') in OWN_RUN_NAMES:
+            sid = interval.get('station')
+            log.finish_run(interval)
+            if not any(
+                    run.get('station') == sid and run.get('program_name') not in OWN_RUN_NAMES
+                    for run in log.active_runs()):
+                stations.deactivate(sid)
+
+
+def health():
+    """Return temperature source, regulation and worker state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    enabled = sum(
+        1 for key in ('enabled_a', 'enabled_b', 'enabled_c') if plugin_options[key]
+    )
+    valid_temperatures = [
+        value for value in state['temperatures']
+        if isinstance(value, (int, float)) and value != -127
+    ]
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Enabled regulation channels'): enabled,
+        _('Temperature source available'): _('Yes') if state['source_available'] else _('No'),
+        _('Configured probes'): plugin_options['ds_count'],
+        _('Valid temperatures'): len(valid_temperatures),
+        _('Active plug-in runs'): sum(
+            1 for interval in log.active_runs()
+            if interval.get('program_name') in OWN_RUN_NAMES
+        ),
+        _('Last successful temperature reading'): (
+            datetime_string(time.localtime(state['last_read']))
+            if state['last_read'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Temperature Switch worker is not running.'),
+            'details': details,
+        }
+    if enabled == 0:
+        return {
+            'status': 'unknown',
+            'summary': _('All temperature regulation channels are disabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_read']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['source_available']:
+        return {
+            'status': 'warning',
+            'summary': _('The Air Temperature and Humidity Monitor source is not available.'),
+            'details': details,
+        }
+    if not valid_temperatures:
+        return {
+            'status': 'warning',
+            'summary': _('No valid configured temperature is available.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Temperature Switch is responding.'),
+        'details': details,
+    }
 
 
 def clamp_int(value, minimum, maximum):

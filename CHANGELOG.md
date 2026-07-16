@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Temperature Switch<br/>
+Updated Temperature Switch for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring temperature-source and station-control requirements, registers its regulation worker with the shared runtime, observes the common stop request with bounded shutdown, releases only its own A/B/C station runs during stop, and reports worker, enabled channels, source availability, configured probes, valid readings, active runs and errors through `health()`.
+
 (Martin Pihrt) - Telegram Bot<br/>
 Updated Telegram Bot for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Telegram network and scheduler/station-control access, registers its asynchronous polling worker with the shared runtime, manages and disconnects its zone-change receiver, observes the common stop request with bounded shutdown, keeps tokens and chat identifiers out of diagnostics, and reports worker, token presence, connection, username, subscribed count, polling, received messages and errors through `health()`.
 
