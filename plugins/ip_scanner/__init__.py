@@ -14,13 +14,14 @@ import os
 import re
 import socket
 
-from threading import Thread, Event
+from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ospy.webpages import ProtectedPage                          # For check user login permissions
 from ospy.helpers import verify_csrf
 from ospy import helpers
 from ospy.log import log
+from plugins import get_runtime
 
 find_now = False
 scan_common_web_ports = False
@@ -40,6 +41,7 @@ scan_data = {
 
 COMMON_WEB_PORTS = (80, 443, 8080, 8081)
 MAX_SCAN_HOSTS = 512
+runtime = get_runtime()
 
 
 def _run_command(command, timeout=5):
@@ -50,7 +52,7 @@ def _run_command(command, timeout=5):
         return ''
 
 
-def _local_network_info():
+def _local_network_info(stop_event=None):
     ospy_ip = helpers.get_ip()
     info = {
         'ip': ospy_ip,
@@ -64,6 +66,9 @@ def _local_network_info():
     if route_match:
         info['gateway'] = route_match.group(1)
         info['interface'] = route_match.group(2)
+
+    if stop_event is not None and stop_event.is_set():
+        return info
 
     addr_output = _run_command(['ip', '-o', '-f', 'inet', 'addr', 'show'])
     for line in addr_output.splitlines():
@@ -89,7 +94,9 @@ def _local_network_info():
     return info
 
 
-def _ping(ip):
+def _ping(ip, stop_event=None):
+    if stop_event is not None and stop_event.is_set():
+        return False
     ip = str(ip)
     if os.name == 'nt':
         command = ['ping', '-n', '1', '-w', '700', ip]
@@ -102,7 +109,7 @@ def _ping(ip):
         return False
 
 
-def _read_neighbors():
+def _read_neighbors(stop_event=None):
     neighbors = {}
     output = _run_command(['ip', 'neigh', 'show'])
     for line in output.splitlines():
@@ -116,6 +123,9 @@ def _read_neighbors():
             neighbors[ip] = {'mac': mac, 'state': state}
 
     if neighbors:
+        return neighbors
+
+    if stop_event is not None and stop_event.is_set():
         return neighbors
 
     output = _run_command(['arp', '-n'])
@@ -170,10 +180,15 @@ def _check_port(ip, port):
         sock.close()
 
 
-def _scan_network(check_ports=False):
-    info = _local_network_info()
+def _scan_network(check_ports=False, stop_event=None):
+    if stop_event is not None and stop_event.is_set():
+        return None
+    info = _local_network_info(stop_event)
     devices_by_ip = {}
     alive_ips = set()
+
+    if stop_event is not None and stop_event.is_set():
+        return None
 
     if info['network']:
         network = ipaddress.ip_network(info['network'], strict=False)
@@ -184,12 +199,20 @@ def _scan_network(check_ports=False):
         if len(hosts) > MAX_SCAN_HOSTS:
             hosts = hosts[:MAX_SCAN_HOSTS]
         with ThreadPoolExecutor(max_workers=32) as executor:
-            futures = {executor.submit(_ping, ip): str(ip) for ip in hosts}
+            futures = {
+                executor.submit(_ping, ip, stop_event): str(ip)
+                for ip in hosts
+            }
             for future in as_completed(futures):
                 if future.result():
                     alive_ips.add(futures[future])
 
-    neighbors = _read_neighbors()
+    if stop_event is not None and stop_event.is_set():
+        return None
+
+    neighbors = _read_neighbors(stop_event)
+    if stop_event is not None and stop_event.is_set():
+        return None
     for ip, neighbor in neighbors.items():
         if info['network']:
             try:
@@ -221,6 +244,8 @@ def _scan_network(check_ports=False):
         })
 
     for ip, device in devices_by_ip.items():
+        if stop_event is not None and stop_event.is_set():
+            return None
         device['hostname'] = _hostname(ip)
         device['vendor'] = _vendor(device['mac'])
         notes = []
@@ -281,7 +306,7 @@ class MSGSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self.start()
 
@@ -308,7 +333,12 @@ class MSGSender(Thread):
                     scan_data['running'] = True
                     scan_data['error'] = ''
                     msg = [_('Processing...')]
-                    scan_data = _scan_network(check_ports)
+                    result = _scan_network(check_ports, self._stop_event)
+                    if result is None:
+                        scan_data = dict(scan_data)
+                        scan_data['running'] = False
+                        break
+                    scan_data = result
                     msg = _scan_text(scan_data)
 
                 self._sleep(2)
@@ -329,14 +359,65 @@ def start():
     global msg_sender
     if msg_sender is None:
         msg_sender = MSGSender()
+        runtime.register_thread(msg_sender)
 
 
 def stop():
     global msg_sender
-    if msg_sender is not None:
-        msg_sender.stop()
-        msg_sender.join(15)
-        msg_sender = None
+    worker = msg_sender
+    if worker is not None:
+        worker.stop()
+        worker.join(15)
+        if msg_sender is worker and not worker.is_alive():
+            msg_sender = None
+
+
+def health():
+    """Return scanner worker and latest network scan state."""
+    worker_alive = msg_sender is not None and msg_sender.is_alive()
+    data = dict(scan_data)
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Scan in progress'): _('Yes') if data.get('running') else _('No'),
+        _('Network'): data.get('network') or _('Not available'),
+        _('Network interface'): data.get('interface') or _('Not available'),
+        _('Last scan'): data.get('last_scan') or _('Not available'),
+        _('Found devices'): data.get('device_count', 0),
+        _('Common web ports'): (
+            _('Checked') if data.get('ports_checked') else _('Not checked')
+        ),
+    }
+    if data.get('error'):
+        details[_('Last error')] = str(data['error']).splitlines()[-1]
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('IP Scanner worker is stopped.'),
+            'details': details,
+        }
+    if data.get('error'):
+        return {
+            'status': 'error',
+            'summary': str(data['error']).splitlines()[-1],
+            'details': details,
+        }
+    if data.get('running'):
+        return {
+            'status': 'warning',
+            'summary': _('Network scan is in progress.'),
+            'details': details,
+        }
+    if not data.get('last_scan'):
+        return {
+            'status': 'warning',
+            'summary': _('No network scan has been completed yet.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('The last network scan completed successfully.'),
+        'details': details,
+    }
 
 
 ################################################################################

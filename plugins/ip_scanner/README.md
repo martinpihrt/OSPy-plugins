@@ -12,3 +12,10 @@ This OSPy or Sensor candidate.
 
 The optional Check common web ports setting checks ports 80, 443, 8080 and 8081
 for discovered devices.
+
+The plug-in includes an OSPy `plugin.json` manifest, registers its scanning
+worker with the shared plug-in runtime, uses the common stop signal, and
+implements `health()`. A stop request is propagated into queued host checks so
+only the currently running, timeout-bounded commands need to finish.
+Diagnostics reports worker and scan state, network interface and range, last
+completed scan, device count, optional port checking, and the latest error.

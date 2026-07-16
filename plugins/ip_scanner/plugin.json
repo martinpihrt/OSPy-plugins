@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "ip_scanner",
+  "name": "IP Scanner",
+  "menu": "Package: IP Scanner",
+  "version": "1.0.0",
+  "description": "Scans the local network for devices, names, MAC addresses and common web services.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/ip_scanner",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "permissions": [
+    "network",
+    "subprocess"
+  ]
+}

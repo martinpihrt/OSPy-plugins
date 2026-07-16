@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - IP Scanner<br/>
+Updated IP Scanner for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring local-network and subprocess access, registers its scanning worker with the shared runtime, propagates the common stop signal into queued host scans while retaining command timeouts, performs bounded shutdown, and reports worker, scan, interface, network, device, port-check and error state through `health()`.
+
 (Martin Pihrt) - IP Cam<br/>
 Updated IP Cam for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Requests, Pillow, network and cache-file access, registers its automatic snapshot worker with the shared runtime, uses the common stop signal with bounded shutdown, closes completed HTTP responses, and aggregates its existing per-camera diagnostics into a credential-free `health()` report.
 
