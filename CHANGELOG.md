@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - System Information<br/>
+Updated System Information for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest, declares its optional Linux and I2C data sources and permissions, provides an explicit lifecycle stop function, and reports optional system-information source availability through `health()`.
+
 (Martin Pihrt) - MQTT<br/>
 Updated MQTT as the first reference plug-in for the new OSPy lifecycle and diagnostics interfaces. It now includes a `plugin.json` manifest, registers its sender startup thread with the shared plug-in runtime, uses the common stop signal, and provides `health()` information for dependency availability, configuration, MQTT client state, broker connection, recent publishing and the last runtime error.
 

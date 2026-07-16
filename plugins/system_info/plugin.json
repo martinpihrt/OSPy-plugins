@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "system_info",
+  "name": "System Information",
+  "menu": "Package: System Information",
+  "version": "1.0.0",
+  "description": "Displays operating-system, hardware, network, process, storage, USB, serial and optional I2C information.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/system_info",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "distro",
+      "package": "python3-distro",
+      "required": false
+    },
+    {
+      "module": "smbus",
+      "package": "python3-smbus",
+      "required": false
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi",
+      "beaglebone",
+      "linux"
+    ]
+  },
+  "permissions": [
+    "files",
+    "i2c",
+    "subprocess",
+    "system"
+  ]
+}

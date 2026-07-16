@@ -5,6 +5,8 @@ __author__ = 'Martin Pihrt'
 import platform
 from collections import OrderedDict
 import glob
+import importlib.util
+import shutil
 
 import traceback
 from ospy import helpers
@@ -33,7 +35,36 @@ def start():
     pass
 
 
-stop = start
+def stop():
+    pass
+
+
+def health():
+    """Return availability of the system-information data sources."""
+    optional_sources = {
+        _('I2C support'): importlib.util.find_spec('smbus') is not None,
+        'lsusb': shutil.which('lsusb') is not None,
+        'ps': shutil.which('ps') is not None,
+    }
+    unavailable = [
+        name for name, available in optional_sources.items() if not available
+    ]
+    details = {
+        _('Platform'): platform.platform(),
+        _('Optional sources available'): '{}/{}'.format(
+            len(optional_sources) - len(unavailable), len(optional_sources)
+        ),
+    }
+    if unavailable:
+        details[_('Unavailable optional sources')] = ', '.join(unavailable)
+    return {
+        'status': 'warning' if unavailable else 'ok',
+        'summary': (
+            _('Some optional system information is unavailable.')
+            if unavailable else _('System information is available.')
+        ),
+        'details': details,
+    }
 
 def get_overview():
     """Returns the info data as a list of lines."""
