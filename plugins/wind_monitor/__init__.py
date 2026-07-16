@@ -12,14 +12,14 @@ import traceback
 import os
 import mimetypes
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 from ospy.stations import stations
 from ospy.options import options
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir
-from ospy.webpages import ProtectedPage
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
+from ospy.webpages import ProtectedPage, clear_plugin_runtime_data
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers
 from ospy.i2c_guard import i2c_transaction
@@ -66,6 +66,15 @@ wind_options = PluginOptions(
         'dt_to' : '2024-01-01T00:00',                # for graph history (to date time ex: 2024-03-17T12:00)        
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_reading': 0,
+    'last_email': 0,
+    'last_action': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 def wind_i2c_transaction(timeout=30.0, settle_time=0.02):
@@ -83,7 +92,8 @@ class WindSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
+        self.bus = None
    
         self.status = {}
         self.status['meter'] = 0.0
@@ -94,6 +104,7 @@ class WindSender(Thread):
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -109,9 +120,31 @@ class WindSender(Thread):
 
     def _log_problem(self, message):
         now = time_.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= 300:
             log.error(NAME, message)
             self._last_error_log = now
+
+    def _open_bus(self):
+        if self.bus is not None:
+            return
+        try:
+            import smbus
+            self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
+        except ImportError:
+            log.warning(NAME, _('Could not import smbus.'))
+            self.bus = None
+
+    def close_bus(self):
+        bus = self.bus
+        self.bus = None
+        if bus is not None:
+            try:
+                bus.close()
+            except (AttributeError, OSError):
+                pass
 
     def run(self):
         millis = int(round(time_.time() * 1000))
@@ -145,18 +178,15 @@ class WindSender(Thread):
                 normalize_options()
                 if wind_options['use_wind_monitor']:    # if wind plugin is enabled
                     disable_text = True
-                    try:
-                        import smbus  # for PCF 8583
-                        self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
-
-                    except ImportError:
-                        log.warning(NAME, _('Could not import smbus.'))
-
+                    self._open_bus()
+                    puls = None
                     if self.bus is not None:
                         set_counter(self.bus)     # set pcf8583 as counter
-                        puls = counter(self.bus)  # read pulses
+                        puls = counter(self.bus, self._stop_event)  # read pulses
 
                     if puls is not None and puls < 1000:        # limiter for maximal pulses from counter (error filter)
+                        with health_lock:
+                            health_state['last_reading'] = time_.time()
                         puls = puls/10.0                       # counter value is value/10sec
                         val = puls/(wind_options['pulses']*1.0)
                         val = val*wind_options['metperrot']
@@ -302,14 +332,18 @@ class WindSender(Thread):
                             from plugins.email_notifications_ssl import try_mail    
                         if try_mail is not None:                        
                             try_mail(msg, msglog, attachment=None, subject=wind_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
+                            with health_lock:
+                                health_state['last_email'] = time_.time()
 
                     except Exception:
                         self._log_problem(_('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
 
             except Exception:
                 log.clear(NAME)
+                self.close_bus()
                 self._log_problem(_('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
+        self.close_bus()
 
 
 wind_sender = None
@@ -327,8 +361,12 @@ def stop():
     global wind_sender
     if wind_sender is not None:
         wind_sender.stop()
+        runtime.request_stop()
+        wind_sender.close_bus()
         wind_sender.join(15)
-        wind_sender = None
+        if not wind_sender.is_alive():
+            wind_sender = None
+    clear_plugin_runtime_data('wind_monitor')
 
 
 def try_io(call, tries=10):
@@ -401,7 +439,7 @@ def set_counter(i2cbus):
         log.error(NAME, _('Wind speed monitor plug-in') + '%s' % traceback.format_exc())
 
 
-def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses per second
+def counter(i2cbus, stop_event=None): # reset PCF8583, measure pulses and return number pulses per second
     try:
         pulses = 0
         addr = 0
@@ -414,7 +452,11 @@ def counter(i2cbus): # reset PCF8583, measure pulses and return number pulses pe
             try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
             try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
             try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
-        time_.sleep(10)
+        if stop_event is not None:
+            if stop_event.wait(10):
+                return None
+        else:
+            time_.sleep(10)
         # read number (pulses in counter) and translate to DEC
         with wind_i2c_transaction():
             counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
@@ -461,6 +503,8 @@ def set_stations_in_scheduler_off():
                 ending = True   
 
     if ending:
+        with health_lock:
+            health_state['last_action'] = time_.time()
         log.info(NAME, _('Stoping stations in scheduler'))
 
 
@@ -940,3 +984,47 @@ class wind_json(ProtectedPage):
         except:
             data['wind'] = '{}'.format(_('Any error'))
         return json.dumps(data)
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = wind_sender is not None and wind_sender.is_alive()
+    bus_open = wind_sender is not None and wind_sender.bus is not None
+    with health_lock:
+        state = dict(health_state)
+    status_data = wind_sender.status if wind_sender is not None else {
+        'meter': 0.0, 'kmeter': 0.0, 'max_meter': 0.0, 'log_date_maxspeed': ''
+    }
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(wind_options.get('use_wind_monitor', False)),
+        'i2c_address': '0x51' if wind_options.get('address', False) else '0x50',
+        'i2c_bus': _('Open') if bus_open else _('Unavailable'),
+        'speed_mps': status_data['meter'],
+        'maximum_mps': status_data['max_meter'],
+        'maximum_at': status_data['log_date_maxspeed'],
+        'station_stop_enabled': bool(wind_options.get('stoperr', False)),
+        'program_action_enabled': bool(wind_options.get('use_stop_pgm', False)),
+        'last_reading': state['last_reading'],
+        'last_email': state['last_email'],
+        'last_action': state['last_action'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+    if not worker_alive:
+        status = 'error'
+        summary = _('Wind monitor worker is not running.')
+    elif not wind_options.get('use_wind_monitor', False):
+        status = 'unknown'
+        summary = _('Wind monitor is disabled.')
+    elif not bus_open:
+        status = 'error'
+        summary = _('Wind counter is not available.')
+    elif state['last_error'] and state['last_error'] > state['last_reading']:
+        status = 'warning'
+        summary = _('Wind monitor reported an error.')
+    else:
+        status = 'ok'
+        summary = _('Wind monitor is reading the counter.')
+    return {'status': status, 'summary': summary, 'details': details}

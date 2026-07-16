@@ -6,6 +6,8 @@ Tested in Python 3+
 This plugin checked wind speed, if station is switched on and actual wind speed is > wind speed value in options, switches off all selected stations in scheduler and sends E-mail with error. Preventing for fault watering while wind.
 This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 or 0x51.
 1m/s = 3,6 km/h or 1m/s = 2,237 mile/h.
+
+The plug-in includes a manifest declaring its SMBus, I2C, e-mail, logging and scheduler-control requirements, uses the shared OSPy worker lifecycle, reuses and closes its I2C handle, interrupts an active measurement during shutdown, and reports counter, speed, actions and errors through the Diagnostics health interface.
 Measurement cycle:  
   the counter is cleared, 10 seconds are waited, from the counter read the number of pulses in 10 seconds.  
 Formula for calculation:  

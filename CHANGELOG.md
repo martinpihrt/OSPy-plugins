@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Wind Speed Monitor<br/>
+Updated Wind Speed Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C addresses 0x50/0x51, local/SQL logging, e-mail and scheduler/program-control access, registers its monitor with the shared runtime, reuses one SMBus handle instead of leaking a new handle each cycle, interrupts the ten-second measurement and closes I²C during bounded shutdown, clears its footer, and reports worker, counter, speed, maximum, actions, e-mail and errors through `health()`.
+
 (Martin Pihrt) - Weather Stations<br/>
 Updated Weather Stations for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring OSPy sensor, plug-in reading and local settings access, registers its service with the shared runtime instead of leaving a completed thread behind, observes bounded shutdown, and reports display mode, configured channels, sensor count, latest refresh and unavailable values through `health()`.
 
