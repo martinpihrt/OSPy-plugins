@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - CHMI<br/>
+Updated CHMI for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Requests, Pillow, optional SHMU libraries, network, file, subprocess and system access, registers both radar and dependency-installation workers with the shared runtime, uses the common stop signal with bounded shutdown, closes its HTTP session, and reports source, location, optional dependencies, radar timestamp, latest successful update and errors through `health()`.
+
 (Martin Pihrt) - E-mail Reader<br/>
 Updated E-mail Reader for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring IMAP network, e-mail, file and system-control access, registers its mailbox polling worker with the shared runtime, uses the common stop signal with bounded shutdown, closes an active IMAP session after worker errors, and reports non-secret configuration, latest mailbox check, message count and recent IMAP errors through `health()`.
 

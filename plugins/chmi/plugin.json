@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "chmi",
+  "name": "CHMI",
+  "menu": "Package: CHMI radar",
+  "version": "1.0.0",
+  "description": "Downloads CHMI or SHMU radar data, detects local rain and optionally controls a hardware map.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/chmi",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "requests",
+      "package": "requests",
+      "required": true
+    },
+    {
+      "module": "PIL",
+      "package": "Pillow",
+      "required": true
+    },
+    {
+      "module": "h5py",
+      "package": "h5py",
+      "required": false
+    },
+    {
+      "module": "numpy",
+      "package": "numpy",
+      "required": false
+    }
+  ],
+  "permissions": [
+    "files",
+    "network",
+    "subprocess",
+    "system"
+  ]
+}

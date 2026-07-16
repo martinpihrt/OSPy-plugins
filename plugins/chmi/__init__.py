@@ -15,7 +15,7 @@ import shutil
 import importlib.util
 import math
 
-from threading import Thread, Event, Lock
+from threading import Thread, Lock
 import traceback
 import json
 import tarfile
@@ -25,7 +25,7 @@ from ospy.log import log
 from ospy.options import options, rain_blocks
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, stop_onrain, get_input, verify_csrf
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 
 from ospy.webpages import showInFooter, pluginScripts # Enable plugin to display readings in UI footer
 
@@ -87,6 +87,14 @@ animation_lock = Lock()
 animation_frames = []
 dependency_install_lock = Lock()
 dependency_install_running = False
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+    'last_radar_timestamp': '',
+}
 
 HOME_WIDGET_SCRIPT = 'chmi/script/home_widget.js'
 
@@ -111,7 +119,7 @@ class CHMI_Checker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self.status = {}
         self.status['red'] = 0
@@ -158,6 +166,7 @@ class CHMI_Checker(Thread):
                     # If successful, ok = True, bytes = HTTP data of response (image), txt_date = YYYYMMDD.HHM0 of downloaded image
                     ok, byte, txt_date = download_radar()
                     if not ok:
+                        record_radar_error(_('Failed to download radar data.'))
                         log.info(NAME, datetime_string() + ' ' + _('Failed to download radar data.'))
                         log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
                         self._sleep(RADAR_RETRY_SLEEP)
@@ -316,6 +325,7 @@ class CHMI_Checker(Thread):
 
                             c_img.save(corner_path)
                             update_animation_cache()
+                            record_radar_success(txt_date)
 
 
                             # We ve gone through all the cities, so well see if we have any on the list that are raining
@@ -352,6 +362,8 @@ class CHMI_Checker(Thread):
                             self._sleep(60 * 10)  # 60 seconds * 10 = 600 -> 10 minutes
 
                         except:
+                            message = _('Failed to load rain radar bitmap.') + ': ' + traceback.format_exc().splitlines()[-1]
+                            record_radar_error(message)
                             log.info(NAME, datetime_string() + ' ' + _('Failed to load rain radar bitmap.') + ':\n' + traceback.format_exc())
                             log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
                             self._sleep(RADAR_RETRY_SLEEP)
@@ -364,6 +376,7 @@ class CHMI_Checker(Thread):
                         dis_text = False
 
             except Exception:
+                record_radar_error(traceback.format_exc())
                 log.error(NAME, datetime_string() + ' ' + _('CHMI plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
@@ -378,14 +391,94 @@ def start():
     global checker
     if checker is None:
         checker = CHMI_Checker()
+        runtime.register_thread(checker)
 
 
 def stop():
     global checker
-    if checker is not None:
-        checker.stop()
-        checker.join(15)
-        checker = None
+    worker = checker
+    if worker is not None:
+        worker.stop()
+        worker.join(15)
+        if checker is worker and not worker.is_alive():
+            checker = None
+    radar_session.close()
+
+
+def record_radar_success(radar_timestamp):
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+        health_state['last_radar_timestamp'] = radar_timestamp or ''
+
+
+def record_radar_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return radar worker, data source, dependencies and update state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_alive = checker is not None and checker.is_alive()
+    source = radar_source().upper()
+    missing = shmu_missing_dependencies() if radar_source() == 'shmu' else []
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Radar source'): source,
+        _('Location configured'): (
+            _('Yes') if options.weather_lat and options.weather_lon else _('No')
+        ),
+        _('Dependency installation'): (
+            _('Running') if shmu_dependencies_installing() else _('Stopped')
+        ),
+        _('Last radar timestamp'): state['last_radar_timestamp'] or _('Not available'),
+        _('Last successful radar update'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if missing:
+        details[_('Missing Python modules')] = ', '.join(missing)
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not plugin_options['enabled']:
+        return {
+            'status': 'unknown',
+            'summary': _('CHMI radar is disabled.'),
+            'details': details,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('CHMI radar worker is stopped.'),
+            'details': details,
+        }
+    if missing:
+        return {
+            'status': 'error',
+            'summary': _('SHMU radar dependencies are missing.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first radar update.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Radar data is available.'),
+        'details': details,
+    }
 
 def radar_date_txt(date):
     return date.strftime("%Y%m%d.%H%M")[:-1] + "0"
@@ -489,6 +582,7 @@ def start_shmu_dependency_install():
     install_thread = Thread(target=install_shmu_dependencies)
     install_thread.daemon = True
     install_thread.start()
+    runtime.register_thread(install_thread)
 
 def install_shmu_dependencies():
     global dependency_install_running
