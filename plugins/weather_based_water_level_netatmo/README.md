@@ -40,6 +40,8 @@ In status line is added history data of rain from both websites and forecast.
 
 When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly.
 
+The plug-in includes a manifest declaring OSPy weather, Netatmo-network and irrigation-adjustment access, uses the shared OSPy worker lifecycle, closes Netatmo HTTP responses, removes its callback and adjustment during shutdown, and reports calculations without exposing credentials through the Diagnostics health interface.
+
 Plugin setup
 -----------
 * Check Use Automatic Water Level Adjustment:  

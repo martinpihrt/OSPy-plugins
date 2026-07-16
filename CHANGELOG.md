@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Weather-based Water Level Netatmo<br/>
+Updated Weather-based Water Level Netatmo for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring OSPy weather, Netatmo-network and irrigation-adjustment access, registers its calculation worker with the shared runtime, closes Netatmo HTTP responses, removes its callback and adjustment during bounded shutdown, applies the final Netatmo-aware adjustment instead of the earlier weather-only intermediate value, keeps credentials out of diagnostics, and reports rainfall, days, adjustment and errors through `health()`.
+
 (Martin Pihrt) - Weather-based Water Level<br/>
 Updated Weather-based Water Level for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring OSPy weather-network, irrigation-adjustment and freeze-protection access, registers its calculation worker with the shared runtime, removes its weather callback, footer and adjustment during bounded shutdown, and reports days, rainfall, water need, adjustment, freeze protection, latest calculation and errors through `health()`.
 

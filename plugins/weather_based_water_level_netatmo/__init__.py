@@ -4,7 +4,7 @@
 __author__ = u'Vaclav Hrabe' # Add netatmo function 
 
 import datetime
-from threading import Thread, Event
+from threading import Thread, Lock
 import traceback
 import shutil
 import json
@@ -21,7 +21,7 @@ from ospy.options import level_adjustments
 from ospy.helpers import mkdir_p, verify_csrf
 from ospy.webpages import ProtectedPage
 from ospy.weather import weather
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 
 import imghdr
 import warnings
@@ -52,6 +52,17 @@ plugin_options = PluginOptions(
         'netatmo_days': 3,
         'netatmo_level': 4
     })
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'days_used': 0,
+    'weather_rain_mm': 0.0,
+    'netatmo_rain_mm': 0.0,
+    'water_adjustment': None,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 
 ################################################################################
@@ -61,11 +72,12 @@ class WeatherLevelChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -81,6 +93,9 @@ class WeatherLevelChecker(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
@@ -150,8 +165,6 @@ class WeatherLevelChecker(Thread):
 
                     water_adjustment = round((water_left / (4 * days)) * 100, 1)
 
-                    level_adjustments[NAME] = water_adjustment / 100
-
                     if plugin_options['use_netatmo']:
                         water_left = water_needed - zrain - total_info['rain_mm']
                         water_left = round(max(0, min(100, water_left)), 1)
@@ -164,6 +177,13 @@ class WeatherLevelChecker(Thread):
 
                     water_adjustment = float(
                         max(plugin_options['wl_min'], min(plugin_options['wl_max'], water_adjustment)))
+                    level_adjustments[NAME] = water_adjustment / 100
+                    with health_lock:
+                        health_state['last_success'] = time.time()
+                        health_state['days_used'] = days
+                        health_state['weather_rain_mm'] = round(total_info['rain_mm'], 1)
+                        health_state['netatmo_rain_mm'] = round(zrain, 1)
+                        health_state['water_adjustment'] = water_adjustment
 
                     log.info(NAME, _(u'Water needed') + '(%d ' %days +  _(u'days') + '): %.1fmm' % water_needed)
                     log.info(NAME, _(u'Total rainfall') + ': %.1fmm' % total_info['rain_mm'])
@@ -201,8 +221,10 @@ def stop():
     global checker
     if checker is not None:
         checker.stop()
+        runtime.request_stop()
         checker.join(15)
-        checker = None
+        if not checker.is_alive():
+            checker = None
     if NAME in level_adjustments:
         del level_adjustments[NAME]
 
@@ -525,7 +547,8 @@ def postRequest(url, params, json_resp=True, body_size=65535):
     req = urllib.request.Request(url)
     req.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
     params = urllib.parse.urlencode(params).encode('utf-8')
-    resp = urllib.request.urlopen(req, params, timeout=NETATMO_TIMEOUT).read(body_size).decode("utf-8")
+    with urllib.request.urlopen(req, params, timeout=NETATMO_TIMEOUT) as response:
+        resp = response.read(body_size).decode("utf-8")
                 
     if json_resp:
         return json.loads(resp)
@@ -565,3 +588,45 @@ def getStationMinMaxTH(station=None, module=None):
         else : result = [lastD[mname]['Temperature'], lastD[mname]['Humidity']]
         result.extend(devList.MinMaxTH(station, mname))
     return result
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = checker is not None and checker.is_alive()
+    with health_lock:
+        state = dict(health_state)
+    credentials_ready = all(bool(plugin_options.get(key)) for key in
+                            ('netatmo_id', 'netatmo_secret', 'netatmo_user', 'netatmo_pass'))
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'enabled': bool(plugin_options.get('enabled', False)),
+        'netatmo_enabled': bool(plugin_options.get('use_netatmo', False)),
+        'netatmo_credentials': credentials_ready,
+        'days_used': state['days_used'],
+        'weather_rain_mm': state['weather_rain_mm'],
+        'netatmo_rain_mm': state['netatmo_rain_mm'],
+        'water_adjustment_percent': state['water_adjustment'],
+        'last_success': state['last_success'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+    if not worker_alive:
+        status = 'error'
+        summary = _('Netatmo water-level worker is not running.')
+    elif not plugin_options.get('enabled', False):
+        status = 'unknown'
+        summary = _('Netatmo water-level adjustment is disabled.')
+    elif plugin_options.get('use_netatmo', False) and not credentials_ready:
+        status = 'warning'
+        summary = _('Netatmo credentials are incomplete.')
+    elif state['water_adjustment'] is None:
+        status = 'warning'
+        summary = _('No usable water-level calculation is available.')
+    elif state['last_error'] and state['last_error'] > state['last_success']:
+        status = 'warning'
+        summary = _('Netatmo water-level adjustment reported an error.')
+    else:
+        status = 'ok'
+        summary = _('Netatmo water-level adjustment is active.')
+    return {'status': status, 'summary': summary, 'details': details}
