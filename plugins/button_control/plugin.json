@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "button_control",
+  "name": "Button Control",
+  "menu": "Package: Button Control",
+  "version": "1.0.0",
+  "description": "Controls OSPy functions through eight MCP23017 I2C buttons and indicator LEDs.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/button_control",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "smbus",
+      "package": "python3-smbus",
+      "required": true
+    }
+  ],
+  "hardware": {
+    "platforms": [
+      "raspberry_pi",
+      "beaglebone",
+      "linux"
+    ],
+    "requires": [
+      "i2c"
+    ]
+  },
+  "permissions": [
+    "i2c",
+    "system"
+  ]
+}

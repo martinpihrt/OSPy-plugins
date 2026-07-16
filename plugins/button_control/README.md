@@ -8,6 +8,12 @@ This plug-in includes eight buttons with optional functions and signalisating vi
 Visit <a href="https://pihrt.com/clanky/moje-raspberry-pi-plugin-ospy-8-tlacitek-8-led">Martin Pihrt's blog</a> for more information.
 I2C address for MCP23017: 0x20 to 0x27.  
 
+The plug-in includes an OSPy `plugin.json` manifest, registers its polling
+worker with the shared plug-in runtime, uses the common stop signal, and
+implements `health()`. Diagnostics reports enablement, worker state, configured
+I2C address, latest successful controller read, and the latest communication
+error. I2C bus handles are closed after each operation.
+
 Plugin setup
 -----------
 * Check Use Button:  

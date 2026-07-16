@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Button Control<br/>
+Updated Button Control for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring MCP23017 I2C and system-control requirements, registers its polling worker with the shared runtime, uses the common stop signal with bounded shutdown, closes I2C bus handles after operations, and reports enablement, worker, address, successful reads and communication errors through `health()`.
+
 (Martin Pihrt) - CLI Control<br/>
 Updated CLI Control for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Blinker, file, network, subprocess and system access, removes the unnecessary one-shot startup thread, registers station receivers directly, disconnects them during shutdown, tracks command outcomes, and reports enablement, receiver count, configured commands and the latest result through `health()`.
 

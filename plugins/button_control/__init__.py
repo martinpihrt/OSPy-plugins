@@ -7,12 +7,12 @@ import time
 import datetime
 import traceback
 import os
-from threading import Thread, Event
+from threading import Thread, Lock
 
 import web
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.stations import stations
 from ospy.scheduler import scheduler
@@ -31,6 +31,13 @@ NAME = 'Button Control'
 MENU =  _('Package: Button Control')
 LINK = 'settings_page'
 last_led_output = None
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 plugin_options = PluginOptions(
     NAME,
@@ -96,7 +103,7 @@ class PluginSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         
         self.bus = None
         
@@ -189,14 +196,75 @@ def start():
     global plugin_sender
     if plugin_sender is None:
         plugin_sender = PluginSender()
+        runtime.register_thread(plugin_sender)
 
 
 def stop():
     global plugin_sender
-    if plugin_sender is not None:
-        plugin_sender.stop()
-        plugin_sender.join(15)
-        plugin_sender = None
+    worker = plugin_sender
+    if worker is not None:
+        worker.stop()
+        worker.join(5)
+        if plugin_sender is worker and not worker.is_alive():
+            plugin_sender = None
+
+
+def record_button_success():
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+
+
+def record_button_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return worker, configuration and MCP23017 communication state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_alive = plugin_sender is not None and plugin_sender.is_alive()
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('I2C address'): '0x{:02x}'.format(int(plugin_options['i2c_addr'])),
+        _('Last successful read'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not plugin_options['use_button']:
+        return {
+            'status': 'unknown',
+            'summary': _('Button Control is disabled.'),
+            'details': details,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('Button Control worker is stopped.'),
+            'details': details,
+        }
+    if state['last_error'] > state['last_success']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first button-controller response.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Button controller is responding.'),
+        'details': details,
+    }
 
 
 def set_stations_in_scheduler_off():
@@ -253,6 +321,7 @@ def button_i2c_transaction():
         return i2c_transaction()
 
 def read_buttons():
+    bus = None
     try:
         import smbus  
 
@@ -268,6 +337,7 @@ def read_buttons():
         # Read state of GPIOA register
         with button_i2c_transaction():
             MySwitch = try_io(lambda: bus.read_byte_data(plugin_options['i2c_addr'],0x12))  # MySwitch = bus.read_byte_data(0x27,0x12)
+        record_button_success()
                
         inBut = 255-MySwitch; # inversion number for led off if button is not pressed
 
@@ -304,6 +374,7 @@ def read_buttons():
         if str(e) == 'I2C bus is busy.':
             log.debug(NAME, datetime_string() + ': ' + _('I2C bus is busy, button read skipped.'))
         else:
+            record_button_error(str(e))
             log.clear(NAME)
             log.debug(NAME, datetime_string() + ': ' + _('Read button - FAULT'))
             log.debug(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
@@ -311,12 +382,18 @@ def read_buttons():
         return -1
 
     except Exception:
+        record_button_error(traceback.format_exc().splitlines()[-1])
         log.clear(NAME)
         log.debug(NAME, datetime_string() + ': ' + _('Read button - FAULT'))
         log.debug(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
         log.error(NAME, '\n' + traceback.format_exc())
-        pass
         return -1
+    finally:
+        if bus is not None:
+            try:
+                bus.close()
+            except Exception:
+                pass
 
 def led_outputs(led):
     global last_led_output
@@ -324,6 +401,7 @@ def led_outputs(led):
     if led == last_led_output:
         return
 
+    bus = None
     try:
         import smbus  
 
@@ -344,15 +422,22 @@ def led_outputs(led):
         if str(e) == 'I2C bus is busy.':
             log.debug(NAME, datetime_string() + ': ' + _('I2C bus is busy, LED update skipped.'))
         else:
+            record_button_error(str(e))
             log.error(NAME, datetime_string() + ': ' + _('Set LED - FAULT'))
             log.error(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
         pass
 
     except Exception:
+        record_button_error(traceback.format_exc().splitlines()[-1])
         log.error(NAME, datetime_string() + ': ' + _('Set LED - FAULT'))
         log.error(NAME, _('Is hardware connected? Is bus address corectly setuped?'))
         #log.error(NAME, '\n' + traceback.format_exc())
-        pass
+    finally:
+        if bus is not None:
+            try:
+                bus.close()
+            except Exception:
+                pass
 
 ################################################################################
 # Web pages:                                                                   #
