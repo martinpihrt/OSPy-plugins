@@ -15,10 +15,10 @@ import ssl
 import datetime
 from datetime import timedelta
 
-from threading import Thread, Event, Timer                       # For use a separate thread in which the plugin is running
+from threading import Thread, Timer, Lock                       # For use a separate thread in which the plugin is running
 
 import plugins as plugin_manager                                 # For checking whether optional plugins are running
-from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
+from plugins import PluginOptions, plugin_url, get_runtime       # For access to settings and address
 from ospy.log import log                                         # For events logs printing (debug, error, info)
 from ospy.helpers import datetime_string                         # For using date time in events logs
 from ospy.helpers import is_fqdn, verify_csrf                    # Fully qualified domain name
@@ -74,6 +74,18 @@ _client = None
 _subscriptions = {}
 _is_connected = False
 _last_error_log = {}
+_signal_receivers = []
+_health_lock = Lock()
+_health_state = {
+    'started': 0,
+    'last_connected': 0,
+    'last_disconnected': 0,
+    'last_publish': 0,
+    'last_discovery': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
+runtime = get_runtime()
 
 
 def plugin_is_running(module):
@@ -100,6 +112,9 @@ except ImportError:
 
 def log_hass_problem(key, message):
     now = time.time()
+    with _health_lock:
+        _health_state['last_error'] = now
+        _health_state['last_error_message'] = str(message).splitlines()[-1]
     last = _last_error_log.get(key, 0)
     if now - last >= ERROR_LOG_THROTTLE:
         _last_error_log[key] = now
@@ -110,7 +125,17 @@ def safe_publish(client, topic, payload='', qos=0, retain=True):
     if client is None or not topic:
         return False
     try:
-        client.publish(topic, payload, qos=qos, retain=retain)
+        result = client.publish(topic, payload, qos=qos, retain=retain)
+        rc = getattr(result, 'rc', 0)
+        if int(rc) != 0:
+            log_hass_problem(
+                'publish_result',
+                _('MQTT Home Assistant publish failed') + ': {}'.format(rc)
+            )
+            return False
+        with _health_lock:
+            _health_state['last_publish'] = time.time()
+            _health_state['last_error_message'] = ''
         return True
     except Exception:
         log_hass_problem('publish', _('MQTT Home Assistant publish failed') + ': ' + traceback.format_exc().splitlines()[-1])
@@ -126,7 +151,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self.client = None
         self.devices = None
         self.sensors_temp_humi_ds = None
@@ -160,7 +185,10 @@ class Sender(Thread):
                     self.client = get_client()
                     log.info(NAME, _('Plugin is started.'))
                     atexit.register(on_restart)
-                    discovery_publish()
+                    if not self._stop_event.is_set():
+                        discovery_publish()
+                    if self._stop_event.is_set():
+                        disconnect_device_signals()
 
                 if self.client:
                     msg = _('Client OK')
@@ -204,12 +232,42 @@ def on_message(client, userdata, msg):
 def on_log(client, userdata, level, buf):
     log.debug(NAME, datetime_string() + ' log: {}'.format(buf))
 
+def on_connect(client, userdata, flags, rc, properties=None):
+    global _is_connected
+    try:
+        connected = int(rc) == 0
+    except (TypeError, ValueError):
+        connected = str(rc).lower() in ('0', 'success')
+    _is_connected = connected
+    if not connected:
+        log_hass_problem(
+            'connect_result',
+            _('MQTT connection failed') + ': {}'.format(rc)
+        )
+        return
+    with _health_lock:
+        _health_state['last_connected'] = time.time()
+        _health_state['last_error_message'] = ''
+    for topic in list(_subscriptions):
+        client.subscribe(topic, 0)
+
+
+def on_disconnect(client, userdata, *args):
+    global _is_connected
+    _is_connected = False
+    with _health_lock:
+        _health_state['last_disconnected'] = time.time()
+
+
 def get_client():
+        global _client
         try:
             # using MQTT version 5 here, for 3.1.1: MQTTv311, 3.1: MQTTv31
             # userdata is user defined data of any type, updated by user_data_set()
             # client_id is the given name of the client
             _client = paho.Client(client_id=options.name)  # Use system name as client ID
+            _client.on_connect = on_connect
+            _client.on_disconnect = on_disconnect
             _client.on_message = on_message
             if plugin_options['use_mqtt_log']:
                 _client.on_log = on_log                    # debug MQTT communication log
@@ -244,10 +302,10 @@ def subscribe(topic, callback, data, qos=0):
     global _subscriptions, _is_connected
     client = _mqtt_client()
     if client:
-        _is_connected = True
         if topic not in _subscriptions:
             _subscriptions[topic] = [(callback, data)]
-            client.subscribe(topic, qos)
+            if _is_connected:
+                client.subscribe(topic, qos)
             log.debug(NAME, datetime_string() + ' ' + _('Subscribe topic') + ': ' + str(topic))
         else:
             _subscriptions[topic].append((callback, data))
@@ -294,31 +352,123 @@ def _mqtt_client():
 def start():
     global sender
     if sender is None:
+        with _health_lock:
+            _health_state['started'] = time.time()
+            _health_state['last_error_message'] = ''
         sender = Sender()
+        runtime.register_thread(sender)
 
 
 def stop():
-    global sender
-    global _client
+    global sender, _client, _is_connected
+    worker = sender
+    if worker is not None:
+        worker.stop()
     remove_hass_ospy()
-    if sender is not None:
-        if sender.client is not None:
-            try:
-                sender.client.disconnect()
-                sender.client.loop_stop()
-            except Exception:
-                log_hass_problem('stop_client', _('MQTT Home Assistant') + ': ' + traceback.format_exc().splitlines()[-1])
-            sender.client = None
-        sender.stop()
-        sender.join(15)
-        sender = None
-    if _client is not None:
+    disconnect_device_signals()
+    client = worker.client if worker is not None else _client
+    if client is not None:
         try:
-            _client.disconnect()
-            _client.loop_stop()
+            client.disconnect()
+            client.loop_stop()
         except Exception:
-            log_hass_problem('stop_global_client', _('MQTT Home Assistant') + ': ' + traceback.format_exc().splitlines()[-1])
-        _client = None
+            log_hass_problem('stop_client', _('MQTT Home Assistant') + ': ' + traceback.format_exc().splitlines()[-1])
+    if worker is not None:
+        worker.client = None
+        worker.join(5)
+        disconnect_device_signals()
+        if sender is worker and not worker.is_alive():
+            sender = None
+    _client = None
+    _is_connected = False
+    _subscriptions.clear()
+    try:
+        atexit.unregister(on_restart)
+    except Exception:
+        pass
+
+
+def health():
+    """Return MQTT connection, discovery, receiver and publishing state."""
+    with _health_lock:
+        state = dict(_health_state)
+    worker_alive = sender is not None and sender.is_alive()
+    client_ready = sender is not None and sender.client is not None
+    device_count = len(sender.devices or []) if sender is not None else 0
+    sensor_count = (
+        len(sender.sensors_temp_humi_ds or []) + len(sender.sensors_tanks or [])
+        if sender is not None else 0
+    )
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Broker'): '{}:{}'.format(
+            plugin_options['mqtt_broker_host'], plugin_options['mqtt_broker_port']
+        ),
+        _('MQTT client'): _('Running') if client_ready else _('Stopped'),
+        _('Signal receivers'): len(_signal_receivers),
+        _('Subscribed topics'): len(_subscriptions),
+        _('Discovery devices'): device_count,
+        _('Discovery sensors'): sensor_count,
+    }
+    for key, label in (
+        ('last_connected', _('Last connected')),
+        ('last_disconnected', _('Last disconnected')),
+        ('last_publish', _('Last publish')),
+        ('last_discovery', _('Last discovery update')),
+    ):
+        if state[key]:
+            details[label] = datetime_string(time.localtime(state[key]))
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    updated = max(
+        state['started'],
+        state['last_connected'],
+        state['last_disconnected'],
+        state['last_publish'],
+        state['last_discovery'],
+        state['last_error'],
+    )
+    if not slugify_is_installed:
+        return {
+            'status': 'error',
+            'summary': _('Error: slugify not installed. Install it to system. sudo apt install python3-slugify.'),
+            'details': details,
+            'updated': updated,
+        }
+    if not mqtt_is_installed:
+        return {
+            'status': 'error',
+            'summary': _('Error: paho-mqtt is not installed. Install it to system. sudo apt install python3-paho-mqtt.'),
+            'details': details,
+            'updated': updated,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('MQTT Home Assistant worker is stopped.'),
+            'details': details,
+            'updated': updated,
+        }
+    if _is_connected:
+        return {
+            'status': 'ok',
+            'summary': _('Connected to broker.'),
+            'details': details,
+            'updated': updated,
+        }
+    if state['last_error_message']:
+        return {
+            'status': 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+            'updated': updated,
+        }
+    return {
+        'status': 'warning',
+        'summary': _('Disconnected from broker!'),
+        'details': details,
+        'updated': updated,
+    }
 
 
 def get_local_ip(destination='10.255.255.255'):
@@ -590,7 +740,10 @@ def program_set(client, msg, device):
         # next run program id: xx
         # print(device._id)
         programs.run_now(int(device._id))
-        Timer(0.1, programs.calculate_balances).start()
+        balance_timer = Timer(0.1, programs.calculate_balances)
+        balance_timer.daemon = True
+        balance_timer.start()
+        runtime.register_thread(balance_timer)
         report_program_runnow()
         time.sleep(0.2)
         stationsList = [] 
@@ -1086,6 +1239,8 @@ def discovery_publish():
     update_tank_level(sensorWTLDevices)
     
     set_devices_signal()
+    with _health_lock:
+        _health_state['last_discovery'] = time.time()
 
 
 def set_devices_online(device): # set inital values to HASS after plugin start
@@ -1295,67 +1450,37 @@ def remove_hass_ospy():
         
 
 def set_devices_signal():
-    # print("setting the signals")
-    loggedin = signal('loggedin')  ### associations with signal ###
-    loggedin.connect(update_device_values)  ### define which subroutine will be triggered in helper ###
-    value_change = signal('value_change')
-    value_change.connect(update_device_values)
-    option_change = signal('option_change')
-    option_change.connect(update_device_values)
-    rebooted = signal('rebooted')
-    rebooted.connect(update_device_values)
-    restarted = signal('restarted')
-    restarted.connect(update_device_values)
-    station_names = signal('station_names')
-    station_names.connect(update_device_values)
-    program_change = signal('program_change')
-    program_change.connect(update_device_plugin_settings)
-    program_deleted = signal('program_deleted')
-    program_deleted.connect(update_device_plugin_settings)
-    program_toggled = signal('program_toggled')
-    program_toggled.connect(update_device_values)
-    program_runnow = signal('program_runnow')
-    program_runnow.connect(update_device_values)
-    zone_change = signal('zone_change')
-    zone_change.connect(update_device_values)
-    rain_active = signal('rain_active')
-    rain_active.connect(update_device_values)
-    rain_not_active = signal('rain_not_active')
-    rain_not_active.connect(update_device_values)
-    master_one_on = signal('master_one_on')
-    master_one_on.connect(update_device_values)
-    master_one_off = signal('master_one_off')
-    master_one_off.connect(update_device_values)
-    master_two_on = signal('master_two_on')
-    master_two_on.connect(update_device_values)
-    master_two_off = signal('master_two_off')
-    master_two_off.connect(update_device_values)
-    pressurizer_master_relay_on = signal('pressurizer_master_relay_on')
-    pressurizer_master_relay_on.connect(update_device_values)
-    pressurizer_master_relay_off = signal('pressurizer_master_relay_off')
-    pressurizer_master_relay_off.connect(update_device_values)
-    poweroff = signal('poweroff')
-    poweroff.connect(update_device_values)
-    ospyupdate = signal('ospyupdate')
-    ospyupdate.connect(update_device_values)
-    station_on = signal('station_on')
-    station_on.connect(update_device_values)
-    station_off = signal('station_off')
-    station_off.connect(update_device_values)
-    station_clear = signal('station_clear')
-    station_clear.connect(update_device_values)
-    internet_available = signal('internet_available')
-    internet_available.connect(update_device_values)
-    internet_not_available = signal('internet_not_available')
-    internet_not_available.connect(update_device_values)
-    rain_delay_set = signal('rain_delay_set')
-    rain_delay_set.connect(update_device_values)
-    rain_delay_remove = signal('rain_delay_remove')
-    rain_delay_remove.connect(update_device_values)
-    hass_plugin_update = signal('hass_plugin_update')
-    hass_plugin_update.connect(update_device_plugin_settings) ## completely reinitialize on plugin settings change
-    air_temp_humi_plugin_update = signal('air_temp_humi_plugin_update')
-    air_temp_humi_plugin_update.connect(update_device_plugin_settings) ## completely reinitialize on temp plugin settings change
+    global _signal_receivers
+    disconnect_device_signals()
+    value_events = (
+        'loggedin', 'value_change', 'option_change', 'rebooted', 'restarted',
+        'station_names', 'program_toggled', 'program_runnow', 'zone_change',
+        'rain_active', 'rain_not_active', 'master_one_on', 'master_one_off',
+        'master_two_on', 'master_two_off', 'pressurizer_master_relay_on',
+        'pressurizer_master_relay_off', 'poweroff', 'ospyupdate', 'station_on',
+        'station_off', 'station_clear', 'internet_available',
+        'internet_not_available', 'rain_delay_set', 'rain_delay_remove',
+    )
+    discovery_events = (
+        'program_change', 'program_deleted', 'hass_plugin_update',
+        'air_temp_humi_plugin_update',
+    )
+    _signal_receivers = [
+        (signal(event_name), update_device_values)
+        for event_name in value_events
+    ] + [
+        (signal(event_name), update_device_plugin_settings)
+        for event_name in discovery_events
+    ]
+    for event_signal, receiver in _signal_receivers:
+        event_signal.connect(receiver)
+
+
+def disconnect_device_signals():
+    global _signal_receivers
+    for event_signal, receiver in _signal_receivers:
+        event_signal.disconnect(receiver)
+    _signal_receivers = []
     
 
 

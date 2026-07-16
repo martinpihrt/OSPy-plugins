@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - MQTT Home Assistant<br/>
+Updated MQTT Home Assistant for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Paho MQTT, python-slugify, Blinker, network and system access, registers its update and short balance workers with the shared runtime, uses real MQTT connect/disconnect callbacks, resubscribes registered topics after reconnect, manages discovery receivers as one replaceable lifecycle set to prevent duplicates, performs bounded shutdown, and reports credential-free broker, discovery, subscription, receiver and publish state through `health()`.
+
 (Martin Pihrt) - Monthly Water Level<br/>
 Updated Monthly Water Level for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring scheduler-control access, registers its daily adjustment worker with the shared runtime, uses the common stop signal with bounded shutdown, continues removing its global adjustment during stop, and reports month, configured percentage, applied factor, latest update and errors through `health()`.
 

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "mqtt_home_assistant",
+  "name": "Home Assistant",
+  "menu": "Package: MQTT Home Assistant",
+  "version": "1.0.0",
+  "description": "Publishes OSPy devices, controls and sensor values through Home Assistant MQTT Discovery.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/mqtt_home_assistant",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "requirements": [
+    {
+      "module": "paho.mqtt.client",
+      "package": "paho-mqtt",
+      "required": true
+    },
+    {
+      "module": "slugify",
+      "package": "python-slugify",
+      "required": true
+    },
+    {
+      "module": "blinker",
+      "package": "blinker",
+      "required": true
+    }
+  ],
+  "permissions": [
+    "network",
+    "system"
+  ]
+}
