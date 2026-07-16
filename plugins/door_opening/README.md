@@ -19,3 +19,7 @@ Plugin setup
 * Open Door button:
   Start opening door for the selected station and time.
 
+The plug-in includes an OSPy `plugin.json` manifest, registers its one-shot
+activation worker with the shared plug-in runtime, and implements `health()`.
+Diagnostics reports the selected output, configured opening time, worker state,
+and whether a Door Opening run is active.

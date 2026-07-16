@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Door Opening<br/>
+Updated Door Opening for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring station-output control, registers its one-shot activation worker with the shared runtime, observes the common stop request before activating an output, stops safely, and reports selected output, opening time, worker state and active opening runs through `health()`.
+
 (Martin Pihrt) - Webcam Monitor<br/>
 Updated Webcam Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring its Linux USB-camera, file and subprocess access, provides an explicit lifecycle stop function, and reports capture configuration, camera device, `fswebcam` and snapshot availability through `health()`. Corrected the documentation to state that `fswebcam` must be installed through the system package manager.
 

@@ -7,13 +7,13 @@ import web
 import datetime
 import traceback
 
-from threading import Thread, Event
+from threading import Thread
 
 from ospy import helpers
 from ospy.stations import stations
 from ospy.scheduler import predicted_schedule, combined_schedule
 from ospy.webpages import ProtectedPage
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.log import log, logEM
 from ospy.helpers import datetime_string, verify_csrf
 
@@ -25,6 +25,7 @@ MENU =  _('Package: Door Opening')
 LINK = 'start_page'
 MIN_OPEN_TIME = 1
 MAX_OPEN_TIME = 3600
+runtime = get_runtime()
 
 plugin_options = PluginOptions(
     NAME,
@@ -49,6 +50,8 @@ class PluginSender(Thread):
     def run(self):
         global sender
         try:
+            if runtime.stop_event.is_set():
+                return
             open_time = normalize_open_time(plugin_options['open_time'])
             sid = normalize_station_index(plugin_options['open_output'])
             if sid is None:
@@ -134,7 +137,54 @@ def update_footer():
 def start():
     update_footer()
 
-stop = start
+
+def stop():
+    global sender
+    if sender is not None and sender.is_alive():
+        sender.join(5)
+    if sender is not None and not sender.is_alive():
+        sender = None
+
+
+def health():
+    """Return configured output and current door-opening activity."""
+    sid = normalize_station_index(plugin_options['open_output'])
+    worker_alive = sender is not None and sender.is_alive()
+    active = sid is not None and door_opening_is_active(sid)
+    details = {
+        _('Open time'): '{} s'.format(
+            normalize_open_time(plugin_options['open_time'])
+        ),
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Opening active'): _('Yes') if active else _('No'),
+    }
+    if sid is None:
+        details[_('Selected output')] = _('Not available')
+        return {
+            'status': 'error',
+            'summary': _('Selected output is not available.'),
+            'details': details,
+        }
+    details[_('Selected output')] = '{}: {}'.format(
+        sid + 1, stations.get(sid).name
+    )
+    if worker_alive:
+        return {
+            'status': 'ok',
+            'summary': _('Door opening request is being processed.'),
+            'details': details,
+        }
+    if active:
+        return {
+            'status': 'ok',
+            'summary': _('Door opening output is active.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Door opening is ready.'),
+        'details': details,
+    }
 
 ################################################################################
 # Web pages:                                                                   #
@@ -176,6 +226,7 @@ class start_page(ProtectedPage):
                     sender = None
 
             sender = PluginSender()
+            runtime.register_thread(sender)
             raise web.seeother(plugin_url(start_page), True)
 
         except:

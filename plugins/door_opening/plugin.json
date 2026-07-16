@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "door_opening",
+  "name": "Door Opening",
+  "menu": "Package: Door Opening",
+  "version": "1.0.0",
+  "description": "Activates a selected OSPy station for a bounded door or gate opening interval.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/door_opening",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "hardware": {
+    "requires": [
+      "station_output"
+    ]
+  },
+  "permissions": [
+    "system"
+  ]
+}
