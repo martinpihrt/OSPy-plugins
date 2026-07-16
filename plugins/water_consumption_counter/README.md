@@ -7,6 +7,8 @@ This plugin read Water consumption on master station or second master station.
 Total sum is the calculated as run of the main (or second) station per second. This is not an actual flow meter (physical flow sensor).
 Used for an overview of water consumption.
 
+The plug-in includes a manifest for compatibility and permission checks, keeps its master-station signal subscriptions in the shared OSPy lifecycle, disconnects them during shutdown, and reports counters, events and e-mail state through the Diagnostics health interface.
+
 Plugin setup
 -----------
 

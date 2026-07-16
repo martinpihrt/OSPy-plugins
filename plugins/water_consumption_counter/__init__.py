@@ -12,8 +12,8 @@ from blinker import signal
 from ospy import helpers
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.log import log, logEM
-from threading import Thread, Event
-from plugins import PluginOptions, plugin_url
+from threading import Thread, Lock
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage
 from ospy.stations import stations
 from ospy.options import options
@@ -40,6 +40,14 @@ plugin_options = PluginOptions(
 
 master_one_start = datetime.datetime.now() # start time for master 1
 master_two_start = datetime.datetime.now() # start time for master 2
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_master_event': 0,
+    'last_email': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -49,10 +57,11 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self._last_error_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -68,25 +77,34 @@ class Sender(Thread):
 
     def _log_problem(self, message):
         now = time.time()
+        with health_lock:
+            health_state['last_error'] = now
+            health_state['last_error_message'] = str(message).splitlines()[-1]
         if now - self._last_error_log >= ERROR_LOG_THROTTLE:
             log.error(NAME, message)
             self._last_error_log = now
 
     def run(self):
+        master_one_on = signal('master_one_on')
+        master_one_off = signal('master_one_off')
+        master_two_on = signal('master_two_on')
+        master_two_off = signal('master_two_off')
         try:
-            master_one_on = signal('master_one_on')
             master_one_on.connect(notify_master_one_on)
-            master_one_off = signal('master_one_off')
             master_one_off.connect(notify_master_one_off)
-            master_two_on = signal('master_two_on')
             master_two_on.connect(notify_master_two_on)
-            master_two_off = signal('master_two_off')
             master_two_off.connect(notify_master_two_off)
+            while not self._stop_event.wait(1):
+                pass
 
         except Exception:
             log.clear(NAME)
             self._log_problem(_(u'Water Consumption Counter plug-in') + traceback.format_exc())
-            self._sleep(60)
+        finally:
+            master_one_on.disconnect(notify_master_one_on)
+            master_one_off.disconnect(notify_master_one_off)
+            master_two_on.disconnect(notify_master_two_on)
+            master_two_off.disconnect(notify_master_two_off)
 
 sender = None
 
@@ -105,8 +123,10 @@ def stop():
     global sender
     if sender is not None:
         sender.stop()
+        runtime.request_stop()
         sender.join(15)
-        sender = None 
+        if not sender.is_alive():
+            sender = None
 
 
 ### convert number to decimal ###
@@ -147,6 +167,8 @@ def send_email(msg, msglog):
             from plugins.email_notifications_ssl import email
         if email is not None:        
             email(message, subject=Subject)
+            with health_lock:
+                health_state['last_email'] = time.time()
             if not options.run_logEM:
                 log.info(NAME, _(u'Email logging is disabled in options...'))
             else:
@@ -154,6 +176,9 @@ def send_email(msg, msglog):
             log.info(NAME, _(u'Email was sent') + ': ' + msglog)
 
     except Exception:
+        with health_lock:
+            health_state['last_error'] = time.time()
+            health_state['last_error_message'] = _('Email was not sent')
         if not options.run_logEM:
            log.info(NAME, _(u'Email logging is disabled in options...'))
         else:
@@ -168,6 +193,8 @@ def notify_master_one_on(name, **kw):
     log.clear(NAME)
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 1 running, please wait...'))
     master_one_start = datetime.datetime.now()
+    with health_lock:
+        health_state['last_master_event'] = time.time()
 
 ### master one off ###
 def notify_master_one_off(name, **kw):
@@ -179,6 +206,8 @@ def notify_master_one_off(name, **kw):
 
     _sum = round(to_decimal(plugin_options['sum_one']), 2) + round(difference, 2)  # to 2 places
     plugin_options.__setitem__('sum_one', _sum)  
+    with health_lock:
+        health_state['last_master_event'] = time.time()
 
     msg = '<b>' + _(u'Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _(u'liter') + '</p>'
     msglog = _(u'Water Consumption Counter plug-in') + ': ' + _(u'Water Consumption for master 1') + ': ' + str(round(difference,2)) + ' ' + _(u'liter')
@@ -194,6 +223,8 @@ def notify_master_two_on(name, **kw):
     log.clear(NAME)
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 2 running, please wait...'))
     master_two_start = datetime.datetime.now()  
+    with health_lock:
+        health_state['last_master_event'] = time.time()
 
 ### master two off ###
 def notify_master_two_off(name, **kw):
@@ -205,6 +236,8 @@ def notify_master_two_off(name, **kw):
 
     _sum = round(to_decimal(plugin_options['sum_two']), 2) + round(difference, 2)  # to 2 places
     plugin_options.__setitem__('sum_two', _sum)
+    with health_lock:
+        health_state['last_master_event'] = time.time()
   
     msg = '<b>' + _(u'Water Consumption Counter plug-in') + '</b> ' + '<br><p style="color:green;">' + _(u'Water Consumption') + ' ' + str(round(difference,2)) + ' ' + _(u'liter') + '</p>'
     msglog = _(u'Water Consumption Counter plug-in') + ': ' + _(u'Water Consumption for master 2') + ': ' + str(round(difference,2)) + ' ' + _(u'liter')
@@ -270,3 +303,32 @@ class settings_json(ProtectedPage):            ### return plugin_options as JSON
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
+
+
+def health():
+    """Return a compact status for the OSPy diagnostics page."""
+    worker_alive = sender is not None and sender.is_alive()
+    with health_lock:
+        state = dict(health_state)
+    details = {
+        'worker': _('Running') if worker_alive else _('Stopped'),
+        'master_one_liters': float(to_decimal(plugin_options.get('sum_one', 0))),
+        'master_two_liters': float(to_decimal(plugin_options.get('sum_two', 0))),
+        'last_reset': plugin_options.get('last_reset', ''),
+        'email_enabled': bool(plugin_options.get('sendeml', False)),
+        'last_master_event': state['last_master_event'],
+        'last_email': state['last_email'],
+        'last_error': state['last_error'],
+    }
+    if state['last_error_message']:
+        details['error'] = state['last_error_message']
+    if not worker_alive:
+        status = 'error'
+        summary = _('Water consumption counter is not monitoring master stations.')
+    elif state['last_error'] and state['last_error'] > state['last_master_event']:
+        status = 'warning'
+        summary = _('Water consumption counter reported an error.')
+    else:
+        status = 'ok'
+        summary = _('Water consumption counter is monitoring master stations.')
+    return {'status': status, 'summary': summary, 'details': details}

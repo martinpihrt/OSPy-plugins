@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Water Consumption Counter<br/>
+Updated Water Consumption Counter for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring station-event, local settings and e-mail access, registers its signal listener with the shared runtime, keeps the listener alive and disconnects all master-station signals during bounded shutdown, and reports counters, reset, latest master event, e-mail and errors through `health()`.
+
 (Martin Pihrt) - Voltage and Temperature Monitor<br/>
 Updated Voltage and Temperature Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMBus, Raspberry Pi I²C address 0x48 and local log-file access, registers its PCF8591 worker with the shared runtime, closes the I²C handle after errors and during bounded shutdown, and reports worker, converter, channels, latest reading and errors through `health()`.
 
