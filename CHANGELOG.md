@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Network Ping Monitor<br/>
+Updated Network Ping Monitor for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring ICMP network, file and system access, registers its polling worker with the shared runtime, propagates the common stop signal between timeout-bounded target checks, performs bounded shutdown, and reports worker, per-target reachability, completed cycles, partial or total outages and internal errors through `health()`.
+
 (Martin Pihrt) - MQTT Home Assistant<br/>
 Updated MQTT Home Assistant for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Paho MQTT, python-slugify, Blinker, network and system access, registers its update and short balance workers with the shared runtime, uses real MQTT connect/disconnect callbacks, resubscribes registered topics after reconnect, manages discovery receivers as one replaceable lifecycle set to prevent duplicates, performs bounded shutdown, and reports credential-free broker, discovery, subscription, receiver and publish state through `health()`.
 

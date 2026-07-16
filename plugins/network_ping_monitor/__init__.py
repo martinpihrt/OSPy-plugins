@@ -9,13 +9,13 @@ import mimetypes
 import csv
 import web
 
-from threading import Thread, Event
+from threading import Thread, Lock
 
 from datetime import datetime
 from ospy import helpers
 from ospy.options import options
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.webpages import ProtectedPage
 
@@ -30,6 +30,13 @@ MIN_LOG_INTERVAL_MINUTES = 1
 ERROR_LOG_THROTTLE = 300
 
 _last_error_log = {}
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 plugin_options = PluginOptions(
     NAME,
@@ -70,6 +77,9 @@ servers = {
 
 def log_ping_problem(key, message):
     now = time.time()
+    with health_lock:
+        health_state['last_error'] = now
+        health_state['last_error_message'] = str(message).splitlines()[-1]
     last = _last_error_log.get(key, 0)
     if now - last >= ERROR_LOG_THROTTLE:
         _last_error_log[key] = now
@@ -103,7 +113,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self.start()
 
@@ -141,6 +151,8 @@ class Sender(Thread):
                     all_times = []
 
                     for name, data in servers.items():
+                        if self._stop_event.is_set():
+                            break
                         status, avg = ping_test(data["ip"])
                         all_statuses.append(status)
                         if status:
@@ -179,6 +191,13 @@ class Sender(Thread):
                         if name == plugin_options["label_3"]:
                             state['ping3'] = status
                             state['rtt3'] = avg
+
+                    if self._stop_event.is_set():
+                        break
+
+                    with health_lock:
+                        health_state['last_cycle'] = time.time()
+                        health_state['last_error_message'] = ''
 
                     if all(all_statuses):
                         if last_all_status != True:
@@ -373,13 +392,91 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
+        runtime.register_thread(sender)
 
 def stop():
     global sender
-    if sender is not None:
-        sender.stop()
-        sender.join(15)
-        sender = None
+    worker = sender
+    if worker is not None:
+        worker.stop()
+        worker.join(5)
+        if sender is worker and not worker.is_alive():
+            sender = None
+
+
+def health():
+    """Return worker and latest reachability results for all targets."""
+    with health_lock:
+        health_data = dict(health_state)
+    worker_alive = sender is not None and sender.is_alive()
+    status_items = []
+    known_statuses = []
+    for name, data in servers.items():
+        status = data.get('status')
+        if status is None:
+            status_text = _('Not checked')
+        elif status:
+            status_text = _('Available')
+            known_statuses.append(True)
+        else:
+            status_text = _('Unavailable')
+            known_statuses.append(False)
+        status_items.append('{}: {}'.format(name, status_text))
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('Server states'): '; '.join(status_items),
+        _('Check interval'): '{} {}'.format(MAIN_LOOP_SLEEP, _('seconds')),
+        _('Last completed check'): (
+            datetime_string(time.localtime(health_data['last_cycle']))
+            if health_data['last_cycle'] else _('Not available')
+        ),
+    }
+    if health_data['last_error_message']:
+        details[_('Last error')] = health_data['last_error_message']
+    if not plugin_options['use_ping']:
+        return {
+            'status': 'unknown',
+            'summary': _('Network Ping Monitor is disabled.'),
+            'details': details,
+        }
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('Network Ping Monitor worker is stopped.'),
+            'details': details,
+        }
+    if (
+        health_data['last_error'] and
+        health_data['last_error'] >= health_data['last_cycle']
+    ):
+        return {
+            'status': 'error',
+            'summary': health_data['last_error_message'],
+            'details': details,
+        }
+    if len(known_statuses) < len(servers):
+        return {
+            'status': 'warning',
+            'summary': _('Waiting for the first complete ping check.'),
+            'details': details,
+        }
+    if all(known_statuses):
+        return {
+            'status': 'ok',
+            'summary': _('All monitored servers are available.'),
+            'details': details,
+        }
+    if any(known_statuses):
+        return {
+            'status': 'warning',
+            'summary': _('Some monitored servers are unavailable.'),
+            'details': details,
+        }
+    return {
+        'status': 'error',
+        'summary': _('All monitored servers are unavailable.'),
+        'details': details,
+    }
 
 def ping_test(ip):
     try:

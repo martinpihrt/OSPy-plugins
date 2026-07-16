@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "network_ping_monitor",
+  "name": "Network Ping Monitor",
+  "menu": "Package: Network Ping Monitor",
+  "version": "1.0.0",
+  "description": "Monitors three network targets through ICMP and optionally logs availability and latency.",
+  "author": "Martin Pihrt",
+  "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/network_ping_monitor",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min": "3.0.211"
+  },
+  "python": {
+    "min": "3.8"
+  },
+  "permissions": [
+    "files",
+    "network",
+    "system"
+  ]
+}
