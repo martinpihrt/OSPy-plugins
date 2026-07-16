@@ -7,9 +7,9 @@ import web                                                       # Framework web
 import json                                                      # For working with json file
 import traceback                                                 # For Errors listing via callback where the event occurred
 import time                                                      # For working with time, see the def _sleep function
-from threading import Thread, Event                              # For use a separate thread in which the plugin is running
+from threading import Thread, Lock                              # For use a separate thread in which the plugin is running
 
-from plugins import PluginOptions, plugin_url, plugin_data_dir   # For access to settings, address and plugin data folder
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.log import log                                         # For events logs printing (debug, error, info)
 from ospy.helpers import datetime_string, now, get_input, verify_csrf # For using date time in events logs
 from ospy.webpages import ProtectedPage                          # For check user login permissions
@@ -58,6 +58,14 @@ plugin_options = PluginOptions(
         'sensor_ip': ['']*20,
     }
 )
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_cycle': 0,
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -66,7 +74,7 @@ class Sender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
         self.devices = []
         self._sleep_time = 0
         self._session = Session()
@@ -75,6 +83,7 @@ class Sender(Thread):
         self._last_msg_info = None
         self._last_msg_log = 0
         self.start()
+        runtime.register_thread(self)
 
     def stop(self):
         self._stop_event.set()
@@ -94,12 +103,18 @@ class Sender(Thread):
     def _mark_request_success(self, key):
         self._next_request_time.pop(key, None)
         self._request_failures.pop(key, None)
+        with health_lock:
+            health_state['last_success'] = time.time()
+            health_state['last_error_message'] = ''
 
     def _mark_request_failure(self, key, base_delay=60):
         failures = self._request_failures.get(key, 0) + 1
         self._request_failures[key] = failures
         delay = min(600, base_delay * (2 ** (failures - 1)))
         self._next_request_time[key] = time.time() + delay
+        with health_lock:
+            health_state['last_error'] = time.time()
+            health_state['last_error_message'] = _('Request failed for a configured Shelly device.')
 
     def _write_status(self, msg_info):
         now_time = time.time()
@@ -138,6 +153,7 @@ class Sender(Thread):
                                     url = 'http://{}/status'.format(plugin_options['sensor_ip'][i])
                                 else:                                       # gen2+ device. url=http://IP/rpc/Shelly.GetStatus
                                     url = 'http://{}/rpc/Shelly.GetStatus'.format(plugin_options['sensor_ip'][i])
+                            response = None
                             try:
                                 response = self._session.get(url, timeout=5)
                                 if response.status_code == 401:
@@ -1409,15 +1425,24 @@ class Sender(Thread):
                                 response = None
                                 msg += _('[{}: ERROR] ').format(plugin_options['sensor_label'][i])
                                 msg_info += _('{}: Error: {}\n').format(plugin_options['sensor_label'][i], e)
+                            finally:
+                                if response is not None:
+                                    response.close()
 
                     self._write_status(msg_info)
                     if plugin_options['use_footer']:
                         if in_footer is not None:
                             in_footer.val = msg.encode('utf8').decode('utf8')
 
+                with health_lock:
+                    health_state['last_cycle'] = time.time()
                 self._sleep(plugin_options['request_interval'])   # The loop is executed every second
 
             except Exception:                                     # In the event of an error (the try did not turn out correctly), a callback is used to write where the error is
+                message = traceback.format_exc().splitlines()[-1]
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = message
                 log.clear(NAME)
                 log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
                 self._sleep(60)                                   # In case of an error, it is advisable to wait longer than 1 second
@@ -1437,9 +1462,90 @@ def stop():                                                       # This functio
     global sender
     if sender is not None:
         sender.stop()
-        sender.join(15)
         sender._session.close()
-        sender = None
+        sender.join(15)
+        if sender.is_alive():
+            log.error(NAME, _('The plug-in worker did not stop within the timeout.'))
+        else:
+            sender = None
+
+
+def health():
+    """Return configured Shelly device and worker state without credentials."""
+    with health_lock:
+        state = dict(health_state)
+    worker_running = sender is not None and sender.is_alive()
+    devices = list(sender.devices) if sender is not None else []
+    configured = sum(
+        1 for enabled in plugin_options['use_sensor'][:plugin_options['number_sensors']]
+        if enabled
+    )
+    online = sum(1 for device in devices if device.get('online'))
+    details = {
+        _('Worker thread'): _('Running') if worker_running else _('Stopped'),
+        _('Cloud authorization configured'): (
+            _('Yes') if len(plugin_options['auth_key']) > 5 else _('No')
+        ),
+        _('Shelly server'): plugin_options['server_uri'] or _('Not configured'),
+        _('Configured devices'): configured,
+        _('Loaded devices'): len(devices),
+        _('Online devices'): online,
+        _('Devices in retry backoff'): (
+            len(sender._request_failures) if sender is not None else 0
+        ),
+        _('Last successful cycle'): (
+            datetime_string(time.localtime(state['last_cycle']))
+            if state['last_cycle'] else _('Not available')
+        ),
+        _('Last successful device request'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_running:
+        return {
+            'status': 'error',
+            'summary': _('Shelly Cloud Integration worker is not running.'),
+            'details': details,
+        }
+    if configured == 0:
+        return {
+            'status': 'unknown',
+            'summary': _('No Shelly devices are enabled.'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'unknown',
+            'summary': _('Shelly Cloud Integration is waiting for its first device response.'),
+            'details': details,
+        }
+    if online < len(devices):
+        return {
+            'status': 'warning',
+            'summary': _('One or more loaded Shelly devices are offline.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('Shelly Cloud Integration is responding.'),
+        'details': details,
+    }
+
+
+def safe_settings_json():
+    data = dict(plugin_options)
+    if data.get('auth_key'):
+        data['auth_key'] = '********'
+    return data
 
 
 def format_timestamp(timestamp):                                  # Convert timestamp (ex: 1735731059.4796138 to "01.01.2025 12:10:10")
@@ -1652,7 +1758,7 @@ class settings_json(ProtectedPage):
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         try:
-            return json.dumps(plugin_options)
+            return json.dumps(safe_settings_json())
         except:
             return {}
 

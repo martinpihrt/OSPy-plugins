@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Shelly Cloud Integration<br/>
+Updated Shelly Cloud Integration for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring Requests and cloud/local network access, registers its polling worker with the shared runtime, closes each HTTP response and its session before bounded shutdown, excludes the cloud authorization key from diagnostics and the settings JSON endpoint, and reports worker, server, configured, loaded and online devices, retry state, latest request and errors through `health()`.
+
 (Martin Pihrt) - Remote Notifications<br/>
 Updated Remote Notifications for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring HTTP network and system-state access, registers its event-monitoring worker with the shared runtime, observes the common stop request with bounded shutdown, closes HTTP responses, keeps the API key out of diagnostics, and reports worker, server, API-key presence, latest cycle, successful notification, reply and errors through `health()`.
 

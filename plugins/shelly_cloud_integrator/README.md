@@ -3,6 +3,11 @@ Shelly Cloud Integration Readme
 
 Tested in Python 3+
 
+The plug-in includes a `plugin.json` manifest and reports its worker, Shelly
+server, configured, loaded and online devices, retry state, latest request and
+errors through the OSPy system health interface. The cloud authorization key is
+not included in diagnostics or the settings JSON endpoint.
+
 How to get the latest device status via Shelly Cloud API and curl. Path: https://server_uri/device/status.
 Supported methods: GET and POST.
 Parameters are supplied via query or request body
