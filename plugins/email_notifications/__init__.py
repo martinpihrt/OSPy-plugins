@@ -9,7 +9,7 @@ import os
 import os.path
 import traceback
 import smtplib
-from threading import Thread, Event
+from threading import Thread, Lock
 from random import randint
 
 from email.encoders import encode_base64
@@ -19,7 +19,7 @@ from email.mime.multipart import MIMEBase
 
 import web
 from ospy.webpages import ProtectedPage
-from plugins import PluginOptions, plugin_url, plugin_data_dir
+from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.options import options
 from ospy.stations import stations
 from ospy.inputs import inputs
@@ -60,6 +60,13 @@ email_options = PluginOptions(
 )
 
 global saved_emails
+runtime = get_runtime()
+health_lock = Lock()
+health_state = {
+    'last_success': 0,
+    'last_error': 0,
+    'last_error_message': '',
+}
 
 ################################################################################
 # Main function loop:                                                          #
@@ -68,7 +75,7 @@ class EmailSender(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.daemon = True
-        self._stop_event = Event()
+        self._stop_event = runtime.stop_event
 
         self._sleep_time = 0
         self.start()
@@ -86,9 +93,7 @@ class EmailSender(Thread):
             self._sleep_time -= 1
 
     def run(self):
-        time.sleep(
-            randint(3, 10)
-        )  # Sleep some time to prevent printing before startup information
+        self._sleep(randint(3, 10))  # Wait until startup information is printed.
 
         send_interval = QUEUE_RETRY_INTERVAL # default time for sending between e-mails (ms)
         last_millis   = 0     # timer for repeating sending e-mails (ms)
@@ -387,15 +392,18 @@ class EmailSender(Thread):
 
                                 except Exception:
                                     #print traceback.format_exc()
+                                    record_email_error(traceback.format_exc())
                                     queue_failures += 1
                                     send_interval = min(QUEUE_FAILURE_INTERVAL_MAX, QUEUE_FAILURE_INTERVAL * queue_failures)
                                     log.info(NAME, _('E-mail queue send failed. Next retry later.'))
                     except:
+                        record_email_error(traceback.format_exc())
                         log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())  
 
                 self._sleep(MAIN_LOOP_SLEEP)
 
             except Exception:
+                record_email_error(traceback.format_exc())
                 log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
 
@@ -408,14 +416,88 @@ def start():
     global email_sender
     if email_sender is None:
         email_sender = EmailSender()
+        runtime.register_thread(email_sender)
 
 
 def stop():
     global email_sender
-    if email_sender is not None:
-        email_sender.stop()
-        email_sender.join(15)
-        email_sender = None
+    worker = email_sender
+    if worker is not None:
+        worker.stop()
+        worker.join(15)
+        if email_sender is worker and not worker.is_alive():
+            email_sender = None
+
+
+def record_email_success():
+    with health_lock:
+        health_state['last_success'] = time.time()
+        health_state['last_error_message'] = ''
+
+
+def record_email_error(message):
+    with health_lock:
+        health_state['last_error'] = time.time()
+        health_state['last_error_message'] = str(message).splitlines()[-1]
+
+
+def health():
+    """Return SMTP configuration, queue and latest delivery state."""
+    with health_lock:
+        state = dict(health_state)
+    worker_alive = email_sender is not None and email_sender.is_alive()
+    configured = all([
+        email_options['emlusr'],
+        email_options['emlpwd'],
+        email_options['emladr0'],
+        email_options['emlserver'],
+        email_options['emlport'],
+    ])
+    try:
+        queue_size = len(read_saved_emails()) if email_options['emlrepeater'] else 0
+    except Exception:
+        queue_size = 0
+    details = {
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+        _('SMTP server'): '{}:{}'.format(email_options['emlserver'], email_options['emlport']),
+        _('Queued E-mails'): queue_size,
+        _('Queue retry'): _('Enabled') if email_options['emlrepeater'] else _('Disabled'),
+        _('Last successful E-mail'): (
+            datetime_string(time.localtime(state['last_success']))
+            if state['last_success'] else _('Not available')
+        ),
+    }
+    if state['last_error_message']:
+        details[_('Last error')] = state['last_error_message']
+    if not worker_alive:
+        return {
+            'status': 'error',
+            'summary': _('E-mail Notifications worker is stopped.'),
+            'details': details,
+        }
+    if not configured:
+        return {
+            'status': 'warning',
+            'summary': _('E-mail plug-in is not properly configured!'),
+            'details': details,
+        }
+    if state['last_error'] and state['last_error'] >= state['last_success']:
+        return {
+            'status': 'warning' if email_options['emlrepeater'] else 'error',
+            'summary': state['last_error_message'],
+            'details': details,
+        }
+    if not state['last_success']:
+        return {
+            'status': 'warning',
+            'summary': _('No E-mail has been sent yet.'),
+            'details': details,
+        }
+    return {
+        'status': 'ok',
+        'summary': _('E-mail delivery is working.'),
+        'details': details,
+    }
 
 def safeStr(obj):
     try: 
@@ -462,15 +544,22 @@ def email(text, subject=None, attach=None):
                 encode_base64(part)
                 part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(attach))
                 msg.attach(part)
-            with smtplib.SMTP(SMTP_server, int(SMTP_port), timeout=SMTP_TIMEOUT) as mail_server:
-                mail_server.ehlo()
-                mail_server.starttls()
-                mail_server.ehlo()
-                mail_server.login(SMTP_user, SMTP_pwd)
-                mail_server.sendmail(mail_from, recipients_list, msg.as_string())   # name + e-mail address in the From: field
+            try:
+                with smtplib.SMTP(SMTP_server, int(SMTP_port), timeout=SMTP_TIMEOUT) as mail_server:
+                    mail_server.ehlo()
+                    mail_server.starttls()
+                    mail_server.ehlo()
+                    mail_server.login(SMTP_user, SMTP_pwd)
+                    mail_server.sendmail(mail_from, recipients_list, msg.as_string())   # name + e-mail address in the From: field
+                record_email_success()
+            except Exception:
+                record_email_error(traceback.format_exc())
+                raise
 
     else:
-        raise Exception(_('E-mail plug-in is not properly configured!'))
+        message = _('E-mail plug-in is not properly configured!')
+        record_email_error(message)
+        raise Exception(message)
 
 
 def read_saved_emails():
@@ -513,6 +602,7 @@ def try_mail(text, logtext, attachment=None, subject=None):
             logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Sent'))
 
     except Exception:
+        record_email_error(traceback.format_exc())
         log.error(NAME, _('E-mail was not sent! Connection to Internet not ready.'))
         logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('E-mail was not sent! Connection to Internet not ready.'))
         if not options.run_logEM:

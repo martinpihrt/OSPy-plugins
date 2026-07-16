@@ -5,6 +5,12 @@ Tested in Python 3+
 
 This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider (google.com, seznam.cz)...
 
+The plug-in includes an OSPy `plugin.json` manifest, registers its notification
+and retry worker with the shared plug-in runtime, uses the common stop signal,
+and implements `health()`. Diagnostics reports worker and SMTP configuration
+state, queued message count, retry mode, latest successful delivery, and the
+latest SMTP or worker error. Passwords and recipient addresses are not exposed.
+
 Plugin setup
 -----------
 * Check Send E-mail after power on for send E-mail.    

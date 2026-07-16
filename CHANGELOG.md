@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - E-mail Notifications<br/>
+Updated E-mail Notifications for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring SMTP network, e-mail and queue-file access, registers its notification and retry worker with the shared runtime, uses the common stop signal with bounded shutdown, and reports SMTP configuration, queue size, retry mode, latest successful delivery and recent errors through `health()` without exposing credentials or recipients.
+
 (Martin Pihrt) - Database Connector<br/>
 Updated Database Connector for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring MySQL Connector, network, file and subprocess access, replaces its unnecessary one-shot worker with explicit lifecycle handling, and reports enablement, connector availability and version, configured target, and the latest real database operation through `health()`.
 
