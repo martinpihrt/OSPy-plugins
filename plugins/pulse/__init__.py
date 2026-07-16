@@ -11,7 +11,7 @@ from threading import Thread, Event
 from ospy import helpers
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage
-from plugins import PluginOptions, plugin_url
+from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.log import log
 from ospy.helpers import verify_csrf
 
@@ -21,6 +21,7 @@ MENU =  _('Package: Pulse Output Test')
 LINK = 'start_page'
 MIN_TEST_TIME = 1
 MAX_TEST_TIME = 3600
+runtime = get_runtime()
 
 pulse_options = PluginOptions(
     NAME,
@@ -46,7 +47,15 @@ class PulseSender(Thread):
     def update(self):
         self._sleep_time = 0
 
+    def _wait(self, seconds):
+        return (
+            runtime.stop_event.is_set() or
+            self._stop_event.wait(seconds) or
+            runtime.stop_event.is_set()
+        )
+
     def run(self):
+        global sender
         station = None
         try:
             log.clear(NAME)
@@ -57,10 +66,10 @@ class PulseSender(Thread):
 
             for x in range(0, test_time):
                 station.active = True
-                if self._stop_event.wait(0.5):
+                if self._wait(0.5):
                     break
                 station.active = False
-                if self._stop_event.wait(0.5):
+                if self._wait(0.5):
                     break
 
             log.info(NAME, _('Test stopped.'))
@@ -73,6 +82,8 @@ class PulseSender(Thread):
                     station.active = True
                 else:
                     station.active = False
+            if sender is self:
+                sender = None
 
 sender = None
 
@@ -84,7 +95,45 @@ def start():
     pass
 
 
-stop = start
+def stop():
+    global sender
+    worker = sender
+    if worker is not None:
+        worker.stop()
+        worker.join(5)
+        if sender is worker and not worker.is_alive():
+            sender = None
+
+
+def health():
+    """Return selected output and pulse-test worker state."""
+    normalize_options(pulse_options)
+    worker_alive = sender is not None and sender.is_alive()
+    details = {
+        _('Test time'): '{} s'.format(pulse_options['test_time']),
+        _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
+    }
+    try:
+        station = stations.get(pulse_options['test_output'])
+    except Exception:
+        details[_('Selected output')] = _('Not available')
+        return {
+            'status': 'error',
+            'summary': _('Selected output is not available.'),
+            'details': details,
+        }
+    details[_('Selected output')] = '{}: {}'.format(
+        pulse_options['test_output'] + 1, station.name
+    )
+    details[_('Output active')] = _('Yes') if station.active else _('No')
+    return {
+        'status': 'ok',
+        'summary': (
+            _('Pulse output test is running.')
+            if worker_alive else _('Pulse output test is ready.')
+        ),
+        'details': details,
+    }
 
 
 def to_int(value, default):
@@ -120,9 +169,11 @@ class start_page(ProtectedPage):
             stop = helpers.get_input(qdict, 'stop', False, lambda x: True)
             if sender is not None and stop:
                 verify_csrf(qdict)
-                sender.stop()
-                sender.join(5)
-                sender = None
+                worker = sender
+                worker.stop()
+                worker.join(5)
+                if sender is worker and not worker.is_alive():
+                    sender = None
                 raise web.seeother(plugin_url(start_page), True)
 
             return self.plugin_render.pulse(pulse_options, log.events(NAME))
@@ -143,10 +194,12 @@ class start_page(ProtectedPage):
             normalize_options(qdict)
             pulse_options.web_update(qdict)
             if sender is not None:
-                sender.stop()
-                sender.join(5)
+                worker = sender
+                worker.stop()
+                worker.join(5)
 
             sender = PulseSender()
+            runtime.register_thread(sender)
 
             raise web.seeother(plugin_url(start_page), True)
 

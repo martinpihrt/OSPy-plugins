@@ -2,6 +2,9 @@
 
 July 16 2026
 -----------
+(Martin Pihrt) - Pulse Output Test<br/>
+Updated Pulse Output Test for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring station-output control, registers its test worker with the shared runtime, responds separately to the manual test stop and common plug-in stop signals, clears completed workers, and reports the selected output, duration, worker and output state through `health()`.
+
 (Martin Pihrt) - Door Opening<br/>
 Updated Door Opening for the new OSPy plug-in interfaces. It now includes a `plugin.json` manifest declaring station-output control, registers its one-shot activation worker with the shared runtime, observes the common stop request before activating an output, stops safely, and reports selected output, opening time, worker state and active opening runs through `health()`.
 

@@ -23,6 +23,11 @@ Plugin setup
 * Stop test button:
   Stop the test immediately.
 
+The plug-in includes an OSPy `plugin.json` manifest, registers the pulse worker
+with the shared plug-in runtime, responds to both the test stop control and the
+common plug-in stop request, and implements `health()`. Diagnostics reports the
+selected output, test duration, worker state, and current output state.
+
 The hardware should be connected as follows:
 <a href="/plugins/pulse/static/images/schematics.png"><img src="/plugins/pulse/static/images/schematics.png" width="100%"></a>
 
