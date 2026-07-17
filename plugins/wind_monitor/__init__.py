@@ -603,10 +603,10 @@ def update_log():
 
     if wind_options['en_sql_log']:
         try:
-            from plugins.database_connector import execute_db
-            # first create table windmonitor if not exists
-            sql = "CREATE TABLE IF NOT EXISTS windmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, max VARCHAR(7), actual VARCHAR(7))"
-            execute_db(sql, test=False, commit=False) # not commit
+            from plugins.database_connector import execute_db, table_exists
+            if not table_exists('windmonitor'):
+                sql = "CREATE TABLE IF NOT EXISTS windmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, max VARCHAR(7), actual VARCHAR(7))"
+                execute_db(sql, test=False, commit=False)
             # next insert data to table windmonitor
             sql = "INSERT INTO `windmonitor` (`max`, `actual`) VALUES ('%s','%s')" % (get_all_values()[1],get_all_values()[0])
             execute_db(sql, test=False, commit=True)  # yes commit inserted data

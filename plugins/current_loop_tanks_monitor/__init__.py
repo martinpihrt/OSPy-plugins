@@ -1020,10 +1020,10 @@ def update_log():
 
     if plugin_options['en_sql_log']:
         try:
-            from plugins.database_connector import execute_db
-            # first create table tankmonitor if not exists
-            sql = "CREATE TABLE IF NOT EXISTS `currentmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tank1 VARCHAR(4), tank2 VARCHAR(4), tank3 VARCHAR(4), tank4 VARCHAR(4), tank1vol VARCHAR(4), tank2vol VARCHAR(4), tank3vol VARCHAR(4), tank4vol VARCHAR(4))"
-            execute_db(sql, test=False, commit=False) # not commit
+            from plugins.database_connector import execute_db, table_exists
+            if not table_exists('currentmonitor'):
+                sql = "CREATE TABLE IF NOT EXISTS `currentmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, tank1 VARCHAR(4), tank2 VARCHAR(4), tank3 VARCHAR(4), tank4 VARCHAR(4), tank1vol VARCHAR(4), tank2vol VARCHAR(4), tank3vol VARCHAR(4), tank4vol VARCHAR(4))"
+                execute_db(sql, test=False, commit=False)
             # next insert data to table tankmonitor
             sql = "INSERT INTO `currentmonitor` (`tank1`, `tank2`, `tank3`, `tank4`, `tank1vol`, `tank2vol`, `tank3vol`, `tank4vol`) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s')" % (round(tanks['levelPercent'][0]),round(tanks['levelPercent'][1]),round(tanks['levelPercent'][2]),round(tanks['levelPercent'][3]),round(tanks['volumeLiter'][0]),round(tanks['volumeLiter'][1]),round(tanks['volumeLiter'][2]),round(tanks['volumeLiter'][3]))
             execute_db(sql, test=False, commit=True)  # yes commit inserted data

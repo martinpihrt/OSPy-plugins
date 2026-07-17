@@ -554,10 +554,10 @@ def update_log(status):
 
     if pressure_options['en_sql_log']:
         try:
-            from plugins.database_connector import execute_db
-            # first create table upsmonitor if not exists
-            sql = "CREATE TABLE IF NOT EXISTS pressmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, actual VARCHAR(3))"
-            execute_db(sql, test=False, commit=False) # not commit
+            from plugins.database_connector import execute_db, table_exists
+            if not table_exists('pressmonitor'):
+                sql = "CREATE TABLE IF NOT EXISTS pressmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, actual VARCHAR(3))"
+                execute_db(sql, test=False, commit=False)
             # next insert data to table pressmonitor
             sql = "INSERT INTO `pressmonitor` (`actual`) VALUES ('%s')" % (status)
             execute_db(sql, test=False, commit=True)  # yes commit inserted data

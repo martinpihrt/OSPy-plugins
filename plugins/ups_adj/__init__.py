@@ -486,10 +486,10 @@ def update_log(status):
 
     if ups_options['en_sql_log']:
         try:
-            from plugins.database_connector import execute_db
-            # first create table upsmonitor if not exists
-            sql = "CREATE TABLE IF NOT EXISTS upsmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, actual VARCHAR(3))"
-            execute_db(sql, test=False, commit=False) # not commit
+            from plugins.database_connector import execute_db, table_exists
+            if not table_exists('upsmonitor'):
+                sql = "CREATE TABLE IF NOT EXISTS upsmonitor (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, actual VARCHAR(3))"
+                execute_db(sql, test=False, commit=False)
             # next insert data to table upsmonitor
             sql = "INSERT INTO `upsmonitor` (`actual`) VALUES ('%s')" % (status)
             execute_db(sql, test=False, commit=True)  # yes commit inserted data

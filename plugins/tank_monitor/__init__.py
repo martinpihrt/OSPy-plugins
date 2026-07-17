@@ -907,10 +907,10 @@ def update_log():
 
     if tank_options['en_sql_log']:
         try:
-            from plugins.database_connector import execute_db
-            # first create table tankmonitor if not exists
-            sql = "CREATE TABLE IF NOT EXISTS `tankmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, min VARCHAR(7), max VARCHAR(7), actual VARCHAR(7), volume VARCHAR(10))"
-            execute_db(sql, test=False, commit=False) # not commit
+            from plugins.database_connector import execute_db, table_exists
+            if not table_exists('tankmonitor'):
+                sql = "CREATE TABLE IF NOT EXISTS `tankmonitor` (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, min VARCHAR(7), max VARCHAR(7), actual VARCHAR(7), volume VARCHAR(10))"
+                execute_db(sql, test=False, commit=False)
             # next insert data to table tankmonitor
             sql = "INSERT INTO `tankmonitor` (`min`, `max`, `actual`, `volume`) VALUES ('%s','%s','%s','%s')" % (status['minlevel'],status['maxlevel'],get_all_values()[0],get_all_values()[3])
             execute_db(sql, test=False, commit=True)  # yes commit inserted data

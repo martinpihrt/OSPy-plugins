@@ -304,7 +304,9 @@ def update_log(event):
 
 def create_sql_table():
     try:
-        from plugins.database_connector import execute_db
+        from plugins.database_connector import execute_db, table_exists
+        if table_exists('netping'):
+            return
         sql = ("CREATE TABLE IF NOT EXISTS netping ("
                "id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, "
                "ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "

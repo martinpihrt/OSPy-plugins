@@ -206,6 +206,24 @@ def should_log_command(test=False):
     return False
 
 
+def is_idempotent_table_create(sql):
+    normalized = ' '.join(str(sql).strip().upper().split())
+    return normalized.startswith('CREATE TABLE IF NOT EXISTS ')
+
+
+def table_exists(table_name):
+    table_name = str(table_name).strip()
+    if not table_name or not table_name.replace('_', '').isalnum():
+        return False
+    rows = execute_db(
+        "SHOW TABLES LIKE '{}'".format(table_name),
+        test=False,
+        commit=False,
+        fetch=True,
+    )
+    return bool(rows)
+
+
 def execute_db(sql = "", commit = False, test = False, fetch = False):
     global is_installed_ok
     if is_installed_ok:
@@ -262,6 +280,13 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
                 log_db_error(_('Something is wrong with your user name or password'))
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 log_db_error(_('Database does not exist'))
+            elif (err.errno == errorcode.ER_TABLE_EXISTS_ERROR and
+                    is_idempotent_table_create(sql)):
+                # With raise_on_warnings enabled, MySQL Connector can promote
+                # the harmless IF NOT EXISTS note to an exception. The server
+                # has already kept the existing table unchanged.
+                record_db_success()
+                return -1
             elif err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
                 log_db_error(_('Table already exists'))
             else:
