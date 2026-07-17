@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "wind_monitor",
   "name": "Wind Speed Monitor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

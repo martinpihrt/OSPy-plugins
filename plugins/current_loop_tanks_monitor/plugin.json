@@ -3,7 +3,7 @@
   "id": "current_loop_tanks_monitor",
   "name": "Current Loop Tanks Monitor",
   "menu": "Package: Current Loop Tanks Monitor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Monitors up to four water tanks through an ADS1115 and 4-20 mA pressure sensors.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/current_loop_tanks_monitor",

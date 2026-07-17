@@ -5,6 +5,8 @@ July 17 2026
 (Martin Pihrt) - Database Connector and SQL logging plug-ins<br/>
 Added a validated table-existence query and changed Air Temperature and Humidity Monitor, Current Loop Tanks Monitor, Network Ping Monitor, Pressure Monitor, Tank Monitor, UPS Monitor and Wind Speed Monitor to create their SQL tables only when missing. Database Connector also no longer reports the harmless MySQL table-exists warning as an error if a concurrent `CREATE TABLE IF NOT EXISTS` reaches the server; genuine table-exists errors from ordinary `CREATE TABLE` statements remain visible.
 
+Raised all eight affected plug-in manifest versions from `1.0.0` to `1.0.1`. Code changes to a released plug-in must include an appropriate semantic-version increment; backward-compatible fixes use the patch component.
+
 July 16 2026
 -----------
 (Martin Pihrt) - System Update<br/>
