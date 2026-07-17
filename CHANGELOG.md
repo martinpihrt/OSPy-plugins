@@ -2,6 +2,9 @@
 
 July 17 2026
 -----------
+(Martin Pihrt) - System Update v1.1.0<br/>
+Added explicit update channels. Stable is the default and follows the tested `master` branch; Test follows the fixed `beta` branch and receives changes immediately. Repository checks, manual and automatic updates, status, Diagnostics, e-mail and event records identify the selected channel. Switching from beta back to Stable explicitly installs `master`, even when its revision count is lower. Every update now requires a verified OSPy system safety backup before Git changes are applied, and Git command failures abort the update. Updated the plug-in help.
+
 (Martin Pihrt) - Database Connector and SQL logging plug-ins<br/>
 Added a validated table-existence query and changed Air Temperature and Humidity Monitor, Current Loop Tanks Monitor, Network Ping Monitor, Pressure Monitor, Tank Monitor, UPS Monitor and Wind Speed Monitor to create their SQL tables only when missing. Database Connector also no longer reports the harmless MySQL table-exists warning as an error if a concurrent `CREATE TABLE IF NOT EXISTS` reaches the server; genuine table-exists errors from ordinary `CREATE TABLE` statements remain visible.
 

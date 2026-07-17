@@ -230,6 +230,12 @@ jQuery("#updateAction").empty();
 }
 
 if (stat.can_error) {
+jQuery("#repositoryError").text(stat.error_message || "").show();
+} else {
+jQuery("#repositoryError").empty().hide();
+}
+
+if (stat.can_ownership_error) {
 jQuery("#errorAction").html('<a href="' + errorUrl + '" class="button upload danger"><b>' + errorText + '</b></a>');
 } else {
 jQuery("#errorAction").empty();
@@ -304,6 +310,15 @@ checkingTimer = setTimeout(loadStatus, 1500);
                 <input name='use_update' type='checkbox'${" checked" if plugin_options['use_update'] else ""}>
                 <span class="slider"></span>
                 </label>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Update channel'):</td>
+                <td title=$:{json.dumps(_('Stable uses the tested master branch. Beta receives changes immediately and may contain defects.'), ensure_ascii=False)}>
+                    <select name="update_channel">
+                        <option value="stable" ${"selected" if plugin_options.get("update_channel", "stable") == "stable" else ""}>$_('Stable') (master) - $_('default')</option>
+                        <option value="beta" ${"selected" if plugin_options.get("update_channel", "stable") == "beta" else ""}>$_('Test') (beta)</option>
+                    </select>
                 </td>
             </tr>
             <tr>
@@ -391,12 +406,13 @@ checkingTimer = setTimeout(loadStatus, 1500);
                     <textarea id="statusArea" class="status-area" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
                     <a id="checkVersion" href="$plugins.plugin_url('system_update.status_json')?refresh=1&$csrf_query()" class="button refresh">$_('Check new version')</a>
                     <span id="checkingStatus" style="margin-left: 10px; color: #666666; display: ${'inline' if stat.get('checking') else 'none'};">$_('Checking...')</span>
+                    <span id="repositoryError" style="margin-left: 10px; color: #a01822; display: ${'inline' if stat.get('can_error') else 'none'};">$stat.get('error_message', '')</span>
                     <span id="updateAction">
                         $if stat['can_update']:
                             <a href="$plugins.plugin_url('system_update.update_page')?$csrf_query()" class="button reboot danger"><b>$_('A new version of OSPy is available - update?')</b></a>
                     </span>
                     <span id="errorAction">
-                        $if stat['can_error']:
+                        $if stat.get('can_ownership_error'):
                             <a href="$plugins.plugin_url('system_update.error_page')?$csrf_query()" class="button upload danger"><b>$_('Fix detected dubious ownership?')</b></a>
                     </span>                        
                 </td>

@@ -8,6 +8,7 @@ import traceback
 import json
 import os
 import shlex
+import zipfile
 import web
 from ospy.webpages import ProtectedPage, clear_plugin_runtime_data
 from ospy.log import log, logEM, logEV
@@ -31,6 +32,7 @@ plugin_options = PluginOptions(
         'eml_subject': _('Report from OSPy SYSTEM UPDATE plugin'),
         'use_footer': False,
         'eplug': 0, # email plugin type (email notifications or email notifications SSL)
+        'update_channel': 'stable',
     }
 )
 
@@ -55,6 +57,24 @@ health_state = {
     'last_error_message': '',
 }
 
+UPDATE_CHANNELS = {
+    'stable': 'master',
+    'beta': 'beta',
+}
+
+
+def selected_channel():
+    channel = str(plugin_options.get('update_channel', 'stable')).lower()
+    return channel if channel in UPDATE_CHANNELS else 'stable'
+
+
+def selected_branch():
+    return UPDATE_CHANNELS[selected_channel()]
+
+
+def selected_remote_branch():
+    return 'origin/{}'.format(selected_branch())
+
 
 class StatusChecker(Thread):
     def __init__(self):
@@ -69,9 +89,12 @@ class StatusChecker(Thread):
             'ver_str': version.ver_str,
             'ver_date': version.ver_date,
             'remote': _('None!'),
-            'remote_branch': 'origin/master',
+            'channel': selected_channel(),
+            'remote_branch': selected_remote_branch(),
             'can_update': False,
             'can_error': False,
+            'can_ownership_error': False,
+            'error_message': '',
             'checking': False,
             'commits': [],
             'local_hash': ''
@@ -121,23 +144,29 @@ class StatusChecker(Thread):
         self.status['checking'] = True
 
         try:
-            run_command(['git', 'fetch', '--prune', 'origin'], timeout=45)
+            run_required_command(['git', 'fetch', '--prune', 'origin'], timeout=45)
             remote = git_output(['git', 'config', '--get', 'remote.origin.url'])
             if remote:
                 self.status['remote'] = remote
 
-            remote_branch = git_output(
-                ['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']
-            )
-            if remote_branch:
-                self.status['remote_branch'] = remote_branch
+            channel = selected_channel()
+            remote_branch = selected_remote_branch()
+            self.status['channel'] = channel
+            self.status['remote_branch'] = remote_branch
+            try:
+                git_output(['git', 'rev-parse', '--verify', remote_branch])
+            except Exception:
+                raise RuntimeError(
+                    _('The selected update channel branch was not found') + ': ' + remote_branch
+                )
 
-            local_rev = int(git_output(['git', 'rev-list', 'HEAD', '--count']))
             remote_rev = int(git_output(['git', 'rev-list', remote_branch, '--count']))
-            self.status['can_update'] = remote_rev > local_rev
+            local_hash = git_output(['git', 'rev-parse', 'HEAD'])
+            remote_hash = git_output(['git', 'rev-parse', remote_branch])
+            self.status['can_update'] = remote_hash != local_hash
 
             # AktuĂˇlnĂ­ commit hash
-            self.status['local_hash'] = git_output(['git', 'rev-parse', 'HEAD'])
+            self.status['local_hash'] = local_hash
 
             command = 'git log -1 %s --format=%%cd --date=short' % remote_branch
             new_date = git_output(command.split())
@@ -166,34 +195,44 @@ class StatusChecker(Thread):
                     })
             self.status['commits'] = commits
             self.status['can_error'] = False
+            self.status['can_ownership_error'] = False
+            self.status['error_message'] = ''
             with health_lock:
                 health_state['last_check'] = time.time()
 
         except Exception:
+            error_message = traceback.format_exc().splitlines()[-1]
             with health_lock:
                 health_state['last_error'] = time.time()
-                health_state['last_error_message'] = traceback.format_exc().splitlines()[-1]
+                health_state['last_error_message'] = error_message
             log.error(NAME, _('Error while updating revision data:\n') + traceback.format_exc())
+            self.status['can_update'] = False
+            stats['can_update'] = False
             self.status['can_error'] = True
+            self.status['can_ownership_error'] = 'dubious ownership' in error_message.lower()
+            self.status['error_message'] = error_message
             self.status['checking'] = False
             self.started.set()
             return
 
-        if new_revision == version.revision and new_date == version.ver_date:
+        if not self.status['can_update']:
             log.info(NAME, _('Up-to-date.'))
             stats['can_update'] = False
-        elif new_revision > version.revision:
+        else:
             log.info(NAME, _('New version is available!'))
+            log.info(NAME, _('Update channel') + ': {} ({})'.format(selected_channel(), selected_branch()))
             log.info(NAME, _('Currently running revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date))
             log.info(NAME, _('Available revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date))
             log.info(NAME, _('Changes') +':\n' + changes)
             stats['ver_changes'] = changes
             msg = '<b>' + _('System update plug-in') + '</b> ' + '<br><p style="color:red;">' 
             msg += _('New OSPy version is available!') + '<br>' 
+            msg += _('Update channel') + ': {} ({})'.format(selected_channel(), selected_branch()) + '<br>'
             msg += _('Currently running revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date) + '<br>'
             msg += _('Available revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date) + '.' + '</p>'
             msglog =   _('System update plug-in') + ': '
             msglog +=  _('New OSPy version is available!') + '-> ' + _('Currently running revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date) + ', '
+            msglog += _('Update channel') + ': {} ({}), '.format(selected_channel(), selected_branch())
             msglog +=  _('Available revision') + ': %d.%d.%d (%s)' % (version.major_ver, version.minor_ver, new_revision - version.old_count, new_date) + '.'
                
             if plugin_options['use_eml']:
@@ -214,12 +253,6 @@ class StatusChecker(Thread):
             stats['ver_new_date'] = '%s' % new_date   
             stats['ver_act'] =  '%d.%d.%d (%s)' % (version.major_ver, version.minor_ver, (version.revision - version.old_count), version.ver_date)
             stats['can_update'] = True
-
-        else:
-            log.info(NAME, _('Running unknown version!'))
-            log.info(NAME, _('Currently running revision') + ': %d (%s)' % (version.revision, version.ver_date))
-            log.info(NAME, _('Available revision') + ': %d (%s)' % (new_revision, new_date))
-            stats['can_update'] = False
 
         self.status['checking'] = False
         self.started.set()
@@ -242,11 +275,11 @@ class StatusChecker(Thread):
                     self._update_rev_data()
                         
                     if self.status['can_update']:
-                        msg =_('New OSPy version is available!')
+                        msg = _('New OSPy version is available!') + ' [{} / {}]'.format(selected_channel(), selected_branch())
                         stats['can_update'] = True 
                         report_ospyupdate()
                     else:
-                        msg =_('Up-to-date')
+                        msg = _('Up-to-date') + ' [{} / {}]'.format(selected_channel(), selected_branch())
                         stats['can_update'] = False    
 
                     if self.status['can_update'] and plugin_options['auto_update']:
@@ -291,24 +324,83 @@ def run_command(cmd, timeout=60):
         log.error(NAME, _('System update plug-in') + ':\n' + traceback.format_exc())
         return ''
 
+
+def run_required_command(cmd, timeout=60):
+    args = shlex.split(cmd) if isinstance(cmd, str) else cmd
+    output = subprocess.check_output(args, stderr=subprocess.STDOUT, timeout=timeout).decode('utf-8')
+    if output.strip():
+        log.info(NAME, output.strip())
+    return output.strip()
+
+
+def create_update_safety_backup():
+    """Use the new verified backup engine, with a legacy bridge for older OSPy."""
+    try:
+        from ospy.backup import create_system_backup
+    except ImportError:
+        data_dir = os.path.abspath(os.path.join('ospy', 'data'))
+        backup_dir = os.path.abspath(os.path.join('ospy', 'backup'))
+        os.makedirs(backup_dir, exist_ok=True)
+        destination = os.path.join(
+            backup_dir,
+            'ospy_pre_update_{}.zip'.format(time.strftime('%Y-%m-%d_%H-%M-%S'))
+        )
+        temporary = destination + '.tmp'
+        try:
+            with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+                for current, dirs, files in os.walk(data_dir):
+                    dirs[:] = [name for name in dirs if name != '__pycache__']
+                    for name in files:
+                        path = os.path.join(current, name)
+                        if os.path.islink(path) or not os.path.isfile(path):
+                            continue
+                        archive.write(path, os.path.relpath(path, data_dir))
+            with zipfile.ZipFile(temporary, 'r') as archive:
+                if not archive.namelist() or archive.testzip() is not None:
+                    raise RuntimeError(_('The safety backup could not be verified.'))
+            os.replace(temporary, destination)
+            return destination
+        except Exception:
+            if os.path.exists(temporary):
+                os.remove(temporary)
+            raise
+    return create_system_backup(reason='before system update')
+
 def perform_update():
     try:
+        channel = selected_channel()
+        branch = selected_branch()
+        remote_branch = selected_remote_branch()
+        from ospy.options import options as current_options
+        current_options.save_now()
+        safety_backup = create_update_safety_backup()
+        log.info(NAME, _('Safety backup created before update') + ': ' + os.path.basename(safety_backup))
+
         # UloĹľĂ­me aktuĂˇlnĂ­ commit pro pĹ™Ă­pad rollbacku
         commit_hash = git_output(['git', 'rev-parse', 'HEAD'])
         with open(ROLLBACK_FILE, 'w') as f:
             f.write(commit_hash)
 
-        run_command("git config core.filemode false")
-        run_command("git reset --hard", timeout=120)
-        run_command("git pull", timeout=300)
+        run_required_command(['git', 'config', 'core.filemode', 'false'])
+        run_required_command(['git', 'fetch', '--prune', 'origin'], timeout=120)
+        git_output(['git', 'rev-parse', '--verify', remote_branch])
+        run_required_command(['git', 'reset', '--hard'], timeout=120)
+        run_required_command(['git', 'checkout', '-B', branch, remote_branch], timeout=120)
+        run_required_command(['git', 'reset', '--hard', remote_branch], timeout=120)
         with health_lock:
             health_state['last_update'] = time.time()
 
-        msg = _('OSPy updated successfully. Please wait while restarting...')
+        msg = _('OSPy updated successfully. Please wait while restarting...') + ' ' + \
+              _('Update channel') + ': {} ({}).'.format(channel, branch)
         log.info(NAME, msg)
 
         if options.run_logEV:
-            logEV.save_events_log( _('System OSPy'), _('Updated to version') + ': {}'.format(str(stats['ver_new'])))        
+            logEV.save_events_log(
+                _('System OSPy'),
+                _('Updated to version') + ': {}. '.format(str(stats['ver_new'])) +
+                _('Update channel') + ': {} ({})'.format(channel, branch),
+                id='SystemUpdate', level='success', category='system'
+            )
 
         # SpustĂ­me restart v pozadĂ­, aby se hlĂˇĹˇka stihla zobrazit
         def delayed_restart():
@@ -398,7 +490,13 @@ class status_page(ProtectedPage):
     def POST(self):
         qdict = web.input()
         verify_csrf(qdict)
+        requested_channel = str(qdict.get('update_channel', 'stable')).lower()
+        qdict['update_channel'] = requested_channel if requested_channel in UPDATE_CHANNELS else 'stable'
         plugin_options.web_update(qdict)
+        checker.status['channel'] = selected_channel()
+        checker.status['remote_branch'] = selected_remote_branch()
+        checker.status['can_update'] = False
+        checker.refresh_async()
         raise web.seeother(plugin_url(status_page), True)
 
 
@@ -545,6 +643,7 @@ def health():
     checker_status = checker.status if checker is not None else {}
     with health_lock:
         state = dict(health_state)
+    channel_label = _('Stable') if selected_channel() == 'stable' else _('Test')
     details = {
         'worker': _('Running') if worker_alive else _('Stopped'),
         'enabled': bool(plugin_options.get('use_update', False)),
@@ -554,6 +653,7 @@ def health():
         'current_version': version.ver_str,
         'current_commit': checker_status.get('local_hash', ''),
         'upstream_branch': checker_status.get('remote_branch', ''),
+        _('Update channel'): '{} ({})'.format(channel_label, selected_branch()),
         'last_check': state['last_check'],
         'last_update': state['last_update'],
         'last_rollback': state['last_rollback'],
@@ -576,8 +676,8 @@ def health():
         summary = _('System Update is checking the repository.')
     elif checker_status.get('can_update', False):
         status = 'warning'
-        summary = _('A newer OSPy version is available.')
+        summary = _('A different OSPy revision is available in the selected update channel.')
     else:
         status = 'ok'
-        summary = _('OSPy is up to date.')
+        summary = _('OSPy is up to date.') + ' {} ({})'.format(channel_label, selected_branch())
     return {'status': status, 'summary': summary, 'details': details}
