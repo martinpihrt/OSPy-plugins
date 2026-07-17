@@ -7,6 +7,9 @@ Added a validated table-existence query and changed Air Temperature and Humidity
 
 Raised all eight affected plug-in manifest versions from `1.0.0` to `1.0.1`. Code changes to a released plug-in must include an appropriate semantic-version increment; backward-compatible fixes use the patch component.
 
+(Martin Pihrt) - Database Connector v1.0.2<br/>
+Removed obsolete `sender` checks left in the settings and backup pages after the plug-in lifecycle migration. Test connection, connector installation, database backup, file deletion and download actions now use the running plug-in directly without raising `NameError`.
+
 July 16 2026
 -----------
 (Martin Pihrt) - System Update<br/>

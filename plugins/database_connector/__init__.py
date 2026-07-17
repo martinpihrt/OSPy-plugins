@@ -377,17 +377,16 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         try:
-            global sender
             qdict  = web.input()
             test = get_input(qdict, 'test', False, lambda x: True)
             install = get_input(qdict, 'install', False, lambda x: True)
 
-            if sender is not None and test:
+            if test:
                 verify_csrf(qdict)
                 sql = "SHOW DATABASES"
                 execute_db(sql, test=True, commit=False)
 
-            if sender is not None and install:
+            if install:
                 verify_csrf(qdict)
                 install_db()
 
@@ -416,19 +415,18 @@ class backup_page(ProtectedPage):
 
     def GET(self):
         try:
-            global sender
             qdict  = web.input()
             backup = get_input(qdict, 'backup', False, lambda x: True)
 
             log.clear(NAME)
-            if sender is not None and backup:
+            if backup:
                 verify_csrf(qdict)
                 if get_dump():
                     log.info(NAME, datetime_string() + ': ' + _('Created database backup.'))
                 else:
                     log.error(NAME, datetime_string() + ': ' + _('Error in database backup.'))
 
-            if 'delete' in qdict and sender is not None:
+            if 'delete' in qdict:
                 verify_csrf(qdict)
                 delete = qdict['delete']
                 if len(plugin_options['sql_name']) > 0:
@@ -439,7 +437,7 @@ class backup_page(ProtectedPage):
                     else:
                         log.error(NAME, datetime_string() + ': ' + _('File for deleting not found!'))
 
-            if 'download' in qdict and sender is not None:
+            if 'download' in qdict:
                 download = qdict['download']
                 if len(plugin_options['sql_name']) > 0:
                     down_name = plugin_options['sql_name'][int(download)]

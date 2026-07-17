@@ -3,7 +3,7 @@
   "id": "database_connector",
   "name": "Database Connector",
   "menu": "Package: Database Connector",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Provides a shared MySQL connection and backup interface for OSPy plug-ins.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/database_connector",
