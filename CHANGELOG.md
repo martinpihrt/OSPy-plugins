@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 18 2026
+-----------
+(Martin Pihrt) - SQL logging plug-in dependencies<br/>
+Declared Database Connector as an optional ordering dependency for Air Temperature and Humidity Monitor, Current Loop Tanks Monitor, Network Ping Monitor, Pressure Monitor, Tank Monitor, UPS Monitor and Wind Speed Monitor. With both plug-ins enabled, OSPy now starts Database Connector first and stops it last, while every monitor remains usable without SQL logging. Raised the seven affected manifest versions from `1.0.1` to `1.0.2`.
+
 July 17 2026
 -----------
 (Martin Pihrt) - System Update v1.1.0<br/>

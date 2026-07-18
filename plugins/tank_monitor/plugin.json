@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "tank_monitor",
   "name": "Water Tank Monitor",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -16,6 +16,12 @@
       "module": "smbus",
       "package": "python3-smbus",
       "required": true
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "database_connector",
+      "required": false
     }
   ],
   "hardware": {
