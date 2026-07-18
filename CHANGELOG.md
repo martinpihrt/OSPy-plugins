@@ -2,6 +2,9 @@
 
 July 18 2026
 -----------
+(Martin Pihrt) - Automated plug-in tests<br/>
+Added GitHub Actions checks for pushes and pull requests to the plug-in `beta` and `master` branches. Each tested plug-in revision now runs the OSPy test suite on Python 3.11 against both OSPy `master` and OSPy `beta`, so stable compatibility and upcoming core changes are verified before promotion. Documented the stable and test branch workflow.
+
 (Martin Pihrt) - SQL logging plug-in dependencies<br/>
 Declared Database Connector as an optional ordering dependency for Air Temperature and Humidity Monitor, Current Loop Tanks Monitor, Network Ping Monitor, Pressure Monitor, Tank Monitor, UPS Monitor and Wind Speed Monitor. With both plug-ins enabled, OSPy now starts Database Connector first and stops it last, while every monitor remains usable without SQL logging. Raised the seven affected manifest versions from `1.0.1` to `1.0.2`.
 

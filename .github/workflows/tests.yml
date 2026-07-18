@@ -1,0 +1,60 @@
+name: Automated plug-in tests
+
+on:
+  push:
+    branches:
+      - master
+      - beta
+  pull_request:
+    branches:
+      - master
+      - beta
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unittest:
+    name: Python 3.11 / OSPy ${{ matrix.ospy-branch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        ospy-branch:
+          - master
+          - beta
+
+    steps:
+      - name: Check out tested plug-ins
+        uses: actions/checkout@v6
+        with:
+          path: OSPy-plugins
+
+      - name: Check out OSPy ${{ matrix.ospy-branch }}
+        uses: actions/checkout@v6
+        with:
+          repository: martinpihrt/OSPy
+          ref: ${{ matrix.ospy-branch }}
+          path: OSPy
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "web.py==0.62" cmarkgfm requests "qrcode[pil]" paho-mqtt
+
+      - name: Run OSPy tests with this plug-in revision
+        working-directory: OSPy
+        env:
+          OSPY_PLUGIN_ROOTS: ${{ github.workspace }}/OSPy-plugins/plugins
+        run: python -m unittest discover -s tests -v

@@ -3,6 +3,18 @@
 
 Please note: Unless otherwise stated: This is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
+## Stable and test channels
+
+The `master` branch is the stable channel selected by OSPy by default. New
+plug-in changes are developed and verified in the `beta` branch first. After
+successful practical and automated testing, the same commits can be promoted
+from `beta` to `master` without rebuilding or changing them.
+
+GitHub Actions runs the OSPy test suite on every push and pull request to
+`beta` or `master`. The tested plug-in revision is checked against both the
+OSPy `master` and OSPy `beta` branches on Python 3.11. Both jobs should pass
+before a beta change is promoted to the stable channel.
+
 These programs are distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. http://opensource.org/licenses/gpl-3.0.html
 
 Theses I2C addresses is used in available plugins:
