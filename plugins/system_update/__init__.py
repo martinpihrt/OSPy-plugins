@@ -7,7 +7,12 @@ import subprocess
 import traceback
 import json
 import os
+import re
+import secrets
 import shlex
+import shutil
+import socket
+import sys
 import zipfile
 import web
 from ospy.webpages import ProtectedPage, clear_plugin_runtime_data
@@ -46,6 +51,14 @@ stats = {
 
 PLUGIN_DIR = os.path.dirname(__file__)
 ROLLBACK_FILE = os.path.join(PLUGIN_DIR, 'rollback_commit.txt')
+WATCHDOG_DIR = os.path.join(PLUGIN_DIR, 'data')
+WATCHDOG_STATE_FILE = os.path.join(WATCHDOG_DIR, 'update_watchdog.json')
+WATCHDOG_ACK_FILE = os.path.join(WATCHDOG_DIR, 'update_watchdog.ack.json')
+WATCHDOG_RESULT_FILE = os.path.join(WATCHDOG_DIR, 'update_watchdog_result.json')
+WATCHDOG_SCRIPT = os.path.join(PLUGIN_DIR, 'update_watchdog.py')
+WATCHDOG_TIMEOUT = 120
+WATCHDOG_CONFIRM_DELAY = 20
+COMMIT_RE = re.compile(r'^[0-9a-fA-F]{40}$')
 runtime = get_runtime()
 health_lock = Lock()
 health_state = {
@@ -55,6 +68,7 @@ health_state = {
     'last_email': 0,
     'last_error': 0,
     'last_error_message': '',
+    'watchdog_mode': '',
 }
 
 UPDATE_CHANNELS = {
@@ -333,6 +347,192 @@ def run_required_command(cmd, timeout=60):
     return output.strip()
 
 
+def _read_json(path):
+    try:
+        with open(path, 'r', encoding='utf-8') as source:
+            value = json.load(source)
+        return value if isinstance(value, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _write_json(path, value):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    temporary = path + '.tmp'
+    with open(temporary, 'w', encoding='utf-8') as target:
+        json.dump(value, target, indent=2, sort_keys=True)
+        target.flush()
+        os.fsync(target.fileno())
+    os.replace(temporary, path)
+
+
+def _valid_commit(commit_hash):
+    return COMMIT_RE.fullmatch(str(commit_hash or '')) is not None
+
+
+def _watchdog_state(previous_commit, target_commit):
+    if not _valid_commit(previous_commit) or not _valid_commit(target_commit):
+        raise RuntimeError(_('The update watchdog received an invalid commit identifier.'))
+    repository = git_output(['git', 'rev-parse', '--show-toplevel'])
+    previous_branch = git_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+    token = secrets.token_hex(32)
+    unit = 'ospy-update-watchdog-{}'.format(int(time.time()))
+    state = {
+        'schema_version': 1,
+        'token': token,
+        'repository': os.path.abspath(repository),
+        'python': sys.executable,
+        'previous_commit': previous_commit,
+        'previous_branch': previous_branch if previous_branch != 'HEAD' else '',
+        'target_commit': target_commit,
+        'created': time.time(),
+        'deadline': time.time() + WATCHDOG_TIMEOUT,
+        'acknowledgement': WATCHDOG_ACK_FILE,
+        'result': WATCHDOG_RESULT_FILE,
+        'unit': unit,
+    }
+    for path in (WATCHDOG_ACK_FILE, WATCHDOG_STATE_FILE):
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+    _write_json(WATCHDOG_STATE_FILE, state)
+    return state
+
+
+def arm_update_watchdog(previous_commit, target_commit):
+    """Start a monitor outside ospy.service before changing tracked files."""
+    state = _watchdog_state(previous_commit, target_commit)
+    systemd_run = shutil.which('systemd-run')
+    systemctl = shutil.which('systemctl')
+    try:
+        if systemd_run and systemctl and os.path.isdir('/run/systemd/system'):
+            command = [
+                systemd_run,
+                '--quiet',
+                '--collect',
+                '--unit={}'.format(state['unit']),
+                '--property=Type=exec',
+                sys.executable,
+                WATCHDOG_SCRIPT,
+                '--state', WATCHDOG_STATE_FILE,
+                '--token', state['token'],
+            ]
+            try:
+                run_required_command(command, timeout=15)
+                mode = 'systemd'
+            except Exception:
+                # Older systemd versions may not support --collect or Type=exec.
+                command = [
+                    systemd_run,
+                    '--quiet',
+                    '--unit={}'.format(state['unit']),
+                    sys.executable,
+                    WATCHDOG_SCRIPT,
+                    '--state', WATCHDOG_STATE_FILE,
+                    '--token', state['token'],
+                ]
+                run_required_command(command, timeout=15)
+                mode = 'systemd'
+        else:
+            process = subprocess.Popen(
+                [
+                    sys.executable, WATCHDOG_SCRIPT,
+                    '--state', WATCHDOG_STATE_FILE,
+                    '--token', state['token'],
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+                close_fds=True,
+            )
+            time.sleep(0.2)
+            if process.poll() is not None:
+                raise RuntimeError(_('The external update watchdog could not be started.'))
+            mode = 'process'
+    except Exception:
+        try:
+            os.remove(WATCHDOG_STATE_FILE)
+        except OSError:
+            pass
+        raise
+    state['mode'] = mode
+    _write_json(WATCHDOG_STATE_FILE, state)
+    with health_lock:
+        health_state['watchdog_mode'] = mode
+    log.info(NAME, _('External update watchdog armed.') + ' ({})'.format(mode))
+    return state
+
+
+def acknowledge_update_watchdog():
+    """Confirm a pending update only after the new process is healthy."""
+    state = _read_json(WATCHDOG_STATE_FILE)
+    if not state:
+        return False
+    target = state.get('target_commit', '')
+    token = state.get('token', '')
+    if not _valid_commit(target) or not token:
+        return False
+    if git_output(['git', 'rev-parse', 'HEAD']) != target:
+        return False
+    from ospy import health as core_health
+    scheduler_health = core_health.component('scheduler')
+    if scheduler_health.get('last_success', 0) <= state.get('created', 0):
+        return False
+    bind_address = str(options.HTTP_web_ip or '0.0.0.0')
+    if bind_address == '0.0.0.0':
+        bind_address = '127.0.0.1'
+    elif bind_address == '::':
+        bind_address = '::1'
+    try:
+        connection = socket.create_connection((bind_address, int(options.web_port)), timeout=2)
+        connection.close()
+    except OSError:
+        return False
+    _write_json(WATCHDOG_ACK_FILE, {
+        'token': token,
+        'status': 'confirmed',
+        'time': time.time(),
+        'commit': target,
+    })
+    log.info(NAME, _('Updated OSPy start confirmed; automatic rollback cancelled.'))
+    return True
+
+
+def _confirm_pending_update():
+    # The old process exits immediately because no state existed at its start.
+    if not _read_json(WATCHDOG_STATE_FILE):
+        return
+    if runtime.stop_event.wait(WATCHDOG_CONFIRM_DELAY):
+        return
+    while not runtime.stop_event.is_set():
+        state = _read_json(WATCHDOG_STATE_FILE)
+        if not state or time.time() >= float(state.get('deadline', 0)) - 10:
+            return
+        try:
+            if acknowledge_update_watchdog():
+                return
+        except Exception:
+            with health_lock:
+                health_state['last_error'] = time.time()
+                health_state['last_error_message'] = traceback.format_exc().splitlines()[-1]
+            log.error(NAME, _('Update watchdog confirmation error:\n') + traceback.format_exc())
+            return
+        if runtime.stop_event.wait(2):
+            return
+
+
+def cancel_update_watchdog(state, status='cancelled'):
+    if not state:
+        return
+    _write_json(WATCHDOG_ACK_FILE, {
+        'token': state.get('token', ''),
+        'status': status,
+        'time': time.time(),
+    })
+
+
 def create_update_safety_backup():
     """Use the new verified backup engine, with a legacy bridge for older OSPy."""
     try:
@@ -367,23 +567,26 @@ def create_update_safety_backup():
     return create_system_backup(reason='before system update')
 
 def perform_update():
+    watchdog = None
+    previous_commit = ''
     try:
         channel = selected_channel()
         branch = selected_branch()
         remote_branch = selected_remote_branch()
+        run_required_command(['git', 'config', 'core.filemode', 'false'])
+        run_required_command(['git', 'fetch', '--prune', 'origin'], timeout=120)
+        target_commit = git_output(['git', 'rev-parse', '--verify', remote_branch])
+        previous_commit = git_output(['git', 'rev-parse', 'HEAD'])
         from ospy.options import options as current_options
         current_options.save_now()
         safety_backup = create_update_safety_backup()
         log.info(NAME, _('Safety backup created before update') + ': ' + os.path.basename(safety_backup))
 
         # UloĹľĂ­me aktuĂˇlnĂ­ commit pro pĹ™Ă­pad rollbacku
-        commit_hash = git_output(['git', 'rev-parse', 'HEAD'])
         with open(ROLLBACK_FILE, 'w') as f:
-            f.write(commit_hash)
+            f.write(previous_commit)
+        watchdog = arm_update_watchdog(previous_commit, target_commit)
 
-        run_required_command(['git', 'config', 'core.filemode', 'false'])
-        run_required_command(['git', 'fetch', '--prune', 'origin'], timeout=120)
-        git_output(['git', 'rev-parse', '--verify', remote_branch])
         run_required_command(['git', 'reset', '--hard'], timeout=120)
         run_required_command(['git', 'checkout', '-B', branch, remote_branch], timeout=120)
         run_required_command(['git', 'reset', '--hard', remote_branch], timeout=120)
@@ -412,16 +615,29 @@ def perform_update():
         return msg  # pokud volĂˇĹˇ z webu, mĹŻĹľeĹˇ tuto hlĂˇĹˇku zobrazit
 
     except Exception:
+        if previous_commit and _valid_commit(previous_commit):
+            try:
+                run_required_command(['git', 'reset', '--hard', previous_commit], timeout=120)
+                previous_branch = (watchdog or {}).get('previous_branch', '')
+                if previous_branch:
+                    run_required_command(
+                        ['git', 'checkout', '-B', previous_branch, previous_commit],
+                        timeout=120
+                    )
+            except Exception:
+                log.error(NAME, _('Immediate update recovery failed:\n') + traceback.format_exc())
+        cancel_update_watchdog(watchdog, status='update_failed')
         log.error(NAME, _('Update error:\n') + traceback.format_exc())
         return _('Update failed!')
 
 
 def perform_rollback_selected(commit_hash):
     try:
-        if not commit_hash:
+        if not _valid_commit(commit_hash):
             log.error(NAME, _('No commit hash provided for rollback.'))
             return
-        run_command(f'git reset --hard {commit_hash}')
+        run_required_command(['git', 'cat-file', '-e', '{}^{{commit}}'.format(commit_hash)])
+        run_required_command(['git', 'reset', '--hard', commit_hash], timeout=120)
         with health_lock:
             health_state['last_rollback'] = time.time()
         log.info(NAME, _('Rolled back to commit: ') + commit_hash)
@@ -434,6 +650,9 @@ def start():
     global checker
     if checker is None:
         checker = StatusChecker()
+        confirmation = Thread(target=_confirm_pending_update, daemon=True)
+        confirmation.start()
+        runtime.register_thread(confirmation)
 
 
 def stop():
@@ -643,6 +862,8 @@ def health():
     checker_status = checker.status if checker is not None else {}
     with health_lock:
         state = dict(health_state)
+    watchdog_pending = _read_json(WATCHDOG_STATE_FILE)
+    watchdog_result = _read_json(WATCHDOG_RESULT_FILE)
     channel_label = _('Stable') if selected_channel() == 'stable' else _('Test')
     details = {
         'worker': _('Running') if worker_alive else _('Stopped'),
@@ -659,10 +880,23 @@ def health():
         'last_rollback': state['last_rollback'],
         'last_email': state['last_email'],
         'last_error': state['last_error'],
+        _('Update watchdog'): (
+            _('Waiting for healthy start') if watchdog_pending else
+            state.get('watchdog_mode') or _('Inactive')
+        ),
+        _('Last watchdog result'): watchdog_result.get('status', _('None')),
     }
     if state['last_error_message']:
         details['error'] = state['last_error_message']
-    if not worker_alive:
+    if watchdog_result.get('status') == 'rollback_failed':
+        status = 'error'
+        summary = _('Automatic rollback after a failed update did not complete.')
+        if watchdog_result.get('error'):
+            details['error'] = watchdog_result['error']
+    elif watchdog_pending:
+        status = 'warning'
+        summary = _('The update watchdog is waiting for a healthy OSPy start.')
+    elif not worker_alive:
         status = 'error'
         summary = _('System Update worker is not running.')
     elif not plugin_options.get('use_update', False):

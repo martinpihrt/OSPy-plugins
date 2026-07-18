@@ -7,6 +7,8 @@ $var page: plugins
     <div class="title">$_('System update from GitHub - Help')</div>
     <p>$_('This plugin compares the local copy with the remote repository and can automatically update the local copy').</p>
     <p>$_('This plugin also allows you to restore a previous version of the OSPy software (you can go back 10 steps)').</p>    
+    <p>$_('Before changing OSPy files, the plug-in starts an external watchdog. The updated process confirms a healthy start after the scheduler responds and the web interface is listening. If confirmation is not received within two minutes, the previous commit is restored and OSPy is restarted automatically.')</p>
+    <p>$_('If the external watchdog cannot be started, the update is stopped before tracked files are changed.')</p>
     <p>$_('For check new version OSPy click on update status button').</p>
     <p>$_('If new version is posible click on update OSPy button. Plugin downloading and installing new version OSPy. Next restarting OSPy service').</p>  
     <p>$_('This plugin allows update itself automatically the system, while allowing send an E-mail to the system administrator').</p>

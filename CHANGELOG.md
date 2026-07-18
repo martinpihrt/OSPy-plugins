@@ -2,6 +2,9 @@
 
 July 18 2026
 -----------
+(Martin Pihrt) - System Update v1.2.0<br/>
+Added an external update watchdog that is armed before tracked OSPy files are changed. On systemd installations it runs in an independent transient service and survives the OSPy restart; other systems use a detached helper process. The new OSPy process confirms the update only after a fresh scheduler heartbeat and a listening web interface. If confirmation is not received within 120 seconds, the watchdog resets the repository to the previous commit and branch and restarts OSPy automatically. A watchdog startup failure aborts the update before the working tree is changed, update failures immediately restore the previous revision, and manual rollback commit identifiers are now validated. Diagnostics reports watchdog state and the plug-in help and README describe the recovery process.
+
 (Martin Pihrt) - Automated plug-in tests<br/>
 Added GitHub Actions checks for pushes and pull requests to the plug-in `beta` and `master` branches. Each tested plug-in revision now runs the OSPy test suite on Python 3.11 against both OSPy `master` and OSPy `beta`, so stable compatibility and upcoming core changes are verified before promotion. Documented the stable and test branch workflow.
 
