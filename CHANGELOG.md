@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 19 2026
+-----------
+(Martin Pihrt) - System Update v1.2.1<br/>
+Fixed a stale Diagnostics warning after a successful OSPy update. A valid watchdog acknowledgement now immediately takes precedence over the pending state file, so System Update reports success even if the external watchdog has not yet removed its temporary files. After confirming the scheduler and web interface, the plug-in also records the successful result and removes its own pending marker while leaving the acknowledgement for the external helper. The acknowledgement is accepted only when its token matches the pending update.
+
 July 18 2026
 -----------
 (Martin Pihrt) - System Update v1.2.0<br/>

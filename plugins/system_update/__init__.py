@@ -496,6 +496,20 @@ def acknowledge_update_watchdog():
         'time': time.time(),
         'commit': target,
     })
+    _write_json(WATCHDOG_RESULT_FILE, {
+        'status': 'confirmed',
+        'time': time.time(),
+        'previous_commit': state.get('previous_commit', ''),
+        'target_commit': target,
+    })
+    # The external helper already loaded the state before OSPy was restarted.
+    # Removing the pending marker here prevents a stale warning if the helper's
+    # final file cleanup is delayed or interrupted.  Its acknowledgement stays
+    # available so the helper can still observe it and exit without rollback.
+    try:
+        os.remove(WATCHDOG_STATE_FILE)
+    except OSError:
+        pass
     log.info(NAME, _('Updated OSPy start confirmed; automatic rollback cancelled.'))
     return True
 
@@ -863,7 +877,19 @@ def health():
     with health_lock:
         state = dict(health_state)
     watchdog_pending = _read_json(WATCHDOG_STATE_FILE)
+    watchdog_ack = _read_json(WATCHDOG_ACK_FILE)
     watchdog_result = _read_json(WATCHDOG_RESULT_FILE)
+    watchdog_confirmed = bool(
+        watchdog_pending
+        and watchdog_ack.get('token') == watchdog_pending.get('token')
+        and watchdog_ack.get('status') == 'confirmed'
+    )
+    watchdog_waiting = bool(watchdog_pending) and not watchdog_confirmed
+    watchdog_result_status = watchdog_result.get('status', '')
+    watchdog_result_label = (
+        _('Success') if watchdog_confirmed or watchdog_result_status == 'confirmed'
+        else watchdog_result_status or _('None')
+    )
     channel_label = _('Stable') if selected_channel() == 'stable' else _('Test')
     details = {
         'worker': _('Running') if worker_alive else _('Stopped'),
@@ -881,10 +907,11 @@ def health():
         'last_email': state['last_email'],
         'last_error': state['last_error'],
         _('Update watchdog'): (
-            _('Waiting for healthy start') if watchdog_pending else
+            _('Success') if watchdog_confirmed else
+            _('Waiting for healthy start') if watchdog_waiting else
             state.get('watchdog_mode') or _('Inactive')
         ),
-        _('Last watchdog result'): watchdog_result.get('status', _('None')),
+        _('Last watchdog result'): watchdog_result_label,
     }
     if state['last_error_message']:
         details['error'] = state['last_error_message']
@@ -893,7 +920,7 @@ def health():
         summary = _('Automatic rollback after a failed update did not complete.')
         if watchdog_result.get('error'):
             details['error'] = watchdog_result['error']
-    elif watchdog_pending:
+    elif watchdog_waiting:
         status = 'warning'
         summary = _('The update watchdog is waiting for a healthy OSPy start.')
     elif not worker_alive:
