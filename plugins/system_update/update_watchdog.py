@@ -55,20 +55,24 @@ def _valid_state(state, token):
 def _restart_ospy(state):
     if shutil.which("systemctl") and os.path.isdir("/run/systemd/system"):
         subprocess.run(
-            ["systemctl", "restart", "ospy.service"],
+            ["systemctl", "--no-block", "restart", "ospy.service"],
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            timeout=30,
+            timeout=10,
         )
         return
     if shutil.which("service"):
-        subprocess.run(
+        # SysV restart can legitimately take longer than the watchdog should
+        # remain attached to the old OSPy process tree.  Queue it in a detached
+        # process; the init system owns completion after the command starts.
+        subprocess.Popen(
             ["service", "ospy", "restart"],
-            check=True,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            timeout=30,
+            start_new_session=True,
+            close_fds=True,
         )
         return
     repository = os.path.abspath(state["repository"])

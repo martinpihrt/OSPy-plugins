@@ -2,6 +2,9 @@
 
 July 19 2026
 -----------
+(Martin Pihrt) - System Update v1.2.3<br/>
+Fixed a false `rollback_failed` result on legacy SysV installations. Their generated systemd restart job can spend 30 seconds stopping OSPy, exactly matching the former watchdog subprocess timeout; systemd still completed the restart after the client timed out, but the successful repository rollback was reported as failed. The watchdog now submits a non-blocking systemd restart job, or starts the SysV restart command as a detached process when systemd is unavailable, after recording the successful rollback.
+
 (Martin Pihrt) - System Update v1.2.2<br/>
 Fixed automatic rollback on OSPy installations managed by the legacy SysV init script. That script can terminate every `/usr/bin/python3` process during restart, including the Python watchdog helper. The watchdog now runs below a non-Python shell supervisor that relaunches a helper killed by the legacy cleanup while recovery remains pending. A token-bound readiness marker must also be received before any Git-tracked OSPy files are changed; a transient service that exits or never loads its recovery state causes the update to stop. Added regression coverage for readiness, supervisor relaunch and safe PID-only SysV shutdown.
 
