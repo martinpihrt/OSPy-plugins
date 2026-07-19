@@ -92,7 +92,13 @@ def monitor(state_path, token):
 
     acknowledgement = str(state.get("acknowledgement", state_path + ".ack"))
     result_path = str(state.get("result", state_path + ".result"))
+    ready_path = str(state.get("ready", state_path + ".ready"))
     deadline = float(state.get("deadline", time.time() + 120))
+    _write_json(ready_path, {
+        "token": token,
+        "time": time.time(),
+        "pid": os.getpid(),
+    })
 
     while time.time() < deadline:
         ack = _read_json(acknowledgement)
@@ -104,7 +110,7 @@ def monitor(state_path, token):
                 "target_commit": state["target_commit"],
             }
             _write_json(result_path, result)
-            for path in (acknowledgement, state_path):
+            for path in (acknowledgement, ready_path, state_path):
                 try:
                     os.remove(path)
                 except OSError:
@@ -142,10 +148,11 @@ def monitor(state_path, token):
         result["status"] = "rolled_back"
         result["time"] = time.time()
         _write_json(result_path, result)
-        try:
-            os.remove(state_path)
-        except OSError:
-            pass
+        for path in (ready_path, state_path):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
         _restart_ospy(state)
         return 0
     except Exception as error:
@@ -153,6 +160,10 @@ def monitor(state_path, token):
         result["time"] = time.time()
         result["error"] = "{}: {}".format(type(error).__name__, error)
         _write_json(result_path, result)
+        try:
+            os.remove(ready_path)
+        except OSError:
+            pass
         return 4
 
 

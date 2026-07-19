@@ -2,6 +2,9 @@
 
 July 19 2026
 -----------
+(Martin Pihrt) - System Update v1.2.2<br/>
+Fixed automatic rollback on OSPy installations managed by the legacy SysV init script. That script can terminate every `/usr/bin/python3` process during restart, including the Python watchdog helper. The watchdog now runs below a non-Python shell supervisor that relaunches a helper killed by the legacy cleanup while recovery remains pending. A token-bound readiness marker must also be received before any Git-tracked OSPy files are changed; a transient service that exits or never loads its recovery state causes the update to stop. Added regression coverage for readiness, supervisor relaunch and safe PID-only SysV shutdown.
+
 (Martin Pihrt) - System Update v1.2.1<br/>
 Fixed a stale Diagnostics warning after a successful OSPy update. A valid watchdog acknowledgement now immediately takes precedence over the pending state file, so System Update reports success even if the external watchdog has not yet removed its temporary files. After confirming the scheduler and web interface, the plug-in also records the successful result and removes its own pending marker while leaving the acknowledgement for the external helper. The acknowledgement is accepted only when its token matches the pending update.
 

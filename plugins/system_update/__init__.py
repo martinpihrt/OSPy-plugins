@@ -55,9 +55,12 @@ WATCHDOG_DIR = os.path.join(PLUGIN_DIR, 'data')
 WATCHDOG_STATE_FILE = os.path.join(WATCHDOG_DIR, 'update_watchdog.json')
 WATCHDOG_ACK_FILE = os.path.join(WATCHDOG_DIR, 'update_watchdog.ack.json')
 WATCHDOG_RESULT_FILE = os.path.join(WATCHDOG_DIR, 'update_watchdog_result.json')
+WATCHDOG_READY_FILE = os.path.join(WATCHDOG_DIR, 'update_watchdog.ready.json')
 WATCHDOG_SCRIPT = os.path.join(PLUGIN_DIR, 'update_watchdog.py')
+WATCHDOG_SUPERVISOR = os.path.join(PLUGIN_DIR, 'update_watchdog_supervisor.sh')
 WATCHDOG_TIMEOUT = 120
 WATCHDOG_CONFIRM_DELAY = 20
+WATCHDOG_START_TIMEOUT = 10
 COMMIT_RE = re.compile(r'^[0-9a-fA-F]{40}$')
 runtime = get_runtime()
 health_lock = Lock()
@@ -389,9 +392,10 @@ def _watchdog_state(previous_commit, target_commit):
         'deadline': time.time() + WATCHDOG_TIMEOUT,
         'acknowledgement': WATCHDOG_ACK_FILE,
         'result': WATCHDOG_RESULT_FILE,
+        'ready': WATCHDOG_READY_FILE,
         'unit': unit,
     }
-    for path in (WATCHDOG_ACK_FILE, WATCHDOG_STATE_FILE):
+    for path in (WATCHDOG_ACK_FILE, WATCHDOG_READY_FILE, WATCHDOG_STATE_FILE):
         try:
             os.remove(path)
         except OSError:
@@ -405,6 +409,22 @@ def arm_update_watchdog(previous_commit, target_commit):
     state = _watchdog_state(previous_commit, target_commit)
     systemd_run = shutil.which('systemd-run')
     systemctl = shutil.which('systemctl')
+    shell = shutil.which('sh')
+    helper_command = [sys.executable, WATCHDOG_SCRIPT]
+    if shell and os.path.isfile(WATCHDOG_SUPERVISOR):
+        # The legacy SysV OSPy stop script used to kill every process whose
+        # executable was /usr/bin/python3.  Keep a non-Python supervisor as
+        # the transient unit's main process so it can relaunch the helper if
+        # that broad cleanup is still installed on an existing controller.
+        helper_command = [
+            shell, WATCHDOG_SUPERVISOR, sys.executable, WATCHDOG_SCRIPT,
+        ]
+    helper_command.extend([
+        '--state', WATCHDOG_STATE_FILE,
+        '--token', state['token'],
+    ])
+    process = None
+    mode = ''
     try:
         if systemd_run and systemctl and os.path.isdir('/run/systemd/system'):
             command = [
@@ -413,11 +433,7 @@ def arm_update_watchdog(previous_commit, target_commit):
                 '--collect',
                 '--unit={}'.format(state['unit']),
                 '--property=Type=exec',
-                sys.executable,
-                WATCHDOG_SCRIPT,
-                '--state', WATCHDOG_STATE_FILE,
-                '--token', state['token'],
-            ]
+            ] + helper_command
             try:
                 run_required_command(command, timeout=15)
                 mode = 'systemd'
@@ -427,20 +443,12 @@ def arm_update_watchdog(previous_commit, target_commit):
                     systemd_run,
                     '--quiet',
                     '--unit={}'.format(state['unit']),
-                    sys.executable,
-                    WATCHDOG_SCRIPT,
-                    '--state', WATCHDOG_STATE_FILE,
-                    '--token', state['token'],
-                ]
+                ] + helper_command
                 run_required_command(command, timeout=15)
                 mode = 'systemd'
         else:
             process = subprocess.Popen(
-                [
-                    sys.executable, WATCHDOG_SCRIPT,
-                    '--state', WATCHDOG_STATE_FILE,
-                    '--token', state['token'],
-                ],
+                helper_command,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -451,11 +459,33 @@ def arm_update_watchdog(previous_commit, target_commit):
             if process.poll() is not None:
                 raise RuntimeError(_('The external update watchdog could not be started.'))
             mode = 'process'
+
+        ready_deadline = time.time() + WATCHDOG_START_TIMEOUT
+        while time.time() < ready_deadline:
+            ready = _read_json(WATCHDOG_READY_FILE)
+            if ready.get('token') == state['token']:
+                break
+            if process is not None and process.poll() is not None:
+                raise RuntimeError(_('The external update watchdog could not be started.'))
+            time.sleep(0.1)
+        else:
+            raise RuntimeError(_('The external update watchdog could not be started.'))
     except Exception:
-        try:
-            os.remove(WATCHDOG_STATE_FILE)
-        except OSError:
-            pass
+        if mode == 'systemd' and systemctl:
+            try:
+                run_command([systemctl, 'stop', state['unit']], timeout=5)
+            except Exception:
+                pass
+        elif process is not None:
+            try:
+                process.terminate()
+            except Exception:
+                pass
+        for path in (WATCHDOG_READY_FILE, WATCHDOG_STATE_FILE):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
         raise
     state['mode'] = mode
     _write_json(WATCHDOG_STATE_FILE, state)
@@ -506,10 +536,11 @@ def acknowledge_update_watchdog():
     # Removing the pending marker here prevents a stale warning if the helper's
     # final file cleanup is delayed or interrupted.  Its acknowledgement stays
     # available so the helper can still observe it and exit without rollback.
-    try:
-        os.remove(WATCHDOG_STATE_FILE)
-    except OSError:
-        pass
+    for path in (WATCHDOG_READY_FILE, WATCHDOG_STATE_FILE):
+        try:
+            os.remove(path)
+        except OSError:
+            pass
     log.info(NAME, _('Updated OSPy start confirmed; automatic rollback cancelled.'))
     return True
 
