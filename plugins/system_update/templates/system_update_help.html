@@ -9,6 +9,9 @@ $var page: plugins
     <p>$_('This plugin also allows you to restore a previous version of the OSPy software (you can go back 10 steps)').</p>    
     <p>$_('Before changing OSPy files, the plug-in starts an external watchdog. The updated process confirms a healthy start after the scheduler responds and the web interface is listening. If confirmation is not received within two minutes, the previous commit is restored and OSPy is restarted automatically.')</p>
     <p>$_('If the external watchdog cannot be started, the update is stopped before tracked files are changed.')</p>
+    <p>$_('The status page shows the exact current and target commits. A verified stable release is an annotated vX.Y.Z Git tag whose commit belongs to the master branch; its tag message is displayed as the release notes.')</p>
+    <p>$_('Rollback to the last verified stable release and manual commit rollback both create a verified safety backup and start the external watchdog before changing OSPy files.')</p>
+    <p>$_('Release tags are created manually by the project maintainer after successful tests. The plug-in does not create release tags.')</p>
     <p>$_('For check new version OSPy click on update status button').</p>
     <p>$_('If new version is posible click on update OSPy button. Plugin downloading and installing new version OSPy. Next restarting OSPy service').</p>  
     <p>$_('This plugin allows update itself automatically the system, while allowing send an E-mail to the system administrator').</p>

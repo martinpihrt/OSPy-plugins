@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 20 2026
+-----------
+(Martin Pihrt) - System Update v1.2.4<br/>
+Added verified stable releases based on annotated semantic Git tags (`vX.Y.Z`) reachable from `origin/master`. The status page now shows the exact running and target commits, stable tag, date and tag release notes. Added a dedicated rollback to the latest verified stable release and hardened manual commit rollback with settings persistence, a verified safety backup, external watchdog protection, immediate recovery on failure and a single restart. Stable rollback revalidates repository tags server-side and checks out `master`; lightweight, malformed and non-master tags are ignored. Manual rollback now uses full commit identifiers while displaying a compact hash. Moved all System Update page styling from its HTML template into plug-in static CSS and added regression coverage for tag validation, presentation and rollback ordering.
+
 July 19 2026
 -----------
 (Martin Pihrt) - System Update v1.2.3<br/>

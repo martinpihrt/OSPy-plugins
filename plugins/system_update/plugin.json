@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "system_update",
   "name": "System Update",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

@@ -3,184 +3,7 @@ $def with(plugin_options, events, stat)
 $var title: $_('System update from GitHub')
 $var page: plugins
 
-<style>
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 24px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.switch::before {
-  position: absolute;
-  left: -40px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: red;
-  font-weight: bold;
-}
-
-.switch::after {
-  position: absolute;
-  right: -40px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: green;
-  font-weight: bold;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: red;
-  transition: 0.4s;
-  border-radius: 24px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: green;
-}
-
-input:checked + .slider:before {
-  transform: translateX(26px);
-}
-
-.switch {
-  display: inline-block;
-}
-
-.switch input {
-  display: none;
-}
-
-table.optionList {
-   width: 92%;  
-}
-
-#controls {
-  width: 78%;
-  border: 3px solid #2E3959;
-  border-radius: 10px;
-  padding: 10px;
-  margin-top: 10px;
-}
-
-#controls .button:hover,
-#controls .submit:hover {
-  background-color: #007bff;
-  color: white;
-}
-
-#controls select {
-  width: 90%;            
-  white-space: normal;      
-  overflow-wrap: anywhere; 
-  border-radius: 6px;
-  padding: 4px;
-}
-
-.status-area {
-  font-family: monospace;
-  width: 95%;
-  box-sizing: border-box;
-  border: 1px solid ;
-  border-radius: 6px;
-  background-color: #f8faff;
-  padding: 6px;
-  resize: vertical;
-}
-
-.section-box {
-  width: 90%;
-  border: 3px solid #2E3959;
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: 16px;
-}
-
-.commit-list {
-  max-height: 300px;
-  overflow-y: auto;
-  border-radius: 6px;
-  background-color: #ffffff;
-  padding: 8px;
-}
-
-.commit-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 6px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.commit-item:hover {
-  background-color: #e6f0ff;
-}
-
-.commit-item input[type="radio"] {
-  margin-right: 10px;
-  margin-top: 4px;
-}
-
-.commit-info {
-  flex: 1;
-  word-break: break-word;
-  white-space: normal;
-}
-
-.commit-header {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-  color: #004a9f;
-}
-
-.commit-date {
-  font-size: 0.9em;
-}
-
-.commit-hash {
-  font-size: 0.9em;
-  color: #555;
-  font-family: monospace;
-}
-
-.commit-message {
-  margin-top: 3px;
-  font-size: 0.9em;
-  white-space: normal;
-}
-
-.commit-actions {
-  text-align: center;
-  margin-top: 10px;
-}
-</style>
+<link href="/plugins/system_update/static/system_update.css" rel="stylesheet" type="text/css">
 
 <script>
 jQuery(document).ready(function(){
@@ -204,7 +27,7 @@ html += '<input type="radio" name="commit_hash" value="' + escapeHtml(commit.has
 html += '<div class="commit-info">';
 html += '<div class="commit-header">';
 html += '<span class="commit-date">' + escapeHtml(commit.date) + '</span>';
-html += '<span class="commit-hash">' + escapeHtml(commit.hash) + '</span>';
+html += '<span class="commit-hash">' + escapeHtml(commit.short_hash || commit.hash) + '</span>';
 html += '</div>';
 html += '<div class="commit-message">' + escapeHtml(commit.message) + '</div>';
 html += '</div>';
@@ -220,6 +43,7 @@ jQuery("#remoteBranch").text(stat.remote_branch || "");
 jQuery("#localVersion").text(stat.ver_str || "");
 jQuery("#localDate").text(stat.ver_date || "");
 jQuery("#localHash").text(stat.local_hash || "");
+jQuery("#targetHash").text(stat.target_hash || "");
 jQuery("#statusArea").val((data.events || []).join("\n"));
 jQuery("#checkingStatus").toggle(!!stat.checking);
 
@@ -242,6 +66,14 @@ jQuery("#errorAction").empty();
 }
 
 renderCommits(stat.commits);
+
+let release = stat.stable_release || {};
+jQuery("#stableReleaseTag").text(release.tag || "");
+jQuery("#stableReleaseCommit").text(release.commit || "");
+jQuery("#stableReleaseDate").text(release.date || "");
+jQuery("#stableReleaseNotes").text(release.notes || "");
+jQuery("#stableRelease").toggle(!!release.tag);
+jQuery("#noStableRelease").toggle(!release.tag);
 
 if (stat.checking) {
 checkingTimer = setTimeout(loadStatus, 1500);
@@ -291,6 +123,19 @@ return false;
 }
 });
 
+jQuery("#stableRollbackForm").submit(function(e){
+let releaseTag = jQuery("#stableReleaseTag").text();
+let releaseCommit = jQuery("#stableReleaseCommit").text();
+let confirmMsg =
+$:{json.dumps(_('Are you sure you want to rollback to the last verified stable release'), ensure_ascii=False).encode('utf8').decode('utf-8')} +
+" " + releaseTag + " (" + releaseCommit + ")? " +
+$:{json.dumps(_('A safety backup will be created and OSPy will restart.'), ensure_ascii=False).encode('utf8').decode('utf-8')};
+if (!confirm(confirmMsg)) {
+e.preventDefault();
+return false;
+}
+});
+
 if (initialChecking) {
 checkingTimer = setTimeout(loadStatus, 1500);
 }
@@ -304,7 +149,7 @@ checkingTimer = setTimeout(loadStatus, 1500);
         $:csrf_input()
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Use update plugin'):</td>
+                <td class="system-update-label">$_('Use update plugin'):</td>
                 <td title=$:{json.dumps(_('If the check box is selected, the plugin will be active.'), ensure_ascii=False)}>
                 <label class="switch">
                 <input name='use_update' type='checkbox'${" checked" if plugin_options['use_update'] else ""}>
@@ -313,7 +158,7 @@ checkingTimer = setTimeout(loadStatus, 1500);
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Update channel'):</td>
+                <td class="system-update-label">$_('Update channel'):</td>
                 <td title=$:{json.dumps(_('Stable uses the tested master branch. Beta receives changes immediately and may contain defects.'), ensure_ascii=False)}>
                     <select name="update_channel">
                         <option value="stable" ${"selected" if plugin_options.get("update_channel", "stable") == "stable" else ""}>$_('Stable') (master) - $_('default')</option>
@@ -322,37 +167,43 @@ checkingTimer = setTimeout(loadStatus, 1500);
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Remote repository'):</b></td>
+                <td class="system-update-label"><b>$_('Remote repository'):</b></td>
                 <td id="remoteRepository">
                     $stat["remote"]
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Remote branch'):</b></td>
+                <td class="system-update-label"><b>$_('Remote branch'):</b></td>
                 <td id="remoteBranch">
                     $stat["remote_branch"]
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Local OSPy version'):</b></td>
+                <td class="system-update-label"><b>$_('Local OSPy version'):</b></td>
                 <td id="localVersion">
                     $stat["ver_str"]
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Local OSPy date'):</b></td>
+                <td class="system-update-label"><b>$_('Local OSPy date'):</b></td>
                 <td id="localDate">
                     $stat["ver_date"]
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Current commit hash'):</b></td>
+                <td class="system-update-label"><b>$_('Current commit hash'):</b></td>
                 <td id="localHash">
                     $stat["local_hash"]
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Automatic update'):</td>
+                <td class="system-update-label"><b>$_('Target commit hash'):</b></td>
+                <td id="targetHash">
+                    $stat.get("target_hash", "")
+                </td>
+            </tr>
+            <tr>
+                <td class="system-update-label">$_('Automatic update'):</td>
                 <td title=$:{json.dumps(_('If the check box is selected, the plug-in updates the system OSPy itself.'), ensure_ascii=False)}>
                 <label class="switch">
                 <input name='auto_update' type='checkbox'${" checked" if plugin_options['auto_update'] else ""}>
@@ -361,7 +212,7 @@ checkingTimer = setTimeout(loadStatus, 1500);
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Send E-mail if update is available'):</td>
+                <td class="system-update-label">$_('Send E-mail if update is available'):</td>
                 <td title=$:{json.dumps(_('If checked, extension will send an e-mail notifying you when a new version is available. For this function required e-mail plugin.'), ensure_ascii=False)}>
                 <label class="switch">
                 <input name='use_eml' type='checkbox'${" checked" if plugin_options['use_eml'] else ""}>
@@ -370,13 +221,13 @@ checkingTimer = setTimeout(loadStatus, 1500);
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('E-mail subject'):</td>
+                <td class="system-update-label">$_('E-mail subject'):</td>
                 <td>
                     <input name='eml_subject' type='text' value='$plugin_options["eml_subject"]'>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('E-mail plug-ins'):</td>
+                <td class="system-update-label">$_('E-mail plug-ins'):</td>
                 <td title=$:{json.dumps(_('Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
                 <select name="eplug">
                     <option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_('E-mail notifications V1')</option>
@@ -385,7 +236,7 @@ checkingTimer = setTimeout(loadStatus, 1500);
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Show in footer'):</td>
+                <td class="system-update-label">$_('Show in footer'):</td>
                 <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
                 <label class="switch">
                 <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
@@ -401,12 +252,12 @@ checkingTimer = setTimeout(loadStatus, 1500);
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Status'):</td>
+                <td class="system-update-label">$_('Status'):</td>
                 <td>
                     <textarea id="statusArea" class="status-area" rows="25" cols="55" readonly>$'\n'.join(events)</textarea><br/>
                     <a id="checkVersion" href="$plugins.plugin_url('system_update.status_json')?refresh=1&$csrf_query()" class="button refresh">$_('Check new version')</a>
-                    <span id="checkingStatus" style="margin-left: 10px; color: #666666; display: ${'inline' if stat.get('checking') else 'none'};">$_('Checking...')</span>
-                    <span id="repositoryError" style="margin-left: 10px; color: #a01822; display: ${'inline' if stat.get('can_error') else 'none'};">$stat.get('error_message', '')</span>
+                    <span id="checkingStatus" class="system-update-inline-status${'' if stat.get('checking') else ' is-hidden'}">$_('Checking...')</span>
+                    <span id="repositoryError" class="system-update-repository-error${'' if stat.get('can_error') else ' is-hidden'}">$stat.get('error_message', '')</span>
                     <span id="updateAction">
                         $if stat['can_update']:
                             <a href="$plugins.plugin_url('system_update.update_page')?$csrf_query()" class="button reboot danger"><b>$_('A new version of OSPy is available - update?')</b></a>
@@ -421,6 +272,24 @@ checkingTimer = setTimeout(loadStatus, 1500);
     </form>
 </div>
 
+<div class="section-box">
+  <h3>$_('Last verified stable release')</h3>
+  <div id="stableRelease" class="${'' if stat.get('stable_release', {}).get('tag') else 'is-hidden'}">
+    <p><b>$_('Release tag'):</b> <span id="stableReleaseTag">$stat.get('stable_release', {}).get('tag', '')</span></p>
+    <p><b>$_('Exact commit'):</b> <span id="stableReleaseCommit" class="commit-hash">$stat.get('stable_release', {}).get('commit', '')</span></p>
+    <p><b>$_('Release date'):</b> <span id="stableReleaseDate">$stat.get('stable_release', {}).get('date', '')</span></p>
+    <h4>$_('Release notes')</h4>
+    <div id="stableReleaseNotes" class="release-notes">$stat.get('stable_release', {}).get('notes', '')</div>
+    <form id="stableRollbackForm" method="POST" action="$plugins.plugin_url('system_update.rollback_stable_page')">
+      $:csrf_input()
+      <button type="submit" class="button reboot danger">$_('Rollback to the last stable release')</button>
+    </form>
+  </div>
+  <div id="noStableRelease" class="${'is-hidden' if stat.get('stable_release', {}).get('tag') else ''}">
+    $_('No verified stable release is available. An annotated vX.Y.Z tag reachable from master is required.')
+  </div>
+</div>
+
 <!-- Rollback Section -->
 <div class="section-box">
   <h3>$_('Rollback to previous version')</h3>
@@ -433,7 +302,7 @@ checkingTimer = setTimeout(loadStatus, 1500);
           <div class="commit-info">
             <div class="commit-header">
               <span class="commit-date">$c['date']</span>
-              <span class="commit-hash">$c['hash']</span>
+              <span class="commit-hash">$c.get('short_hash', c['hash'])</span>
             </div>
             <div class="commit-message">$c['message']</div>
           </div>

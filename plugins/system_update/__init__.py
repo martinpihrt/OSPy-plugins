@@ -62,6 +62,7 @@ WATCHDOG_TIMEOUT = 120
 WATCHDOG_CONFIRM_DELAY = 20
 WATCHDOG_START_TIMEOUT = 10
 COMMIT_RE = re.compile(r'^[0-9a-fA-F]{40}$')
+STABLE_TAG_RE = re.compile(r'^v\d+\.\d+\.\d+$')
 runtime = get_runtime()
 health_lock = Lock()
 health_state = {
@@ -93,6 +94,56 @@ def selected_remote_branch():
     return 'origin/{}'.format(selected_branch())
 
 
+def current_commit():
+    try:
+        return git_output(['git', 'rev-parse', 'HEAD'])
+    except Exception:
+        return ''
+
+
+def stable_release_info():
+    """Return the newest verified stable release reachable from origin/master."""
+    try:
+        tags = git_output([
+            'git', 'for-each-ref', 'refs/tags', '--sort=-version:refname',
+            '--format=%(refname:short)'
+        ]).splitlines()
+    except Exception:
+        return {}
+
+    for tag in tags:
+        tag = tag.strip()
+        if not STABLE_TAG_RE.fullmatch(tag):
+            continue
+        try:
+            if git_output(['git', 'cat-file', '-t', tag]) != 'tag':
+                continue
+            run_required_command([
+                'git', 'merge-base', '--is-ancestor', '{}^{{commit}}'.format(tag),
+                'origin/master'
+            ])
+            commit_hash = git_output(['git', 'rev-list', '-n', '1', tag])
+            if not _valid_commit(commit_hash):
+                continue
+            release_date = git_output([
+                'git', 'for-each-ref', 'refs/tags/{}'.format(tag),
+                '--format=%(creatordate:short)'
+            ])
+            notes = git_output([
+                'git', 'for-each-ref', 'refs/tags/{}'.format(tag),
+                '--format=%(contents)'
+            ])[:4000]
+            return {
+                'tag': tag,
+                'commit': commit_hash,
+                'date': release_date,
+                'notes': notes,
+            }
+        except Exception:
+            continue
+    return {}
+
+
 class StatusChecker(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -114,7 +165,9 @@ class StatusChecker(Thread):
             'error_message': '',
             'checking': False,
             'commits': [],
-            'local_hash': ''
+            'local_hash': current_commit(),
+            'target_hash': '',
+            'stable_release': {},
         }
         self._sleep_time = 0
         self.start()
@@ -161,7 +214,7 @@ class StatusChecker(Thread):
         self.status['checking'] = True
 
         try:
-            run_required_command(['git', 'fetch', '--prune', 'origin'], timeout=45)
+            run_required_command(['git', 'fetch', '--prune', '--tags', 'origin'], timeout=45)
             remote = git_output(['git', 'config', '--get', 'remote.origin.url'])
             if remote:
                 self.status['remote'] = remote
@@ -184,6 +237,8 @@ class StatusChecker(Thread):
 
             # AktuĂˇlnĂ­ commit hash
             self.status['local_hash'] = local_hash
+            self.status['target_hash'] = remote_hash
+            self.status['stable_release'] = stable_release_info()
 
             command = 'git log -1 %s --format=%%cd --date=short' % remote_branch
             new_date = git_output(command.split())
@@ -198,7 +253,7 @@ class StatusChecker(Thread):
 
             # PoslednĂ­ch 10 commitĹŻ (hash|datum|message)
             commit_log = git_output(
-                ['git', 'log', '-n', '10', '--pretty=format:%h|%cd|%s', '--date=short']
+                ['git', 'log', '-n', '10', '--pretty=format:%H|%cd|%s', '--date=short']
             ).splitlines()
 
             commits = []
@@ -207,6 +262,7 @@ class StatusChecker(Thread):
                 if len(parts) == 3:
                     commits.append({
                         'hash': parts[0],
+                        'short_hash': parts[0][:8],
                         'date': parts[1],
                         'message': parts[2]
                     })
@@ -578,7 +634,7 @@ def cancel_update_watchdog(state, status='cancelled'):
     })
 
 
-def create_update_safety_backup():
+def create_update_safety_backup(reason='before system update'):
     """Use the new verified backup engine, with a legacy bridge for older OSPy."""
     try:
         from ospy.backup import create_system_backup
@@ -609,7 +665,7 @@ def create_update_safety_backup():
             if os.path.exists(temporary):
                 os.remove(temporary)
             raise
-    return create_system_backup(reason='before system update')
+    return create_system_backup(reason=reason)
 
 def perform_update():
     watchdog = None
@@ -676,19 +732,48 @@ def perform_update():
         return _('Update failed!')
 
 
-def perform_rollback_selected(commit_hash):
+def perform_rollback_selected(commit_hash, target_branch=None, target_label=''):
+    watchdog = None
+    previous_commit = ''
     try:
         if not _valid_commit(commit_hash):
             log.error(NAME, _('No commit hash provided for rollback.'))
-            return
+            return False
         run_required_command(['git', 'cat-file', '-e', '{}^{{commit}}'.format(commit_hash)])
+        previous_commit = git_output(['git', 'rev-parse', 'HEAD'])
+        from ospy.options import options as current_options
+        current_options.save_now()
+        safety_backup = create_update_safety_backup(reason='before system rollback')
+        log.info(NAME, _('Safety backup created before rollback') + ': ' + os.path.basename(safety_backup))
+        with open(ROLLBACK_FILE, 'w') as rollback_file:
+            rollback_file.write(previous_commit)
+        watchdog = arm_update_watchdog(previous_commit, commit_hash)
         run_required_command(['git', 'reset', '--hard', commit_hash], timeout=120)
+        if target_branch:
+            run_required_command(
+                ['git', 'checkout', '-B', target_branch, commit_hash], timeout=120
+            )
+            run_required_command(['git', 'reset', '--hard', commit_hash], timeout=120)
         with health_lock:
             health_state['last_rollback'] = time.time()
-        log.info(NAME, _('Rolled back to commit: ') + commit_hash)
-        restart(wait=4)
+        destination = '{} ({})'.format(target_label, commit_hash) if target_label else commit_hash
+        log.info(NAME, _('Rolled back to commit: ') + destination)
+        return True
     except Exception:
+        if previous_commit and _valid_commit(previous_commit):
+            try:
+                run_required_command(['git', 'reset', '--hard', previous_commit], timeout=120)
+                previous_branch = (watchdog or {}).get('previous_branch', '')
+                if previous_branch:
+                    run_required_command(
+                        ['git', 'checkout', '-B', previous_branch, previous_commit],
+                        timeout=120
+                    )
+            except Exception:
+                log.error(NAME, _('Immediate rollback recovery failed:\n') + traceback.format_exc())
+        cancel_update_watchdog(watchdog, status='rollback_failed')
         log.error(NAME, _('Rollback error:\n') + traceback.format_exc())
+        return False
 
 
 def start():
@@ -817,7 +902,8 @@ class rollback_select_page(ProtectedPage):
         # SpustĂ­me rollback a restart s krĂˇtkĂ˝m zpoĹľdÄ›nĂ­m
         def do_rollback_and_restart():
             try:
-                perform_rollback_selected(commit_hash)
+                if not perform_rollback_selected(commit_hash):
+                    return
                 time.sleep(3)  # 3 sekundy na zobrazenĂ­ hlĂˇĹˇky
                 restart(wait=0)  # okamĹľitĂ˝ restart po zpoĹľdÄ›nĂ­
             except Exception:
@@ -826,6 +912,35 @@ class rollback_select_page(ProtectedPage):
         Thread(target=do_rollback_and_restart, daemon=True).start()
 
         # VrĂˇtĂ­me HTML strĂˇnku s hlĂˇĹˇkou
+        return self.core_render.notice('/', msg)
+
+
+class rollback_stable_page(ProtectedPage):
+    def POST(self):
+        data = web.input()
+        verify_csrf(data)
+        try:
+            run_required_command(['git', 'fetch', '--prune', '--tags', 'origin'], timeout=45)
+            release = stable_release_info()
+        except Exception:
+            release = {}
+        if not release:
+            log.error(NAME, _('No verified stable release is available.'))
+            return self.core_render.notice('/', _('No verified stable release is available.'))
+
+        msg = _('OSPy rollback to the last stable release has started. Please wait...')
+        log.info(NAME, msg)
+
+        def do_stable_rollback_and_restart():
+            try:
+                if perform_rollback_selected(
+                        release['commit'], target_branch='master', target_label=release['tag']):
+                    time.sleep(3)
+                    restart(wait=0)
+            except Exception:
+                log.error(NAME, _('Rollback thread error:\n') + traceback.format_exc())
+
+        Thread(target=do_stable_rollback_and_restart, daemon=True).start()
         return self.core_render.notice('/', msg)
 
 
@@ -929,7 +1044,9 @@ def health():
         'checking': bool(checker_status.get('checking', False)),
         'update_available': bool(checker_status.get('can_update', False)),
         'current_version': version.ver_str,
-        'current_commit': checker_status.get('local_hash', ''),
+        'current_commit': checker_status.get('local_hash', '') or current_commit(),
+        'target_commit': checker_status.get('target_hash', ''),
+        'stable_release': checker_status.get('stable_release', {}).get('tag', ''),
         'upstream_branch': checker_status.get('remote_branch', ''),
         _('Update channel'): '{} ({})'.format(channel_label, selected_branch()),
         'last_check': state['last_check'],

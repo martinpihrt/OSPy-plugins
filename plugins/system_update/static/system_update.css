@@ -1,0 +1,202 @@
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch::before {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: red;
+  font-weight: bold;
+}
+
+.switch::after {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: green;
+  font-weight: bold;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: green;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch {
+  display: inline-block;
+}
+
+.switch input {
+  display: none;
+}
+
+table.optionList {
+   width: 92%;  
+}
+
+#controls {
+  width: 78%;
+  border: 3px solid #2E3959;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+#controls .button:hover,
+#controls .submit:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+#controls select {
+  width: 90%;            
+  white-space: normal;      
+  overflow-wrap: anywhere; 
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.status-area {
+  font-family: monospace;
+  width: 95%;
+  box-sizing: border-box;
+  border: 1px solid ;
+  border-radius: 6px;
+  background-color: #f8faff;
+  padding: 6px;
+  resize: vertical;
+}
+
+.section-box {
+  width: 90%;
+  border: 3px solid #2E3959;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.commit-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background-color: #ffffff;
+  padding: 8px;
+}
+
+.commit-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 6px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.commit-item:hover {
+  background-color: #e6f0ff;
+}
+
+.commit-item input[type="radio"] {
+  margin-right: 10px;
+  margin-top: 4px;
+}
+
+.commit-info {
+  flex: 1;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.commit-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  color: #004a9f;
+}
+
+.commit-date {
+  font-size: 0.9em;
+}
+
+.commit-hash {
+  font-size: 0.9em;
+  color: #555;
+  font-family: monospace;
+}
+
+.commit-message {
+  margin-top: 3px;
+  font-size: 0.9em;
+  white-space: normal;
+}
+
+.commit-actions {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.system-update-label {
+  text-transform: none;
+}
+
+.system-update-inline-status {
+  margin-left: 10px;
+  color: #666666;
+}
+
+.system-update-repository-error {
+  margin-left: 10px;
+  color: #a01822;
+}
+
+.is-hidden {
+  display: none;
+}
+
+.release-notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 8px;
+  border-left: 4px solid #2E3959;
+  background: #f8faff;
+}
