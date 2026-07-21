@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 21 2026
+-----------
+(Martin Pihrt) - Automated plug-in tests<br/>
+Expanded required GitHub Actions compatibility testing to Python 3.11 and the latest stable Python 3.14. Every plug-in revision is now tested in four combinations covering both Python versions and both OSPy `master` and OSPy `beta`; all combinations must pass before promotion to the stable channel.
+
 July 20 2026
 -----------
 (Martin Pihrt) - System Update v1.2.4<br/>
