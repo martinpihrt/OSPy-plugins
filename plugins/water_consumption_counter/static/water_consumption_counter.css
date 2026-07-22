@@ -1,5 +1,9 @@
 .wccPlugin {
     max-width: 1100px;
+    padding: 12px;
+    border: 3px solid #2e3959;
+    border-radius: 12px;
+    box-sizing: border-box;
 }
 
 .wccHeader {

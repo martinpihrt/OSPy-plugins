@@ -49,7 +49,7 @@ health_state = {
     'last_error_message': '',
 }
 
-PLUGIN_VERSION = '1.1.0'
+PLUGIN_VERSION = '1.1.1'
 
 ################################################################################
 # Main function loop:                                                          #

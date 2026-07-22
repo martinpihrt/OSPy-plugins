@@ -2,6 +2,9 @@
 
 July 22 2026
 -----------
+(Martin Pihrt) - Water Consumption Counter v1.1.1<br/>
+Added the standard blue rounded border around the plug-in interface.
+
 (Martin Pihrt) - Declared permission approval documentation<br/>
 Documented the OSPy 3.0.294 administrator-approval rules for permissions declared in `plugin.json`, including backward-compatible approval of already installed plug-ins, renewed approval only when an update adds permissions and automatic-update blocking until review. No plug-in code, manifest or version was changed.
 
