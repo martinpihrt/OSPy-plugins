@@ -42,7 +42,7 @@ QUEUE_RETRY_INTERVAL = 10000
 QUEUE_FAILURE_INTERVAL = 60000
 QUEUE_FAILURE_INTERVAL_MAX = 300000
 MAIN_LOOP_SLEEP = 5
-PLUGIN_VERSION = '1.1.0'
+PLUGIN_VERSION = '1.1.1'
 
 email_options = PluginOptions(
     NAME,
@@ -88,7 +88,7 @@ signals_connected = False
 
 
 def html_heading(text):
-    return '<br><br><b>' + text + '</b>'
+    return '<br><b>' + text + '</b>'
 
 
 def html_line(text):
@@ -519,12 +519,9 @@ class EmailSender(Thread):
                                             body += html_line(sensor_result)
                                             logtext += sensor_result
                                             logtext += '\n'
-                                        body += '<br>'
-
                                     else:
                                         sensor_result += _('No sensors available')
                                         body += html_line(sensor_result)
-                                        body += '<br>'
                                         logtext += sensor_result
                                         logtext += '\n'
                             except:
@@ -782,7 +779,7 @@ def add_to_body_local_ospy_name():
             ahref = 'https://{}:{}'.format(ospy_local_name, options.web_port)
         else:
             ahref = 'http://{}:{}'.format(ospy_local_name, options.web_port)
-        return '<br><p style="color:black;">' + _('OSPy is in the network under the name') + ': <a href="' + ahref + '">' + ahref + '</a></p><br>'
+        return '<br><span style="color:black;">' + _('OSPy is in the network under the name') + ': <a href="' + ahref + '">' + ahref + '</a></span>'
     except:
         return ""
 
@@ -891,9 +888,7 @@ def email(text, subject=None, attach=None):
            <html>
              <head></head>
              <body>
-               <p>
-                 %s
-               </p>
+               %s
              </body>
            </html>
                """ % text
