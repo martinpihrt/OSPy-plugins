@@ -1,6 +1,11 @@
 Email Notifications SSL Readme
 ====
 
+Version 1.1.2 keeps one empty line between independent sections in HTML
+messages. Before adding the optional virtual water-meter section, the plug-in
+briefly waits for the completed master counter to be stored so the message does
+not show a transient zero value.
+
 Only for Python 3+
 
 This plugin can send E-mails. For this plugin you need an E-mail SMTP account as provider.

@@ -50,7 +50,7 @@ health_state = {
     'last_error_message': '',
 }
 
-PLUGIN_VERSION = '1.2.0'
+PLUGIN_VERSION = '1.2.1'
 
 ################################################################################
 # Main function loop:                                                          #
@@ -409,6 +409,15 @@ def get_run_report(station_index, duration_seconds, control_master=None):
     else:
         master_run_liters = float(last_master_run[master_number])
     total_liters = float(live_status[master_key]['total'])
+
+    # A completed-run e-mail can be assembled just before the master OFF
+    # receiver stores its final value (or after a plug-in restart that missed
+    # the corresponding ON event). Use the station-duration estimate as a
+    # display-only fallback instead of reporting a misleading 0.00 l. Neither
+    # persistent master counter is modified here.
+    if master_run_liters <= 0.0 and station_run_liters > 0.0:
+        master_run_liters = station_run_liters
+        total_liters += station_run_liters
     return {
         'master': master_number,
         'master_name': master_label,

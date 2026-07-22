@@ -42,7 +42,7 @@ QUEUE_RETRY_INTERVAL = 10000
 QUEUE_FAILURE_INTERVAL = 60000
 QUEUE_FAILURE_INTERVAL_MAX = 300000
 MAIN_LOOP_SLEEP = 5
-PLUGIN_VERSION = '1.1.1'
+PLUGIN_VERSION = '1.1.2'
 
 email_options = PluginOptions(
     NAME,
@@ -88,7 +88,8 @@ signals_connected = False
 
 
 def html_heading(text):
-    return '<br><b>' + text + '</b>'
+    # Two line breaks create one empty line between independent sections.
+    return '<br><br><b>' + text + '</b>'
 
 
 def html_line(text):
@@ -250,6 +251,10 @@ class EmailSender(Thread):
                             # Send data from the virtual water meter. This
                             # section intentionally remains above DS values.
                             if email_options["eml_plug_wcounter"]:
+                                # The master OFF notification persists the
+                                # completed counter just after the station run
+                                # is closed. Give it a brief chance to finish.
+                                self._sleep(2)
                                 water_body, water_log = virtual_water_meter_section(run)
                                 body += water_body
                                 logtext += water_log

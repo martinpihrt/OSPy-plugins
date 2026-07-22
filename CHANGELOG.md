@@ -2,6 +2,9 @@
 
 July 22 2026
 -----------
+(Martin Pihrt) - E-mail Notifications SSL v1.1.2 and Water Consumption Counter v1.2.1<br/>
+Added exactly one empty line between independent HTML e-mail sections. Completed-run e-mails now briefly wait for the master OFF counter update, and the virtual water-meter report uses the station-duration estimate as a display-only fallback when that update is not yet available, preventing a misleading zero master-run consumption.
+
 (Martin Pihrt) - E-mail Notifications SSL v1.1.1<br/>
 Removed inconsistent blank space between generated e-mail sections. Section headings now use one controlled line break, sensor blocks no longer append an extra empty line, the local OSPy address is emitted without a margin-bearing paragraph, and the final MIME body no longer wraps generated block content in an invalid outer paragraph.
 

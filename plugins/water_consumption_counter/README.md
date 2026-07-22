@@ -1,6 +1,11 @@
 Water Consumption Counter Readme
 ====
 
+Version 1.2.1 prevents a completed-run report from displaying a misleading
+zero master consumption while the master OFF counter update is still pending.
+The report-only fallback is calculated from the completed station duration and
+configured master flow and never modifies the saved counters.
+
 Tested in Python 3+
 
 This plugin read Water consumption on master station or second master station.  
