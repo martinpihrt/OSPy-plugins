@@ -2,6 +2,9 @@
 
 July 22 2026
 -----------
+(Martin Pihrt) - Water Consumption Counter v1.2.0 and E-mail Notifications SSL v1.1.0<br/>
+Changed Home timeline values to show increasing virtual consumption without repeating the configured flow, with automatic cubic-meter formatting from 1000 liters. Added a read-only completed-run report and extended the SSL e-mail plug-in's existing water-counter option to include master consumption during the station run, total master consumption and completed station consumption. Missing or unavailable counter data never blocks the remaining e-mail. Moved the SSL switch styling from the template to a versioned static CSS file and exposed its plug-in version on the settings page.
+
 (Martin Pihrt) - Water Consumption Counter v1.1.1<br/>
 Added the standard blue rounded border around the plug-in interface.
 

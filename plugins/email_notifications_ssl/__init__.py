@@ -42,6 +42,7 @@ QUEUE_RETRY_INTERVAL = 10000
 QUEUE_FAILURE_INTERVAL = 60000
 QUEUE_FAILURE_INTERVAL_MAX = 300000
 MAIN_LOOP_SLEEP = 5
+PLUGIN_VERSION = '1.1.0'
 
 email_options = PluginOptions(
     NAME,
@@ -92,6 +93,43 @@ def html_heading(text):
 
 def html_line(text):
     return '<br>&nbsp;&nbsp;' + text
+
+
+def virtual_water_meter_section(run):
+    """Build an optional completed-run report from Water Consumption Counter."""
+    try:
+        from plugins import water_consumption_counter
+        duration = max(0.0, (run['end'] - run['start']).total_seconds())
+        report = water_consumption_counter.get_run_report(
+            run['station'], duration, run.get('control_master')
+        )
+        if not report:
+            return '', ''
+
+        heading = _('Virtual water meter')
+        lines = [
+            _('Master') + ': ' + report['master_name'],
+            _('Master consumption during this station run') + ': ' +
+            report['master_run_display'],
+            _('Total master consumption') + ': ' +
+            report['master_total_display'],
+            _('Station consumption') + ' (' + report['station_name'] + '): ' +
+            report['station_run_display'],
+        ]
+        body = html_heading(heading)
+        for line in lines:
+            body += html_line(line)
+        logtext = heading + '-> \n' + '\n'.join(lines) + '\n'
+        return body, logtext
+    except (ImportError, AttributeError):
+        log.debug(NAME, _('Cannot import plugin: water consumption counter.'))
+    except Exception:
+        log.debug(
+            NAME,
+            _('Virtual water meter data is not available.') + '\n' +
+            traceback.format_exc()
+        )
+    return '', ''
 
 
 ################################################################################
@@ -209,37 +247,12 @@ class EmailSender(Thread):
                                 log.debug(NAME, _('Cannot import plugin: tank monitor.'))
                                 pass
 
-                            # Send data from plugin water consumption counter
-                            try:
-                                if email_options["eml_plug_wcounter"]:
-                                    from plugins import water_consumption_counter
-                                    self._sleep(2) # wait for the meter to save consumption
-                                    consum_from = water_consumption_counter.get_all_values()[0]
-                                    consum_one  = float(water_consumption_counter.get_all_values()[1])
-                                    consum_two  = float(water_consumption_counter.get_all_values()[2])
-                                    msg = ' '
-                                    msg +=  _('Measured from day') + ': ' + str(consum_from) + ', '
-                                    msg +=  _('Master Station') + ': '
-                                    if consum_one < 1000.0:
-                                        msg += str(consum_one) + ' '
-                                        msg += _('Liter') + ', '
-                                    else: 
-                                        msg += str(round((consum_one/1000.0), 2)) + ' '
-                                        msg += _('m3') + ', '
-                                    msg +=  _('Second Master Station') + ': '
-                                    if consum_two < 1000.0:
-                                        msg += str(consum_two) + ' '
-                                        msg += _('Liter') 
-                                    else:
-                                        msg += str(round((consum_two/1000.0), 2)) + ' '
-                                        msg += _('m3')
-                                    body += html_heading(_('Water Consumption Counter'))
-                                    body += html_line('%s' % (msg))
-                                    logtext += _('Water Consumption Counter') + ': %s \n' % (msg)
-
-                            except ImportError:
-                                log.debug(NAME, _('Cannot import plugin: water consumption counter.'))
-                                pass
+                            # Send data from the virtual water meter. This
+                            # section intentionally remains above DS values.
+                            if email_options["eml_plug_wcounter"]:
+                                water_body, water_log = virtual_water_meter_section(run)
+                                body += water_body
+                                logtext += water_log
 
                             # Send data from plugin air temp humidity 6x DS18b20
                             try:
@@ -1044,7 +1057,9 @@ class settings_page(ProtectedPage):
 
     def GET(self):
         try:
-            return self.plugin_render.email_notifications_ssl(email_options, log.events(NAME))
+            return self.plugin_render.email_notifications_ssl(
+                email_options, log.events(NAME), PLUGIN_VERSION
+            )
         except:
             log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '

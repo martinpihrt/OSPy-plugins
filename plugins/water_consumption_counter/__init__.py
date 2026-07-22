@@ -40,6 +40,7 @@ plugin_options = PluginOptions(
 
 master_one_start = datetime.datetime.now() # start time for master 1
 master_two_start = datetime.datetime.now() # start time for master 2
+last_master_run = {1: 0.0, 2: 0.0}
 runtime = get_runtime()
 health_lock = Lock()
 health_state = {
@@ -49,7 +50,7 @@ health_state = {
     'last_error_message': '',
 }
 
-PLUGIN_VERSION = '1.1.1'
+PLUGIN_VERSION = '1.2.0'
 
 ################################################################################
 # Main function loop:                                                          #
@@ -142,12 +143,12 @@ class Sender(Thread):
             liters = elapsed * rate
             if station.is_master:
                 total = float(plugin_options['sum_one']) + liters
-                value = 'Σ {:.2f} l'.format(total)
+                value = 'Σ {}'.format(format_volume(total))
             elif station.is_master_two:
                 total = float(plugin_options['sum_two']) + liters
-                value = 'Σ {:.2f} l'.format(total)
+                value = 'Σ {}'.format(format_volume(total))
             else:
-                value = '{:.2f} l · {:.2f} l/s'.format(liters, rate)
+                value = '+ {}'.format(format_volume(liters))
             self._timeline_entry(station.index).val = value
             live_stations.append({
                 'index': station.index,
@@ -234,6 +235,40 @@ def safe_int(value, default=0):
         return default
 
 
+def format_volume(liters):
+    """Format liters for compact Home and e-mail presentation."""
+    try:
+        liters = max(0.0, float(liters))
+    except (TypeError, ValueError):
+        liters = 0.0
+    if liters >= 1000.0:
+        return '{:.2f} m³'.format(liters / 1000.0)
+    return '{:.2f} l'.format(liters)
+
+
+def _master_number_for_run(station, control_master=None):
+    """Resolve which virtual master meter applies to a station run."""
+    if station.is_master or station.activate_master:
+        return 1
+    if station.is_master_two or station.activate_master_two:
+        return 2
+    if station.activate_master_by_program:
+        selected = safe_int(control_master, 0)
+        if selected in (1, 2):
+            return selected
+        master_one_active = (
+            stations.master is not None and
+            stations.get(stations.master).active
+        )
+        master_two_active = (
+            stations.master_two is not None and
+            stations.get(stations.master_two).active
+        )
+        if master_one_active != master_two_active:
+            return 1 if master_one_active else 2
+    return None
+
+
 def normalize_options():
     plugin_options['liter_per_sec_master_one'] = max(0, float(to_decimal(plugin_options.get('liter_per_sec_master_one', 0.45))))
     plugin_options['liter_per_sec_master_two'] = max(0, float(to_decimal(plugin_options.get('liter_per_sec_master_two', 0.01))))
@@ -286,11 +321,13 @@ def notify_master_one_on(name, **kw):
 
 ### master one off ###
 def notify_master_one_off(name, **kw):
+    global last_master_run
     normalize_options()
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 1 stopped, counter finished...')) 
     master_one_stop  = datetime.datetime.now()
     master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() # run time in seconds
     difference = to_decimal(master_one_time_delta) * to_decimal(plugin_options['liter_per_sec_master_one'])
+    last_master_run[1] = float(difference)
 
     _sum = round(to_decimal(plugin_options['sum_one']), 2) + round(difference, 2)  # to 2 places
     plugin_options.__setitem__('sum_one', _sum)  
@@ -316,11 +353,13 @@ def notify_master_two_on(name, **kw):
 
 ### master two off ###
 def notify_master_two_off(name, **kw):
+    global last_master_run
     normalize_options()
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 2 stopped, counter finished...')) 
     master_two_stop  = datetime.datetime.now()
     master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
     difference = to_decimal(master_two_time_delta) * to_decimal(plugin_options['liter_per_sec_master_two'])
+    last_master_run[2] = float(difference)
 
     _sum = round(to_decimal(plugin_options['sum_two']), 2) + round(difference, 2)  # to 2 places
     plugin_options.__setitem__('sum_two', _sum)
@@ -339,6 +378,49 @@ def notify_master_two_off(name, **kw):
 ### return all consum counter as summar ###
 def get_all_values():
     return plugin_options['last_reset'], round(to_decimal(plugin_options['sum_one']), 2), round(to_decimal(plugin_options['sum_two']), 2)
+
+
+def get_run_report(station_index, duration_seconds, control_master=None):
+    """Return virtual-meter values for one completed station run.
+
+    The function is intentionally read-only so notification plug-ins can use it
+    without changing or resetting either master counter.
+    """
+    normalize_options()
+    try:
+        station = stations.get(int(station_index))
+    except (IndexError, TypeError, ValueError):
+        return None
+    master_number = _master_number_for_run(station, control_master)
+    if master_number not in (1, 2):
+        return None
+
+    duration = max(0.0, float(duration_seconds or 0))
+    live_status = get_live_status()
+    master_key = 'master_one' if master_number == 1 else 'master_two'
+    master_label = _('Master Station') if master_number == 1 else _('Second Master Station')
+    rate = float(plugin_options[
+        'liter_per_sec_master_one' if master_number == 1 else
+        'liter_per_sec_master_two'
+    ])
+    station_run_liters = duration * rate
+    if live_status[master_key]['active']:
+        master_run_liters = float(live_status[master_key]['current'])
+    else:
+        master_run_liters = float(last_master_run[master_number])
+    total_liters = float(live_status[master_key]['total'])
+    return {
+        'master': master_number,
+        'master_name': master_label,
+        'master_run_liters': round(master_run_liters, 2),
+        'master_run_display': format_volume(master_run_liters),
+        'master_total_liters': round(total_liters, 2),
+        'master_total_display': format_volume(total_liters),
+        'station': station.index,
+        'station_name': station.name,
+        'station_run_liters': round(station_run_liters, 2),
+        'station_run_display': format_volume(station_run_liters),
+    }
 
 
 def get_live_status():

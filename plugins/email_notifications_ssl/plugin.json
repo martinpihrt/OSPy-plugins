@@ -3,7 +3,7 @@
   "id": "email_notifications_ssl",
   "name": "E-mail Notifications SSL",
   "menu": "Package: E-mail Notifications SSL",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Sends OSPy event and login notifications through SMTP over SSL with an optional retry queue.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/email_notifications_ssl",

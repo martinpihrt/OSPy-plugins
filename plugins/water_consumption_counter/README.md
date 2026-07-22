@@ -9,7 +9,9 @@ Used for an overview of water consumption.
 
 The plug-in includes a manifest for compatibility and permission checks, keeps its master-station signal subscriptions in the shared OSPy lifecycle, disconnects them during shutdown, and reports counters, events and e-mail state through the Diagnostics health interface.
 
-Version 1.1.0 adds a responsive status dashboard and live Home timeline values. An active main or second main station shows the total estimated consumption since the last counter reset, including the current run. Every active ordinary station configured to use that master shows only the estimated consumption of its current run and the applicable configured flow. A station without an assigned master does not display an estimated value. Home updates the values automatically; **Options > System > Show plug-ins on home** must be enabled.
+Version 1.2.0 makes the live Home values unambiguous. An active main or second main station shows the total estimated consumption since the last counter reset, including the current run. Every active ordinary station configured to use that master shows its increasing estimated consumption for the current run. The configured flow is no longer appended to the station value. Values below 1000 liters are displayed in liters and larger values in cubic meters. A station without an assigned master does not display an estimated value. Home updates the values automatically; **Options > System > Show plug-ins on home** must be enabled.
+
+The read-only completed-run report is available to notification plug-ins. It contains the applicable master, consumption of its complete current or just-finished activation, the current total master counter and consumption of the specific completed station. The master and station values can differ when master delays or consecutive stations extend the master activation.
 
 Plugin setup
 -----------

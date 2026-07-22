@@ -13,6 +13,15 @@ reports worker, signal receiver and SMTP configuration state, queued message
 count, latest successful SSL delivery, and recent errors without exposing
 credentials or recipients.
 
+Version 1.1.0 extends the existing optional Water Consumption Counter data in
+finished-run e-mails. When **Send data from virtual water meter** is enabled
+and the running counter provides data, the message includes the applicable
+master, its estimated consumption during its current or just-finished
+activation, its total counter and the completed station consumption. The two
+run values can differ due to master delays or consecutive stations. Values from 1000 liters are displayed
+in cubic meters. If the counter is absent or has no data for that station, the
+rest of the e-mail is sent normally without this section.
+
 Plugin setup
 -----------
 * Check Send E-mail after power on for send E-mail:  
@@ -29,6 +38,9 @@ Plugin setup
 
 * Check Send E-mail if a program has finished:  
   If checked send E-mail if a program has finished into your E-mail address.
+
+* Send data from virtual water meter:
+  Adds completed-run and total master consumption when Water Consumption Counter is installed, running and has data for the station.
 
 * Check Send E-mail if the rain delay has setuped:  
   If checked send E-mail if the rain delay has setuped.

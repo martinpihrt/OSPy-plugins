@@ -1,53 +1,9 @@
-$def with(plugin_options, events)
+$def with(plugin_options, events, plugin_version)
 
 $var title: $_('E-mail Notifications SSL')
 $var page: plugins
 
-<style>
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-}
-
-.switch input {
-    display: none;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ff4d4d; /* Default red for 'off' */
-    transition: 0.4s;
-    border-radius: 34px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    border-radius: 50%;
-    left: 4px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.4s;
-}
-
-/* Green color when switch is 'on' */
-input:checked + .slider {
-    background-color: #4caf50;
-}
-
-input:checked + .slider:before {
-    transform: translateX(26px);
-}
-</style>
+<link href="/plugins/email_notifications_ssl/static/email_notifications_ssl.css?v=1.1.0" rel="stylesheet" type="text/css">
 
 <script>
     // Initialize behaviors
@@ -80,8 +36,9 @@ function showPWD(){
 }    
 </script>
 
-<div id="plugin">
+<div id="plugin" class="emailNotificationsSsl">
     <div class="title">$_('E-mail Notifications SSL')</div>
+    <div class="pluginVersion">$_('Version'): $plugin_version</div>
     <a href=$plugins.plugin_url('email_notifications_ssl.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('email_notifications_ssl.settings_page')" method="post">
         $:csrf_input()
@@ -182,7 +139,7 @@ function showPWD(){
             </tr>
             <!-- Plug-in data water consumption counter -->
             <tr>
-                <td style='text-transform: none;'>$_('Send data from plugin water consumption counter'):</td>
+                <td style='text-transform: none;'>$_('Send data from virtual water meter'):</td>
                 <td>
                     <label class="switch">
                         <input name='eml_plug_wcounter' type='checkbox'${" checked" if plugin_options['eml_plug_wcounter'] else ""}>

@@ -1,0 +1,45 @@
+.emailNotificationsSsl .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.emailNotificationsSsl .switch input {
+    display: none;
+}
+
+.emailNotificationsSsl .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    border-radius: 34px;
+    background-color: #ff4d4d;
+    transition: 0.4s;
+}
+
+.emailNotificationsSsl .slider::before {
+    position: absolute;
+    left: 4px;
+    bottom: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: white;
+    content: "";
+    transition: 0.4s;
+}
+
+.emailNotificationsSsl input:checked + .slider {
+    background-color: #4caf50;
+}
+
+.emailNotificationsSsl input:checked + .slider::before {
+    transform: translateX(26px);
+}
+
+.emailNotificationsSsl .pluginVersion {
+    margin-bottom: 8px;
+    color: #687080;
+    font-size: 0.9em;
+}
