@@ -14,7 +14,7 @@ from ospy.helpers import datetime_string, verify_csrf
 from ospy.log import log, logEM
 from threading import Thread, Lock
 from plugins import PluginOptions, plugin_url, get_runtime
-from ospy.webpages import ProtectedPage
+from ospy.webpages import ProtectedPage, showOnTimeline
 from ospy.stations import stations
 from ospy.options import options
 
@@ -49,6 +49,8 @@ health_state = {
     'last_error_message': '',
 }
 
+PLUGIN_VERSION = '1.1.0'
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -60,6 +62,10 @@ class Sender(Thread):
         self._stop_event = runtime.stop_event
         self._sleep_time = 0
         self._last_error_log = 0
+        self._timeline_entries = {}
+        self._station_started = {}
+        self._live_lock = Lock()
+        self._live_stations = []
         self.start()
         runtime.register_thread(self)
 
@@ -84,6 +90,85 @@ class Sender(Thread):
             log.error(NAME, message)
             self._last_error_log = now
 
+    def _timeline_entry(self, station_index):
+        entry = self._timeline_entries.get(station_index)
+        if entry is None:
+            entry = showOnTimeline()
+            entry.unit = station_index
+            entry.val = ''
+            self._timeline_entries[station_index] = entry
+        return entry
+
+    def _station_rate(self, station):
+        """Return the configured flow applicable to a station."""
+        rate_one = float(plugin_options['liter_per_sec_master_one'])
+        rate_two = float(plugin_options['liter_per_sec_master_two'])
+        if station.is_master:
+            return rate_one
+        if station.is_master_two:
+            return rate_two
+        if (station.activate_master and stations.master is not None and
+                stations.get(stations.master).active):
+            return rate_one
+        if (station.activate_master_two and stations.master_two is not None and
+                stations.get(stations.master_two).active):
+            return rate_two
+        if station.activate_master_by_program:
+            master_one_active = (
+                stations.master is not None and
+                stations.get(stations.master).active
+            )
+            master_two_active = (
+                stations.master_two is not None and
+                stations.get(stations.master_two).active
+            )
+            if master_one_active and not master_two_active:
+                return rate_one
+            if master_two_active and not master_one_active:
+                return rate_two
+        return 0.0
+
+    def _update_timeline(self):
+        now = time.time()
+        active_indexes = set()
+        live_stations = []
+        for station in stations.get():
+            rate = self._station_rate(station)
+            if not station.active or rate <= 0:
+                continue
+            active_indexes.add(station.index)
+            started = self._station_started.setdefault(station.index, now)
+            elapsed = max(0.0, now - started)
+            liters = elapsed * rate
+            if station.is_master:
+                total = float(plugin_options['sum_one']) + liters
+                value = 'Σ {:.2f} l'.format(total)
+            elif station.is_master_two:
+                total = float(plugin_options['sum_two']) + liters
+                value = 'Σ {:.2f} l'.format(total)
+            else:
+                value = '{:.2f} l · {:.2f} l/s'.format(liters, rate)
+            self._timeline_entry(station.index).val = value
+            live_stations.append({
+                'index': station.index,
+                'name': station.name,
+                'rate': round(rate, 2),
+                'liters': round(liters, 2),
+                'elapsed': int(elapsed),
+                'master': bool(station.is_master or station.is_master_two),
+            })
+
+        for station_index, entry in list(self._timeline_entries.items()):
+            if station_index not in active_indexes:
+                entry.val = ''
+                self._station_started.pop(station_index, None)
+        with self._live_lock:
+            self._live_stations = live_stations
+
+    def live_stations(self):
+        with self._live_lock:
+            return [dict(item) for item in self._live_stations]
+
     def run(self):
         master_one_on = signal('master_one_on')
         master_one_off = signal('master_one_off')
@@ -95,12 +180,14 @@ class Sender(Thread):
             master_two_on.connect(notify_master_two_on)
             master_two_off.connect(notify_master_two_off)
             while not self._stop_event.wait(1):
-                pass
+                self._update_timeline()
 
         except Exception:
             log.clear(NAME)
             self._log_problem(_(u'Water Consumption Counter plug-in') + traceback.format_exc())
         finally:
+            for entry in self._timeline_entries.values():
+                entry.val = ''
             master_one_on.disconnect(notify_master_one_on)
             master_one_off.disconnect(notify_master_one_off)
             master_two_on.disconnect(notify_master_two_on)
@@ -116,6 +203,7 @@ sender = None
 def start():
     global sender
     if sender is None:
+        normalize_options()
         sender = Sender()
  
 ### stop ###
@@ -253,6 +341,46 @@ def get_all_values():
     return plugin_options['last_reset'], round(to_decimal(plugin_options['sum_one']), 2), round(to_decimal(plugin_options['sum_two']), 2)
 
 
+def get_live_status():
+    """Return display-only values for the settings overview."""
+    normalize_options()
+    now = datetime.datetime.now()
+    master_one_active = (
+        stations.master is not None and stations.get(stations.master).active
+    )
+    master_two_active = (
+        stations.master_two is not None and
+        stations.get(stations.master_two).active
+    )
+    current_one = 0.0
+    current_two = 0.0
+    if master_one_active:
+        current_one = max(
+            0.0, (now - master_one_start).total_seconds()
+        ) * float(plugin_options['liter_per_sec_master_one'])
+    if master_two_active:
+        current_two = max(
+            0.0, (now - master_two_start).total_seconds()
+        ) * float(plugin_options['liter_per_sec_master_two'])
+    live_stations = sender.live_stations() if sender is not None else []
+    return {
+        'version': PLUGIN_VERSION,
+        'master_one': {
+            'active': master_one_active,
+            'rate': plugin_options['liter_per_sec_master_one'],
+            'current': round(current_one, 2),
+            'total': round(float(plugin_options['sum_one']) + current_one, 2),
+        },
+        'master_two': {
+            'active': master_two_active,
+            'rate': plugin_options['liter_per_sec_master_two'],
+            'current': round(current_two, 2),
+            'total': round(float(plugin_options['sum_two']) + current_two, 2),
+        },
+        'stations': [item for item in live_stations if not item['master']],
+    }
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
@@ -276,7 +404,9 @@ class settings_page(ProtectedPage):
             log.info(NAME, datetime_string() + ': ' + _(u'Counter has reseted'))
             raise web.seeother(plugin_url(settings_page), True)
 
-        return self.plugin_render.water_consumption_counter(plugin_options, log.events(NAME))
+        return self.plugin_render.water_consumption_counter(
+            plugin_options, log.events(NAME), get_live_status()
+        )
 
     def POST(self):
         qdict = web.input()

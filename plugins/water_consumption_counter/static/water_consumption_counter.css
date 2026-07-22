@@ -1,0 +1,228 @@
+.wccPlugin {
+    max-width: 1100px;
+}
+
+.wccHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.wccHeader .title {
+    margin-bottom: 2px;
+}
+
+.wccVersion,
+.wccHint {
+    color: #687080;
+    font-size: 0.9em;
+}
+
+.wccSection,
+.wccEvents {
+    margin: 10px 0;
+    padding: 12px;
+    border: 1px solid rgba(90, 100, 120, 0.45);
+    border-radius: 7px;
+    background: rgba(128, 128, 128, 0.08);
+}
+
+.wccSection h3,
+.wccSection h4 {
+    margin: 0 0 10px;
+}
+
+.wccDashboard {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(210px, 1fr));
+    gap: 10px;
+}
+
+.wccMasterCard,
+.wccResetCard {
+    padding: 12px;
+    border-left: 4px solid #687080;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.55);
+    color: #20242a;
+}
+
+.wccMasterCard.isActive {
+    border-left-color: #2f8a28;
+    background: #e8f4e7;
+}
+
+.wccMasterCard.isIdle {
+    border-left-color: #7b8494;
+}
+
+.wccCardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.wccState {
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: rgba(80, 90, 105, 0.16);
+    font-size: 0.82em;
+}
+
+.isActive .wccState {
+    background: #2f8a28;
+    color: #fff;
+}
+
+.wccTotal {
+    margin: 12px 0;
+    color: #287523;
+    font-size: 1.8em;
+    font-weight: bold;
+}
+
+.wccTotal small {
+    font-size: 0.55em;
+}
+
+.wccMetrics {
+    margin: 0;
+}
+
+.wccMetrics div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.wccMetrics dt,
+.wccMetrics dd {
+    margin: 0;
+}
+
+.wccMetrics dd {
+    font-weight: bold;
+}
+
+.wccResetTime {
+    margin: 12px 0;
+    overflow-wrap: anywhere;
+}
+
+.wccRunningStations {
+    margin-top: 14px;
+}
+
+.wccStationList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.wccStationList span {
+    padding: 5px 8px;
+    border-left: 3px solid #2f8a28;
+    background: rgba(47, 138, 40, 0.12);
+}
+
+.wccFormGrid {
+    display: grid;
+    grid-template-columns: minmax(190px, 0.8fr) minmax(240px, 1.5fr);
+    align-items: center;
+    gap: 9px 14px;
+}
+
+.wccFormGrid > label,
+.wccFormGrid > span {
+    font-weight: bold;
+}
+
+.wccFormGrid input[type="text"],
+.wccFormGrid input[type="number"],
+.wccFormGrid select {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 520px;
+}
+
+.wccInputUnit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wccInputUnit input {
+    max-width: 130px !important;
+}
+
+.wccSwitch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.wccSwitch input {
+    position: absolute;
+    opacity: 0;
+}
+
+.wccSlider {
+    position: relative;
+    width: 44px;
+    height: 22px;
+    border-radius: 12px;
+    background: #8f1d27;
+}
+
+.wccSlider::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.15s ease;
+}
+
+.wccSwitch input:checked + .wccSlider {
+    background: #2f8a28;
+}
+
+.wccSwitch input:checked + .wccSlider::after {
+    transform: translateX(22px);
+}
+
+.wccSwitch input:focus-visible + .wccSlider {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.wccEvents summary {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.wccEvents textarea {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 10px;
+    font-family: monospace;
+    resize: vertical;
+}
+
+@media (max-width: 800px) {
+    .wccDashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .wccFormGrid {
+        grid-template-columns: 1fr;
+    }
+}

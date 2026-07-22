@@ -5,6 +5,9 @@ July 22 2026
 (Martin Pihrt) - Declared permission approval documentation<br/>
 Documented the OSPy 3.0.294 administrator-approval rules for permissions declared in `plugin.json`, including backward-compatible approval of already installed plug-ins, renewed approval only when an update adds permissions and automatic-update blocking until review. No plug-in code, manifest or version was changed.
 
+(Martin Pihrt) - Water Consumption Counter v1.1.0<br/>
+Reworked the settings page into a responsive overview with separate master totals, current-run values, configured flow, active station summaries, e-mail settings and collapsible activity history. Added live `showOnTimeline` publishing: each active master displays the total estimated consumption since the last reset, while every running station assigned to a master displays only its estimated consumption for the current run and the applicable flow rate. Moved all plug-in styling into a versioned static stylesheet and retained the existing settings, counters, reset and e-mail behavior. The manifest requires OSPy 3.0.296, which contains station-ID based live timeline refresh, so older stable installations are prompted to update OSPy before installing this plug-in revision.
+
 July 21 2026
 -----------
 (Martin Pihrt) - Automated plug-in tests<br/>

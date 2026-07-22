@@ -2,11 +2,11 @@
   "schema_version": 1,
   "id": "water_consumption_counter",
   "name": "Water Consumption Counter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
-    "min_version": "3.0.211"
+    "min_version": "3.0.296"
   },
   "python": {
     "min_version": "3.8"

@@ -9,8 +9,11 @@ $var page: plugins
     <p>$_(u'Total sum is the calculated as run of the main (or second) station.')</p>
     <p>$_(u'This is not an actual flow meter (physical flow sensor).')</p>
     <p>$_(u'Used for an overview of water consumption.')</p>
+    <h3>$_('Live values on Home')</h3>
+    <p>$_('When plug-in data on Home is enabled, an active master station shows total estimated consumption since the last reset, including the current run.')</p>
+    <p>$_('Every running station assigned to a master shows only its estimated consumption for the current run and the configured flow. Stations without an assigned master show no estimated value.')</p>
 </div>
 
 <div id="controls">
     <a href=$plugins.plugin_url('water_consumption_counter.settings_page') class="button danger">$_(u'Cancel')</a><br/>
-</div> 
+</div>

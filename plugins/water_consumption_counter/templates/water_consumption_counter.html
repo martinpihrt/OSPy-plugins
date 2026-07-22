@@ -1,144 +1,111 @@
-$def with(plugin_options, events)
+$def with(plugin_options, events, live_status)
 
 $var title: $_(u'Water Consumption Counter settings')
 $var page: plugins
 
-<style>
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-}
-
-.switch input {
-    display: none;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ff4d4d;
-    transition: 0.4s;
-    border-radius: 34px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    border-radius: 50%;
-    left: 4px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.4s;
-}
-
-input:checked + .slider {
-    background-color: #4caf50;
-}
-
-input:checked + .slider:before {
-    transform: translateX(26px);
-}
-</style>
+<link href="/plugins/water_consumption_counter/static/water_consumption_counter.css?v=1.1.0" rel="stylesheet" type="text/css">
 
 <script>
-	// Initialize behaviors
-	jQuery(document).ready(function(){
-
-		jQuery("#cSubmit").click(function() {
-			jQuery("#pluginForm").submit();
-		});
-		jQuery("button#cCancel").click(function(){
-			window.location="/";
-		});
-	});
+jQuery(document).ready(function(){
+    jQuery("#cSubmit").click(function(){
+        jQuery("#pluginForm").submit();
+    });
+    jQuery("#cCancel").click(function(){
+        window.location = "/";
+    });
+});
 </script>
 
-<div id="plugin">
-	<div class="title">$_('Water Consumption Counter settings')</div>
-	<a href=$plugins.plugin_url('water_consumption_counter.help_page') class="button upload">$_(u'Help')</a><br/>
-	<form id="pluginForm" action="$plugins.plugin_url('water_consumption_counter.settings_page')" method="post">
-	    $:csrf_input()
-		<table class="optionList">
-			<tr>
-				<td style='text-transform: none;'>$_('Master Station'):</td>
-				<td>
-					<input name='liter_per_sec_master_one' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_one"]'> $_('Liters per second')
-				</td>
-			</tr>
-			<tr>
-				<td style='text-transform: none;'>$_('Second Master Station'):</td>
-				<td>
-					<input name='liter_per_sec_master_two' type='number' step='0.01' min='0' value='$plugin_options["liter_per_sec_master_two"]'> $_('Liters per second')
-				</td>
-			</tr>
-			<tr>
-				<td style='text-transform: none;'>$_('Send email with water consumption'):</td>
-				<td>
-					<label class="switch">
-					    <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}>
-					    <span class="slider"></span>
-					</label> ($_('For this function required email plugin'))
-				</td>
-			</tr>
-			<tr>
-				<td style='text-transform: none;'>$_('E-mail subject'):</td>
-				<td>
-					<input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
-				</td>
-			</tr>
-			<tr>
-			<td style='text-transform: none;'>$_('E-mail plug-ins'):</td>
-			<td title=$:{json.dumps(_(u'Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
-			<select name="eplug">
-			<option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_(u'E-mail notifications V1')</option>
-			<option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
-			</select>
-			</td>
-			</tr>
-			<tr>
-				<td style='text-transform: none; vertical-align: top;'>$_('Master Station'):</td>
-				<td style="background-color: rgb(220, 220, 220);text-align: left;">
-					$if plugin_options["sum_one"] < 1000:
-						<b>$plugin_options["sum_one"]</b> $_('liter.')
-					$else:
-						<b>$(round((plugin_options["sum_one"]/1000.0),2))</b> $_('m3.')
-				</td>
-			</tr>
-			<tr>
-				<td style='text-transform: none; vertical-align: top;'>$_('Second Master Station'):</td>
-				<td style="background-color: rgb(220, 220, 220);text-align: left;">
-					$if plugin_options["sum_two"] < 1000:
-						<b>$plugin_options["sum_two"]</b> $_('liter.')
-					$else:
-						<b>$(round((plugin_options["sum_two"]/1000.0),2))</b> $_('m3.')
-				</td>
-			</tr>
-			<tr>
-				<td style='text-transform: none; vertical-align: top;'>$_('Last counter reset'):</td>
-				<td style="background-color: rgb(220, 220, 220);text-align: left;">
-					<b>$plugin_options["last_reset"]  </b>
-				</td>
-			</tr>
-			<tr>
-				<td style='text-transform: none;'>$_('Status'):</td>
-				<td>
-					<textarea style="font-family: monospace;" rows="7" cols="55" readonly>$'\n'.join(events)</textarea>
-				</td>
-			</tr>
-		</table>
-	</form>
+<div id="plugin" class="wccPlugin">
+    <div class="wccHeader">
+        <div>
+            <div class="title">$_('Water Consumption Counter')</div>
+            <span class="wccVersion">$_('Version'): $live_status['version']</span>
+        </div>
+        <a href=$plugins.plugin_url('water_consumption_counter.help_page') class="button upload">$_(u'Help')</a>
+    </div>
+
+    <section class="wccSection" aria-labelledby="wccOverviewTitle">
+        <h3 id="wccOverviewTitle">$_('Current overview')</h3>
+        <div class="wccDashboard">
+            $for key, label in [('master_one', _('Master Station')), ('master_two', _('Second Master Station'))]:
+                $ master = live_status[key]
+                <article class="wccMasterCard ${'isActive' if master['active'] else 'isIdle'}">
+                    <div class="wccCardHeader">
+                        <strong>$label</strong>
+                        <span class="wccState">${_('Running') if master['active'] else _('Idle')}</span>
+                    </div>
+                    <div class="wccTotal">${'%.2f' % master['total']} <small>$_('liter')</small></div>
+                    <dl class="wccMetrics">
+                        <div><dt>$_('Configured flow')</dt><dd>${'%.2f' % master['rate']} l/s</dd></div>
+                        <div><dt>$_('Current run')</dt><dd>${'%.2f' % master['current']} l</dd></div>
+                    </dl>
+                </article>
+            <article class="wccResetCard">
+                <strong>$_('Last counter reset')</strong>
+                <div class="wccResetTime">$plugin_options['last_reset']</div>
+                <a href="?reset&$csrf_query()" class="button cancel danger">$_('Reset Counter')</a>
+            </article>
+        </div>
+
+        <div class="wccRunningStations">
+            <h4>$_('Running stations')</h4>
+            $if live_status['stations']:
+                <div class="wccStationList">
+                    $for station in live_status['stations']:
+                        <span><b>$station['name']</b>: ${'%.2f' % station['liters']} l · ${'%.2f' % station['rate']} l/s</span>
+            $else:
+                <p>$_('No station with a configured master is currently running.')</p>
+        </div>
+    </section>
+
+    <form id="pluginForm" action="$plugins.plugin_url('water_consumption_counter.settings_page')" method="post">
+        $:csrf_input()
+        <section class="wccSection" aria-labelledby="wccFlowTitle">
+            <h3 id="wccFlowTitle">$_('Flow configuration')</h3>
+            <div class="wccFormGrid">
+                <label for="wccMasterOne">$_('Master Station')</label>
+                <div class="wccInputUnit">
+                    <input id="wccMasterOne" name="liter_per_sec_master_one" type="number" step="0.01" min="0" value="$plugin_options['liter_per_sec_master_one']">
+                    <span>$_('Liters per second')</span>
+                </div>
+                <label for="wccMasterTwo">$_('Second Master Station')</label>
+                <div class="wccInputUnit">
+                    <input id="wccMasterTwo" name="liter_per_sec_master_two" type="number" step="0.01" min="0" value="$plugin_options['liter_per_sec_master_two']">
+                    <span>$_('Liters per second')</span>
+                </div>
+            </div>
+            <p class="wccHint">$_('The plug-in estimates consumption from the configured flow and station running time; it does not read a physical flow meter.')</p>
+        </section>
+
+        <section class="wccSection" aria-labelledby="wccEmailTitle">
+            <h3 id="wccEmailTitle">$_('E-mail report')</h3>
+            <div class="wccFormGrid">
+                <span>$_('Send email with water consumption')</span>
+                <label class="wccSwitch">
+                    <input name="sendeml" type="checkbox"${" checked" if plugin_options['sendeml'] else ""}>
+                    <span class="wccSlider" aria-hidden="true"></span>
+                    <span>${_('Enabled') if plugin_options['sendeml'] else _('Disabled')}</span>
+                </label>
+                <label for="wccSubject">$_('E-mail subject')</label>
+                <input id="wccSubject" name="emlsubject" type="text" value="$plugin_options['emlsubject']">
+                <label for="wccEmailPlugin">$_('E-mail plug-ins')</label>
+                <select id="wccEmailPlugin" name="eplug" title=$:{json.dumps(_(u'Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
+                    <option value="0" ${"selected" if plugin_options['eplug'] == 0 else ""}>$_(u'E-mail notifications V1')</option>
+                    <option value="1" ${"selected" if plugin_options['eplug'] == 1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
+                </select>
+            </div>
+            <p class="wccHint">$_('An enabled and configured e-mail notification plug-in is required.')</p>
+        </section>
+    </form>
+
+    <details class="wccEvents">
+        <summary>$_('Recent activity')</summary>
+        <textarea rows="7" readonly>$'\n'.join(events)</textarea>
+    </details>
 </div>
 
 <div id="controls">
-	<button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
-	<button id="cCancel" class="cancel danger">$_('Cancel')</button>
-	<a href="?reset&$csrf_query()" class="button cancel danger">$_('Reset Counter')</a>
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger" type="button">$_('Cancel')</button>
 </div>
