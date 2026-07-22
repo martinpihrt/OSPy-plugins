@@ -17,6 +17,22 @@ jobs must pass before a beta change is promoted to the stable channel. Python
 3.11 remains the Raspberry Pi OS Bookworm baseline and Python 3.14 verifies
 compatibility with the latest stable Python feature release.
 
+## Declared permission approval
+
+Every `plugin.json` must declare only the permissions the plug-in actually
+uses: `network`, `files`, `i2c`, `gpio`, `email`, `subprocess` and/or `system`.
+Starting with OSPy 3.0.294, newly installed plug-ins require explicit
+administrator approval of that complete set before their Python code starts.
+An update with the same or fewer permissions keeps its approval. Adding a
+permission requires a new approval and is skipped by automatic update until it
+has been reviewed. Existing installed plug-ins are approved once during the
+backward-compatible OSPy upgrade migration, including disabled plug-ins.
+
+This is administrative consent and an audit record, not operating-system
+sandboxing. Plug-in authors must increase the manifest version whenever code
+or declared requirements change and must never omit a permission merely to
+avoid the approval prompt.
+
 These programs are distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. http://opensource.org/licenses/gpl-3.0.html
 
 Theses I2C addresses is used in available plugins:
