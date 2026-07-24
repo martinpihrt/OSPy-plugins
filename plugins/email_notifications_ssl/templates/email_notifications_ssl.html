@@ -1,9 +1,9 @@
-$def with(plugin_options, events, plugin_version)
+$def with(plugin_options, events)
 
 $var title: $_('E-mail Notifications SSL')
 $var page: plugins
 
-<link href="/plugins/email_notifications_ssl/static/email_notifications_ssl.css?v=1.1.3" rel="stylesheet" type="text/css">
+<link href="/plugins/email_notifications_ssl/static/email_notifications_ssl.css?v=1.1.4" rel="stylesheet" type="text/css">
 
 <script>
     // Initialize behaviors
@@ -38,7 +38,6 @@ function showPWD(){
 
 <div id="plugin" class="emailNotificationsSsl">
     <div class="title">$_('E-mail Notifications SSL')</div>
-    <div class="pluginVersion">$_('Version'): $plugin_version</div>
     <a href=$plugins.plugin_url('email_notifications_ssl.help_page') class="button upload">$_('Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('email_notifications_ssl.settings_page')" method="post">
         $:csrf_input()

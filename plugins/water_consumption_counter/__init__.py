@@ -53,7 +53,6 @@ health_state = {
     'last_error_message': '',
 }
 
-PLUGIN_VERSION = '1.2.3'
 COUNTER_CHECKPOINT_INTERVAL = 10
 
 ################################################################################
@@ -620,7 +619,6 @@ def get_live_status():
     now = datetime.datetime.now()
     live_stations = sender.live_stations() if sender is not None else []
     return {
-        'version': PLUGIN_VERSION,
         'master_one': _master_live_values(1, now),
         'master_two': _master_live_values(2, now),
         'stations': [item for item in live_stations if not item['master']],

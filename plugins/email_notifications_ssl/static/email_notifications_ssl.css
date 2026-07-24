@@ -37,9 +37,3 @@
 .emailNotificationsSsl input:checked + .slider::before {
     transform: translateX(26px);
 }
-
-.emailNotificationsSsl .pluginVersion {
-    margin-bottom: 8px;
-    color: #687080;
-    font-size: 0.9em;
-}

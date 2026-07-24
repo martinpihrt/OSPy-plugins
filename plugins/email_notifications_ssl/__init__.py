@@ -43,8 +43,6 @@ QUEUE_RETRY_INTERVAL = 10000
 QUEUE_FAILURE_INTERVAL = 60000
 QUEUE_FAILURE_INTERVAL_MAX = 300000
 MAIN_LOOP_SLEEP = 5
-PLUGIN_VERSION = '1.1.3'
-
 email_options = PluginOptions(
     NAME,
     {
@@ -1094,7 +1092,7 @@ class settings_page(ProtectedPage):
     def GET(self):
         try:
             return self.plugin_render.email_notifications_ssl(
-                email_options, log.events(NAME), PLUGIN_VERSION
+                email_options, log.events(NAME)
             )
         except:
             log.error(NAME, _('E-mail plug-in') + ':\n' + traceback.format_exc())
