@@ -216,6 +216,10 @@ def stop():
         lcd_sender.stop()
         lcd_sender.join(5)
         lcd_sender = None
+    signal('rebooted').disconnect(notify_rebooted)
+    signal('restarted').disconnect(notify_restarted)
+    signal('poweroff').disconnect(notify_poweroff)
+    signal('ospyupdate').disconnect(notify_ospyupdate)
     reset_lcd_cache()
 
 

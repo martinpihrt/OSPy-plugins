@@ -1,6 +1,9 @@
 LCD Settings Readme
 ====
 
+Version 1.0.1 disconnects all OSPy signal receivers when the plug-in worker
+stops, preventing stale callbacks after a plug-in restart.
+
 Tested in Python 3+
 
 This plugin shows information on 16x2 character LCD with PCF8574.  

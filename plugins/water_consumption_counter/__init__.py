@@ -13,6 +13,7 @@ from ospy import helpers
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.log import log, logEM
 from threading import Thread, Lock
+from queue import Queue, Empty
 from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.webpages import ProtectedPage, showOnTimeline
 from ospy.stations import stations
@@ -40,9 +41,11 @@ plugin_options = PluginOptions(
 
 master_one_start = datetime.datetime.now() # start time for master 1
 master_two_start = datetime.datetime.now() # start time for master 2
+master_checkpoint = {1: None, 2: None}
 last_master_run = {1: 0.0, 2: 0.0}
 runtime = get_runtime()
 health_lock = Lock()
+counter_lock = Lock()
 health_state = {
     'last_master_event': 0,
     'last_email': 0,
@@ -50,7 +53,8 @@ health_state = {
     'last_error_message': '',
 }
 
-PLUGIN_VERSION = '1.2.1'
+PLUGIN_VERSION = '1.2.3'
+COUNTER_CHECKPOINT_INTERVAL = 10
 
 ################################################################################
 # Main function loop:                                                          #
@@ -67,6 +71,7 @@ class Sender(Thread):
         self._station_started = {}
         self._live_lock = Lock()
         self._live_stations = []
+        self._master_events = Queue()
         self.start()
         runtime.register_thread(self)
 
@@ -142,10 +147,14 @@ class Sender(Thread):
             elapsed = max(0.0, now - started)
             liters = elapsed * rate
             if station.is_master:
-                total = float(plugin_options['sum_one']) + liters
+                total = _master_live_values(
+                    1, datetime.datetime.fromtimestamp(now)
+                )['total']
                 value = 'Σ {}'.format(format_volume(total))
             elif station.is_master_two:
-                total = float(plugin_options['sum_two']) + liters
+                total = _master_live_values(
+                    2, datetime.datetime.fromtimestamp(now)
+                )['total']
                 value = 'Σ {}'.format(format_volume(total))
             else:
                 value = '+ {}'.format(format_volume(liters))
@@ -170,6 +179,38 @@ class Sender(Thread):
         with self._live_lock:
             return [dict(item) for item in self._live_stations]
 
+    def queue_master_event(self, master_number, active, occurred=None):
+        self._master_events.put((
+            int(master_number),
+            bool(active),
+            occurred if isinstance(occurred, datetime.datetime)
+            else datetime.datetime.now(),
+        ))
+
+    def _drain_master_events(self):
+        while True:
+            try:
+                master_number, active, occurred = \
+                    self._master_events.get_nowait()
+            except Empty:
+                return
+            try:
+                if master_number == 1:
+                    if active:
+                        _handle_master_one_on(occurred)
+                    else:
+                        _handle_master_one_off(occurred)
+                elif master_number == 2:
+                    if active:
+                        _handle_master_two_on(occurred)
+                    else:
+                        _handle_master_two_off(occurred)
+            except Exception:
+                self._log_problem(
+                    _(u'Water Consumption Counter plug-in') + ':\n' +
+                    traceback.format_exc()
+                )
+
     def run(self):
         master_one_on = signal('master_one_on')
         master_one_off = signal('master_one_off')
@@ -180,13 +221,31 @@ class Sender(Thread):
             master_one_off.connect(notify_master_one_off)
             master_two_on.connect(notify_master_two_on)
             master_two_off.connect(notify_master_two_off)
-            while not self._stop_event.wait(1):
-                self._update_timeline()
+            next_timeline = 0
+            next_checkpoint = 0
+            _initialize_active_masters()
+            while not self._stop_event.wait(0.2):
+                self._drain_master_events()
+                current = time.time()
+                if current >= next_timeline:
+                    self._update_timeline()
+                    next_timeline = current + 1
+                if current >= next_checkpoint:
+                    _checkpoint_active_masters()
+                    next_checkpoint = current + COUNTER_CHECKPOINT_INTERVAL
 
         except Exception:
             log.clear(NAME)
             self._log_problem(_(u'Water Consumption Counter plug-in') + traceback.format_exc())
         finally:
+            try:
+                self._drain_master_events()
+                _checkpoint_active_masters(force=True)
+            except Exception:
+                self._log_problem(
+                    _(u'Water Consumption Counter plug-in') + ':\n' +
+                    traceback.format_exc()
+                )
             for entry in self._timeline_entries.values():
                 entry.val = ''
             master_one_on.disconnect(notify_master_one_on)
@@ -310,27 +369,33 @@ def send_email(msg, msglog):
         log.info(NAME, _(u'Email was not sent') + '! ' + traceback.format_exc())
 
 
-### master one on ###
-def notify_master_one_on(name, **kw):
+def _handle_master_one_on(occurred):
     global master_one_start
     log.clear(NAME)
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 1 running, please wait...'))
-    master_one_start = datetime.datetime.now()
+    with counter_lock:
+        master_one_start = occurred
+        master_checkpoint[1] = occurred
+        last_master_run[1] = 0.0
     with health_lock:
         health_state['last_master_event'] = time.time()
 
-### master one off ###
-def notify_master_one_off(name, **kw):
+
+def _handle_master_one_off(occurred):
     global last_master_run
     normalize_options()
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 1 stopped, counter finished...')) 
-    master_one_stop  = datetime.datetime.now()
-    master_one_time_delta  = (master_one_stop - master_one_start).total_seconds() # run time in seconds
-    difference = to_decimal(master_one_time_delta) * to_decimal(plugin_options['liter_per_sec_master_one'])
-    last_master_run[1] = float(difference)
-
-    _sum = round(to_decimal(plugin_options['sum_one']), 2) + round(difference, 2)  # to 2 places
-    plugin_options.__setitem__('sum_one', _sum)  
+    _checkpoint_master(1, occurred, force=True)
+    with counter_lock:
+        master_one_time_delta = max(
+            0.0, (occurred - master_one_start).total_seconds()
+        )
+        difference = (
+            to_decimal(master_one_time_delta) *
+            to_decimal(plugin_options['liter_per_sec_master_one'])
+        )
+        last_master_run[1] = float(difference)
+        master_checkpoint[1] = None
     with health_lock:
         health_state['last_master_event'] = time.time()
 
@@ -342,27 +407,33 @@ def notify_master_one_off(name, **kw):
     except Exception:
         log.error(NAME, _(u'Email was not sent') + '! '  + traceback.format_exc())
 
-### master two on ###
-def notify_master_two_on(name, **kw):
+def _handle_master_two_on(occurred):
     global master_two_start
     log.clear(NAME)
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 2 running, please wait...'))
-    master_two_start = datetime.datetime.now()  
+    with counter_lock:
+        master_two_start = occurred
+        master_checkpoint[2] = occurred
+        last_master_run[2] = 0.0
     with health_lock:
         health_state['last_master_event'] = time.time()
 
-### master two off ###
-def notify_master_two_off(name, **kw):
+
+def _handle_master_two_off(occurred):
     global last_master_run
     normalize_options()
     log.info(NAME, datetime_string() + ': ' + _(u'Master station 2 stopped, counter finished...')) 
-    master_two_stop  = datetime.datetime.now()
-    master_two_time_delta  = (master_two_stop - master_two_start).total_seconds() 
-    difference = to_decimal(master_two_time_delta) * to_decimal(plugin_options['liter_per_sec_master_two'])
-    last_master_run[2] = float(difference)
-
-    _sum = round(to_decimal(plugin_options['sum_two']), 2) + round(difference, 2)  # to 2 places
-    plugin_options.__setitem__('sum_two', _sum)
+    _checkpoint_master(2, occurred, force=True)
+    with counter_lock:
+        master_two_time_delta = max(
+            0.0, (occurred - master_two_start).total_seconds()
+        )
+        difference = (
+            to_decimal(master_two_time_delta) *
+            to_decimal(plugin_options['liter_per_sec_master_two'])
+        )
+        last_master_run[2] = float(difference)
+        master_checkpoint[2] = None
     with health_lock:
         health_state['last_master_event'] = time.time()
   
@@ -373,6 +444,117 @@ def notify_master_two_off(name, **kw):
             send_email(msg, msglog)
     except Exception:
         log.error(NAME, _('Email was not sent') + '! '  + traceback.format_exc())
+
+
+### Master callbacks only enqueue work.  They run synchronously in the OSPy
+### scheduler thread, so persistence or SMTP must never happen here.
+def notify_master_one_on(name, **kw):
+    if sender is not None:
+        sender.queue_master_event(1, True, kw.get('occurred_at'))
+
+
+def notify_master_one_off(name, **kw):
+    if sender is not None:
+        sender.queue_master_event(1, False, kw.get('occurred_at'))
+
+
+def notify_master_two_on(name, **kw):
+    if sender is not None:
+        sender.queue_master_event(2, True, kw.get('occurred_at'))
+
+
+def notify_master_two_off(name, **kw):
+    if sender is not None:
+        sender.queue_master_event(2, False, kw.get('occurred_at'))
+
+
+def _master_is_active(master_number):
+    index = stations.master if master_number == 1 else stations.master_two
+    return index is not None and stations.get(index).active
+
+
+def _initialize_active_masters():
+    """Start a recoverable checkpoint if the plug-in starts during irrigation."""
+    now = datetime.datetime.now()
+    if _master_is_active(1):
+        _handle_master_one_on(now)
+    if _master_is_active(2):
+        _handle_master_two_on(now)
+
+
+def _checkpoint_master(master_number, occurred=None, force=False):
+    """Persist the unaccounted part of one active master run."""
+    occurred = occurred or datetime.datetime.now()
+    key = 'sum_one' if master_number == 1 else 'sum_two'
+    rate_key = (
+        'liter_per_sec_master_one'
+        if master_number == 1 else 'liter_per_sec_master_two'
+    )
+    with counter_lock:
+        checkpoint = master_checkpoint.get(master_number)
+        if checkpoint is None:
+            return 0.0
+        elapsed = max(0.0, (occurred - checkpoint).total_seconds())
+        if elapsed <= 0:
+            return 0.0
+        if not force and elapsed < COUNTER_CHECKPOINT_INTERVAL:
+            return 0.0
+        increment = elapsed * float(plugin_options[rate_key])
+        plugin_options[key] = float(plugin_options[key]) + increment
+        master_checkpoint[master_number] = occurred
+        return increment
+
+
+def _checkpoint_active_masters(force=False):
+    now = datetime.datetime.now()
+    for master_number in (1, 2):
+        if _master_is_active(master_number):
+            _checkpoint_master(master_number, now, force=force)
+
+
+def _master_live_values(master_number, now):
+    key = 'sum_one' if master_number == 1 else 'sum_two'
+    rate_key = (
+        'liter_per_sec_master_one'
+        if master_number == 1 else 'liter_per_sec_master_two'
+    )
+    start = master_one_start if master_number == 1 else master_two_start
+    with counter_lock:
+        checkpoint = master_checkpoint.get(master_number)
+        active = _master_is_active(master_number)
+        rate = float(plugin_options[rate_key])
+        persisted = float(plugin_options[key])
+        current = (
+            max(0.0, (now - start).total_seconds()) * rate
+            if active else 0.0
+        )
+        pending = (
+            max(0.0, (now - checkpoint).total_seconds()) * rate
+            if active and checkpoint is not None else 0.0
+        )
+    return {
+        'active': active,
+        'rate': rate,
+        'current': round(current, 2),
+        'total': round(persisted + pending, 2),
+    }
+
+
+def _reset_counters():
+    global master_one_start, master_two_start
+    reset_time = datetime.datetime.now()
+    master_one_active = _master_is_active(1)
+    master_two_active = _master_is_active(2)
+    with counter_lock:
+        plugin_options['sum_one'] = 0
+        plugin_options['sum_two'] = 0
+        plugin_options['last_reset'] = datetime_string()
+        if master_one_active:
+            master_checkpoint[1] = reset_time
+            master_one_start = reset_time
+        if master_two_active:
+            master_checkpoint[2] = reset_time
+            master_two_start = reset_time
 
 
 ### return all consum counter as summar ###
@@ -436,38 +618,11 @@ def get_live_status():
     """Return display-only values for the settings overview."""
     normalize_options()
     now = datetime.datetime.now()
-    master_one_active = (
-        stations.master is not None and stations.get(stations.master).active
-    )
-    master_two_active = (
-        stations.master_two is not None and
-        stations.get(stations.master_two).active
-    )
-    current_one = 0.0
-    current_two = 0.0
-    if master_one_active:
-        current_one = max(
-            0.0, (now - master_one_start).total_seconds()
-        ) * float(plugin_options['liter_per_sec_master_one'])
-    if master_two_active:
-        current_two = max(
-            0.0, (now - master_two_start).total_seconds()
-        ) * float(plugin_options['liter_per_sec_master_two'])
     live_stations = sender.live_stations() if sender is not None else []
     return {
         'version': PLUGIN_VERSION,
-        'master_one': {
-            'active': master_one_active,
-            'rate': plugin_options['liter_per_sec_master_one'],
-            'current': round(current_one, 2),
-            'total': round(float(plugin_options['sum_one']) + current_one, 2),
-        },
-        'master_two': {
-            'active': master_two_active,
-            'rate': plugin_options['liter_per_sec_master_two'],
-            'current': round(current_two, 2),
-            'total': round(float(plugin_options['sum_two']) + current_two, 2),
-        },
+        'master_one': _master_live_values(1, now),
+        'master_two': _master_live_values(2, now),
         'stations': [item for item in live_stations if not item['master']],
     }
 
@@ -487,9 +642,7 @@ class settings_page(ProtectedPage):
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
         if sender is not None and reset:
             verify_csrf(qdict)
-            plugin_options.__setitem__('sum_one', 0)
-            plugin_options.__setitem__('sum_two', 0)
-            plugin_options.__setitem__('last_reset', datetime_string())
+            _reset_counters()
 
             log.clear(NAME)
             log.info(NAME, datetime_string() + ': ' + _(u'Counter has reseted'))
@@ -524,6 +677,14 @@ class settings_json(ProtectedPage):            ### return plugin_options as JSON
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
         return json.dumps(plugin_options)
+
+
+class live_json(ProtectedPage):
+    """Return current counters for the settings page without a full reload."""
+
+    def GET(self):
+        web.header('Content-Type', 'application/json')
+        return json.dumps(get_live_status())
 
 
 def health():

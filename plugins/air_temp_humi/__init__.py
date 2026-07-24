@@ -12,6 +12,7 @@ import os
 import importlib.util
 from threading import Thread, Lock
 from contextlib import contextmanager
+import plugins as plugin_manager
 
 import web
 
@@ -46,6 +47,16 @@ health_state = {
     'last_error': 0,
     'last_error_message': '',
 }
+
+
+def optional_plugin(name):
+    """Return an optional running plug-in without dereferencing its proxy."""
+    try:
+        if name not in plugin_manager.running():
+            return None
+        return plugin_manager.get(name)
+    except Exception:
+        return None
 
 tempDS = [-127,-127,-127,-127,-127,-127]
 tempDHT = 0
@@ -863,14 +874,24 @@ def update_log(status):
             create_default_graph()
 
     if plugin_options['en_sql_log']:
+        database_connector = optional_plugin('database_connector')
+        if database_connector is None:
+            log.debug(
+                NAME,
+                _('Cannot import plugin: database connector.')
+            )
+            return
         try:
-            from plugins.database_connector import execute_db, table_exists
-            if not table_exists('airtemp'):
+            if not database_connector.table_exists('airtemp'):
                 sql = "CREATE TABLE IF NOT EXISTS airtemp (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ds1 VARCHAR(7), ds2 VARCHAR(7), ds3 VARCHAR(7), ds4 VARCHAR(7), ds5 VARCHAR(7), ds6 VARCHAR(7), dht1 VARCHAR(7), dht2 VARCHAR(7), dht3 VARCHAR(2))"
-                execute_db(sql, test=False, commit=False)
+                database_connector.execute_db(
+                    sql, test=False, commit=False
+                )
             # next insert data to table airtemp
             sql = "INSERT INTO `airtemp` (`ds1`, `ds2`, `ds3`, `ds4`, `ds5`, `ds6`, `dht1`, `dht2`, `dht3`) VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','%s')" % (status['DS0'],status['DS1'],status['DS2'],status['DS3'],status['DS4'],status['DS5'],status['temp'],status['humi'],status['outp'])
-            execute_db(sql, test=False, commit=True)  # yes commit inserted data
+            database_connector.execute_db(
+                sql, test=False, commit=True
+            )  # yes commit inserted data
             log.info(NAME, _('Saving to SQL database.'))
         except:
             log.error(NAME, _('Air Temperature and Humidity Monitor plug-in') + ':\n' + traceback.format_exc())

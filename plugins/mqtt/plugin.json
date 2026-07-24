@@ -3,7 +3,7 @@
   "id": "mqtt",
   "name": "MQTT",
   "menu": "Package: MQTT",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared MQTT client, status publishing and remote OSPy control.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/mqtt",

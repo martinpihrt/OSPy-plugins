@@ -13,6 +13,7 @@ import smtplib
 import ssl
 from threading import Thread, Lock
 from random import randint
+import plugins as plugin_manager
 
 # standard library imports
 from email.encoders import encode_base64
@@ -42,7 +43,7 @@ QUEUE_RETRY_INTERVAL = 10000
 QUEUE_FAILURE_INTERVAL = 60000
 QUEUE_FAILURE_INTERVAL_MAX = 300000
 MAIN_LOOP_SLEEP = 5
-PLUGIN_VERSION = '1.1.2'
+PLUGIN_VERSION = '1.1.3'
 
 email_options = PluginOptions(
     NAME,
@@ -96,10 +97,24 @@ def html_line(text):
     return '<br>&nbsp;&nbsp;' + text
 
 
+def optional_plugin(name):
+    """Return a running optional plug-in, or None without touching its proxy."""
+    try:
+        if name not in plugin_manager.running():
+            return None
+        return plugin_manager.get(name)
+    except Exception:
+        return None
+
+
 def virtual_water_meter_section(run):
     """Build an optional completed-run report from Water Consumption Counter."""
     try:
-        from plugins import water_consumption_counter
+        water_consumption_counter = optional_plugin(
+            'water_consumption_counter'
+        )
+        if water_consumption_counter is None:
+            return '', ''
         duration = max(0.0, (run['end'] - run['start']).total_seconds())
         report = water_consumption_counter.get_run_report(
             run['station'], duration, run.get('control_master')
@@ -212,7 +227,13 @@ class EmailSender(Thread):
                             # Send data from plugin sonic tank monitor
                             try:
                                 if email_options["eml_plug_tank"]:
-                                    from plugins import tank_monitor
+                                    tank_monitor = optional_plugin(
+                                        'tank_monitor'
+                                    )
+                                    if tank_monitor is None:
+                                        raise RuntimeError(
+                                            'tank_monitor is not running'
+                                        )
                                     cm = 0
                                     percent = 0
                                     ping = 0
@@ -244,9 +265,8 @@ class EmailSender(Thread):
                                         body += html_line(_('Water level in tank') + ': %s' % (msg))
                                         logtext += _('Water') + '-> \n' + _('Water level in tank') + ': %s \n' % (msg)
 
-                            except ImportError:
+                            except (ImportError, RuntimeError):
                                 log.debug(NAME, _('Cannot import plugin: tank monitor.'))
-                                pass
 
                             # Send data from the virtual water meter. This
                             # section intentionally remains above DS values.
@@ -262,7 +282,13 @@ class EmailSender(Thread):
                             # Send data from plugin air temp humidity 6x DS18b20
                             try:
                                 if email_options["eml_plug_6ds"]:
-                                    from plugins import air_temp_humi
+                                    air_temp_humi = optional_plugin(
+                                        'air_temp_humi'
+                                    )
+                                    if air_temp_humi is None:
+                                        raise RuntimeError(
+                                            'air_temp_humi is not running'
+                                        )
                                     active_ds = air_temp_humi.DS18B20_active_indexes() if hasattr(air_temp_humi, 'DS18B20_active_indexes') else range(0, air_temp_humi.plugin_options['ds_used'])
                                     active_ds = list(active_ds)
                                     if active_ds:
@@ -274,14 +300,19 @@ class EmailSender(Thread):
                                             msg = label + ': ' + '%.1f \u2103' % value
                                             body += html_line(msg)
                                             logtext += msg + '\n'
-                            except ImportError:
+                            except (ImportError, RuntimeError):
                                 log.debug(NAME, _('Cannot import plugin: air temp humi.'))
-                                pass
 
                             # Send data from plugin current loop tanks monitor 4-20mA
                             try:
                                 if email_options["eml_plug_4tank"]:
-                                    from plugins import current_loop_tanks_monitor
+                                    current_loop_tanks_monitor = optional_plugin(
+                                        'current_loop_tanks_monitor'
+                                    )
+                                    if current_loop_tanks_monitor is None:
+                                        raise RuntimeError(
+                                            'current_loop_tanks_monitor is not running'
+                                        )
                                     enabled_tanks = [i for i in range(4) if current_loop_tanks_monitor.plugin_options['en_tank{}'.format(i + 1)]]
                                     if enabled_tanks:
                                         body += html_heading(_('Current Loop Tanks Monitor'))
@@ -303,9 +334,8 @@ class EmailSender(Thread):
                                                 msg = _('{}: {:.2f} cm {:.2f} % {:.2f} V {:.2f} Liters').format(label, level_cm, level_perc, volt, volume)
                                                 body += html_line(msg)
                                                 logtext += msg + '\n'
-                            except ImportError:
+                            except (ImportError, RuntimeError):
                                 log.debug(NAME, _('Cannot import plugin: Current Loop Tanks Monitor.'))
-                                pass
 
                             # Send data from OSPy sensors
                             try:
@@ -536,7 +566,13 @@ class EmailSender(Thread):
                             # Send data from Shelly sensors
                             try:
                                 if email_options["eml_plug_shelly"]:
-                                    from plugins import shelly_cloud_integrator
+                                    shelly_cloud_integrator = optional_plugin(
+                                        'shelly_cloud_integrator'
+                                    )
+                                    if shelly_cloud_integrator is None:
+                                        raise RuntimeError(
+                                            'shelly_cloud_integrator is not running'
+                                        )
                                     body += html_heading(_('Shelly cloud'))
                                     logtext += _('Shelly cloud') + '-> \n'
                                     for i in range(0, shelly_cloud_integrator.plugin_options['number_sensors']):

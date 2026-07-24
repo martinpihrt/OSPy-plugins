@@ -139,12 +139,17 @@ class Sender(Thread):
                 log.info(NAME, _('MQTT plug-in is disabled.'))
 
 sender = None
+signals_connected = False
 
 ################################################################################
 # Helper functions:                                                            #
 ################################################################################
 def start():
-    global sender
+    global sender, signals_connected
+    if not signals_connected:
+        signal("value_change").connect(notify_value_change)
+        signal("zone_change").connect(notify_zone_change)
+        signals_connected = True
     if sender is None:
         with _health_lock:
             _health_state['started'] = time.time()
@@ -154,12 +159,20 @@ def start():
 
       
 def stop():
-    global sender
+    global sender, signals_connected
     if sender is not None:
         on_stop()
         sender.stop()
         sender.join(5)
-        sender = None 
+        sender = None
+    if signals_connected:
+        signal("value_change").disconnect(notify_value_change)
+        signal("zone_change").disconnect(notify_zone_change)
+        signals_connected = False
+    try:
+        atexit.unregister(on_stop)
+    except Exception:
+        pass
 
 
 def log_mqtt_problem(key, message):
@@ -678,10 +691,6 @@ def notify_value_change(name, **kw):
         log_mqtt_problem('value_change', _('MQTT plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         pass
 
-value = signal("value_change")
-value.connect(notify_value_change)
-
-
 ### Stations (zone) state changed ###
 def notify_zone_change(name, **kw):
     global last_stations, sender
@@ -723,9 +732,6 @@ def notify_zone_change(name, **kw):
     except Exception:
         log_mqtt_problem('zone_change', _('MQTT plug-in') + ': ' + traceback.format_exc().splitlines()[-1])
         pass
-
-value = signal("zone_change")
-value.connect(notify_zone_change)
 
 ################################################################################
 # Web pages:                                                                   #

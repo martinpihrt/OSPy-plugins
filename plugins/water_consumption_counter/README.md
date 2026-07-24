@@ -1,7 +1,13 @@
 Water Consumption Counter Readme
 ====
 
-Version 1.2.1 prevents a completed-run report from displaying a misleading
+Version 1.2.3 refreshes the settings overview automatically and checkpoints an
+active master counter every ten seconds, so a missing final OFF event can lose
+at most the uncheckpointed tail instead of the complete run.
+
+Version 1.2.2 queues master start and stop processing in the plug-in worker so
+counter persistence and optional SMTP delivery can never delay OSPy's physical
+outputs or scheduler. Version 1.2.1 prevents a completed-run report from displaying a misleading
 zero master consumption while the master OFF counter update is still pending.
 The report-only fallback is calculated from the completed station duration and
 configured master flow and never modifies the saved counters.

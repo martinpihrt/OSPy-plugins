@@ -1,6 +1,10 @@
 MQTT Readme
 ====
 
+Version 1.0.1 registers its OSPy signal receivers only while the plug-in is
+running and disconnects them during shutdown, preventing duplicate or stale
+callbacks after a plug-in restart.
+
 Tested in Python 3+
 
 If you change settings you must restarting OSPy!

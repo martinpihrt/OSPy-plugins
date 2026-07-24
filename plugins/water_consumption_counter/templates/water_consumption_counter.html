@@ -3,7 +3,7 @@ $def with(plugin_options, events, live_status)
 $var title: $_(u'Water Consumption Counter settings')
 $var page: plugins
 
-<link href="/plugins/water_consumption_counter/static/water_consumption_counter.css?v=1.2.1" rel="stylesheet" type="text/css">
+<link href="/plugins/water_consumption_counter/static/water_consumption_counter.css?v=1.2.3" rel="stylesheet" type="text/css">
 
 <script>
 jQuery(document).ready(function(){
@@ -13,6 +13,48 @@ jQuery(document).ready(function(){
     jQuery("#cCancel").click(function(){
         window.location = "/";
     });
+
+    function volume(value) {
+        value = Math.max(0, Number(value) || 0);
+        return value >= 1000
+            ? (value / 1000).toFixed(2) + " m\u00b3"
+            : value.toFixed(2) + " l";
+    }
+
+    function updateLiveStatus() {
+        jQuery.getJSON(
+            "$plugins.plugin_url('water_consumption_counter.live_json')"
+        ).done(function(data) {
+            ["master_one", "master_two"].forEach(function(key) {
+                var master = data[key];
+                var card = jQuery('[data-master="' + key + '"]');
+                card.toggleClass("isActive", master.active);
+                card.toggleClass("isIdle", !master.active);
+                card.find("[data-role=state]").text(
+                    master.active
+                        ? $:{json.dumps(_('Running'), ensure_ascii=False)}
+                        : $:{json.dumps(_('Idle'), ensure_ascii=False)}
+                );
+                card.find("[data-role=total]").text(volume(master.total));
+                card.find("[data-role=current]").text(volume(master.current));
+            });
+            var list = jQuery("#wccStationList").empty();
+            if (data.stations.length) {
+                data.stations.forEach(function(station) {
+                    jQuery("<span>").append(
+                        jQuery("<b>").text(station.name),
+                        ": " + volume(station.liters) +
+                        " \u00b7 " + Number(station.rate).toFixed(2) + " l/s"
+                    ).appendTo(list);
+                });
+                jQuery("#wccNoStations").hide();
+            } else {
+                jQuery("#wccNoStations").show();
+            }
+        });
+    }
+
+    window.setInterval(updateLiveStatus, 2000);
 });
 </script>
 
@@ -30,15 +72,15 @@ jQuery(document).ready(function(){
         <div class="wccDashboard">
             $for key, label in [('master_one', _('Master Station')), ('master_two', _('Second Master Station'))]:
                 $ master = live_status[key]
-                <article class="wccMasterCard ${'isActive' if master['active'] else 'isIdle'}">
+                <article class="wccMasterCard ${'isActive' if master['active'] else 'isIdle'}" data-master="$key">
                     <div class="wccCardHeader">
                         <strong>$label</strong>
-                        <span class="wccState">${_('Running') if master['active'] else _('Idle')}</span>
+                        <span class="wccState" data-role="state">${_('Running') if master['active'] else _('Idle')}</span>
                     </div>
-                    <div class="wccTotal">${'%.2f' % master['total']} <small>$_('liter')</small></div>
+                    <div class="wccTotal" data-role="total">${'%.2f' % master['total']} l</div>
                     <dl class="wccMetrics">
                         <div><dt>$_('Configured flow')</dt><dd>${'%.2f' % master['rate']} l/s</dd></div>
-                        <div><dt>$_('Current run')</dt><dd>${'%.2f' % master['current']} l</dd></div>
+                        <div><dt>$_('Current run')</dt><dd data-role="current">${'%.2f' % master['current']} l</dd></div>
                     </dl>
                 </article>
             <article class="wccResetCard">
@@ -50,12 +92,12 @@ jQuery(document).ready(function(){
 
         <div class="wccRunningStations">
             <h4>$_('Running stations')</h4>
-            $if live_status['stations']:
-                <div class="wccStationList">
+            <div class="wccStationList" id="wccStationList">
+                $if live_status['stations']:
                     $for station in live_status['stations']:
                         <span><b>$station['name']</b>: ${'%.2f' % station['liters']} l · ${'%.2f' % station['rate']} l/s</span>
-            $else:
-                <p>$_('No station with a configured master is currently running.')</p>
+            </div>
+            <p id="wccNoStations"${' style="display:none"' if live_status['stations'] else ''}>$_('No station with a configured master is currently running.')</p>
         </div>
     </section>
 

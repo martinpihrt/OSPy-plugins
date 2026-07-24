@@ -1,7 +1,9 @@
 Email Notifications SSL Readme
 ====
 
-Version 1.1.2 keeps one empty line between independent sections in HTML
+Version 1.1.3 skips optional data sections when their provider plug-in is
+disabled or stopped, without aborting the remaining e-mail. Version 1.1.2
+keeps one empty line between independent sections in HTML
 messages. Before adding the optional virtual water-meter section, the plug-in
 briefly waits for the completed master counter to be stored so the message does
 not show a transient zero value.

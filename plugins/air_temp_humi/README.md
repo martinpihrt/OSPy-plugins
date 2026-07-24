@@ -3,6 +3,10 @@ Air Temperature and Humidity Monitor Readme
 
 Tested in Python 3+
 
+Version 1.0.3 treats Database Connector as an optional runtime dependency.
+When it is stopped, sensor sampling and local logging continue and SQL logging
+is skipped without repeated error tracebacks.
+
 This plugin needs DHT11 (22) probe connected to GPIO 10 (pin 19 MOSI).   
 This plugin allows you to connect 1-6 DS18B20 sensors connected to the external hardware board via an I2C bus (address 0x03). 
 Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-raspberry-pi-plugin-ospy-mereni-teploty-pomoci-ds18b20). for more information for HW.
