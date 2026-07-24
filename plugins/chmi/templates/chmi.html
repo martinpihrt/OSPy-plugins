@@ -357,6 +357,15 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'><b>$_('Where it is raining'):</b></td>
+                <td title=$:{json.dumps(_(u'Show in the status window where it is raining on the map.'), ensure_ascii=False)}>
+                    <label class="switch">
+                    <input name='PRINT_WHERE_RAINING' type='checkbox'${" checked" if plugin_options['PRINT_WHERE_RAINING'] else ""}>
+                    <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'><b>$_('Animate radar map'):</b></td>
                 <td title=$:{json.dumps(_(u'When enabled, recent radar images are kept in RAM and animated on the settings page.'), ensure_ascii=False)}>
                     <label class="switch">

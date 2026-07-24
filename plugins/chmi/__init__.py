@@ -57,6 +57,7 @@ plugin_options = PluginOptions(
         'SEND_TO_HW': True,          # Send detected rainy cities to the external hardware map
         'ANIMATE': False,            # Animate the radar map from recent images kept in RAM
         'HOME_WIDGET': False,        # Show a small animated radar widget on the OSPy home page
+        'PRINT_WHERE_RAINING': False,# Display in the status window where it's raining on the map
         'IP_ADDR': '192.168.88.2',   # remote map IP address
         'HW_BOARD': '0',             # 0 = laskakit board, 1 = tmep board, 3 = pihrt board
         'R_DETECT': True,            # Use red channel for rain detection
@@ -233,7 +234,7 @@ class CHMI_Checker(Thread):
                             font = ImageFont.truetype(font_path, font_size)
                             draw.text((5, 5), drawtext, font=font, fill="white")
 
-                            if cities:
+                            if cities and plugin_options['PRINT_WHERE_RAINING']:
                                 log.debug(NAME, datetime_string() + ' ' + _('Analyzing if is raining in the cities...'))
                                 log.debug(NAME, '-' * 40)
                                 # We go through the list city by city
