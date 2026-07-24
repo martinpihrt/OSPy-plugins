@@ -2,6 +2,9 @@
 
 July 24 2026
 -----------
+(Martin Pihrt) - CHMI v1.0.1<br/>
+Removed the redundant location/map row from the CHMI settings page. CHMI now exclusively uses the validated location managed by OSPy weather settings; disabling weather also disables local radar evaluation even if old coordinates remain stored. When weather or its location is unavailable, the plug-in shows a direct link to the OSPy weather settings and reports the missing prerequisite through health diagnostics.
+
 (Martin Pihrt) - Water Consumption Counter v1.2.3, E-mail Notifications SSL v1.1.3, Air Temperature and Humidity Monitor v1.0.3, MQTT v1.0.1 and LCD Display v1.0.1<br/>
 Moved virtual master-counter persistence and optional e-mail delivery out of OSPy's synchronous output callback into the plug-in worker, preserving the original output-event timestamp while preventing SMTP or settings storage from delaying the scheduler. Water Consumption Counter now refreshes its settings overview every two seconds without a page reload and checkpoints each running master total every ten seconds, limiting data loss if a final master-OFF event is interrupted. E-mail Notifications SSL now checks whether every optional data-provider plug-in is actually running before reading it; disabled tank, temperature, current-loop, water-counter or Shelly providers are skipped without aborting the remaining e-mail. Air Temperature and Humidity Monitor now quietly skips optional SQL logging while Database Connector is stopped instead of repeatedly reporting a plug-in proxy exception. MQTT no longer leaves module-import signal receivers behind, and both MQTT and LCD Display disconnect their receivers during plug-in shutdown so restarting either plug-in cannot create stale or duplicate callbacks.
 

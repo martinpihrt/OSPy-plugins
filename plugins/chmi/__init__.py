@@ -274,9 +274,9 @@ class CHMI_Checker(Thread):
                             r=g=b=rad=0
                             rain_area = None
 
-                            if options.weather_lat and options.weather_lon:
-                                lat = float(options.weather_lat)
-                                lon = float(options.weather_lon)
+                            location = ospy_weather_location()
+                            if location is not None:
+                                lat, lon = location
                                 is_lat_lon = True
                                 # We calculate the pixel coordinates my location on the radar image
                                 x, y = radar_pixel_xy(lat, lon, bitmap.width, bitmap.height, bounds)
@@ -426,11 +426,15 @@ def health():
     worker_alive = checker is not None and checker.is_alive()
     source = radar_source().upper()
     missing = shmu_missing_dependencies() if radar_source() == 'shmu' else []
+    location = ospy_weather_location()
     details = {
         _('Worker thread'): _('Running') if worker_alive else _('Stopped'),
         _('Radar source'): source,
+        _('OSPy weather'): (
+            _('Enabled') if options.use_weather else _('Disabled')
+        ),
         _('Location configured'): (
-            _('Yes') if options.weather_lat and options.weather_lon else _('No')
+            _('Yes') if location is not None else _('No')
         ),
         _('Dependency installation'): (
             _('Running') if shmu_dependencies_installing() else _('Stopped')
@@ -461,6 +465,14 @@ def health():
         return {
             'status': 'error',
             'summary': _('SHMU radar dependencies are missing.'),
+            'details': details,
+        }
+    if location is None:
+        return {
+            'status': 'warning',
+            'summary': _(
+                'Enable weather and set the location in OSPy settings.'
+            ),
             'details': details,
         }
     if state['last_error'] and state['last_error'] >= state['last_success']:
@@ -497,6 +509,22 @@ def radar_source():
     if source not in ('chmi', 'shmu'):
         source = 'chmi'
     return source
+
+
+def ospy_weather_location():
+    """Return the validated location managed by OSPy weather settings."""
+    if not bool(getattr(options, 'use_weather', False)):
+        return None
+    try:
+        latitude = float(options.weather_lat)
+        longitude = float(options.weather_lon)
+    except (TypeError, ValueError):
+        return None
+    if not -90.0 <= latitude <= 90.0:
+        return None
+    if not -180.0 <= longitude <= 180.0:
+        return None
+    return latitude, longitude
 
 def radar_bounds():
     if radar_source() == 'shmu':
@@ -805,10 +833,10 @@ def create_animation_image(byte, date_txt, frame_type, relative_minutes):
     draw.text((5, 5), animation_label(date_txt, frame_type, relative_minutes), font=font, fill="white")
     rgb_info = None
 
-    if options.weather_lat and options.weather_lon:
+    location = ospy_weather_location()
+    if location is not None:
         try:
-            lat = float(options.weather_lat)
-            lon = float(options.weather_lon)
+            lat, lon = location
             x, y = radar_pixel_xy(lat, lon, detection_img.width, detection_img.height)
             if 0 <= x < frame_img.width and 0 <= y < frame_img.height:
                 rgb_info = analyze_location_rain(detection_img, x, y)
@@ -1262,10 +1290,12 @@ class state_json(ProtectedPage):
             if checker.status['state']:
                data['state'] = _('RAIN IN LOCATION')
             else:
-                if options.weather_lat and options.weather_lon:
+                if ospy_weather_location() is not None:
                     data['state'] = _('NOT RAIN IN LOCATION')
                 else:
-                    data['state'] = _('MY LOCATION IS NOT SET')
+                    data['state'] = _(
+                        'ENABLE WEATHER AND SET THE LOCATION IN OSPY'
+                    )
             return json.dumps(data)
         except:
             return {}

@@ -8,7 +8,7 @@ When enabled, the extension retrieves radar data from the selected meteorologica
 The SHMU source requires the h5py and numpy Python libraries. If they are missing, the settings page shows an install button and writes the installation progress to the status window. On Raspberry Pi OS the plugin installs the system packages `python3-h5py`, `python3-numpy`, and `python3-pillow`. After installation, set your location coordinates in the OSPy options so rain detection works correctly.
 
 The interactive map of the Czech Republic is based on an ESP32 microcontroller and contains 72 WS2812 RGB LEDs on the front - each for one district city. It is thus possible, for example, to display current warnings in given locations, or other dates. Different sensors can be connected and all usable pins are brought out on solder pads for possible connection of different sensors and devices. The board is equipped with a USB programming converter, so all you need to program it is a cable with a USB-C connector and, for example, the Arduino IDE. https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/.
-The extension allows you to set a rain delay when rain is detected at a set position on the map. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
+The extension allows you to set a rain delay when rain is detected at your location. The plug-in uses only the location managed by the OSPy weather settings and does not keep a separate location. Weather must be enabled and valid coordinates must be configured in OSPy. Otherwise, the settings page shows a link to the OSPy weather settings and local rain detection remains inactive.
 
 The plug-in includes an OSPy `plugin.json` manifest, registers its radar and
 optional dependency-installation workers with the shared plug-in runtime, uses
@@ -49,7 +49,7 @@ Plugin setup
   A downloaded map from the Meteo Institute is displayed here.
 
 * Use a rain delay:
-  If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague). Warning: you have to enable "Use Weather" and "Storm Glass API key". If you don't use a key, enter anything.
+  If checked, a rain delay is set when rain is detected at the location configured in OSPy. Enable weather and configure the location in OSPy first. The plug-in does not use a separate map or location setting.
 
 * Delay time:
   Delay time in hours.

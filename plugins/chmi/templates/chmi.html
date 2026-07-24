@@ -416,13 +416,12 @@ input:checked + .slider:before {
                     </div>
                 </td>
             </tr>
-            $if options.weather_lat and options.weather_lon:
+            $if not options.use_weather or not options.weather_lat or not options.weather_lon:
                 <tr>
-                    <td style='text-transform: none;'><small>$_('My location lat/lon') ${options.weather_lat}/${options.weather_lon}</small></td>
-                    <td>
-                        $ patch = 'https://www.openstreetmap.org/#map=15/' + options.weather_lat + '/' + options.weather_lon
-                        <a href="${patch}" class="button upload" target="_blank" title=$:{json.dumps(_(u'Displaying the found area on the map'), ensure_ascii=False).encode('utf8').decode('utf-8')}>$_('Map')
-                        </a>
+                    <td colspan="2">
+                        <strong>$_('Weather location is not available.')</strong>
+                        $_('Enable weather and set the location in OSPy settings.')
+                        <a href="/options#weather-options" class="button backup">$_('Open weather settings')</a>
                     </td>
                 </tr>
             <tr>
@@ -432,7 +431,7 @@ input:checked + .slider:before {
             </tr>
             <tr>
                 <td style='text-transform: none;'><b>$_('Use a rain delay'):</b></td>
-                <td title=$:{json.dumps(_(u'If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague). Warning: you have to enable Use Weather and Storm Glass API key. If you do not use a key, enter anything.'), ensure_ascii=False)}>
+                <td title=$:{json.dumps(_(u'If enabled, rain detected at the location configured in OSPy weather settings activates a rain delay.'), ensure_ascii=False)}>
                     <label class="switch">
                     <input name='USE_RAIN_DELAY' type='checkbox'${" checked" if plugin_options['USE_RAIN_DELAY'] else ""}>
                     <span class="slider"></span>
