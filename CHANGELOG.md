@@ -2,6 +2,12 @@
 
 July 24 2026
 -----------
+(Martin Pihrt) - Astro Sunrise and Sunset v1.0.1<br/>
+Removed the duplicate manual location, region, time-zone and coordinate fields. A selected Astral city still has priority; when no city is selected, the plug-in now uses the weather location managed by OSPy and the host system time zone. Missing OSPy weather/location settings are shown with a direct settings link and as a health warning.
+
+(Martin Pihrt) - Water Consumption Counter v1.2.4 and E-mail Notifications SSL v1.1.4<br/>
+Removed the redundant plug-in version rendered inside both settings pages. OSPy already displays the authoritative version from `plugin.json` in its common plug-in information bar.
+
 (Martin Pihrt) - CHMI v1.0.1<br/>
 Removed the redundant location/map row from the CHMI settings page. CHMI now exclusively uses the validated location managed by OSPy weather settings; disabling weather also disables local radar evaluation even if old coordinates remain stored. When weather or its location is unavailable, the plug-in shows a direct link to the OSPy weather settings and reports the missing prerequisite through health diagnostics.
 

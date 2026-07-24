@@ -41,10 +41,6 @@ plugin_options = PluginOptions(
         'use_astro': False,
         'use_script': True,             # enable script injection on homepage
         'location': 0,
-        'custom_location': '',
-        'custom_region': '',
-        'custom_timezone': 'UTC',
-        'custom_lati_longit': '',
         'use_footer': False,
         'number_pgm': 2,                # program count number
         'pgm_type': [0, 1],             # 0=sunrise, 1=sunset 
@@ -520,6 +516,7 @@ class StatusChecker(Thread):
                         found_timezone =''
                         found_latitude = 0
                         found_longitude = 0
+                        self.mycity = None
                         try:
                             if plugin_options['location'] != 0:     # 0 is none location
                                 ### find automatic location
@@ -533,22 +530,17 @@ class StatusChecker(Thread):
                                 found_longitude = city.longitude
                                 self.mycity = city
                             else:
-                                if plugin_options['custom_location'] and plugin_options['custom_region'] and plugin_options['custom_timezone'] and plugin_options['custom_lati_longit']:
-                                    ### manual location
-                                    from astral.geocoder import add_locations, database, lookup
-                                    db = database()
-                                    _loc = '{},{},{},{}'.format(plugin_options['custom_location'], plugin_options['custom_region'], plugin_options['custom_timezone'], plugin_options['custom_lati_longit'])
-                                    add_locations(_loc, db) # "Somewhere,Secret Location,UTC,24°28'N,39°36'E"
-                                    city = lookup(plugin_options['custom_location'], db)
-                                    found_name = city.name
-                                    found_region = city.region
-                                    found_timezone = city.timezone
-                                    found_latitude = city.latitude
-                                    found_longitude = city.longitude
-                                    self.mycity = city
-                                else:
-                                    log.info(NAME, _('You must fill in all required fields (location, region, timezone/name, latitude and longitude!'))
-                                    city = None
+                                city = ospy_location_info()
+                                if city is None:
+                                    raise ValueError(
+                                        _('Enable weather and set the location in OSPy settings.')
+                                    )
+                                found_name = city.name
+                                found_region = city.region
+                                found_timezone = city.timezone
+                                found_latitude = city.latitude
+                                found_longitude = city.longitude
+                                self.mycity = city
  
                             if city is not None:
                                 log.info(NAME, _('Found city'))
@@ -698,6 +690,69 @@ def stop():
             checker = None
 
 
+def system_timezone_name():
+    """Return the IANA timezone configured for the OSPy host."""
+    candidates = []
+    environment_timezone = str(os.environ.get('TZ', '')).strip()
+    if environment_timezone:
+        candidates.append(environment_timezone)
+    try:
+        with open('/etc/timezone', 'r', encoding='utf-8') as timezone_file:
+            candidates.append(timezone_file.read().strip())
+    except (OSError, UnicodeError):
+        pass
+    try:
+        localtime_path = os.path.realpath('/etc/localtime')
+        zoneinfo_marker = os.sep + 'zoneinfo' + os.sep
+        if zoneinfo_marker in localtime_path:
+            candidates.append(localtime_path.split(zoneinfo_marker, 1)[1])
+    except OSError:
+        pass
+    local_timezone = datetime.now().astimezone().tzinfo
+    candidates.extend([
+        getattr(local_timezone, 'key', ''),
+        getattr(local_timezone, 'zone', ''),
+    ])
+    try:
+        import pytz
+        for candidate in candidates:
+            candidate = str(candidate or '').strip()
+            if not candidate:
+                continue
+            try:
+                pytz.timezone(candidate)
+                return candidate
+            except pytz.UnknownTimeZoneError:
+                continue
+    except ImportError:
+        pass
+    return 'UTC'
+
+
+def ospy_location_info():
+    """Build an Astral location from the weather location managed by OSPy."""
+    if not bool(getattr(options, 'use_weather', False)):
+        return None
+    try:
+        latitude = float(options.weather_lat)
+        longitude = float(options.weather_lon)
+    except (TypeError, ValueError):
+        return None
+    if not -90.0 <= latitude <= 90.0:
+        return None
+    if not -180.0 <= longitude <= 180.0:
+        return None
+    from astral import LocationInfo
+    name = str(getattr(options, 'location', '') or '').strip() or 'OSPy'
+    return LocationInfo(
+        name,
+        'OSPy',
+        system_timezone_name(),
+        latitude,
+        longitude,
+    )
+
+
 def health():
     """Return Astral calculation, schedule and worker state."""
     with health_lock:
@@ -744,6 +799,12 @@ def health():
         return {
             'status': 'error',
             'summary': _('Astral is not installed.'),
+            'details': details,
+        }
+    if plugin_options['location'] == 0 and ospy_location_info() is None:
+        return {
+            'status': 'warning',
+            'summary': _('Enable weather and set the location in OSPy settings.'),
             'details': details,
         }
     if state['last_error'] and state['last_error'] >= state['last_calculation']:

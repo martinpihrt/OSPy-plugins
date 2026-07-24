@@ -40,22 +40,7 @@ Plugin setup
   If the box is checked, the plugin checks Sunrise and Sunset updates every hour.
 
 * City Location:
-  The help for the plugin contains a list of known cities, from which we can choose our position. If the city you are looking for is not in the list, we will use the box below and add our location. Other necessary data such as location, region... will be read from the available location.
-
-* Custom Location:
-  Somewhere on earth (own name). Example: Pilsen
-
-* Custom region:
-  The custom label serves for our better location orientation.
-
-* Custom Timezone/name:
-  UTC (Coordinated Universal Time). As the Earths rotation slows slightly, GMT is gradually lagging behind UTC. In order to be used in practical life, which is associated with the rotation of the Earth, UTC is maintained within ± 0.9 seconds of UT1; if this deviation is exceeded, the so-called leap second is added or (theoretically) removed at midnight on the next 30 June or 31 December, so that this day ends at 23.59: 60, resp. 23.59: 58 (as opposed to the usual 23.59: 59). This occurs on average once a year to a year and a half. As the Earth's rotation slows down, leap seconds are always added, but theoretically the possibility of taking a leap second is also considered. The International Earth Rotation and Reference Systems Service decides whether to use the leap second in the relevant term according to the Earth's rotation measurements.
-  Example: UTC or Europe/Prague...
-
-Note: custom location and custom region can be anything you like.
-
-* Custom Latitude and longitude:
-  Example city Pilsen 49°44′29",13°22′57"
+  Select a city from the Astral list to use its built-in location. Leave the city unselected to use the coordinates from OSPy weather settings and the time zone configured on the OSPy host. Weather and location must be enabled in OSPy. The plug-in no longer stores a separate manual location.
 
 * Show in footer:  
   Show data from plugin in footer on home page.
