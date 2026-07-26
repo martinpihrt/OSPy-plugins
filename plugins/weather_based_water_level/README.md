@@ -1,54 +1,52 @@
-Weather-based Water Level Readme
-====
+# Weather-based Water Level
 
-Tested in Python 3+
+Tested with Python 3.8+.
 
-When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly.
-In addition, it is now able to protect plants against freezing during selected months.
-If weather data is temporarily unavailable, the plugin logs the problem and leaves the current water level adjustment unchanged.
+The plug-in calculates an OSPy water-level adjustment every hour. Version 1.1.0 offers three selectable calculation methods while retaining the original multi-day method as the default for existing installations.
 
-The plug-in includes a manifest declaring weather-network, irrigation-adjustment and freeze-protection access, uses the shared OSPy worker lifecycle, removes its callback, footer and adjustment during shutdown, and reports its latest calculation through the Diagnostics health interface.
+## Calculation methods
 
-Plugin setup
------------
-* Check Use Automatic Water Level Adjustment:  
-  If checked use automatic water level adjustment plugin is enabled.  
-  
-* Min percentage:  
-  Type min percentage (minimum is 0, maximum is 100).    
+### Multi-day weather balance
 
-* Max percentage:  
-  Type max percentage (minimum is 0, maximum is 1000).
+This is the original plug-in calculation. It combines the selected history, today and forecast days. The configured reference water at 100% (default 4 mm/day) is adjusted by mean temperature, wind and relative humidity, then total rainfall is subtracted.
 
-* History days used:  
-  Type history days (minimum is 0, maximum is 20).
+OSPy weather humidity uses the normalized range `0..1`. Version 1.1.0 correctly converts it to `0..100%` before applying the humidity factor.
 
-* Forecast days used:  
-  Type forecast days (minimum is 0, maximum is 7).
+### Zimmerman
 
-* Show in footer:
-  Show a short status on the OSPy home page footer with the last calculation time, missing rainfall and the current water adjustment.
+The Zimmerman calculation uses yesterday's mean temperature and humidity plus rainfall from yesterday and today:
 
-* Forecast details:
-  Opens a detail page with the last weather calculation. The page shows the used history, today and forecast days, including hourly data count, rainfall, average temperature, wind, humidity and the resulting water level adjustment.
+```text
+temperature factor = (mean °C - reference °C) × 7.2
+humidity factor    = reference RH% - mean RH%
+rain factor        = (yesterday rain + today rain) × -7.874
+adjustment         = 100 + temperature factor + humidity factor + rain factor
+```
 
-* Protect against freezing:  
-  If checked Protect against freezing plugin monitors temperature and protects stations from freezing.
-  
-* Protect temperature:  
-  Type temperature to activate protection.
+The defaults correspond to the classic 70 °F / 30% reference: 21.1 °C and 30% relative humidity. The reference values can be adapted to the local climate. The calculation period is fixed, so the multi-day history and forecast controls are hidden.
 
-* Protect minutes:  
-  Type time in minutes for protection.
+### FAO-56 ETo
 
-* Protect stations:  
-  Select all stations for protection.
+This method reads `weather.get_eto()` from OSPy for 1–7 completed historical days. OSPy uses provider-supplied ETo where available and otherwise calculates FAO-56 reference evapotranspiration from weather observations.
 
-* Protect months:  
-  Select all months for protection.
+```text
+ETc            = ETo × crop coefficient
+effective rain = (historical rain + today rain) × effective-rain percentage
+net need       = max(0, sum(ETc) - effective rain)
+gross need     = net need / irrigation efficiency
+adjustment     = gross need / (reference mm/day × valid days) × 100
+```
 
-* Status:  
-  Status window from the plugin.  
+The crop coefficient describes the vegetation, irrigation efficiency accounts for delivery losses, and effective rainfall accounts for rain not retained in the root zone. Forecast days are not used.
 
-Note:
-If you set the minimum percentage to 0%, the station time can be set to 0%. As a result, in the preview program on the main page it can look like the program is not working.
+## Common behavior
+
+- The minimum and maximum percentage limits apply to every method.
+- Freeze protection is independent of the calculation method.
+- The footer can show the active method and current adjustment.
+- The details page shows method-specific inputs, factors and results.
+- Changing the method removes the previous method's adjustment immediately and triggers recalculation.
+- If the selected method has never produced a usable result, missing data gives a neutral 100% contribution.
+- A temporary data failure after a successful calculation retains only the last successful result from the same method and marks it as stale.
+
+The plug-in declares network and system permissions, uses the shared OSPy worker lifecycle, removes its callback, footer and adjustment during shutdown, and reports its latest calculation through the Diagnostics health interface.

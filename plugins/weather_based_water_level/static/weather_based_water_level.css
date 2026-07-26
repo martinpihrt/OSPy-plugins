@@ -1,0 +1,125 @@
+.weatherLevelPlugin {
+    border: 2px solid #2f3b62;
+    border-radius: 12px;
+    box-sizing: border-box;
+    margin-top: 8px;
+    padding: 10px;
+}
+.weatherLevelPlugin fieldset {
+    border: 1px solid #aab3c5;
+    border-radius: 8px;
+    margin: 12px 0;
+    padding: 8px 12px 12px;
+}
+.weatherLevelPlugin legend {
+    font-weight: bold;
+    padding: 0 6px;
+}
+.weatherOptions td {
+    padding: 4px 8px;
+    text-transform: none;
+    vertical-align: middle;
+}
+.weatherOptions td:first-child {
+    min-width: 240px;
+}
+.weatherHint {
+    color: #555;
+    margin: 2px 0 8px;
+}
+.weatherStatus {
+    box-sizing: border-box;
+    font-family: monospace;
+    max-width: 100%;
+    width: 620px;
+}
+.switch {
+    display: inline-block;
+    height: 24px;
+    position: relative;
+    width: 50px;
+}
+.switch input {
+    display: none;
+}
+.slider {
+    background-color: #ff4d4d;
+    border-radius: 34px;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: 0.4s;
+}
+.slider::before {
+    background-color: white;
+    border-radius: 50%;
+    bottom: 3px;
+    content: "";
+    height: 18px;
+    left: 4px;
+    position: absolute;
+    transition: 0.4s;
+    width: 18px;
+}
+input:checked + .slider {
+    background-color: #4caf50;
+}
+input:checked + .slider::before {
+    transform: translateX(24px);
+}
+.weatherDetailSummary {
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+}
+.weatherDetailSummary td {
+    padding: 4px 12px 4px 0;
+}
+.weatherDetailTable {
+    border-collapse: collapse;
+    margin-top: 10px;
+    width: 100%;
+}
+.weatherDetailTable th,
+.weatherDetailTable td {
+    border-bottom: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+}
+.weatherDetailTable th {
+    font-weight: bold;
+}
+.weatherDetailTable .number {
+    text-align: right;
+    white-space: nowrap;
+}
+.weatherDetailTable .center {
+    text-align: center;
+}
+.weatherDetailNote {
+    max-width: 260px;
+}
+.weatherStale {
+    background: #fff4d6;
+    border-left: 4px solid #d88a00;
+    padding: 6px 8px;
+}
+.weatherInlineForm {
+    display: inline;
+}
+@media (max-width: 720px) {
+    .weatherOptions,
+    .weatherOptions tbody,
+    .weatherOptions tr,
+    .weatherOptions td {
+        display: block;
+        width: auto;
+    }
+    .weatherOptions td:first-child {
+        min-width: 0;
+        padding-bottom: 1px;
+    }
+}

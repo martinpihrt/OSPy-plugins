@@ -1,92 +1,36 @@
 $def with(detail)
 
-$var title: $_(u'Weather-based Water Level - forecast details')
+$var title: $_(u'Weather-based Water Level - calculation details')
 $var page: plugins
 
-<style>
-.weatherDetailSummary {
-    border-collapse: collapse;
-    margin-top: 10px;
-    margin-bottom: 16px;
-}
+<link href="/plugins/weather_based_water_level/static/weather_based_water_level.css?v=1.1.0" rel="stylesheet" type="text/css">
 
-.weatherDetailSummary td {
-    padding: 4px 12px 4px 0;
-}
-
-.weatherDetailTable {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.weatherDetailTable th,
-.weatherDetailTable td {
-    border-bottom: 1px solid #ddd;
-    padding: 6px 8px;
-    text-align: left;
-    vertical-align: top;
-}
-
-.weatherDetailTable th {
-    font-weight: bold;
-}
-
-.weatherDetailTable .number {
-    text-align: right;
-    white-space: nowrap;
-}
-
-.weatherDetailTable .center {
-    text-align: center;
-}
-
-.weatherDetailNote {
-    max-width: 260px;
-}
-</style>
-
-<div id="plugin">
-    <div class="title">$_(u'Weather-based Water Level - forecast details')</div>
+<div id="plugin" class="weatherLevelPlugin">
+    <div class="title">$_(u'Weather-based Water Level - calculation details')</div>
+    $if detail.get('stale'):
+        <p class="weatherStale">$_(u'These values are from the last successful calculation with the selected method.')</p>
 
     <table class="weatherDetailSummary">
         <tr>
-            <td><b>$_(u'Last calculation'):</b></td>
-            <td>${detail['calculated_at'] or '-'}</td>
-            <td><b>$_(u'Used days'):</b></td>
-            <td>${detail['days_used']}</td>
+            <td><b>$_(u'Calculation method'):</b></td><td>${detail['method_label']}</td>
+            <td><b>$_(u'Last calculation'):</b></td><td>${detail['calculated_at'] or '-'}</td>
         </tr>
         <tr>
-            <td><b>$_(u'History / forecast'):</b></td>
-            <td>${detail['days_history']} / ${detail['days_forecast']}</td>
-            <td><b>$_(u'Total rainfall'):</b></td>
-            <td>${'%.1f' % detail['rain_mm']} mm</td>
+            <td><b>$_(u'Used days'):</b></td><td>${detail['days_used']}</td>
+            <td><b>$_(u'Total rainfall'):</b></td><td>${'%.1f' % detail['rain_mm']} mm</td>
         </tr>
         <tr>
-            <td><b>$_(u'Water needed'):</b></td>
-            <td>${'%.1f' % detail['water_needed']} mm</td>
-            <td><b>$_(u'Irrigation needed'):</b></td>
-            <td>${'%.1f' % detail['water_left']} mm</td>
-        </tr>
-        <tr>
+            $if detail['method'] == 'zimmerman':
+                <td><b>$_(u'Calculation period'):</b></td><td>$_(u'Yesterday weather and rainfall through today')</td>
+            $else:
+                <td><b>$_(u'Irrigation needed'):</b></td><td>${'%.1f' % detail['water_left']} mm</td>
             <td><b>$_(u'Weather adjustment'):</b></td>
-            <td>
-                $if detail['water_adjustment'] is None:
-                    -
-                $else:
-                    ${'%.1f' % detail['water_adjustment']} %
-            </td>
-            <td><b>$_(u'Raw adjustment'):</b></td>
-            <td>
-                $if detail['raw_water_adjustment'] is None:
-                    -
-                $else:
-                    ${'%.1f' % detail['raw_water_adjustment']} %
-            </td>
+            <td>${'-' if detail['water_adjustment'] is None else '%.1f %%' % detail['water_adjustment']}</td>
         </tr>
         <tr>
-            <td><b>$_(u'Status'):</b></td>
-            <td colspan="3">${detail['message']}</td>
+            <td><b>$_(u'Raw adjustment'):</b></td>
+            <td>${'-' if detail['raw_water_adjustment'] is None else '%.1f %%' % detail['raw_water_adjustment']}</td>
+            <td><b>$_(u'Status'):</b></td><td>${detail['message']}</td>
         </tr>
         $if detail['limited_by_min'] or detail['limited_by_max']:
             <tr>
@@ -100,62 +44,67 @@ $var page: plugins
             </tr>
     </table>
 
-    <table class="weatherDetailTable">
-        <thead>
-            <tr>
-                <th>$_(u'Day')</th>
-                <th>$_(u'Date')</th>
-                <th>$_(u'Type')</th>
-                <th class="number">$_(u'Hours')</th>
-                <th class="number">$_(u'Rain')</th>
-                <th class="number">$_(u'Temperature')</th>
-                <th class="number">$_(u'Wind')</th>
-                <th class="number">$_(u'Humidity')</th>
-                <th class="center">$_(u'Used')</th>
-                <th>$_(u'Influence')</th>
-            </tr>
-        </thead>
-        <tbody>
-            $if not detail['rows']:
+    $if detail['method'] == 'multi_day':
+        <table class="weatherDetailTable">
+            <thead>
                 <tr>
-                    <td colspan="10">$_(u'No weather detail is available yet.')</td>
+                    <th>$_(u'Day')</th><th>$_(u'Date')</th><th>$_(u'Type')</th>
+                    <th class="number">$_(u'Hours')</th><th class="number">$_(u'Rain')</th>
+                    <th class="number">$_(u'Temperature')</th><th class="number">$_(u'Wind')</th>
+                    <th class="number">$_(u'Humidity')</th><th class="center">$_(u'Used')</th>
+                    <th>$_(u'Influence')</th>
                 </tr>
-            $for row in detail['rows']:
-                <tr>
-                    <td>${row['label']}</td>
-                    <td>${row['date']}</td>
-                    <td>${row['type']}</td>
-                    <td class="number">${row['hours']}</td>
-                    <td class="number">${'%.1f' % row['rain_mm']} mm</td>
-                    <td class="number">
-                        $if row['temp'] is None:
-                            -
-                        $else:
-                            ${'%.1f' % row['temp']} ${options.temp_unit}
-                    </td>
-                    <td class="number">
-                        $if row['wind_ms'] is None:
-                            -
-                        $else:
-                            ${'%.1f' % row['wind_ms']} m/s
-                    </td>
-                    <td class="number">
-                        $if row['humidity'] is None:
-                            -
-                        $else:
-                            ${'%.1f' % row['humidity']} %
-                    </td>
-                    <td class="center">${_(u'Yes') if row['used'] else _(u'No')}</td>
-                    <td class="weatherDetailNote">${row['note']}</td>
-                </tr>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                $if not detail['rows']:
+                    <tr><td colspan="10">$_(u'No weather detail is available yet.')</td></tr>
+                $for row in detail['rows']:
+                    <tr>
+                        <td>${row['label']}</td><td>${row['date']}</td><td>${row['type']}</td>
+                        <td class="number">${row['hours']}</td><td class="number">${'%.1f' % row['rain_mm']} mm</td>
+                        <td class="number">${'-' if row['temp'] is None else '%.1f %s' % (row['temp'], options.temp_unit)}</td>
+                        <td class="number">${'-' if row['wind_ms'] is None else '%.1f m/s' % row['wind_ms']}</td>
+                        <td class="number">${'-' if row['humidity'] is None else '%.1f %%' % row['humidity']}</td>
+                        <td class="center">${_(u'Yes') if row['used'] else _(u'No')}</td>
+                        <td class="weatherDetailNote">${row['note']}</td>
+                    </tr>
+            </tbody>
+        </table>
+
+    $if detail['method'] == 'zimmerman':
+        <table class="weatherDetailTable">
+            <thead><tr><th>$_(u'Date')</th><th>$_(u'Yesterday mean temperature')</th><th>$_(u'Temperature factor')</th><th>$_(u'Yesterday mean humidity')</th><th>$_(u'Humidity factor')</th><th>$_(u'Rain yesterday')</th><th>$_(u'Rain today')</th><th>$_(u'Rain factor')</th></tr></thead>
+            <tbody>
+                $if not detail['rows']:
+                    <tr><td colspan="8">$_(u'No weather detail is available yet.')</td></tr>
+                $for row in detail['rows']:
+                    <tr>
+                        <td>${row['date']}</td><td>${'%.1f' % row['temperature']} ${options.temp_unit}</td>
+                        <td>${'%+.1f' % row['temperature_factor']} %</td><td>${'%.1f' % row['humidity']} %</td>
+                        <td>${'%+.1f' % row['humidity_factor']} %</td><td>${'%.1f' % row['rain_yesterday']} mm</td>
+                        <td>${'%.1f' % row['rain_today']} mm</td><td>${'%+.1f' % row['rain_factor']} %</td>
+                    </tr>
+            </tbody>
+        </table>
+
+    $if detail['method'] == 'eto_fao56':
+        <table class="weatherDetailTable">
+            <thead><tr><th>$_(u'Date')</th><th>$_(u'Reference evapotranspiration')</th><th>$_(u'Crop evapotranspiration')</th><th>$_(u'Rain')</th><th>$_(u'Effective rainfall')</th><th>$_(u'Deficit')</th></tr></thead>
+            <tbody>
+                $if not detail['rows']:
+                    <tr><td colspan="6">$_(u'No weather detail is available yet.')</td></tr>
+                $for row in detail['rows']:
+                    <tr><td>${row['date']}</td><td>${'%.2f' % row['eto']} mm</td><td>${'%.2f' % row['etc']} mm</td><td>${'%.2f' % row['rain_mm']} mm</td><td>${'%.2f' % row['effective_rain_mm']} mm</td><td>${'%.2f' % row['deficit_mm']} mm</td></tr>
+            </tbody>
+        </table>
+        $if detail.get('total_eto') is not None:
+            <p><b>$_(u'Total ETo'):</b> ${'%.2f' % detail['total_eto']} mm · <b>$_(u'Total crop evapotranspiration'):</b> ${'%.2f' % detail['total_etc']} mm · <b>$_(u'Effective rainfall'):</b> ${'%.2f' % detail['effective_rain_mm']} mm · <b>$_(u'Gross irrigation requirement'):</b> ${'%.2f' % detail['gross_irrigation_mm']} mm</p>
 </div>
 
 <div id="controls">
-    <form action="$plugins.plugin_url('weather_based_water_level.details_page')" method="post" style="display:inline">
+    <form action="$plugins.plugin_url('weather_based_water_level.details_page')" method="post" class="weatherInlineForm">
         $:csrf_input()
         <button type="submit" class="submit"><b>$_(u'Recalculate now')</b></button>
     </form>
-    <a href=$plugins.plugin_url('weather_based_water_level.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+    <a href=$plugins.plugin_url('weather_based_water_level.settings_page') class="button danger">$_(u'Cancel')</a>
 </div>

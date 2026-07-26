@@ -18,6 +18,16 @@ from ospy.stations import stations
 from ospy.weather import weather
 from plugins import PluginOptions, plugin_url, get_runtime
 from ospy.helpers import verify_csrf
+from .methods import (
+    ETO_FAO56,
+    MULTI_DAY,
+    ZIMMERMAN,
+    calculate_eto,
+    calculate_multi_day,
+    calculate_zimmerman,
+    humidity_percent,
+    normalize_method,
+)
 
 
 NAME = 'Weather-based Water Level'
@@ -31,10 +41,18 @@ plugin_options = PluginOptions(
     NAME,
     {
         'enabled': False,
+        'calculation_method': MULTI_DAY,
         'wl_min': 0,
         'wl_max': 200,
+        'base_mm_per_day': 4.0,
         'days_history': 3,
         'days_forecast': 3,
+        'zimmerman_reference_temp_c': 21.1,
+        'zimmerman_reference_humidity': 30.0,
+        'eto_days': 3,
+        'eto_crop_coefficient': 1.0,
+        'eto_irrigation_efficiency': 100.0,
+        'eto_effective_rain': 100.0,
         'protect_enabled': False,
         'protect_temp': 2.0 if options.temp_unit == "C" else 35.6,
         'protect_minutes': 10,
@@ -46,6 +64,8 @@ plugin_options = PluginOptions(
 last_detail = {
     'calculated_at': None,
     'enabled': False,
+    'method': plugin_options['calculation_method'],
+    'method_label': _(u'Multi-day weather balance'),
     'message': _(u'No calculation has been run yet.'),
     'days_used': 0,
     'days_history': plugin_options['days_history'],
@@ -58,7 +78,10 @@ last_detail = {
     'limited_by_min': False,
     'limited_by_max': False,
     'rows': [],
+    'stale': False,
+    'data_missing': False,
 }
+successful_details = {}
 runtime = get_runtime()
 health_lock = Lock()
 health_state = {
@@ -111,6 +134,161 @@ def _day_note(hourly_data, rain_mm, avg_temp_c, avg_wind_ms, avg_humidity):
         notes.append(_(u'dry air raises irrigation need'))
 
     return ', '.join(notes) if notes else _(u'normal weather influence')
+
+
+def _method_label(method):
+    if method == ZIMMERMAN:
+        return _(u'Zimmerman method')
+    if method == ETO_FAO56:
+        return _(u'FAO-56 ETo method')
+    return _(u'Multi-day weather balance')
+
+
+def _local_temperature(temp_c):
+    if temp_c is None:
+        return None
+    return temp_c if options.temp_unit == 'C' else 32.0 + 9.0 / 5.0 * temp_c
+
+
+def _weather_day(offset, include_eto=False):
+    check_date = datetime.date.today() + datetime.timedelta(days=offset)
+    hourly_data = weather.get_hourly_data(check_date) or []
+    rain_mm = weather.get_rain(check_date)
+    result = {
+        'offset': offset,
+        'date': check_date.strftime('%Y-%m-%d'),
+        'hourly': hourly_data,
+        'rain_mm': rain_mm,
+    }
+    if include_eto and hourly_data:
+        try:
+            result['eto'] = weather.get_eto(check_date)
+        except (KeyError, TypeError, ValueError, ZeroDivisionError):
+            result['eto'] = None
+    return result
+
+
+def _multi_day_rows(days):
+    rows = []
+    for day in days:
+        hourly_data = day['hourly']
+        avg_temp_c = _mean([val['temperature'] for val in hourly_data])
+        avg_wind_ms = _mean([val['windSpeed'] for val in hourly_data])
+        avg_humidity = _mean([humidity_percent(val['humidity']) for val in hourly_data])
+        rows.append({
+            'offset': day['offset'],
+            'label': _day_name(day['offset']),
+            'type': _day_type(day['offset']),
+            'date': day['date'],
+            'hours': len(hourly_data),
+            'rain_mm': round(day['rain_mm'], 1),
+            'temp': round(_local_temperature(avg_temp_c), 1) if avg_temp_c is not None else None,
+            'wind_ms': round(avg_wind_ms, 1) if avg_wind_ms is not None else None,
+            'humidity': round(avg_humidity, 1) if avg_humidity is not None else None,
+            'used': bool(hourly_data),
+            'note': _day_note(
+                hourly_data, day['rain_mm'], avg_temp_c, avg_wind_ms, avg_humidity),
+        })
+    return rows
+
+
+def _calculate_weather_adjustment(method):
+    minimum = plugin_options['wl_min']
+    maximum = plugin_options['wl_max']
+    if method == ZIMMERMAN:
+        yesterday = _weather_day(-1)
+        today = _weather_day(0)
+        result = calculate_zimmerman(
+            yesterday,
+            today,
+            plugin_options['zimmerman_reference_temp_c'],
+            plugin_options['zimmerman_reference_humidity'],
+            minimum,
+            maximum,
+        )
+        result['rows'] = [{
+            'date': yesterday['date'],
+            'temperature': round(_local_temperature(result['average_temperature_c']), 1),
+            'humidity': round(result['average_humidity'], 1),
+            'rain_yesterday': result['rain_yesterday'],
+            'rain_today': result['rain_today'],
+            'temperature_factor': result['temperature_factor'],
+            'humidity_factor': result['humidity_factor'],
+            'rain_factor': result['rain_factor'],
+        }]
+        result['days_history'] = 1
+        result['days_forecast'] = 0
+        return result
+
+    if method == ETO_FAO56:
+        eto_days = [
+            _weather_day(offset, include_eto=True)
+            for offset in range(-plugin_options['eto_days'], 0)
+        ]
+        today = _weather_day(0)
+        result = calculate_eto(
+            eto_days,
+            today['rain_mm'],
+            plugin_options['eto_crop_coefficient'],
+            plugin_options['base_mm_per_day'],
+            plugin_options['eto_irrigation_efficiency'],
+            plugin_options['eto_effective_rain'],
+            minimum,
+            maximum,
+        )
+        result['days_history'] = plugin_options['eto_days']
+        result['days_forecast'] = 0
+        result['today_rain'] = round(today['rain_mm'], 2)
+        return result
+
+    days = [
+        _weather_day(offset)
+        for offset in range(-plugin_options['days_history'], plugin_options['days_forecast'] + 1)
+    ]
+    result = calculate_multi_day(
+        days,
+        plugin_options['base_mm_per_day'],
+        minimum,
+        maximum,
+    )
+    result['rows'] = _multi_day_rows(days)
+    result['days_history'] = plugin_options['days_history']
+    result['days_forecast'] = plugin_options['days_forecast']
+    return result
+
+
+def _empty_detail(method, message, stale=False):
+    return {
+        'calculated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'enabled': bool(plugin_options['enabled']),
+        'method': method,
+        'method_label': _method_label(method),
+        'message': message,
+        'days_used': 0,
+        'days_history': plugin_options['days_history'] if method == MULTI_DAY else 0,
+        'days_forecast': plugin_options['days_forecast'] if method == MULTI_DAY else 0,
+        'rain_mm': 0.0,
+        'water_needed': 0.0,
+        'water_left': 0.0,
+        'water_adjustment': None,
+        'raw_water_adjustment': None,
+        'limited_by_min': False,
+        'limited_by_max': False,
+        'rows': [],
+        'stale': stale,
+        'data_missing': False,
+    }
+
+
+def _missing_data_message(error):
+    code = str(error)
+    if code == 'missing_yesterday_weather_data':
+        return _(u'Yesterday weather data required by the Zimmerman method is unavailable.')
+    if code == 'missing_eto_data':
+        return _(u'No complete historical ETo data is available for the selected period.')
+    if code == 'invalid_irrigation_efficiency':
+        return _(u'Irrigation efficiency must be greater than zero.')
+    return _(u'No usable weather information is available yet.')
 
 
 ################################################################################
@@ -179,117 +357,57 @@ class WeatherLevelChecker(Thread):
                     log.clear(NAME)
                     log.debug(NAME,  _(u'Checking weather status') + '...')
 
-                    info = []
-                    rows = []
-                    days = 0
-                    total_info = {'rain_mm': 0.0}
-                    for day in range(-plugin_options['days_history'], plugin_options['days_forecast']+1):
-                        check_date = datetime.date.today() + datetime.timedelta(days=day)
-                        hourly_data = weather.get_hourly_data(check_date) or []
-                        rain_mm = weather.get_rain(check_date)
-                        if hourly_data:
-                            days += 1
-                        info += hourly_data
-
-                        total_info['rain_mm'] += rain_mm
-
-                        avg_temp_c = _mean([val['temperature'] for val in hourly_data])
-                        avg_wind_ms = _mean([val['windSpeed'] for val in hourly_data])
-                        avg_humidity = _mean([val['humidity'] for val in hourly_data])
-                        avg_temp = None
-                        if avg_temp_c is not None:
-                            avg_temp = avg_temp_c if options.temp_unit == "C" else 32.0 + 9.0 / 5.0 * avg_temp_c
-                        rows.append({
-                            'offset': day,
-                            'label': _day_name(day),
-                            'type': _day_type(day),
-                            'date': check_date.strftime('%Y-%m-%d'),
-                            'hours': len(hourly_data),
-                            'rain_mm': round(rain_mm, 1),
-                            'temp': round(avg_temp, 1) if avg_temp is not None else None,
-                            'wind_ms': round(avg_wind_ms, 1) if avg_wind_ms is not None else None,
-                            'humidity': round(avg_humidity, 1) if avg_humidity is not None else None,
-                            'used': bool(hourly_data),
-                            'note': _day_note(hourly_data, rain_mm, avg_temp_c, avg_wind_ms, avg_humidity),
-                        })
-
-                    log.info(NAME, _(u'Using') + ' %d ' % days + _(u'days of information.'))
-
-                    if not info or days < 1:
-                        if NAME in level_adjustments:
-                            del level_adjustments[NAME]
-                        msg = _(u'No usable weather information is available yet.')
+                    method = plugin_options['calculation_method']
+                    try:
+                        result = _calculate_weather_adjustment(method)
+                    except ValueError as error:
+                        msg = _missing_data_message(error)
+                        previous = successful_details.get(method)
+                        if previous:
+                            last_detail = dict(previous)
+                            last_detail.update({
+                                'calculated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                'message': msg + ' ' + _(u'The last successful result from the same method remains active.'),
+                                'stale': True,
+                                'data_missing': True,
+                            })
+                            level_adjustments[NAME] = previous['water_adjustment'] / 100.0
+                        else:
+                            last_detail = _empty_detail(method, msg)
+                            last_detail['water_adjustment'] = 100.0
+                            last_detail['raw_water_adjustment'] = 100.0
+                            last_detail['data_missing'] = True
+                            level_adjustments[NAME] = 1.0
                         log.info(NAME, msg)
-                        log.info(NAME, _(u'Water level adjustment was not changed.'))
-                        last_detail = {
-                            'calculated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                            'enabled': True,
-                            'message': msg,
-                            'days_used': days,
-                            'days_history': plugin_options['days_history'],
-                            'days_forecast': plugin_options['days_forecast'],
-                            'rain_mm': round(total_info['rain_mm'], 1),
-                            'water_needed': 0.0,
-                            'water_left': 0.0,
-                            'water_adjustment': None,
-                            'raw_water_adjustment': None,
-                            'limited_by_min': False,
-                            'limited_by_max': False,
-                            'rows': rows,
-                        }
                         update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'No weather data'))
                         self._sleep(WEATHER_CALC_INTERVAL)
                         continue
 
-                    total_info.update({
-                        'temp_c': sum([val['temperature'] for val in info]) / len(info),
-                        'wind_ms': sum([val['windSpeed'] for val in info]) / len(info),
-                        'humidity': sum([val['humidity'] for val in info]) / len(info)
-                    })                    
-
-                    # We assume that the default 100% provides 4mm water per day (normal need)
-                    # We calculate what we will need to provide using the mean data of X days around today
-
-                    water_needed = 4 * days                                     # 4mm per day
-                    water_needed *= 1 + (total_info['temp_c'] - 20) / 15        # 5 => 0%, 35 => 200%
-                    water_needed *= 1 + (total_info['wind_ms'] / 100)           # 0 => 100%, 20 => 120%
-                    water_needed *= 1 - (total_info['humidity'] - 50) / 200     # 0 => 125%, 100 => 75%
-                    water_needed = round(water_needed, 1)
-
-                    water_left = water_needed - total_info['rain_mm']
-                    water_left = round(max(0, min(100, water_left)), 1)
-
-                    raw_water_adjustment = round((water_left / (4 * days)) * 100, 1)
-
-                    water_adjustment = float(
-                        max(plugin_options['wl_min'], min(plugin_options['wl_max'], raw_water_adjustment)))
-
-                    log.info(NAME, _(u'Water needed') + ' %d ' % days + _('days') + ': %.1fmm' % water_needed)
-                    log.info(NAME, _(u'Total rainfall') + ': %.1fmm' % total_info['rain_mm'])
-                    log.info(NAME, u'_______________________________')
-                    log.info(NAME, _(u'Irrigation needed') +  ': %.1fmm' % water_left)
-                    log.info(NAME, _(u'Weather Adjustment') + ': %.1f%%' % water_adjustment)
-                    last_detail = {
+                    result.update({
                         'calculated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         'enabled': True,
+                        'method': method,
+                        'method_label': _method_label(method),
                         'message': _(u'Calculation finished successfully.'),
-                        'days_used': days,
-                        'days_history': plugin_options['days_history'],
-                        'days_forecast': plugin_options['days_forecast'],
-                        'rain_mm': round(total_info['rain_mm'], 1),
-                        'water_needed': water_needed,
-                        'water_left': water_left,
-                        'water_adjustment': water_adjustment,
-                        'raw_water_adjustment': raw_water_adjustment,
-                        'limited_by_min': raw_water_adjustment < plugin_options['wl_min'],
-                        'limited_by_max': raw_water_adjustment > plugin_options['wl_max'],
-                        'rows': rows,
-                    }
+                        'stale': False,
+                        'data_missing': False,
+                    })
+                    last_detail = result
+                    successful_details[method] = dict(result)
+                    water_adjustment = result['water_adjustment']
+                    log.info(NAME, _(u'Calculation method') + ': ' + _method_label(method))
+                    log.info(NAME, _(u'Using') + ' %d ' % result['days_used'] + _(u'days of information.'))
+                    log.info(NAME, _(u'Total rainfall') + ': %.1fmm' % result['rain_mm'])
+                    log.info(NAME, u'_______________________________')
+                    log.info(NAME, _(u'Irrigation needed') + ': %.1fmm' % result['water_left'])
+                    log.info(NAME, _(u'Weather Adjustment') + ': %.1f%%' % water_adjustment)
                     with health_lock:
                         health_state['last_success'] = time.time()
-                    update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Missing') + ' %.1fmm, %.0f%%' % (water_left, water_adjustment))
-
-                    level_adjustments[NAME] = water_adjustment / 100
+                        health_state['last_error_message'] = ''
+                    update_footer(
+                        datetime.datetime.now().strftime('%d.%m. %H:%M')
+                        + ' ' + _method_label(method) + ', %.0f%%' % water_adjustment)
+                    level_adjustments[NAME] = water_adjustment / 100.0
 
                     if plugin_options['protect_enabled']:
                         current_data = weather.get_current_data() or {}
@@ -325,22 +443,8 @@ class WeatherLevelChecker(Thread):
                         update_footer(datetime.datetime.now().strftime('%d.%m. %H:%M') + ' ' + _(u'Plug-in is disabled.'))
                     if NAME in level_adjustments:
                         del level_adjustments[NAME]
-                    last_detail = {
-                        'calculated_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        'enabled': False,
-                        'message': _(u'Plug-in is disabled.'),
-                        'days_used': 0,
-                        'days_history': plugin_options['days_history'],
-                        'days_forecast': plugin_options['days_forecast'],
-                        'rain_mm': 0.0,
-                        'water_needed': 0.0,
-                        'water_left': 0.0,
-                        'water_adjustment': None,
-                        'raw_water_adjustment': None,
-                        'limited_by_min': False,
-                        'limited_by_max': False,
-                        'rows': [],
-                    }
+                    last_detail = _empty_detail(
+                        plugin_options['calculation_method'], _(u'Plug-in is disabled.'))
                     self._sleep(24*3600)
 
             except Exception:
@@ -402,10 +506,24 @@ def safe_float(value, default=0.0):
 
 
 def normalize_options():
+    plugin_options['calculation_method'] = normalize_method(
+        plugin_options.get('calculation_method', MULTI_DAY))
     plugin_options['wl_min'] = max(0, min(200, safe_int(plugin_options.get('wl_min', 0), 0)))
     plugin_options['wl_max'] = max(plugin_options['wl_min'], min(200, safe_int(plugin_options.get('wl_max', 200), 200)))
+    plugin_options['base_mm_per_day'] = max(0.1, min(50.0, safe_float(plugin_options.get('base_mm_per_day', 4.0), 4.0)))
     plugin_options['days_history'] = max(0, min(14, safe_int(plugin_options.get('days_history', 3), 3)))
     plugin_options['days_forecast'] = max(0, min(14, safe_int(plugin_options.get('days_forecast', 3), 3)))
+    plugin_options['zimmerman_reference_temp_c'] = max(-30.0, min(60.0, safe_float(
+        plugin_options.get('zimmerman_reference_temp_c', 21.1), 21.1)))
+    plugin_options['zimmerman_reference_humidity'] = max(0.0, min(100.0, safe_float(
+        plugin_options.get('zimmerman_reference_humidity', 30.0), 30.0)))
+    plugin_options['eto_days'] = max(1, min(7, safe_int(plugin_options.get('eto_days', 3), 3)))
+    plugin_options['eto_crop_coefficient'] = max(0.1, min(2.0, safe_float(
+        plugin_options.get('eto_crop_coefficient', 1.0), 1.0)))
+    plugin_options['eto_irrigation_efficiency'] = max(1.0, min(100.0, safe_float(
+        plugin_options.get('eto_irrigation_efficiency', 100.0), 100.0)))
+    plugin_options['eto_effective_rain'] = max(0.0, min(100.0, safe_float(
+        plugin_options.get('eto_effective_rain', 100.0), 100.0)))
     plugin_options['protect_temp'] = safe_float(plugin_options.get('protect_temp', 2.0), 2.0)
     plugin_options['protect_minutes'] = max(1, min(240, safe_int(plugin_options.get('protect_minutes', 10), 10)))
     plugin_options['protect_stations'] = [safe_int(station, -1) for station in plugin_options.get('protect_stations', []) if safe_int(station, -1) >= 0]
@@ -423,10 +541,18 @@ class settings_page(ProtectedPage):
         return self.plugin_render.weather_based_water_level(plugin_options, log.events(NAME))
 
     def POST(self):
+        global last_detail
+        old_method = plugin_options.get('calculation_method', MULTI_DAY)
         qdict = web.input(**plugin_options)
         verify_csrf(qdict)
         plugin_options.web_update(qdict)
         normalize_options()
+        if old_method != plugin_options['calculation_method']:
+            last_detail = _empty_detail(
+                plugin_options['calculation_method'],
+                _(u'Waiting for the first calculation with the selected method.'))
+            if NAME in level_adjustments:
+                del level_adjustments[NAME]
         if checker is not None:
             checker.update()
         raise web.seeother(plugin_url(settings_page), True)
@@ -471,6 +597,7 @@ def health():
     details = {
         'worker': _('Running') if worker_alive else _('Stopped'),
         'enabled': bool(plugin_options.get('enabled', False)),
+        'method': _method_label(plugin_options.get('calculation_method', MULTI_DAY)),
         'days_used': last_detail.get('days_used', 0),
         'rain_mm': last_detail.get('rain_mm', 0),
         'water_needed_mm': last_detail.get('water_needed', 0),
@@ -480,6 +607,7 @@ def health():
         'last_calculation': last_detail.get('calculated_at'),
         'last_success': state['last_success'],
         'last_error': state['last_error'],
+        'stale': bool(last_detail.get('stale', False)),
     }
     if state['last_error_message']:
         details['error'] = state['last_error_message']
@@ -492,6 +620,12 @@ def health():
     elif last_detail.get('water_adjustment') is None:
         status = 'warning'
         summary = _('No usable weather calculation is available.')
+    elif last_detail.get('stale'):
+        status = 'warning'
+        summary = _('The last successful weather adjustment is temporarily being retained.')
+    elif last_detail.get('data_missing'):
+        status = 'warning'
+        summary = _('The selected weather calculation method has no usable data.')
     elif state['last_error'] and state['last_error'] > state['last_success']:
         status = 'warning'
         summary = _('Weather-based water level reported an error.')
