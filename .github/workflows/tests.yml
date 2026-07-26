@@ -61,3 +61,7 @@ jobs:
         env:
           OSPY_PLUGIN_ROOTS: ${{ github.workspace }}/OSPy-plugins/plugins
         run: python -m unittest discover -s tests -v
+
+      - name: Run plug-in calculation tests
+        working-directory: OSPy-plugins
+        run: python -m unittest discover -s tests -v

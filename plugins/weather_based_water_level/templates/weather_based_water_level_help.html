@@ -3,16 +3,32 @@ $def with()
 $var title: $_(u'Weather-based Water Level - help')
 $var page: plugins
 
-<div id="plugin">
+<link href="/plugins/weather_based_water_level/static/weather_based_water_level.css?v=1.1.0" rel="stylesheet" type="text/css">
+
+<div id="plugin" class="weatherLevelPlugin">
     <div class="title">$_(u'Weather-based Water Level - help')</div>
-    <p>$_(u'When weather-based water level is enabled, the weather will be checked every hour and the water level will be adjusted accordingly').</p>
-    <p>$_(u'In addition, it is now able to protect plants from frost during the selected months').</p>
-    <p>$_(u'The home page footer can show a short status with the last calculation time, missing rainfall and the current water adjustment.')</p>
-    <p>$_(u'The forecast details page shows the last calculation input and result, including the history, today and forecast days used by the plugin.')</p>
-    <p>$_(u'If no usable weather information is available, the plugin keeps OSPy running and does not change the water level adjustment.')</p>
+    <p>$_(u'The plug-in calculates one water-level adjustment and OSPy applies it to scheduled program durations. Choose the calculation method that matches the available weather data and your irrigation model.')</p>
+
+    <h3>$_(u'Multi-day weather balance')</h3>
+    <p>$_(u'This is the original plug-in method and remains the default for existing installations. It combines the configured history, today and forecast, then adjusts the daily reference water by mean temperature, wind and relative humidity before subtracting rainfall.')</p>
+    <p>$_(u'OSPy stores relative humidity as a value from zero to one. Version 1.1.0 correctly converts it to percent before this method applies the humidity factor.')</p>
+
+    <h3>$_(u'Zimmerman method')</h3>
+    <p>$_(u'This method uses yesterday mean temperature and relative humidity together with rainfall from yesterday and today. The result starts at 100 percent. Each degree Celsius above the reference adds 7.2 percentage points, each humidity point above the reference subtracts one point, and each millimeter of rain subtracts about 7.87 points.')</p>
+    <p>$_(u'The default references are 21.1 degrees Celsius and 30 percent relative humidity. They can be adapted to the local climate.')</p>
+
+    <h3>$_(u'FAO-56 ETo method')</h3>
+    <p>$_(u'This method reads OSPy reference evapotranspiration for completed historical days. OSPy uses provider ETo when available and otherwise calculates the FAO-56 value from weather observations.')</p>
+    <p>$_(u'Crop evapotranspiration equals ETo multiplied by the crop coefficient. Effective historical and current-day rainfall is subtracted, irrigation efficiency converts the net requirement to a gross requirement, and the result is compared with the configured daily water at 100 percent.')</p>
+    <p>$_(u'Use a crop coefficient appropriate for the irrigated plants. Irrigation efficiency accounts for water that does not reach the root zone; effective rainfall accounts for rain that is not retained by the soil.')</p>
+
+    <h3>$_(u'Limits and missing data')</h3>
+    <p>$_(u'The common minimum and maximum percentages are applied to every method. Freeze protection is independent of the selected calculation method.')</p>
+    <p>$_(u'After changing the method, the previous method result is removed immediately. If the selected method has no usable data, the first result is neutral at 100 percent. After a successful result, a temporary data failure retains only the last successful result from that same method and marks it as stale.')</p>
+    <p>$_(u'The calculation details page shows the inputs, factors and final result for the selected method.')</p>
     <p>$_(u'Author Rimco (Thank you).')</p>
 </div>
 
 <div id="controls">
-    <a href=$plugins.plugin_url('weather_based_water_level.settings_page') class="button danger">$_(u'Cancel')</a><br/>
+    <a href=$plugins.plugin_url('weather_based_water_level.settings_page') class="button danger">$_(u'Cancel')</a>
 </div>
