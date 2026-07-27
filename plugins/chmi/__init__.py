@@ -28,6 +28,7 @@ from ospy.helpers import datetime_string, stop_onrain, get_input, verify_csrf
 from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 
 from ospy.webpages import showInFooter, pluginScripts # Enable plugin to display readings in UI footer
+from .radar_analysis import analyze_location_pixels, pixel_matches_threshold
 
 from PIL import Image, ImageDraw, ImageFont
 import requests
@@ -356,7 +357,9 @@ class CHMI_Checker(Thread):
                                         log.error(NAME, datetime_string() + ' ' + _('I cannot connect to the map board of the Czech Republic at the URL http://{}/').format(plugin_options['IP_ADDR']))
                                 else:
                                     log.debug(NAME, datetime_string() + ' ' + _('Sending data to the hardware map is disabled.'))
-                            elif radar_source() == 'chmi':
+                            elif (
+                                    radar_source() == 'chmi'
+                                    and plugin_options['PRINT_WHERE_RAINING']):
                                 log.info(NAME, datetime_string() + ' ' + _('Looks like it is not raining in any city.'))
                             
                             log.info(NAME, datetime_string() + ' ' + _('Waiting 10 minutes for next update...'))
@@ -767,60 +770,31 @@ def download_shmu_radar(date=None, trials=3):
     return False, None, shmu_date_txt(date)
 
 def pixel_matches_rain_threshold(r, g, b):
-    checks = []
-    if plugin_options.get('R_DETECT', True):
-        checks.append(r > int(plugin_options['R_INTENS']))
-    if plugin_options.get('G_DETECT', True):
-        checks.append(g > int(plugin_options['G_INTENS']))
-    if plugin_options.get('B_DETECT', True):
-        checks.append(b > int(plugin_options['B_INTENS']))
-    return any(checks)
+    return pixel_matches_threshold(r, g, b, {
+        'red_enabled': plugin_options.get('R_DETECT', True),
+        'red_threshold': plugin_options['R_INTENS'],
+        'green_enabled': plugin_options.get('G_DETECT', True),
+        'green_threshold': plugin_options['G_INTENS'],
+        'blue_enabled': plugin_options.get('B_DETECT', True),
+        'blue_threshold': plugin_options['B_INTENS'],
+    })
 
 def analyze_location_rain(bitmap, x, y):
-    radius = max(0, int(plugin_options['DETECTION_RADIUS']))
-    min_percent = max(0, min(100, int(plugin_options['MIN_RAIN_PIXELS'])))
-    rainy_pixels = 0
-    total_pixels = 0
-    red_sum = 0
-    green_sum = 0
-    blue_sum = 0
-
-    for dx in range(-radius, radius + 1):
-        for dy in range(-radius, radius + 1):
-            if dx * dx + dy * dy > radius * radius:
-                continue
-            px = x + dx
-            py = y + dy
-            if px < 0 or py < 0 or px >= bitmap.width or py >= bitmap.height:
-                continue
-
-            r, g, b = bitmap.getpixel((px, py))
-            total_pixels += 1
-            if pixel_matches_rain_threshold(r, g, b):
-                rainy_pixels += 1
-                red_sum += r
-                green_sum += g
-                blue_sum += b
-
-    rainy_percent = int(round((rainy_pixels * 100.0) / total_pixels)) if total_pixels else 0
-    if rainy_pixels:
-        red = int(round(red_sum / rainy_pixels))
-        green = int(round(green_sum / rainy_pixels))
-        blue = int(round(blue_sum / rainy_pixels))
-    else:
-        red = green = blue = 0
-
-    return {
-        'rain': rainy_percent >= min_percent,
-        'red': red,
-        'green': green,
-        'blue': blue,
-        'rainy_pixels': rainy_pixels,
-        'total_pixels': total_pixels,
-        'rainy_percent': rainy_percent,
-        'radius': radius,
-        'min_percent': min_percent,
-    }
+    return analyze_location_pixels(
+        bitmap,
+        x,
+        y,
+        plugin_options['DETECTION_RADIUS'],
+        plugin_options['MIN_RAIN_PIXELS'],
+        {
+            'red_enabled': plugin_options.get('R_DETECT', True),
+            'red_threshold': plugin_options['R_INTENS'],
+            'green_enabled': plugin_options.get('G_DETECT', True),
+            'green_threshold': plugin_options['G_INTENS'],
+            'blue_enabled': plugin_options.get('B_DETECT', True),
+            'blue_threshold': plugin_options['B_INTENS'],
+        },
+    )
 
 def create_animation_image(byte, date_txt, frame_type, relative_minutes):
     radar_img = Image.open(BytesIO(byte))

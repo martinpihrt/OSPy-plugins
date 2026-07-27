@@ -1,0 +1,115 @@
+$def with(plugin_options)
+
+$var title: $_(u'Wind Speed Monitor settings')
+$var page: plugins
+
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.1.0" rel="stylesheet" type="text/css">
+
+<script>
+jQuery(document).ready(function() {
+    jQuery("#cSubmit").click(function() { jQuery("#pluginForm").submit(); });
+});
+</script>
+
+<div id="plugin" class="windPanel">
+    <div class="title">$_(u'Wind Speed Monitor settings')</div>
+    <div class="windToolbar">
+        <a href=$plugins.plugin_url('wind_monitor.overview_page') class="button submit">$_(u'Overview')</a>
+        <a href=$plugins.plugin_url('wind_monitor.help_page') class="button upload">$_(u'Help')</a>
+        <a href=$plugins.plugin_url('wind_monitor.diagnostic_page') class="button backup">$_(u'Diagnostic log')</a>
+    </div>
+
+    <form id="pluginForm" action="$plugins.plugin_url('wind_monitor.settings_page')" method="post">
+        $:csrf_input()
+
+        <fieldset>
+            <legend>$_(u'Measurement')</legend>
+            <table class="optionList windOptions">
+                <tr><td>$_(u'Use wind monitor'):</td><td><label class="switch"><input name="use_wind_monitor" type="checkbox"${" checked" if plugin_options['use_wind_monitor'] else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>I&sup2;C $_(u'address'):</td><td><select name="address"><option value="off"${" selected" if not plugin_options['address'] else ""}>0x50</option><option value="on"${" selected" if plugin_options['address'] else ""}>0x51</option></select></td></tr>
+                <tr><td>$_(u'Number of pulses per rotation'):</td><td><input name="pulses" type="text" inputmode="decimal" value="$plugin_options['pulses']"></td></tr>
+                <tr><td>$_(u'Wind speed per rotation'):</td><td><input name="metperrot" type="text" inputmode="decimal" value="$plugin_options['metperrot']"> m/s</td></tr>
+                <tr><td>$_(u'Display in km/h'):</td><td><label class="switch"><input name="use_kmh" type="checkbox"${" checked" if plugin_options['use_kmh'] else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>$_(u'Show in footer'):</td><td><label class="switch"><input name="use_footer" type="checkbox"${" checked" if plugin_options['use_footer'] else ""}><span class="slider"></span></label></td></tr>
+            </table>
+            <p class="windHint">$_(u'Decimal values may be entered with either a decimal point or a decimal comma.')</p>
+        </fieldset>
+
+        <fieldset>
+            <legend>$_(u'Measurement validation')</legend>
+            <table class="optionList windOptions">
+                <tr><td>$_(u'Filter implausible measurements'):</td><td><label class="switch"><input name="filter_invalid" type="checkbox"${" checked" if plugin_options['filter_invalid'] else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>$_(u'Maximum accepted wind speed'):</td><td><input name="max_accepted_speed" type="text" inputmode="decimal" value="$plugin_options['max_accepted_speed']"> m/s</td></tr>
+                <tr><td>$_(u'Consecutive measurements for a safety action'):</td><td><input name="action_confirmations" type="number" min="1" max="10" value="$plugin_options['action_confirmations']"></td></tr>
+                <tr><td>$_(u'Enable I2C diagnostic logging'):</td><td><label class="switch"><input name="diagnostic_logging" type="checkbox"${" checked" if plugin_options['diagnostic_logging'] else ""}><span class="slider"></span></label></td></tr>
+            </table>
+            <p class="windHint">$_(u'Rejected measurements are excluded from maximum values, graphs, logs and automatic actions. Diagnostic logging is bounded and should normally remain disabled.')</p>
+        </fieldset>
+
+        <fieldset>
+            <legend>$_(u'Measurement logging')</legend>
+            <table class="optionList windOptions">
+                <tr><td>$_(u'Enable local logging'):</td><td><label class="switch"><input name="enable_log" type="checkbox"${" checked" if plugin_options['enable_log'] else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>$_(u'Display data from'):</td><td><select name="type_log"><option value="0"${" selected" if plugin_options['type_log'] == 0 else ""}>$_(u'Database file')</option><option value="1"${" selected" if plugin_options['type_log'] == 1 else ""}>$_(u'SQL database')</option></select></td></tr>
+                <tr><td>$_(u'Enable SQL logging'):</td><td><label class="switch"><input name="en_sql_log" type="checkbox"${" checked" if plugin_options['en_sql_log'] else ""}><span class="slider"></span></label> <a href="?delSQL&$csrf_query()" class="button danger">$_(u'Delete SQL table')</a></td></tr>
+                <tr><td>$_(u'Save when maximum speed changes'):</td><td><label class="switch"><input name="enable_log_change" type="checkbox"${" checked" if plugin_options['enable_log_change'] else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>$_(u'Reset maximum speed after an interval'):</td><td><label class="switch"><input name="delete_max_24h" type="checkbox"${" checked" if plugin_options['delete_max_24h'] else ""}><span class="slider"></span></label></td></tr>
+                <tr>
+                    <td>$_(u'Maximum reset interval'):</td>
+                    <td><select name="delete_max">
+                        <option value="1"${" selected" if plugin_options['delete_max'] == '1' else ""}>$_(u'1 minute')</option>
+                        <option value="10"${" selected" if plugin_options['delete_max'] == '10' else ""}>$_(u'10 minutes')</option>
+                        <option value="30"${" selected" if plugin_options['delete_max'] == '30' else ""}>$_(u'30 minutes')</option>
+                        <option value="1h"${" selected" if plugin_options['delete_max'] == '1h' else ""}>$_(u'1 hour')</option>
+                        <option value="2h"${" selected" if plugin_options['delete_max'] == '2h' else ""}>$_(u'2 hours')</option>
+                        <option value="10h"${" selected" if plugin_options['delete_max'] == '10h' else ""}>$_(u'10 hours')</option>
+                        <option value="24h"${" selected" if plugin_options['delete_max'] == '24h' else ""}>$_(u'1 day')</option>
+                    </select></td>
+                </tr>
+                <tr><td>$_(u'Maximum number of log records'):</td><td><input name="log_records" type="number" min="0" max="10000" value="$plugin_options['log_records']"></td></tr>
+                <tr><td>$_(u'Logging interval'):</td><td><input name="log_interval" type="number" min="1" max="1440" value="$plugin_options['log_interval']"> min</td></tr>
+            </table>
+        </fieldset>
+
+        <fieldset>
+            <legend>$_(u'Station protection')</legend>
+            <table class="optionList windOptions">
+                <tr><td>$_(u'Maximum wind speed for stopping stations'):</td><td><input name="maxspeed" type="text" inputmode="decimal" value="$plugin_options['maxspeed']"> m/s</td></tr>
+                <tr><td>$_(u'Stop selected stations'):</td><td><label class="switch"><input name="stoperr" type="checkbox"${" checked" if plugin_options['stoperr'] else ""}><span class="slider"></span></label></td></tr>
+                <tr>
+                    <td>$_(u'Stations to stop'):</td>
+                    <td><select multiple name="used_stations" size="8">
+                        $for station in [station for station in stations if station.enabled]:
+                            <option value="${str(station.index)}"${" selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index + 1)})</option>
+                    </select></td>
+                </tr>
+                <tr><td>$_(u'Send e-mail when stations are stopped'):</td><td><label class="switch"><input name="sendeml" type="checkbox"${" checked" if plugin_options['sendeml'] else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>$_(u'E-mail subject'):</td><td><input name="emlsubject" type="text" value="$plugin_options['emlsubject']"></td></tr>
+                <tr><td>$_(u'E-mail plug-in'):</td><td><select name="eplug"><option value="0"${" selected" if plugin_options['eplug'] == 0 else ""}>$_(u'E-mail notifications V1')</option><option value="1"${" selected" if plugin_options['eplug'] == 1 else ""}>$_(u'E-mail notifications V2 SSL')</option></select></td></tr>
+            </table>
+        </fieldset>
+
+        <fieldset>
+            <legend>$_(u'Program action')</legend>
+            <table class="optionList windOptions">
+                <tr><td>$_(u'Run program when exceeded'):</td><td><label class="switch"><input name="use_stop_pgm" type="checkbox"${" checked" if plugin_options['use_stop_pgm'] else ""}><span class="slider"></span></label></td></tr>
+                <tr>
+                    <td>$_(u'Program to run'):</td>
+                    <td><select name="used_program" size="8">
+                        $for program in programs.get():
+                            <option value="${str(program.index)}"${" selected" if program.index in plugin_options['used_program'] else ""}>${program.name}</option>
+                    </select></td>
+                </tr>
+                <tr><td>$_(u'Wind speed for starting the program'):</td><td><input name="m_speed_trig" type="text" inputmode="decimal" value="$plugin_options['m_speed_trig']"> m/s</td></tr>
+                <tr><td>$_(u'Number of exceedances'):</td><td><input name="event_repetitions" type="number" min="1" max="100" value="$plugin_options['event_repetitions']"></td></tr>
+                <tr><td>$_(u'Exceedance interval'):</td><td><input name="event_interval" type="number" min="1" max="1440" value="$plugin_options['event_interval']"> min</td></tr>
+                <tr><td>$_(u'Ignore further events'):</td><td><input name="ignore_interval" type="number" min="1" max="8760" value="$plugin_options['ignore_interval']"> h</td></tr>
+            </table>
+        </fieldset>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_(u'Submit')</b></button>
+    <a href=$plugins.plugin_url('wind_monitor.overview_page') class="button danger">$_(u'Cancel')</a>
+</div>
