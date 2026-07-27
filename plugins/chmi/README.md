@@ -36,8 +36,25 @@ Plugin setup
 * Send to HW map:
   If checked, detected rainy cities are sent to the external hardware map.
 
+* Where it is raining:
+  If checked, cities with detected radar echoes are listed in the status
+  window. When it is disabled, the city-wide analysis is not performed and
+  the plug-in does not claim that no city has rain.
+
 * Animate radar map:
-  If checked, recent radar images from the last hour and available forecast frames are kept in RAM and animated on the settings page. Animation frames are not written to the SD card. The time slider below the map can be used to move through the animation manually. The timeline uses green frames for radar history and yellow frames for forecast data. Forecast frames are loaded from the CHMI forecast archive when available and cover approximately +10 to +60 minutes. The current location from the OSPy weather settings is drawn directly into the animation map. The static map remains available when animation data is not ready yet.
+  If checked, recent radar images from the last hour and available forecast
+  frames are kept in RAM and animated on the settings page. Animation frames
+  are not written to the SD card. The time slider below the map can be used to
+  move through the animation manually. The timeline uses green frames for
+  radar history and yellow frames for forecast data. Forecast frames are
+  loaded from the CHMI forecast archive when available and cover approximately
+  +10 to +60 minutes. The current location from the OSPy weather settings is
+  drawn directly into the animation map. For every displayed frame, the page
+  shows the exact RGB value of the location pixel, a matching color sample,
+  the result of the configured rain threshold and statistics for the
+  surrounding detection area. The exact RGB value remains visible even when
+  it is below the configured threshold. The static map remains available when
+  animation data is not ready yet.
 
 * Show on home page:
   If checked, a small animated CHMI radar widget is injected into the OSPy home page. The widget is shown only when CHMI is enabled and animation frames are available. Clicking the widget opens the CHMI plugin settings page.

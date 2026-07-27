@@ -3,6 +3,8 @@ $def with(plugin_options, events, shmu_missing, shmu_installing, shmu_missing_te
 $var title: $_('CHMI meteoradar')
 $var page: plugins
 
+<link href="/plugins/chmi/static/chmi.css?v=1.0.2" rel="stylesheet" type="text/css">
+
 <script>
     let animationFrames = [];
     let animationIndex = 0;
@@ -10,6 +12,8 @@ $var page: plugins
     let animateSettingsPage = ${'true' if plugin_options['ANIMATE'] else 'false'};
     let rgbLabelTemplate = $:{json.dumps(_('RGB in my location is R:{}, G:{}, B:{}'), ensure_ascii=False)};
     let rainAreaTemplate = $:{json.dumps(_('Rain detection area: {} of {} pixels ({}%) are above the threshold.'), ensure_ascii=False)};
+    let frameRainTemplate = $:{json.dumps(_('Rain is detected at my location in this frame.'), ensure_ascii=False)};
+    let frameNoRainTemplate = $:{json.dumps(_('Rain is not detected at my location in this frame.'), ensure_ascii=False)};
 
     function formatTemplate(template, values) {
         let index = 0;
@@ -60,12 +64,12 @@ $var page: plugins
             row.show();
             jQuery("#shmuDepsMissing").text(missing.join(", "));
             if (_data.installing) {
-                jQuery("#installShmuDeps").hide();
-                jQuery("#shmuDepsRunning").show();
+                jQuery("#installShmuDeps").addClass("isHidden");
+                jQuery("#shmuDepsRunning").removeClass("isHidden");
             }
             else {
-                jQuery("#installShmuDeps").show();
-                jQuery("#shmuDepsRunning").hide();
+                jQuery("#installShmuDeps").removeClass("isHidden");
+                jQuery("#shmuDepsRunning").addClass("isHidden");
             }
         })
     }
@@ -108,10 +112,22 @@ $var page: plugins
         if (frame.rgb) {
             let rgbText = formatTemplate(rgbLabelTemplate, [frame.rgb.red, frame.rgb.green, frame.rgb.blue]);
             let areaText = formatTemplate(rainAreaTemplate, [frame.rgb.rainy_pixels, frame.rgb.total_pixels, frame.rgb.rainy_percent]);
-            jQuery("#meteoRgbLabel").text(rgbText + " | " + areaText);
+            jQuery("#meteoRgbLabel").text(rgbText);
+            jQuery("#meteoRainArea").text(areaText);
+            jQuery("#meteoRgbSwatch").css(
+                "background-color",
+                "rgb(" + frame.rgb.red + "," + frame.rgb.green + "," + frame.rgb.blue + ")"
+            );
+            jQuery("#meteoRainResult")
+                .attr("class", "meteoRainResult " + (frame.rgb.rain ? "rain" : "noRain"))
+                .text(frame.rgb.rain ? frameRainTemplate : frameNoRainTemplate);
+            jQuery("#meteoFrameData").removeClass("isHidden");
         }
         else {
             jQuery("#meteoRgbLabel").text("");
+            jQuery("#meteoRainArea").text("");
+            jQuery("#meteoRainResult").text("");
+            jQuery("#meteoFrameData").addClass("isHidden");
         }
         updateTimeline();
         animationIndex = (animationIndex + 1) % animationFrames.length;
@@ -173,134 +189,6 @@ $var page: plugins
     });
 </script>
 
-<style>
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 24px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: red;
-  transition: 0.4s;
-  border-radius: 24px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: green;
-}
-
-input:checked + .slider:before {
-  transform: translateX(26px);
-}
-
-.switch input {
-  display: none;
-}
-
-.radarTimeWrap {
-  width: 640px;
-  margin-top: 8px;
-}
-
-.radarSlider {
-  width: 640px;
-  display: none;
-}
-
-.meteoFrameLabel {
-  display: inline-block;
-  margin-top: 4px;
-  font-weight: bold;
-}
-
-.meteoRgbLabel {
-  display: inline-block;
-  margin-bottom: 4px;
-  font-weight: bold;
-}
-
-.colorThresholds {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 14px;
-}
-
-.colorThreshold {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.colorThreshold input[type="number"] {
-  width: 72px;
-}
-
-.radarTimeline {
-  display: flex;
-  align-items: center;
-  width: 640px;
-  margin-top: 4px;
-  gap: 3px;
-}
-
-.radarTick {
-  flex: 1;
-  min-width: 28px;
-  padding: 2px 3px;
-  border-radius: 3px;
-  text-align: center;
-  font-size: 11px;
-  color: white;
-}
-
-.radarTick.history {
-  background: #2b7f2b;
-}
-
-.radarTick.forecast {
-  background: #d69b00;
-}
-
-.radarTick.active {
-  outline: 3px solid #1f355e;
-  font-weight: bold;
-}
-
-.dependencyStatus {
-  display: inline-block;
-  margin-left: 8px;
-  font-weight: bold;
-  color: #1f355e;
-}
-</style>
-
 <div id="plugin">
     <div class="title">$_('CHMI meteoradar')</div>
     <p>$_('The measurement time is primarily given in UTC world time (UTC=UT=GMT=SELC-2h = CET-1h).')</p>
@@ -315,7 +203,7 @@ input:checked + .slider:before {
         $:csrf_input()
         <table class="optionList">
             <tr>
-                <td style='text-transform: none;'>$_('Radar data source'):</td>
+                <td class="chmiLabel">$_('Radar data source'):</td>
                 <td title=$:{json.dumps(_(u'Select the meteorological radar data source. CHMI uses Czech PNG radar images, SHMU uses Slovak OpenData HDF radar composites.'), ensure_ascii=False)}>
                     <select name='DATA_SOURCE'>
                         <option value="chmi" ${" selected" if plugin_options['DATA_SOURCE']=="chmi" else ""}>$_('CHMI Czech Republic')</option>
@@ -325,21 +213,21 @@ input:checked + .slider:before {
             </tr>
             $if shmu_missing:
                 <tr id="shmuDepsRow">
-                    <td style='text-transform: none;'>$_('SHMU radar libraries'):</td>
+                    <td class="chmiLabel">$_('SHMU radar libraries'):</td>
                     <td title=$:{json.dumps(_(u'SHMU radar needs h5py and numpy for reading HDF radar files.'), ensure_ascii=False)}>
                         <span>$_('Missing modules'): <b id="shmuDepsMissing">$shmu_missing_text</b></span>
                         $if shmu_installing:
                             <span id="shmuDepsRunning" class="dependencyStatus">$_('Installing, please wait...')</span>
-                            <a id="installShmuDeps" href="?install_deps&$csrf_query()" class="button upload" style="display:none;">$_('Install libraries')</a>
+                            <a id="installShmuDeps" href="?install_deps&$csrf_query()" class="button upload isHidden">$_('Install libraries')</a>
                         $else:
-                            <span id="shmuDepsRunning" class="dependencyStatus" style="display:none;">$_('Installing, please wait...')</span>
+                            <span id="shmuDepsRunning" class="dependencyStatus isHidden">$_('Installing, please wait...')</span>
                             <a id="installShmuDeps" href="?install_deps&$csrf_query()" class="button upload">$_('Install libraries')</a>
                         <br/>
                         <small>$_('After installation set your location coordinates in the OSPy options so rain detection works correctly.')</small>
                     </td>
                 </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Use radar'):</b></td>
+                <td class="chmiLabel"><b>$_('Use radar'):</b></td>
                 <td title=$:{json.dumps(_(u'When the box is checked, the extension will be active.'), ensure_ascii=False)}>
                     <label class="switch">
                     <input name='enabled' type='checkbox'${" checked" if plugin_options['enabled'] else ""}>
@@ -348,7 +236,7 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Send to HW map'):</b></td>
+                <td class="chmiLabel"><b>$_('Send to HW map'):</b></td>
                 <td title=$:{json.dumps(_(u'When enabled, detected rainy cities will be sent to the external hardware map.'), ensure_ascii=False)}>
                     <label class="switch">
                     <input name='SEND_TO_HW' type='checkbox'${" checked" if plugin_options['SEND_TO_HW'] else ""}>
@@ -357,7 +245,7 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Where it is raining'):</b></td>
+                <td class="chmiLabel"><b>$_('Where it is raining'):</b></td>
                 <td title=$:{json.dumps(_(u'Show in the status window where it is raining on the map.'), ensure_ascii=False)}>
                     <label class="switch">
                     <input name='PRINT_WHERE_RAINING' type='checkbox'${" checked" if plugin_options['PRINT_WHERE_RAINING'] else ""}>
@@ -366,7 +254,7 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Animate radar map'):</b></td>
+                <td class="chmiLabel"><b>$_('Animate radar map'):</b></td>
                 <td title=$:{json.dumps(_(u'When enabled, recent radar images are kept in RAM and animated on the settings page.'), ensure_ascii=False)}>
                     <label class="switch">
                     <input name='ANIMATE' type='checkbox'${" checked" if plugin_options['ANIMATE'] else ""}>
@@ -375,7 +263,7 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Show on home page'):</b></td>
+                <td class="chmiLabel"><b>$_('Show on home page'):</b></td>
                 <td title=$:{json.dumps(_(u'When enabled, a small animated CHMI radar widget is shown on the OSPy home page.'), ensure_ascii=False)}>
                     <label class="switch">
                     <input name='HOME_WIDGET' type='checkbox'${" checked" if plugin_options['HOME_WIDGET'] else ""}>
@@ -384,12 +272,12 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Map IP address'):</td>
+                <td class="chmiLabel">$_('Map IP address'):</td>
                 <td title=$:{json.dumps(_(u'IP address for map.'), ensure_ascii=False)}><input name='IP_ADDR' class="Input IPnumbersOnly" type='text' size='15' maxlength='15' id='IPnumbersOnly' value='$plugin_options["IP_ADDR"]'>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Map board type'):</td>
+                <td class="chmiLabel">$_('Map board type'):</td>
                 <td>
                     <select name='HW_BOARD' title=$:{json.dumps(_(u'Mark used your board hardware.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
                     <option value="0" ${" selected" if plugin_options['HW_BOARD']=="0" else ""}>$_('Laskakit')</option>
@@ -399,15 +287,20 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('State in my location'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;">
+                <td class="chmiTopLabel">$_('State in my location'):</td>
+                <td class="chmiState">
                 <p id="state"><b><span class="state">-</span></b></p>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Meteo map'):</td>
+                <td class="chmiLabel">$_('Meteo map'):</td>
                 <td title=$:{json.dumps(_(u'A downloaded map from the Meteo Institute is displayed here.'), ensure_ascii=False)}>
-                    <small id="meteoRgbLabel" class="meteoRgbLabel"></small><br/>
+                    <div id="meteoFrameData" class="meteoFrameData isHidden">
+                        <span id="meteoRgbSwatch" class="meteoRgbSwatch"></span>
+                        <span id="meteoRgbLabel" class="meteoRgbLabel"></span>
+                        <span id="meteoRainResult" class="meteoRainResult"></span>
+                        <span id="meteoRainArea"></span>
+                    </div>
                     <a href="$plugins.plugin_url('chmi.download_page')"><img id="meteoMap" src="$plugins.plugin_url('chmi.download_page')" width="640"></a><br/>
                     <div class="radarTimeWrap">
                         <input id="radarSlider" class="radarSlider" type="range" min="0" max="0" value="0">
@@ -430,7 +323,7 @@ input:checked + .slider:before {
                 </th>
             </tr>
             <tr>
-                <td style='text-transform: none;'><b>$_('Use a rain delay'):</b></td>
+                <td class="chmiLabel"><b>$_('Use a rain delay'):</b></td>
                 <td title=$:{json.dumps(_(u'If enabled, rain detected at the location configured in OSPy weather settings activates a rain delay.'), ensure_ascii=False)}>
                     <label class="switch">
                     <input name='USE_RAIN_DELAY' type='checkbox'${" checked" if plugin_options['USE_RAIN_DELAY'] else ""}>
@@ -439,14 +332,14 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Delay time'):</td>
+                <td class="chmiLabel">$_('Delay time'):</td>
                 <td title=$:{json.dumps(_(u'Delay time in hours.'), ensure_ascii=False)}>
                     <input name='RAIN_DELAY' type='number' min='1' value='$plugin_options["RAIN_DELAY"]'> $_('(in hours)')
                     <a href="?del_rain&$csrf_query()"  class="button cancel danger">$_('Removing Rain Delay')</a>
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Intensity threshold'):</td>
+                <td class="chmiLabel">$_('Intensity threshold'):</td>
                 <td title=$:{json.dumps(_(u'Intensity threshold for activate rain delay in my location. Enabled channels are evaluated with OR logic. This means that when enabled red exceeds 50, or enabled green exceeds 100, or enabled blue exceeds 200, for example, rain is detected.'), ensure_ascii=False)}>
                     <div class="colorThresholds">
                         <div class="colorThreshold">
@@ -477,13 +370,13 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Detection radius'):</td>
+                <td class="chmiLabel">$_('Detection radius'):</td>
                 <td title=$:{json.dumps(_(u'Pixel radius around my location used for rain detection. A larger radius is less sensitive to one bad pixel.'), ensure_ascii=False)}>
                     <input name='DETECTION_RADIUS' type='number' min='0' max='30' value='$plugin_options["DETECTION_RADIUS"]'> px
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Minimum rainy pixels'):</td>
+                <td class="chmiLabel">$_('Minimum rainy pixels'):</td>
                 <td title=$:{json.dumps(_(u'Minimum percentage of pixels in the detection area that must exceed the intensity threshold before rain delay is activated.'), ensure_ascii=False)}>
                     <input name='MIN_RAIN_PIXELS' type='number' min='1' max='100' value='$plugin_options["MIN_RAIN_PIXELS"]'> %
                 </td>
@@ -494,7 +387,7 @@ input:checked + .slider:before {
                 </th>
             </tr>             
             <tr>
-                <td style='text-transform: none;'><b>$_('Enable logging'):</b></td>
+                <td class="chmiLabel"><b>$_('Enable logging'):</b></td>
                 <td>
                     <label class="switch">
                     <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
@@ -503,7 +396,7 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
+                <td class="chmiLabel">$_('Maximum number of log records'):</td>
                 <td>
                     <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'> ($_('0 = unlimited'))
                 </td>
@@ -514,7 +407,7 @@ input:checked + .slider:before {
                 </th>
             </tr>            
             <tr>
-                <td style='text-transform: none;'><b>$_('Show in footer'):</b></td>
+                <td class="chmiLabel"><b>$_('Show in footer'):</b></td>
                 <td title=$:{json.dumps(_(u'Show data from plugin in footer on home page'), ensure_ascii=False).encode('utf-8').decode('utf-8')}>
                     <label class="switch">
                     <input name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
@@ -523,9 +416,9 @@ input:checked + .slider:before {
                 </td>
             </tr>                        
             <tr>
-                <td style='text-transform: none;'>$_('Status'):</td>
+                <td class="chmiLabel">$_('Status'):</td>
                 <td>
-                    <textarea id="statusLog" style="font-family: monospace;" rows="18" cols="95" readonly>$'\n'.join(events)</textarea>
+                    <textarea id="statusLog" class="chmiStatusLog" rows="18" cols="95" readonly>$'\n'.join(events)</textarea>
                 </td>
             </tr>
         </table>

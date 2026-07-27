@@ -1,0 +1,151 @@
+.switch {
+    display: inline-block;
+    height: 24px;
+    position: relative;
+    width: 50px;
+}
+.switch input {
+    display: none;
+    height: 0;
+    opacity: 0;
+    width: 0;
+}
+.slider {
+    background-color: red;
+    border-radius: 24px;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: 0.4s;
+}
+.slider::before {
+    background-color: white;
+    border-radius: 50%;
+    bottom: 3px;
+    content: "";
+    height: 18px;
+    left: 3px;
+    position: absolute;
+    transition: 0.4s;
+    width: 18px;
+}
+input:checked + .slider {
+    background-color: green;
+}
+input:checked + .slider::before {
+    transform: translateX(26px);
+}
+.chmiLabel {
+    text-transform: none;
+}
+.chmiTopLabel {
+    text-transform: none;
+    vertical-align: top;
+}
+.chmiState {
+    background-color: rgb(220, 220, 220);
+    text-align: left;
+}
+.isHidden {
+    display: none;
+}
+.radarTimeWrap {
+    margin-top: 8px;
+    max-width: 100%;
+    width: 640px;
+}
+.radarSlider {
+    display: none;
+    max-width: 100%;
+    width: 640px;
+}
+.meteoFrameLabel {
+    display: inline-block;
+    font-weight: bold;
+    margin-top: 4px;
+}
+.meteoFrameData {
+    align-items: center;
+    background: #eef1f5;
+    border-left: 4px solid #2f3b62;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 5px;
+    max-width: 628px;
+    padding: 6px;
+}
+.meteoRgbLabel {
+    font-weight: bold;
+}
+.meteoRgbSwatch {
+    border: 1px solid #2f3b62;
+    border-radius: 4px;
+    display: inline-block;
+    height: 20px;
+    width: 32px;
+}
+.meteoRainResult {
+    font-weight: bold;
+}
+.meteoRainResult.rain {
+    color: #a51d2d;
+}
+.meteoRainResult.noRain {
+    color: #26752e;
+}
+.colorThresholds {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+}
+.colorThreshold {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+}
+.colorThreshold input[type="number"] {
+    width: 72px;
+}
+.radarTimeline {
+    align-items: center;
+    display: flex;
+    gap: 3px;
+    margin-top: 4px;
+    max-width: 100%;
+    width: 640px;
+}
+.radarTick {
+    border-radius: 3px;
+    color: white;
+    flex: 1;
+    font-size: 11px;
+    min-width: 28px;
+    padding: 2px 3px;
+    text-align: center;
+}
+.radarTick.history {
+    background: #2b7f2b;
+}
+.radarTick.forecast {
+    background: #d69b00;
+}
+.radarTick.active {
+    font-weight: bold;
+    outline: 3px solid #1f355e;
+}
+.dependencyStatus {
+    color: #1f355e;
+    display: inline-block;
+    font-weight: bold;
+    margin-left: 8px;
+}
+.chmiStatusLog {
+    box-sizing: border-box;
+    font-family: monospace;
+    max-width: 100%;
+}
