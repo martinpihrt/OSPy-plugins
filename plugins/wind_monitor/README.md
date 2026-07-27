@@ -1,106 +1,74 @@
-Wind Speed Monitor Readme
-====
+# Wind Speed Monitor
 
-Tested in Python 3+
+Tested with Python 3.8+.
 
-This plugin checked wind speed, if station is switched on and actual wind speed is > wind speed value in options, switches off all selected stations in scheduler and sends E-mail with error. Preventing for fault watering while wind.
-This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 or 0x51.
-1m/s = 3,6 km/h or 1m/s = 2,237 mile/h.
+The plug-in measures an anemometer through a PCF8583 event counter on I2C address `0x50` or `0x51`. It can display and log wind, stop selected running stations, send an e-mail, or start a configured program after validated wind thresholds are exceeded.
 
-The plug-in includes a manifest declaring its SMBus, I2C, e-mail, logging and scheduler-control requirements, uses the shared OSPy worker lifecycle, reuses and closes its I2C handle, interrupts an active measurement during shutdown, and reports counter, speed, actions and errors through the Diagnostics health interface.
-Measurement cycle:  
-  the counter is cleared, 10 seconds are waited, from the counter read the number of pulses in 10 seconds.  
-Formula for calculation:  
-  pulse = number of measured pulses from the counter/10. Result in m/s = (pulse/(set number of pulses per revolution * 1.0)) * set wind speed in m/s.
-Rounding to 2 places:  
-  result in m/s = round (result in m/s * 1.0, 2). If we want the result in km/h to 2 decimal places: result in km/h = round (result in m/s * 3.6, 2).
-Current value measurement:  
-  the current wind value is measured continuously (the records in counter), but the result is processed and displayed after 10 seconds.
-Maximal speed measurement:  
-  if the current speed is higher than the previous maximal speed, save to log (if enabled log) is performed and the new maximal wind speed is saved.
-Switching off the station in case of exceeding the maximum set speed: 
-  wind in m/s maximal setup speed -> stop station.
-Error message at maximal wind speed:  
-  if the wind has a speed higher than 150 km/h (42 m/sec), measurement is not guaranteed an error is displayed.
-Measurement accuracy very much depends on the setting of the following parameters (Number of pulses/sec, wind speed per rotation m/sec).
+## Measurement
 
+For every measurement the plug-in:
 
-Plugin setup
------------
-* Check Use wind monitor:  
-  If checked use wind monitor plugin is enabled.  
+1. verifies that the PCF8583 is in event-counter mode;
+2. clears registers `0x01` to `0x03`;
+3. waits approximately ten seconds;
+4. reads the three counter registers as one I2C block;
+5. validates every BCD digit;
+6. calculates the pulse rate from the actual monotonic elapsed time;
+7. calculates wind speed from the configured pulses and speed per rotation.
 
-* I2C address 0x50:  
-  If checked I2C address is 0x51.    
+Using the actual interval is important. If another I2C device temporarily holds the shared bus after the nominal ten-second wait, the counter continues counting. Older versions always divided by ten and could therefore report an artificially high speed.
 
-* Check Send E-mail if error:  
-  If checked E-mail notification plugin sends E-mail with error.  
-  For this function required E-mail notification plugin with all setup in plugin.  
+```text
+pulses per second = raw pulse count / actual elapsed seconds
+speed in m/s      = pulses per second / pulses per rotation × speed per rotation
+speed in km/h     = speed in m/s × 3.6
+```
 
-* Stoping stations:  
-  Stoping selected stations in scheduler if stations has run.  
+Calibration and threshold fields accept both a decimal point and a decimal comma.
 
-* Stoping this stations:  
-  Selector for used stations. If wind speed is bigger stop this selected stations.  
+## Overview and trend
 
-* Number of pulses:  
-  Type number of pulses per rotation from your rotation sensor.  
+The overview page contains the current and maximum speed, operational status, a graph, and a one-minute trend. Live values refresh through a JSON endpoint without reloading the page. The trend compares older and newer accepted readings and reports rising, falling, steady, or waiting for sufficient data.
 
-* Number of wind speed per rotation:  
-  Type number of wind speed per rotation in meter per second.
+## Plausibility and action protection
 
-* Max wind speed:  
-  Type maximum wind speed to deactivate all stations (meter per second).   
+The plausibility filter rejects an accepted-speed candidate above the configured maximum. Rejected readings:
 
-* Wind speed state:  
-  Show actual wind speed in meter per second.
+- do not replace the current speed;
+- do not change the stored maximum;
+- are not written to the measurement graph or database;
+- cannot stop stations, send e-mail, or start a program.
 
-* Enable local logging:  
-  Enable logging and graphing.
+Station stopping and its e-mail notification require the configured number of consecutive accepted measurements above the stop threshold. This avoids an immediate action after one isolated pulse spike. Program actions retain their existing repetition and interval configuration and only receive accepted measurements.
 
-* Check Enable SQL logging:  
-  If checked enabled logging save measure value to SQL database. This option requires the Database Connector extension to be installed and configured. The button will delete the windmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!  
+The default filter limit is 40 m/s (144 km/h), and the default station/e-mail confirmation count is two measurements.
 
-* Save to log if maximal speed change:  
-  If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately.
+## I2C diagnostic log
 
-* Maximum number of log records:  
-  Maximum number of log records (only for csv file).
+Diagnostic logging is intended for temporary troubleshooting. It writes bounded JSON lines to the OSPy plug-in data directory and rotates the file at approximately 1 MB. The diagnostic page can display, download, refresh, and delete the log.
 
-* Interval for logging:  
-  Logging interval (minimum 1 minute).
+Records include:
 
-* Display in km/h:  
-  the measured data will be displayed in km/h.
+- PCF8583 setup and control-register confirmation;
+- I2C retry errors;
+- selected I2C address;
+- raw counter bytes and decoded pulse count;
+- I2C lock wait and actual measurement duration;
+- pulse rate and calculated speed;
+- whether the reading was accepted and any rejection reason.
 
-* Run the program when exceeded
-  When the set speed is exceeded, start the selected program and close the window blinds, for example.
+Disable diagnostic logging after the problem has been captured.
 
-* Running program:  
-  Select the program will be run after event.   
+## Logging and actions
 
-* Maximum wind speed for starting the program in m/s
-  If this set speed is exceeded, another condition will be activated.
+Accepted measurements can be written to the local graph files or through the optional Database Connector plug-in. A configured maximum can be reset manually or after an interval. Selected running stations can be stopped after the stop threshold is confirmed, and an optional e-mail can be sent. A separate program action uses its own threshold, repetition count, interval, and suppression period.
 
-* Number of event repetitions for the action
-  If the maximum wind speed is repeatedly exceeded in a given time period (it is set in the box below), the program will be started.
+The plug-in declares SMBus, I2C, e-mail, file and scheduler-control permissions, uses the shared OSPy worker lifecycle, closes its I2C handle during shutdown, and reports measurement, filter and diagnostic state through the Diagnostics health interface.
 
-* Repeatedly exceeded in these interval
-  In this time period, the number of set exceeded events (time in minutes) is measured.
+## Hardware
 
-* Ignore other events for a while
-  If the program has been started, the next possible start will be triggered by an event only after this set time (in hours).  
+The I2C bus must be enabled and the PCF8583 connected correctly. The original wiring diagram remains available at:
 
-* Select filter for graph history  
-  Without limits  
-  Day filter  
-  Month filter  
-  Year filter    
+`/plugins/wind_monitor/static/images/schematics.png`
 
-* Status:  
-  Status window from the plugin.  
-
-The hardware should be connected as follows:  
-<a href="/plugins/wind_monitor/static/images/schematics.png"><img src="/plugins/wind_monitor/static/images/schematics.png" width="100%"></a>
-
-Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer). for more information.
+Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer) for additional hardware information.

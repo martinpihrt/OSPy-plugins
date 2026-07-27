@@ -1,583 +1,171 @@
 $def with(plugin_options, status, events)
 
-$var title: $_('Wind Speed Monitor settings')
+$var title: $_(u'Wind Speed Monitor')
 $var page: plugins
 
-<style>
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-}
-
-.switch input {
-    display: none;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ff4d4d;
-    transition: 0.4s;
-    border-radius: 34px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    border-radius: 50%;
-    left: 4px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.4s;
-}
-
-input:checked + .slider {
-    background-color: #4caf50;
-}
-
-input:checked + .slider:before {
-    transform: translateX(26px);
-}
-</style>
-
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.1.0" rel="stylesheet" type="text/css">
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
-<script src="/static/scripts/jquery.flot.axislabels.js"></script>
 <script src="/static/scripts/jquery.flot.selection.js"></script>
 
 <script>
-function updateWind(){
-    jQuery.getJSON("/plugins/wind_monitor/wind_json", function(_data) {
-        let wind = _data.wind;
-        //console.log(wind);
-        jQuery("#wind span.wind").text(wind);
-    })
-    setTimeout(updateWind, 2000); // 2 second
-}
-
-var graph_text;
-
-function draw_graph(result) {
-    var data = [];
-    graph_text = [];
-    var legend_items = jQuery('#legend-visible').find('.legendColorBox');
-
-    for (var i = 0; i < result.length; i++) {
-        var balances = [];
-        var txt_header = "<table class=\"balanceList\"><tr><th>" + $:{json.dumps(_('Reason'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</th><th>" + $:{json.dumps(_('(m/s or km/h)'), ensure_ascii=False).encode('utf8').decode('utf8')} +"</th></tr>";
-        var texts = [];
-        var txt_body = "";
-        var txt_footer = "</table>";
-        for (timestamp in result[i]['balances']) {
-            var balance = result[i]['balances'][timestamp];
-            balances.push([1000*parseInt(timestamp), balance['total']]);
-            var date = new Date(1000*parseInt(timestamp));
-            var hours = date.getHours();
-            var minutes = "0" + date.getMinutes();
-            var seconds = "0" + date.getSeconds();
-            var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-            txt_body += "<tr><td>" + $:{json.dumps(_('Actual Value'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
-            texts.push("<b>" + result[i]['station'] + "</b> " + toXSDate(date) + "<br>" + formattedTime + "<br>" + txt_header + txt_body + txt_footer);
-            txt_body = "<tr><td>" + $:{json.dumps(_('Previous Value'), ensure_ascii=False).encode('utf8').decode('utf8')} + "</td><td class=\"balValue\">" + balance['total'].toFixed(1) + "</td></tr>";
-        }
-
-        if (i >= legend_items.length || legend_items.eq(i).children().children().attr("data") == 1)
-        {
-            data.push({
-                data: balances,
-                label: result[i]['station'],
-                color: i
-            })
-            graph_text.push(texts);
-        }
-    }
-
-    var yLabels = $:{json.dumps(_('Wind m/s or km/h'), ensure_ascii=False).encode('utf8').decode('utf8')};
-
-    return jQuery.plot("#graph-placeholder", data, {
-        series: {
-            lines: {
-                show: true
-            },
-            points: {
-                show: true
-            }
-        },
-        grid: {
-            hoverable: true
-        },
-        xaxis: {
-            mode: "time",
-            timeformat: "%m-%d"
-        },
-        legend: {
-            show: true,
-            container: jQuery("#legend-placeholder")
-        },
-        axisLabels: {
-            show: true
-        },
-        yaxes: [{
-            position: 'left',
-            axisLabel: yLabels
-        }],
-        selection: {
-            mode: 'x'
-        }
-    });
-}
-
-function create_graph(result) {
-    plot = draw_graph(result);
-    var point_count = 0;
-    for (var i = 0; i < result.length; i++) {
-        for (timestamp in result[i]['balances']) {
-            point_count++;
-        }
-    }
-    if (point_count > 0) {
-        jQuery("#graph-empty").hide();
-    } else {
-        jQuery("#graph-empty").show();
-    }
-
-    jQuery('#legend-visible').html(jQuery('#legend-placeholder').html());
-    plot.resize();
-    plot.setupGrid();
-    plot.draw();
-    plot.clearSelection();
-
-    jQuery('#legend-visible').find('.legendColorBox').children().children().css({
-        color: "#ddd"
-    }).attr("data", 1);
-
-    jQuery('#legend-visible').off('click', 'tr').on('click', 'tr', function(){
-        var colorbox = jQuery(this).find('.legendColorBox').children().children();
-        colorbox.css({
-            "border-color": colorbox.css("color"),
-            "color": colorbox.css("border-left-color")
-        });
-        colorbox.attr("data", 1 - colorbox.attr("data"));
-        draw_graph(result);
-    });
-
-    jQuery("#tooltip").remove();
-    jQuery("<div id='tooltip'></div>").css({
-        position: "absolute",
-        display: "none",
-        "min-width": "120px",
-        "background-color": "#eee",
-        padding: "5px",
-        "border-radius": "5px"
-    }).appendTo("body");
-
-
-    jQuery("#graph-placeholder").unbind("plothover").bind("plothover", function (event, pos, item) {
-        if (item) {
-            jQuery("#tooltip").html(graph_text[item.seriesIndex][item.dataIndex]);
-            var x = item.pageX+5;
-            if (item.pageX + jQuery("#tooltip").width() > jQuery(document).width() - 100)
-            {
-                x = item.pageX-jQuery("#tooltip").width()-10;
-            }
-            var y = item.pageY+5;
-            if (item.pageY + jQuery("#tooltip").height() > jQuery(document).height() - 20)
-            {
-                y = item.pageY-jQuery("#tooltip").height()-10;
-            }
-            jQuery("#tooltip").css({top: y, left: x}).fadeIn(200);
-        } else {
-            jQuery("#tooltip").hide();
-        }
-    });
-
-    jQuery("#graph-placeholder").unbind("plotselected").bind("plotselected", function (event, ranges) {
-        jQuery("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
-        jQuery.each(plot.getXAxes(), function(_, axis) {
-                var opts = axis.options;
-                opts.min = ranges.xaxis.from;
-                opts.max = ranges.xaxis.to;
-        });
-        plot.setupGrid();
-        plot.draw();
-        plot.clearSelection();
-    });
-
-}
+var windPlot = null;
 
 function graphDateTime(date) {
-    function pad(value) {
-        return value < 10 ? "0" + value : value;
-    }
-    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()) + "T" + pad(date.getHours()) + ":" + pad(date.getMinutes());
+    function pad(value) { return value < 10 ? "0" + value : value; }
+    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" +
+        pad(date.getDate()) + "T" + pad(date.getHours()) + ":" + pad(date.getMinutes());
 }
 
 function setGraphRange(range) {
     var now = new Date();
     var from = new Date(now.getTime());
     var label = "";
-
-    if (range == "today") {
+    if (range === "today") {
         from.setHours(0, 0, 0, 0);
-        label = $:{json.dumps(_('Today'), ensure_ascii=False).encode('utf8').decode('utf8')};
-    } else if (range == "24h") {
-        from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        label = $:{json.dumps(_('Today'), ensure_ascii=False)};
+    } else if (range === "24h") {
+        from = new Date(now.getTime() - 86400000);
         label = "24 h";
-    } else if (range == "7d") {
-        from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        label = "7 " + $:{json.dumps(_('days'), ensure_ascii=False).encode('utf8').decode('utf8')};
-    } else if (range == "30d") {
-        from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        label = "30 " + $:{json.dumps(_('days'), ensure_ascii=False).encode('utf8').decode('utf8')};
+    } else if (range === "7d") {
+        from = new Date(now.getTime() - 7 * 86400000);
+        label = "7 " + $:{json.dumps(_('days'), ensure_ascii=False)};
+    } else if (range === "30d") {
+        from = new Date(now.getTime() - 30 * 86400000);
+        label = "30 " + $:{json.dumps(_('days'), ensure_ascii=False)};
     } else {
-        from = new Date(2020, 0, 1, 0, 0, 0, 0);
-        label = $:{json.dumps(_('All'), ensure_ascii=False).encode('utf8').decode('utf8')};
+        from = new Date(2020, 0, 1);
+        label = $:{json.dumps(_('All'), ensure_ascii=False)};
     }
-
     jQuery("#dt_from").val(graphDateTime(from));
     jQuery("#dt_to").val(graphDateTime(now));
     jQuery("#graph-range-label").text(label);
 }
 
-function loadGraph() {
-    var params = {
-        dt_from: jQuery("#dt_from").val(),
-        dt_to: jQuery("#dt_to").val()
-    };
-    jQuery("#graph-empty").hide();
-    jQuery.getJSON("/plugins/wind_monitor/graph_json", params, create_graph);
+function drawWindGraph(result) {
+    var series = [];
+    var points = 0;
+    for (var i = 0; i < result.length; i++) {
+        var values = [];
+        for (var timestamp in result[i].balances) {
+            values.push([1000 * parseInt(timestamp, 10), result[i].balances[timestamp].total]);
+            points++;
+        }
+        series.push({data: values, label: result[i].station});
+    }
+    jQuery("#graph-empty").toggle(points === 0);
+    windPlot = jQuery.plot("#graph-placeholder", series, {
+        series: {lines: {show: true}, points: {show: true}},
+        grid: {hoverable: true},
+        xaxis: {mode: "time", timeformat: "%m-%d"},
+        legend: {show: true, position: "ne"},
+        selection: {mode: "x"}
+    });
 }
 
-    // Initialize behaviors
-    jQuery(document).ready(function(){
+function loadWindGraph() {
+    if (!jQuery("#graph-placeholder").length) { return; }
+    jQuery.getJSON("/plugins/wind_monitor/graph_json", {
+        dt_from: jQuery("#dt_from").val(),
+        dt_to: jQuery("#dt_to").val()
+    }, drawWindGraph);
+}
 
-        jQuery("#cSubmit").click(function() {
-            jQuery("#pluginForm").submit();
-        });
-        jQuery("button#cCancel").click(function(){
-            window.location="/";
-        });
-
-    if (jQuery("#graph-placeholder").length > 0) {
-        setTimeout(loadGraph, 500);
-    }
-
-    jQuery(".graph-range").click(function(){
-        setGraphRange(jQuery(this).attr("data-range"));
-        loadGraph();
+function updateWindStatus() {
+    jQuery.getJSON("/plugins/wind_monitor/wind_json", function(data) {
+        jQuery("#wind-current").text(data.wind);
+        jQuery("#wind-maximum").text(data.maximum);
+        jQuery("#wind-maximum-at").text(data.maximum_at || "-");
+        jQuery("#wind-status").text(data.status);
+        jQuery("#wind-last").text(data.last_measurement || "-");
+        jQuery("#wind-pulses").text(data.raw_pulses);
+        jQuery("#wind-interval").text(Number(data.elapsed || 0).toFixed(3) + " s");
+        jQuery("#wind-confirmation").text(data.confirmation_count + " / " + data.confirmation_required);
+        jQuery("#wind-activity").val(data.activity || "");
+        jQuery("#wind-trend")
+            .attr("class", "windTrend windTrend-" + data.trend)
+            .text(data.trend_symbol + " " + data.trend_label);
+        jQuery("#wind-rejected").toggle(Boolean(data.rejected_reason));
     });
-    jQuery("#filterSelection").click(loadGraph);
-    jQuery("#clearSelection").click(function(){
-        setGraphRange("all");
-        loadGraph();
+}
+
+jQuery(document).ready(function() {
+    setGraphRange("7d");
+    updateWindStatus();
+    loadWindGraph();
+    window.setInterval(updateWindStatus, 2000);
+    window.setInterval(loadWindGraph, 30000);
+    jQuery(".graph-range").click(function() {
+        setGraphRange(jQuery(this).data("range"));
+        loadWindGraph();
     });
-
-    updateWind();
-
+    jQuery("#filterSelection").click(loadWindGraph);
+    jQuery("#clearSelection").click(function() {
+        setGraphRange("7d");
+        loadWindGraph();
+    });
 });
 </script>
 
-<div id="plugin">
-    <div class="title">$_('Wind Speed Monitor settings')</div>
-    <a href=$plugins.plugin_url('wind_monitor.help_page') class="button upload">$_('Help')</a><br/>
+<div id="plugin" class="windPanel">
+    <div class="title">$_(u'Wind Speed Monitor')</div>
+    <div class="windToolbar">
+        <a href=$plugins.plugin_url('wind_monitor.settings_page') class="button upload">$_(u'Settings')</a>
+        <a href=$plugins.plugin_url('wind_monitor.help_page') class="button upload">$_(u'Help')</a>
+        <a href=$plugins.plugin_url('wind_monitor.log_page') class="button backup">$_(u'Measurement log')</a>
+        <a href=$plugins.plugin_url('wind_monitor.diagnostic_page') class="button backup">$_(u'Diagnostic log')</a>
+        <a href="?reset&$csrf_query()" class="button danger">$_(u'Reset maximum speed')</a>
+    </div>
+
+    <div class="windLiveGrid">
+        <section class="windLiveCard">
+            <span class="windCardLabel">$_(u'Current speed')</span>
+            <strong id="wind-current">--</strong>
+            <span id="wind-trend" class="windTrend windTrend-unknown">· $_(u'Waiting for trend data')</span>
+        </section>
+        <section class="windLiveCard">
+            <span class="windCardLabel">$_(u'Maximum speed')</span>
+            <strong id="wind-maximum">--</strong>
+            <span>$_(u'Measured at'): <span id="wind-maximum-at">-</span></span>
+        </section>
+        <section class="windLiveCard">
+            <span class="windCardLabel">$_(u'Status')</span>
+            <strong id="wind-status">--</strong>
+            <span>$_(u'Last measurement'): <span id="wind-last">-</span></span>
+        </section>
+    </div>
+
+    <div class="windTechnicalStatus">
+        <span>$_(u'Raw pulses'): <b id="wind-pulses">0</b></span>
+        <span>$_(u'Actual measurement interval'): <b id="wind-interval">0.000 s</b></span>
+        <span>$_(u'Action confirmation'): <b id="wind-confirmation">0 / 0</b></span>
+        <span id="wind-rejected" class="windRejected">$_(u'The last measurement was rejected by the plausibility filter.')</span>
+    </div>
+
+    <details>
+        <summary>$_(u'Activity status')</summary>
+        <textarea id="wind-activity" class="windStatusText" rows="9" readonly>$'\n'.join(events)</textarea>
+    </details>
+
     $if plugin_options['enable_log'] or plugin_options['en_sql_log']:
-        <p>
-        <a href="?show" class="button backup">$_('Show logs')</a>
-        <a href="?reset&$csrf_query()" class="button cancel danger">$_('Reset max speed')</a>
-        </p></br>
-    <form id="pluginForm" action="$plugins.plugin_url('wind_monitor.settings_page')" method="post">
-        $:csrf_input()
-        <table class="optionList">
-            <tr>
-                <td style='text-transform: none;'><b>$_('Use wind monitor'):</b></td>
-                <td title=$:{json.dumps(_('If the box is checked, wind monitor be enabled.'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='use_wind_monitor' type='checkbox'${" checked" if plugin_options['use_wind_monitor'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'><b>$_('Enable local logging'):</b></td>
-                <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='enable_log' type='checkbox'${" checked" if plugin_options['enable_log'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Show data from'):</td>
-                <td>
-                <select id="type_log" name="type_log" style="width: 200px" title=$:{json.dumps(_('Choose from where the displayed data in the log and graph will be loaded.'), ensure_ascii=False)}>
-                <option value="0" ${"selected" if plugin_options['type_log']==0 else ""}>$_('Local file')</option>
-                <option value="1" ${"selected" if plugin_options['type_log']==1 else ""}>$_('Database file')</option>
-                </select>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'><b>$_('Enable SQL logging'):</b></td>
-                <td title=$:{json.dumps(_('The measured data will be stored in the database. This option requires the database connector extension to be installed and configured. The button will delete the windmonitor table from the database, thus deleting all saved data from this extension! This promotion is non-refundable!'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='en_sql_log' type='checkbox'${" checked" if plugin_options['en_sql_log'] else ""}>
-                        <span class="slider"></span>
-                    </label> ($_('requires database connector plugin'))
-                    <a href="?delSQL&$csrf_query()" class="button cancel danger">$_('Delete SQL table')</a>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Save to log if maximal speed change'):</td>
-                <td title=$:{json.dumps(_('If the wind speed changes above the stored maximum and there is no time for save log to file, log this value immediately'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='enable_log_change' type='checkbox'${" checked" if plugin_options['enable_log_change'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Delete max speed after selected interval'):</td>
-                <td title=$:{json.dumps(_('If the box is checked, the maximum measured speed is reset after selected interval (log is not deleted)'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='delete_max_24h' type='checkbox'${" checked" if plugin_options['delete_max_24h'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Delete max speed interval'):</td>
-                <td title=$:{json.dumps(_('Select interval for reseting maximal speed'), ensure_ascii=False)}>
-                    <select id="delete_max" name="delete_max" style="width: 200px" title=$:{json.dumps(_('Select interval for reseting maximal speed'), ensure_ascii=False)}>
-                    <option value="1" ${"selected" if plugin_options['delete_max']=="1" else ""}>$_(u'1 minute')</option>
-                    <option value="10" ${"selected" if plugin_options['delete_max']=="10" else ""}>$_(u'10 minutes')</option>
-                    <option value="30" ${"selected" if plugin_options['delete_max']=="30" else ""}>$_(u'30 minutes')</option>
-                    <option value="1h" ${"selected" if plugin_options['delete_max']=="1h" else ""}>$_(u'1 hour')</option>
-                    <option value="2h" ${"selected" if plugin_options['delete_max']=="2h" else ""}>$_(u'2 hours')</option>
-                    <option value="10h" ${"selected" if plugin_options['delete_max']=="10h" else ""}>$_(u'10 hours')</option>
-                    <option value="24h" ${"selected" if plugin_options['delete_max']=="24h" else ""}>$_(u'1 day')</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Maximum number of log records'):</td>
-                <td title=$:{json.dumps(_('0 = unlimited'), ensure_ascii=False)}>
-                    <input name='log_records' type='number' min='0' value='$plugin_options["log_records"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Interval for logging'):</td>
-                <td title=$:{json.dumps(_('In minutes (Minimum is 1)'), ensure_ascii=False)}>
-                    <input name='log_interval' type='number' min='1' value='$plugin_options["log_interval"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>I&sup2;C $_('address 0x50'):</td>
-                <td title=$:{json.dumps(_('If the box is checked, wind monitor is on address 0x50.'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='address' type='checkbox'${" checked" if plugin_options['address'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Number of pulses per rotation'):</td>
-                <td title=$:{json.dumps(_('pulses/rotation'), ensure_ascii=False)}>
-                    <input name='pulses' type='text' value='$plugin_options["pulses"]' style="width:40px;">
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Number of wind speed per rotation in m/s'):</td>
-                <td title=$:{json.dumps(_('Wind speed set in meter/second'), ensure_ascii=False)}>
-                    <input name='metperrot' type='text' value='$plugin_options["metperrot"]' style="width:40px;">
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Display in km/h'):</td>
-                <td title=$:{json.dumps(_('If the box is checked, the speed is in km/h'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='use_kmh' type='checkbox'${" checked" if plugin_options['use_kmh'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Max wind speed for stop stations in m/s'):</td>
-                <td title=$:{json.dumps(_('If the wind speed exceeds this value, the station will stop'), ensure_ascii=False)}>
-                    <input name='maxspeed' type='text' value='$plugin_options["maxspeed"]' style="width:40px;">
-                </td>
-            </tr>
-            <tr>
-               <th colspan="2">
-                 <hr>
-               </th>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Send E-mail if stop'):</td>
-                <td title=$:{json.dumps(_('For this function required E-mail plugin'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='sendeml' type='checkbox'${" checked" if plugin_options['sendeml'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('E-mail subject'):</td>
-                <td title=$:{json.dumps(_('Subject for E-mail from this wind monitor'), ensure_ascii=False)}>
-                    <input name='emlsubject' type='text' value='$plugin_options["emlsubject"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('E-mail plug-ins'):</td>
-                <td title=$:{json.dumps(_('Select E-mail plug-in for sending E-mail'), ensure_ascii=False)}>
-                <select name="eplug">
-                    <option value="0" ${"selected" if plugin_options["eplug"]==0 else ""}>$_(u'E-mail notifications V1')</option>
-                    <option value="1" ${"selected" if plugin_options["eplug"]==1 else ""}>$_(u'E-mail notifications V2 SSL')</option>
-                </select>
-                </td>
-            </tr>
-            <tr>
-               <th colspan="2">
-                 <hr>
-               </th>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Stoping stations'):</td>
-                <td title=$:{json.dumps(_('Stoping selected stations in scheduler if stations has run'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='stoperr' type='checkbox'${" checked" if plugin_options['stoperr'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Stoping this stations'):</td>
-                <td style='text-transform: none;'>$_('Stop this run stations in scheduler')</td>
-            </tr>
-            <tr>
-                <td></td>
-                <td title=$:{json.dumps(_('If wind speed is bigger stop this selected stations'), ensure_ascii=False)}>
-                <select multiple name="used_stations" width="250" style="width: 250px" size="8">
-                    $for station in [station for station in stations if station.enabled]:
-                        <option value="${str(station.index)}" ${"selected" if station.index in plugin_options['used_stations'] else ""}>${station.name} ($_('Output') ${str(station.index+1)})</option>
-                </select>
-                </td>
-            </tr>
-            <tr>
-               <th colspan="2">
-                 <hr>
-               </th>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Run program when exceeded'):</td>
-                <td title=$:{json.dumps(_('When the set speed is exceeded, start the selected program and close the window blinds, for example.'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input name='use_stop_pgm' type='checkbox'${" checked" if plugin_options['use_stop_pgm'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Running program'):</td>
-                <td>
-                    <select name='used_program' width="250" style="width: 250px" size="8"> title=$:{json.dumps(_(u'Mark the required programs to run.'), ensure_ascii=False).encode('utf8').decode('utf-8')}>
-                    $for program in programs.get():
-                        <option value="${str(program.index)}" ${" selected" if program.index in plugin_options['used_program'] else ""}>${program.name}</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Maximum wind speed for starting the program in m/s'):</td>
-                <td title=$:{json.dumps(_('If this set speed is exceeded, another condition will be activated.'), ensure_ascii=False)}>
-                    <input name='m_speed_trig' type='number' min='1' value='$plugin_options["m_speed_trig"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Number of event repetitions for the action'):</td>
-                <td title=$:{json.dumps(_('If the maximum wind speed is repeatedly exceeded in a given time period (it is set in the box below), the program will be started.'), ensure_ascii=False)}>
-                    <input name='event_repetitions' type='number' min='1' value='$plugin_options["event_repetitions"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Repeatedly exceeded in these interval'):</td>
-                <td title=$:{json.dumps(_('In this time period, the number of set exceeded events (time in minutes) is measured.'), ensure_ascii=False)}>
-                    <input name='event_interval' type='number' min='1' value='$plugin_options["event_interval"]'>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Ignore other events for a while'):</td>
-                <td title=$:{json.dumps(_('If the program has been started, the next possible start will be triggered by an event only after this set time (in hours).'), ensure_ascii=False)}>
-                    <input name='ignore_interval' type='number' min='1' value='$plugin_options["ignore_interval"]'>
-                </td>
-            </tr>
-            <tr>
-               <th colspan="2">
-                 <hr>
-               </th>
-            </tr>
-            <tr>
-                <td style='text-transform: none; vertical-align: top;'>$_('Wind speed state (measuring every 10 sec)'):</td>
-                <td style="background-color: rgb(220, 220, 220);text-align: left;">
-                    $if plugin_options['use_wind_monitor']:
-                        <p id="wind"><b><span class="wind">--</span></b></p>
-                    $else:
-                        --
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Show in footer'):</td>
-                <td title=$:{json.dumps(_('Show data from plugin in footer on home page'), ensure_ascii=False)}>
-                    <label class="switch">
-                        <input id="use_footer" name='use_footer' type='checkbox'${" checked" if plugin_options['use_footer'] else ""}>
-                        <span class="slider"></span>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td style='text-transform: none;'>$_('Status'):</td>
-                <td>
-                    <textarea style="font-family: monospace;" rows="15" cols="70" readonly>$'\n'.join(events)</textarea>
-                </td>
-            </tr>
-        </table>
-    </form>
+        <section class="windGraphSection">
+            <h3>$_(u'Wind history')</h3>
+            <div class="windGraphControls">
+                <button type="button" class="button backup graph-range" data-range="today">$_('Today')</button>
+                <button type="button" class="button backup graph-range" data-range="24h">24 h</button>
+                <button type="button" class="button backup graph-range" data-range="7d">7 $_('days')</button>
+                <button type="button" class="button backup graph-range" data-range="30d">30 $_('days')</button>
+                <button type="button" class="button backup graph-range" data-range="all">$_('All')</button>
+                <span>$_('Range'): <b id="graph-range-label">7 $_('days')</b></span>
+            </div>
+            <div class="windGraphFilter">
+                <label>$_('From') <input id="dt_from" type="datetime-local"></label>
+                <label>$_('To') <input id="dt_to" type="datetime-local"></label>
+                <button type="button" id="filterSelection" class="button submit">$_('Filtering')</button>
+                <button type="button" id="clearSelection" class="button backup">$_('Reset')</button>
+            </div>
+            <div id="graph-empty" class="windGraphEmpty">$_('No records found for selected range.')</div>
+            <div id="graph-placeholder" class="windGraph"></div>
+        </section>
 </div>
-
-<div id="controls">
-    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
-    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
-</div>
-
-$if plugin_options['enable_log'] or plugin_options['en_sql_log']:
-    $if plugin_options['type_log'] == 0:
-        $_('The chart from local file')
-    $if plugin_options['type_log'] == 1:
-        $_('The chart from database')
-    <div id="graph-container" class="graph-container">
-    <div id="graph-controls" style="margin-bottom: 8px;">
-        <button type="button" class="button backup graph-range" data-range="today">$_('Today')</button>
-        <button type="button" class="button backup graph-range" data-range="24h">24 h</button>
-        <button type="button" class="button backup graph-range" data-range="7d">7 $_('days')</button>
-        <button type="button" class="button backup graph-range" data-range="30d">30 $_('days')</button>
-        <button type="button" class="button backup graph-range" data-range="all">$_('All')</button>
-        <span style="margin-left: 8px;">$_('Range'): <b id="graph-range-label">$_('Custom')</b></span>
-    </div>
-    <div id="graph-filter" style="margin-bottom: 8px;">
-        $_('From') <input name='dt_from' id="dt_from" input type="datetime-local" value='$plugin_options['dt_from']' />
-        $_('To') <input name='dt_to' id="dt_to" input type="datetime-local" value='$plugin_options['dt_to']' />
-        <button type="button" id="filterSelection" class="button submit">$_('Filtering')</button>
-        <button type="button" id="clearSelection" class="button backup">$_('Reset')</button>
-    </div>
-    <div id="graph-empty" style="display: none; margin-bottom: 8px;">$_('No records found for selected range.')</div>
-    <div id="legend-placeholder" style="display:none;"></div>
-    <div id="legend-visible" style="float: right; width: auto;"></div>
-    <div id="graph-placeholder" class="graph-placeholder" style="overflow: hidden;"></div>
-    <div style="clear: both;"></div>
-    </div>

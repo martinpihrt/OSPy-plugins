@@ -1,0 +1,23 @@
+$def with(lines, plugin_options)
+
+$var title: $_(u'Wind Speed Monitor diagnostic log')
+$var page: plugins
+
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.1.0" rel="stylesheet" type="text/css">
+
+<div id="plugin" class="windPanel">
+    <div class="title">$_(u'Wind Speed Monitor diagnostic log')</div>
+    <div class="windToolbar">
+        <a href=$plugins.plugin_url('wind_monitor.overview_page') class="button submit">$_(u'Overview')</a>
+        <a href=$plugins.plugin_url('wind_monitor.settings_page') class="button upload">$_(u'Settings')</a>
+        <a href=$plugins.plugin_url('wind_monitor.diagnostic_download') class="button download">$_(u'Download diagnostic log')</a>
+        <a href="?delete&$csrf_query()" class="button danger">$_(u'Delete diagnostic log')</a>
+        <a href="" class="button refresh">$_(u'Refresh')</a>
+    </div>
+    $if plugin_options['diagnostic_logging']:
+        <p class="windDiagnosticOn">$_(u'I2C diagnostic logging is enabled. Disable it after the problem has been captured.')</p>
+    $else:
+        <p class="windDiagnosticOff">$_(u'I2C diagnostic logging is disabled. It can be enabled in the plug-in settings.')</p>
+    <p>$_(u'The newest bounded diagnostic records are shown below.')</p>
+    <pre class="windDiagnosticLog">$'\n'.join(lines)</pre>
+</div>

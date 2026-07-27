@@ -12,6 +12,7 @@ import traceback
 import os
 import mimetypes
 
+from collections import deque
 from threading import Thread, Lock
 
 import web
@@ -27,11 +28,24 @@ from ospy.scheduler import predicted_schedule, combined_schedule
 from ospy.programs import programs
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
+from .methods import (
+    calculate_speed,
+    calculate_trend,
+    decode_bcd_counter,
+    parse_decimal,
+    update_confirmation,
+    validate_measurement,
+)
 
 
 NAME = 'Wind Speed Monitor'
 MENU =  _('Package: Wind Speed Monitor')
-LINK = 'settings_page'
+LINK = 'overview_page'
+MEASUREMENT_SECONDS = 10.0
+DIAGNOSTIC_LOG_NAME = 'diagnostic.log'
+DIAGNOSTIC_LOG_BACKUP_NAME = 'diagnostic.log.1'
+DIAGNOSTIC_LOG_MAX_BYTES = 1024 * 1024
+DIAGNOSTIC_LOG_LINES = 500
 
 wind_options = PluginOptions(
     NAME,
@@ -39,9 +53,9 @@ wind_options = PluginOptions(
         'use_wind_monitor': False,
         'address': False,            # True = 0x51, False = 0x50 for PCF8583
         'sendeml': True,             # True = send email with error
-        'pulses': 2,                 # 2 pulses per rotation
+        'pulses': 2.0,               # 2 pulses per rotation
         'metperrot': 1.492,          # 1.492 meter per hour per rotation
-        'maxspeed': 20,              # 20 max speed to deactivate stations  
+        'maxspeed': 20.0,            # 20 max speed to deactivate stations
         'emlsubject': _('Report from OSPy WIND SPEED MONITOR plugin'),
         'enable_log': False,         # log to file and graph
         'log_interval': 1,           # log interval in minutes
@@ -55,7 +69,7 @@ wind_options = PluginOptions(
         'use_footer': True,          # show data from plugin in footer on home page
         'eplug': 0,                  # email plugin type (email notifications or email notifications SSL)
         'use_stop_pgm': False,       # run the program when exceeded
-        'm_speed_trig': 10,          # maximum wind speed for starting the program in m/s
+        'm_speed_trig': 10.0,        # maximum wind speed for starting the program in m/s
         'event_repetitions': 3,      # number of event repetitions for the action (3x repeating)
         'event_interval': 1,         # repeatedly exceeded in these interval (minutes)
         'ignore_interval': 24,       # ignore other events for a while (24 hours)
@@ -64,16 +78,34 @@ wind_options = PluginOptions(
         'type_log': 0,               # 0 = show log and graph from local log file, 1 = from database
         'dt_from' : '2024-01-01T00:00',              # for graph history (from date time ex: 2024-02-01T6:00)
         'dt_to' : '2024-01-01T00:00',                # for graph history (to date time ex: 2024-03-17T12:00)        
+        'diagnostic_logging': False,
+        'filter_invalid': True,
+        'max_accepted_speed': 40.0,
+        'action_confirmations': 2,
     }
 )
+
+# Preserve numeric settings written by older releases with integer defaults.
+try:
+    _stored_wind_options = options.get(wind_options._plugin, {})
+    for _numeric_key in ('pulses', 'metperrot', 'maxspeed', 'm_speed_trig'):
+        if _numeric_key in _stored_wind_options:
+            wind_options[_numeric_key] = float(
+                str(_stored_wind_options[_numeric_key]).replace(',', '.'))
+except (AttributeError, TypeError, ValueError):
+    pass
+
 runtime = get_runtime()
 health_lock = Lock()
+diagnostic_lock = Lock()
 health_state = {
     'last_reading': 0,
     'last_email': 0,
     'last_action': 0,
     'last_error': 0,
     'last_error_message': '',
+    'last_rejected': 0,
+    'rejected_count': 0,
 }
 
 
@@ -82,6 +114,62 @@ def wind_i2c_transaction(timeout=30.0, settle_time=0.02):
         return i2c_transaction(timeout=timeout, settle_time=settle_time, priority='high')
     except TypeError:
         return i2c_transaction(timeout=timeout, settle_time=settle_time)
+
+
+def _diagnostic_path(backup=False):
+    name = DIAGNOSTIC_LOG_BACKUP_NAME if backup else DIAGNOSTIC_LOG_NAME
+    return os.path.join(plugin_data_dir(), name)
+
+
+def diagnostic_event(event, **values):
+    if not wind_options.get('diagnostic_logging', False):
+        return
+    record = {
+        'time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+        'event': str(event),
+    }
+    record.update(values)
+    line = json.dumps(record, ensure_ascii=False, sort_keys=True)
+    try:
+        with diagnostic_lock:
+            path = _diagnostic_path()
+            if os.path.exists(path) and os.path.getsize(path) >= DIAGNOSTIC_LOG_MAX_BYTES:
+                backup = _diagnostic_path(True)
+                try:
+                    if os.path.exists(backup):
+                        os.remove(backup)
+                    os.replace(path, backup)
+                except OSError:
+                    pass
+            with open(path, 'a', encoding='utf-8') as output:
+                output.write(line + '\n')
+    except OSError:
+        pass
+
+
+def read_diagnostic_log(limit=DIAGNOSTIC_LOG_LINES):
+    lines = []
+    with diagnostic_lock:
+        for path in (_diagnostic_path(True), _diagnostic_path()):
+            try:
+                with open(path, encoding='utf-8', errors='replace') as source:
+                    lines.extend(source.readlines())
+            except OSError:
+                continue
+    if limit is None:
+        selected = lines
+    else:
+        selected = lines[-max(1, int(limit)):]
+    return [line.rstrip() for line in selected]
+
+
+def clear_diagnostic_log():
+    with diagnostic_lock:
+        for path in (_diagnostic_path(), _diagnostic_path(True)):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
 
 
 ################################################################################
@@ -100,9 +188,18 @@ class WindSender(Thread):
         self.status['kmeter'] = 0.0
         self.status['max_meter'] = 0
         self.status['log_date_maxspeed'] = datetime_string()
+        self.status['trend'] = 'unknown'
+        self.status['last_measurement'] = ''
+        self.status['last_raw_pulses'] = 0
+        self.status['last_pulse_rate'] = 0.0
+        self.status['last_elapsed'] = 0.0
+        self.status['last_rejected_reason'] = ''
+        self.status['action_confirmation_count'] = 0
+        self._trend_samples = deque(maxlen=12)
 
         self._sleep_time = 0
         self._last_error_log = 0
+        self._last_rejected_log = 0
         self.start()
         runtime.register_thread(self)
 
@@ -166,12 +263,14 @@ class WindSender(Thread):
         trig_once = False
         last_trig_once = False
         trig_count = 0
+        hazard_active = False
+        action_confirmation_count = 0
 
         if wind_options['use_footer']:
             wind_mon = showInFooter() #  instantiate class to enable data in footer
             wind_mon.label = _('Wind Speed')           # label on footer
             wind_mon.val = '---'                        # value on footer
-            wind_mon.button = "wind_monitor/settings"   # button redirect on footer
+            wind_mon.button = "wind_monitor/overview"   # button redirect on footer
 
         while not self._stop_event.is_set():
             try:
@@ -179,20 +278,63 @@ class WindSender(Thread):
                 if wind_options['use_wind_monitor']:    # if wind plugin is enabled
                     disable_text = True
                     self._open_bus()
-                    puls = None
-                    if self.bus is not None:
-                        set_counter(self.bus)     # set pcf8583 as counter
-                        puls = counter(self.bus, self._stop_event)  # read pulses
+                    measurement = None
+                    if self.bus is not None and set_counter(self.bus):
+                        measurement = counter(self.bus, self._stop_event)
 
-                    if puls is not None and puls < 1000:        # limiter for maximal pulses from counter (error filter)
+                    if measurement is not None:
+                        raw_pulses = measurement['raw_pulses']
+                        elapsed = measurement['elapsed']
+                        pulse_rate, val = calculate_speed(
+                            raw_pulses,
+                            elapsed,
+                            wind_options['pulses'],
+                            wind_options['metperrot'],
+                        )
+                        accepted, rejected_reason = validate_measurement(
+                            val,
+                            wind_options['filter_invalid'],
+                            wind_options['max_accepted_speed'],
+                        )
+                        self.status['last_raw_pulses'] = raw_pulses
+                        self.status['last_pulse_rate'] = round(pulse_rate, 3)
+                        self.status['last_elapsed'] = round(elapsed, 3)
+                        self.status['last_measurement'] = datetime_string()
+                        self.status['last_rejected_reason'] = rejected_reason
+                        diagnostic_event(
+                            'measurement',
+                            address=measurement['address'],
+                            raw_bytes=measurement['raw_bytes'],
+                            raw_pulses=raw_pulses,
+                            elapsed=round(elapsed, 6),
+                            pulse_rate=round(pulse_rate, 6),
+                            speed_mps=round(val, 6),
+                            accepted=accepted,
+                            reason=rejected_reason,
+                        )
+                        if not accepted:
+                            action_confirmation_count = 0
+                            self.status['action_confirmation_count'] = 0
+                            with health_lock:
+                                health_state['last_rejected'] = time_.time()
+                                health_state['rejected_count'] += 1
+                            if time_.time() - self._last_rejected_log >= 300:
+                                log.warning(
+                                    NAME,
+                                    _('Wind measurement was rejected as implausible.')
+                                    + ' %.2f m/s' % val)
+                                self._last_rejected_log = time_.time()
+                            self._sleep(1)
+                            continue
+
                         with health_lock:
                             health_state['last_reading'] = time_.time()
-                        puls = puls/10.0                       # counter value is value/10sec
-                        val = puls/(wind_options['pulses']*1.0)
-                        val = val*wind_options['metperrot']
 
                         self.status['meter']  = round(val*1.0, 2)
                         self.status['kmeter'] = round(val*3.6, 2)
+                        now_monotonic = time_.monotonic()
+                        self._trend_samples.append((now_monotonic, self.status['meter']))
+                        self.status['trend'] = calculate_trend(list(self._trend_samples))
 
                         if self.status['meter'] > self.status['max_meter']:
                             self.status['max_meter'] = self.status['meter']
@@ -203,9 +345,9 @@ class WindSender(Thread):
 
                         log.info(NAME, datetime_string())
                         if wind_options['use_kmh']:
-                            log.info(NAME, _('Speed') + ': ' + '%.1f' % round(self.status['meter']*3.6, 2) + ' ' + _('km/h') + ', ' + _('Pulses') + ': ' + '%s' % puls + ' ' + _('pulses/sec'))                  
+                            log.info(NAME, _('Speed') + ': ' + '%.1f' % round(self.status['meter']*3.6, 2) + ' ' + _('km/h') + ', ' + _('Pulses') + ': ' + '%.3f' % pulse_rate + ' ' + _('pulses/sec'))
                         else:
-                            log.info(NAME, _('Speed') + ': ' + '%.1f' % round(self.status['meter'], 2) + ' ' + _('m/sec') + ', ' + _('Pulses') + ': ' +  '%s' % puls + ' ' + _('pulses/sec'))  
+                            log.info(NAME, _('Speed') + ': ' + '%.1f' % round(self.status['meter'], 2) + ' ' + _('m/sec') + ', ' + _('Pulses') + ': ' +  '%.3f' % pulse_rate + ' ' + _('pulses/sec'))
 
                         if wind_options['use_kmh']:
                             log.info(NAME, '%s' % self.status['log_date_maxspeed'] + ' ' + _('Maximal speed') + ': ' + '%s' % round(self.status['max_meter']*3.6, 2) + ' ' + _('km/h'))  
@@ -215,7 +357,17 @@ class WindSender(Thread):
                         if self.status['meter'] >= 42: 
                             log.error(NAME, datetime_string() + ' ' + _('Wind speed > 150 km/h (42 m/sec)'))
 
-                        if self.status['meter'] >= int(wind_options['maxspeed']):          # if wind speed is > options max speed
+                        action_confirmation_count, action_confirmed = update_confirmation(
+                            action_confirmation_count,
+                            self.status['meter'] >= wind_options['maxspeed'],
+                            wind_options['action_confirmations'],
+                        )
+                        if self.status['meter'] < wind_options['maxspeed']:
+                            hazard_active = False
+                        self.status['action_confirmation_count'] = action_confirmation_count
+
+                        if action_confirmed and not hazard_active:
+                            hazard_active = True
                             log.clear(NAME)
                             if wind_options['sendeml']:                   # if enabled send email
                                 send = True  
@@ -266,7 +418,7 @@ class WindSender(Thread):
                                     update_log()
 
                         # running program after action ------------------------------------------------------------------------------------------------------
-                        if wind_options['use_stop_pgm'] and not ignore_intervals:                                     # action is enabled and not active delay ignore
+                        if wind_options['use_stop_pgm'] and not ignore_intervals:
                             if self.status['meter'] >= wind_options['m_speed_trig']:                                  # wind is > trig
                                 trig_once = True
                                 if not last_trig_once and trig_once:
@@ -371,6 +523,7 @@ def stop():
 
 def try_io(call, tries=10):
     assert tries > 0
+    total_tries = tries
     error = None
     result = None
 
@@ -380,6 +533,12 @@ def try_io(call, tries=10):
         except IOError as e:
             error = e
             tries -= 1
+            diagnostic_event(
+                'i2c_retry',
+                attempt=total_tries - tries,
+                remaining=tries,
+                error=str(e),
+            )
             time.sleep(0.01)
         else:
             break
@@ -404,6 +563,14 @@ def safe_float(value, default=0.0):
         return default
 
 
+def decimal_input(qdict, key, default):
+    try:
+        return parse_decimal(qdict.get(key, default), key)
+    except ValueError:
+        raise web.badrequest(_('Invalid value for') + ' ' + '{}:{}'.format(
+            key, qdict.get(key)))
+
+
 def normalize_options():
     wind_options['pulses'] = max(0.001, min(1000000.0, safe_float(wind_options.get('pulses', 2), 2)))
     wind_options['metperrot'] = max(0.001, min(1000000.0, safe_float(wind_options.get('metperrot', 1.492), 1.492)))
@@ -414,6 +581,10 @@ def normalize_options():
     wind_options['event_repetitions'] = max(1, min(100, safe_int(wind_options.get('event_repetitions', 3), 3)))
     wind_options['event_interval'] = max(1, min(1440, safe_int(wind_options.get('event_interval', 1), 1)))
     wind_options['ignore_interval'] = max(1, min(8760, safe_int(wind_options.get('ignore_interval', 24), 24)))
+    wind_options['max_accepted_speed'] = max(0.1, min(1000.0, safe_float(
+        wind_options.get('max_accepted_speed', 40.0), 40.0)))
+    wind_options['action_confirmations'] = max(1, min(10, safe_int(
+        wind_options.get('action_confirmations', 2), 2)))
     wind_options['eplug'] = 1 if safe_int(wind_options.get('eplug', 0), 0) == 1 else 0
     wind_options['used_stations'] = [safe_int(station, -1) for station in wind_options.get('used_stations', []) if safe_int(station, -1) >= 0]
     wind_options['used_program'] = [safe_int(program, -1) for program in wind_options.get('used_program', []) if safe_int(program, -1) >= 0]
@@ -433,15 +604,27 @@ def set_counter(i2cbus):
             try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
             try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
             try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
+            status = try_io(lambda: i2cbus.read_byte_data(addr, 0x00))
+        if (status & 0x30) != 0x20:
+            diagnostic_event('setup_rejected', address='0x%02X' % addr, status=status)
+            raise IOError(_('PCF8583 event-counter mode was not confirmed.'))
+        diagnostic_event('setup', address='0x%02X' % addr, status=status, result='ok')
         log.debug(NAME, _('Wind speed monitor plug-in') + ': ' + _('Setup PCF8583 as event counter - OK')) 
-    except:
+        return True
+    except Exception:
+        diagnostic_event(
+            'setup_error',
+            address='0x%02X' % addr,
+            error=traceback.format_exc().splitlines()[-1],
+        )
         log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + _('Setup PCF8583 as event counter - FAULT'))
         log.error(NAME, _('Wind speed monitor plug-in') + '%s' % traceback.format_exc())
+        return False
 
 
-def counter(i2cbus, stop_event=None): # reset PCF8583, measure pulses and return number pulses per second
+def counter(i2cbus, stop_event=None):
+    """Reset PCF8583, measure pulses and return raw count with actual duration."""
     try:
-        pulses = 0
         addr = 0
         if wind_options['address']:
             addr = 0x51
@@ -452,29 +635,45 @@ def counter(i2cbus, stop_event=None): # reset PCF8583, measure pulses and return
             try_io(lambda: i2cbus.write_byte_data(addr, 0x01, 0x00)) # reset LSB
             try_io(lambda: i2cbus.write_byte_data(addr, 0x02, 0x00)) # reset midle Byte
             try_io(lambda: i2cbus.write_byte_data(addr, 0x03, 0x00)) # reset MSB
+        started = time_.monotonic()
         if stop_event is not None:
-            if stop_event.wait(10):
+            if stop_event.wait(MEASUREMENT_SECONDS):
                 return None
         else:
-            time_.sleep(10)
-        # read number (pulses in counter) and translate to DEC
+            time_.sleep(MEASUREMENT_SECONDS)
+        lock_requested = time_.monotonic()
         with wind_i2c_transaction():
-            counter = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x00))
-        num1 = (counter[1] & 0x0F)             # units
-        num10 = (counter[1] & 0xF0) >> 4       # dozens
-        num100 = (counter[2] & 0x0F)           # hundred
-        num1000 = (counter[2] & 0xF0) >> 4     # thousand
-        num10000 = (counter[3] & 0x0F)         # tens of thousands
-        num100000 = (counter[3] & 0xF0) >> 4   # hundreds of thousands
-        pulses = (num100000 * 100000) + (num10000 * 10000) + (num1000 * 1000) + (num100 * 100) + (num10 * 10) + num1
-        return pulses
+            lock_acquired = time_.monotonic()
+            raw_bytes = try_io(lambda: i2cbus.read_i2c_block_data(addr, 0x01, 3))
+        finished = time_.monotonic()
+        raw_pulses = decode_bcd_counter(raw_bytes)
+        diagnostic_event(
+            'counter_read',
+            address='0x%02X' % addr,
+            raw_bytes=[int(value) for value in raw_bytes],
+            raw_pulses=raw_pulses,
+            elapsed=round(finished - started, 6),
+            i2c_wait=round(lock_acquired - lock_requested, 6),
+        )
+        return {
+            'address': '0x%02X' % addr,
+            'raw_bytes': [int(value) for value in raw_bytes],
+            'raw_pulses': raw_pulses,
+            'elapsed': finished - started,
+            'i2c_wait': lock_acquired - lock_requested,
+        }
     except IOError as e:
         if str(e) == 'I2C bus is busy.':
             log.debug(NAME, datetime_string() + ': ' + _('I2C bus is busy, wind counter read skipped.'))
         else:
             log.error(NAME, _('Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
+        diagnostic_event('counter_error', error=str(e))
         return None
-    except:
+    except Exception:
+        diagnostic_event(
+            'counter_error',
+            error=traceback.format_exc().splitlines()[-1],
+        )
         log.error(NAME, _('Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
         return None
 
@@ -635,25 +834,30 @@ def create_default_graph():
 ################################################################################
 
 
-class settings_page(ProtectedPage):
-    """Load an html page for entering wind speed monitor settings."""
+def _empty_status():
+    return {
+        'meter': 0.0,
+        'kmeter': 0.0,
+        'max_meter': 0,
+        'log_date_maxspeed': datetime_string(),
+        'trend': 'unknown',
+        'last_measurement': '',
+        'last_raw_pulses': 0,
+        'last_pulse_rate': 0.0,
+        'last_elapsed': 0.0,
+        'last_rejected_reason': '',
+        'action_confirmation_count': 0,
+    }
+
+
+class overview_page(ProtectedPage):
+    """Display live wind status and history graph."""
 
     def GET(self):
-        global wind_sender
-
         qdict = web.input()
         normalize_options()
         reset = helpers.get_input(qdict, 'reset', False, lambda x: True)
         show = helpers.get_input(qdict, 'show', False, lambda x: True)
-        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
-        delfilter = helpers.get_input(qdict, 'delfilter', False, lambda x: True)
-
-        if wind_sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:
-            verify_csrf(qdict)
-            dt_from = qdict['dt_from']
-            dt_to = qdict['dt_to']
-            wind_options.__setitem__('dt_from', dt_from) #__setitem__(self, key, value)
-            wind_options.__setitem__('dt_to', dt_to)     #__setitem__(self, key, value)        
 
         if wind_sender is not None and reset:
             verify_csrf(qdict)
@@ -661,18 +865,22 @@ class settings_page(ProtectedPage):
             wind_sender.status['log_date_maxspeed'] = datetime_string()
             log.clear(NAME)
             log.info(NAME, datetime_string() + ' ' + _('Maximal speed has reseted.'))
-            raise web.seeother(plugin_url(settings_page), True)
-
-        if wind_sender is not None and delfilter:
-            verify_csrf(qdict)
-            from datetime import datetime, timedelta
-            dt_now = (datetime.today() + timedelta(days=1)).date()
-            wind_options.__setitem__('dt_from', "2020-01-01T00:00")
-            wind_options.__setitem__('dt_to', "{}T00:00".format(dt_now))
+            raise web.seeother(plugin_url(overview_page), True)
 
         if wind_sender is not None and show:
             raise web.seeother(plugin_url(log_page), True)
 
+        status = wind_sender.status if wind_sender is not None else _empty_status()
+        return self.plugin_render.wind_monitor(wind_options, status, log.events(NAME))
+
+
+class settings_page(ProtectedPage):
+    """Load an html page for entering wind speed monitor settings."""
+
+    def GET(self):
+        qdict = web.input()
+        normalize_options()
+        delSQL = helpers.get_input(qdict, 'delSQL', False, lambda x: True)
         if wind_sender is not None and delSQL:
             verify_csrf(qdict)
             try:
@@ -684,13 +892,25 @@ class settings_page(ProtectedPage):
                 log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + traceback.format_exc())
                 pass            
 
-        status = wind_sender.status if wind_sender is not None else {'meter': 0.0, 'kmeter': 0.0, 'max_meter': 0, 'log_date_maxspeed': datetime_string()}
-        return self.plugin_render.wind_monitor(wind_options, status, log.events(NAME))
+        return self.plugin_render.wind_monitor_settings(wind_options)
 
     def POST(self):
-        qdict = web.input(used_stations=[])
+        decimal_fields = (
+            'pulses',
+            'metperrot',
+            'maxspeed',
+            'm_speed_trig',
+            'max_accepted_speed',
+        )
+        qdict = web.input(used_stations=[], used_program=[])
         verify_csrf(qdict)
-        wind_options.web_update(qdict) #for save multiple select
+        decimal_values = {
+            key: decimal_input(qdict, key, wind_options.get(key))
+            for key in decimal_fields
+        }
+        wind_options.web_update(qdict, skipped=decimal_fields)
+        for key, value in decimal_values.items():
+            wind_options[key] = value
         normalize_options()
 
         if wind_sender is not None:
@@ -705,7 +925,7 @@ class settings_page(ProtectedPage):
 
         log.info(NAME, datetime_string() + ' ' + _('Options has updated.'))
 
-        raise web.seeother(plugin_url(settings_page), True)
+        raise web.seeother(plugin_url(overview_page), True)
 
 
 class help_page(ProtectedPage):
@@ -742,6 +962,36 @@ class log_page(ProtectedPage):
                 pass          
 
         return self.plugin_render.wind_monitor_log(read_log(), read_sql_log(), wind_options)
+
+
+class diagnostic_page(ProtectedPage):
+    """Display the bounded PCF8583 and I2C diagnostic log."""
+
+    def GET(self):
+        qdict = web.input()
+        delete = helpers.get_input(qdict, 'delete', False, lambda x: True)
+        if delete:
+            verify_csrf(qdict)
+            clear_diagnostic_log()
+            log.info(NAME, _('Wind diagnostic log was deleted.'))
+            raise web.seeother(plugin_url(diagnostic_page), True)
+        return self.plugin_render.wind_monitor_diagnostic(
+            read_diagnostic_log(), wind_options)
+
+
+class diagnostic_download(ProtectedPage):
+    """Download the current bounded diagnostic log."""
+
+    def GET(self):
+        data = '\n'.join(read_diagnostic_log(None))
+        if data:
+            data += '\n'
+        web.header('Content-Type', 'text/plain; charset=utf-8')
+        web.header(
+            'Content-Disposition',
+            'attachment; filename="wind_monitor_diagnostic_{}.log"'.format(
+                time.strftime('%Y%m%d-%H%M%S')))
+        return data
 
 
 class settings_json(ProtectedPage):
@@ -969,20 +1219,54 @@ class log_sql_json(ProtectedPage):
 
 
 class wind_json(ProtectedPage):
-    """Returns seconds water in JSON format."""
+    """Return live wind status for the overview page."""
 
     def GET(self):
         global wind_sender
         web.header('Access-Control-Allow-Origin', '*')
         web.header('Content-Type', 'application/json')
-        data = {}
+        status = wind_sender.status if wind_sender is not None else _empty_status()
+        trend = status.get('trend', 'unknown')
+        trend_labels = {
+            'up': _('Rising'),
+            'down': _('Falling'),
+            'steady': _('Steady'),
+            'unknown': _('Waiting for trend data'),
+        }
+        trend_symbols = {
+            'up': '↑',
+            'down': '↓',
+            'steady': '→',
+            'unknown': '·',
+        }
+        data = {
+            'enabled': bool(wind_options.get('use_wind_monitor', False)),
+            'running': wind_sender is not None and wind_sender.is_alive(),
+            'trend': trend,
+            'trend_symbol': trend_symbols.get(trend, '·'),
+            'trend_label': trend_labels.get(trend, trend_labels['unknown']),
+            'last_measurement': status.get('last_measurement', ''),
+            'raw_pulses': status.get('last_raw_pulses', 0),
+            'pulse_rate': status.get('last_pulse_rate', 0.0),
+            'elapsed': status.get('last_elapsed', 0.0),
+            'rejected_reason': status.get('last_rejected_reason', ''),
+            'confirmation_count': status.get('action_confirmation_count', 0),
+            'confirmation_required': wind_options.get('action_confirmations', 2),
+            'maximum_at': status.get('log_date_maxspeed', ''),
+            'activity': '\n'.join(log.events(NAME)),
+        }
         try:
             if wind_options['use_kmh']:
-                data['wind'] = '{} {}'.format(round(wind_sender.status['meter']*3.6, 2), _('km/h'))
+                data['wind'] = '{} {}'.format(round(status['meter']*3.6, 2), _('km/h'))
+                data['maximum'] = '{} {}'.format(round(status['max_meter']*3.6, 2), _('km/h'))
             else:
-                data['wind'] = '{} {}'.format(round(wind_sender.status['meter'], 2), _('m/s'))
-        except:
+                data['wind'] = '{} {}'.format(round(status['meter'], 2), _('m/s'))
+                data['maximum'] = '{} {}'.format(round(status['max_meter'], 2), _('m/s'))
+            data['status'] = _('Measurement is active.') if data['enabled'] and data['running'] else _('Measurement is inactive.')
+        except Exception:
             data['wind'] = '{}'.format(_('Any error'))
+            data['maximum'] = '-'
+            data['status'] = _('Wind monitor data is unavailable.')
         return json.dumps(data)
 
 
@@ -993,7 +1277,9 @@ def health():
     with health_lock:
         state = dict(health_state)
     status_data = wind_sender.status if wind_sender is not None else {
-        'meter': 0.0, 'kmeter': 0.0, 'max_meter': 0.0, 'log_date_maxspeed': ''
+        'meter': 0.0, 'kmeter': 0.0, 'max_meter': 0.0, 'log_date_maxspeed': '',
+        'trend': 'unknown', 'last_elapsed': 0.0, 'last_raw_pulses': 0,
+        'last_rejected_reason': '',
     }
     details = {
         'worker': _('Running') if worker_alive else _('Stopped'),
@@ -1003,6 +1289,14 @@ def health():
         'speed_mps': status_data['meter'],
         'maximum_mps': status_data['max_meter'],
         'maximum_at': status_data['log_date_maxspeed'],
+        'trend': status_data.get('trend', 'unknown'),
+        'measurement_seconds': status_data.get('last_elapsed', 0.0),
+        'raw_pulses': status_data.get('last_raw_pulses', 0),
+        'filter_enabled': bool(wind_options.get('filter_invalid', True)),
+        'maximum_accepted_mps': wind_options.get('max_accepted_speed', 40.0),
+        'last_rejected_reason': status_data.get('last_rejected_reason', ''),
+        'rejected_measurements': state.get('rejected_count', 0),
+        'diagnostic_logging': bool(wind_options.get('diagnostic_logging', False)),
         'station_stop_enabled': bool(wind_options.get('stoperr', False)),
         'program_action_enabled': bool(wind_options.get('use_stop_pgm', False)),
         'last_reading': state['last_reading'],
