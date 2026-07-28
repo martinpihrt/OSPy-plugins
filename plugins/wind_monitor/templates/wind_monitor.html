@@ -3,7 +3,7 @@ $def with(plugin_options, status, events)
 $var title: $_(u'Wind Speed Monitor')
 $var page: plugins
 
-<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.1.0" rel="stylesheet" type="text/css">
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.1.1" rel="stylesheet" type="text/css">
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -11,6 +11,61 @@ $var page: plugins
 
 <script>
 var windPlot = null;
+var windGraphTexts = [];
+
+function escapeGraphHtml(value) {
+    return jQuery("<div>").text(value == null ? "" : String(value)).html();
+}
+
+function windGraphTooltip(station, date, current, previous) {
+    var rows = "";
+    if (previous !== null) {
+        rows += "<tr><td>" + $:{json.dumps(_('Previous Value'), ensure_ascii=False)} +
+            "</td><td class=\"balValue\">" + Number(previous).toFixed(1) + "</td></tr>";
+    }
+    rows += "<tr><td>" + $:{json.dumps(_('Actual Value'), ensure_ascii=False)} +
+        "</td><td class=\"balValue\">" + Number(current).toFixed(1) + "</td></tr>";
+    return "<b>" + escapeGraphHtml(station) + "</b> " +
+        escapeGraphHtml(toXSDate(date)) + "<br>" +
+        escapeGraphHtml(
+            ("0" + date.getHours()).slice(-2) + ":" +
+            ("0" + date.getMinutes()).slice(-2) + ":" +
+            ("0" + date.getSeconds()).slice(-2)
+        ) +
+        "<table class=\"balanceList\"><tr><th>" +
+        $:{json.dumps(_('Reason'), ensure_ascii=False)} + "</th><th>" +
+        $:{json.dumps(_('(m/s or km/h)'), ensure_ascii=False)} +
+        "</th></tr>" + rows + "</table>";
+}
+
+function bindWindGraphTooltip() {
+    var tooltip = jQuery("#wind-graph-tooltip");
+    if (!tooltip.length) {
+        tooltip = jQuery("<div id=\"wind-graph-tooltip\" class=\"windGraphTooltip\"></div>")
+            .appendTo("body");
+    }
+    jQuery("#graph-placeholder")
+        .off("plothover.windMonitor")
+        .on("plothover.windMonitor", function(event, pos, item) {
+            if (!item || !windGraphTexts[item.seriesIndex] ||
+                    !windGraphTexts[item.seriesIndex][item.dataIndex]) {
+                tooltip.hide();
+                return;
+            }
+            tooltip.html(windGraphTexts[item.seriesIndex][item.dataIndex]).show();
+            var pageX = item.pageX || event.pageX || 0;
+            var pageY = item.pageY || event.pageY || 0;
+            var left = pageX + 8;
+            var top = pageY + 8;
+            if (left + tooltip.outerWidth() > jQuery(window).scrollLeft() + jQuery(window).width()) {
+                left = pageX - tooltip.outerWidth() - 8;
+            }
+            if (top + tooltip.outerHeight() > jQuery(window).scrollTop() + jQuery(window).height()) {
+                top = pageY - tooltip.outerHeight() - 8;
+            }
+            tooltip.css({left: Math.max(0, left), top: Math.max(0, top)});
+        });
+}
 
 function graphDateTime(date) {
     function pad(value) { return value < 10 ? "0" + value : value; }
@@ -46,13 +101,25 @@ function setGraphRange(range) {
 function drawWindGraph(result) {
     var series = [];
     var points = 0;
+    windGraphTexts = [];
     for (var i = 0; i < result.length; i++) {
         var values = [];
-        for (var timestamp in result[i].balances) {
-            values.push([1000 * parseInt(timestamp, 10), result[i].balances[timestamp].total]);
+        var texts = [];
+        var previous = null;
+        var timestamps = Object.keys(result[i].balances).sort(function(a, b) {
+            return parseInt(a, 10) - parseInt(b, 10);
+        });
+        for (var j = 0; j < timestamps.length; j++) {
+            var timestamp = timestamps[j];
+            var current = Number(result[i].balances[timestamp].total);
+            var date = new Date(1000 * parseInt(timestamp, 10));
+            values.push([date.getTime(), current]);
+            texts.push(windGraphTooltip(result[i].station, date, current, previous));
+            previous = current;
             points++;
         }
         series.push({data: values, label: result[i].station});
+        windGraphTexts.push(texts);
     }
     jQuery("#graph-empty").toggle(points === 0);
     windPlot = jQuery.plot("#graph-placeholder", series, {
@@ -62,6 +129,7 @@ function drawWindGraph(result) {
         legend: {show: true, position: "ne"},
         selection: {mode: "x"}
     });
+    bindWindGraphTooltip();
 }
 
 function loadWindGraph() {

@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 28 2026
+------------
+(Martin Pihrt) - Wind Speed Monitor v1.1.1<br/>
+Restored the point-hover tooltip in the automatically refreshed history graph. Each measured point again shows its time and current value, plus the preceding value when available. Tooltip handlers and data are rebuilt safely after every background graph refresh, point order is normalized chronologically, and the tooltip styling is kept in the plug-in CSS.
+
 July 27 2026
 ------------
 (Martin Pihrt) - CHMI v1.0.2<br/>

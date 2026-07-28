@@ -9,6 +9,7 @@ MODULE_PATH = (
     / 'wind_monitor'
     / 'methods.py'
 )
+PLUGIN_ROOT = MODULE_PATH.parent
 SPEC = importlib.util.spec_from_file_location('wind_monitor_methods', MODULE_PATH)
 methods = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(methods)
@@ -66,6 +67,22 @@ class WindMonitorMethodTests(unittest.TestCase):
         self.assertEqual(
             methods.calculate_trend([(0, 1), (10, 2), (20, 3), (30, 4)]),
             'unknown')
+
+
+class WindMonitorTemplateTests(unittest.TestCase):
+    def test_graph_restores_previous_and_actual_value_tooltip(self):
+        template = (
+            PLUGIN_ROOT / 'templates' / 'wind_monitor.html'
+        ).read_text(encoding='utf-8')
+        css = (
+            PLUGIN_ROOT / 'static' / 'wind_monitor.css'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('plothover.windMonitor', template)
+        self.assertIn("(_('Previous Value')", template)
+        self.assertIn("(_('Actual Value')", template)
+        self.assertIn('windGraphTexts[item.seriesIndex][item.dataIndex]', template)
+        self.assertIn('.windGraphTooltip', css)
 
 
 if __name__ == '__main__':
