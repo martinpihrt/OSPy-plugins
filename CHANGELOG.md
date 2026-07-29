@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 29 2026
+------------
+(Martin Pihrt) - Wind Speed Monitor v1.1.2<br/>
+Made every diagnostic and history file path explicitly target the Wind Speed Monitor data directory. Runtime files such as `diagnostic.log.1` can therefore no longer be created at the shared plug-in root and mistaken for an installable plug-in by OSPy.
+
 July 28 2026
 ------------
 (Martin Pihrt) - Wind Speed Monitor v1.1.1<br/>

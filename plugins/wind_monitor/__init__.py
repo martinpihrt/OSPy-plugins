@@ -118,7 +118,7 @@ def wind_i2c_transaction(timeout=30.0, settle_time=0.02):
 
 def _diagnostic_path(backup=False):
     name = DIAGNOSTIC_LOG_BACKUP_NAME if backup else DIAGNOSTIC_LOG_NAME
-    return os.path.join(plugin_data_dir(), name)
+    return os.path.join(plugin_data_dir('wind_monitor'), name)
 
 
 def diagnostic_event(event, **values):
@@ -722,7 +722,7 @@ def get_all_values():
 def read_log():
     """Read log data from json file."""
     try:
-        with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
+        with open(os.path.join(plugin_data_dir('wind_monitor'), 'log.json')) as logf:
             return json.load(logf)
     except (IOError, ValueError):
         return []
@@ -732,7 +732,7 @@ def read_graph_log():
     """Read graph data from json file."""
 
     try:
-        with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
+        with open(os.path.join(plugin_data_dir('wind_monitor'), 'graph.json')) as logf:
             return json.load(logf)
     except (IOError, ValueError):
         return []
@@ -741,14 +741,14 @@ def read_graph_log():
 def write_log(json_data):
     """Write data to log json file."""
 
-    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+    with open(os.path.join(plugin_data_dir('wind_monitor'), 'log.json'), 'w') as outfile:
         json.dump(json_data, outfile)
 
 
 def write_graph_log(json_data):
     """Write data to graph json file."""
 
-    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+    with open(os.path.join(plugin_data_dir('wind_monitor'), 'graph.json'), 'w') as outfile:
         json.dump(json_data, outfile)
 
 
