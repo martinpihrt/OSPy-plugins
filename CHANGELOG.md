@@ -2,6 +2,9 @@
 
 July 29 2026
 ------------
+(Martin Pihrt) - Wind Speed Monitor v1.1.3<br/>
+Stopped the measurement loop from rewriting every normalized plug-in setting on every sample. Values are now persisted only when normalization actually corrects a value, reducing settings-database traffic and avoiding stale settings-object assignments during a live plug-in update.
+
 (Martin Pihrt) - Wind Speed Monitor v1.1.2<br/>
 Made every diagnostic and history file path explicitly target the Wind Speed Monitor data directory. Runtime files such as `diagnostic.log.1` can therefore no longer be created at the shared plug-in root and mistaken for an installable plug-in by OSPy.
 

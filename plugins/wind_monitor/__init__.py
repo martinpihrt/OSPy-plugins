@@ -572,24 +572,41 @@ def decimal_input(qdict, key, default):
 
 
 def normalize_options():
-    wind_options['pulses'] = max(0.001, min(1000000.0, safe_float(wind_options.get('pulses', 2), 2)))
-    wind_options['metperrot'] = max(0.001, min(1000000.0, safe_float(wind_options.get('metperrot', 1.492), 1.492)))
-    wind_options['maxspeed'] = max(0, min(1000, safe_float(wind_options.get('maxspeed', 20), 20)))
-    wind_options['m_speed_trig'] = max(0, min(1000, safe_float(wind_options.get('m_speed_trig', 10), 10)))
-    wind_options['log_interval'] = max(1, min(1440, safe_int(wind_options.get('log_interval', 1), 1)))
-    wind_options['log_records'] = max(0, min(10000, safe_int(wind_options.get('log_records', 0), 0)))
-    wind_options['event_repetitions'] = max(1, min(100, safe_int(wind_options.get('event_repetitions', 3), 3)))
-    wind_options['event_interval'] = max(1, min(1440, safe_int(wind_options.get('event_interval', 1), 1)))
-    wind_options['ignore_interval'] = max(1, min(8760, safe_int(wind_options.get('ignore_interval', 24), 24)))
-    wind_options['max_accepted_speed'] = max(0.1, min(1000.0, safe_float(
-        wind_options.get('max_accepted_speed', 40.0), 40.0)))
-    wind_options['action_confirmations'] = max(1, min(10, safe_int(
-        wind_options.get('action_confirmations', 2), 2)))
-    wind_options['eplug'] = 1 if safe_int(wind_options.get('eplug', 0), 0) == 1 else 0
-    wind_options['used_stations'] = [safe_int(station, -1) for station in wind_options.get('used_stations', []) if safe_int(station, -1) >= 0]
-    wind_options['used_program'] = [safe_int(program, -1) for program in wind_options.get('used_program', []) if safe_int(program, -1) >= 0]
-    if not wind_options['used_program']:
-        wind_options['used_program'] = [-1]
+    normalized = {
+        'pulses': max(0.001, min(1000000.0, safe_float(wind_options.get('pulses', 2), 2))),
+        'metperrot': max(0.001, min(1000000.0, safe_float(wind_options.get('metperrot', 1.492), 1.492))),
+        'maxspeed': max(0, min(1000, safe_float(wind_options.get('maxspeed', 20), 20))),
+        'm_speed_trig': max(0, min(1000, safe_float(wind_options.get('m_speed_trig', 10), 10))),
+        'log_interval': max(1, min(1440, safe_int(wind_options.get('log_interval', 1), 1))),
+        'log_records': max(0, min(10000, safe_int(wind_options.get('log_records', 0), 0))),
+        'event_repetitions': max(1, min(100, safe_int(wind_options.get('event_repetitions', 3), 3))),
+        'event_interval': max(1, min(1440, safe_int(wind_options.get('event_interval', 1), 1))),
+        'ignore_interval': max(1, min(8760, safe_int(wind_options.get('ignore_interval', 24), 24))),
+        'max_accepted_speed': max(0.1, min(1000.0, safe_float(
+            wind_options.get('max_accepted_speed', 40.0), 40.0))),
+        'action_confirmations': max(1, min(10, safe_int(
+            wind_options.get('action_confirmations', 2), 2))),
+        'eplug': 1 if safe_int(wind_options.get('eplug', 0), 0) == 1 else 0,
+        'used_stations': [
+            safe_int(station, -1)
+            for station in wind_options.get('used_stations', [])
+            if safe_int(station, -1) >= 0
+        ],
+        'used_program': [
+            safe_int(program, -1)
+            for program in wind_options.get('used_program', [])
+            if safe_int(program, -1) >= 0
+        ],
+    }
+    if not normalized['used_program']:
+        normalized['used_program'] = [-1]
+
+    # Normalization runs in the measurement loop. Persist only an actual
+    # correction instead of rewriting every setting on every sample.
+    for key, value in normalized.items():
+        current = wind_options.get(key)
+        if current != value or type(current) is not type(value):
+            wind_options[key] = value
 
 
 def set_counter(i2cbus):
