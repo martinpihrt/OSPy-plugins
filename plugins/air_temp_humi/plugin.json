@@ -3,7 +3,7 @@
   "id": "air_temp_humi",
   "name": "Air Temperature and Humidity Monitor",
   "menu": "Package: Air Temperature and Humidity Monitor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Monitors DHT temperature and humidity and optional DS18B20 sensors through an external I2C board.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/air_temp_humi",
@@ -48,5 +48,9 @@
     "gpio",
     "i2c",
     "system"
-  ]
+  ],
+  "mobile": {
+    "api_version": 1,
+    "actions": []
+  }
 }

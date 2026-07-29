@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "ups_adj",
   "name": "UPS Monitor",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -41,5 +41,9 @@
     "gpio",
     "email",
     "system"
-  ]
+  ],
+  "mobile": {
+    "api_version": 1,
+    "actions": []
+  }
 }

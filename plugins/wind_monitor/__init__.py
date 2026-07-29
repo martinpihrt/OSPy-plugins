@@ -1339,3 +1339,68 @@ def health():
         status = 'ok'
         summary = _('Wind monitor is reading the counter.')
     return {'status': status, 'summary': summary, 'details': details}
+
+
+def _mobile_series():
+    """Return bounded local graph data without accessing I2C or SQL."""
+    series = []
+    unit = _('km/h') if wind_options.get('use_kmh', False) else _('m/sec')
+    for index, item in enumerate(read_graph_log() or []):
+        balances = item.get('balances', {}) if isinstance(item, dict) else {}
+        points = []
+        for timestamp, value in sorted(
+                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
+            try:
+                points.append({
+                    'time': datetime.datetime.fromtimestamp(
+                        int(timestamp)).isoformat(),
+                    'value': float(value.get('total')),
+                })
+            except (AttributeError, TypeError, ValueError, OSError):
+                continue
+        if points:
+            series.append({
+                'id': 'maximum' if index == 0 else 'actual',
+                'label': str(item.get('station') or (
+                    _('Maximum') if index == 0 else _('Actual'))),
+                'unit': unit,
+                'points': points,
+            })
+    return series
+
+
+def mobile_status():
+    """Return current wind state without triggering a new measurement."""
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Wind Speed Monitor'),
+        'summary': result.get('summary', ''),
+        'updated': (
+            wind_sender.status.get('last_measurement', '')
+            if wind_sender is not None else ''
+        ),
+    }
+
+
+def mobile_cards():
+    """Return current speed, maximum, trend and local history."""
+    current = wind_sender.status.copy() if wind_sender is not None else {}
+    use_kmh = bool(wind_options.get('use_kmh', False))
+    factor = 3.6 if use_kmh else 1.0
+    unit = _('km/h') if use_kmh else _('m/sec')
+    return [{
+        'id': 'wind',
+        'title': _('Wind speed'),
+        'metrics': [
+            {'label': _('Actual'), 'value': round(
+                float(current.get('meter', 0)) * factor, 2), 'unit': unit},
+            {'label': _('Maximum'), 'value': round(
+                float(current.get('max_meter', 0)) * factor, 2), 'unit': unit},
+            {'label': _('Trend'), 'value': current.get('trend', 'unknown'),
+             'unit': ''},
+            {'label': _('Pulses'), 'value': current.get('last_raw_pulses', 0),
+             'unit': ''},
+        ],
+        'series': _mobile_series(),
+    }]

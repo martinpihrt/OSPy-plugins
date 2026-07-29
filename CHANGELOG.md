@@ -2,6 +2,9 @@
 
 July 29 2026
 ------------
+(Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.4, Wind Speed Monitor v1.1.4, Water Consumption Counter v1.2.5, Current Loop Tanks Monitor v1.0.3, Water Tank Monitor v1.0.3, UPS Monitor v1.0.3 and CHMI v1.0.3<br/>
+Added the optional, read-only mobile API v1 contribution to the selected monitoring plug-ins. The Android application can now display each plug-in's current operating state and measurements; temperature, wind, tank and radar plug-ins also expose bounded local history series for native graphs. Mobile reads use existing in-memory values and local history files and never initiate hardware, network or SQL measurements.
+
 (Martin Pihrt) - Wind Speed Monitor v1.1.3<br/>
 Stopped the measurement loop from rewriting every normalized plug-in setting on every sample. Values are now persisted only when normalization actually corrects a value, reducing settings-database traffic and avoiding stale settings-object assignments during a live plug-in update.
 

@@ -496,6 +496,62 @@ def health():
         'details': details,
     }
 
+
+def _mobile_radar_series():
+    channels = [
+        ('red', _('Red')),
+        ('green', _('Green')),
+        ('blue', _('Blue')),
+    ]
+    rows = list(reversed((read_log() or [])[:96]))
+    result = []
+    for key, label in channels:
+        points = []
+        for row in rows:
+            try:
+                points.append({
+                    'time': str(row.get('datetime', '')),
+                    'value': float(row.get(key, 0)),
+                })
+            except (AttributeError, TypeError, ValueError):
+                continue
+        if points:
+            result.append({
+                'id': key,
+                'label': label,
+                'unit': 'RGB',
+                'points': points,
+            })
+    return result
+
+
+def mobile_status():
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('CHMI radar'),
+        'summary': result.get('summary', ''),
+        'updated': health_state.get('last_radar_timestamp', ''),
+    }
+
+
+def mobile_cards():
+    current = checker.status.copy() if checker is not None else {}
+    return [{
+        'id': 'radar',
+        'title': _('Radar at the configured location'),
+        'metrics': [
+            {'label': _('Rain detected'), 'value': bool(current.get('state', 0)),
+             'unit': ''},
+            {'label': _('Red'), 'value': current.get('red', 0), 'unit': 'RGB'},
+            {'label': _('Green'), 'value': current.get('green', 0), 'unit': 'RGB'},
+            {'label': _('Blue'), 'value': current.get('blue', 0), 'unit': 'RGB'},
+            {'label': _('Radar source'), 'value': radar_source().upper(), 'unit': ''},
+        ],
+        'series': _mobile_radar_series(),
+    }]
+
+
 def radar_date_txt(date):
     return date.strftime("%Y%m%d.%H%M")[:-1] + "0"
 

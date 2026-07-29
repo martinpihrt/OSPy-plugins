@@ -625,6 +625,61 @@ def get_live_status():
     }
 
 
+def mobile_status():
+    """Return the counter health without changing stored totals."""
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Water Consumption Counter'),
+        'summary': result.get('summary', ''),
+        'updated': datetime_string(),
+    }
+
+
+def mobile_cards():
+    """Return master totals and incremental station consumption."""
+    live = get_live_status()
+    metrics = []
+    for master in (live.get('master_one'), live.get('master_two')):
+        if not master:
+            continue
+        metrics.extend([
+            {
+                'label': '{} - {}'.format(
+                    master.get('master_name', _('Master station')),
+                    _('Current consumption')),
+                'value': master.get('master_run_liters', 0),
+                'unit': 'l',
+            },
+            {
+                'label': '{} - {}'.format(
+                    master.get('master_name', _('Master station')),
+                    _('Total consumption')),
+                'value': master.get('master_total_liters', 0),
+                'unit': 'l',
+            },
+        ])
+    station_metrics = [{
+        'label': item.get('station_name', ''),
+        'value': item.get('station_run_liters', 0),
+        'unit': 'l',
+    } for item in live.get('stations', [])]
+    cards = [{
+        'id': 'masters',
+        'title': _('Master station consumption'),
+        'metrics': metrics,
+        'series': [],
+    }]
+    if station_metrics:
+        cards.append({
+            'id': 'stations',
+            'title': _('Running station consumption'),
+            'metrics': station_metrics,
+            'series': [],
+        })
+    return cards
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################
