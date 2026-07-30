@@ -14,6 +14,7 @@ import subprocess
 import shutil
 import importlib.util
 import math
+import base64
 
 from threading import Thread, Lock
 import traceback
@@ -497,32 +498,18 @@ def health():
     }
 
 
-def _mobile_radar_series():
-    channels = [
-        ('red', _('Red')),
-        ('green', _('Green')),
-        ('blue', _('Blue')),
-    ]
-    rows = list(reversed((read_log() or [])[:96]))
-    result = []
-    for key, label in channels:
-        points = []
-        for row in rows:
-            try:
-                points.append({
-                    'time': str(row.get('datetime', '')),
-                    'value': float(row.get(key, 0)),
-                })
-            except (AttributeError, TypeError, ValueError):
-                continue
-        if points:
-            result.append({
-                'id': key,
-                'label': label,
-                'unit': 'RGB',
-                'points': points,
-            })
-    return result
+def _mobile_radar_image():
+    """Return the latest already-downloaded radar image without network I/O."""
+    image_path = os.path.join(plugin_data_dir(), 'last.png')
+    try:
+        with open(image_path, 'rb') as image_file:
+            return {
+                'mime_type': 'image/png',
+                'data_base64': base64.b64encode(image_file.read()).decode('ascii'),
+                'updated': health_state.get('last_radar_timestamp', ''),
+            }
+    except (IOError, OSError):
+        return None
 
 
 def mobile_status():
@@ -537,19 +524,29 @@ def mobile_status():
 
 def mobile_cards():
     current = checker.status.copy() if checker is not None else {}
-    return [{
+    card = {
         'id': 'radar',
         'title': _('Radar at the configured location'),
         'metrics': [
-            {'label': _('Rain detected'), 'value': bool(current.get('state', 0)),
-             'unit': ''},
-            {'label': _('Red'), 'value': current.get('red', 0), 'unit': 'RGB'},
-            {'label': _('Green'), 'value': current.get('green', 0), 'unit': 'RGB'},
-            {'label': _('Blue'), 'value': current.get('blue', 0), 'unit': 'RGB'},
-            {'label': _('Radar source'), 'value': radar_source().upper(), 'unit': ''},
+            {
+                'id': 'rain_state',
+                'label': _('Rain detected'),
+                'value': 'rain' if bool(current.get('state', 0)) else 'dry',
+                'unit': '',
+            },
+            {
+                'id': 'radar_source',
+                'label': _('Radar source'),
+                'value': radar_source().upper(),
+                'unit': '',
+            },
         ],
-        'series': _mobile_radar_series(),
-    }]
+        'series': [],
+    }
+    image = _mobile_radar_image()
+    if image is not None:
+        card['image'] = image
+    return [card]
 
 
 def radar_date_txt(date):

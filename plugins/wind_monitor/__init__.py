@@ -1393,13 +1393,15 @@ def mobile_cards():
         'id': 'wind',
         'title': _('Wind speed'),
         'metrics': [
-            {'label': _('Actual'), 'value': round(
+            {'id': 'actual', 'label': _('Actual'), 'value': round(
                 float(current.get('meter', 0)) * factor, 2), 'unit': unit},
-            {'label': _('Maximum'), 'value': round(
+            {'id': 'maximum', 'label': _('Maximum'), 'value': round(
                 float(current.get('max_meter', 0)) * factor, 2), 'unit': unit},
-            {'label': _('Trend'), 'value': current.get('trend', 'unknown'),
+            {'id': 'trend', 'label': _('Trend'),
+             'value': current.get('trend', 'unknown'),
              'unit': ''},
-            {'label': _('Pulses'), 'value': current.get('last_raw_pulses', 0),
+            {'id': 'pulses', 'label': _('Pulses'),
+             'value': current.get('last_raw_pulses', 0),
              'unit': ''},
         ],
         'series': _mobile_series(),

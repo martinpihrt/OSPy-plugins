@@ -640,28 +640,32 @@ def mobile_cards():
     """Return master totals and incremental station consumption."""
     live = get_live_status()
     metrics = []
-    for master in (live.get('master_one'), live.get('master_two')):
+    for master_number, master in enumerate(
+            (live.get('master_one'), live.get('master_two')), 1):
         if not master:
             continue
+        master_name = (
+            _('Master Station') if master_number == 1
+            else _('Second Master Station')
+        )
         metrics.extend([
             {
-                'label': '{} - {}'.format(
-                    master.get('master_name', _('Master station')),
-                    _('Current consumption')),
-                'value': master.get('master_run_liters', 0),
+                'id': 'master_{}_current'.format(master_number),
+                'label': '{} - {}'.format(master_name, _('Current consumption')),
+                'value': master.get('current', 0),
                 'unit': 'l',
             },
             {
-                'label': '{} - {}'.format(
-                    master.get('master_name', _('Master station')),
-                    _('Total consumption')),
-                'value': master.get('master_total_liters', 0),
+                'id': 'master_{}_total'.format(master_number),
+                'label': '{} - {}'.format(master_name, _('Total consumption')),
+                'value': master.get('total', 0),
                 'unit': 'l',
             },
         ])
     station_metrics = [{
-        'label': item.get('station_name', ''),
-        'value': item.get('station_run_liters', 0),
+        'id': 'station_current',
+        'label': item.get('name', ''),
+        'value': item.get('liters', 0),
         'unit': 'l',
     } for item in live.get('stations', [])]
     cards = [{

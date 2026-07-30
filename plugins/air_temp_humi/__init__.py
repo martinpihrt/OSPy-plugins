@@ -475,7 +475,12 @@ def health():
 def _mobile_series():
     """Return a bounded, read-only temperature history for mobile clients."""
     series = []
+    active_ds = set(DS18B20_active_indexes())
     for index, item in enumerate(read_graph_log() or []):
+        if index < 6 and index not in active_ds:
+            continue
+        if index >= 6 and not plugin_options.get('enable_dht', False):
+            continue
         balances = item.get('balances', {}) if isinstance(item, dict) else {}
         points = []
         for timestamp, value in sorted(
@@ -518,12 +523,15 @@ def mobile_cards():
     metrics = []
     if plugin_options['enable_dht']:
         metrics.extend([
-            {'label': plugin_options['label'], 'value': current.get('temp', 0),
+            {'id': 'dht_temperature', 'label': plugin_options['label'],
+             'value': current.get('temp', 0),
              'unit': '°C'},
-            {'label': _('Humidity'), 'value': current.get('humi', 0), 'unit': '%'},
+            {'id': 'dht_humidity', 'label': _('Humidity'),
+             'value': current.get('humi', 0), 'unit': '%'},
         ])
     for index in DS18B20_active_indexes():
         metrics.append({
+            'id': 'ds18b20_{}'.format(index),
             'label': plugin_options['label_ds{}'.format(index)],
             'value': current.get('DS{}'.format(index), DS18B20_ERROR_VALUE),
             'unit': '°C',

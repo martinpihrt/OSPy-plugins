@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+July 30 2026
+------------
+(Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.5, CHMI v1.0.4, Water Consumption Counter v1.2.6 and Wind Speed Monitor v1.1.5<br/>
+Refined the native mobile API data. Temperature history now contains only enabled sensors and stable series identifiers. CHMI supplies the latest radar image and a concise local rain state instead of an RGB history chart. Water consumption uses the live master and running-station counters, and wind metrics include stable identifiers for localized values and trend display.
+
 July 29 2026
 ------------
 (Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.4, Wind Speed Monitor v1.1.4, Water Consumption Counter v1.2.5, Current Loop Tanks Monitor v1.0.3, Water Tank Monitor v1.0.3, UPS Monitor v1.0.3 and CHMI v1.0.3<br/>
