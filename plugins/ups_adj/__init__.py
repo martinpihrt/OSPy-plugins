@@ -344,6 +344,39 @@ def health():
     }
 
 
+def mobile_status():
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('UPS Monitor'),
+        'summary': result.get('summary', ''),
+        'updated': (
+            datetime_string(time.localtime(health_state['last_check']))
+            if health_state['last_check'] else ''
+        ),
+    }
+
+
+def mobile_cards():
+    power = get_power_state_data()
+    return [{
+        'id': 'power',
+        'title': _('Power line'),
+        'metrics': [
+            {'label': _('State'), 'value': power.get('ups_state', ''), 'unit': ''},
+            {'label': _('Shutdown countdown'),
+             'value': (
+                 format_seconds(power['countdown_remaining'])
+                 if power.get('countdown_remaining') is not None
+                 else _('Not active')
+             ), 'unit': ''},
+            {'label': _('Shutdown delay'), 'value': ups_options.get('time', 0),
+             'unit': 'min'},
+        ],
+        'series': [],
+    }]
+
+
 def get_check_power_str():
     if GPIO.input(pin_power_ok) == 0:
         pwr = _('GPIO Pin = 0 Power line is OK.')

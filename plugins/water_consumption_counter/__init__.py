@@ -625,6 +625,65 @@ def get_live_status():
     }
 
 
+def mobile_status():
+    """Return the counter health without changing stored totals."""
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Water Consumption Counter'),
+        'summary': result.get('summary', ''),
+        'updated': datetime_string(),
+    }
+
+
+def mobile_cards():
+    """Return master totals and incremental station consumption."""
+    live = get_live_status()
+    metrics = []
+    for master_number, master in enumerate(
+            (live.get('master_one'), live.get('master_two')), 1):
+        if not master:
+            continue
+        master_name = (
+            _('Master Station') if master_number == 1
+            else _('Second Master Station')
+        )
+        metrics.extend([
+            {
+                'id': 'master_{}_current'.format(master_number),
+                'label': '{} - {}'.format(master_name, _('Current consumption')),
+                'value': master.get('current', 0),
+                'unit': 'l',
+            },
+            {
+                'id': 'master_{}_total'.format(master_number),
+                'label': '{} - {}'.format(master_name, _('Total consumption')),
+                'value': master.get('total', 0),
+                'unit': 'l',
+            },
+        ])
+    station_metrics = [{
+        'id': 'station_current',
+        'label': item.get('name', ''),
+        'value': item.get('liters', 0),
+        'unit': 'l',
+    } for item in live.get('stations', [])]
+    cards = [{
+        'id': 'masters',
+        'title': _('Master station consumption'),
+        'metrics': metrics,
+        'series': [],
+    }]
+    if station_metrics:
+        cards.append({
+            'id': 'stations',
+            'title': _('Running station consumption'),
+            'metrics': station_metrics,
+            'series': [],
+        })
+    return cards
+
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################

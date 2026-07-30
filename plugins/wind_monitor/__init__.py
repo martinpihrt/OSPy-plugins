@@ -118,7 +118,7 @@ def wind_i2c_transaction(timeout=30.0, settle_time=0.02):
 
 def _diagnostic_path(backup=False):
     name = DIAGNOSTIC_LOG_BACKUP_NAME if backup else DIAGNOSTIC_LOG_NAME
-    return os.path.join(plugin_data_dir(), name)
+    return os.path.join(plugin_data_dir('wind_monitor'), name)
 
 
 def diagnostic_event(event, **values):
@@ -572,24 +572,41 @@ def decimal_input(qdict, key, default):
 
 
 def normalize_options():
-    wind_options['pulses'] = max(0.001, min(1000000.0, safe_float(wind_options.get('pulses', 2), 2)))
-    wind_options['metperrot'] = max(0.001, min(1000000.0, safe_float(wind_options.get('metperrot', 1.492), 1.492)))
-    wind_options['maxspeed'] = max(0, min(1000, safe_float(wind_options.get('maxspeed', 20), 20)))
-    wind_options['m_speed_trig'] = max(0, min(1000, safe_float(wind_options.get('m_speed_trig', 10), 10)))
-    wind_options['log_interval'] = max(1, min(1440, safe_int(wind_options.get('log_interval', 1), 1)))
-    wind_options['log_records'] = max(0, min(10000, safe_int(wind_options.get('log_records', 0), 0)))
-    wind_options['event_repetitions'] = max(1, min(100, safe_int(wind_options.get('event_repetitions', 3), 3)))
-    wind_options['event_interval'] = max(1, min(1440, safe_int(wind_options.get('event_interval', 1), 1)))
-    wind_options['ignore_interval'] = max(1, min(8760, safe_int(wind_options.get('ignore_interval', 24), 24)))
-    wind_options['max_accepted_speed'] = max(0.1, min(1000.0, safe_float(
-        wind_options.get('max_accepted_speed', 40.0), 40.0)))
-    wind_options['action_confirmations'] = max(1, min(10, safe_int(
-        wind_options.get('action_confirmations', 2), 2)))
-    wind_options['eplug'] = 1 if safe_int(wind_options.get('eplug', 0), 0) == 1 else 0
-    wind_options['used_stations'] = [safe_int(station, -1) for station in wind_options.get('used_stations', []) if safe_int(station, -1) >= 0]
-    wind_options['used_program'] = [safe_int(program, -1) for program in wind_options.get('used_program', []) if safe_int(program, -1) >= 0]
-    if not wind_options['used_program']:
-        wind_options['used_program'] = [-1]
+    normalized = {
+        'pulses': max(0.001, min(1000000.0, safe_float(wind_options.get('pulses', 2), 2))),
+        'metperrot': max(0.001, min(1000000.0, safe_float(wind_options.get('metperrot', 1.492), 1.492))),
+        'maxspeed': max(0, min(1000, safe_float(wind_options.get('maxspeed', 20), 20))),
+        'm_speed_trig': max(0, min(1000, safe_float(wind_options.get('m_speed_trig', 10), 10))),
+        'log_interval': max(1, min(1440, safe_int(wind_options.get('log_interval', 1), 1))),
+        'log_records': max(0, min(10000, safe_int(wind_options.get('log_records', 0), 0))),
+        'event_repetitions': max(1, min(100, safe_int(wind_options.get('event_repetitions', 3), 3))),
+        'event_interval': max(1, min(1440, safe_int(wind_options.get('event_interval', 1), 1))),
+        'ignore_interval': max(1, min(8760, safe_int(wind_options.get('ignore_interval', 24), 24))),
+        'max_accepted_speed': max(0.1, min(1000.0, safe_float(
+            wind_options.get('max_accepted_speed', 40.0), 40.0))),
+        'action_confirmations': max(1, min(10, safe_int(
+            wind_options.get('action_confirmations', 2), 2))),
+        'eplug': 1 if safe_int(wind_options.get('eplug', 0), 0) == 1 else 0,
+        'used_stations': [
+            safe_int(station, -1)
+            for station in wind_options.get('used_stations', [])
+            if safe_int(station, -1) >= 0
+        ],
+        'used_program': [
+            safe_int(program, -1)
+            for program in wind_options.get('used_program', [])
+            if safe_int(program, -1) >= 0
+        ],
+    }
+    if not normalized['used_program']:
+        normalized['used_program'] = [-1]
+
+    # Normalization runs in the measurement loop. Persist only an actual
+    # correction instead of rewriting every setting on every sample.
+    for key, value in normalized.items():
+        current = wind_options.get(key)
+        if current != value or type(current) is not type(value):
+            wind_options[key] = value
 
 
 def set_counter(i2cbus):
@@ -722,7 +739,7 @@ def get_all_values():
 def read_log():
     """Read log data from json file."""
     try:
-        with open(os.path.join(plugin_data_dir(), 'log.json')) as logf:
+        with open(os.path.join(plugin_data_dir('wind_monitor'), 'log.json')) as logf:
             return json.load(logf)
     except (IOError, ValueError):
         return []
@@ -732,7 +749,7 @@ def read_graph_log():
     """Read graph data from json file."""
 
     try:
-        with open(os.path.join(plugin_data_dir(), 'graph.json')) as logf:
+        with open(os.path.join(plugin_data_dir('wind_monitor'), 'graph.json')) as logf:
             return json.load(logf)
     except (IOError, ValueError):
         return []
@@ -741,14 +758,14 @@ def read_graph_log():
 def write_log(json_data):
     """Write data to log json file."""
 
-    with open(os.path.join(plugin_data_dir(), 'log.json'), 'w') as outfile:
+    with open(os.path.join(plugin_data_dir('wind_monitor'), 'log.json'), 'w') as outfile:
         json.dump(json_data, outfile)
 
 
 def write_graph_log(json_data):
     """Write data to graph json file."""
 
-    with open(os.path.join(plugin_data_dir(), 'graph.json'), 'w') as outfile:
+    with open(os.path.join(plugin_data_dir('wind_monitor'), 'graph.json'), 'w') as outfile:
         json.dump(json_data, outfile)
 
 
@@ -1322,3 +1339,70 @@ def health():
         status = 'ok'
         summary = _('Wind monitor is reading the counter.')
     return {'status': status, 'summary': summary, 'details': details}
+
+
+def _mobile_series():
+    """Return bounded local graph data without accessing I2C or SQL."""
+    series = []
+    unit = _('km/h') if wind_options.get('use_kmh', False) else _('m/sec')
+    for index, item in enumerate(read_graph_log() or []):
+        balances = item.get('balances', {}) if isinstance(item, dict) else {}
+        points = []
+        for timestamp, value in sorted(
+                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
+            try:
+                points.append({
+                    'time': datetime.datetime.fromtimestamp(
+                        int(timestamp)).isoformat(),
+                    'value': float(value.get('total')),
+                })
+            except (AttributeError, TypeError, ValueError, OSError):
+                continue
+        if points:
+            series.append({
+                'id': 'maximum' if index == 0 else 'actual',
+                'label': str(item.get('station') or (
+                    _('Maximum') if index == 0 else _('Actual'))),
+                'unit': unit,
+                'points': points,
+            })
+    return series
+
+
+def mobile_status():
+    """Return current wind state without triggering a new measurement."""
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Wind Speed Monitor'),
+        'summary': result.get('summary', ''),
+        'updated': (
+            wind_sender.status.get('last_measurement', '')
+            if wind_sender is not None else ''
+        ),
+    }
+
+
+def mobile_cards():
+    """Return current speed, maximum, trend and local history."""
+    current = wind_sender.status.copy() if wind_sender is not None else {}
+    use_kmh = bool(wind_options.get('use_kmh', False))
+    factor = 3.6 if use_kmh else 1.0
+    unit = _('km/h') if use_kmh else _('m/sec')
+    return [{
+        'id': 'wind',
+        'title': _('Wind speed'),
+        'metrics': [
+            {'id': 'actual', 'label': _('Actual'), 'value': round(
+                float(current.get('meter', 0)) * factor, 2), 'unit': unit},
+            {'id': 'maximum', 'label': _('Maximum'), 'value': round(
+                float(current.get('max_meter', 0)) * factor, 2), 'unit': unit},
+            {'id': 'trend', 'label': _('Trend'),
+             'value': current.get('trend', 'unknown'),
+             'unit': ''},
+            {'id': 'pulses', 'label': _('Pulses'),
+             'value': current.get('last_raw_pulses', 0),
+             'unit': ''},
+        ],
+        'series': _mobile_series(),
+    }]

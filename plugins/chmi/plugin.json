@@ -3,7 +3,7 @@
   "id": "chmi",
   "name": "CHMI",
   "menu": "Package: CHMI radar",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Downloads CHMI or SHMU radar data, detects local rain and optionally controls a hardware map.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/chmi",
@@ -41,5 +41,9 @@
     "network",
     "subprocess",
     "system"
-  ]
+  ],
+  "mobile": {
+    "api_version": 1,
+    "actions": []
+  }
 }

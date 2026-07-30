@@ -1,5 +1,26 @@
 # OSPy-plugins Changelog
 
+July 30 2026
+------------
+(Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.5, CHMI v1.0.4, Water Consumption Counter v1.2.6 and Wind Speed Monitor v1.1.5<br/>
+Refined the native mobile API data. Temperature history now contains only enabled sensors and stable series identifiers. CHMI supplies the latest radar image and a concise local rain state instead of an RGB history chart. Water consumption uses the live master and running-station counters, and wind metrics include stable identifiers for localized values and trend display.
+
+July 29 2026
+------------
+(Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.4, Wind Speed Monitor v1.1.4, Water Consumption Counter v1.2.5, Current Loop Tanks Monitor v1.0.3, Water Tank Monitor v1.0.3, UPS Monitor v1.0.3 and CHMI v1.0.3<br/>
+Added the optional, read-only mobile API v1 contribution to the selected monitoring plug-ins. The Android application can now display each plug-in's current operating state and measurements; temperature, wind, tank and radar plug-ins also expose bounded local history series for native graphs. Mobile reads use existing in-memory values and local history files and never initiate hardware, network or SQL measurements.
+
+(Martin Pihrt) - Wind Speed Monitor v1.1.3<br/>
+Stopped the measurement loop from rewriting every normalized plug-in setting on every sample. Values are now persisted only when normalization actually corrects a value, reducing settings-database traffic and avoiding stale settings-object assignments during a live plug-in update.
+
+(Martin Pihrt) - Wind Speed Monitor v1.1.2<br/>
+Made every diagnostic and history file path explicitly target the Wind Speed Monitor data directory. Runtime files such as `diagnostic.log.1` can therefore no longer be created at the shared plug-in root and mistaken for an installable plug-in by OSPy.
+
+July 28 2026
+------------
+(Martin Pihrt) - Wind Speed Monitor v1.1.1<br/>
+Restored the point-hover tooltip in the automatically refreshed history graph. Each measured point again shows its time and current value, plus the preceding value when available. Tooltip handlers and data are rebuilt safely after every background graph refresh, point order is normalized chronologically, and the tooltip styling is kept in the plug-in CSS.
+
 July 27 2026
 ------------
 (Martin Pihrt) - CHMI v1.0.2<br/>

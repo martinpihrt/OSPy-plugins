@@ -472,6 +472,78 @@ def health():
     }
 
 
+def _mobile_series():
+    """Return a bounded, read-only temperature history for mobile clients."""
+    series = []
+    active_ds = set(DS18B20_active_indexes())
+    for index, item in enumerate(read_graph_log() or []):
+        if index < 6 and index not in active_ds:
+            continue
+        if index >= 6 and not plugin_options.get('enable_dht', False):
+            continue
+        balances = item.get('balances', {}) if isinstance(item, dict) else {}
+        points = []
+        for timestamp, value in sorted(
+                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
+            try:
+                points.append({
+                    'time': datetime.datetime.fromtimestamp(
+                        int(timestamp)).isoformat(),
+                    'value': float(value.get('total')),
+                })
+            except (AttributeError, TypeError, ValueError, OSError):
+                continue
+        if points:
+            series.append({
+                'id': 'sensor-{}'.format(index),
+                'label': str(item.get('station') or _('Temperature')),
+                'unit': '%' if index == 7 else '°C',
+                'points': points,
+            })
+    return series
+
+
+def mobile_status():
+    """Return the native mobile status without performing sensor I/O."""
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Air Temperature and Humidity Monitor'),
+        'summary': result.get('summary', ''),
+        'updated': (
+            datetime_string(time.localtime(health_state['last_sample']))
+            if health_state['last_sample'] else ''
+        ),
+    }
+
+
+def mobile_cards():
+    """Return current DHT/DS18B20 readings and recent local history."""
+    current = sender.status.copy() if sender is not None else {}
+    metrics = []
+    if plugin_options['enable_dht']:
+        metrics.extend([
+            {'id': 'dht_temperature', 'label': plugin_options['label'],
+             'value': current.get('temp', 0),
+             'unit': '°C'},
+            {'id': 'dht_humidity', 'label': _('Humidity'),
+             'value': current.get('humi', 0), 'unit': '%'},
+        ])
+    for index in DS18B20_active_indexes():
+        metrics.append({
+            'id': 'ds18b20_{}'.format(index),
+            'label': plugin_options['label_ds{}'.format(index)],
+            'value': current.get('DS{}'.format(index), DS18B20_ERROR_VALUE),
+            'unit': '°C',
+        })
+    return [{
+        'id': 'temperatures',
+        'title': _('Temperature sensors'),
+        'metrics': metrics,
+        'series': _mobile_series(),
+    }]
+
+
 def try_io(call, tries=10):
     assert tries > 0
     error = None

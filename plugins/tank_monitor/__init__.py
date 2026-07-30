@@ -496,6 +496,62 @@ def health():
         'details': details,
     }
 
+
+def _mobile_tank_series():
+    series = []
+    units = ('cm', 'cm', 'cm', 'l')
+    ids = ('minimum', 'maximum', 'level', 'volume')
+    for index, item in enumerate(read_graph_log() or []):
+        balances = item.get('balances', {}) if isinstance(item, dict) else {}
+        points = []
+        for timestamp, value in sorted(
+                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
+            try:
+                points.append({
+                    'time': datetime.datetime.fromtimestamp(
+                        int(timestamp)).isoformat(),
+                    'value': float(value.get('total')),
+                })
+            except (AttributeError, TypeError, ValueError, OSError):
+                continue
+        if points:
+            series.append({
+                'id': ids[index] if index < len(ids) else 'value-{}'.format(index),
+                'label': str(item.get('station') or ids[index]),
+                'unit': units[index] if index < len(units) else '',
+                'points': points,
+            })
+    return series
+
+
+def mobile_status():
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Water Tank Monitor'),
+        'summary': result.get('summary', ''),
+        'updated': (
+            datetime_string(time.localtime(health_state['last_read']))
+            if health_state['last_read'] else ''
+        ),
+    }
+
+
+def mobile_cards():
+    return [{
+        'id': 'tank',
+        'title': _('Water tank'),
+        'metrics': [
+            {'label': _('Level'), 'value': status.get('level', -1), 'unit': 'cm'},
+            {'label': _('Tank fill'), 'value': status.get('percent', -1), 'unit': '%'},
+            {'label': _('Volume'), 'value': status.get('volume', -1),
+             'unit': 'l' if tank_options.get('check_liters', False) else 'm³'},
+            {'label': _('Sensor distance'), 'value': status.get('ping', -1),
+             'unit': 'cm'},
+        ],
+        'series': _mobile_tank_series(),
+    }]
+
 def average_list(lst):
     ### Average of a list ###
     try:

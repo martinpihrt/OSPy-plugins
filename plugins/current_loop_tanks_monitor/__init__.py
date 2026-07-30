@@ -544,6 +544,64 @@ def health():
     }
 
 
+def _mobile_tank_series():
+    series = []
+    for index, item in enumerate(read_graph_log() or []):
+        balances = item.get('balances', {}) if isinstance(item, dict) else {}
+        points = []
+        for timestamp, value in sorted(
+                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
+            try:
+                points.append({
+                    'time': datetime.datetime.fromtimestamp(
+                        int(timestamp)).isoformat(),
+                    'value': float(value.get('total')),
+                })
+            except (AttributeError, TypeError, ValueError, OSError):
+                continue
+        if points:
+            series.append({
+                'id': 'tank-{}-{}'.format(index % 4 + 1,
+                                          'liters' if index >= 4 else 'percent'),
+                'label': str(item.get('station') or tanks['label'][index % 4]),
+                'unit': 'l' if index >= 4 else '%',
+                'points': points,
+            })
+    return series
+
+
+def mobile_status():
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Current Loop Tanks Monitor'),
+        'summary': result.get('summary', ''),
+        'updated': (
+            datetime_string(time.localtime(health_state['last_success']))
+            if health_state['last_success'] else ''
+        ),
+    }
+
+
+def mobile_cards():
+    metrics = []
+    for index in range(4):
+        if not plugin_options['en_tank{}'.format(index + 1)]:
+            continue
+        metrics.extend([
+            {'label': '{} - {}'.format(tanks['label'][index], _('Level')),
+             'value': round(float(tanks['levelPercent'][index]), 1), 'unit': '%'},
+            {'label': '{} - {}'.format(tanks['label'][index], _('Volume')),
+             'value': round(float(tanks['volumeLiter'][index]), 1), 'unit': 'l'},
+        ])
+    return [{
+        'id': 'tanks',
+        'title': _('Tank levels'),
+        'metrics': metrics,
+        'series': _mobile_tank_series(),
+    }]
+
+
 def set_stations_in_scheduler_off():
     """Stoping selected station in scheduler."""
     
