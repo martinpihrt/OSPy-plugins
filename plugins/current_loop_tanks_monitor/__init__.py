@@ -544,30 +544,22 @@ def health():
     }
 
 
-def _mobile_tank_series():
-    series = []
-    for index, item in enumerate(read_graph_log() or []):
-        balances = item.get('balances', {}) if isinstance(item, dict) else {}
-        points = []
-        for timestamp, value in sorted(
-                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
-            try:
-                points.append({
-                    'time': datetime.datetime.fromtimestamp(
-                        int(timestamp)).isoformat(),
-                    'value': float(value.get('total')),
-                })
-            except (AttributeError, TypeError, ValueError, OSError):
-                continue
-        if points:
-            series.append({
-                'id': 'tank-{}-{}'.format(index % 4 + 1,
-                                          'liters' if index >= 4 else 'percent'),
-                'label': str(item.get('station') or tanks['label'][index % 4]),
-                'unit': 'l' if index >= 4 else '%',
-                'points': points,
-            })
-    return series
+def _mobile_tank_series(from_time=None, to_time=None, max_points=400):
+    from plugins.current_loop_tanks_monitor.mobile_history import mobile_history
+    definitions = []
+    for index in range(8):
+        tank_index = index % 4
+        if not plugin_options.get('en_tank{}'.format(tank_index + 1), False):
+            definitions.append(None)
+            continue
+        definitions.append((
+            'tank-{}-{}'.format(tank_index + 1,
+                                'liters' if index >= 4 else 'percent'),
+            tanks['label'][tank_index], 'l' if index >= 4 else '%'))
+    source = 'sql' if plugin_options.get('type_log', 0) == 1 else 'local'
+    graph_data = read_graph_sql_log() if source == 'sql' else read_graph_log()
+    return mobile_history(graph_data, definitions, from_time, to_time,
+                          max_points, source)
 
 
 def mobile_status():
@@ -583,7 +575,7 @@ def mobile_status():
     }
 
 
-def mobile_cards():
+def mobile_cards(from_time=None, to_time=None, max_points=400):
     metrics = []
     for index in range(4):
         if not plugin_options['en_tank{}'.format(index + 1)]:
@@ -594,11 +586,13 @@ def mobile_cards():
             {'label': '{} - {}'.format(tanks['label'][index], _('Volume')),
              'value': round(float(tanks['volumeLiter'][index]), 1), 'unit': 'l'},
         ])
+    series, history = _mobile_tank_series(from_time, to_time, max_points)
     return [{
         'id': 'tanks',
         'title': _('Tank levels'),
         'metrics': metrics,
-        'series': _mobile_tank_series(),
+        'series': series,
+        'history': history,
     }]
 
 

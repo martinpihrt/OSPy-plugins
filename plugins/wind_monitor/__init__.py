@@ -1341,32 +1341,16 @@ def health():
     return {'status': status, 'summary': summary, 'details': details}
 
 
-def _mobile_series():
-    """Return bounded local graph data without accessing I2C or SQL."""
-    series = []
+def _mobile_series(from_time=None, to_time=None, max_points=400):
+    """Return the requested local or SQL graph interval."""
+    from plugins.wind_monitor.mobile_history import mobile_history
     unit = _('km/h') if wind_options.get('use_kmh', False) else _('m/sec')
-    for index, item in enumerate(read_graph_log() or []):
-        balances = item.get('balances', {}) if isinstance(item, dict) else {}
-        points = []
-        for timestamp, value in sorted(
-                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
-            try:
-                points.append({
-                    'time': datetime.datetime.fromtimestamp(
-                        int(timestamp)).isoformat(),
-                    'value': float(value.get('total')),
-                })
-            except (AttributeError, TypeError, ValueError, OSError):
-                continue
-        if points:
-            series.append({
-                'id': 'maximum' if index == 0 else 'actual',
-                'label': str(item.get('station') or (
-                    _('Maximum') if index == 0 else _('Actual'))),
-                'unit': unit,
-                'points': points,
-            })
-    return series
+    source = 'sql' if wind_options.get('type_log', 0) == 1 else 'local'
+    graph_data = read_graph_sql_log() if source == 'sql' else read_graph_log()
+    return mobile_history(
+        graph_data,
+        [('maximum', _('Maximum'), unit), ('actual', _('Actual'), unit)],
+        from_time, to_time, max_points, source)
 
 
 def mobile_status():
@@ -1383,12 +1367,13 @@ def mobile_status():
     }
 
 
-def mobile_cards():
-    """Return current speed, maximum, trend and local history."""
+def mobile_cards(from_time=None, to_time=None, max_points=400):
+    """Return current speed, maximum, trend and requested history."""
     current = wind_sender.status.copy() if wind_sender is not None else {}
     use_kmh = bool(wind_options.get('use_kmh', False))
     factor = 3.6 if use_kmh else 1.0
     unit = _('km/h') if use_kmh else _('m/sec')
+    series, history = _mobile_series(from_time, to_time, max_points)
     return [{
         'id': 'wind',
         'title': _('Wind speed'),
@@ -1404,5 +1389,6 @@ def mobile_cards():
              'value': current.get('last_raw_pulses', 0),
              'unit': ''},
         ],
-        'series': _mobile_series(),
+        'series': series,
+        'history': history,
     }]

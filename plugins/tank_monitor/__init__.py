@@ -497,31 +497,17 @@ def health():
     }
 
 
-def _mobile_tank_series():
-    series = []
+def _mobile_tank_series(from_time=None, to_time=None, max_points=400):
+    from plugins.tank_monitor.mobile_history import mobile_history
     units = ('cm', 'cm', 'cm', 'l')
     ids = ('minimum', 'maximum', 'level', 'volume')
-    for index, item in enumerate(read_graph_log() or []):
-        balances = item.get('balances', {}) if isinstance(item, dict) else {}
-        points = []
-        for timestamp, value in sorted(
-                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
-            try:
-                points.append({
-                    'time': datetime.datetime.fromtimestamp(
-                        int(timestamp)).isoformat(),
-                    'value': float(value.get('total')),
-                })
-            except (AttributeError, TypeError, ValueError, OSError):
-                continue
-        if points:
-            series.append({
-                'id': ids[index] if index < len(ids) else 'value-{}'.format(index),
-                'label': str(item.get('station') or ids[index]),
-                'unit': units[index] if index < len(units) else '',
-                'points': points,
-            })
-    return series
+    labels = (_('Minimum'), _('Maximum'), _('Level'), _('Volume'))
+    source = 'sql' if tank_options.get('type_log', 0) == 1 else 'local'
+    graph_data = read_graph_sql_log() if source == 'sql' else read_graph_log()
+    definitions = [(ids[index], labels[index], units[index])
+                   for index in range(4)]
+    return mobile_history(graph_data, definitions, from_time, to_time,
+                          max_points, source)
 
 
 def mobile_status():
@@ -537,7 +523,8 @@ def mobile_status():
     }
 
 
-def mobile_cards():
+def mobile_cards(from_time=None, to_time=None, max_points=400):
+    series, history = _mobile_tank_series(from_time, to_time, max_points)
     return [{
         'id': 'tank',
         'title': _('Water tank'),
@@ -549,7 +536,8 @@ def mobile_cards():
             {'label': _('Sensor distance'), 'value': status.get('ping', -1),
              'unit': 'cm'},
         ],
-        'series': _mobile_tank_series(),
+        'series': series,
+        'history': history,
     }]
 
 def average_list(lst):

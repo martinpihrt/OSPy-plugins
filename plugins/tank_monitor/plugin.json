@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "tank_monitor",
   "name": "Water Tank Monitor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

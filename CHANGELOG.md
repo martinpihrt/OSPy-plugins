@@ -21,6 +21,11 @@ July 28 2026
 (Martin Pihrt) - Wind Speed Monitor v1.1.1<br/>
 Restored the point-hover tooltip in the automatically refreshed history graph. Each measured point again shows its time and current value, plus the preceding value when available. Tooltip handlers and data are rebuilt safely after every background graph refresh, point order is normalized chronologically, and the tooltip styling is kept in the plug-in CSS.
 
+August 5 2026
+-------------
+(Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.6, Wind Speed Monitor v1.1.6, Water Tank Monitor v1.0.4 and Current Loop Tanks Monitor v1.0.4<br/>
+Extended the native mobile chart interface with ISO date-range selection, local/SQL history-source parity, bounded point counts and min/max-preserving downsampling. Mobile clients now receive actual timestamps, the selected source, returned-point count and last available record, so old local graph data is not presented as current SQL history and empty periods are reported clearly.
+
 July 27 2026
 ------------
 (Martin Pihrt) - CHMI v1.0.2<br/>
