@@ -2,6 +2,9 @@
 
 August 6 2026
 -------------
+(Martin Pihrt) - CHMI v1.0.6, E-mail Notifications SSL v1.1.5, LCD Display v1.0.2, Monthly Water Level v1.0.1, Home Assistant MQTT v1.0.1, OSPy Package Backup v1.0.1, System Debug Information v1.0.1, System Update v1.2.5, Thermostat v1.0.1, Usage Statistics v1.0.1 and Weather-based Water Level v1.1.2<br/>
+Added safe, read-only Mobile API v1 operating cards for the listed service and system plug-ins without exposing credentials or configuration. CHMI now marks the OSPy weather location on a generated copy of the current radar frame and formats compact radar timestamps as a readable local date and time. Cards without graph data no longer advertise an empty series, allowing native clients to omit irrelevant history controls.
+
 (Martin Pihrt) - Astro Sunrise and Sunset v1.0.3<br/>
 Fixed the native mobile card so its sunrise, sunset, twilight, moon phase and 24-hour daylight data are returned instead of being discarded by a datetime namespace error.
 

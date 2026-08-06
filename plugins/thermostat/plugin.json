@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "thermostat",
   "name": "Thermostat",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -10,6 +10,10 @@
   },
   "python": {
     "min_version": "3.8"
+  },
+  "mobile": {
+    "api_version": 1,
+    "actions": []
   },
   "permissions": [
     "system"

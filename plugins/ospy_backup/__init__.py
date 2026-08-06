@@ -128,6 +128,25 @@ def health():
     }
 
 
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('OSPy package Backup'),
+            'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    metrics = [
+        {'id': 'backup_{}'.format(index), 'label': label,
+         'value': value, 'unit': ''}
+        for index, (label, value) in enumerate(result.get('details', {}).items())
+    ]
+    return [{'id': 'plugin_backup', 'kind': 'metrics',
+             'title': _('Plug-in data backup'), 'metrics': metrics}]
+
+
 def get_backup():
     if not backup_lock.acquire(False):
         record_backup_error(_('A plug-in data backup is already running.'))

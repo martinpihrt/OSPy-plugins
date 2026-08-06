@@ -1090,3 +1090,26 @@ def health():
         status = 'ok'
         summary = _('OSPy is up to date.') + ' {} ({})'.format(channel_label, selected_branch())
     return {'status': status, 'summary': summary, 'details': details}
+
+
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('System Update'), 'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    wanted = ('enabled', 'automatic_update', 'checking', 'update_available',
+              'current_version', 'current_commit', 'target_commit',
+              'stable_release', 'upstream_branch', _('Update channel'),
+              _('Update watchdog'), _('Last watchdog result'))
+    details = result.get('details', {})
+    metrics = [
+        {'id': 'update_{}'.format(index), 'label': label,
+         'value': details.get(label, ''), 'unit': ''}
+        for index, label in enumerate(wanted)
+    ]
+    return [{'id': 'system_update', 'kind': 'metrics',
+             'title': _('System Update'), 'metrics': metrics}]

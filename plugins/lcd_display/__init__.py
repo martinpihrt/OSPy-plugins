@@ -1053,6 +1053,28 @@ def health():
         'updated': updated,
     }
 
+
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('LCD Display'), 'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    metrics = [
+        {'id': 'lcd_{}'.format(index), 'label': label,
+         'value': value, 'unit': ''}
+        for index, (label, value) in enumerate(result.get('details', {}).items())
+    ]
+    metrics.extend([
+        {'id': 'line_1', 'label': _('Line 1'), 'value': L1web or '', 'unit': ''},
+        {'id': 'line_2', 'label': _('Line 2'), 'value': L2web or '', 'unit': ''},
+    ])
+    return [{'id': 'lcd_status', 'kind': 'metrics',
+             'title': _('LCD display'), 'metrics': metrics}]
+
 def notify_rebooted(name, **kw):
     ### Reboot Linux HW software ###
     if lcd_options['d_notify']:

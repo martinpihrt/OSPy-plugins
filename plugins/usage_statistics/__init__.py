@@ -217,6 +217,26 @@ def health():
         'details': details,
     }
 
+
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('Usage Statistics'),
+            'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    metrics = [
+        {'id': 'usage_{}'.format(index), 'label': label,
+         'value': value, 'unit': ''}
+        for index, (label, value) in enumerate(result.get('details', {}).items())
+        if label != _('Statistics URL')
+    ]
+    return [{'id': 'usage_status', 'kind': 'metrics',
+             'title': _('Usage statistics'), 'metrics': metrics}]
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################

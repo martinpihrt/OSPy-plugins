@@ -701,6 +701,6 @@ def mobile_cards(**_kwargs):
             row_metrics.append({'id': 'note', 'label': _('Influence'), 'value': row['note'], 'unit': ''})
         rows.append({'id': 'day_{}'.format(index),
                      'title': '{} {}'.format(row.get('label', ''), row.get('date', '')).strip(),
-                     'metrics': row_metrics, 'series': []})
+                     'metrics': row_metrics})
     return [{'id': 'calculation', 'title': _('Weather calculation'),
-             'metrics': metrics, 'series': []}] + rows
+             'metrics': metrics}] + rows
