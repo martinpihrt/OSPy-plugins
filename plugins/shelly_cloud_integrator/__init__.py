@@ -12,6 +12,7 @@ from threading import Thread, Lock                              # For use a sepa
 from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.log import log                                         # For events logs printing (debug, error, info)
 from ospy.helpers import datetime_string, now, get_input, verify_csrf # For using date time in events logs
+from ospy.options import options
 from ospy.webpages import ProtectedPage                          # For check user login permissions
 
 from ospy.webpages import showInFooter                           # Enable plugin to display readings in UI footer
@@ -1539,6 +1540,69 @@ def health():
         'summary': _('Shelly Cloud Integration is responding.'),
         'details': details,
     }
+
+
+def mobile_status():
+    result = health()
+    with health_lock:
+        updated = health_state.get('last_success', 0)
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Shelly Cloud Integration'),
+        'summary': result.get('summary', ''),
+        'updated': datetime_string(time.localtime(updated)) if updated else '',
+    }
+
+
+def mobile_cards(**_kwargs):
+    """Expose only cached device readings; never credentials or controls."""
+    devices = [dict(device) for device in (sender.devices if sender is not None else [])]
+    cards = []
+    fields = (
+        ('temperature', _('Temperature'), '°{}'.format(options.temp_unit)),
+        ('humidity', _('Humidity'), '%'),
+        ('illuminance', _('Illuminance'), 'lx'),
+        ('power', _('Power'), 'W'),
+        ('retpower', _('Returned power'), 'W'),
+        ('voltage', _('Voltage'), 'V'),
+        ('battery', _('Battery'), '%'),
+        ('rssi', _('Wi-Fi signal'), 'dBm'),
+    )
+    for device in devices:
+        metrics = [
+            {'id': 'state', 'label': _('State'),
+             'value': _('Online') if device.get('online') else _('Offline'), 'unit': ''},
+        ]
+        if device.get('hw'):
+            metrics.append({'id': 'model', 'label': _('Model'),
+                            'value': device.get('hw'), 'unit': ''})
+        if device.get('ip'):
+            metrics.append({'id': 'ip_address', 'label': _('IP address'),
+                            'value': device.get('ip'), 'unit': ''})
+        if device.get('updated'):
+            metrics.append({'id': 'updated', 'label': _('Updated'),
+                            'value': format_timestamp(device.get('updated')), 'unit': ''})
+        for key, label, unit in fields:
+            value = device.get(key)
+            values = value if isinstance(value, list) else [value]
+            for index, item in enumerate(values):
+                if item in (None, '') or (key in ('voltage', 'battery') and item == 0):
+                    continue
+                metric_label = '{} {}'.format(label, index + 1) if len(values) > 1 else label
+                metrics.append({'id': '{}_{}'.format(key, index), 'label': metric_label,
+                                'value': item, 'unit': unit})
+        if device.get('output'):
+            for index, output in enumerate(device['output']):
+                metrics.append({'id': 'output_{}'.format(index),
+                                'label': '{} {}'.format(_('Output'), index + 1),
+                                'value': _('On') if output else _('Off'), 'unit': ''})
+        cards.append({
+            'id': 'device_{}'.format(device.get('id', len(cards))),
+            'title': device.get('label') or device.get('hw') or _('Shelly device'),
+            'metrics': metrics,
+            'series': [],
+        })
+    return cards
 
 
 def safe_settings_json():

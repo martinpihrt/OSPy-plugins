@@ -304,6 +304,17 @@ def format_volume(liters):
     return '{:.2f} l'.format(liters)
 
 
+def mobile_volume(liters):
+    """Return a numeric value and unit suitable for the mobile API."""
+    try:
+        liters = max(0.0, float(liters))
+    except (TypeError, ValueError):
+        liters = 0.0
+    if liters >= 1000.0:
+        return round(liters / 1000.0, 2), 'm³'
+    return round(liters, 2), 'l'
+
+
 def _master_number_for_run(station, control_master=None):
     """Resolve which virtual master meter applies to a station run."""
     if station.is_master or station.activate_master:
@@ -648,26 +659,31 @@ def mobile_cards():
             _('Master Station') if master_number == 1
             else _('Second Master Station')
         )
+        current_value, current_unit = mobile_volume(master.get('current', 0))
+        total_value, total_unit = mobile_volume(master.get('total', 0))
         metrics.extend([
             {
                 'id': 'master_{}_current'.format(master_number),
                 'label': '{} - {}'.format(master_name, _('Current consumption')),
-                'value': master.get('current', 0),
-                'unit': 'l',
+                'value': current_value,
+                'unit': current_unit,
             },
             {
                 'id': 'master_{}_total'.format(master_number),
                 'label': '{} - {}'.format(master_name, _('Total consumption')),
-                'value': master.get('total', 0),
-                'unit': 'l',
+                'value': total_value,
+                'unit': total_unit,
             },
         ])
-    station_metrics = [{
-        'id': 'station_current',
-        'label': item.get('name', ''),
-        'value': item.get('liters', 0),
-        'unit': 'l',
-    } for item in live.get('stations', [])]
+    station_metrics = []
+    for item in live.get('stations', []):
+        value, unit = mobile_volume(item.get('liters', 0))
+        station_metrics.append({
+            'id': 'station_current',
+            'label': item.get('name', ''),
+            'value': value,
+            'unit': unit,
+        })
     cards = [{
         'id': 'masters',
         'title': _('Master station consumption'),

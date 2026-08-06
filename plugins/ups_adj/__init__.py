@@ -357,8 +357,16 @@ def mobile_status():
     }
 
 
-def mobile_cards():
+def mobile_cards(from_time=None, to_time=None, max_points=400):
     power = get_power_state_data()
+    source = 'sql' if ups_options.get('type_log', 0) == 1 else 'local'
+    try:
+        graph_data = read_graph_sql_log() if source == 'sql' else read_graph_log()
+    except Exception:
+        graph_data = []
+    from .mobile_history import build
+    series, history = build(graph_data, from_time, to_time, max_points, source,
+                            live_value=power.get('state'), label=_('Power line'))
     return [{
         'id': 'power',
         'title': _('Power line'),
@@ -373,7 +381,8 @@ def mobile_cards():
             {'label': _('Shutdown delay'), 'value': ups_options.get('time', 0),
              'unit': 'min'},
         ],
-        'series': [],
+        'series': series,
+        'history': history,
     }]
 
 

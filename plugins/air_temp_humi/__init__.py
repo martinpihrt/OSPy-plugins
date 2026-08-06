@@ -472,7 +472,7 @@ def health():
     }
 
 
-def _mobile_series(from_time=None, to_time=None, max_points=400):
+def _mobile_series(current, from_time=None, to_time=None, max_points=400):
     """Return filtered temperature history for mobile clients."""
     from plugins.air_temp_humi.mobile_history import mobile_history
     active_ds = set(DS18B20_active_indexes())
@@ -490,8 +490,17 @@ def _mobile_series(from_time=None, to_time=None, max_points=400):
             definitions.append(None)
     source = 'sql' if plugin_options.get('type_log', 0) == 1 else 'local'
     graph_data = read_graph_sql_log() if source == 'sql' else read_graph_log()
-    return mobile_history(graph_data, definitions, from_time, to_time,
-                          max_points, source)
+    live_values = {}
+    for index in active_ds:
+        value = current.get('DS{}'.format(index), DS18B20_ERROR_VALUE)
+        if DS18B20_value_is_valid(value):
+            live_values['sensor-{}'.format(index)] = value
+    if plugin_options.get('enable_dht', False):
+        live_values['sensor-6'] = current.get('temp')
+        live_values['sensor-7'] = current.get('humi')
+    return mobile_history(
+        graph_data, definitions, from_time, to_time, max_points, source,
+        live_values=live_values, live_time=health_state.get('last_sample'))
 
 
 def mobile_status():
@@ -527,7 +536,7 @@ def mobile_cards(from_time=None, to_time=None, max_points=400):
             'value': current.get('DS{}'.format(index), DS18B20_ERROR_VALUE),
             'unit': '°C',
         })
-    series, history = _mobile_series(from_time, to_time, max_points)
+    series, history = _mobile_series(current, from_time, to_time, max_points)
     return [{
         'id': 'temperatures',
         'title': _('Temperature sensors'),

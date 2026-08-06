@@ -31,7 +31,8 @@ def _downsample(points, maximum):
 
 
 def mobile_history(graph_data, definitions, from_time=None, to_time=None,
-                   max_points=400, source="local"):
+                   max_points=400, source="local", live_values=None,
+                   live_time=None):
     now = datetime.datetime.now()
     start = _boundary(from_time, now.replace(hour=0, minute=0, second=0,
                                               microsecond=0))
@@ -41,7 +42,12 @@ def mobile_history(graph_data, definitions, from_time=None, to_time=None,
     end_epoch = end.timestamp()
     latest = None
     series = []
-    for index, item in enumerate(graph_data or []):
+    live_values = live_values or {}
+    live_epoch = float(live_time or datetime.datetime.now().timestamp())
+    items = list(graph_data or [])
+    if len(items) < len(definitions):
+        items.extend({"balances": {}} for _ in range(len(definitions) - len(items)))
+    for index, item in enumerate(items):
         if index >= len(definitions) or definitions[index] is None:
             continue
         definition = definitions[index]
@@ -56,6 +62,16 @@ def mobile_history(graph_data, definitions, from_time=None, to_time=None,
             latest = epoch if latest is None else max(latest, epoch)
             if start_epoch <= epoch <= end_epoch:
                 raw.append((epoch, numeric))
+        series_id = definition[0]
+        if series_id in live_values:
+            try:
+                live_numeric = float(live_values[series_id])
+                if start_epoch <= live_epoch <= end_epoch:
+                    raw = [point for point in raw if point[0] != live_epoch]
+                    raw.append((live_epoch, live_numeric))
+                latest = live_epoch if latest is None else max(latest, live_epoch)
+            except (TypeError, ValueError):
+                pass
         raw.sort(key=lambda point: point[0])
         points = [
             {"time": datetime.datetime.fromtimestamp(epoch).isoformat(),

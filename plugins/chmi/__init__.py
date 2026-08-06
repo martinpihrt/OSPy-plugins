@@ -500,16 +500,19 @@ def health():
 
 def _mobile_radar_image():
     """Return the latest already-downloaded radar image without network I/O."""
-    image_path = os.path.join(plugin_data_dir(), 'last.png')
-    try:
-        with open(image_path, 'rb') as image_file:
-            return {
-                'mime_type': 'image/png',
-                'data_base64': base64.b64encode(image_file.read()).decode('ascii'),
-                'updated': health_state.get('last_radar_timestamp', ''),
-            }
-    except (IOError, OSError):
-        return None
+    for filename in ('result.png', 'last.png'):
+        image_path = os.path.join(plugin_data_dir(), filename)
+        try:
+            with open(image_path, 'rb') as image_file:
+                return {
+                    'mime_type': 'image/png',
+                    'data_base64': base64.b64encode(
+                        image_file.read()).decode('ascii'),
+                    'updated': health_state.get('last_radar_timestamp', ''),
+                }
+        except (IOError, OSError):
+            continue
+    return None
 
 
 def mobile_status():
