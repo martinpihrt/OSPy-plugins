@@ -2,6 +2,9 @@
 
 August 6 2026
 -------------
+(Martin Pihrt) - Astro Sunrise and Sunset v1.0.3<br/>
+Fixed the native mobile card so its sunrise, sunset, twilight, moon phase and 24-hour daylight data are returned instead of being discarded by a datetime namespace error.
+
 (Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.7, CHMI v1.0.5, Real Time and NTP v1.0.1, Shelly Cloud Integrator v1.0.1, Astro Sunrise and Sunset v1.0.2, System Information v1.0.1, UPS Monitor v1.0.4, Water Consumption Counter v1.2.7 and Weather-based Water Level v1.1.1<br/>
 Expanded the read-only Mobile API v1 adapters. Shelly Cloud now reports cached device readings, Astro supplies sunrise, sunset, twilight, moon phase and a 24-hour daylight series, Real Time reports recent synchronization state, System Information exposes cached host statistics, and Weather-based Water Level publishes the selected calculation method and its current result. Temperature, CHMI radar, UPS and virtual water-meter mobile data now follow the requested history source and range more accurately, preserve current runtime values, identify both master counters, use cubic metres from 1000 litres and provide the current radar frame with the geographic outline. No mobile adapter performs configuration or initiates a hardware, cloud or database measurement.
 

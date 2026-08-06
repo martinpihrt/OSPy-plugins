@@ -10,6 +10,7 @@ import traceback
 import json
 import os
 import shutil
+import datetime as datetime_module
 
 import web
 from datetime import datetime
@@ -829,7 +830,7 @@ def health():
 def _mobile_moon_phase():
     try:
         from astral import moon
-        phase = float(moon.phase(datetime.date.today()))
+        phase = float(moon.phase(datetime_module.date.today()))
     except Exception:
         return _('Not available'), None
     if phase < 1.75 or phase >= 26.25:
@@ -880,17 +881,17 @@ def mobile_cards(**_kwargs):
     if moon_value is not None:
         metrics.append({'id': 'moon_age', 'label': _('Moon age'),
                         'value': moon_value, 'unit': _('days')})
-    today = datetime.date.today()
-    start = datetime.datetime.combine(today, datetime.time.min)
-    end = datetime.datetime.combine(today, datetime.time(23, 59, 59))
+    today = datetime_module.date.today()
+    start = datetime_module.datetime.combine(today, datetime_module.time.min)
+    end = datetime_module.datetime.combine(today, datetime_module.time(23, 59, 59))
     sunrise = values.get('sunrise')
     sunset = values.get('sunset')
     points = [{'time': start.isoformat(), 'value': 0}]
     if sunrise and sunset:
         points.extend([
-            {'time': (sunrise.replace(tzinfo=None) - datetime.timedelta(seconds=1)).isoformat(), 'value': 0},
+            {'time': (sunrise.replace(tzinfo=None) - datetime_module.timedelta(seconds=1)).isoformat(), 'value': 0},
             {'time': sunrise.replace(tzinfo=None).isoformat(), 'value': 1},
-            {'time': (sunset.replace(tzinfo=None) - datetime.timedelta(seconds=1)).isoformat(), 'value': 1},
+            {'time': (sunset.replace(tzinfo=None) - datetime_module.timedelta(seconds=1)).isoformat(), 'value': 1},
             {'time': sunset.replace(tzinfo=None).isoformat(), 'value': 0},
         ])
     points.append({'time': end.isoformat(), 'value': 0})
