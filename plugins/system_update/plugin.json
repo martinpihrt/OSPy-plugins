@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "system_update",
   "name": "System Update",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -10,6 +10,10 @@
   },
   "python": {
     "min_version": "3.8"
+  },
+  "mobile": {
+    "api_version": 1,
+    "actions": []
   },
   "permissions": [
     "email",

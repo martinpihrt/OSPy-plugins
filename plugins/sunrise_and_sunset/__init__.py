@@ -10,6 +10,7 @@ import traceback
 import json
 import os
 import shutil
+import datetime as datetime_module
 
 import web
 from datetime import datetime
@@ -824,6 +825,85 @@ def health():
         'summary': _('Astro Sunrise and Sunset is responding.'),
         'details': details,
     }
+
+
+def _mobile_moon_phase():
+    try:
+        from astral import moon
+        phase = float(moon.phase(datetime_module.date.today()))
+    except Exception:
+        return _('Not available'), None
+    if phase < 1.75 or phase >= 26.25:
+        label = _('New moon')
+    elif phase < 8.75:
+        label = _('Waxing moon')
+    elif phase < 15.75:
+        label = _('Full moon')
+    elif phase < 22.75:
+        label = _('Waning moon')
+    else:
+        label = _('New moon')
+    return label, round(phase, 2)
+
+
+def mobile_status():
+    result = health()
+    with health_lock:
+        updated = health_state.get('last_calculation', 0)
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Astro Sunrise and Sunset'),
+        'summary': result.get('summary', ''),
+        'updated': datetime_string(time.localtime(updated)) if updated else '',
+    }
+
+
+def mobile_cards(**_kwargs):
+    """Return today's sun events and a read-only 24-hour daylight chart."""
+    try:
+        values = compute_sunrise_sunset() if checker is not None and checker.mycity else None
+    except Exception:
+        values = None
+    values = values or {}
+    moon_label, moon_value = _mobile_moon_phase()
+    event_definitions = (
+        ('dawn', _('Dawn')), ('sunrise', _('Sunrise')), ('noon', _('Noon')),
+        ('sunset', _('Sunset')), ('dusk', _('Dusk')),
+    )
+    metrics = []
+    for key, label in event_definitions:
+        value = values.get(key)
+        metrics.append({'id': key, 'label': label,
+                        'value': value.strftime('%H:%M:%S') if value else _('Not available'),
+                        'unit': ''})
+    metrics.append({'id': 'moon_phase', 'label': _('Moon phase'),
+                    'value': moon_label, 'unit': ''})
+    if moon_value is not None:
+        metrics.append({'id': 'moon_age', 'label': _('Moon age'),
+                        'value': moon_value, 'unit': _('days')})
+    today = datetime_module.date.today()
+    start = datetime_module.datetime.combine(today, datetime_module.time.min)
+    end = datetime_module.datetime.combine(today, datetime_module.time(23, 59, 59))
+    sunrise = values.get('sunrise')
+    sunset = values.get('sunset')
+    points = [{'time': start.isoformat(), 'value': 0}]
+    if sunrise and sunset:
+        points.extend([
+            {'time': (sunrise.replace(tzinfo=None) - datetime_module.timedelta(seconds=1)).isoformat(), 'value': 0},
+            {'time': sunrise.replace(tzinfo=None).isoformat(), 'value': 1},
+            {'time': (sunset.replace(tzinfo=None) - datetime_module.timedelta(seconds=1)).isoformat(), 'value': 1},
+            {'time': sunset.replace(tzinfo=None).isoformat(), 'value': 0},
+        ])
+    points.append({'time': end.isoformat(), 'value': 0})
+    return [{
+        'id': 'sun_today',
+        'title': _('Sunrise and sunset on a 24-hour timeline'),
+        'metrics': metrics,
+        'series': [{'id': 'daylight', 'label': _('Daylight'), 'unit': '', 'points': points}],
+        'history': {'from': start.isoformat(), 'to': end.isoformat(),
+                    'source': 'calculation', 'last_available': end.isoformat(),
+                    'returned_points': len(points)},
+    }]
 
 def run_command(cmd):
     try:

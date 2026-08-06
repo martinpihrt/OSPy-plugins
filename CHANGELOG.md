@@ -1,5 +1,16 @@
 # OSPy-plugins Changelog
 
+August 6 2026
+-------------
+(Martin Pihrt) - CHMI v1.0.6, E-mail Notifications SSL v1.1.5, LCD Display v1.0.2, Monthly Water Level v1.0.1, Home Assistant MQTT v1.0.1, OSPy Package Backup v1.0.1, System Debug Information v1.0.1, System Update v1.2.5, Thermostat v1.0.1, Usage Statistics v1.0.1 and Weather-based Water Level v1.1.2<br/>
+Added safe, read-only Mobile API v1 operating cards for the listed service and system plug-ins without exposing credentials or configuration. CHMI now marks the OSPy weather location on a generated copy of the current radar frame and formats compact radar timestamps as a readable local date and time. Cards without graph data no longer advertise an empty series, allowing native clients to omit irrelevant history controls.
+
+(Martin Pihrt) - Astro Sunrise and Sunset v1.0.3<br/>
+Fixed the native mobile card so its sunrise, sunset, twilight, moon phase and 24-hour daylight data are returned instead of being discarded by a datetime namespace error.
+
+(Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.7, CHMI v1.0.5, Real Time and NTP v1.0.1, Shelly Cloud Integrator v1.0.1, Astro Sunrise and Sunset v1.0.2, System Information v1.0.1, UPS Monitor v1.0.4, Water Consumption Counter v1.2.7 and Weather-based Water Level v1.1.1<br/>
+Expanded the read-only Mobile API v1 adapters. Shelly Cloud now reports cached device readings, Astro supplies sunrise, sunset, twilight, moon phase and a 24-hour daylight series, Real Time reports recent synchronization state, System Information exposes cached host statistics, and Weather-based Water Level publishes the selected calculation method and its current result. Temperature, CHMI radar, UPS and virtual water-meter mobile data now follow the requested history source and range more accurately, preserve current runtime values, identify both master counters, use cubic metres from 1000 litres and provide the current radar frame with the geographic outline. No mobile adapter performs configuration or initiates a hardware, cloud or database measurement.
+
 July 30 2026
 ------------
 (Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.5, CHMI v1.0.4, Water Consumption Counter v1.2.6 and Wind Speed Monitor v1.1.5<br/>
@@ -20,6 +31,11 @@ July 28 2026
 ------------
 (Martin Pihrt) - Wind Speed Monitor v1.1.1<br/>
 Restored the point-hover tooltip in the automatically refreshed history graph. Each measured point again shows its time and current value, plus the preceding value when available. Tooltip handlers and data are rebuilt safely after every background graph refresh, point order is normalized chronologically, and the tooltip styling is kept in the plug-in CSS.
+
+August 5 2026
+-------------
+(Martin Pihrt) - Air Temperature and Humidity Monitor v1.0.6, Wind Speed Monitor v1.1.6, Water Tank Monitor v1.0.4 and Current Loop Tanks Monitor v1.0.4<br/>
+Extended the native mobile chart interface with ISO date-range selection, local/SQL history-source parity, bounded point counts and min/max-preserving downsampling. Mobile clients now receive actual timestamps, the selected source, returned-point count and last available record, so old local graph data is not presented as current SQL history and empty periods are reported clearly.
 
 July 27 2026
 ------------

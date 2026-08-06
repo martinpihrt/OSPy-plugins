@@ -810,6 +810,27 @@ def health():
         'details': details,
     }
 
+
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('E-mail Notifications SSL'),
+            'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    hidden = (_('SMTP server'),)
+    metrics = [
+        {'id': 'email_{}'.format(index), 'label': label,
+         'value': value, 'unit': ''}
+        for index, (label, value) in enumerate(result.get('details', {}).items())
+        if label not in hidden
+    ]
+    return [{'id': 'email_status', 'kind': 'metrics',
+             'title': _('E-mail delivery'), 'metrics': metrics}]
+
 def add_to_body_local_ospy_name():
     try:
         from ospy.helpers import ospy_web_url

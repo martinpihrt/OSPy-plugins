@@ -299,6 +299,37 @@ def health():
         'details': details,
     }
 
+
+def mobile_status():
+    result = health()
+    with health_lock:
+        updated = health_state.get('last_cycle', 0)
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Real Time and NTP time'),
+        'summary': result.get('summary', ''),
+        'updated': datetime_string(time.localtime(updated)) if updated else '',
+    }
+
+
+def mobile_cards(**_kwargs):
+    with health_lock:
+        state = dict(health_state)
+    return [{
+        'id': 'synchronization',
+        'title': _('Time synchronization'),
+        'metrics': [
+            {'id': 'ospy_time', 'label': _('OSPy time'), 'value': datetime_string(), 'unit': ''},
+            {'id': 'last_sync', 'label': _('Last successful synchronization cycle'),
+             'value': datetime_string(time.localtime(state['last_cycle'])) if state['last_cycle'] else _('Not available'), 'unit': ''},
+            {'id': 'ntp_time', 'label': _('Last NTP time'),
+             'value': str(state['last_ntp_time']) if state['last_ntp_time'] else _('Not available'), 'unit': ''},
+            {'id': 'rtc_time', 'label': _('Last RTC time'),
+             'value': str(state['last_rtc_time']) if state['last_rtc_time'] else _('Not available'), 'unit': ''},
+        ],
+        'series': [],
+    }]
+
 ################################################################################
 # Web pages:                                                                   #
 ################################################################################

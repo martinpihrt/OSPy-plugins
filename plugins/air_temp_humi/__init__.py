@@ -472,35 +472,35 @@ def health():
     }
 
 
-def _mobile_series():
-    """Return a bounded, read-only temperature history for mobile clients."""
-    series = []
+def _mobile_series(current, from_time=None, to_time=None, max_points=400):
+    """Return filtered temperature history for mobile clients."""
+    from plugins.air_temp_humi.mobile_history import mobile_history
     active_ds = set(DS18B20_active_indexes())
-    for index, item in enumerate(read_graph_log() or []):
-        if index < 6 and index not in active_ds:
-            continue
-        if index >= 6 and not plugin_options.get('enable_dht', False):
-            continue
-        balances = item.get('balances', {}) if isinstance(item, dict) else {}
-        points = []
-        for timestamp, value in sorted(
-                balances.items(), key=lambda pair: int(pair[0]))[-96:]:
-            try:
-                points.append({
-                    'time': datetime.datetime.fromtimestamp(
-                        int(timestamp)).isoformat(),
-                    'value': float(value.get('total')),
-                })
-            except (AttributeError, TypeError, ValueError, OSError):
-                continue
-        if points:
-            series.append({
-                'id': 'sensor-{}'.format(index),
-                'label': str(item.get('station') or _('Temperature')),
-                'unit': '%' if index == 7 else '°C',
-                'points': points,
-            })
-    return series
+    definitions = []
+    for index in range(8):
+        if index < 6:
+            definitions.append(
+                ('sensor-{}'.format(index), DS18B20_graph_name(index), '°C')
+                if index in active_ds else None)
+        elif plugin_options.get('enable_dht', False):
+            definitions.append(('sensor-{}'.format(index),
+                                plugin_options['label'],
+                                '%' if index == 7 else '°C'))
+        else:
+            definitions.append(None)
+    source = 'sql' if plugin_options.get('type_log', 0) == 1 else 'local'
+    graph_data = read_graph_sql_log() if source == 'sql' else read_graph_log()
+    live_values = {}
+    for index in active_ds:
+        value = current.get('DS{}'.format(index), DS18B20_ERROR_VALUE)
+        if DS18B20_value_is_valid(value):
+            live_values['sensor-{}'.format(index)] = value
+    if plugin_options.get('enable_dht', False):
+        live_values['sensor-6'] = current.get('temp')
+        live_values['sensor-7'] = current.get('humi')
+    return mobile_history(
+        graph_data, definitions, from_time, to_time, max_points, source,
+        live_values=live_values, live_time=health_state.get('last_sample'))
 
 
 def mobile_status():
@@ -517,8 +517,8 @@ def mobile_status():
     }
 
 
-def mobile_cards():
-    """Return current DHT/DS18B20 readings and recent local history."""
+def mobile_cards(from_time=None, to_time=None, max_points=400):
+    """Return current readings and the requested history interval."""
     current = sender.status.copy() if sender is not None else {}
     metrics = []
     if plugin_options['enable_dht']:
@@ -536,11 +536,13 @@ def mobile_cards():
             'value': current.get('DS{}'.format(index), DS18B20_ERROR_VALUE),
             'unit': '°C',
         })
+    series, history = _mobile_series(current, from_time, to_time, max_points)
     return [{
         'id': 'temperatures',
         'title': _('Temperature sensors'),
         'metrics': metrics,
-        'series': _mobile_series(),
+        'series': series,
+        'history': history,
     }]
 
 

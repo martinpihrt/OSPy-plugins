@@ -3,7 +3,7 @@
   "id": "monthly_water_level",
   "name": "Monthly Water Level",
   "menu": "Package: Monthly Water Level",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Applies a configurable irrigation percentage adjustment for each calendar month.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/monthly_water_level",
@@ -13,6 +13,10 @@
   },
   "python": {
     "min": "3.8"
+  },
+  "mobile": {
+    "api_version": 1,
+    "actions": []
   },
   "permissions": [
     "system"

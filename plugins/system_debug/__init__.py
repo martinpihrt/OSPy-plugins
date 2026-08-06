@@ -5,7 +5,7 @@ __author__ = 'Martin Pihrt'
 from ospy.webpages import ProtectedPage
 from ospy import log
 from ospy import helpers
-from ospy.helpers import verify_csrf
+from ospy.helpers import datetime_string, verify_csrf
 from ospy.options import options
 
 from plugins import plugin_url
@@ -76,6 +76,27 @@ def health():
         'summary': _('Debug log file is available.'),
         'details': details,
     }
+
+
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('System Debug Information'),
+            'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    hidden = (_('Log file'),)
+    metrics = [
+        {'id': 'debug_{}'.format(index), 'label': label,
+         'value': value, 'unit': ''}
+        for index, (label, value) in enumerate(result.get('details', {}).items())
+        if label not in hidden
+    ]
+    return [{'id': 'debug_status', 'kind': 'metrics',
+             'title': _('Debug log'), 'metrics': metrics}]
 
 def tail(f, lines=20):
     total_lines_wanted = lines

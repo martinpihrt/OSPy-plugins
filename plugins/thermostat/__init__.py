@@ -616,6 +616,24 @@ def health():
     }
 
 
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('Thermostat'), 'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    metrics = [
+        {'id': 'thermostat_{}'.format(index), 'label': label,
+         'value': value, 'unit': ''}
+        for index, (label, value) in enumerate(result.get('details', {}).items())
+    ]
+    return [{'id': 'thermostat_status', 'kind': 'metrics',
+             'title': _('Thermostat zones'), 'metrics': metrics}]
+
+
 def template_data():
     _normalize_zones()
     return {

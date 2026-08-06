@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "shelly_cloud_integrator",
   "name": "Shelly Cloud Integration",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -20,5 +20,9 @@
   ],
   "permissions": [
     "network"
-  ]
+  ],
+  "mobile": {
+    "api_version": 1,
+    "actions": []
+  }
 }

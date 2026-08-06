@@ -3,7 +3,7 @@
   "id": "ospy_backup",
   "name": "OSPy package Backup",
   "menu": "Package: OSPy package Backup",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Creates downloadable ZIP archives of installed plug-in data directories.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/ospy_backup",
@@ -13,6 +13,10 @@
   },
   "python": {
     "min": "3.8"
+  },
+  "mobile": {
+    "api_version": 1,
+    "actions": []
   },
   "permissions": [
     "files"

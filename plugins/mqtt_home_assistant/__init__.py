@@ -471,6 +471,26 @@ def health():
     }
 
 
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('Home Assistant'), 'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    hidden = (_('Broker'),)
+    metrics = [
+        {'id': 'mqtt_{}'.format(index), 'label': label,
+         'value': value, 'unit': ''}
+        for index, (label, value) in enumerate(result.get('details', {}).items())
+        if label not in hidden
+    ]
+    return [{'id': 'mqtt_status', 'kind': 'metrics',
+             'title': _('Home Assistant connection'), 'metrics': metrics}]
+
+
 def get_local_ip(destination='10.255.255.255'):
     """ Return the interface ip to a destination server """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

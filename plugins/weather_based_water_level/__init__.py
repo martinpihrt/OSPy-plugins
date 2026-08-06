@@ -633,3 +633,74 @@ def health():
         status = 'ok'
         summary = _('Weather-based water level is active.')
     return {'status': status, 'summary': summary, 'details': details}
+
+
+def mobile_status():
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Weather-based Water Level'),
+        'summary': result.get('summary', ''),
+        'updated': last_detail.get('calculated_at') or '',
+    }
+
+
+def mobile_cards(**_kwargs):
+    """Expose the latest calculation inputs and result without settings controls."""
+    detail = dict(last_detail)
+    metrics = [
+        {'id': 'method', 'label': _('Calculation method'),
+         'value': detail.get('method_label') or _method_label(detail.get('method')), 'unit': ''},
+        {'id': 'calculated_at', 'label': _('Calculated at'),
+         'value': detail.get('calculated_at') or _('Not available'), 'unit': ''},
+        {'id': 'days_used', 'label': _('Used days'), 'value': detail.get('days_used', 0), 'unit': ''},
+        {'id': 'rain', 'label': _('Total rainfall'), 'value': detail.get('rain_mm', 0), 'unit': 'mm'},
+        {'id': 'water_needed', 'label': _('Irrigation needed'),
+         'value': detail.get('water_needed', 0), 'unit': 'mm'},
+        {'id': 'water_left', 'label': _('Remaining irrigation need'),
+         'value': detail.get('water_left', 0), 'unit': 'mm'},
+        {'id': 'adjustment', 'label': _('Weather Adjustment'),
+         'value': detail.get('water_adjustment') if detail.get('water_adjustment') is not None else _('Not available'),
+         'unit': '%' if detail.get('water_adjustment') is not None else ''},
+    ]
+    optional_metrics = (
+        ('raw_water_adjustment', _('Unrestricted weather adjustment'), '%'),
+        ('average_temperature_c', _('Average temperature'), '°C'),
+        ('average_humidity', _('Average humidity'), '%'),
+        ('rain_yesterday', _('Yesterday rainfall'), 'mm'),
+        ('rain_today', _('Today rainfall'), 'mm'),
+        ('total_eto', _('Total ETo'), 'mm'),
+        ('total_etc', _('Crop evapotranspiration'), 'mm'),
+        ('effective_rain_mm', _('Effective rainfall'), 'mm'),
+        ('net_irrigation_mm', _('Net irrigation'), 'mm'),
+        ('gross_irrigation_mm', _('Gross irrigation'), 'mm'),
+    )
+    for key, label, unit in optional_metrics:
+        if detail.get(key) is not None:
+            metrics.append({'id': key, 'label': label, 'value': detail.get(key), 'unit': unit})
+    if detail.get('limited_by_min'):
+        metrics.append({'id': 'limit', 'label': _('Limit'), 'value': _('Minimum limit applied'), 'unit': ''})
+    elif detail.get('limited_by_max'):
+        metrics.append({'id': 'limit', 'label': _('Limit'), 'value': _('Maximum limit applied'), 'unit': ''})
+    rows = []
+    for index, row in enumerate(detail.get('rows') or []):
+        row_metrics = []
+        for key, label, unit in (
+                ('rain_mm', _('Rain'), 'mm'), ('temp', _('Temperature'), '°{}'.format(options.temp_unit)),
+                ('temperature', _('Temperature'), '°{}'.format(options.temp_unit)),
+                ('humidity', _('Humidity'), '%'), ('wind_ms', _('Wind speed'), 'm/s'),
+                ('eto', _('ETo'), 'mm'), ('etc', _('Crop evapotranspiration'), 'mm'),
+                ('rain_yesterday', _('Yesterday rainfall'), 'mm'),
+                ('rain_today', _('Today rainfall'), 'mm'),
+                ('temperature_factor', _('Temperature factor'), '%'),
+                ('humidity_factor', _('Humidity factor'), '%'),
+                ('rain_factor', _('Rain factor'), '%')):
+            if row.get(key) is not None:
+                row_metrics.append({'id': key, 'label': label, 'value': row.get(key), 'unit': unit})
+        if row.get('note'):
+            row_metrics.append({'id': 'note', 'label': _('Influence'), 'value': row['note'], 'unit': ''})
+        rows.append({'id': 'day_{}'.format(index),
+                     'title': '{} {}'.format(row.get('label', ''), row.get('date', '')).strip(),
+                     'metrics': row_metrics})
+    return [{'id': 'calculation', 'title': _('Weather calculation'),
+             'metrics': metrics}] + rows

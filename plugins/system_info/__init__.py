@@ -66,6 +66,35 @@ def health():
         'details': details,
     }
 
+
+def mobile_status():
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('System Information'),
+        'summary': result.get('summary', ''),
+        'updated': helpers.datetime_string(),
+    }
+
+
+def mobile_cards(**_kwargs):
+    """Return inexpensive read-only system values without running an I2C scan."""
+    meminfo = helpers.get_meminfo()
+    metrics = [
+        {'id': 'platform', 'label': _('Platform'), 'value': platform.platform(), 'unit': ''},
+        {'id': 'python', 'label': _('Python'), 'value': platform.python_version(), 'unit': ''},
+        {'id': 'uptime', 'label': _('Uptime'), 'value': helpers.uptime(), 'unit': ''},
+        {'id': 'cpu_temperature', 'label': _('CPU temp'),
+         'value': helpers.get_cpu_temp(options.temp_unit), 'unit': '°{}'.format(options.temp_unit)},
+        {'id': 'cpu_usage', 'label': _('CPU usage'), 'value': helpers.get_cpu_usage(), 'unit': '%'},
+        {'id': 'memory_total', 'label': _('Total memory'), 'value': meminfo.get('MemTotal', ''), 'unit': ''},
+        {'id': 'memory_free', 'label': _('Free memory'), 'value': meminfo.get('MemFree', ''), 'unit': ''},
+        {'id': 'ip_address', 'label': _('IP address'), 'value': helpers.get_ip(), 'unit': ''},
+        {'id': 'mac_address', 'label': _('MAC adress'), 'value': helpers.get_mac(), 'unit': ''},
+    ]
+    return [{'id': 'overview', 'title': _('System overview'),
+             'metrics': metrics, 'series': []}]
+
 def get_overview():
     """Returns the info data as a list of lines."""
     result = []

@@ -155,6 +155,25 @@ def health():
     }
 
 
+def mobile_status():
+    result = health()
+    return {'status': result.get('status', 'unknown'),
+            'title': _('Monthly Water Level'),
+            'summary': result.get('summary', ''),
+            'updated': datetime_string()}
+
+
+def mobile_cards(**_kwargs):
+    result = health()
+    metrics = [
+        {'id': 'monthly_{}'.format(index), 'label': label,
+         'value': value, 'unit': ''}
+        for index, (label, value) in enumerate(result.get('details', {}).items())
+    ]
+    return [{'id': 'monthly_adjustment', 'kind': 'metrics',
+             'title': _('Monthly irrigation adjustment'), 'metrics': metrics}]
+
+
 class settings_page(ProtectedPage):
     """Load an html page for entering monthly irrigation time adjustments"""
 

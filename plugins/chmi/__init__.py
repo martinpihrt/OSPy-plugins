@@ -499,17 +499,55 @@ def health():
 
 
 def _mobile_radar_image():
-    """Return the latest already-downloaded radar image without network I/O."""
-    image_path = os.path.join(plugin_data_dir(), 'last.png')
-    try:
-        with open(image_path, 'rb') as image_file:
-            return {
-                'mime_type': 'image/png',
-                'data_base64': base64.b64encode(image_file.read()).decode('ascii'),
-                'updated': health_state.get('last_radar_timestamp', ''),
-            }
-    except (IOError, OSError):
-        return None
+    """Return the latest radar image with the configured OSPy location marker."""
+    for filename in ('result.png', 'last.png'):
+        image_path = os.path.join(plugin_data_dir(), filename)
+        try:
+            with Image.open(image_path) as source:
+                radar_image = source.convert('RGBA')
+                location = ospy_weather_location()
+                if location is not None:
+                    latitude, longitude = location
+                    x, y = radar_pixel_xy(
+                        latitude, longitude,
+                        radar_image.size[0], radar_image.size[1])
+                    if (0 <= x < radar_image.size[0] and
+                            0 <= y < radar_image.size[1]):
+                        marker = ImageDraw.Draw(radar_image)
+                        radius = max(5, min(radar_image.size) // 60)
+                        marker.ellipse(
+                            (x - radius, y - radius, x + radius, y + radius),
+                            fill=(255, 255, 0, 225), outline=(0, 0, 0, 255),
+                            width=max(1, radius // 3))
+                        marker.line(
+                            (x - radius - 3, y, x + radius + 3, y),
+                            fill=(0, 0, 0, 255), width=max(1, radius // 3))
+                        marker.line(
+                            (x, y - radius - 3, x, y + radius + 3),
+                            fill=(0, 0, 0, 255), width=max(1, radius // 3))
+                output = BytesIO()
+                radar_image.save(output, format='PNG')
+                return {
+                    'mime_type': 'image/png',
+                    'data_base64': base64.b64encode(output.getvalue()).decode('ascii'),
+                    'updated': _format_radar_timestamp(
+                        health_state.get('last_radar_timestamp', '')),
+                }
+        except (IOError, OSError, ValueError):
+            continue
+    return None
+
+
+def _format_radar_timestamp(value):
+    """Format CHMI timestamps such as 20260806.0620 for mobile clients."""
+    text = str(value or '').strip()
+    for pattern in ('%Y%m%d.%H%M', '%Y%m%d.%H%M%S'):
+        try:
+            return datetime.datetime.strptime(text, pattern).strftime(
+                '%Y-%m-%d %H:%M')
+        except ValueError:
+            pass
+    return text
 
 
 def mobile_status():
@@ -518,7 +556,8 @@ def mobile_status():
         'status': result.get('status', 'unknown'),
         'title': _('CHMI radar'),
         'summary': result.get('summary', ''),
-        'updated': health_state.get('last_radar_timestamp', ''),
+        'updated': _format_radar_timestamp(
+            health_state.get('last_radar_timestamp', '')),
     }
 
 
@@ -541,7 +580,6 @@ def mobile_cards():
                 'unit': '',
             },
         ],
-        'series': [],
     }
     image = _mobile_radar_image()
     if image is not None:
