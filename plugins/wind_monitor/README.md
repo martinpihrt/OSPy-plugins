@@ -69,6 +69,8 @@ The plug-in declares SMBus, I2C, e-mail, file and scheduler-control permissions,
 
 The I2C bus must be enabled and the PCF8583 connected correctly. The original wiring diagram remains available at:
 
+Addresses `0x50` and `0x51` are alternatives; the plug-in occupies only the address selected in its settings. OSPy can install and run Wind Speed Monitor beside another selectable-address plug-in when each receives a different address. If the preferred address is occupied during activation, the plug-in selects the free alternative. The settings page refuses an address currently used by another enabled plug-in and keeps the preceding selection.
+
 `/plugins/wind_monitor/static/images/schematics.png`
 
 Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer) for additional hardware information.

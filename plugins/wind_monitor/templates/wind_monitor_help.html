@@ -8,6 +8,7 @@ $var page: plugins
 <div id="plugin" class="windPanel">
     <div class="title">$_(u'Wind Speed Monitor settings - help')</div>
     <p>$_(u'The plug-in measures wind with a PCF8583 event counter at I2C address 0x50 or 0x51. It can stop selected stations, send an e-mail or run a program when confirmed wind thresholds are exceeded.')</p>
+    <p>$_(u'The two I2C addresses are alternatives. If the preferred address is occupied during activation, OSPy selects the free alternative. The settings page rejects an address already used by another enabled plug-in.')</p>
     <p>$_(u'Each measurement resets the counter, waits approximately ten seconds and divides the pulse count by the actual monotonic elapsed time. This prevents I2C lock waiting from incorrectly increasing the calculated wind speed.')</p>
     <p>$_(u'The PCF8583 counter bytes are read directly from registers 0x01 to 0x03 and every BCD digit is validated. A failed setup, short read or invalid digit is rejected.')</p>
     <p>$_(u'The plausibility filter rejects speeds above the configured maximum accepted speed. Rejected values do not change the current or maximum speed and cannot be logged or trigger an automatic action.')</p>

@@ -19,7 +19,14 @@ import web
 from ospy.stations import stations
 from ospy.options import options
 from ospy.log import log, logEM
-from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
+from plugins import (
+    PluginOptions,
+    get_runtime,
+    plugin_data_dir,
+    plugin_i2c_address_error,
+    plugin_url,
+    select_plugin_i2c_address,
+)
 from ospy.webpages import ProtectedPage, clear_plugin_runtime_data
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers
@@ -506,6 +513,13 @@ wind_sender = None
 def start():
     global wind_sender
     if wind_sender is None:
+        preferred = '0x51' if wind_options['address'] else '0x50'
+        selected = select_plugin_i2c_address('wind_monitor', preferred)
+        if not selected:
+            raise RuntimeError(
+                _('No non-conflicting I2C address is available for Wind Speed Monitor.')
+            )
+        wind_options['address'] = selected == '0x51'
         wind_sender = WindSender()
 
 
@@ -921,6 +935,12 @@ class settings_page(ProtectedPage):
         )
         qdict = web.input(used_stations=[], used_program=[])
         verify_csrf(qdict)
+        requested_address = '0x51' if qdict.get('address', 'off') == 'on' else '0x50'
+        address_error = plugin_i2c_address_error(
+            'wind_monitor', requested_address
+        )
+        if address_error:
+            raise web.badrequest(address_error)
         decimal_values = {
             key: decimal_input(qdict, key, wind_options.get(key))
             for key in decimal_fields

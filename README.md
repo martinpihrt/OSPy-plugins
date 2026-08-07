@@ -42,9 +42,11 @@ Theses I2C addresses is used in available plugins:
 * lcd_display 	0x20-0x27, 0x38-0x3F<br>
 * real_time 	0x68<br>
 * volt_temp_da 	0x48<br>
-* water_meter 	0x50, 0x51<br>
-* wind_monitor 	0x50, 0x51<br>
+* water_meter 	one selectable address: 0x50 or 0x51<br>
+* wind_monitor 	one selectable address: 0x50 or 0x51<br>
 * current_loop_tanks_monitor 0x48, 0x49, 0x4A, 0x4B<br> 
+
+OSPy treats the Water Meter and Wind Speed Monitor declarations as one selectable I2C resource each. Both plug-ins can therefore be installed from the repository or a custom ZIP and run together when they use different addresses. Activation selects a free alternative when necessary, and either settings page rejects an address already used by another enabled plug-in.
 
 Available plugins:
 * Usage Statistics  

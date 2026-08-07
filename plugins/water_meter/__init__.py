@@ -11,7 +11,13 @@ from threading import Thread, Lock
 import web
 
 from ospy.log import log
-from plugins import PluginOptions, plugin_url, get_runtime
+from plugins import (
+    PluginOptions,
+    get_runtime,
+    plugin_i2c_address_error,
+    plugin_url,
+    select_plugin_i2c_address,
+)
 from ospy.webpages import ProtectedPage
 from ospy.helpers import datetime_string, verify_csrf
 from ospy import helpers
@@ -202,6 +208,13 @@ water_sender = None
 def start():
     global water_sender
     if water_sender is None:
+        preferred = '0x51' if options['address'] else '0x50'
+        selected = select_plugin_i2c_address('water_meter', preferred)
+        if not selected:
+            raise RuntimeError(
+                _('No non-conflicting I2C address is available for Water Meter.')
+            )
+        options['address'] = selected == '0x51'
         water_sender = WaterSender()
 
 
@@ -340,6 +353,12 @@ class settings_page(ProtectedPage):
     def POST(self):
         qdict = web.input()
         verify_csrf(qdict)
+        requested_address = '0x51' if qdict.get('address', 'off') == 'on' else '0x50'
+        address_error = plugin_i2c_address_error(
+            'water_meter', requested_address
+        )
+        if address_error:
+            raise web.badrequest(address_error)
         options.web_update(qdict)
         normalize_options()
 
