@@ -26,3 +26,5 @@ Setup
 * Choose local and/or SQL logging, the display source, interval, record limit and zero-flow behavior when history is required.
 
 The mobile API provides a status summary, live cards for `l/s`, `l/min`, current-minute, current-hour and total consumption, and bounded/downsampled flow history from the selected local or SQL source. The manifest declares SMBus and I2C requirements plus the optional Database Connector dependency and mobile API v1. The plug-in uses the shared OSPy worker lifecycle, closes the I2C handle during errors and shutdown, removes its Home value during shutdown, and reports counter availability, live flow and totals through the Diagnostics health interface.
+
+The PCF8583 count is read explicitly from registers `0x01–0x03`. If setup or a measurement fails, the plug-in closes the bus, retries initialization automatically and shows the current I2C error on the overview instead of silently remaining at zero. Saving settings requests a safe counter reinitialization in the worker thread.

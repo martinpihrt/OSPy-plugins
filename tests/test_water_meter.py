@@ -5,6 +5,9 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugins' / 'water_meter'
+METHOD_SPEC = importlib.util.spec_from_file_location('water_meter_methods', PLUGIN / 'methods.py')
+METHODS = importlib.util.module_from_spec(METHOD_SPEC)
+METHOD_SPEC.loader.exec_module(METHODS)
 
 
 class WaterMeterRegressionTests(unittest.TestCase):
@@ -15,6 +18,15 @@ class WaterMeterRegressionTests(unittest.TestCase):
         counter_source = source[counter_start:counter_end]
         self.assertIn('stop_event.wait(1.0)', counter_source)
         self.assertIn('elapsed = time.monotonic() - started', counter_source)
+        self.assertIn("read_i2c_block_data(_address(), 0x01, 3)", counter_source)
+        self.assertIn('decode_bcd_counter(raw)', counter_source)
+
+    def test_three_counter_registers_are_decoded_as_bcd(self):
+        self.assertEqual(METHODS.decode_bcd_counter([0x56, 0x34, 0x12]), 123456)
+        with self.assertRaisesRegex(ValueError, 'invalid_counter_length'):
+            METHODS.decode_bcd_counter([0x56, 0x34])
+        with self.assertRaisesRegex(ValueError, 'invalid_bcd_digit'):
+            METHODS.decode_bcd_counter([0x1A, 0x00, 0x00])
 
     def test_existing_total_is_preserved_across_numeric_storage_types(self):
         source = (PLUGIN / '__init__.py').read_text(encoding='utf-8-sig')
@@ -40,6 +52,14 @@ class WaterMeterRegressionTests(unittest.TestCase):
         self.assertIn("_('l/s')", source)
         self.assertIn("_('l/min')", source)
         self.assertIn("clear_plugin_runtime_data('water_meter')", source)
+
+    def test_failed_counter_initialization_retries_and_is_visible(self):
+        source = (PLUGIN / '__init__.py').read_text(encoding='utf-8-sig')
+        template = (PLUGIN / 'templates' / 'water_meter.html').read_text(encoding='utf-8-sig')
+        self.assertIn("raise IOError(_('Could not initialize PCF8583.'))", source)
+        self.assertIn("self.status['measurement_error']", source)
+        self.assertIn("data['status'] = _('I2C error')", source)
+        self.assertIn('id="water-error"', template)
 
     def test_sql_dependency_is_optional(self):
         import json

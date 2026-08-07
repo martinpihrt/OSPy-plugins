@@ -9,6 +9,7 @@
 .waterGraphSection { border-top: 1px solid #9fb9bc; margin-top: 12px; padding-top: 8px; }
 .waterGraph { height: 360px; overflow: hidden; width: 100%; }
 .waterGraphEmpty { display: none; margin-bottom: 8px; }
+.waterError { color: #a51d2d; display: none; font-weight: bold; overflow-wrap: anywhere; }
 .waterPanel fieldset { border: 1px solid #9fb9bc; border-radius: 8px; margin: 12px 0; padding: 8px 12px 12px; }
 .waterPanel legend { font-weight: bold; padding: 0 6px; }
 .waterOptions td { padding: 4px 8px; text-transform: none; vertical-align: middle; }

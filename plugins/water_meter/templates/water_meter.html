@@ -46,6 +46,7 @@ function updateWaterStatus() {
         jQuery("#water-hour-total").text(Number(data.hour_liters || 0).toFixed(3) + " " + $:{json.dumps(_('liters'), ensure_ascii=False)});
         jQuery("#water-total").text(Number(data.total_liters || 0).toFixed(3) + " " + $:{json.dumps(_('liters'), ensure_ascii=False)});
         jQuery("#water-status").text(data.status);
+        jQuery("#water-error").text(data.error || "").toggle(Boolean(data.error));
         jQuery("#water-address").text(data.address);
         jQuery("#water-last").text(data.last_measurement || "-");
         jQuery("#water-pulses").text(data.raw_pulses || 0);
@@ -79,7 +80,7 @@ jQuery(document).ready(function() {
         <section class="waterLiveCard"><span class="waterCardLabel">$_(u'Current flow')</span><strong id="water-current">--</strong><span>$_(u'Per-minute flow'): <b id="water-minute-rate">--</b></span></section>
         <section class="waterLiveCard"><span class="waterCardLabel">$_(u'Consumption')</span><strong id="water-minute-total">--</strong><span>$_(u'Current hour'): <b id="water-hour-total">--</b></span></section>
         <section class="waterLiveCard"><span class="waterCardLabel">$_(u'Total consumption')</span><strong id="water-total">--</strong><span>$_(u'Measured from'): $plugin_options['log_date_last_reset']</span></section>
-        <section class="waterLiveCard"><span class="waterCardLabel">$_(u'Status')</span><strong id="water-status">--</strong><span>$_(u'Last measurement'): <span id="water-last">-</span></span></section>
+        <section class="waterLiveCard"><span class="waterCardLabel">$_(u'Status')</span><strong id="water-status">--</strong><span>$_(u'Last measurement'): <span id="water-last">-</span></span><span id="water-error" class="waterError"></span></section>
     </div>
     <div class="waterTechnicalStatus"><span>I&sup2;C $_(u'address'): <b id="water-address">--</b></span><span>$_(u'Raw pulses'): <b id="water-pulses">0</b></span></div>
     <details><summary>$_(u'Activity status')</summary><textarea id="water-activity" class="waterStatusText" rows="8" readonly>$'\n'.join(str(event) for event in events)</textarea></details>

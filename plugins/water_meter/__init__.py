@@ -27,6 +27,7 @@ from plugins import (
     plugin_url,
     select_plugin_i2c_address,
 )
+from .methods import decode_bcd_counter
 
 
 NAME = 'Water Meter'
@@ -97,6 +98,7 @@ def _empty_status():
         'total_liters': round(options.get('sum', 0.0), 2),
         'last_measurement': '',
         'raw_pulses': 0,
+        'measurement_error': '',
     }
 
 
@@ -110,6 +112,7 @@ class WaterSender(Thread):
         self.status = _empty_status()
         self._last_error_log = 0
         self._footer = None
+        self._reopen_requested = False
         self.start()
         runtime.register_thread(self)
 
@@ -118,6 +121,7 @@ class WaterSender(Thread):
 
     def update(self):
         normalize_options()
+        self._reopen_requested = True
 
     def _sleep(self, seconds):
         self._stop_event.wait(seconds)
@@ -132,17 +136,29 @@ class WaterSender(Thread):
             self._last_error_log = now
 
     def _open_bus(self):
+        bus = None
         try:
             import smbus
-            self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
-            self.pcf = set_counter(self.bus)
+            bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
+            if not set_counter(bus):
+                raise IOError(_('Could not initialize PCF8583.'))
+            self.bus = bus
+            self.pcf = True
+            self.status['measurement_error'] = ''
         except ImportError:
             log.warning(NAME, _('Could not import smbus.'))
             self.bus = None
             self.pcf = None
+            self.status['measurement_error'] = _('Could not import smbus.')
         except Exception:
+            if bus is not None:
+                try:
+                    bus.close()
+                except (AttributeError, OSError):
+                    pass
             self.bus = None
             self.pcf = None
+            self.status['measurement_error'] = traceback.format_exc().splitlines()[-1]
             self._log_problem(_('Water Meter plug-in') + ':\n' + traceback.format_exc())
 
     def close_bus(self):
@@ -203,6 +219,9 @@ class WaterSender(Thread):
             while not self._stop_event.is_set():
                 try:
                     normalize_options()
+                    if self._reopen_requested:
+                        self._reopen_requested = False
+                        self.close_bus()
                     self._sync_footer()
                     if not options['enabled']:
                         self.status.update(_empty_status())
@@ -243,6 +262,7 @@ class WaterSender(Thread):
                     self.status['hour_liters'] = round(self.status['hour_liters'] + liters, 3)
                     self.status['total_liters'] = round(self.status['total_liters'] + liters, 3)
                     self.status['last_measurement'] = datetime_string()
+                    self.status['measurement_error'] = ''
                     with health_lock:
                         health_state['last_reading'] = time.time()
                     self._sync_footer()
@@ -255,6 +275,7 @@ class WaterSender(Thread):
                         if not options['log_only_flow'] or flow > 0:
                             update_log(self.status)
                 except Exception:
+                    self.status['measurement_error'] = traceback.format_exc().splitlines()[-1]
                     self.close_bus()
                     self._log_problem(_('Water Meter plug-in') + ':\n' + traceback.format_exc())
                     self._sleep(5)
@@ -332,13 +353,13 @@ def counter(i2cbus, stop_event=None):
         time.sleep(1.0)
     elapsed = time.monotonic() - started
     with i2c_transaction(timeout=I2C_TIMEOUT, priority=I2C_PRIORITY):
-        raw = try_io(lambda: i2cbus.read_i2c_block_data(_address(), 0x00))
-    if len(raw) < 4:
+        raw = try_io(lambda: i2cbus.read_i2c_block_data(_address(), 0x01, 3))
+    if len(raw) < 3:
         raise IOError(_('PCF8583 returned an incomplete counter value.'))
-    digits = (raw[1] & 0x0F, raw[1] >> 4, raw[2] & 0x0F, raw[2] >> 4, raw[3] & 0x0F, raw[3] >> 4)
-    if any(digit > 9 for digit in digits):
+    try:
+        pulses = decode_bcd_counter(raw)
+    except ValueError:
         raise ValueError(_('PCF8583 returned an invalid counter value.'))
-    pulses = sum(digit * (10 ** index) for index, digit in enumerate(digits))
     return pulses, elapsed
 
 
@@ -507,7 +528,15 @@ class water_json(ProtectedPage):
         data = dict(status)
         data['sec_water'] = status['meter']
         data['enabled'] = bool(options['enabled'])
-        data['status'] = _('Running') if options['enabled'] and water_sender is not None else _('Stopped')
+        if not options['enabled']:
+            data['status'] = _('Disabled')
+        elif water_sender is None:
+            data['status'] = _('Stopped')
+        elif water_sender.bus is None or not water_sender.pcf:
+            data['status'] = _('I2C error')
+        else:
+            data['status'] = _('Running')
+        data['error'] = status.get('measurement_error', '')
         data['address'] = '0x51' if options['address'] else '0x50'
         data['activity'] = '\n'.join(str(event) for event in log.events(NAME))
         return json.dumps(data)

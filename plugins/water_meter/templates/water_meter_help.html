@@ -12,6 +12,7 @@ $var page: plugins
     <p>$_('Local JSON logging and optional SQL logging can be enabled independently. The selected display source supplies the measurement log, CSV download and graph. The interval is specified in seconds, zero maximum records means unlimited history, and zero-flow samples can be omitted.')</p>
     <p>$_('When enabled, the Home display shows the current liters per second followed by the equivalent liters per minute in parentheses and opens the Water Meter overview when selected.')</p>
     <p>$_('The mobile application receives current flow and consumption cards plus bounded flow history from the selected local or SQL source.')</p>
+    <p>$_('The PCF8583 count is read explicitly from registers 0x01 to 0x03. After a setup or measurement failure the I2C bus is closed and initialization is retried automatically; the overview displays the current I2C error instead of silently showing only zero.')</p>
     <p>$_('Visit') <a href="https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer">Martin Pihrt blog</a> $_('for more information').</p>
     <p><b>$_('The PCB board for Water Meter (board by pihrt.com)')</b></p>
     <p>$_('Without input amplifier and comparator')</p><a href="/plugins/water_meter/static/images/aa.png"><img src="/plugins/water_meter/static/images/aa.png" width="60%"></a><br>
