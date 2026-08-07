@@ -1,4 +1,4 @@
-$def with(plugin_options, events)
+$def with(plugin_options, events, validation_error=None)
 
 $var title: $_('Water meter settings')
 $var page: plugins
@@ -73,6 +73,8 @@ input:checked + .slider:before {
 
 <div id="plugin">
     <div class="title">$_('Water meter settings')</div>
+    $if validation_error:
+        <div class="alert" role="alert">$validation_error</div>
     <a href=$plugins.plugin_url('water_meter.help_page') class="button upload">$_(u'Help')</a><br/>
     <form id="pluginForm" action="$plugins.plugin_url('water_meter.settings_page')" method="post">
         $:csrf_input()

@@ -6,7 +6,7 @@ Tested in Python 3+
 This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 or 0x51.  
 This plugin measures the amount of water flowing per sec, min, hour and the total amount of water.
 
-Addresses `0x50` and `0x51` are alternatives; the plug-in occupies only the address selected in its settings. OSPy can install and run Water Meter beside another selectable-address plug-in when each receives a different address. If the preferred address is occupied during activation, the plug-in selects the free alternative. The settings page refuses an address currently used by another enabled plug-in and keeps the preceding selection.
+Addresses `0x50` and `0x51` are alternatives; the plug-in occupies only the address selected in its settings. OSPy can install and run Water Meter beside another selectable-address plug-in when each receives a different address. If the preferred address is occupied during activation, the plug-in selects the free alternative. The settings page refuses an address currently used by another enabled plug-in, keeps the preceding settings and displays the conflict in a red status bar without leaving the page.
 
 The plug-in includes a manifest declaring its SMBus and I2C requirements, uses the shared OSPy worker lifecycle, closes the I2C handle during errors and shutdown, and reports counter availability, flow and totals through the Diagnostics health interface.
 

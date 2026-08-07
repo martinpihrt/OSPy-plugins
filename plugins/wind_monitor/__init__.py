@@ -940,7 +940,9 @@ class settings_page(ProtectedPage):
             'wind_monitor', requested_address
         )
         if address_error:
-            raise web.badrequest(address_error)
+            return self.plugin_render.wind_monitor_settings(
+                wind_options, address_error
+            )
         decimal_values = {
             key: decimal_input(qdict, key, wind_options.get(key))
             for key in decimal_fields

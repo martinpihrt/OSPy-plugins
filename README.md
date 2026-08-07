@@ -46,7 +46,7 @@ Theses I2C addresses is used in available plugins:
 * wind_monitor 	one selectable address: 0x50 or 0x51<br>
 * current_loop_tanks_monitor 0x48, 0x49, 0x4A, 0x4B<br> 
 
-OSPy treats the Water Meter and Wind Speed Monitor declarations as one selectable I2C resource each. Both plug-ins can therefore be installed from the repository or a custom ZIP and run together when they use different addresses. Activation selects a free alternative when necessary, and either settings page rejects an address already used by another enabled plug-in.
+OSPy treats the Water Meter and Wind Speed Monitor declarations as one selectable I2C resource each. Both plug-ins can therefore be installed from the repository or a custom ZIP and run together when they use different addresses. Activation selects a free alternative when necessary, and either settings page rejects an address already used by another enabled plug-in, preserves the previous settings and displays the conflict in a red status bar.
 
 Available plugins:
 * Usage Statistics  

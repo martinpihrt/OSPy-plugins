@@ -358,7 +358,9 @@ class settings_page(ProtectedPage):
             'water_meter', requested_address
         )
         if address_error:
-            raise web.badrequest(address_error)
+            return self.plugin_render.water_meter(
+                options, log.events(NAME), address_error
+            )
         options.web_update(qdict)
         normalize_options()
 
