@@ -1,0 +1,23 @@
+.waterPanel { border: 2px solid #176b73; border-radius: 12px; box-sizing: border-box; margin-top: 8px; padding: 10px; }
+.waterToolbar, .waterGraphControls { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
+.waterLiveGrid { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(160px, 1fr)); }
+.waterLiveCard { background: #eef8f8; border-left: 5px solid #16828c; border-radius: 7px; display: flex; flex-direction: column; min-height: 92px; padding: 10px 12px; }
+.waterLiveCard strong { font-size: 1.45em; margin: 5px 0; }
+.waterCardLabel { color: #39555a; font-weight: bold; }
+.waterTechnicalStatus { background: #e8f0f1; border-radius: 7px; display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 10px 0; padding: 8px 10px; }
+.waterStatusText { box-sizing: border-box; font-family: monospace; margin-top: 7px; max-width: 100%; width: 760px; }
+.waterGraphSection { border-top: 1px solid #9fb9bc; margin-top: 12px; padding-top: 8px; }
+.waterGraph { height: 360px; overflow: hidden; width: 100%; }
+.waterGraphEmpty { display: none; margin-bottom: 8px; }
+.waterPanel fieldset { border: 1px solid #9fb9bc; border-radius: 8px; margin: 12px 0; padding: 8px 12px 12px; }
+.waterPanel legend { font-weight: bold; padding: 0 6px; }
+.waterOptions td { padding: 4px 8px; text-transform: none; vertical-align: middle; }
+.waterOptions td:first-child { min-width: 310px; }
+.waterHint { color: #555; margin: 5px 8px; }
+.switch { display: inline-block; height: 24px; position: relative; width: 50px; }
+.switch input { display: none; }
+.slider { background-color: #ff4d4d; border-radius: 34px; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+.slider::before { background-color: white; border-radius: 50%; bottom: 3px; content: ""; height: 18px; left: 4px; position: absolute; transition: .4s; width: 18px; }
+input:checked + .slider { background-color: #4caf50; }
+input:checked + .slider::before { transform: translateX(24px); }
+@media (max-width: 760px) { .waterLiveGrid { grid-template-columns: 1fr; } .waterOptions, .waterOptions tbody, .waterOptions tr, .waterOptions td { display: block; width: auto; } .waterOptions td:first-child { min-width: 0; padding-bottom: 1px; } }

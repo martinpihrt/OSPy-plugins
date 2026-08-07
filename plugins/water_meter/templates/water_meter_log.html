@@ -1,0 +1,23 @@
+$def with(records, plugin_options)
+
+$var title: $_(u'Water Meter - measurement log')
+$var page: plugins
+
+<link href="/plugins/water_meter/static/water_meter.css?v=1.1.0" rel="stylesheet" type="text/css">
+<div id="plugin" class="waterPanel">
+    <div class="title">$_(u'Water Meter - measurement log')</div>
+    <p>$(_('Log from local file') if plugin_options['type_log'] == 0 else _('Log from database')) — $_(u'Total number of records'): ${len(records)}</p>
+    <div class="waterToolbar">
+        <a href=$plugins.plugin_url('water_meter.log_csv') class="button download">$_(u'Download displayed log')</a>
+        $if plugin_options['type_log'] == 0:
+            <a href="?delete&$csrf_query()" class="button danger">$_(u'Delete all local logs')</a>
+        $else:
+            <a href="?delSQL&$csrf_query()" class="button danger">$_(u'Delete SQL table')</a>
+        <a href="" class="button refresh">$_(u'Refresh')</a>
+    </div>
+    <table class="logList"><tr><th>$_(u'Date Time')</th><th>$_(u'Flow (l/s)')</th><th>$_(u'Flow (l/min)')</th><th>$_(u'Total liters')</th></tr>
+    $for record in records:
+        <tr class="${loop.parity}"><td>${record.get('datetime', '')}</td><td>${record.get('flow_lps', 0)}</td><td>${record.get('flow_lpm', 0)}</td><td>${record.get('total_liters', 0)}</td></tr>
+    </table>
+</div>
+<div id="controls"><a href=$plugins.plugin_url('water_meter.overview_page') class="button danger">$_(u'Cancel')</a></div>

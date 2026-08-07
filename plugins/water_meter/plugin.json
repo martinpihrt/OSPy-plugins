@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "water_meter",
   "name": "Water Meter",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -16,6 +16,12 @@
       "module": "smbus",
       "package": "python3-smbus",
       "required": true
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "database_connector",
+      "required": false
     }
   ],
   "hardware": {
@@ -43,5 +49,9 @@
   "permissions": [
     "files",
     "i2c"
-  ]
+  ],
+  "mobile": {
+    "api_version": 1,
+    "actions": []
+  }
 }

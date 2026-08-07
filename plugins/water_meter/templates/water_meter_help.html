@@ -1,25 +1,21 @@
 $def with()
 
-$var title: $_('Water meter - help')
+$var title: $_('Water Meter - help')
 $var page: plugins
 
-<div id="plugin">
-    <div class="title">$_('Water meter - help')</div>
-    <p>$_('This plugin needs an enabled') I&sup2;C $_('bus and connected counter PCF8583 on') I&sup2;C $_('address 0x50 or 0x51.')</p>
+<link href="/plugins/water_meter/static/water_meter.css?v=1.1.0" rel="stylesheet" type="text/css">
+<div id="plugin" class="waterPanel">
+    <div class="title">$_('Water Meter - help')</div>
+    <p>$_('The plug-in measures pulses from a water meter through a PCF8583 counter at I2C address 0x50 or 0x51. Each uninterrupted one-second measurement produces the current flow in liters per second and liters per minute.')</p>
     <p>$_('The two I2C addresses are alternatives. If the preferred address is occupied during activation, OSPy selects the free alternative. The settings page rejects an address already used by another enabled plug-in, preserves the previous settings and displays the conflict in a red status bar.')</p>
-    <p>$_('This plugin measures the amount of water flowing per sec, min, hour and the total amount of water').</p>
-    <p>$_('Visit') <a href="https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer">Martin Pihrt blog</a> $_('for more information').</p><br>
-    <p><b>$_('The PCB board for Water meter (board by pihrt.com)')</b></p>
-    <p>$_('Without input amplifier and comparator')</p>
-    <a href="/plugins/water_meter/static/images/aa.png"><img src="/plugins/water_meter/static/images/aa.png" width="60%"></a></br>
-    <a href="/plugins/water_meter/static/images/bb.png"><img src="/plugins/water_meter/static/images/bb.png" width="20%"></a></br>
-    <p>$_('With input amplifier and comparator')</p>
-    <a href="/plugins/water_meter/static/images/schematics.png"><img src="/plugins/water_meter/static/images/schematics.png" width="60%"></a></br>
-    <a href="/plugins/water_meter/static/images/brd.png"><img src="/plugins/water_meter/static/images/brd.png" width="30%"></a></br>
-    <a href="/plugins/water_meter/static/images/top.png"><img src="/plugins/water_meter/static/images/top.png" width="40%"></a></br>
-    <a href="/plugins/water_meter/static/images/bot.png"><img src="/plugins/water_meter/static/images/bot.png" width="40%"></a></br>        
+    <p>$_('The overview refreshes live values every second and shows the current flow, consumption in the current minute and hour, total consumption, counter state and a flow history graph.')</p>
+    <p>$_('Local JSON logging and optional SQL logging can be enabled independently. The selected display source supplies the measurement log, CSV download and graph. The interval is specified in seconds, zero maximum records means unlimited history, and zero-flow samples can be omitted.')</p>
+    <p>$_('When enabled, the Home display shows the current liters per second followed by the equivalent liters per minute in parentheses and opens the Water Meter overview when selected.')</p>
+    <p>$_('The mobile application receives current flow and consumption cards plus bounded flow history from the selected local or SQL source.')</p>
+    <p>$_('Visit') <a href="https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer">Martin Pihrt blog</a> $_('for more information').</p>
+    <p><b>$_('The PCB board for Water Meter (board by pihrt.com)')</b></p>
+    <p>$_('Without input amplifier and comparator')</p><a href="/plugins/water_meter/static/images/aa.png"><img src="/plugins/water_meter/static/images/aa.png" width="60%"></a><br>
+    <p>$_('With input amplifier and comparator')</p><a href="/plugins/water_meter/static/images/bb.png"><img src="/plugins/water_meter/static/images/bb.png" width="60%"></a><br>
+    <p>$_('Wiring diagram')</p><a href="/plugins/water_meter/static/images/schematics.png"><img src="/plugins/water_meter/static/images/schematics.png" width="60%"></a>
 </div>
-
-<div id="controls">
-    <a href=$plugins.plugin_url('water_meter.settings_page') class="button danger">$_(u'Cancel')</a><br/>
-</div> 
+<div id="controls"><a href=$plugins.plugin_url('water_meter.overview_page') class="button danger">$_(u'Cancel')</a></div>

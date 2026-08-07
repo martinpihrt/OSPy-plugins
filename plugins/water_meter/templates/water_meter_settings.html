@@ -1,0 +1,32 @@
+$def with(plugin_options, validation_error=None)
+
+$var title: $_(u'Water Meter settings')
+$var page: plugins
+
+<link href="/plugins/water_meter/static/water_meter.css?v=1.1.0" rel="stylesheet" type="text/css">
+<script>jQuery(document).ready(function() { jQuery("#cSubmit").click(function() { jQuery("#pluginForm").submit(); }); });</script>
+
+<div id="plugin" class="waterPanel">
+    <div class="title">$_(u'Water Meter settings')</div>
+    $if validation_error:
+        <div class="alert" role="alert">$validation_error</div>
+    <div class="waterToolbar"><a href=$plugins.plugin_url('water_meter.overview_page') class="button submit">$_(u'Overview')</a><a href=$plugins.plugin_url('water_meter.help_page') class="button upload">$_(u'Help')</a></div>
+    <form id="pluginForm" action="$plugins.plugin_url('water_meter.settings_page')" method="post">
+        $:csrf_input()
+        <fieldset><legend>$_(u'Measurement')</legend><table class="optionList waterOptions">
+            <tr><td>$_(u'Use Water Meter'):</td><td><label class="switch"><input name="enabled" type="checkbox"${" checked" if plugin_options['enabled'] else ""}><span class="slider"></span></label></td></tr>
+            <tr><td>I&sup2;C $_(u'address'):</td><td><select name="address"><option value="off"${" selected" if not plugin_options['address'] else ""}>0x50</option><option value="on"${" selected" if plugin_options['address'] else ""}>0x51</option></select></td></tr>
+            <tr><td>$_(u'Pulses per liter'):</td><td><input name="pulses" type="text" inputmode="decimal" value="$plugin_options['pulses']"></td></tr>
+            <tr><td>$_(u'Show on Home'):</td><td><label class="switch"><input name="use_footer" type="checkbox"${" checked" if plugin_options['use_footer'] else ""}><span class="slider"></span></label></td></tr>
+        </table><p class="waterHint">$_(u'The Home value uses the format current l/s (current l/min). Decimal values may use a point or comma.')</p></fieldset>
+        <fieldset><legend>$_(u'Measurement logging')</legend><table class="optionList waterOptions">
+            <tr><td>$_(u'Enable local logging'):</td><td><label class="switch"><input name="enable_log" type="checkbox"${" checked" if plugin_options['enable_log'] else ""}><span class="slider"></span></label></td></tr>
+            <tr><td>$_(u'Enable SQL logging'):</td><td><label class="switch"><input name="en_sql_log" type="checkbox"${" checked" if plugin_options['en_sql_log'] else ""}><span class="slider"></span></label> <a href="?delSQL&$csrf_query()" class="button danger">$_(u'Delete SQL table')</a></td></tr>
+            <tr><td>$_(u'Display data from'):</td><td><select name="type_log"><option value="0"${" selected" if plugin_options['type_log'] == 0 else ""}>$_(u'Local file')</option><option value="1"${" selected" if plugin_options['type_log'] == 1 else ""}>$_(u'SQL database')</option></select></td></tr>
+            <tr><td>$_(u'Logging interval'):</td><td><input name="log_interval" type="number" min="1" max="86400" value="$plugin_options['log_interval']"> $_(u'seconds')</td></tr>
+            <tr><td>$_(u'Maximum number of log records'):</td><td><input name="log_records" type="number" min="0" max="1000000" value="$plugin_options['log_records']"></td></tr>
+            <tr><td>$_(u'Log only when flow is greater than zero'):</td><td><label class="switch"><input name="log_only_flow" type="checkbox"${" checked" if plugin_options['log_only_flow'] else ""}><span class="slider"></span></label></td></tr>
+        </table><p class="waterHint">$_(u'Zero maximum records keeps an unlimited history. The limit applies independently to the local file and SQL table.')</p></fieldset>
+    </form>
+</div>
+<div id="controls"><button id="cSubmit" class="submit"><b>$_(u'Submit')</b></button><a href=$plugins.plugin_url('water_meter.overview_page') class="button danger">$_(u'Cancel')</a></div>

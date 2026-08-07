@@ -2,6 +2,9 @@
 
 August 7 2026
 -------------
+(Martin Pihrt) - Water Meter v1.1.0<br/>
+Changed the PCF8583 worker to uninterrupted one-second measurement cycles so the live liters-per-second value refreshes every second without discarding pulses during an extra sleep. Added a Wind Monitor-style responsive overview, per-second live refresh, liters-per-minute conversion, current-minute/current-hour/total cards, separate settings and log pages, local JSON and optional SQL logging, selectable graph/log source, seconds-based logging interval, zero-flow filtering, bounded or unlimited record retention, CSV download, and a flow history graph. Added an optional Home value in the format `current l/s (current l/min)` with lifecycle cleanup and mobile API v1 cards plus bounded flow history, declared Database Connector as optional, expanded help and README documentation, and added regression tests.
+
 (Martin Pihrt) - Wind Speed Monitor v1.1.8 and Water Meter v1.0.2<br/>
 Changed selectable-I2C settings conflicts from a standalone HTTP 400 error page to an inline red status bar on each plug-in settings page. A rejected submission keeps all preceding settings, remains on the form and exposes the message with alert semantics for assistive technology. Added regression tests and updated the repository, plug-in README and in-app help documentation.
 

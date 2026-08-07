@@ -1,32 +1,28 @@
 Water Meter Readme
 ====
 
-Tested in Python 3+
-
-This plugin needs an enabled I2C bus and connected counter PCF8583 on I2C address 0x50 or 0x51.  
-This plugin measures the amount of water flowing per sec, min, hour and the total amount of water.
+The Water Meter plug-in measures a pulse-output water meter through a PCF8583 I2C counter. It performs uninterrupted one-second measurements and reports current flow in liters per second, the equivalent liters per minute, consumption in the current minute and hour, and total consumption.
 
 Addresses `0x50` and `0x51` are alternatives; the plug-in occupies only the address selected in its settings. OSPy can install and run Water Meter beside another selectable-address plug-in when each receives a different address. If the preferred address is occupied during activation, the plug-in selects the free alternative. The settings page refuses an address currently used by another enabled plug-in, keeps the preceding settings and displays the conflict in a red status bar without leaving the page.
 
-The plug-in includes a manifest declaring its SMBus and I2C requirements, uses the shared OSPy worker lifecycle, closes the I2C handle during errors and shutdown, and reports counter availability, flow and totals through the Diagnostics health interface.
+Overview and settings are separate pages. The overview refreshes live values every second, includes activity and counter information, and shows a selectable history graph when local or SQL logging is enabled. The measurement log can be viewed and downloaded as CSV.
 
-Plugin setup
------------
-* Check Use Water Meter:  
-  If checked use water meter plugin is enabled.  
+Logging
+----
 
-* Select the I2C address: Clear the checkbox for `0x50` or select it for `0x51`. The selected address must not already be used by another enabled plug-in.
+Local JSON logging and optional SQL logging through the Database Connector plug-in can be enabled independently. Select which source supplies the graph, measurement log and CSV download. Configure the logging interval in seconds, optionally omit samples whose flow is zero, and set the maximum number of records. A maximum of `0` keeps unlimited history; a positive limit is applied independently to the local file and SQL table.
 
-* Number of pulses per liter:
-  Type number of pulses per liter from your sensor.
+Home display
+----
 
-* Water meter state:
-  Show actual liter per second
+Enable **Show on Home** to add a live Water flow value to the OSPy Home footer/header area. It is updated after every one-second measurement in the format `0.250 l/s (15.000 l/min)` and opens the Water Meter overview when selected. The item is removed when the option is disabled or during plug-in shutdown.
 
-* Status:
-  Status window from the plugin.  
+Setup
+----
 
-The hardware should be connected as follows:
-<a href="/plugins/water_meter/static/images/schematics.png"><img src="/plugins/water_meter/static/images/schematics.png" width="100%"></a>
+* Enable **Use Water Meter**.
+* Select I2C address `0x50` or `0x51`; it must differ from an address already used by another enabled plug-in.
+* Enter the sensor calibration as pulses per liter. Decimal values accept a point or comma.
+* Choose local and/or SQL logging, the display source, interval, record limit and zero-flow behavior when history is required.
 
-Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer). for more information.
+The mobile API provides a status summary, live cards for `l/s`, `l/min`, current-minute, current-hour and total consumption, and bounded/downsampled flow history from the selected local or SQL source. The manifest declares SMBus and I2C requirements plus the optional Database Connector dependency and mobile API v1. The plug-in uses the shared OSPy worker lifecycle, closes the I2C handle during errors and shutdown, removes its Home value during shutdown, and reports counter availability, live flow and totals through the Diagnostics health interface.

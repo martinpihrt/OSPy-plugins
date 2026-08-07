@@ -10,7 +10,7 @@ class SelectableI2cAddressUiTests(unittest.TestCase):
     def test_conflicts_render_inline_alerts_in_both_plugins(self):
         definitions = (
             ('wind_monitor', 'wind_monitor_settings'),
-            ('water_meter', 'water_meter'),
+            ('water_meter', 'water_meter_settings'),
         )
         for plugin, template_name in definitions:
             with self.subTest(plugin=plugin):
@@ -30,7 +30,7 @@ class SelectableI2cAddressUiTests(unittest.TestCase):
     def test_inline_alert_release_versions_are_incremented(self):
         expected = {
             'wind_monitor': '1.1.8',
-            'water_meter': '1.0.2',
+            'water_meter': '1.1.0',
         }
         for plugin, version in expected.items():
             with self.subTest(plugin=plugin):
