@@ -42,9 +42,13 @@ Theses I2C addresses is used in available plugins:
 * lcd_display 	0x20-0x27, 0x38-0x3F<br>
 * real_time 	0x68<br>
 * volt_temp_da 	0x48<br>
-* water_meter 	0x50, 0x51<br>
-* wind_monitor 	0x50, 0x51<br>
+* water_meter 	one selectable address: 0x50 or 0x51<br>
+* wind_monitor 	one selectable address: 0x50 or 0x51<br>
 * current_loop_tanks_monitor 0x48, 0x49, 0x4A, 0x4B<br> 
+
+OSPy treats the Water Meter and Wind Speed Monitor declarations as one selectable I2C resource each. Both plug-ins can therefore be installed from the repository or a custom ZIP and run together when they use different addresses. Activation selects a free alternative when necessary, and either settings page rejects an address already used by another enabled plug-in, preserves the previous settings and displays the conflict in a red status bar.
+
+Water Meter v1.1.1 uses uninterrupted one-second measurements and separates its live overview from configuration. It can log flow to a bounded or unlimited local JSON file and optionally to SQL through Database Connector, omit zero-flow samples, select the graph/log source, download CSV history, and display current `l/s` with the equivalent `l/min` on Home. PCF8583 data is read explicitly from registers `0x01–0x03`; initialization and measurement failures close and retry the bus and are shown on the overview.
 
 Available plugins:
 * Usage Statistics  

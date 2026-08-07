@@ -1,4 +1,4 @@
-$def with(plugin_options)
+$def with(plugin_options, validation_error=None)
 
 $var title: $_(u'Wind Speed Monitor settings')
 $var page: plugins
@@ -13,6 +13,8 @@ jQuery(document).ready(function() {
 
 <div id="plugin" class="windPanel">
     <div class="title">$_(u'Wind Speed Monitor settings')</div>
+    $if validation_error:
+        <div class="alert" role="alert">$validation_error</div>
     <div class="windToolbar">
         <a href=$plugins.plugin_url('wind_monitor.overview_page') class="button submit">$_(u'Overview')</a>
         <a href=$plugins.plugin_url('wind_monitor.help_page') class="button upload">$_(u'Help')</a>

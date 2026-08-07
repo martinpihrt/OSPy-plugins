@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "wind_monitor",
   "name": "Wind Speed Monitor",
-  "version": "1.1.6",
+  "version": "1.1.8",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -32,8 +32,18 @@
       "i2c"
     ],
     "i2c": [
-      "0x50",
-      "0x51"
+      {
+        "alternatives": [
+          "0x50",
+          "0x51"
+        ],
+        "option": "address",
+        "option_values": {
+          "0x50": false,
+          "0x51": true
+        },
+        "default": "0x50"
+      }
     ]
   },
   "permissions": [

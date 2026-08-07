@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "water_meter",
   "name": "Water Meter",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -18,6 +18,12 @@
       "required": true
     }
   ],
+  "dependencies": [
+    {
+      "id": "database_connector",
+      "required": false
+    }
+  ],
   "hardware": {
     "platforms": [
       "raspberry_pi"
@@ -26,12 +32,26 @@
       "i2c"
     ],
     "i2c": [
-      "0x50",
-      "0x51"
+      {
+        "alternatives": [
+          "0x50",
+          "0x51"
+        ],
+        "option": "address",
+        "option_values": {
+          "0x50": false,
+          "0x51": true
+        },
+        "default": "0x50"
+      }
     ]
   },
   "permissions": [
     "files",
     "i2c"
-  ]
+  ],
+  "mobile": {
+    "api_version": 1,
+    "actions": []
+  }
 }

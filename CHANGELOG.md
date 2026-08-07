@@ -1,5 +1,19 @@
 # OSPy-plugins Changelog
 
+August 7 2026
+-------------
+(Martin Pihrt) - Water Meter v1.1.1<br/>
+Fixed an enabled Water Meter remaining at zero after PCF8583 initialization or block-read failure. Counter data is now read explicitly as three bytes from registers 0x01-0x03, failed setup closes the bus and is retried automatically, setting changes request safe worker-thread reinitialization, and the overview reports the active I2C error instead of presenting a misleading running state.
+
+(Martin Pihrt) - Water Meter v1.1.0<br/>
+Changed the PCF8583 worker to uninterrupted one-second measurement cycles so the live liters-per-second value refreshes every second without discarding pulses during an extra sleep. Added a Wind Monitor-style responsive overview, per-second live refresh, liters-per-minute conversion, current-minute/current-hour/total cards, separate settings and log pages, local JSON and optional SQL logging, selectable graph/log source, seconds-based logging interval, zero-flow filtering, bounded or unlimited record retention, CSV download, and a flow history graph. Added an optional Home value in the format `current l/s (current l/min)` with lifecycle cleanup and mobile API v1 cards plus bounded flow history, declared Database Connector as optional, expanded help and README documentation, and added regression tests.
+
+(Martin Pihrt) - Wind Speed Monitor v1.1.8 and Water Meter v1.0.2<br/>
+Changed selectable-I2C settings conflicts from a standalone HTTP 400 error page to an inline red status bar on each plug-in settings page. A rejected submission keeps all preceding settings, remains on the form and exposes the message with alert semantics for assistive technology. Added regression tests and updated the repository, plug-in README and in-app help documentation.
+
+(Martin Pihrt) - Wind Speed Monitor v1.1.7 and Water Meter v1.0.1<br/>
+Declared PCF8583 addresses 0x50 and 0x51 as selectable alternatives instead of two simultaneously occupied I2C resources. Both plug-ins can now be installed from the official repository or a custom ZIP and run together on distinct addresses. During activation each plug-in keeps its preferred address when available or selects the free alternative; both settings pages reject an address already used by another enabled plug-in. Updated the repository, plug-in README and in-app help documentation.
+
 August 6 2026
 -------------
 (Martin Pihrt) - CHMI v1.0.6, E-mail Notifications SSL v1.1.5, LCD Display v1.0.2, Monthly Water Level v1.0.1, Home Assistant MQTT v1.0.1, OSPy Package Backup v1.0.1, System Debug Information v1.0.1, System Update v1.2.5, Thermostat v1.0.1, Usage Statistics v1.0.1 and Weather-based Water Level v1.1.2<br/>
