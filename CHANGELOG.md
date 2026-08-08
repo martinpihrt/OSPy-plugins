@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 8 2026
+-------------
+(Martin Pihrt) - OSPy Package Backup v1.0.2<br/>
+Restored the latest successful plug-in backup status from existing ZIP archives after OSPy or the plug-in restarts. The native mobile status and diagnostics now report the newest persistent archive name, modification time and size instead of resetting to “no backup created”. Added regression tests for archive discovery.
+
 August 7 2026
 -------------
 (Martin Pihrt) - Water Meter v1.1.1<br/>
