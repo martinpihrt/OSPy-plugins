@@ -39,7 +39,7 @@ Plugin setup
   Unique ID number to identify Shelly devices. It can be found in the Shelly device settings or on the Shelly manufacturer's cloud site: https://control.shelly.cloud after logging in, click on the desired device and the "device information" section.
 
 * Shelly sensor type:
-  Shelly Plus HT, Shelly Plus Plug S, Shelly Pro 2PM...
+  Shelly Plus HT, Shelly Plus Plug S, Shelly Pro 2PM, Shelly Pro 3EM and Shelly 3EM-63T Gen3. The three-phase meters expose power, reverse power, voltage, current, power factor and accumulated energy for every phase, including total power and total energy for use by other OSPy plug-ins.
 
 * Status:  
   Status window from the plugin.

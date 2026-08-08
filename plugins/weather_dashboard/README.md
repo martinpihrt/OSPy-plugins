@@ -80,6 +80,9 @@ Available sources
 * OSPy Sensor:  
   Reads values from configured OSPy sensors.
 
+* Shelly Cloud:
+  Reads cached Shelly values without starting another network request. Shelly Pro 3EM and Shelly 3EM-63T Gen3 provide per-phase power, reverse power, voltage, current, power factor and energy together with total power and total energy.
+
 
 Using the dashboard
 -----------
