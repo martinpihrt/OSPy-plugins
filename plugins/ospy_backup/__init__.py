@@ -15,6 +15,7 @@ from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.log import log
 from ospy.helpers import datetime_string, get_input, mkdir_p, del_rw, verify_csrf
 from ospy.webpages import ProtectedPage
+from .backup_state import latest_backup
 
 
 ################################################################################
@@ -66,6 +67,7 @@ def start():
     global sender
     if sender is None:
         sender = Sender()
+    refresh_persistent_backup_state()
 
 
 def stop():
@@ -81,8 +83,24 @@ def record_backup_error(message):
         health_state['last_error_message'] = str(message).splitlines()[-1]
 
 
+def refresh_persistent_backup_state():
+    """Hydrate volatile health data from archives that survive a restart."""
+    try:
+        latest = latest_backup(plugin_data_dir())
+    except Exception:
+        latest = None
+    if latest is None:
+        return
+    with health_lock:
+        if latest['modified'] >= health_state['last_success']:
+            health_state['last_success'] = latest['modified']
+            health_state['last_file'] = latest['filename']
+            health_state['last_size'] = latest['size']
+
+
 def health():
     """Return lifecycle and latest plug-in data backup state."""
+    refresh_persistent_backup_state()
     with health_lock:
         state = dict(health_state)
     details = {

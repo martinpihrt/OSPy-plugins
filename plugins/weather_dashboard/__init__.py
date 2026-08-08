@@ -34,10 +34,23 @@ SHELLY_VALUE_TYPES = [
     'power_2',
     'power_3',
     'power_4',
+    'total_power',
     'retpower',
     'retpower_2',
     'retpower_3',
     'voltage',
+    'voltage_2',
+    'voltage_3',
+    'current',
+    'current_2',
+    'current_3',
+    'power_factor',
+    'power_factor_2',
+    'power_factor_3',
+    'energy',
+    'energy_2',
+    'energy_3',
+    'total_energy',
     'battery',
     'rssi',
     'online'
@@ -397,7 +410,19 @@ def get_shelly_value(device, value_type):
         'power_4': ('power', 3),
         'retpower': ('retpower', 0),
         'retpower_2': ('retpower', 1),
-        'retpower_3': ('retpower', 2)
+        'retpower_3': ('retpower', 2),
+        'voltage': ('voltages', 0),
+        'voltage_2': ('voltages', 1),
+        'voltage_3': ('voltages', 2),
+        'current': ('current', 0),
+        'current_2': ('current', 1),
+        'current_3': ('current', 2),
+        'power_factor': ('power_factor', 0),
+        'power_factor_2': ('power_factor', 1),
+        'power_factor_3': ('power_factor', 2),
+        'energy': ('energy', 0),
+        'energy_2': ('energy', 1),
+        'energy_3': ('energy', 2)
     }
 
     if value_type in list_mapping:
@@ -407,9 +432,11 @@ def get_shelly_value(device, value_type):
             if isinstance(value[idx], bool):
                 return 1 if value[idx] else 0
             return value[idx]
+        if key == 'voltages' and idx == 0:
+            return device.get('voltage', -127)
         return -127
 
-    if value_type in ('voltage', 'battery', 'rssi'):
+    if value_type in ('total_power', 'total_energy', 'battery', 'rssi'):
         value = device.get(value_type, -127)
         if isinstance(value, bool):
             return 1 if value else 0

@@ -22,6 +22,8 @@ from json.decoder import JSONDecodeError
 
 import datetime
 
+from .three_phase_meter import parse_three_phase_meter
+
 
 ################################################################################
 # Plugin name, translated name, link for web page in init, plugin options      #
@@ -1237,7 +1239,7 @@ class Sender(Thread):
                                                 }
                                                 update_or_add_device(self, payload)
 
-                                    # typ: 10=Shelly Pro 3EM
+                                    # typ: 10=Shelly Pro 3EM / Shelly 3EM-63T Gen3
                                     # gen: 0 = GEN1, 1 = GEN 2+
                                     if plugin_options['sensor_type'][i] == 10:
                                         if plugin_options['gen_type'][i] == 0:
@@ -1261,47 +1263,19 @@ class Sender(Thread):
                                                 msg += _('[{}: Error] ').format(name)
                                                 msg_info += _('{}: Error: {}\n').format(name, err)
                                             else:
-                                                if plugin_options['reading_type'][i] == 1:  # only cloud API data
-                                                    a_total = response_data["data"]["device_status"]["emdata:0"]["a_total_act_energy"]# total energy L1
-                                                    b_total = response_data["data"]["device_status"]["emdata:0"]["b_total_act_energy"]# total energy L2
-                                                    c_total = response_data["data"]["device_status"]["emdata:0"]["c_total_act_energy"]# total energy L3
-                                                    a_power = response_data["data"]["device_status"]["em:0"]["a_act_power"]           # actual power L1
-                                                    b_power = response_data["data"]["device_status"]["em:0"]["b_act_power"]           # actual power L2
-                                                    c_power = response_data["data"]["device_status"]["em:0"]["c_act_power"]           # actual power L3
-                                                    a_revpower = -a_power if a_power < 0 else 0                                       # actual reverse power L1 (example from PV)
-                                                    b_revpower = -b_power if b_power < 0 else 0                                       # actual reverse power L2 (example from PV)
-                                                    c_revpower = -c_power if c_power < 0 else 0                                       # actual reverse power L3 (example from PV)                                                    
-                                                    a_voltage = response_data["data"]["device_status"]["em:0"]["a_voltage"]           # actual voltage L1
-                                                    b_voltage = response_data["data"]["device_status"]["em:0"]["b_voltage"]           # actual voltage L2
-                                                    c_voltage = response_data["data"]["device_status"]["em:0"]["c_voltage"]           # actual voltage L3
-                                                    internal_temperature = response_data["data"]["device_status"]["temperature:0"]["tC"]
-                                                    updated = now()
-                                                    online = response_data["data"]["online"]
-                                                    wifi = response_data["data"]["device_status"]["wifi"]
-                                                    sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]
-                                                else:                                       # via local IP data
-                                                    a_total = response_data["emdata:0"]["a_total_act_energy"]# total energy L1
-                                                    b_total = response_data["emdata:0"]["b_total_act_energy"]# total energy L2
-                                                    c_total = response_data["emdata:0"]["c_total_act_energy"]# total energy L3
-                                                    a_power = response_data["em:0"]["a_act_power"]           # actual power L1
-                                                    b_power = response_data["em:0"]["b_act_power"]           # actual power L2
-                                                    c_power = response_data["em:0"]["c_act_power"]           # actual power L3
-                                                    a_revpower = -a_power if a_power < 0 else 0              # actual reverse power L1 (example from PV)
-                                                    b_revpower = -b_power if b_power < 0 else 0              # actual reverse power L2 (example from PV)
-                                                    c_revpower = -c_power if c_power < 0 else 0              # actual reverse power L3 (example from PV)                                                    
-                                                    a_voltage = response_data["em:0"]["a_voltage"]           # actual voltage L1
-                                                    b_voltage = response_data["em:0"]["b_voltage"]           # actual voltage L2
-                                                    c_voltage = response_data["em:0"]["c_voltage"]           # actual voltage L3
-                                                    internal_temperature = response_data["temperature:0"]["tC"]
-                                                    updated = now()
-                                                    online = True
-                                                    wifi = response_data["wifi"]
-                                                    sta_ip = wifi["sta_ip"]
-                                                    rssi = wifi["rssi"]
+                                                meter = parse_three_phase_meter(response_data, plugin_options['reading_type'][i] == 1)
+                                                a_power, b_power, c_power = meter['powers']
+                                                a_voltage, b_voltage, c_voltage = meter['voltages']
+                                                a_revpower, b_revpower, c_revpower = meter['reverse_powers']
+                                                a_total, b_total, c_total = meter['energy_kwh']
+                                                internal_temperature = meter['temperature']
+                                                updated = now()
+                                                online = meter['online']
+                                                sta_ip = meter['ip']
+                                                rssi = meter['rssi']
                                                 if online:
                                                         msg += _('[{}: L1 {} W, L2 {} W, L3 {} W]').format(name, a_power, b_power, c_power)
-                                                        msg_info += _('{}: L1 {} W ({} kW/h) L2 {} W ({} kW/h) L3 {} W  ({} kW/h) {} V IP:{} RSSI:{} dbm INTt:{} °C {}\n').format(name, a_power, b_power, c_power, round(a_total/1000.0, 2), round(b_total/1000.0, 2), round(c_total/1000.0, 2), voltage, sta_ip, rssi, internal_temperature, format_timestamp(updated))
+                                                        msg_info += _('{}: L1 {} W ({} kWh, {} V) L2 {} W ({} kWh, {} V) L3 {} W ({} kWh, {} V) IP:{} RSSI:{} dBm internal temperature:{} °C {}\n').format(name, a_power, a_total, a_voltage, b_power, b_total, b_voltage, c_power, c_total, c_voltage, sta_ip, rssi, internal_temperature if internal_temperature is not None else '-', format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -1309,8 +1283,14 @@ class Sender(Thread):
                                                     'id': id,
                                                     'ip': sta_ip,
                                                     'voltage': a_voltage,
+                                                    'voltages': meter['voltages'],
+                                                    'current': meter['currents'],
+                                                    'power_factor': meter['power_factors'],
+                                                    'energy': meter['energy_kwh'],
+                                                    'total_power': meter['total_power'],
+                                                    'total_energy': meter['total_energy'],
                                                     'battery': 0,
-                                                    'temperature': [internal_temperature],
+                                                    'temperature': [internal_temperature] if internal_temperature is not None else [],
                                                     'humidity': [],
                                                     'illuminance': [],                                                    
                                                     'rssi': rssi,
@@ -1321,7 +1301,7 @@ class Sender(Thread):
                                                     'online': online,
                                                     'updated': updated,
                                                     'gen': _('GEN1') if plugin_options['gen_type'][i]==0 else _('GEN2+'),
-                                                    'hw': _('Shelly Pro 3EM'),
+                                                    'hw': _('Shelly Pro 3EM / Shelly 3EM-63T Gen3'),
                                                     'hw_nbr': plugin_options['sensor_type'][i]
                                                 }
                                                 update_or_add_device(self, payload)

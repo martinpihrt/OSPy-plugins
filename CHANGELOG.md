@@ -1,5 +1,13 @@
 # OSPy-plugins Changelog
 
+August 8 2026
+-------------
+(Martin Pihrt) - Shelly Cloud Integration v1.0.2 and Weather Dashboard v1.0.1<br/>
+Fixed Shelly Pro 3EM and Shelly 3EM-63T Gen3 processing by using all three phase voltages, correcting the phase power and energy ordering, tolerating devices without an internal-temperature component and normalizing local and cloud status payloads. The Weather Dashboard can now display cached per-phase power, reverse power, voltage, current, power factor and energy plus total power and total energy. Added regression tests for the Shelly 3EM-63T Gen3 payload.
+
+(Martin Pihrt) - OSPy Package Backup v1.0.2<br/>
+Restored the latest successful plug-in backup status from existing ZIP archives after OSPy or the plug-in restarts. The native mobile status and diagnostics now report the newest persistent archive name, modification time and size instead of resetting to “no backup created”. Added regression tests for archive discovery.
+
 August 7 2026
 -------------
 (Martin Pihrt) - Water Meter v1.1.1<br/>
