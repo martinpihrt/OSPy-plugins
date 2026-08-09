@@ -107,11 +107,23 @@
     width: 100%;
 }
 
-.energyConfig input,
+.energyConfig input:not([type="checkbox"]),
 .energyConfig select {
     box-sizing: border-box;
     max-width: 190px;
     width: 100%;
+}
+
+.energyWeekdays {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-width: 250px;
+}
+
+.energyDay {
+    margin: 0;
+    min-width: 30px;
 }
 
 .energyConfig .m-host,

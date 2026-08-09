@@ -20,7 +20,7 @@ Intervals spanning an OSPy restart are retained as one interval and period aggre
 
 ## History, prices and tariffs
 
-The overview and history show L1, L2, L3 and total values for import and export, live power, today, yesterday, current month and current year. Responsive graphs offer 7-, 30- and 365-day views and history can be downloaded as CSV. Local JSON history is supported without another plug-in; SQL history and dual local-plus-SQL logging require Database Connector. Record retention is configurable and zero means unlimited.
+The overview and history show L1, L2, L3 and total values for import and export, live power, today, yesterday, current month and current year. Responsive graphs offer 7-, 30- and 365-day views and history can be downloaded as CSV. Local JSON history is supported without another plug-in; SQL history and dual local-plus-SQL logging require Database Connector. Record retention is configurable and zero means unlimited. Boolean settings use the standard OSPy switches, while each tariff uses localized Monday-through-Sunday buttons to select its active days.
 
 Set a currency, default import price and default feed-in price. Optional tariffs match weekdays and time ranges, including ranges crossing midnight. The first matching tariff is used. The tariff identifier and the actual import and feed-in prices are written to each interval, so changing prices later does not recalculate historical costs or income.
 
