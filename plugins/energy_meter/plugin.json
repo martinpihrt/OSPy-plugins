@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "energy_meter",
   "name": "Energy Meter",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {"min_version": "3.0.318"},

@@ -3,7 +3,7 @@ $def with(plugin_options, meters, tariffs, validation_error=None)
 $var title: $_(u'Energy Meter settings')
 $var page: plugins
 
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.2" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.3" rel="stylesheet" type="text/css">
 <script>
 var meters = $:{json.dumps(meters, ensure_ascii=False)}; var tariffs = $:{json.dumps(tariffs, ensure_ascii=False)};
 var dayLabels = [$:{json.dumps(_('Mon'), ensure_ascii=False)}, $:{json.dumps(_('Tue'), ensure_ascii=False)}, $:{json.dumps(_('Wed'), ensure_ascii=False)}, $:{json.dumps(_('Thu'), ensure_ascii=False)}, $:{json.dumps(_('Fri'), ensure_ascii=False)}, $:{json.dumps(_('Sat'), ensure_ascii=False)}, $:{json.dumps(_('Sun'), ensure_ascii=False)}];
@@ -70,7 +70,7 @@ $if validation_error:
                 <table class="energyConfig">
                     <thead>
                         <tr>
-                            <th>$_(u'On')</th>
+                            <th>Enabled</th>
                             <th>$_(u'Name')</th>
                             <th>$_(u'Role')</th>
                             <th>$_(u'Source')</th>
@@ -106,7 +106,7 @@ $if validation_error:
                 <table class="energyConfig">
                     <thead>
                         <tr>
-                            <th>$_(u'On')</th>
+                            <th>Enabled</th>
                             <th>$_(u'Name')</th>
                             <th>$_(u'From')</th>
                             <th>$_(u'To')</th>

@@ -2,10 +2,11 @@
 
 August 9 2026
 -------------
-(Martin Pihrt) - Energy Meter v1.0.2 and Shelly Cloud Integration v1.0.3<br/>
+(Martin Pihrt) - Energy Meter v1.0.3 and Shelly Cloud Integration v1.0.3<br/>
 Added the multi-meter Energy Meter plug-in with direct local Shelly RPC as the recommended source and the Shelly Cloud Integration cache as an optional per-meter source. It supports Grid, Solar production, Load and Auxiliary roles, L1-L3 and total power/energy, separate import and grid export, today/yesterday/month/year totals, solar self-consumption and independence calculations, atomically persisted counter baselines across OSPy restarts, safe meter-reset/replacement handling, weekday/time tariffs with historically fixed prices, costs and feed-in income, local JSON and optional SQL history, CSV export, responsive graphs, Home summary, diagnostics and bounded mobile API data. Shelly three-phase cache payloads now also expose per-phase and total returned-energy counters required for feed-in logging.
 Fixed web.py template block indentation so settings, empty history and the overview render completely, kept the OSPy footer outside the history table, and aligned Energy Meter framing and cards with Wind Speed Monitor.
 Energy Meter settings now use the standard OSPy switch component for boolean values and localized Monday-through-Sunday push buttons instead of numeric weekday input.
+Added the switch CSS used by Air Temperature and Humidity Monitor so all Energy Meter boolean controls render as red/green sliders, and changed both dynamic enabled-column headings to the untranslated literal `Enabled`.
 
 August 8 2026
 -------------
