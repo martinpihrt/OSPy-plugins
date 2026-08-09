@@ -1,0 +1,20 @@
+$def with()
+$var title: $_(u'Energy Meter help')
+$var page: plugins
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.0" rel="stylesheet" type="text/css">
+<div id="plugin" class="energyPanel">
+<div class="title">$_(u'Energy Meter help')</div>
+<div class="energyToolbar">
+<a href=$plugins.plugin_url('energy_meter.overview_page') class="button submit">$_(u'Overview')</a>
+<a href=$plugins.plugin_url('energy_meter.settings_page') class="button upload">$_(u'Settings')</a>
+</div>
+<h3>$_(u'Connection')</h3>
+<p>$_(u'Use Direct LAN / IP whenever possible. Enter an IPv4 or IPv6 address, optional port, or a DNS name resolvable by the OSPy computer. The plug-in reads Shelly.GetStatus locally and does not require Internet access. Shelly local authentication uses the configured user and password.')</p>
+<p>$_(u'Shelly Cloud Integration is an alternative source. It only works when that plug-in is installed, enabled, configured and already exposes the selected three-phase meter.')</p>
+<h3>$_(u'Meter roles and solar systems')</h3>
+<p>$_(u'Grid connection records energy imported from and exported to the public grid. Solar production records generated energy. Load records a separate consumer and Auxiliary is an independent meter. Grid export is never presented as solar production. With both Grid and Solar meters, house consumption equals production plus grid import minus grid export; self-consumption equals production minus grid export. Battery charging and discharging are not inferred without a dedicated meter.')</p>
+<h3>$_(u'History and counter replacement')</h3>
+<p>$_(u'Current Shelly cumulative counters and the previous sample are persisted atomically. OSPy therefore continues after restart without losing the counter baseline. If a counter decreases, the plug-in records a reset and establishes a new baseline without adding a false energy spike. Use Reset baseline before replacing or resetting a meter.')</p>
+<h3>$_(u'Prices, storage and mobile data')</h3>
+<p>$_(u'Prices active at sampling time are stored with each interval. History can be kept in local JSON, SQL through Database Connector, or both, and can be exported as CSV. The OSPy mobile API receives live meter power, period totals and bounded history.')</p>
+</div>

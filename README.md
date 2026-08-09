@@ -50,6 +50,8 @@ OSPy treats the Water Meter and Wind Speed Monitor declarations as one selectabl
 
 Water Meter v1.1.1 uses uninterrupted one-second measurements and separates its live overview from configuration. It can log flow to a bounded or unlimited local JSON file and optionally to SQL through Database Connector, omit zero-flow samples, select the graph/log source, download CSV history, and display current `l/s` with the equivalent `l/min` on Home. PCF8583 data is read explicitly from registers `0x01–0x03`; initialization and measurement failures close and retry the bus and are shown on the overview.
 
+Energy Meter v1.0.0 monitors multiple Shelly Pro 3EM and Shelly 3EM-63T Gen3 meters over direct local RPC by IP address or DNS name, or optionally through Shelly Cloud Integration. Grid, Solar production, Load and Auxiliary roles keep import, export and generation distinct; phase and total history supports restart-safe counters, meter replacement, time tariffs, costs, feed-in income, photovoltaic self-consumption and savings, local JSON or optional SQL, CSV, graphs, Home, diagnostics and mobile API cards. See [the Energy Meter README](plugins/energy_meter/README.md) for configuration and formulas.
+
 Available plugins:
 * Usage Statistics  
 * LCD Display  
@@ -74,6 +76,7 @@ Available plugins:
 * Remote FTP Control  
 * System Update  
 * Water Meter  
+* Energy Meter
 * Webcam Monitor  
 * Weather-based Water Level Netatmo  
 * Direct 16 Relay Outputs  

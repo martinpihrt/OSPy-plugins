@@ -21,6 +21,7 @@ def parse_three_phase_meter(response_data, cloud=False):
     currents = [em.get('{}_current'.format(phase)) for phase in ('a', 'b', 'c')]
     power_factors = [em.get('{}_pf'.format(phase)) for phase in ('a', 'b', 'c')]
     energy_wh = [emdata.get('{}_total_act_energy'.format(phase), 0) for phase in ('a', 'b', 'c')]
+    returned_energy_wh = [emdata.get('{}_total_act_ret_energy'.format(phase), 0) for phase in ('a', 'b', 'c')]
 
     temperature = None
     temperature_status = status.get('temperature:0')
@@ -45,8 +46,10 @@ def parse_three_phase_meter(response_data, cloud=False):
         'currents': currents,
         'power_factors': power_factors,
         'energy_kwh': [round(value / 1000.0, 3) if isinstance(value, (int, float)) else 0 for value in energy_wh],
+        'returned_energy_kwh': [round(value / 1000.0, 3) if isinstance(value, (int, float)) else 0 for value in returned_energy_wh],
         'total_power': em.get('total_act_power', sum(value for value in powers if isinstance(value, (int, float)))),
         'total_energy': round(sum(value for value in energy_wh if isinstance(value, (int, float))) / 1000.0, 3),
+        'total_returned_energy': round(sum(value for value in returned_energy_wh if isinstance(value, (int, float))) / 1000.0, 3),
         'temperature': temperature,
         'ip': ip_address,
         'rssi': rssi,

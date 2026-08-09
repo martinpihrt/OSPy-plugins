@@ -1,0 +1,96 @@
+$def with(plugin_options, meters, summary, status, currency)
+
+$var title: $_(u'Energy Meter')
+$var page: plugins
+
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.0" rel="stylesheet" type="text/css">
+<script src="/static/scripts/jquery.flot.js"></script>
+<script src="/static/scripts/jquery.flot.time.js"></script>
+<script src="/static/scripts/jquery.flot.resize.js"></script>
+<script>
+function loadEnergyGraph(days) { var now = Math.floor(Date.now() / 1000); jQuery.getJSON('/plugins/energy_meter/graph_json', {from: now - days * 86400, to: now}, function(records) { var buckets = {}; records.forEach(function(r) { var day = new Date(Number(r.ended) * 1000); day.setHours(0,0,0,0); var key = day.getTime(); if (!buckets[key]) buckets[key] = {i:0,e:0,p:0}; if (r.role === 'grid') { buckets[key].i += Number(r.import_kwh || 0); buckets[key].e += Number(r.export_kwh || 0); } if (r.role === 'production') buckets[key].p += Number(r.import_kwh || 0); }); var keys = Object.keys(buckets).sort(); var series = [{label:$:{json.dumps(_('Grid import'), ensure_ascii=False)},data:keys.map(function(k){return [Number(k),buckets[k].i];})},{label:$:{json.dumps(_('Grid export'), ensure_ascii=False)},data:keys.map(function(k){return [Number(k),buckets[k].e];})},{label:$:{json.dumps(_('Solar production'), ensure_ascii=False)},data:keys.map(function(k){return [Number(k),buckets[k].p];})}]; jQuery('#energy-empty').toggle(keys.length === 0); jQuery.plot('#energy-graph', series, {series:{lines:{show:true},points:{show:true}},xaxis:{mode:'time',timeformat:'%m-%d'},legend:{position:'ne'}}); }); }
+jQuery(function(){ loadEnergyGraph(30); jQuery('.energyRange').click(function(){jQuery('.energyRange').removeClass('active');jQuery(this).addClass('active');loadEnergyGraph(Number(jQuery(this).data('days')));}); });
+</script>
+
+<div id="plugin" class="energyPanel">
+    <div class="title">$_(u'Energy Meter')</div>
+    <div class="energyToolbar">
+        <a href=$plugins.plugin_url('energy_meter.settings_page') class="button upload">$_(u'Settings')</a>
+        <a href=$plugins.plugin_url('energy_meter.log_page') class="button backup">$_(u'History')</a>
+        <a href=$plugins.plugin_url('energy_meter.help_page') class="button upload">$_(u'Help')</a>
+    </div>
+$ today = summary['periods']['today']
+$ yesterday = summary['periods']['yesterday']
+$ month = summary['periods']['month']
+$ year = summary['periods']['year']
+    <div class="energyPeriodGrid">
+        <section class="energyCard">
+            <span>$_(u'Today')</span>
+            <strong>$_(u'Import') $'{:.3f}'.format(today['grid_import_kwh']) kWh</strong>
+            <b>$_(u'Export') $'{:.3f}'.format(today['grid_export_kwh']) kWh</b>
+            <small>$_(u'Cost') $'{:.2f}'.format(today['cost']) $currency / $_(u'Income') $'{:.2f}'.format(today['feed_in_income']) $currency</small>
+        </section>
+        <section class="energyCard">
+            <span>$_(u'Yesterday')</span>
+            <strong>$_(u'Import') $'{:.3f}'.format(yesterday['grid_import_kwh']) kWh</strong>
+            <b>$_(u'Export') $'{:.3f}'.format(yesterday['grid_export_kwh']) kWh</b>
+        </section>
+        <section class="energyCard">
+            <span>$_(u'This month')</span>
+            <strong>$_(u'Import') $'{:.3f}'.format(month['grid_import_kwh']) kWh</strong>
+            <b>$_(u'Export') $'{:.3f}'.format(month['grid_export_kwh']) kWh</b>
+        </section>
+        <section class="energyCard">
+            <span>$_(u'This year')</span>
+            <strong>$_(u'Import') $'{:.3f}'.format(year['grid_import_kwh']) kWh</strong>
+            <b>$_(u'Export') $'{:.3f}'.format(year['grid_export_kwh']) kWh</b>
+        </section>
+    </div>
+$if today.get('production_available'):
+    <section class="energySolar">
+        <h3>$_(u'Solar system today')</h3>
+        <div><b>$_(u'Production'):</b> $'{:.3f}'.format(today['production_kwh']) kWh</div>
+        <div><b>$_(u'House consumption'):</b> $'{:.3f}'.format(today['house_consumption_kwh']) kWh</div>
+        <div><b>$_(u'Self-consumption'):</b> $'{:.3f}'.format(today['self_consumption_kwh']) kWh ($today['self_consumption_ratio'] %)</div>
+        <div><b>$_(u'Energy independence'):</b> $today['independence_ratio'] %</div>
+        <div><b>$_(u'Solar savings'):</b> $'{:.2f}'.format(today['solar_savings']) $currency</div>
+    </section>
+    <h3>$_(u'Electricity meters')</h3>
+    <div class="energyMeterGrid">
+$for meter in meters:
+    $ live = status.get('meters', {}).get(meter['id'], {})
+    <section class="energyMeterCard">
+        <div>
+            <strong>$meter['label']</strong>
+        $if live.get('online'):
+            <span class="energyBadge ok">$_(u'Online')</span>
+        $else:
+            <span class="energyBadge fault">$_(u'Unavailable')</span>
+        </div>
+        <p>$_(u'Role'): $meter['role_label'] · $_(u'Source'): $meter['source_label']</p>
+        <div class="energyPhases">
+            <span>L1 $'{:.1f}'.format(live.get('power_l1_w', 0)) W</span>
+            <span>L2 $'{:.1f}'.format(live.get('power_l2_w', 0)) W</span>
+            <span>L3 $'{:.1f}'.format(live.get('power_l3_w', 0)) W</span>
+            <strong>$'{:.1f}'.format(live.get('power_w', 0)) W</strong>
+        </div>
+        $if live.get('error'):
+            <p class="energyError">$live['error']</p>
+        <form action=$plugins.plugin_url('energy_meter.reset_meter_page') method="post" onsubmit="return confirm('$:_('Reset the stored counter baseline for this meter?')');">
+            $:csrf_input()
+            <input type="hidden" name="meter_id" value="$meter['id']">
+            <button class="danger">$_(u'Reset baseline / replace meter')</button>
+        </form>
+    </section>
+    </div>
+    <section class="energyGraphSection">
+        <h3>$_(u'Energy history')</h3>
+        <div class="energyToolbar">
+            <button class="button backup energyRange" data-days="7">7 $_(u'days')</button>
+            <button class="button backup energyRange active" data-days="30">30 $_(u'days')</button>
+            <button class="button backup energyRange" data-days="365">365 $_(u'days')</button>
+        </div>
+        <div id="energy-empty">$_(u'No records found for selected range.')</div>
+        <div id="energy-graph"></div>
+    </section>
+</div>

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "energy_meter",
+  "name": "Energy Meter",
+  "version": "1.0.0",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {"min_version": "3.0.318"},
+  "python": {"min_version": "3.8"},
+  "requirements": [{"module": "requests", "package": "requests", "required": true}],
+  "dependencies": [{"id": "shelly_cloud_integrator", "required": false}, {"id": "database_connector", "required": false}],
+  "permissions": ["files", "network"],
+  "mobile": {"api_version": 1, "actions": []}
+}

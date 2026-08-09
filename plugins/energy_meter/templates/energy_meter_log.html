@@ -1,0 +1,42 @@
+$def with(records, plugin_options)
+$var title: $_(u'Energy Meter history')
+$var page: plugins
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.0" rel="stylesheet" type="text/css">
+<div id="plugin" class="energyPanel">
+    <div class="title">$_(u'Energy Meter history')</div>
+    <div class="energyToolbar">
+        <a href=$plugins.plugin_url('energy_meter.overview_page') class="button submit">$_(u'Overview')</a>
+        <a href=$plugins.plugin_url('energy_meter.log_csv') class="button download">$_(u'Download CSV')</a>
+    </div>
+    <div class="energyTableWrap">
+        <table class="energyHistory">
+            <thead>
+                <tr>
+                    <th>$_(u'Date Time')</th>
+                    <th>$_(u'Meter')</th>
+                    <th>$_(u'Role')</th>
+                    <th>$_(u'Import') L1/L2/L3/Σ kWh</th>
+                    <th>$_(u'Export') L1/L2/L3/Σ kWh</th>
+                    <th>$_(u'Power')</th>
+                    <th>$_(u'Tariff')</th>
+                    <th>$_(u'Cost')</th>
+                    <th>$_(u'Income')</th>
+                </tr>
+            </thead>
+            <tbody>
+$for record in reversed(records[-1000:]):
+                <tr>
+                    <td>$record.get('datetime', '')</td>
+                    <td>$record['label']</td>
+                    <td>$record['role_label']</td>
+                    <td>$'{:.4f} / {:.4f} / {:.4f} / {:.4f}'.format(record['import_l1_kwh'],record['import_l2_kwh'],record['import_l3_kwh'],record['import_kwh'])</td>
+                    <td>$'{:.4f} / {:.4f} / {:.4f} / {:.4f}'.format(record['export_l1_kwh'],record['export_l2_kwh'],record['export_l3_kwh'],record['export_kwh'])</td>
+                    <td>$'{:.1f}'.format(record['power_w']) W</td>
+                    <td>$record['tariff_name']</td>
+                    <td>$'{:.2f}'.format(record['cost']) $plugin_options['currency']</td>
+                    <td>$'{:.2f}'.format(record['income']) $plugin_options['currency']</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,121 @@
+.energyToolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 7px 0 12px;
+}
+
+.energyPeriodGrid,
+.energyMeterGrid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(4, minmax(190px, 1fr));
+}
+
+.energyCard,
+.energyMeterCard,
+.energySolar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.energyCard strong {
+    font-size: 1.15em;
+}
+
+.energySolar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    margin: 12px 0;
+}
+
+.energyMeterCard > div:first-child {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.energyBadge {
+    border-radius: 14px;
+    color: #fff;
+    font-size: .85em;
+    padding: 3px 8px;
+}
+
+.energyBadge.ok {
+    background: #278c34;
+}
+
+.energyBadge.fault {
+    background: #b22431;
+}
+
+.energyPhases {
+    display: grid;
+    gap: 4px;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.energyError {
+    color: #a51d2d;
+    overflow-wrap: anywhere;
+}
+
+.energyGraphSection {
+    margin-top: 14px;
+}
+
+#energy-graph {
+    height: 360px;
+    width: 100%;
+}
+
+#energy-empty {
+    display: none;
+}
+
+.energyTableWrap {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.energyConfig,
+.energyHistory {
+    min-width: 980px;
+    width: 100%;
+}
+
+.energyConfig input,
+.energyConfig select {
+    box-sizing: border-box;
+    max-width: 190px;
+    width: 100%;
+}
+
+.energyConfig .m-host,
+.energyConfig .m-device {
+    display: block;
+    margin-bottom: 4px;
+    min-width: 185px;
+}
+
+.energyConfig .m-user,
+.energyConfig .m-pass {
+    display: block;
+    margin-bottom: 4px;
+    min-width: 110px;
+}
+
+@media (max-width: 850px) {
+    .energyPeriodGrid,
+    .energyMeterGrid,
+    .energySolar {
+        grid-template-columns: 1fr;
+    }
+
+    .energyPhases {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
