@@ -1,3 +1,11 @@
+.energyPanel {
+    border: 2px solid #2f3b62;
+    border-radius: 12px;
+    box-sizing: border-box;
+    margin-top: 8px;
+    padding: 10px;
+}
+
 .energyToolbar {
     align-items: center;
     display: flex;
@@ -16,9 +24,14 @@
 .energyCard,
 .energyMeterCard,
 .energySolar {
+    background: #f3f6fb;
+    border-left: 5px solid #2f3b62;
+    border-radius: 7px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    padding: 10px 12px;
 }
 
 .energyCard strong {
@@ -29,6 +42,11 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(150px, 1fr));
     margin: 12px 0;
+}
+
+.energySolar h3 {
+    grid-column: 1 / -1;
+    margin: 0;
 }
 
 .energyMeterCard > div:first-child {
@@ -64,7 +82,9 @@
 }
 
 .energyGraphSection {
+    border-top: 1px solid #aab3c5;
     margin-top: 14px;
+    padding-top: 8px;
 }
 
 #energy-graph {

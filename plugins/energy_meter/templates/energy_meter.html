@@ -3,7 +3,7 @@ $def with(plugin_options, meters, summary, status, currency)
 $var title: $_(u'Energy Meter')
 $var page: plugins
 
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.0" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.1" rel="stylesheet" type="text/css">
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -55,8 +55,8 @@ $if today.get('production_available'):
         <div><b>$_(u'Energy independence'):</b> $today['independence_ratio'] %</div>
         <div><b>$_(u'Solar savings'):</b> $'{:.2f}'.format(today['solar_savings']) $currency</div>
     </section>
-    <h3>$_(u'Electricity meters')</h3>
-    <div class="energyMeterGrid">
+<h3>$_(u'Electricity meters')</h3>
+<div class="energyMeterGrid">
 $for meter in meters:
     $ live = status.get('meters', {}).get(meter['id'], {})
     <section class="energyMeterCard">
@@ -82,15 +82,15 @@ $for meter in meters:
             <button class="danger">$_(u'Reset baseline / replace meter')</button>
         </form>
     </section>
+</div>
+<section class="energyGraphSection">
+    <h3>$_(u'Energy history')</h3>
+    <div class="energyToolbar">
+        <button class="button backup energyRange" data-days="7">7 $_(u'days')</button>
+        <button class="button backup energyRange active" data-days="30">30 $_(u'days')</button>
+        <button class="button backup energyRange" data-days="365">365 $_(u'days')</button>
     </div>
-    <section class="energyGraphSection">
-        <h3>$_(u'Energy history')</h3>
-        <div class="energyToolbar">
-            <button class="button backup energyRange" data-days="7">7 $_(u'days')</button>
-            <button class="button backup energyRange active" data-days="30">30 $_(u'days')</button>
-            <button class="button backup energyRange" data-days="365">365 $_(u'days')</button>
-        </div>
-        <div id="energy-empty">$_(u'No records found for selected range.')</div>
-        <div id="energy-graph"></div>
-    </section>
+    <div id="energy-empty">$_(u'No records found for selected range.')</div>
+    <div id="energy-graph"></div>
+</section>
 </div>

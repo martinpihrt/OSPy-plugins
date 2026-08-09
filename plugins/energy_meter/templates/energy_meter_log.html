@@ -1,7 +1,7 @@
 $def with(records, plugin_options)
 $var title: $_(u'Energy Meter history')
 $var page: plugins
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.0" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.1" rel="stylesheet" type="text/css">
 <div id="plugin" class="energyPanel">
     <div class="title">$_(u'Energy Meter history')</div>
     <div class="energyToolbar">
@@ -36,7 +36,7 @@ $for record in reversed(records[-1000:]):
                     <td>$'{:.2f}'.format(record['cost']) $plugin_options['currency']</td>
                     <td>$'{:.2f}'.format(record['income']) $plugin_options['currency']</td>
                 </tr>
-            </tbody>
-        </table>
-    </div>
+</tbody>
+</table>
+</div>
 </div>

@@ -1,10 +1,13 @@
 import datetime
 import importlib.util
+import json
 import pathlib
 import sys
 import tempfile
 import types
 import unittest
+
+from web import template
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -28,7 +31,32 @@ sources = load('sources')
 mobile_history = load('mobile_history')
 
 
+def render_template(name, *arguments):
+    globals_ = {
+        '_': lambda value: value,
+        'csrf_input': lambda: '<input name="csrf" value="test">',
+        'json': json,
+        'plugins': types.SimpleNamespace(plugin_url=lambda page: '/plugins/energy_meter/' + str(page)),
+        'reversed': reversed,
+    }
+    source = (PLUGIN / 'templates' / name).read_text(encoding='utf-8')
+    return str(template.Template(source, filename=name, globals=globals_)(*arguments))
+
+
 class EnergyMeterTests(unittest.TestCase):
+    def test_empty_templates_keep_settings_history_and_overview_structure(self):
+        plugin_options = {'enabled': False, 'use_footer': True, 'sample_interval': 60, 'storage': 'local', 'max_records': 0, 'currency': 'CZK', 'default_import_price': 0, 'default_export_price': 0}
+        settings = render_template('energy_meter_settings.html', plugin_options, [], [], None)
+        history = render_template('energy_meter_log.html', [], plugin_options)
+        empty_period = {'grid_import_kwh': 0, 'grid_export_kwh': 0, 'cost': 0, 'feed_in_income': 0, 'production_available': False}
+        overview = render_template('energy_meter.html', plugin_options, [], {'periods': {'today': empty_period, 'yesterday': empty_period, 'month': empty_period, 'year': empty_period}}, {}, 'CZK')
+        self.assertIn('id="pluginForm"', settings)
+        self.assertIn('Add electricity meter', settings)
+        self.assertIn('</tbody>', history)
+        self.assertIn('</table>', history)
+        self.assertIn('Electricity meters', overview)
+        self.assertIn('id="energy-graph"', overview)
+
     def test_counter_delta_rebaselines_after_meter_reset(self):
         self.assertEqual(model.counter_delta(12.5, 10.0), (2.5, False))
         self.assertEqual(model.counter_delta(1.0, 99.0), (0.0, True))
