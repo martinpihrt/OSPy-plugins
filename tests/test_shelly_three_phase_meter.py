@@ -21,6 +21,7 @@ class ShellyThreePhaseMeterTests(unittest.TestCase):
             },
             'emdata:0': {
                 'a_total_act_energy': 1000, 'b_total_act_energy': 2500, 'c_total_act_energy': 500,
+                'a_total_act_ret_energy': 200, 'b_total_act_ret_energy': 300, 'c_total_act_ret_energy': 100,
             },
             'wifi': {'sta_ip': '192.168.1.20', 'rssi': -55},
         }
@@ -32,6 +33,8 @@ class ShellyThreePhaseMeterTests(unittest.TestCase):
         self.assertEqual(meter['voltages'], [230.1, 231.2, 229.8])
         self.assertEqual(meter['energy_kwh'], [1.0, 2.5, 0.5])
         self.assertEqual(meter['total_energy'], 4.0)
+        self.assertEqual(meter['returned_energy_kwh'], [0.2, 0.3, 0.1])
+        self.assertEqual(meter['total_returned_energy'], 0.6)
         self.assertIsNone(meter['temperature'])
 
     def test_parses_cloud_status_wrapper(self):
