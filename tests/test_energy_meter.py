@@ -36,7 +36,7 @@ class EnergyMeterTests(unittest.TestCase):
         self.assertIn("$if validation_error:\n    <div class=\"alert\">$validation_error</div>\n<div class=\"energyToolbar\">", settings)
         self.assertIn('\n<form id="pluginForm"', settings)
         self.assertIn('<label class="switch"><input name="enabled"', settings)
-        self.assertEqual(settings.count('<th>Enabled</th>'), 2)
+        self.assertEqual(settings.count('<th>$_(u'Enabled')</th>'), 2)
         self.assertNotIn("<th>$_(u'On')</th>", settings)
         self.assertIn("var dayLabels = [$:{json.dumps(_('Mon')", settings)
         self.assertIn("r.find('.energyDay.on')", settings)
