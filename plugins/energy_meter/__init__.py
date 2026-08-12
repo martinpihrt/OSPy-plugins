@@ -30,6 +30,8 @@ SQL_TABLE = 'energy_meter_history'
 runtime = get_runtime()
 lock = Lock()
 options = PluginOptions(NAME, {'enabled': False, 'use_footer': True, 'sample_interval': 60, 'max_records': 200000, 'storage': 'local', 'currency': 'CZK', 'default_import_price': 0.0, 'default_export_price': 0.0, 'meters_json': '[]', 'tariffs_json': '[]'})
+_store_cache = None
+_store_cache_key = None
 
 
 def safe_int(value, default=0):
@@ -84,7 +86,12 @@ def tariffs():
 
 
 def store():
-    return JsonStore(plugin_data_dir('energy_meter'), safe_int(options.get('max_records'), 0))
+    global _store_cache, _store_cache_key
+    key = (plugin_data_dir('energy_meter'), safe_int(options.get('max_records'), 0))
+    if _store_cache is None or _store_cache_key != key:
+        _store_cache = JsonStore(key[0], key[1])
+        _store_cache_key = key
+    return _store_cache
 
 
 def local_history():
@@ -121,6 +128,16 @@ def sql_history():
         return [json.loads(row[0]) for row in rows]
     except Exception:
         return []
+
+
+def clear_sql_history():
+    try:
+        from plugins.database_connector import execute_db, table_exists
+        if table_exists(SQL_TABLE):
+            execute_db('DELETE FROM energy_meter_history', test=False, commit=True)
+    except Exception:
+        log.error(NAME, _('Clearing Energy Meter SQL history failed') + ':\n' + traceback.format_exc())
+        raise
 
 
 def selected_history():
@@ -291,6 +308,23 @@ class graph_json(ProtectedPage):
         records = [record for record in selected_history() if safe_float(record.get('ended')) >= start_value and safe_float(record.get('started')) <= end_value]
         web.header('Content-Type', 'application/json')
         return json.dumps(records)
+
+
+class clear_history_page(ProtectedPage):
+    def POST(self):
+        from ospy.server import session
+
+        qdict = web.input()
+        verify_csrf(qdict)
+        if session.get('category') != 'admin':
+            raise web.forbidden()
+        with lock:
+            if local_enabled():
+                store().clear_history()
+            if sql_enabled():
+                clear_sql_history()
+        log.info(NAME, _('Energy Meter history was cleared.'))
+        raise web.seeother(plugin_url(log_page), True)
 
 
 class reset_meter_page(ProtectedPage):

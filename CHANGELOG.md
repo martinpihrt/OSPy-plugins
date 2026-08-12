@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 12 2026
+--------------
+(Martin Pihrt) - Energy Meter v1.0.4<br/>
+Expanded the overview into separate energy and power graphs. Energy now shows grid import and export L1/L2/L3/total plus solar production, while power shows L1/L2/L3/total for every configured meter. The history table now also displays phase power, and administrators can permanently clear local, SQL or dual history through a confirmed CSRF-protected action without losing the cumulative-counter baseline. Local interval storage now appends records to `history.jsonl` instead of rewriting the complete `history.json` list every sampling interval; existing JSON history remains readable and bounded retention compacts the journal periodically. Updated help, README and regression tests.
+
 August 9 2026
 -------------
 (Martin Pihrt) - Energy Meter v1.0.3 and Shelly Cloud Integration v1.0.3<br/>

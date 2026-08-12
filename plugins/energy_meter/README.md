@@ -14,13 +14,13 @@ When both Grid and Solar production meters are present, the dashboard calculates
 
 ## Counters, restart and replacement
 
-Shelly cumulative active and returned energy counters are persisted after every successful sample in an atomically replaced JSON state file. OSPy therefore resumes from the previous baseline after restart. A lower counter is treated as a reset or meter replacement: the plug-in establishes a new baseline and does not create an artificial consumption spike. The overview also provides a CSRF-protected Reset baseline / replace meter action for planned replacement or factory reset.
+Shelly cumulative active and returned energy counters are persisted after every successful sample in an atomically replaced JSON state file. OSPy therefore resumes from the previous baseline after restart. A lower counter is treated as a reset or meter replacement: the plug-in establishes a new baseline and does not create an artificial consumption spike. The overview also provides a CSRF-protected Reset baseline / replace meter action for planned replacement or factory reset. Local interval history is appended to `history.jsonl`, avoiding a rewrite of the complete history on every sample. Existing `history.json` data is read automatically for backward compatibility.
 
 Intervals spanning an OSPy restart are retained as one interval and period aggregation apportions their energy by overlap with the requested day, month or year. This prevents loss of cumulative energy and avoids assigning an entire restart interval to the wrong calendar period.
 
 ## History, prices and tariffs
 
-The overview and history show L1, L2, L3 and total values for import and export, live power, today, yesterday, current month and current year. Responsive graphs offer 7-, 30- and 365-day views and history can be downloaded as CSV. Local JSON history is supported without another plug-in; SQL history and dual local-plus-SQL logging require Database Connector. Record retention is configurable and zero means unlimited. Boolean settings use the standard OSPy switches, while each tariff uses localized Monday-through-Sunday buttons to select its active days.
+The overview and history show L1, L2, L3 and total values for import and export, live power, today, yesterday, current month and current year. Separate responsive energy and power graphs offer 7-, 30- and 365-day views: energy includes grid import and export L1/L2/L3/total plus solar production, while power includes L1/L2/L3/total for every configured meter. History can be downloaded as CSV or deleted by an administrator without resetting the stored cumulative-counter baseline. Local JSON history is supported without another plug-in; SQL history and dual local-plus-SQL logging require Database Connector. Record retention is configurable and zero means unlimited. Boolean settings use the standard OSPy switches, while each tariff uses localized Monday-through-Sunday buttons to select its active days.
 
 Set a currency, default import price and default feed-in price. Optional tariffs match weekdays and time ranges, including ranges crossing midnight. The first matching tariff is used. The tariff identifier and the actual import and feed-in prices are written to each interval, so changing prices later does not recalculate historical costs or income.
 
@@ -30,7 +30,7 @@ The mobile API v1 card contains today’s grid import and export, solar producti
 
 ## Data files and API
 
-Local files are stored in the OSPy plug-in data directory as `state.json` and `history.json`. Authenticated administrators can read `/plugins/energy_meter/status_json` for current meters and period summaries, `/plugins/energy_meter/graph_json?from=UNIX&to=UNIX` for bounded history and `/plugins/energy_meter/log_csv` for CSV export. Standard OSPy mobile plug-in discovery exposes `mobile_status()` and `mobile_cards()`.
+Local files are stored in the OSPy plug-in data directory as `state.json`, the backward-compatible `history.json`, and the append-only interval journal `history.jsonl`. Authenticated administrators can read `/plugins/energy_meter/status_json` for current meters and period summaries, `/plugins/energy_meter/graph_json?from=UNIX&to=UNIX` for bounded history and `/plugins/energy_meter/log_csv` for CSV export. Standard OSPy mobile plug-in discovery exposes `mobile_status()` and `mobile_cards()`.
 
 ## Diagnostics
 
