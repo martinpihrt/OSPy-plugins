@@ -6,6 +6,11 @@ Only for Python 3+
 The plug-in includes a `plugin.json` manifest and reports its worker, Astral
 availability, location, sunrise, sunset, scheduled programs, dependency
 installation and calculation errors through the OSPy system health interface.
+The mobile interface provides today's astronomical values and a fixed 24-hour timeline with night before sunrise and after sunset; it does not expose irrelevant history-range controls.
+
+## Mobile application
+
+Open Plug-ins and expand Astro Sunrise and Sunset operating data in the OSPy mobile application. The native 24-hour timeline always represents the current day, uses gray bands before sunrise and after sunset, marks sunrise, sunset and the current time, and therefore does not offer history-range buttons. The astronomical metrics and timeline refresh automatically while the panel remains expanded.
 
 This extension requires the Astral Python package. If Astral is missing, the status page shows an Install libraries button and writes the installation progress to the status log. On Raspberry Pi OS install it with:
 

@@ -7,6 +7,11 @@ This plugin displays selected values from other OSPy plugins and OSPy sensors on
 Each value is configured as one gauge. The dashboard can show gauges as round canvas meters or as simple text values.
 
 The plug-in includes a manifest declaring access to OSPy sensors and other plug-in readings, uses the shared OSPy lifecycle, and reports configured gauges, refreshes and unavailable values through the Diagnostics health interface.
+Its mobile API exposes the same canvas/text mode, current values, scale, ticks and colored limits used by the web dashboard so native clients can reproduce the configured presentation.
+
+## Mobile application
+
+Open Plug-ins and expand Weather Dashboard operating data in the OSPy mobile application. Canvas mode displays every enabled gauge as a native radial meter below the previous one and applies its configured minimum, maximum, tick labels and red, blue and green ranges. Text mode displays the same live values and units using the configured text size. The expanded panel refreshes automatically while it remains open, and pulling down on the Plug-ins page reloads the complete plug-in list.
 
 
 Plugin setup

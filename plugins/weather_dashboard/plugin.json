@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "weather_dashboard",
   "name": "Weather Dashboard",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -14,5 +14,9 @@
   "permissions": [
     "files",
     "system"
-  ]
+  ],
+  "mobile": {
+    "api_version": 1,
+    "actions": []
+  }
 }

@@ -228,6 +228,25 @@ def safe_int(value, default=0):
         return default
 
 
+def safe_float(value, default=0.0):
+    try:
+        return float(str(value).replace(',', '.'))
+    except (TypeError, ValueError):
+        return default
+
+
+def gauge_ticks(value):
+    result = []
+    for item in str(value or '').split(','):
+        item = item.strip()
+        if item:
+            try:
+                result.append(float(item.replace(',', '.')))
+            except (TypeError, ValueError):
+                pass
+    return result
+
+
 def normalize_gauge(gauge):
     data = default_gauge()
     if isinstance(gauge, dict):
@@ -618,3 +637,65 @@ def health():
         status = 'ok'
         summary = _('Weather Dashboard is ready.')
     return {'status': status, 'summary': summary, 'details': details}
+
+
+def mobile_status():
+    """Return dashboard availability without initiating external I/O."""
+    result = health()
+    with health_lock:
+        updated = health_state.get('last_refresh', 0)
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Weather Dashboard'),
+        'summary': result.get('summary', ''),
+        'updated': datetime_string(time.localtime(updated)) if updated else '',
+    }
+
+
+def mobile_cards(**_kwargs):
+    """Return configured gauges using the same mode and limits as the web UI."""
+    normalize_options()
+    values = []
+    unavailable = 0
+    refreshed = time.time()
+    for index, gauge in enumerate(plugin_options['gauges']):
+        if not gauge['enabled']:
+            continue
+        try:
+            value = get_value(
+                gauge['source'], gauge['channel'], gauge['value_type'])
+        except Exception:
+            value = -127
+        available = value != -127
+        if not available:
+            unavailable += 1
+        values.append({
+            'id': 'gauge_{}'.format(index),
+            'label': gauge['name'],
+            'value': value if available else None,
+            'available': available,
+            'unit': gauge['unit'],
+            'minimum': safe_float(gauge['min']),
+            'maximum': safe_float(gauge['max'], 100.0),
+            'ticks': gauge_ticks(gauge['tick']),
+            'ranges': [
+                {'from': gauge['red_from'], 'to': gauge['red_to'],
+                 'color': 'red'},
+                {'from': gauge['blue_from'], 'to': gauge['blue_to'],
+                 'color': 'blue'},
+                {'from': gauge['green_from'], 'to': gauge['green_to'],
+                 'color': 'green'},
+            ],
+        })
+    with health_lock:
+        health_state['last_refresh'] = refreshed
+        health_state['values_returned'] = len(values)
+        health_state['unavailable_values'] = unavailable
+    return [{
+        'id': 'weather_dashboard',
+        'title': _('Weather Dashboard'),
+        'kind': 'gauge_dashboard',
+        'mode': plugin_options.get('dashboard_mode', 'canvas'),
+        'text_size': plugin_options.get('txt_size_font', 40),
+        'gauges': values,
+    }]
