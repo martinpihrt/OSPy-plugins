@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 14 2026
+--------------
+(Martin Pihrt) - Shelly Cloud Integration v1.0.4<br/>
+Preserved the full Shelly three-phase cumulative energy-counter precision in the integration cache. Energy Meter interval history no longer consists mostly of zero values followed by artificial 0.001 kWh steps at low power. Added a regression test for sub-Wh counter values.
+
 August 12 2026
 --------------
 (Martin Pihrt) - Energy Meter v1.0.4<br/>
