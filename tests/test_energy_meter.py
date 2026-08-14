@@ -45,10 +45,17 @@ class EnergyMeterTests(unittest.TestCase):
         self.assertIn('.switch input {\n    display: none;', switch_css)
         self.assertIn('input:checked + .slider:before', switch_css)
         self.assertIn("$for record in reversed(records[-1000:]):", history)
+        self.assertIn("energy_meter.clear_history_page", history)
+        self.assertIn("record.get('power_l1_w', 0)", history)
         self.assertIn('\n</tbody>\n</table>\n</div>\n</div>', history)
         self.assertIn("$if today.get('production_available'):", overview)
         self.assertIn("\n<h3>$_(u'Electricity meters')</h3>", overview)
         self.assertIn('\n</div>\n<section class="energyGraphSection">', overview)
+        self.assertIn("Import and export energy by phase", overview)
+        self.assertIn("Power by phase", overview)
+        self.assertIn("#energy-power-graph", overview)
+        self.assertIn("import_l1_kwh", overview)
+        self.assertIn("export_l3_kwh", overview)
 
     def test_counter_delta_rebaselines_after_meter_reset(self):
         self.assertEqual(model.counter_delta(12.5, 10.0), (2.5, False))
@@ -109,6 +116,29 @@ class EnergyMeterTests(unittest.TestCase):
             self.assertEqual([record['ended'] for record in second.history()], [2, 3])
             second.reset_meter('grid')
             self.assertEqual(second.states(), {})
+
+    def test_history_journal_appends_and_clear_preserves_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = storage.JsonStore(directory, max_records=0)
+            store.save_state({'grid': {'import_kwh': [1, 2, 3]}})
+            store.append([{'ended': 1}])
+            store.append([{'ended': 2}])
+            journal = pathlib.Path(directory, 'history.jsonl')
+
+            self.assertEqual([record['ended'] for record in store.history()], [1, 2])
+            self.assertEqual(len(journal.read_text(encoding='utf-8').splitlines()), 2)
+
+            store.clear_history()
+            self.assertEqual(store.history(), [])
+            self.assertEqual(store.states()['grid']['import_kwh'], [1, 2, 3])
+
+    def test_history_journal_compacts_only_after_retention_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = storage.JsonStore(directory, max_records=3)
+            store.append([{'ended': 1}, {'ended': 2}, {'ended': 3}])
+            store.append([{'ended': 4}])
+
+            self.assertEqual([record['ended'] for record in store.history()], [2, 3, 4])
 
     def test_mobile_history_filters_iso_range_and_keeps_extremes(self):
         start = datetime.datetime(2026, 8, 9, 10, 0)

@@ -1,12 +1,16 @@
 $def with(records, plugin_options)
 $var title: $_(u'Energy Meter history')
 $var page: plugins
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.3" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.4" rel="stylesheet" type="text/css">
 <div id="plugin" class="energyPanel">
     <div class="title">$_(u'Energy Meter history')</div>
     <div class="energyToolbar">
         <a href=$plugins.plugin_url('energy_meter.overview_page') class="button submit">$_(u'Overview')</a>
         <a href=$plugins.plugin_url('energy_meter.log_csv') class="button download">$_(u'Download CSV')</a>
+        <form action=$plugins.plugin_url('energy_meter.clear_history_page') method="post" onsubmit="return confirm('$:_('Permanently delete all Energy Meter history? Current meter counter baselines will be preserved.')');">
+            $:csrf_input()
+            <button class="danger">$_(u'Delete history')</button>
+        </form>
     </div>
     <div class="energyTableWrap">
         <table class="energyHistory">
@@ -17,7 +21,7 @@ $var page: plugins
                     <th>$_(u'Role')</th>
                     <th>$_(u'Import') L1/L2/L3/Σ kWh</th>
                     <th>$_(u'Export') L1/L2/L3/Σ kWh</th>
-                    <th>$_(u'Power')</th>
+                    <th>$_(u'Power') L1/L2/L3/Σ W</th>
                     <th>$_(u'Tariff')</th>
                     <th>$_(u'Cost')</th>
                     <th>$_(u'Income')</th>
@@ -31,7 +35,7 @@ $for record in reversed(records[-1000:]):
                     <td>$record['role_label']</td>
                     <td>$'{:.4f} / {:.4f} / {:.4f} / {:.4f}'.format(record['import_l1_kwh'],record['import_l2_kwh'],record['import_l3_kwh'],record['import_kwh'])</td>
                     <td>$'{:.4f} / {:.4f} / {:.4f} / {:.4f}'.format(record['export_l1_kwh'],record['export_l2_kwh'],record['export_l3_kwh'],record['export_kwh'])</td>
-                    <td>$'{:.1f}'.format(record['power_w']) W</td>
+                    <td>$'{:.1f} / {:.1f} / {:.1f} / {:.1f}'.format(record.get('power_l1_w', 0),record.get('power_l2_w', 0),record.get('power_l3_w', 0),record.get('power_w', 0))</td>
                     <td>$record['tariff_name']</td>
                     <td>$'{:.2f}'.format(record['cost']) $plugin_options['currency']</td>
                     <td>$'{:.2f}'.format(record['income']) $plugin_options['currency']</td>

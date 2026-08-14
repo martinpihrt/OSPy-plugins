@@ -30,6 +30,8 @@ Calibration and threshold fields accept both a decimal point and a decimal comma
 
 The overview page contains the current and maximum speed, operational status, a graph, and a one-minute trend. Live values refresh through a JSON endpoint without reloading the page. The trend compares older and newer accepted readings and reports rising, falling, steady, or waiting for sufficient data.
 
+The mobile API returns the stable trend codes `up`, `down`, `steady` and `unknown`. The OSPy mobile application renders these codes as localized rising, falling, steady and waiting states and refreshes the expanded operating-data panel automatically.
+
 ## Plausibility and action protection
 
 The plausibility filter rejects an accepted-speed candidate above the configured maximum. Rejected readings:

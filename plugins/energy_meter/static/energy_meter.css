@@ -130,9 +130,14 @@ input:checked + .slider:before {
     padding-top: 8px;
 }
 
-#energy-graph {
+#energy-graph,
+#energy-power-graph {
     height: 360px;
     width: 100%;
+}
+
+.energyGraphSection h4 {
+    margin-bottom: 4px;
 }
 
 #energy-empty {

@@ -3,12 +3,48 @@ $def with(plugin_options, meters, summary, status, currency)
 $var title: $_(u'Energy Meter')
 $var page: plugins
 
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.3" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.4" rel="stylesheet" type="text/css">
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
 <script>
-function loadEnergyGraph(days) { var now = Math.floor(Date.now() / 1000); jQuery.getJSON('/plugins/energy_meter/graph_json', {from: now - days * 86400, to: now}, function(records) { var buckets = {}; records.forEach(function(r) { var day = new Date(Number(r.ended) * 1000); day.setHours(0,0,0,0); var key = day.getTime(); if (!buckets[key]) buckets[key] = {i:0,e:0,p:0}; if (r.role === 'grid') { buckets[key].i += Number(r.import_kwh || 0); buckets[key].e += Number(r.export_kwh || 0); } if (r.role === 'production') buckets[key].p += Number(r.import_kwh || 0); }); var keys = Object.keys(buckets).sort(); var series = [{label:$:{json.dumps(_('Grid import'), ensure_ascii=False)},data:keys.map(function(k){return [Number(k),buckets[k].i];})},{label:$:{json.dumps(_('Grid export'), ensure_ascii=False)},data:keys.map(function(k){return [Number(k),buckets[k].e];})},{label:$:{json.dumps(_('Solar production'), ensure_ascii=False)},data:keys.map(function(k){return [Number(k),buckets[k].p];})}]; jQuery('#energy-empty').toggle(keys.length === 0); jQuery.plot('#energy-graph', series, {series:{lines:{show:true},points:{show:true}},xaxis:{mode:'time',timeformat:'%m-%d'},legend:{position:'ne'}}); }); }
+function energyNumber(value) { var parsed = Number(value); return isFinite(parsed) ? parsed : 0; }
+function energySample(points, maximum) { if (points.length <= maximum) return points; var step = Math.ceil(points.length / maximum); return points.filter(function(value, index) { return index % step === 0 || index === points.length - 1; }); }
+function loadEnergyGraph(days) {
+    var now = Math.floor(Date.now() / 1000);
+    jQuery.getJSON('/plugins/energy_meter/graph_json', {from: now - days * 86400, to: now}, function(records) {
+        var buckets = {}, power = {}, labels = {}, bucketHours = days <= 7 ? 1 : 24;
+        records.forEach(function(r) {
+            var moment = new Date(Number(r.ended) * 1000), key;
+            if (bucketHours === 1) moment.setMinutes(0,0,0); else moment.setHours(0,0,0,0);
+            key = moment.getTime();
+            if (!buckets[key]) buckets[key] = {il1:0,il2:0,il3:0,i:0,el1:0,el2:0,el3:0,e:0,p:0};
+            if (r.role === 'grid') {
+                buckets[key].il1 += energyNumber(r.import_l1_kwh); buckets[key].il2 += energyNumber(r.import_l2_kwh); buckets[key].il3 += energyNumber(r.import_l3_kwh); buckets[key].i += energyNumber(r.import_kwh);
+                buckets[key].el1 += energyNumber(r.export_l1_kwh); buckets[key].el2 += energyNumber(r.export_l2_kwh); buckets[key].el3 += energyNumber(r.export_l3_kwh); buckets[key].e += energyNumber(r.export_kwh);
+            }
+            if (r.role === 'production') buckets[key].p += energyNumber(r.import_kwh);
+            var meter = String(r.meter_id || ''), timestamp = Number(r.ended) * 1000;
+            labels[meter] = String(r.label || meter);
+            if (!power[meter]) power[meter] = {l1:[],l2:[],l3:[],sum:[]};
+            power[meter].l1.push([timestamp,energyNumber(r.power_l1_w)]); power[meter].l2.push([timestamp,energyNumber(r.power_l2_w)]); power[meter].l3.push([timestamp,energyNumber(r.power_l3_w)]); power[meter].sum.push([timestamp,energyNumber(r.power_w)]);
+        });
+        var keys = Object.keys(buckets).sort(function(a,b){return Number(a)-Number(b);});
+        function energyData(name) { return keys.map(function(k){return [Number(k),buckets[k][name]];}); }
+        var energySeries = [
+            {label:$:{json.dumps(_('Import L1'), ensure_ascii=False)} + ' (kWh)',data:energyData('il1')}, {label:$:{json.dumps(_('Import L2'), ensure_ascii=False)} + ' (kWh)',data:energyData('il2')}, {label:$:{json.dumps(_('Import L3'), ensure_ascii=False)} + ' (kWh)',data:energyData('il3')}, {label:$:{json.dumps(_('Grid import total'), ensure_ascii=False)} + ' (kWh)',data:energyData('i'),lines:{lineWidth:3}},
+            {label:$:{json.dumps(_('Export L1'), ensure_ascii=False)} + ' (kWh)',data:energyData('el1')}, {label:$:{json.dumps(_('Export L2'), ensure_ascii=False)} + ' (kWh)',data:energyData('el2')}, {label:$:{json.dumps(_('Export L3'), ensure_ascii=False)} + ' (kWh)',data:energyData('el3')}, {label:$:{json.dumps(_('Grid export total'), ensure_ascii=False)} + ' (kWh)',data:energyData('e'),lines:{lineWidth:3}},
+            {label:$:{json.dumps(_('Solar production'), ensure_ascii=False)} + ' (kWh)',data:energyData('p'),lines:{lineWidth:3}}
+        ];
+        var powerSeries = [];
+        Object.keys(power).sort().forEach(function(meter) {
+            powerSeries.push({label:labels[meter] + ' L1 (W)',data:energySample(power[meter].l1,1000)}, {label:labels[meter] + ' L2 (W)',data:energySample(power[meter].l2,1000)}, {label:labels[meter] + ' L3 (W)',data:energySample(power[meter].l3,1000)}, {label:labels[meter] + ' Σ (W)',data:energySample(power[meter].sum,1000),lines:{lineWidth:3}});
+        });
+        jQuery('#energy-empty').toggle(records.length === 0);
+        jQuery.plot('#energy-graph', energySeries, {series:{lines:{show:true},points:{show:true,radius:2}},xaxis:{mode:'time',timeformat:bucketHours === 1 ? '%m-%d %H:%M' : '%m-%d'},legend:{position:'ne'}});
+        jQuery.plot('#energy-power-graph', powerSeries, {series:{lines:{show:true},points:{show:false}},xaxis:{mode:'time',timeformat:'%m-%d %H:%M'},legend:{position:'ne'}});
+    });
+}
 jQuery(function(){ loadEnergyGraph(30); jQuery('.energyRange').click(function(){jQuery('.energyRange').removeClass('active');jQuery(this).addClass('active');loadEnergyGraph(Number(jQuery(this).data('days')));}); });
 </script>
 
@@ -91,6 +127,9 @@ $for meter in meters:
         <button class="button backup energyRange" data-days="365">365 $_(u'days')</button>
     </div>
     <div id="energy-empty">$_(u'No records found for selected range.')</div>
+    <h4>$_(u'Import and export energy by phase')</h4>
     <div id="energy-graph"></div>
+    <h4>$_(u'Power by phase')</h4>
+    <div id="energy-power-graph"></div>
 </section>
 </div>

@@ -859,7 +859,7 @@ def mobile_status():
 
 
 def mobile_cards(**_kwargs):
-    """Return today's sun events and a read-only 24-hour daylight chart."""
+    """Return today's sun events and a fixed native 24-hour timeline."""
     try:
         values = compute_sunrise_sunset() if checker is not None and checker.mycity else None
     except Exception:
@@ -883,26 +883,21 @@ def mobile_cards(**_kwargs):
                         'value': moon_value, 'unit': _('days')})
     today = datetime_module.date.today()
     start = datetime_module.datetime.combine(today, datetime_module.time.min)
-    end = datetime_module.datetime.combine(today, datetime_module.time(23, 59, 59))
+    end = start + datetime_module.timedelta(days=1)
     sunrise = values.get('sunrise')
     sunset = values.get('sunset')
-    points = [{'time': start.isoformat(), 'value': 0}]
-    if sunrise and sunset:
-        points.extend([
-            {'time': (sunrise.replace(tzinfo=None) - datetime_module.timedelta(seconds=1)).isoformat(), 'value': 0},
-            {'time': sunrise.replace(tzinfo=None).isoformat(), 'value': 1},
-            {'time': (sunset.replace(tzinfo=None) - datetime_module.timedelta(seconds=1)).isoformat(), 'value': 1},
-            {'time': sunset.replace(tzinfo=None).isoformat(), 'value': 0},
-        ])
-    points.append({'time': end.isoformat(), 'value': 0})
     return [{
         'id': 'sun_today',
         'title': _('Sunrise and sunset on a 24-hour timeline'),
+        'kind': 'daylight_timeline',
         'metrics': metrics,
-        'series': [{'id': 'daylight', 'label': _('Daylight'), 'unit': '', 'points': points}],
-        'history': {'from': start.isoformat(), 'to': end.isoformat(),
-                    'source': 'calculation', 'last_available': end.isoformat(),
-                    'returned_points': len(points)},
+        'timeline': {
+            'start': start.isoformat(),
+            'end': end.isoformat(),
+            'sunrise': sunrise.replace(tzinfo=None).isoformat() if sunrise else '',
+            'sunset': sunset.replace(tzinfo=None).isoformat() if sunset else '',
+            'now': datetime_module.datetime.now().isoformat(),
+        },
     }]
 
 def run_command(cmd):

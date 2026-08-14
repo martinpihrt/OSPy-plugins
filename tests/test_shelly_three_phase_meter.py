@@ -44,6 +44,17 @@ class ShellyThreePhaseMeterTests(unittest.TestCase):
         self.assertEqual(meter['ip'], '192.168.1.20')
         self.assertEqual(meter['rssi'], -55)
 
+    def test_preserves_sub_wh_resolution_for_interval_history(self):
+        self.status['emdata:0']['a_total_act_energy'] = 1000.123
+        self.status['emdata:0']['a_total_act_ret_energy'] = 200.456
+
+        meter = three_phase_meter.parse_three_phase_meter(self.status)
+
+        self.assertEqual(meter['energy_kwh'][0], 1.000123)
+        self.assertEqual(meter['returned_energy_kwh'][0], 0.200456)
+        self.assertEqual(meter['total_energy'], 4.000123)
+        self.assertEqual(meter['total_returned_energy'], 0.600456)
+
     def test_rejects_status_without_energy_meter_component(self):
         with self.assertRaises(ValueError):
             three_phase_meter.parse_three_phase_meter({'wifi': {}})

@@ -1,7 +1,7 @@
 $def with()
 $var title: $_(u'Energy Meter help')
 $var page: plugins
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.3" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.4" rel="stylesheet" type="text/css">
 <div id="plugin" class="energyPanel">
 <div class="title">$_(u'Energy Meter help')</div>
 <div class="energyToolbar">
@@ -15,6 +15,7 @@ $var page: plugins
 <p>$_(u'Grid connection records energy imported from and exported to the public grid. Solar production records generated energy. Load records a separate consumer and Auxiliary is an independent meter. Grid export is never presented as solar production. With both Grid and Solar meters, house consumption equals production plus grid import minus grid export; self-consumption equals production minus grid export. Battery charging and discharging are not inferred without a dedicated meter.')</p>
 <h3>$_(u'History and counter replacement')</h3>
 <p>$_(u'Current Shelly cumulative counters and the previous sample are persisted atomically. OSPy therefore continues after restart without losing the counter baseline. If a counter decreases, the plug-in records a reset and establishes a new baseline without adding a false energy spike. Use Reset baseline before replacing or resetting a meter.')</p>
+<p>$_(u'Each completed sampling interval stores import and export energy plus power for L1, L2, L3 and the total. The default interval is 60 seconds. Local history is appended to a journal so the complete history file is not rewritten every minute. Delete history removes recorded intervals but preserves the current cumulative-counter baselines.')</p>
 <h3>$_(u'Prices, storage and mobile data')</h3>
 <p>$_(u'Prices active at sampling time are stored with each interval. History can be kept in local JSON, SQL through Database Connector, or both, and can be exported as CSV. The OSPy mobile API receives live meter power, period totals and bounded history.')</p>
 </div>

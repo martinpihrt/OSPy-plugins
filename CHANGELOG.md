@@ -1,5 +1,18 @@
 # OSPy-plugins Changelog
 
+August 14 2026
+--------------
+(Martin Pihrt) - Weather Dashboard v1.0.2, Astro Sunrise and Sunset v1.0.4 and Wind Speed Monitor v1.1.9<br/>
+Added a native Weather Dashboard mobile interface carrying the configured canvas/text mode, live gauge values, scale ticks and colored limits. Replaced Astro's synthetic history series with a fixed 24-hour sunrise/sunset timeline contract so mobile clients can render night/day bands without irrelevant history-range controls. Documented the stable Wind Speed Monitor mobile trend codes used by the Android application and its automatic expanded-panel refresh behavior.
+
+(Martin Pihrt) - Shelly Cloud Integration v1.0.4<br/>
+Preserved the full Shelly three-phase cumulative energy-counter precision in the integration cache. Energy Meter interval history no longer consists mostly of zero values followed by artificial 0.001 kWh steps at low power. Added a regression test for sub-Wh counter values.
+
+August 12 2026
+--------------
+(Martin Pihrt) - Energy Meter v1.0.4<br/>
+Expanded the overview into separate energy and power graphs. Energy now shows grid import and export L1/L2/L3/total plus solar production, while power shows L1/L2/L3/total for every configured meter. The history table now also displays phase power, and administrators can permanently clear local, SQL or dual history through a confirmed CSRF-protected action without losing the cumulative-counter baseline. Local interval storage now appends records to `history.jsonl` instead of rewriting the complete `history.json` list every sampling interval; existing JSON history remains readable and bounded retention compacts the journal periodically. Updated help, README and regression tests.
+
 August 9 2026
 -------------
 (Martin Pihrt) - Energy Meter v1.0.3 and Shelly Cloud Integration v1.0.3<br/>
