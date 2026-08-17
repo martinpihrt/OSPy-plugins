@@ -2,6 +2,9 @@
 
 August 17 2026
 --------------
+(Martin Pihrt) - System Update v1.2.6<br/>
+Extended the external watchdog confirmation window from two to five minutes. Large installations that initialize many plug-ins sequentially now have enough time to start System Update, produce a fresh scheduler heartbeat and open the web interface before automatic rollback, while the existing commit, token and health checks remain unchanged.
+
 (Martin Pihrt) - Astro Sunrise and Sunset v1.0.6<br/>
 Replaced the placeholder Astral region `OSPy` with the region detected from the OSPy weather location. Existing installations fall back to the detected country code until the next weather location lookup stores the more precise region.
 
