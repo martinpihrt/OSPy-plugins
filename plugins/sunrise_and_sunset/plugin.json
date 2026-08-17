@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "sunrise_and_sunset",
   "name": "Astro Sunrise and Sunset",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

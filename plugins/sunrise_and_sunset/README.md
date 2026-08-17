@@ -12,6 +12,8 @@ From version 1.0.5 the plug-in is also the astronomical provider for native OSPy
 
 If the plug-in is disabled, Astral is unavailable or no valid location can be resolved, the provider returns no guessed time. OSPy therefore retains the saved solar program but does not generate its automatic occurrence until the provider recovers. Manual program control and non-solar programs are unaffected.
 
+When the OSPy weather location is used, the displayed Astral region comes from the location detected by OSPy. Older installations use the detected country code until the weather location is looked up again.
+
 ## Mobile application
 
 Open Plug-ins and expand Astro Sunrise and Sunset operating data in the OSPy mobile application. The native 24-hour timeline always represents the current day, uses gray bands before sunrise and after sunset, marks sunrise, sunset and the current time, and therefore does not offer history-range buttons. The astronomical metrics and timeline refresh automatically while the panel remains expanded.

@@ -2,6 +2,9 @@
 
 August 17 2026
 --------------
+(Martin Pihrt) - Astro Sunrise and Sunset v1.0.6<br/>
+Replaced the placeholder Astral region `OSPy` with the region detected from the OSPy weather location. Existing installations fall back to the detected country code until the next weather location lookup stores the more precise region.
+
 (Martin Pihrt) - Astro Sunrise and Sunset v1.0.5<br/>
 Added a stable read-only astronomical provider for native OSPy sunrise and sunset program types. The provider reports whether Astral and location calculation are ready and returns validated dawn, sunrise, noon, sunset and dusk datetimes for a requested day without guessing fallback clock times. Existing plug-in scheduling and the mobile daylight interface remain available.
 

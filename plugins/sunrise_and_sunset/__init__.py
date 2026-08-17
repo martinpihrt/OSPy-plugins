@@ -745,9 +745,12 @@ def ospy_location_info():
         return None
     from astral import LocationInfo
     name = str(getattr(options, 'location', '') or '').strip() or 'OSPy'
+    region = str(getattr(options, 'weather_region', '') or '').strip()
+    if not region:
+        region = str(getattr(options, 'weather_country_code', '') or '').strip()
     return LocationInfo(
         name,
-        'OSPy',
+        region,
         system_timezone_name(),
         latitude,
         longitude,
