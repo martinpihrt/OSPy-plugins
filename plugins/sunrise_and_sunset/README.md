@@ -8,6 +8,10 @@ availability, location, sunrise, sunset, scheduled programs, dependency
 installation and calculation errors through the OSPy system health interface.
 The mobile interface provides today's astronomical values and a fixed 24-hour timeline with night before sunrise and after sunset; it does not expose irrelevant history-range controls.
 
+From version 1.0.5 the plug-in is also the astronomical provider for native OSPy sunrise and sunset program types. It exposes a read-only availability check and the calculated dawn, sunrise, noon, sunset and dusk values for a requested date. OSPy keeps calendar filtering, offsets, allowed time windows and irrigation scheduling in the core; this plug-in remains responsible for Astral, location and timezone calculation. The older plug-in option for launching an existing program remains available and is not removed.
+
+If the plug-in is disabled, Astral is unavailable or no valid location can be resolved, the provider returns no guessed time. OSPy therefore retains the saved solar program but does not generate its automatic occurrence until the provider recovers. Manual program control and non-solar programs are unaffected.
+
 ## Mobile application
 
 Open Plug-ins and expand Astro Sunrise and Sunset operating data in the OSPy mobile application. The native 24-hour timeline always represents the current day, uses gray bands before sunrise and after sunset, marks sunrise, sunset and the current time, and therefore does not offer history-range buttons. The astronomical metrics and timeline refresh automatically while the panel remains expanded.

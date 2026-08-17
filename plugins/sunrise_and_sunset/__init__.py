@@ -1018,6 +1018,37 @@ def compute_sunrise_sunset(_year = None, _month = None, _day = None):
         return None
 
 
+def program_sun_times_available():
+    """Return whether the astronomical program provider is configured."""
+    return bool(
+        plugin_options['use_astro'] and checker is not None and
+        checker.mycity is not None and astral_is_available()
+    )
+
+
+def program_sun_times(day):
+    """Return stable astronomical values for OSPy program scheduling.
+
+    Disabled or unhealthy astronomical calculation never falls back to a
+    guessed clock time.  Callers can therefore block the affected program
+    without changing its saved definition.
+    """
+    if not program_sun_times_available():
+        return None
+    if isinstance(day, datetime_module.datetime):
+        day = day.date()
+    if not isinstance(day, datetime_module.date):
+        return None
+    values = compute_sunrise_sunset(day.year, day.month, day.day)
+    if not isinstance(values, dict):
+        return None
+    required = ('dawn', 'sunrise', 'noon', 'sunset', 'dusk')
+    if any(not isinstance(values.get(key), datetime_module.datetime)
+           for key in required):
+        return None
+    return {key: values[key] for key in required}
+
+
 def time_to_minutes(time):
     hours, minutes, seconds = map(int, time.split(':'))
     sum_minutes = hours * 60 + minutes

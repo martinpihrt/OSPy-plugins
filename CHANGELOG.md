@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 17 2026
+--------------
+(Martin Pihrt) - Astro Sunrise and Sunset v1.0.5<br/>
+Added a stable read-only astronomical provider for native OSPy sunrise and sunset program types. The provider reports whether Astral and location calculation are ready and returns validated dawn, sunrise, noon, sunset and dusk datetimes for a requested day without guessing fallback clock times. Existing plug-in scheduling and the mobile daylight interface remain available.
+
 August 14 2026
 --------------
 (Martin Pihrt) - Weather Dashboard v1.0.2, Astro Sunrise and Sunset v1.0.4 and Wind Speed Monitor v1.1.9<br/>
