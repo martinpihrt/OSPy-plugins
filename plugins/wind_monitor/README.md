@@ -2,9 +2,11 @@
 
 Tested with Python 3.8+.
 
-The plug-in measures an anemometer through a PCF8583 event counter on I2C address `0x50` or `0x51`. It can display and log wind, stop selected running stations, send an e-mail, or start a configured program after validated wind thresholds are exceeded.
+The plug-in measures an anemometer from either the original PCF8583 event counter on I2C address `0x50` or `0x51`, or a ZTS-3000-FSJT wind sensor using Modbus RTU through the shared RS485 Communication plug-in. It can display and log wind, stop selected running stations, send an e-mail, or start a configured program after validated wind thresholds are exceeded.
 
 ## Measurement
+
+The original PCF8583 source is an external pulse counter connected to the Raspberry Pi I2C bus, not a direct Raspberry Pi GPIO pulse input. The pulses-per-rotation and speed-per-rotation calibration fields apply only to this source.
 
 For every measurement the plug-in:
 
@@ -26,6 +28,10 @@ speed in km/h     = speed in m/s × 3.6
 
 Calibration and threshold fields accept both a decimal point and a decimal comma.
 
+For the RS485 source, Wind Monitor sends `01 03 00 00 00 02 C4 0B` at the default device address 1 and validates the returned address, function, byte count and Modbus CRC. Register 0 is decoded in tenths of a meter per second and register 1 contains wind force. The ZTS-3000-FSJT factory settings documented by its manufacturer are address 1, 4800 baud and 8N1.
+
+Wind Monitor uses the public FIFO transaction queue from RS485 Communication and never opens the serial port itself. The RS485 Communication plug-in is an optional manifest dependency: it must be installed, enabled and running when the RS485 source and wind measurement are enabled, but it is not required for the PCF8583 source. Communication speed, framing and serial-port selection are configured centrally in RS485 Communication because all devices on one bus share those settings.
+
 ## Overview and trend
 
 The overview page contains the current and maximum speed, operational status, a graph, and a one-minute trend. Live values refresh through a JSON endpoint without reloading the page. The trend compares older and newer accepted readings and reports rising, falling, steady, or waiting for sufficient data.
@@ -45,11 +51,11 @@ Station stopping and its e-mail notification require the configured number of co
 
 The default filter limit is 40 m/s (144 km/h), and the default station/e-mail confirmation count is two measurements.
 
-## I2C diagnostic log
+## Measurement diagnostic log
 
 Diagnostic logging is intended for temporary troubleshooting. It writes bounded JSON lines to the OSPy plug-in data directory and rotates the file at approximately 1 MB. The diagnostic page can display, download, refresh, and delete the log.
 
-Records include:
+PCF8583 records include:
 
 - PCF8583 setup and control-register confirmation;
 - I2C retry errors;
@@ -59,20 +65,26 @@ Records include:
 - pulse rate and calculated speed;
 - whether the reading was accepted and any rejection reason.
 
+RS485 records include the selected Modbus address, complete response data, decoded speed, wind force, CRC validation and any queue, serial or protocol error.
+
 Disable diagnostic logging after the problem has been captured.
 
 ## Logging and actions
 
 Accepted measurements can be written to the local graph files or through the optional Database Connector plug-in. A configured maximum can be reset manually or after an interval. Selected running stations can be stopped after the stop threshold is confirmed, and an optional e-mail can be sent. A separate program action uses its own threshold, repetition count, interval, and suppression period.
 
-The plug-in declares SMBus, I2C, e-mail, file and scheduler-control permissions, uses the shared OSPy worker lifecycle, closes its I2C handle during shutdown, and reports measurement, filter and diagnostic state through the Diagnostics health interface.
+The plug-in declares SMBus and RS485 Communication as optional dependencies, uses the shared OSPy worker lifecycle, closes its I2C handle during shutdown, and reports source-specific measurement, filter and diagnostic state through the Diagnostics health interface.
 
 ## Hardware
 
-The I2C bus must be enabled and the PCF8583 connected correctly. The original wiring diagram remains available at:
+For the PCF8583 source, the I2C bus must be enabled and the counter connected correctly. The original wiring diagram remains available at:
 
 Addresses `0x50` and `0x51` are alternatives; the plug-in occupies only the address selected in its settings. OSPy can install and run Wind Speed Monitor beside another selectable-address plug-in when each receives a different address. If the preferred address is occupied during activation, the plug-in selects the free alternative. The settings page refuses an address currently used by another enabled plug-in, keeps the preceding settings and displays the conflict in a red status bar without leaving the page.
 
 `/plugins/wind_monitor/static/images/schematics.png`
 
 Visit [Martin Pihrt's blog](https://pihrt.com/clanky/moje-raspberry-pi-plugin-prutokomer) for additional hardware information.
+
+For the RS485 source, connect the ZTS-3000-FSJT to the adapter with the correct A/B polarity and common reference according to the hardware manuals. Configure the shared serial port and baud rate in RS485 Communication before enabling RS485 measurement in Wind Monitor.
+
+Sensor product page: [ZTS-3000-FSJT RS485 wind speed sensor](https://www.laskakit.cz/yoc-fs-cidlo-rychlosti-vetru-anemometr/?variantId=12676)

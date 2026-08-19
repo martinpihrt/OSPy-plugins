@@ -15,9 +15,9 @@ $var page: plugins
         <a href="" class="button refresh">$_(u'Refresh')</a>
     </div>
     $if plugin_options['diagnostic_logging']:
-        <p class="windDiagnosticOn">$_(u'I2C diagnostic logging is enabled. Disable it after the problem has been captured.')</p>
+        <p class="windDiagnosticOn">$_(u'Measurement diagnostic logging is enabled. Disable it after the problem has been captured.')</p>
     $else:
-        <p class="windDiagnosticOff">$_(u'I2C diagnostic logging is disabled. It can be enabled in the plug-in settings.')</p>
+        <p class="windDiagnosticOff">$_(u'Measurement diagnostic logging is disabled. It can be enabled in the plug-in settings.')</p>
     <p>$_(u'The newest bounded diagnostic records are shown below.')</p>
     <pre class="windDiagnosticLog">$'\n'.join(lines)</pre>
 </div>

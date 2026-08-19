@@ -8,6 +8,13 @@ $var page: plugins
 <script>
 jQuery(document).ready(function() {
     jQuery("#cSubmit").click(function() { jQuery("#pluginForm").submit(); });
+    function updateWindSource() {
+        var rs485 = jQuery("#wind-source").val() === "rs485";
+        jQuery(".windSourcePcf").toggle(!rs485);
+        jQuery(".windSourceRs485").toggle(rs485);
+    }
+    jQuery("#wind-source").change(updateWindSource);
+    updateWindSource();
 });
 </script>
 
@@ -28,13 +35,17 @@ jQuery(document).ready(function() {
             <legend>$_(u'Measurement')</legend>
             <table class="optionList windOptions">
                 <tr><td>$_(u'Use wind monitor'):</td><td><label class="switch"><input name="use_wind_monitor" type="checkbox"${" checked" if plugin_options['use_wind_monitor'] else ""}><span class="slider"></span></label></td></tr>
-                <tr><td>I&sup2;C $_(u'address'):</td><td><select name="address"><option value="off"${" selected" if not plugin_options['address'] else ""}>0x50</option><option value="on"${" selected" if plugin_options['address'] else ""}>0x51</option></select></td></tr>
-                <tr><td>$_(u'Number of pulses per rotation'):</td><td><input name="pulses" type="text" inputmode="decimal" value="$plugin_options['pulses']"></td></tr>
-                <tr><td>$_(u'Wind speed per rotation'):</td><td><input name="metperrot" type="text" inputmode="decimal" value="$plugin_options['metperrot']"> m/s</td></tr>
+                <tr><td>$_(u'Signal source'):</td><td><select id="wind-source" name="source"><option value="pcf8583"${" selected" if plugin_options.get('source', 'pcf8583') == 'pcf8583' else ""}>$_(u'PCF8583 pulse counter (I2C)')</option><option value="rs485"${" selected" if plugin_options.get('source', 'pcf8583') == 'rs485' else ""}>$_(u'ZTS-3000-FSJT wind sensor (RS485)')</option></select></td></tr>
+                <tr class="windSourcePcf"><td>I&sup2;C $_(u'address'):</td><td><select name="address"><option value="off"${" selected" if not plugin_options['address'] else ""}>0x50</option><option value="on"${" selected" if plugin_options['address'] else ""}>0x51</option></select></td></tr>
+                <tr class="windSourcePcf"><td>$_(u'Number of pulses per rotation'):</td><td><input name="pulses" type="text" inputmode="decimal" value="$plugin_options['pulses']"></td></tr>
+                <tr class="windSourcePcf"><td>$_(u'Wind speed per rotation'):</td><td><input name="metperrot" type="text" inputmode="decimal" value="$plugin_options['metperrot']"> m/s</td></tr>
+                <tr class="windSourceRs485"><td>$_(u'RS485 device address'):</td><td><input name="rs485_address" type="number" min="1" max="247" value="$plugin_options.get('rs485_address', 1)"></td></tr>
+                <tr class="windSourceRs485"><td>$_(u'RS485 line settings'):</td><td>$_(u'Communication speed and 8N1 framing are configured in the RS485 Communication plug-in.')</td></tr>
                 <tr><td>$_(u'Display in km/h'):</td><td><label class="switch"><input name="use_kmh" type="checkbox"${" checked" if plugin_options['use_kmh'] else ""}><span class="slider"></span></label></td></tr>
                 <tr><td>$_(u'Show in footer'):</td><td><label class="switch"><input name="use_footer" type="checkbox"${" checked" if plugin_options['use_footer'] else ""}><span class="slider"></span></label></td></tr>
             </table>
-            <p class="windHint">$_(u'Decimal values may be entered with either a decimal point or a decimal comma.')</p>
+            <p class="windHint windSourcePcf">$_(u'Decimal values may be entered with either a decimal point or a decimal comma.')</p>
+            <p class="windHint windSourceRs485">$_(u'The RS485 Communication plug-in must be installed, enabled and running only when this source is selected. The ZTS-3000-FSJT factory settings are address 1, 4800 baud and 8N1.')</p>
         </fieldset>
 
         <fieldset>
@@ -43,7 +54,7 @@ jQuery(document).ready(function() {
                 <tr><td>$_(u'Filter implausible measurements'):</td><td><label class="switch"><input name="filter_invalid" type="checkbox"${" checked" if plugin_options['filter_invalid'] else ""}><span class="slider"></span></label></td></tr>
                 <tr><td>$_(u'Maximum accepted wind speed'):</td><td><input name="max_accepted_speed" type="text" inputmode="decimal" value="$plugin_options['max_accepted_speed']"> m/s</td></tr>
                 <tr><td>$_(u'Consecutive measurements for a safety action'):</td><td><input name="action_confirmations" type="number" min="1" max="10" value="$plugin_options['action_confirmations']"></td></tr>
-                <tr><td>$_(u'Enable I2C diagnostic logging'):</td><td><label class="switch"><input name="diagnostic_logging" type="checkbox"${" checked" if plugin_options['diagnostic_logging'] else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>$_(u'Enable measurement diagnostic logging'):</td><td><label class="switch"><input name="diagnostic_logging" type="checkbox"${" checked" if plugin_options['diagnostic_logging'] else ""}><span class="slider"></span></label></td></tr>
             </table>
             <p class="windHint">$_(u'Rejected measurements are excluded from maximum values, graphs, logs and automatic actions. Diagnostic logging is bounded and should normally remain disabled.')</p>
         </fieldset>

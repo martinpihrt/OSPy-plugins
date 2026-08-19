@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import pathlib
 import unittest
 
@@ -42,6 +43,32 @@ class WindMonitorMethodTests(unittest.TestCase):
         self.assertEqual(pulse_rate, 5.0)
         self.assertEqual(speed, 3.75)
 
+    def test_zts_modbus_request_matches_documented_frame(self):
+        self.assertEqual(
+            methods.build_zts_wind_request(1),
+            bytes.fromhex('01 03 00 00 00 02 C4 0B'),
+        )
+
+    def test_zts_modbus_response_decodes_speed_and_wind_force(self):
+        result = methods.parse_zts_wind_response(
+            bytes.fromhex('01 03 04 00 24 00 03 FA 39'), 1)
+        self.assertEqual(result['speed_mps'], 3.6)
+        self.assertEqual(result['wind_force'], 3)
+        self.assertEqual(result['raw_speed'], 36)
+
+    def test_zts_modbus_response_rejects_crc_and_address(self):
+        with self.assertRaisesRegex(ValueError, 'modbus_crc'):
+            methods.parse_zts_wind_response(
+                bytes.fromhex('01 03 04 00 24 00 03 FA 38'), 1)
+        with self.assertRaisesRegex(ValueError, 'modbus_address_mismatch'):
+            methods.parse_zts_wind_response(
+                bytes.fromhex('01 03 04 00 24 00 03 FA 39'), 2)
+
+    def test_zts_modbus_address_range_is_validated(self):
+        for address in (0, 248):
+            with self.assertRaisesRegex(ValueError, 'invalid_modbus_address'):
+                methods.build_zts_wind_request(address)
+
     def test_plausibility_filter_rejects_only_when_enabled(self):
         self.assertEqual(
             methods.validate_measurement(45, True, 40),
@@ -83,6 +110,31 @@ class WindMonitorTemplateTests(unittest.TestCase):
         self.assertIn("(_('Actual Value')", template)
         self.assertIn('windGraphTexts[item.seriesIndex][item.dataIndex]', template)
         self.assertIn('.windGraphTooltip', css)
+
+    def test_settings_offer_source_specific_pcf_and_rs485_fields(self):
+        template = (
+            PLUGIN_ROOT / 'templates' / 'wind_monitor_settings.html'
+        ).read_text(encoding='utf-8')
+        self.assertIn('name="source"', template)
+        self.assertIn('value="pcf8583"', template)
+        self.assertIn('value="rs485"', template)
+        self.assertIn('name="rs485_address"', template)
+        self.assertIn('windSourcePcf', template)
+        self.assertIn('windSourceRs485', template)
+
+    def test_rs485_and_smbus_dependencies_are_optional(self):
+        manifest = json.loads(
+            (PLUGIN_ROOT / 'plugin.json').read_text(encoding='utf-8'))
+        dependencies = {
+            item['id']: item['required']
+            for item in manifest['dependencies']
+        }
+        requirements = {
+            item['module']: item['required']
+            for item in manifest['requirements']
+        }
+        self.assertFalse(dependencies['rs485_communication'])
+        self.assertFalse(requirements['smbus'])
 
 
 if __name__ == '__main__':

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
-# This plugins check wind speed in meter per second. 
-# This plugin read data from I2C counter PCF8583 on I2C address 0x50. Max count PCF8583 is 1 milion pulses per seconds
+# This plug-in measures wind speed from a PCF8583 pulse counter or an RS485 sensor.
 
 import json
 import time as time_
@@ -36,9 +35,11 @@ from ospy.programs import programs
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 from .methods import (
+    build_zts_wind_request,
     calculate_speed,
     calculate_trend,
     decode_bcd_counter,
+    parse_zts_wind_response,
     parse_decimal,
     update_confirmation,
     validate_measurement,
@@ -49,6 +50,8 @@ NAME = 'Wind Speed Monitor'
 MENU =  _('Package: Wind Speed Monitor')
 LINK = 'overview_page'
 MEASUREMENT_SECONDS = 10.0
+SOURCE_PCF8583 = 'pcf8583'
+SOURCE_RS485 = 'rs485'
 DIAGNOSTIC_LOG_NAME = 'diagnostic.log'
 DIAGNOSTIC_LOG_BACKUP_NAME = 'diagnostic.log.1'
 DIAGNOSTIC_LOG_MAX_BYTES = 1024 * 1024
@@ -58,7 +61,9 @@ wind_options = PluginOptions(
     NAME,
     {
         'use_wind_monitor': False,
+        'source': SOURCE_PCF8583,
         'address': False,            # True = 0x51, False = 0x50 for PCF8583
+        'rs485_address': 1,          # ZTS-3000-FSJT factory Modbus address
         'sendeml': True,             # True = send email with error
         'pulses': 2.0,               # 2 pulses per rotation
         'metperrot': 1.492,          # 1.492 meter per hour per rotation
@@ -179,6 +184,27 @@ def clear_diagnostic_log():
                 pass
 
 
+def wind_source(value=None):
+    selected = wind_options.get('source', SOURCE_PCF8583) if value is None else value
+    return SOURCE_RS485 if str(selected).lower() == SOURCE_RS485 else SOURCE_PCF8583
+
+
+def rs485_dependency_error():
+    """Return a user-facing error while the selected RS485 provider is unavailable."""
+    try:
+        from plugins.rs485_communication import get_rs485_status, worker
+    except (ImportError, AttributeError):
+        return _('RS485 Communication plug-in is required for the RS485 signal source.')
+    state = get_rs485_status()
+    if not state.get('enabled', False):
+        return _('Enable the RS485 Communication plug-in before using the RS485 signal source.')
+    if worker is None or not worker.is_alive():
+        return _('The RS485 Communication worker is not running.')
+    if not state.get('serial_available', False):
+        return _('Python serial support required by RS485 Communication is unavailable.')
+    return ''
+
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -200,6 +226,8 @@ class WindSender(Thread):
         self.status['last_raw_pulses'] = 0
         self.status['last_pulse_rate'] = 0.0
         self.status['last_elapsed'] = 0.0
+        self.status['source'] = wind_source()
+        self.status['last_wind_force'] = None
         self.status['last_rejected_reason'] = ''
         self.status['action_confirmation_count'] = 0
         self._trend_samples = deque(maxlen=12)
@@ -250,6 +278,41 @@ class WindSender(Thread):
             except (AttributeError, OSError):
                 pass
 
+    def _read_rs485(self):
+        started = time_.monotonic()
+        if self._stop_event.wait(MEASUREMENT_SECONDS):
+            return None
+        address = wind_options.get('rs485_address', 1)
+        request = build_zts_wind_request(address)
+        try:
+            from plugins.rs485_communication import get_rs485_status, rs485_queue
+            serial_timeout = safe_float(
+                get_rs485_status().get('settings', {}).get('timeout', 1.0), 1.0)
+            response = rs485_queue.transaction(
+                request=request,
+                response_length=9,
+                client=NAME,
+                queue_timeout=2.0,
+                wait_timeout=max(5.0, serial_timeout + 5.0),
+            )
+            parsed = parse_zts_wind_response(response, address)
+            finished = time_.monotonic()
+            return {
+                'source': SOURCE_RS485,
+                'address': int(address),
+                'raw_bytes': [int(value) for value in response],
+                'raw_pulses': 0,
+                'pulse_rate': 0.0,
+                'elapsed': finished - started,
+                'speed_mps': parsed['speed_mps'],
+                'wind_force': parsed['wind_force'],
+                'raw_speed': parsed['raw_speed'],
+            }
+        except Exception as error:
+            diagnostic_event('rs485_error', address=int(address), error=str(error))
+            self._log_problem(_('RS485 wind sensor read failed: {}').format(error))
+            return None
+
     def run(self):
         millis = int(round(time_.time() * 1000))
 
@@ -284,20 +347,30 @@ class WindSender(Thread):
                 normalize_options()
                 if wind_options['use_wind_monitor']:    # if wind plugin is enabled
                     disable_text = True
-                    self._open_bus()
                     measurement = None
-                    if self.bus is not None and set_counter(self.bus):
-                        measurement = counter(self.bus, self._stop_event)
+                    source = wind_source()
+                    self.status['source'] = source
+                    if source == SOURCE_RS485:
+                        self.close_bus()
+                        measurement = self._read_rs485()
+                    else:
+                        self._open_bus()
+                        if self.bus is not None and set_counter(self.bus):
+                            measurement = counter(self.bus, self._stop_event)
 
                     if measurement is not None:
                         raw_pulses = measurement['raw_pulses']
                         elapsed = measurement['elapsed']
-                        pulse_rate, val = calculate_speed(
-                            raw_pulses,
-                            elapsed,
-                            wind_options['pulses'],
-                            wind_options['metperrot'],
-                        )
+                        if source == SOURCE_RS485:
+                            pulse_rate = measurement['pulse_rate']
+                            val = measurement['speed_mps']
+                        else:
+                            pulse_rate, val = calculate_speed(
+                                raw_pulses,
+                                elapsed,
+                                wind_options['pulses'],
+                                wind_options['metperrot'],
+                            )
                         accepted, rejected_reason = validate_measurement(
                             val,
                             wind_options['filter_invalid'],
@@ -306,10 +379,12 @@ class WindSender(Thread):
                         self.status['last_raw_pulses'] = raw_pulses
                         self.status['last_pulse_rate'] = round(pulse_rate, 3)
                         self.status['last_elapsed'] = round(elapsed, 3)
+                        self.status['last_wind_force'] = measurement.get('wind_force')
                         self.status['last_measurement'] = datetime_string()
                         self.status['last_rejected_reason'] = rejected_reason
                         diagnostic_event(
                             'measurement',
+                            source=source,
                             address=measurement['address'],
                             raw_bytes=measurement['raw_bytes'],
                             raw_pulses=raw_pulses,
@@ -318,6 +393,7 @@ class WindSender(Thread):
                             speed_mps=round(val, 6),
                             accepted=accepted,
                             reason=rejected_reason,
+                            wind_force=measurement.get('wind_force'),
                         )
                         if not accepted:
                             action_confirmation_count = 0
@@ -352,9 +428,14 @@ class WindSender(Thread):
 
                         log.info(NAME, datetime_string())
                         if wind_options['use_kmh']:
-                            log.info(NAME, _('Speed') + ': ' + '%.1f' % round(self.status['meter']*3.6, 2) + ' ' + _('km/h') + ', ' + _('Pulses') + ': ' + '%.3f' % pulse_rate + ' ' + _('pulses/sec'))
+                            measurement_text = _('Speed') + ': ' + '%.1f' % round(self.status['meter']*3.6, 2) + ' ' + _('km/h')
                         else:
-                            log.info(NAME, _('Speed') + ': ' + '%.1f' % round(self.status['meter'], 2) + ' ' + _('m/sec') + ', ' + _('Pulses') + ': ' +  '%.3f' % pulse_rate + ' ' + _('pulses/sec'))
+                            measurement_text = _('Speed') + ': ' + '%.1f' % round(self.status['meter'], 2) + ' ' + _('m/sec')
+                        if source == SOURCE_RS485:
+                            measurement_text += ', ' + _('Wind force') + ': ' + str(measurement.get('wind_force'))
+                        else:
+                            measurement_text += ', ' + _('Pulses') + ': ' + '%.3f' % pulse_rate + ' ' + _('pulses/sec')
+                        log.info(NAME, measurement_text)
 
                         if wind_options['use_kmh']:
                             log.info(NAME, '%s' % self.status['log_date_maxspeed'] + ' ' + _('Maximal speed') + ': ' + '%s' % round(self.status['max_meter']*3.6, 2) + ' ' + _('km/h'))  
@@ -513,13 +594,18 @@ wind_sender = None
 def start():
     global wind_sender
     if wind_sender is None:
-        preferred = '0x51' if wind_options['address'] else '0x50'
-        selected = select_plugin_i2c_address('wind_monitor', preferred)
-        if not selected:
-            raise RuntimeError(
-                _('No non-conflicting I2C address is available for Wind Speed Monitor.')
-            )
-        wind_options['address'] = selected == '0x51'
+        if wind_source() == SOURCE_PCF8583:
+            preferred = '0x51' if wind_options['address'] else '0x50'
+            selected = select_plugin_i2c_address('wind_monitor', preferred)
+            if not selected:
+                raise RuntimeError(
+                    _('No non-conflicting I2C address is available for Wind Speed Monitor.')
+                )
+            wind_options['address'] = selected == '0x51'
+        elif wind_options.get('use_wind_monitor', False):
+            dependency_error = rs485_dependency_error()
+            if dependency_error:
+                raise RuntimeError(dependency_error)
         wind_sender = WindSender()
 
 
@@ -587,6 +673,9 @@ def decimal_input(qdict, key, default):
 
 def normalize_options():
     normalized = {
+        'source': wind_source(),
+        'rs485_address': max(1, min(247, safe_int(
+            wind_options.get('rs485_address', 1), 1))),
         'pulses': max(0.001, min(1000000.0, safe_float(wind_options.get('pulses', 2), 2))),
         'metperrot': max(0.001, min(1000000.0, safe_float(wind_options.get('metperrot', 1.492), 1.492))),
         'maxspeed': max(0, min(1000, safe_float(wind_options.get('maxspeed', 20), 20))),
@@ -876,6 +965,8 @@ def _empty_status():
         'last_raw_pulses': 0,
         'last_pulse_rate': 0.0,
         'last_elapsed': 0.0,
+        'source': wind_source(),
+        'last_wind_force': None,
         'last_rejected_reason': '',
         'action_confirmation_count': 0,
     }
@@ -935,19 +1026,38 @@ class settings_page(ProtectedPage):
         )
         qdict = web.input(used_stations=[], used_program=[])
         verify_csrf(qdict)
-        requested_address = '0x51' if qdict.get('address', 'off') == 'on' else '0x50'
-        address_error = plugin_i2c_address_error(
-            'wind_monitor', requested_address
-        )
-        if address_error:
-            return self.plugin_render.wind_monitor_settings(
-                wind_options, address_error
+        requested_source = wind_source(qdict.get('source', SOURCE_PCF8583))
+        if requested_source == SOURCE_PCF8583:
+            requested_address = '0x51' if qdict.get('address', 'off') == 'on' else '0x50'
+            address_error = plugin_i2c_address_error(
+                'wind_monitor', requested_address
             )
+            if address_error:
+                return self.plugin_render.wind_monitor_settings(
+                    wind_options, address_error
+                )
+        try:
+            requested_rs485_address = int(qdict.get(
+                'rs485_address', wind_options.get('rs485_address', 1)))
+        except (TypeError, ValueError):
+            return self.plugin_render.wind_monitor_settings(
+                wind_options, _('The RS485 device address must be a number from 1 to 247.'))
+        if requested_rs485_address < 1 or requested_rs485_address > 247:
+            return self.plugin_render.wind_monitor_settings(
+                wind_options, _('The RS485 device address must be a number from 1 to 247.'))
+        if (requested_source == SOURCE_RS485 and
+                qdict.get('use_wind_monitor', 'off') == 'on'):
+            dependency_error = rs485_dependency_error()
+            if dependency_error:
+                return self.plugin_render.wind_monitor_settings(
+                    wind_options, dependency_error)
         decimal_values = {
             key: decimal_input(qdict, key, wind_options.get(key))
             for key in decimal_fields
         }
         wind_options.web_update(qdict, skipped=decimal_fields)
+        wind_options['source'] = requested_source
+        wind_options['rs485_address'] = requested_rs485_address
         for key, value in decimal_values.items():
             wind_options[key] = value
         normalize_options()
@@ -1004,7 +1114,7 @@ class log_page(ProtectedPage):
 
 
 class diagnostic_page(ProtectedPage):
-    """Display the bounded PCF8583 and I2C diagnostic log."""
+    """Display the bounded source-specific measurement diagnostic log."""
 
     def GET(self):
         qdict = web.input()
@@ -1288,6 +1398,8 @@ class wind_json(ProtectedPage):
             'raw_pulses': status.get('last_raw_pulses', 0),
             'pulse_rate': status.get('last_pulse_rate', 0.0),
             'elapsed': status.get('last_elapsed', 0.0),
+            'source': status.get('source', wind_source()),
+            'wind_force': status.get('last_wind_force'),
             'rejected_reason': status.get('last_rejected_reason', ''),
             'confirmation_count': status.get('action_confirmation_count', 0),
             'confirmation_required': wind_options.get('action_confirmations', 2),
@@ -1312,25 +1424,27 @@ class wind_json(ProtectedPage):
 def health():
     """Return a compact status for the OSPy diagnostics page."""
     worker_alive = wind_sender is not None and wind_sender.is_alive()
+    source = wind_source()
     bus_open = wind_sender is not None and wind_sender.bus is not None
+    dependency_error = rs485_dependency_error() if source == SOURCE_RS485 else ''
     with health_lock:
         state = dict(health_state)
     status_data = wind_sender.status if wind_sender is not None else {
         'meter': 0.0, 'kmeter': 0.0, 'max_meter': 0.0, 'log_date_maxspeed': '',
         'trend': 'unknown', 'last_elapsed': 0.0, 'last_raw_pulses': 0,
-        'last_rejected_reason': '',
+        'last_rejected_reason': '', 'last_wind_force': None,
     }
     details = {
         'worker': _('Running') if worker_alive else _('Stopped'),
         'enabled': bool(wind_options.get('use_wind_monitor', False)),
-        'i2c_address': '0x51' if wind_options.get('address', False) else '0x50',
-        'i2c_bus': _('Open') if bus_open else _('Unavailable'),
+        'source': source,
         'speed_mps': status_data['meter'],
         'maximum_mps': status_data['max_meter'],
         'maximum_at': status_data['log_date_maxspeed'],
         'trend': status_data.get('trend', 'unknown'),
         'measurement_seconds': status_data.get('last_elapsed', 0.0),
         'raw_pulses': status_data.get('last_raw_pulses', 0),
+        'wind_force': status_data.get('last_wind_force'),
         'filter_enabled': bool(wind_options.get('filter_invalid', True)),
         'maximum_accepted_mps': wind_options.get('max_accepted_speed', 40.0),
         'last_rejected_reason': status_data.get('last_rejected_reason', ''),
@@ -1343,6 +1457,18 @@ def health():
         'last_action': state['last_action'],
         'last_error': state['last_error'],
     }
+    if source == SOURCE_RS485:
+        details['rs485_address'] = wind_options.get('rs485_address', 1)
+        try:
+            from plugins.rs485_communication import get_rs485_status
+            rs485_state = get_rs485_status()
+            details['rs485_baudrate'] = rs485_state.get('settings', {}).get('baudrate')
+            details['rs485_port'] = rs485_state.get('active_port') or rs485_state.get('detected_port') or ''
+        except (ImportError, AttributeError):
+            pass
+    else:
+        details['i2c_address'] = '0x51' if wind_options.get('address', False) else '0x50'
+        details['i2c_bus'] = _('Open') if bus_open else _('Unavailable')
     if state['last_error_message']:
         details['error'] = state['last_error_message']
     if not worker_alive:
@@ -1351,7 +1477,10 @@ def health():
     elif not wind_options.get('use_wind_monitor', False):
         status = 'unknown'
         summary = _('Wind monitor is disabled.')
-    elif not bus_open:
+    elif source == SOURCE_RS485 and dependency_error:
+        status = 'error'
+        summary = dependency_error
+    elif source == SOURCE_PCF8583 and not bus_open:
         status = 'error'
         summary = _('Wind counter is not available.')
     elif state['last_error'] and state['last_error'] > state['last_reading']:
@@ -1359,7 +1488,9 @@ def health():
         summary = _('Wind monitor reported an error.')
     else:
         status = 'ok'
-        summary = _('Wind monitor is reading the counter.')
+        summary = (_('Wind monitor is reading the RS485 sensor.')
+                   if source == SOURCE_RS485 else
+                   _('Wind monitor is reading the counter.'))
     return {'status': status, 'summary': summary, 'details': details}
 
 
@@ -1396,6 +1527,13 @@ def mobile_cards(from_time=None, to_time=None, max_points=400):
     factor = 3.6 if use_kmh else 1.0
     unit = _('km/h') if use_kmh else _('m/sec')
     series, history = _mobile_series(from_time, to_time, max_points)
+    source_metric = (
+        {'id': 'wind_force', 'label': _('Wind force'),
+         'value': current.get('last_wind_force'), 'unit': ''}
+        if wind_source() == SOURCE_RS485 else
+        {'id': 'pulses', 'label': _('Pulses'),
+         'value': current.get('last_raw_pulses', 0), 'unit': ''}
+    )
     return [{
         'id': 'wind',
         'title': _('Wind speed'),
@@ -1407,9 +1545,7 @@ def mobile_cards(from_time=None, to_time=None, max_points=400):
             {'id': 'trend', 'label': _('Trend'),
              'value': current.get('trend', 'unknown'),
              'unit': ''},
-            {'id': 'pulses', 'label': _('Pulses'),
-             'value': current.get('last_raw_pulses', 0),
-             'unit': ''},
+            source_metric,
         ],
         'series': series,
         'history': history,
