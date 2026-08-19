@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 19 2026
+--------------
+(Martin Pihrt) - RS485 Communication v1.0.1<br/>
+Added a central RS485 service plug-in for the Waveshare industrial CH343G USB-to-RS485 adapter. It owns one configurable serial interface, serializes dependent plug-in traffic through a bounded FIFO worker, supports synchronous, asynchronous and atomic multi-step operations, automatically detects the adapter, exposes protected status and health diagnostics, validates manual device paths and communication parameters, and safely tests the adapter without transmitting arbitrary bus data. Added CSRF-protected OSPy-themed settings, responsive local product images and adapter documentation, bounded frame/read/delay handling, the required pyserial dependency, and automated security, queue, manifest, template and validation tests.
+
 August 17 2026
 --------------
 (Martin Pihrt) - System Update v1.2.6<br/>

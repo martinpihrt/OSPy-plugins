@@ -110,6 +110,7 @@ Available plugins:
 * Database Connector
 * OSPy Backup
 * MQTT Home Assistant
+* RS485 Communication
 * Shelly Cloud Integration
 * Current Loop Tanks Monitor
 * Network Ping Monitor
