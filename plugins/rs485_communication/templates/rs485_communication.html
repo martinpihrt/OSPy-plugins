@@ -3,6 +3,8 @@ $def with(plugin_options, ports, state, events)
 $var title: $_('RS485 Communication')
 $var page: plugins
 
+<link href="/plugins/rs485_communication/static/rs485_communication.css?v=1.0.1" rel="stylesheet" type="text/css">
+
 <style>
 .rs485-status-title {
     font-size: 1.05em;
@@ -67,15 +69,6 @@ jQuery(document).ready(function() {
     jQuery('#cSubmit').click(function() { setAction('save'); });
     jQuery('#scanButton').click(function() { setAction('scan'); });
     jQuery('#testButton').click(function() { setAction('test'); });
-    jQuery('#enabledToggle').click(function() {
-        var input = jQuery('#enabledInput');
-        var enabled = input.val() === 'on';
-        input.val(enabled ? 'off' : 'on');
-        jQuery(this)
-            .toggleClass('on', !enabled)
-            .toggleClass('off', enabled)
-            .attr('aria-pressed', enabled ? 'false' : 'true');
-    });
     window.setInterval(updateStatus, 2000);
 });
 </script>
@@ -122,10 +115,10 @@ jQuery(document).ready(function() {
             <tr>
                 <td style='text-transform: none;'>$_('Enable RS485 worker'):</td>
                 <td title=$:{json.dumps(_('When enabled, this plug-in owns the serial port and provides synchronized RS485 access to other OSPy plug-ins.'), ensure_ascii=False)}>
-                    <input id="enabledInput" name="enabled" type="hidden" value="${'on' if plugin_options['enabled'] else 'off'}">
-                    <button id="enabledToggle" type="button" class="button toggle narrow ${'on' if plugin_options['enabled'] else 'off'}" aria-pressed="${'true' if plugin_options['enabled'] else 'false'}">
-                        <span class="toggleleft">$_('Enabled')</span><span class="togglesep">&nbsp;</span><span class="toggleright">$_('Disabled')</span>
-                    </button>
+                    <label class="switch">
+                        <input name="enabled" type="checkbox"${" checked" if plugin_options['enabled'] else ""}>
+                        <span class="slider"></span>
+                    </label>
                 </td>
             </tr>
             <tr>

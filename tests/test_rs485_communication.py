@@ -85,13 +85,17 @@ class RS485CommunicationTests(unittest.TestCase):
         self.assertIn('4800', template)
         self.assertIn('9600', template)
 
-    def test_settings_reuse_ospy_theme_controls(self):
+    def test_settings_use_standard_plugin_switch_without_text_labels(self):
         template = (PLUGIN / 'templates' / 'rs485_communication.html').read_text(encoding='utf-8')
-        self.assertIn('class="button toggle narrow', template)
+        css = (PLUGIN / 'static' / 'rs485_communication.css').read_text(encoding='utf-8')
+        self.assertIn('class="switch"', template)
+        self.assertIn('name="enabled" type="checkbox"', template)
+        self.assertIn('class="slider"', template)
+        self.assertNotIn('id="enabledToggle"', template)
+        self.assertNotIn('class="toggleleft"', template)
+        self.assertIn('.switch input:checked + .slider', css)
         self.assertIn('class="alert ', template)
         self.assertIn('class="optionList"', template)
-        self.assertNotIn('class="switch"', template)
-        self.assertNotIn('.slider', template)
 
     def test_frame_and_read_sizes_are_bounded(self):
         symbols = load_selected_symbols({'_as_bytes', '_bounded_length'})
