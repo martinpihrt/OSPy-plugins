@@ -11,7 +11,11 @@ $var page: plugins
     <p>$_('Check Use Control'): $_('If checked enabled plugin is enabled.')</p>
     <p>$_('Check Enable logging') $_('If checked enabled logging is enabled.')</p>
     <p>$_('Show in footer') $_('Show data from plugin in footer on home page.')</p>
-    <p>$_('Number of blinds') $_('Blinds number (eg: 1,2,3...)')</p> 
+    <p>$_('Blinds are added, edited and deleted individually. Existing count-based settings are migrated to the Custom REST profile without changing their commands, status URL or labels. The overview can be saved as cards or a compact list.')</p>
+    <p>$_('Shelly Gen1 uses the roller API and Shelly Gen2 or newer uses the Cover RPC API. Four configurable tilt positions are available in addition to open, stop and closed. The actual position reported by Shelly is the authoritative state.')</p>
+    <p>$_('Temperature shading runs the selected lowering programs only inside the configured time window, above the selected sensor limit and after every required Wind Monitor sample is below the safe wind limit. Strong-wind protection runs the selected raising programs at any time after its confirmation count is reached.')</p>
+    <p>$_('Selected programs run sequentially because OSPy has one Run-Now slot. Strong-wind protection has priority and removes pending lowering actions before it starts the raising programs.')</p>
+    <p>$_('The automation remembers its requested state and reads the actual Shelly position, so a continuous wind or temperature condition does not repeatedly switch the relays. Selected programs started from OSPy or an ESP32 Multi Contact are also recognized as an expected raising or lowering action.')</p>
     <p>$_('Label for blind') $_('Naming blinds for better identification.')</p>
     <p>$_('Command for open blind (eg: http://192.168.88.213/roller/0?go=open).')</p>
     <p>$_('Command for stop blind (eg: http://192.168.88.213/roller/0?go=open).')</p>

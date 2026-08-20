@@ -11,6 +11,9 @@ Added independent technical fault e-mail notifications for PCF8583/I2C setup and
 (Martin Pihrt) - Shelly Cloud Integration v1.0.5<br/>
 Replaced sensor-count based configuration with individual Add new Shelly, Edit and confirmed Delete actions. Existing installations retain their device order, enabled state, labels, Shelly IDs, types, generation, reading source, local addresses and add-on labels through a backward-compatible migration that adds stable internal device identifiers. Added a saved List or Cards display choice, responsive external styling, isolated global and per-device forms, immediate cache invalidation for changed or removed device IDs, bounded input normalization, updated help and README documentation, and regression tests.
 
+(Martin Pihrt) - Venetian Blind v1.1.0<br/>
+Replaced blind-count configuration with individual Add, Edit and confirmed Delete actions plus saved list or card display. Added backward-compatible migration of all existing labels and REST URLs, Shelly Gen1 roller and Gen2+ Cover RPC profiles, four configurable tilt positions, authoritative position classification and responsive manual controls. Added temperature-sensor shading inside a configurable time window after a required safe-wind sample window, continuous confirmed strong-wind raising through multiple sequentially queued programs, strong-wind priority over pending lowering actions, active-program observation for ESP32 or manual starts, and a state latch that prevents repeated relay commands while a condition remains active. Updated permissions, optional Wind Monitor dependency, help, README and regression coverage.
+
 August 19 2026
 --------------
 (Martin Pihrt) - RS485 Communication v1.0.1<br/>

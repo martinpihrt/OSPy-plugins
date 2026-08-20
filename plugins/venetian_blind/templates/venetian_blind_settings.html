@@ -1,0 +1,41 @@
+$def with(plugin_options, msg, blinds, editor, is_new, sensor_items, program_items)
+$var title: $_('Venetian blind settings')
+$var page: plugins
+<link href="/plugins/venetian_blind/static/venetian_blind.css?v=1.1.0" rel="stylesheet" type="text/css">
+<script>jQuery(function(){jQuery('.blindDelete').on('submit',function(e){if(!confirm($:{json.dumps(_('Delete this blind configuration?'),ensure_ascii=False)}))e.preventDefault();});function profile(){var custom=jQuery('#profile').val()==='custom';jQuery('.customUrls').toggle(custom);jQuery('.shellyHost').toggle(!custom);}jQuery('#profile').on('change',profile);profile();});</script>
+<div id="plugin" class="blindPanel"><div class="title">$_('Venetian blind settings')</div><div class="blindTop"><a href=$plugins.plugin_url('venetian_blind.help_page') class="button upload">$_('Help')</a><a href=$plugins.plugin_url('venetian_blind.home_page') class="button danger">$_('Back')</a></div>
+$if editor is not None:
+    <section class="blindSection"><h2>${_('Add blind') if is_new else _('Edit blind')}</h2><form action=$plugins.plugin_url('venetian_blind.setup_page') method="post">$:csrf_input()<input type="hidden" name="action" value="save_blind"><input type="hidden" name="blind_uid" value="$editor['uid']"><table class="optionList blindForm">
+    <tr><td>$_('Enabled'):</td><td><input name="enabled" type="checkbox"${' checked' if editor['enabled'] else ''}></td></tr><tr><td>$_('Label for blind'):</td><td><input name="label" value="$editor['label']"></td></tr><tr><td>$_('Communication profile'):</td><td><select id="profile" name="profile"><option value="gen1"${' selected' if editor['profile']=='gen1' else ''}>$_('Shelly Gen1')</option><option value="gen2"${' selected' if editor['profile']=='gen2' else ''}>$_('Shelly Gen2 and newer')</option><option value="custom"${' selected' if editor['profile']=='custom' else ''}>$_('Custom REST URLs')</option></select></td></tr><tr class="shellyHost"><td>$_('IP address or host name'):</td><td><input name="host" value="$editor['host']" placeholder="192.168.1.20"></td></tr>
+    $for key, label in [('open_url',_('Command for open blind')),('stop_url',_('Command for stop blind')),('close_url',_('Command for close blind')),('status_url',_('Command for read status'))]:
+        <tr class="customUrls"><td>$label:</td><td><input name="$key" value="$editor[key]"></td></tr>
+    <tr><td>$_('Label for position 0%'):</td><td><input name="closed_label" value="$editor['closed_label']"></td></tr><tr><td>$_('Label for position 100%'):</td><td><input name="open_label" value="$editor['open_label']"></td></tr>
+    $for i in range(4):
+        <tr><td>${_('Tilt position')} ${i+1}:</td><td><input name="tilt${i+1}_label" value="$editor['tilt_labels'][i]" class="short"><input name="tilt${i+1}_position" type="number" min="1" max="99" value="$editor['tilt_positions'][i]" class="tiny"> % <input class="customUrls" name="tilt${i+1}_url" value="$editor['tilt_urls'][i]" placeholder="$_('Custom command URL')"></td></tr>
+    </table><button class="submit" type="submit">${_('Add blind') if is_new else _('Save changes')}</button><a href=$plugins.plugin_url('venetian_blind.setup_page') class="button danger">$_('Cancel')</a></form>
+    $if not is_new:
+        <div class="blindCommands"><strong>$_('Test saved commands'):</strong>
+        $for target, label in [('open', _('Open')), ('stop', _('Stop')), ('closed', _('Close')), ('tilt1', editor['tilt_labels'][0] or _('Tilt 1')), ('tilt2', editor['tilt_labels'][1] or _('Tilt 2')), ('tilt3', editor['tilt_labels'][2] or _('Tilt 3')), ('tilt4', editor['tilt_labels'][3] or _('Tilt 4'))]:
+            <form action=$plugins.plugin_url('venetian_blind.setup_page') method="post">$:csrf_input()<input type="hidden" name="action" value="test_command"><input type="hidden" name="blind_uid" value="$editor['uid']"><input type="hidden" name="target" value="$target"><button type="submit">$label</button></form>
+        </div>
+    </section>
+$else:
+    <form action=$plugins.plugin_url('venetian_blind.setup_page') method="post">$:csrf_input()<input type="hidden" name="action" value="save_global"><section class="blindSection"><h2>$_('General settings')</h2><label><input name="use_control" type="checkbox"${' checked' if plugin_options['use_control'] else ''}> $_('Use Control')</label><label><input name="use_log" type="checkbox"${' checked' if plugin_options['use_log'] else ''}> $_('Enable logging')</label><label><input name="use_footer" type="checkbox"${' checked' if plugin_options['use_footer'] else ''}> $_('Show in footer')</label><label>$_('Display as'): <select name="view_mode"><option value="cards"${' selected' if plugin_options['view_mode']=='cards' else ''}>$_('Cards')</option><option value="list"${' selected' if plugin_options['view_mode']=='list' else ''}>$_('List')</option></select></label></section>
+    <section class="blindSection"><h2>$_('Temperature and wind automation')</h2><label><input name="automation_enabled" type="checkbox"${' checked' if plugin_options['automation_enabled'] else ''}> $_('Enable automation')</label>
+    <label>$_('Temperature sensor'): <select name="temperature_sensor"><option value="-1">$_('None')</option>
+    $for sensor in sensor_items:
+        <option value="$sensor.index"${' selected' if plugin_options['temperature_sensor']==sensor.index else ''}>$sensor.name</option>
+    </select></label>
+    <label>$_('Temperature limit'): <input name="temperature_limit" value="$plugin_options['temperature_limit']"> °C</label><label>$_('Temperature hysteresis'): <input name="temperature_hysteresis" value="$plugin_options['temperature_hysteresis']"> °C</label><label>$_('Maximum safe wind speed'): <input name="wind_limit" value="$plugin_options['wind_limit']"> m/s</label><label>$_('Required safe wind measurements'): <input name="safe_wind_samples" type="number" min="1" max="500" value="$plugin_options['safe_wind_samples']"></label><label>$_('Strong wind confirmation measurements'): <input name="strong_wind_samples" type="number" min="1" max="20" value="$plugin_options['strong_wind_samples']"></label><label>$_('Shading time from'): <input name="automation_start" type="time" value="$plugin_options['automation_start']"></label><label>$_('Shading time to'): <input name="automation_end" type="time" value="$plugin_options['automation_end']"></label>
+    <label>$_('Programs for lowering blinds'): <select name="close_programs" multiple size="6">
+    $for program in program_items:
+        <option value="$program.index"${' selected' if program.index in plugin_options['close_programs'] else ''}>$program.name</option>
+    </select></label><label>$_('Programs for raising blinds in strong wind'): <select name="open_programs" multiple size="6">
+    $for program in program_items:
+        <option value="$program.index"${' selected' if program.index in plugin_options['open_programs'] else ''}>$program.name</option>
+    </select></label><p>$_('Strong wind protection operates continuously. Temperature shading operates only in the configured time window after all required wind measurements are below the limit. A latched target prevents repeated relay commands while the condition remains active.')</p></section><button class="submit" type="submit">$_('Save settings')</button></form>
+    <section class="blindSection"><div class="blindManager"><h2>$_('Blinds')</h2><a href="$plugins.plugin_url('venetian_blind.setup_page')?action=add" class="button submit">$_('Add blind')</a></div><div class="${'blindList' if plugin_options['view_mode']=='list' else 'blindCards'}">
+    $for blind in blinds:
+        <article class="blindCard"><h3>${blind['label'] or _('Unnamed blind')}</h3><p>${_('Shelly Gen1') if blind['profile']=='gen1' else (_('Shelly Gen2 and newer') if blind['profile']=='gen2' else _('Custom REST URLs'))}</p><div class="blindTop"><a href="$plugins.plugin_url('venetian_blind.setup_page')?action=edit&amp;blind=$blind['uid']" class="button upload">$_('Edit')</a><form class="blindDelete" action=$plugins.plugin_url('venetian_blind.setup_page') method="post">$:csrf_input()<input type="hidden" name="action" value="delete_blind"><input type="hidden" name="blind_uid" value="$blind['uid']"><button class="danger" type="submit">$_('Delete')</button></form></div></article>
+    </div></section>
+</div>

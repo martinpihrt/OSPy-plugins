@@ -1,0 +1,21 @@
+$def with(plugin_options, blinds)
+$var title: $_('Venetian blind')
+$var page: plugins
+<link href="/plugins/venetian_blind/static/venetian_blind.css?v=1.1.0" rel="stylesheet" type="text/css">
+<script>
+function refreshBlindStatus(){jQuery.getJSON('/plugins/venetian_blind/blind_status_json',function(data){jQuery.each(data,function(index,value){jQuery('#blindStatus'+index).text(value);});});}
+jQuery(function(){refreshBlindStatus();setInterval(refreshBlindStatus,2000);});
+</script>
+<div id="plugin" class="blindPanel"><div class="title">$_('Venetian blind')</div><div class="blindTop"><a href=$plugins.plugin_url('venetian_blind.help_page') class="button upload">$_('Help')</a><a href=$plugins.plugin_url('venetian_blind.setup_page') class="button danger">$_('Settings')</a>
+$if plugin_options['use_log']:
+    <a href=$plugins.plugin_url('venetian_blind.log_page') class="button submit">$_('Log')</a>
+</div><div class="${'blindList' if plugin_options['view_mode']=='list' else 'blindCards'}">
+$for index, blind in enumerate(blinds):
+    $if blind['enabled']:
+        <article class="blindCard"><h3>${index+1}) ${blind['label'] or _('Unnamed blind')}</h3><div class="blindCommands">
+            $for target, label in [('open', _('Open')), ('stop', _('Stop')), ('closed', _('Close'))]:
+                <form action=$plugins.plugin_url('venetian_blind.home_page') method="post">$:csrf_input()<input type="hidden" name="blind_uid" value="$blind['uid']"><input type="hidden" name="target" value="$target"><button type="submit">$label</button></form>
+            $for tilt_index in range(4):
+                <form action=$plugins.plugin_url('venetian_blind.home_page') method="post">$:csrf_input()<input type="hidden" name="blind_uid" value="$blind['uid']"><input type="hidden" name="target" value="tilt${tilt_index+1}"><button type="submit">${blind['tilt_labels'][tilt_index] or _('Tilt {}').format(tilt_index+1)}</button></form>
+        </div><p>$_('Blind state'): <strong id="blindStatus$index">$_('unloaded')</strong></p></article>
+</div></div>
