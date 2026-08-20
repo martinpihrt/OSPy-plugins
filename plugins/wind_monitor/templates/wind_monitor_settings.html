@@ -3,7 +3,7 @@ $def with(plugin_options, validation_error=None)
 $var title: $_(u'Wind Speed Monitor settings')
 $var page: plugins
 
-<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.1.0" rel="stylesheet" type="text/css">
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.2.1" rel="stylesheet" type="text/css">
 
 <script>
 jQuery(document).ready(function() {
@@ -97,9 +97,18 @@ jQuery(document).ready(function() {
                     </select></td>
                 </tr>
                 <tr><td>$_(u'Send e-mail when stations are stopped'):</td><td><label class="switch"><input name="sendeml" type="checkbox"${" checked" if plugin_options['sendeml'] else ""}><span class="slider"></span></label></td></tr>
+            </table>
+        </fieldset>
+
+        <fieldset>
+            <legend>$_(u'E-mail')</legend>
+            <table class="optionList windOptions">
+                <tr><td>$_(u'Send measurement errors by e-mail'):</td><td><label class="switch"><input name="send_error_email" type="checkbox"${" checked" if plugin_options.get('send_error_email', False) else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>$_(u'Error reminder interval'):</td><td><input name="error_email_reminder_hours" type="number" min="1" max="168" value="$plugin_options.get('error_email_reminder_hours', 6)"> h</td></tr>
                 <tr><td>$_(u'E-mail subject'):</td><td><input name="emlsubject" type="text" value="$plugin_options['emlsubject']"></td></tr>
                 <tr><td>$_(u'E-mail plug-in'):</td><td><select name="eplug"><option value="0"${" selected" if plugin_options['eplug'] == 0 else ""}>$_(u'E-mail notifications V1')</option><option value="1"${" selected" if plugin_options['eplug'] == 1 else ""}>$_(u'E-mail notifications V2 SSL')</option></select></td></tr>
             </table>
+            <p class="windHint">$_(u'The first failed or rejected measurement sends one error e-mail. Repeated I2C, RS485, dependency, protocol and plausibility errors are suppressed until the reminder interval expires. One accepted measurement closes the fault, so a later independent failure can send a new notification. A valid zero wind speed is not an error.')</p>
         </fieldset>
 
         <fieldset>

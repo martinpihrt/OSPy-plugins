@@ -108,6 +108,14 @@ def update_confirmation(current_count, exceeded, required_count):
     return count, count >= required
 
 
+def fault_email_due(fault_active, last_sent, now, reminder_hours):
+    """Return whether a fault transition or bounded reminder needs an e-mail."""
+    current = float(now)
+    previous = float(last_sent or 0)
+    interval = max(1.0, float(reminder_hours)) * 3600.0
+    return not fault_active or previous <= 0 or current - previous >= interval
+
+
 def calculate_trend(samples, minimum_span=40.0):
     """Return up/down/steady/unknown from a roughly one-minute sample window."""
     if len(samples) < 4:

@@ -51,6 +51,14 @@ Station stopping and its e-mail notification require the configured number of co
 
 The default filter limit is 40 m/s (144 km/h), and the default station/e-mail confirmation count is two measurements.
 
+## Error e-mail notifications
+
+The E-mail section in settings contains the shared message subject and e-mail plug-in selection. The existing station-protection switch controls the hazard message sent after confirmed excessive wind, while Send measurement errors by e-mail independently controls technical fault notifications.
+
+When technical notifications are enabled, the plug-in sends an e-mail for a failed I2C bus open, PCF8583 setup or counter read, a missing or stopped RS485 Communication dependency, RS485 queue or serial failure, timeout, invalid address, function, response length or CRC, rejected implausible measurement, and an unexpected measurement-worker error. A valid accepted measurement, including zero wind speed, is not an error.
+
+The first failure starts one fault incident and sends one message immediately. Repeated failures belonging to the active incident do not send another message until the configurable reminder interval expires, which defaults to six hours and can be set from one to 168 hours. The first accepted measurement closes the incident, allowing a later independent failure to send a new immediate notification. Delivery failures are written to the OSPy log and Diagnostics state but cannot themselves be reported by e-mail when the selected e-mail plug-in or mail connection is unavailable.
+
 ## Measurement diagnostic log
 
 Diagnostic logging is intended for temporary troubleshooting. It writes bounded JSON lines to the OSPy plug-in data directory and rotates the file at approximately 1 MB. The diagnostic page can display, download, refresh, and delete the log.
@@ -73,7 +81,7 @@ Disable diagnostic logging after the problem has been captured.
 
 Accepted measurements can be written to the local graph files or through the optional Database Connector plug-in. A configured maximum can be reset manually or after an interval. Selected running stations can be stopped after the stop threshold is confirmed, and an optional e-mail can be sent. A separate program action uses its own threshold, repetition count, interval, and suppression period.
 
-The plug-in declares SMBus and RS485 Communication as optional dependencies, uses the shared OSPy worker lifecycle, closes its I2C handle during shutdown, and reports source-specific measurement, filter and diagnostic state through the Diagnostics health interface.
+The plug-in declares SMBus and RS485 Communication as optional dependencies, uses the shared OSPy worker lifecycle, closes its I2C handle during shutdown, and reports source-specific measurement, active fault, bounded error-notification, filter and diagnostic state through the Diagnostics health interface.
 
 ## Hardware
 

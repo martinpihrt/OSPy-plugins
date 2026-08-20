@@ -82,6 +82,13 @@ class WindMonitorMethodTests(unittest.TestCase):
         self.assertEqual((count, triggered), (2, True))
         self.assertEqual(methods.update_confirmation(count, False, 2), (0, False))
 
+    def test_fault_email_is_sent_once_then_only_after_reminder_interval(self):
+        self.assertTrue(methods.fault_email_due(False, 0, 100, 6))
+        self.assertFalse(methods.fault_email_due(True, 100, 100 + 5 * 3600, 6))
+        self.assertTrue(methods.fault_email_due(True, 100, 100 + 6 * 3600, 6))
+        self.assertFalse(methods.fault_email_due(True, 100, 100 + 3599, 0))
+        self.assertTrue(methods.fault_email_due(True, 100, 100 + 3600, 0))
+
     def test_trend_detects_rising_falling_and_steady_samples(self):
         rising = [(0, 1.0), (20, 1.1), (40, 2.0), (60, 2.2)]
         falling = [(0, 3.0), (20, 2.8), (40, 1.0), (60, 0.8)]
@@ -121,6 +128,36 @@ class WindMonitorTemplateTests(unittest.TestCase):
         self.assertIn('name="rs485_address"', template)
         self.assertIn('windSourcePcf', template)
         self.assertIn('windSourceRs485', template)
+
+    def test_settings_have_separate_bounded_error_email_controls(self):
+        template = (
+            PLUGIN_ROOT / 'templates' / 'wind_monitor_settings.html'
+        ).read_text(encoding='utf-8')
+        email_section = template.index("<legend>$_(u'E-mail')</legend>")
+        self.assertIn('name="send_error_email"', template[email_section:])
+        self.assertIn('name="error_email_reminder_hours"', template[email_section:])
+        self.assertIn('min="1" max="168"', template[email_section:])
+        self.assertIn('name="emlsubject"', template[email_section:])
+        self.assertIn('name="eplug"', template[email_section:])
+        self.assertNotIn('name="emlsubject"', template[:email_section])
+        self.assertNotIn('name="eplug"', template[:email_section])
+
+    def test_worker_reports_both_sensor_sources_and_suppresses_fault_spam(self):
+        source = (PLUGIN_ROOT / '__init__.py').read_text(encoding='utf-8')
+        self.assertIn('fault_email_due(', source)
+        self.assertIn("_('PCF8583 setup over I2C failed: {}')", source)
+        self.assertIn("_('Reading the PCF8583 counter over I2C failed: {}')", source)
+        self.assertIn("_('RS485 wind sensor read failed: {}')", source)
+        self.assertIn('self._clear_fault()', source)
+
+    def test_manifest_and_template_assets_use_current_version(self):
+        manifest = json.loads(
+            (PLUGIN_ROOT / 'plugin.json').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['version'], '1.2.1')
+        for template_path in (PLUGIN_ROOT / 'templates').glob('*.html'):
+            template = template_path.read_text(encoding='utf-8')
+            if 'wind_monitor.css?' in template:
+                self.assertIn('wind_monitor.css?v=1.2.1', template)
 
     def test_rs485_and_smbus_dependencies_are_optional(self):
         manifest = json.loads(
