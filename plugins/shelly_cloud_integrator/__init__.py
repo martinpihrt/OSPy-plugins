@@ -1461,6 +1461,34 @@ def _device_type_label(sensor_type):
     return labels.get(sensor_type, _('Unknown device'))
 
 
+DEVICE_PREVIEWS = {
+    '0': {'default': {'image': 'HT.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-plus-h-t'}},
+    '1': {
+        '0': {'image': 'plugSgen1.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-plug-s'},
+        '1': {'image': 'plugSgen2.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-plus-plug-s-1'},
+    },
+    '2': {'default': {'image': 'pro2pm.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-pro-2pm-v1'}},
+    '3': {'default': {'image': 'mini.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-1pm-mini-gen3'}},
+    '4': {'default': {'image': '25.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-2-5'}},
+    '5': {'default': {'image': 'pro4pm.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-pro-4pm-v2'}},
+    '6': {'default': {'image': '1Mini.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-1-mini-gen3'}},
+    '7': {'default': {'image': '2pmaddon.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-plus-add-on'}},
+    '8': {'default': {'image': 'addon.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-plus-add-on'}},
+    '9': {'default': {'image': 'HaT.webp', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-h-t'}},
+    '10': {'default': {'image': 'pro3em.png', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-3em-63-gen3'}},
+    '11': {'default': {'image': 'wallDisplay.png', 'url': 'https://kb.shelly.cloud/knowledge-base/shelly-wall-display'}},
+}
+
+
+def _device_preview(sensor_type, gen_type):
+    choices = DEVICE_PREVIEWS.get(str(sensor_type), {})
+    preview = choices.get(str(gen_type), choices.get('default', {}))
+    result = dict(preview)
+    if result.get('image'):
+        result['image'] = '/plugins/shelly_cloud_integrator/static/images/' + result['image']
+    return result
+
+
 def _persist_devices(devices):
     """Persist legacy parallel lists in an order safe for the running worker."""
     serialized = serialize_devices(devices)
@@ -1490,6 +1518,7 @@ def _device_for_template(device):
     result['type_label'] = _device_type_label(result['sensor_type'])
     result['source_label'] = _('Shelly cloud API') if result['reading_type'] == 1 else _('Locally via IP')
     result['state_label'] = _('Enabled') if result['use_sensor'] else _('Disabled')
+    result['preview'] = _device_preview(result['sensor_type'], result['gen_type'])
     return result
 
 
@@ -1759,6 +1788,7 @@ class sensors_page(ProtectedPage):
                 [_device_for_template(device) for device in devices],
                 editor,
                 is_new,
+                DEVICE_PREVIEWS,
             )
 
         except Exception:

@@ -2,6 +2,9 @@
 
 August 20 2026
 --------------
+(Martin Pihrt) - Shelly Cloud Integration v1.0.6<br/>
+Restored local device previews in the add and edit form and added them to both the compact list and responsive card views. Changing the selected device type or generation refreshes the editor preview immediately, and selecting any preview opens the matching current official Shelly Knowledge Base page in a new tab. Reused the complete local image set already stored in the plug-in, corrected Shelly 2.5, Gen1 and Gen2 Plug S, 1 Mini and Add-on mappings, and avoided external image requests from the settings page.
+
 (Martin Pihrt) - Energy Meter v1.0.5<br/>
 Added a calendar-day selector to the overview, displayed historically calculated cost and feed-in income for every summary period, and applied the selected day to solar calculations. Fixed equal tariff start and end times to cover the complete selected day, replaced end-of-interval tariff assignment with time-weighted pricing across tariff boundaries, rejected non-finite price values, and exposed the stored import and feed-in prices in the history table. Local JSON, optional SQL and CSV now preserve the tariff, currency, applied unit prices, cost and income for every interval; the history uses the stored currency and overview monetary totals no longer combine records from different currencies. Clarified that calendar days use the OSPy server's local time from 00:00 inclusive to the next 00:00 exclusive without resetting Shelly cumulative counters. The delete-history confirmation, in-app help and README now state explicitly that overview totals are derived from retained interval history and are therefore cleared with it, while the preserved counter baseline only prevents a false spike in the next sample.
 

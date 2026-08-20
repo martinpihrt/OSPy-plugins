@@ -1,12 +1,13 @@
-$def with(plugin_options, msg, devices, editor=None, is_new=False)
+$def with(plugin_options, msg, devices, editor=None, is_new=False, device_previews={})
 
 $var title: $_('Shelly Cloud Integration - Setup')
 $var page: plugins
 
-<link href="/plugins/shelly_cloud_integrator/static/shelly_cloud_integration.css?v=1.0.5" rel="stylesheet" type="text/css">
+<link href="/plugins/shelly_cloud_integrator/static/shelly_cloud_integration.css?v=1.0.6" rel="stylesheet" type="text/css">
 
 <script>
     jQuery(document).ready(function() {
+        var devicePreviews = $:{json.dumps(device_previews, ensure_ascii=False)};
         var messages = {
             saved: $:{json.dumps(_('Settings saved.'), ensure_ascii=False)},
             view_saved: $:{json.dumps(_('Device view saved.'), ensure_ascii=False)},
@@ -25,6 +26,7 @@ $var page: plugins
         });
         function updateDeviceFields() {
             var sensorType = parseInt(jQuery("#sensor_type").val(), 10);
+            var generation = parseInt(jQuery("#gen_type").val(), 10);
             var cloudOnly = sensorType === 0 || sensorType === 9;
             var sourceSelect = jQuery("#reading_type");
             if (cloudOnly) {
@@ -34,8 +36,13 @@ $var page: plugins
             jQuery("#cloudOnlyRow").toggle(cloudOnly);
             jQuery("#localIpRow").toggle(!cloudOnly && sourceSelect.val() === "0");
             jQuery("#addonRows").toggle(sensorType === 7 || sensorType === 8);
+            var choices = devicePreviews[String(sensorType)] || {};
+            var preview = choices[String(generation)] || choices.default || {};
+            var image = preview.image ? "/plugins/shelly_cloud_integrator/static/images/" + preview.image : "";
+            jQuery("#devicePreviewImage").attr("src", image).attr("alt", jQuery("#sensor_type option:selected").text());
+            jQuery("#devicePreviewLink").attr("href", preview.url || "#").toggle(Boolean(image));
         }
-        jQuery("#sensor_type, #reading_type").on("change", updateDeviceFields);
+        jQuery("#sensor_type, #gen_type, #reading_type").on("change", updateDeviceFields);
         updateDeviceFields();
     });
 </script>
@@ -69,7 +76,8 @@ $var page: plugins
                         <option value="10"${' selected' if editor['sensor_type'] == 10 else ''}>$_('Shelly Pro 3EM / Shelly 3EM-63T Gen3')</option>
                         <option value="11"${' selected' if editor['sensor_type'] == 11 else ''}>$_('Shelly Wall Display')</option>
                     </select></td></tr>
-                    <tr><td>$_('Shelly Gen'):</td><td><select name="gen_type"><option value="0"${' selected' if editor['gen_type'] == 0 else ''}>$_('Generation 1')</option><option value="1"${' selected' if editor['gen_type'] == 1 else ''}>$_('Generation 2+')</option></select></td></tr>
+                    <tr><td>$_('Device preview'):</td><td><a id="devicePreviewLink" class="shellyEditorPreview" href="#" target="_blank" rel="noopener noreferrer"><img id="devicePreviewImage" src="" alt=""><span>$_('Open the official Shelly device documentation')</span></a></td></tr>
+                    <tr><td>$_('Shelly Gen'):</td><td><select name="gen_type" id="gen_type"><option value="0"${' selected' if editor['gen_type'] == 0 else ''}>$_('Generation 1')</option><option value="1"${' selected' if editor['gen_type'] == 1 else ''}>$_('Generation 2+')</option></select></td></tr>
                     <tr id="sourceRow"><td>$_('Reading data from'):</td><td><select name="reading_type" id="reading_type"><option value="0"${' selected' if editor['reading_type'] == 0 else ''}>$_('Locally via IP')</option><option value="1"${' selected' if editor['reading_type'] == 1 else ''}>$_('Shelly cloud API')</option></select></td></tr>
                     <tr id="cloudOnlyRow"><td>$_('Reading data from'):</td><td>$_('Only cloud')</td></tr>
                     <tr id="localIpRow"><td>$_('Local IP'):</td><td><input name="sensor_ip" type="text" value="$editor['sensor_ip']" maxlength="255" placeholder="192.168.1.100"></td></tr>
@@ -102,15 +110,16 @@ $var page: plugins
             $if not devices:
                 <div class="shellyEmptyState"><h3>$_('No Shelly devices configured')</h3><p>$_('Use Add new Shelly to configure the first device.')</p></div>
             $elif plugin_options['device_view'] == 'list':
-                <div class="shellyListWrap"><table class="shellyDeviceList"><thead><tr><th>$_('Name')</th><th>$_('Shelly ID')</th><th>$_('Type')</th><th>$_('Source')</th><th>$_('Status')</th><th>$_('Actions')</th></tr></thead><tbody>
+                <div class="shellyListWrap"><table class="shellyDeviceList"><thead><tr><th>$_('Preview')</th><th>$_('Name')</th><th>$_('Shelly ID')</th><th>$_('Type')</th><th>$_('Source')</th><th>$_('Status')</th><th>$_('Actions')</th></tr></thead><tbody>
                 $for device in devices:
-                    <tr><td>${device['sensor_label'] or _('Unnamed Shelly device')}</td><td>$device['sensor_id']</td><td>$device['type_label']</td><td>$device['source_label']</td><td><span class="shellyState ${'enabled' if device['use_sensor'] else 'disabled'}">$device['state_label']</span></td><td class="shellyActions"><a href="$plugins.plugin_url('shelly_cloud_integrator.sensors_page')?action=edit&amp;device=$device['device_uid']" class="button upload">$_('Edit')</a><form class="shellyDeleteForm" action=$plugins.plugin_url('shelly_cloud_integrator.sensors_page') method="post">$:csrf_input()<input type="hidden" name="action" value="delete_device"><input type="hidden" name="device_uid" value="$device['device_uid']"><button type="submit" class="danger">$_('Delete')</button></form></td></tr>
+                    <tr><td><a href="$device['preview']['url']" target="_blank" rel="noopener noreferrer"><img class="shellyListPreview" src="$device['preview']['image']" alt="$device['type_label']" loading="lazy"></a></td><td>${device['sensor_label'] or _('Unnamed Shelly device')}</td><td>$device['sensor_id']</td><td>$device['type_label']</td><td>$device['source_label']</td><td><span class="shellyState ${'enabled' if device['use_sensor'] else 'disabled'}">$device['state_label']</span></td><td class="shellyActions"><a href="$plugins.plugin_url('shelly_cloud_integrator.sensors_page')?action=edit&amp;device=$device['device_uid']" class="button upload">$_('Edit')</a><form class="shellyDeleteForm" action=$plugins.plugin_url('shelly_cloud_integrator.sensors_page') method="post">$:csrf_input()<input type="hidden" name="action" value="delete_device"><input type="hidden" name="device_uid" value="$device['device_uid']"><button type="submit" class="danger">$_('Delete')</button></form></td></tr>
                 </tbody></table></div>
             $else:
                 <div class="shellyDeviceCards">
                 $for device in devices:
                     <article class="shellyDeviceCard">
                         <div class="shellyCardHeader"><h3>${device['sensor_label'] or _('Unnamed Shelly device')}</h3><span class="shellyState ${'enabled' if device['use_sensor'] else 'disabled'}">$device['state_label']</span></div>
+                        <a class="shellyCardPreview" href="$device['preview']['url']" target="_blank" rel="noopener noreferrer"><img src="$device['preview']['image']" alt="$device['type_label']" loading="lazy"></a>
                         <dl>
                             <dt>$_('Shelly ID')</dt><dd>${device['sensor_id'] or '—'}</dd>
                             <dt>$_('Type')</dt><dd>$device['type_label']</dd>

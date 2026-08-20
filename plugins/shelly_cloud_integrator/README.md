@@ -21,6 +21,8 @@ The settings page manages devices individually instead of asking for a sensor co
 
 The device overview can be displayed as a compact list or responsive cards. The selected view is saved in the plug-in settings and does not alter measurements, cached data or integrations that identify devices by Shelly ID.
 
+The add and edit form, compact list and responsive cards show a local preview image for every supported device type. Selecting a different device type or generation updates the editor preview immediately, and selecting an image opens the matching official Shelly Knowledge Base page in a new tab. Preview files are stored locally with the plug-in, so the settings page does not depend on loading images from an external server.
+
 * Server uri:  
   The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.
 
