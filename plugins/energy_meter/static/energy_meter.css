@@ -57,6 +57,20 @@ input:checked + .slider:before {
     margin: 7px 0 12px;
 }
 
+.energyDayPicker {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.energyDayPicker input {
+    box-sizing: border-box;
+    min-height: 34px;
+    padding: 4px 7px;
+}
+
 .energyPeriodGrid,
 .energyMeterGrid {
     display: grid;
@@ -153,6 +167,10 @@ input:checked + .slider:before {
 .energyHistory {
     min-width: 980px;
     width: 100%;
+}
+
+.energyHistory {
+    min-width: 1180px;
 }
 
 .energyConfig input:not([type="checkbox"]),

@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 20 2026
+--------------
+(Martin Pihrt) - Energy Meter v1.0.5<br/>
+Added a calendar-day selector to the overview, displayed historically calculated cost and feed-in income for every summary period, and applied the selected day to solar calculations. Fixed equal tariff start and end times to cover the complete selected day, replaced end-of-interval tariff assignment with time-weighted pricing across tariff boundaries, rejected non-finite price values, and exposed the stored import and feed-in prices in the history table. Local JSON, optional SQL and CSV now preserve the tariff, currency, applied unit prices, cost and income for every interval; the history uses the stored currency and overview monetary totals no longer combine records from different currencies. Clarified that calendar days use the OSPy server's local time from 00:00 inclusive to the next 00:00 exclusive without resetting Shelly cumulative counters. The delete-history confirmation, in-app help and README now state explicitly that overview totals are derived from retained interval history and are therefore cleared with it, while the preserved counter baseline only prevents a false spike in the next sample.
+
 August 19 2026
 --------------
 (Martin Pihrt) - RS485 Communication v1.0.1<br/>
