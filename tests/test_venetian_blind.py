@@ -60,6 +60,14 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
         self.assertIn("$_('Edit')", template)
         self.assertIn("$_('Delete')", template)
 
+    def test_all_visible_checkboxes_use_sliding_switches(self):
+        template = (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8')
+        css = (PLUGIN / 'static' / 'venetian_blind.css').read_text(encoding='utf-8')
+        self.assertEqual(template.count('type="checkbox"'), 5)
+        self.assertEqual(template.count('class="blindSwitch"'), 5)
+        self.assertEqual(template.count('class="blindSlider"'), 5)
+        self.assertIn('.blindSwitch input:checked+.blindSlider', css)
+
     def test_overview_has_four_tilt_controls_and_csrf_post_commands(self):
         template = (PLUGIN / 'templates' / 'venetian_blind_overview.html').read_text(encoding='utf-8')
         self.assertIn('range(4)', template)
@@ -82,7 +90,8 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
 
     def test_manifest_version_dependency_and_permissions_are_current(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.1.0')
+        self.assertEqual(manifest['version'], '1.1.1')
+        self.assertIn('venetian_blind.css?v=1.1.1', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
         self.assertIn('system', manifest['permissions'])
         self.assertIn('wind_monitor', [item['id'] for item in manifest['dependencies']])
 

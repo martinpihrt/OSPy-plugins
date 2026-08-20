@@ -2,6 +2,9 @@
 
 August 20 2026
 --------------
+(Martin Pihrt) - Venetian Blind v1.1.1<br/>
+Replaced every visible settings checkbox with the same accessible red and green sliding switch used by other OSPy plug-ins. The change covers individual blind enablement, plug-in control, logging, footer output and temperature and wind automation while preserving all existing form names, saved values and backward compatibility.
+
 (Martin Pihrt) - Shelly Cloud Integration v1.0.6<br/>
 Restored local device previews in the add and edit form and added them to both the compact list and responsive card views. Changing the selected device type or generation refreshes the editor preview immediately, and selecting any preview opens the matching current official Shelly Knowledge Base page in a new tab. Reused the complete local image set already stored in the plug-in, corrected Shelly 2.5, Gen1 and Gen2 Plug S, 1 Mini and Add-on mappings, and avoided external image requests from the settings page.
 

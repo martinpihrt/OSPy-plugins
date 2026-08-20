@@ -12,6 +12,8 @@ Plugin setup
 
 Blinds are managed individually through Add blind, Edit and confirmed Delete actions, with a saved card or list view. Existing count-based settings migrate automatically to the Custom REST profile without changing labels, open, stop, close or status URLs, or the labels for positions 0 and 100 percent.
 
+Boolean settings use the same accessible red and green sliding switches as other OSPy plug-ins without changing the saved option names or their compatibility with existing configurations.
+
 Each blind can use Shelly Gen1, Shelly Gen2 and newer, or Custom REST URLs. Gen1 uses `/status`, `/roller/0?go=open|close|stop` and `to_pos`; Gen2+ uses `Cover.GetStatus`, `Cover.Open`, `Cover.Close`, `Cover.Stop` and `Cover.GoToPosition`. Four independently named tilt positions have configurable percentages and optional custom URLs. The reported Shelly position is classified as closed, tilt 1–4, open or an intermediate position.
 
 Temperature shading selects one OSPy temperature sensor, a threshold with hysteresis, a permitted time window and multiple programs that lower the blinds. Lowering is allowed only after the configured number of consecutive Wind Monitor readings is below the safe limit. Strong-wind protection is active all day, uses its own confirmation count and can run multiple raising programs. Selected programs run sequentially because OSPy has one Run-Now slot, and strong-wind protection cancels pending lowering actions before it raises the blinds. A state latch and the position read from Shelly prevent repeated commands while a condition remains active.

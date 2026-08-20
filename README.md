@@ -54,7 +54,7 @@ Energy Meter v1.0.5 monitors multiple Shelly Pro 3EM and Shelly 3EM-63T Gen3 met
 
 Shelly Cloud Integration v1.0.6 manages devices individually through Add, Edit and confirmed Delete actions while retaining the backward-compatible configuration consumed by other plug-ins. Existing device order and settings migrate with stable internal identifiers, administrators can save either a compact list or responsive card overview, and local device previews link to the matching official Shelly Knowledge Base page without affecting measurements or cached device IDs.
 
-Venetian Blind v1.1.0 manages blinds individually in list or card form, preserves existing custom REST configurations, supports Shelly Gen1 and Gen2+ cover APIs and provides open, closed and four configurable tilt states. Temperature shading requires a selected sensor, time window and a complete safe-wind sample window, while confirmed strong-wind raising remains active continuously; multiple OSPy programs, externally started program observation and an authoritative Shelly position latch prevent repeated relay switching.
+Venetian Blind v1.1.1 manages blinds individually in list or card form, preserves existing custom REST configurations, supports Shelly Gen1 and Gen2+ cover APIs and provides open, closed and four configurable tilt states. Temperature shading requires a selected sensor, time window and a complete safe-wind sample window, while confirmed strong-wind raising remains active continuously; multiple OSPy programs, externally started program observation and an authoritative Shelly position latch prevent repeated relay switching. All Boolean settings use the same accessible sliding switches as other OSPy plug-ins.
 
 Available plugins:
 * Usage Statistics  
