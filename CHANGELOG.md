@@ -8,6 +8,9 @@ Added a calendar-day selector to the overview, displayed historically calculated
 (Martin Pihrt) - Wind Speed Monitor v1.2.1<br/>
 Added independent technical fault e-mail notifications for PCF8583/I2C setup and read failures, RS485 dependency, queue, serial and protocol failures, rejected implausible measurements and unexpected worker errors. Moved the shared e-mail subject and provider selection into a dedicated E-mail settings section, added a separate error-notification switch and a configurable one-to-168-hour reminder interval, and exposed active incident details through plug-in health diagnostics. The first failure sends immediately, repeated failures are bounded to the reminder interval, and one accepted measurement closes the incident; temporary I2C lock contention and valid zero wind remain non-error states. Updated the in-app help, README, cache version and regression tests.
 
+(Martin Pihrt) - Shelly Cloud Integration v1.0.5<br/>
+Replaced sensor-count based configuration with individual Add new Shelly, Edit and confirmed Delete actions. Existing installations retain their device order, enabled state, labels, Shelly IDs, types, generation, reading source, local addresses and add-on labels through a backward-compatible migration that adds stable internal device identifiers. Added a saved List or Cards display choice, responsive external styling, isolated global and per-device forms, immediate cache invalidation for changed or removed device IDs, bounded input normalization, updated help and README documentation, and regression tests.
+
 August 19 2026
 --------------
 (Martin Pihrt) - RS485 Communication v1.0.1<br/>

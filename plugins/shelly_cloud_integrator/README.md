@@ -3,10 +3,7 @@ Shelly Cloud Integration Readme
 
 Tested in Python 3+
 
-The plug-in includes a `plugin.json` manifest and reports its worker, Shelly
-server, configured, loaded and online devices, retry state, latest request and
-errors through the OSPy system health interface. The cloud authorization key is
-not included in diagnostics or the settings JSON endpoint.
+The plug-in includes a `plugin.json` manifest and reports its worker, Shelly server, configured, loaded and online devices, retry state, latest request and errors through the OSPy system health interface. The cloud authorization key is not included in diagnostics or the settings JSON endpoint.
 
 How to get the latest device status via Shelly Cloud API and curl. Path: https://server_uri/device/status.
 Supported methods: GET and POST.
@@ -20,13 +17,17 @@ The server URL where all the devices and client accounts are located. This can b
 Plugin setup
 -----------
 
+The settings page manages devices individually instead of asking for a sensor count. Add new Shelly opens a new-device editor, Edit changes only the selected configuration and Delete removes only that configuration after confirmation without deleting the physical Shelly device or its cloud account. Existing parallel-list settings remain the persisted compatibility format, and migration adds stable internal identifiers while preserving device order, enabled state, labels, Shelly IDs, types, generation, reading source, local addresses and add-on labels.
+
+The device overview can be displayed as a compact list or responsive cards. The selected view is saved in the plug-in settings and does not alter measurements, cached data or integrations that identify devices by Shelly ID.
+
 * Server uri:  
   The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.
 
 * Auth key: 
   This can be obtained from Shelly > User Settings > Cloud Authorization Key.
 
-* Request intervalg: 
+* Request interval:
   Shelly cloud data download recovery interval.
 
 * Use sensor: 

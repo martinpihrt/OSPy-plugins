@@ -52,6 +52,8 @@ Water Meter v1.1.1 uses uninterrupted one-second measurements and separates its 
 
 Energy Meter v1.0.5 monitors multiple Shelly Pro 3EM and Shelly 3EM-63T Gen3 meters over direct local RPC by IP address or DNS name, or optionally through Shelly Cloud Integration. Grid, Solar production, Load and Auxiliary roles keep import, export and generation distinct; phase and total history supports restart-safe counters, meter replacement, time tariffs, costs and feed-in income in every overview period, a selectable retained calendar day, photovoltaic self-consumption and savings, append-only local history or optional SQL, CSV, separate energy and power graphs, explicitly documented history deletion, Home, diagnostics and mobile API cards. See [the Energy Meter README](plugins/energy_meter/README.md) for configuration and formulas.
 
+Shelly Cloud Integration v1.0.5 manages devices individually through Add, Edit and confirmed Delete actions while retaining the backward-compatible configuration consumed by other plug-ins. Existing device order and settings migrate with stable internal identifiers, and administrators can save either a compact list or responsive card overview without affecting measurements or cached device IDs.
+
 Available plugins:
 * Usage Statistics  
 * LCD Display  

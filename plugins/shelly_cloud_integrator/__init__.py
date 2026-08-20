@@ -7,6 +7,7 @@ import web                                                       # Framework web
 import json                                                      # For working with json file
 import traceback                                                 # For Errors listing via callback where the event occurred
 import time                                                      # For working with time, see the def _sleep function
+import uuid
 from threading import Thread, Lock                              # For use a separate thread in which the plugin is running
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
@@ -23,6 +24,7 @@ from json.decoder import JSONDecodeError
 import datetime
 
 from .three_phase_meter import parse_three_phase_meter
+from .device_config import default_device, delete_device, normalize_devices, serialize_devices, upsert_device
 
 
 ################################################################################
@@ -39,10 +41,10 @@ plugin_options = PluginOptions(
         'auth_key': '',                                          # Account verification key
         'server_uri': 'shelly-59-eu.shelly.cloud',               # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key
         'request_interval': 5,                                   # The refresh interval for request from Shelly server
-        'use_sensor': [False, False],                            # Enable or disable shelly in OSPy system
-        'sensor_label': ['label', 'label'],                      # The server URL where all the devices and client accounts are located. This can be obtained from Shelly > User Settings > Cloud Authorization Key.
-        'sensor_id': ['', ''],                                   # Shelly ID. This can be obtained from Shelly > User Settings > Cloud Authorization Key
-        'sensor_type': [0, 1],                                   
+        'use_sensor': [],                                        # Enable or disable Shelly in OSPy system
+        'sensor_label': [],                                      # User-facing Shelly device name
+        'sensor_id': [],                                         # Shelly device ID
+        'sensor_type': [],
          # 0=Shelly Plus HT, 1=Shelly Plus Plug S,
          # 2=Shelly Pro 2PM, 3=Shelly 1PM Mini,
          # 4=Shelly 2.5, 5=Shelly Pro 4PM,
@@ -50,15 +52,17 @@ plugin_options = PluginOptions(
          # 8=Shelly 1PM Addon, 9= Shelly H&T
          # 10=Shelly Pro 3EM
          # 11=Shelly Wall Display 
-        'gen_type': [0, 1],                                      # 0=Gen1, 1=Gen2
-        'number_sensors': 2,                                     # default 2 sensors for example
-        'addons_labels_1': [_('A')],                             # label for addons temperature:100 (DS18B20 nr1)
-        'addons_labels_2': [_('B')],                             # label for addons temperature:101
-        'addons_labels_3': [_('C')],                             # label for addons temperature:101
-        'addons_labels_4': [_('D')],                             # label for addons temperature:101
-        'addons_labels_5': [_('E')],                             # label for addons temperature:101 (DS18B20 nr5)
-        'reading_type': [1]*20,                                  # 0=Locally via IP, 1=Shelly cloud API
-        'sensor_ip': ['']*20,
+        'gen_type': [],                                          # 0=Gen1, 1=Gen2
+        'number_sensors': 0,
+        'device_uid': [],                                        # Stable UI identity independent of list position
+        'device_view': 'cards',                                  # cards or list
+        'addons_labels_1': [],                                   # label for addons temperature:100 (DS18B20 nr1)
+        'addons_labels_2': [],                                   # label for addons temperature:101
+        'addons_labels_3': [],                                   # label for addons temperature:102
+        'addons_labels_4': [],                                   # label for addons temperature:103
+        'addons_labels_5': [],                                   # label for addons temperature:104 (DS18B20 nr5)
+        'reading_type': [],                                      # 0=Locally via IP, 1=Shelly cloud API
+        'sensor_ip': [],
     }
 )
 runtime = get_runtime()
@@ -1435,9 +1439,105 @@ sender = None
 ################################################################################
 # Helper functions:                                                            #
 ################################################################################
+def _new_device_uid():
+    return uuid.uuid4().hex
+
+
+def _device_type_label(sensor_type):
+    labels = {
+        0: _('Shelly Plus HT'),
+        1: _('Shelly Plus Plug S'),
+        2: _('Shelly Pro 2PM'),
+        3: _('Shelly 1PM Mini'),
+        4: _('Shelly 2.5'),
+        5: _('Shelly Pro 4PM'),
+        6: _('Shelly 1 Mini'),
+        7: _('Shelly 2PM Addon'),
+        8: _('Shelly 1PM Addon'),
+        9: _('Shelly HT'),
+        10: _('Shelly Pro 3EM / Shelly 3EM-63T Gen3'),
+        11: _('Shelly Wall Display'),
+    }
+    return labels.get(sensor_type, _('Unknown device'))
+
+
+def _persist_devices(devices):
+    """Persist legacy parallel lists in an order safe for the running worker."""
+    serialized = serialize_devices(devices)
+    old_count = int(plugin_options.get('number_sensors', 0) or 0)
+    new_count = serialized['number_sensors']
+    if new_count < old_count:
+        plugin_options['number_sensors'] = new_count
+    for field, values in serialized.items():
+        if field != 'number_sensors' and plugin_options.get(field) != values:
+            plugin_options[field] = values
+    if new_count >= old_count and old_count != new_count:
+        plugin_options['number_sensors'] = new_count
+
+
+def configured_devices():
+    devices = normalize_devices(dict(plugin_options), _new_device_uid)
+    _persist_devices(devices)
+    view = str(plugin_options.get('device_view', 'cards')).lower()
+    if view not in ('cards', 'list'):
+        view = 'cards'
+        plugin_options['device_view'] = view
+    return devices
+
+
+def _device_for_template(device):
+    result = dict(device)
+    result['type_label'] = _device_type_label(result['sensor_type'])
+    result['source_label'] = _('Shelly cloud API') if result['reading_type'] == 1 else _('Locally via IP')
+    result['state_label'] = _('Enabled') if result['use_sensor'] else _('Disabled')
+    return result
+
+
+def _form_integer(qdict, key, default, minimum, maximum):
+    try:
+        value = int(qdict.get(key, default))
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, min(maximum, value))
+
+
+def _device_from_form(qdict, uid):
+    sensor_type = _form_integer(qdict, 'sensor_type', 0, 0, 11)
+    reading_type = _form_integer(qdict, 'reading_type', 1, 0, 1)
+    if sensor_type in (0, 9):
+        reading_type = 1
+    return {
+        'device_uid': uid,
+        'use_sensor': qdict.get('use_sensor') == 'on',
+        'sensor_label': str(qdict.get('sensor_label', '')).strip(),
+        'sensor_id': str(qdict.get('sensor_id', '')).strip(),
+        'sensor_type': sensor_type,
+        'gen_type': _form_integer(qdict, 'gen_type', 1, 0, 1),
+        'addons_labels_1': str(qdict.get('addons_labels_1', '')).strip(),
+        'addons_labels_2': str(qdict.get('addons_labels_2', '')).strip(),
+        'addons_labels_3': str(qdict.get('addons_labels_3', '')).strip(),
+        'addons_labels_4': str(qdict.get('addons_labels_4', '')).strip(),
+        'addons_labels_5': str(qdict.get('addons_labels_5', '')).strip(),
+        'reading_type': reading_type,
+        'sensor_ip': str(qdict.get('sensor_ip', '')).strip(),
+    }
+
+
+def _invalidate_cached_devices(device_ids):
+    if sender is None:
+        return
+    ids = {device_id for device_id in device_ids if device_id}
+    if ids:
+        sender.devices[:] = [device for device in sender.devices if device.get('id') not in ids]
+        for device_id in ids:
+            sender._next_request_time.pop(device_id, None)
+            sender._request_failures.pop(device_id, None)
+
+
 def start():                                                      # This function starts the plugin core
     global sender
     if sender is None:
+        configured_devices()
         sender = Sender()
 
 
@@ -1632,14 +1732,36 @@ class status_page(ProtectedPage):
 
 
 class sensors_page(ProtectedPage):
-    """Load an html page for entering adjustments."""
+    """Manage global options and individual Shelly devices."""
 
     def GET(self):
         try:
-            msg = 'none'
-            return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
+            qdict = web.input()
+            devices = configured_devices()
+            action = str(qdict.get('action', ''))
+            editor = None
+            is_new = False
+            if action == 'add':
+                editor = default_device(_new_device_uid())
+                is_new = True
+            elif action == 'edit':
+                requested_uid = str(qdict.get('device', ''))
+                editor = next(
+                    (dict(device) for device in devices if device['device_uid'] == requested_uid),
+                    None,
+                )
+            msg = str(qdict.get('msg', 'none'))
+            if msg not in ('none', 'saved', 'view_saved', 'added', 'updated', 'deleted', 'not_found'):
+                msg = 'none'
+            return self.plugin_render.shelly_cloud_integration_devices(
+                plugin_options,
+                msg,
+                [_device_for_template(device) for device in devices],
+                editor,
+                is_new,
+            )
 
-        except:
+        except Exception:
             log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('shelly_cloud -> sensors_page GET')
@@ -1649,120 +1771,56 @@ class sensors_page(ProtectedPage):
         try:
             qdict = web.input()
             verify_csrf(qdict)
+            action = str(qdict.get('action', 'save_global'))
+            devices = configured_devices()
+            message = 'saved'
 
-            if 'number_sensors' in qdict:
-                plugin_options.__setitem__('number_sensors', int(qdict['number_sensors']))
-            if 'request_interval' in qdict:
-                plugin_options.__setitem__('request_interval', int(qdict['request_interval']))
-            if 'auth_key' in qdict:
-                plugin_options.__setitem__('auth_key', qdict['auth_key'])
-            if 'server_uri' in qdict:
-                plugin_options.__setitem__('server_uri', qdict['server_uri'])
-
-            if 'use_footer' in qdict:
-                if qdict['use_footer']=='on':
-                    plugin_options.__setitem__('use_footer', True)
+            if action == 'save_global':
+                plugin_options['request_interval'] = _form_integer(
+                    qdict, 'request_interval', 5, 5, 86400)
+                plugin_options['auth_key'] = str(qdict.get('auth_key', '')).strip()
+                plugin_options['server_uri'] = str(qdict.get('server_uri', '')).strip()
+                plugin_options['use_footer'] = qdict.get('use_footer') == 'on'
+            elif action == 'set_view':
+                requested_view = str(qdict.get('device_view', 'cards')).lower()
+                plugin_options['device_view'] = requested_view if requested_view in ('cards', 'list') else 'cards'
+                message = 'view_saved'
+            elif action == 'save_device':
+                requested_uid = str(qdict.get('device_uid', '')).strip()
+                existing = next(
+                    (device for device in devices if device['device_uid'] == requested_uid),
+                    None,
+                )
+                uid = existing['device_uid'] if existing is not None else _new_device_uid()
+                old_id = existing.get('sensor_id', '') if existing is not None else ''
+                device = _device_from_form(qdict, uid)
+                devices, created = upsert_device(devices, device)
+                _persist_devices(devices)
+                _invalidate_cached_devices((old_id, device['sensor_id']))
+                message = 'added' if created else 'updated'
+            elif action == 'delete_device':
+                requested_uid = str(qdict.get('device_uid', '')).strip()
+                existing = next(
+                    (device for device in devices if device['device_uid'] == requested_uid),
+                    None,
+                )
+                devices, deleted = delete_device(devices, requested_uid)
+                if deleted:
+                    _persist_devices(devices)
+                    _invalidate_cached_devices((existing.get('sensor_id', '') if existing else '',))
+                    message = 'deleted'
                 else:
-                    plugin_options.__setitem__('use_footer', False)
-
-
-            commands = {
-                'sensor_type': [],
-                'gen_type': [],
-                'use_sensor': [],
-                'sensor_label': [],
-                'sensor_id': [],
-                'addons_labels_1': [],
-                'addons_labels_2': [],
-                'addons_labels_3': [],
-                'addons_labels_4': [],
-                'addons_labels_5': [],
-                'reading_type': [],
-                'sensor_ip': [],
-                }
-
-            for i in range(0, plugin_options['number_sensors']):
-                if 'sensor_type'+str(i) in qdict:
-                    commands['sensor_type'].append(int(qdict['sensor_type'+str(i)]))
-                else:
-                    commands['sensor_type'].append(int(0))
-
-                if 'gen_type'+str(i) in qdict:
-                    commands['gen_type'].append(int(qdict['gen_type'+str(i)]))
-                else:
-                    commands['gen_type'].append(int(0))
-
-                if 'use_sensor'+str(i) in qdict:
-                    if qdict['use_sensor'+str(i)]=='on':
-                        commands['use_sensor'].append(True)
-                else:
-                    commands['use_sensor'].append(False)
-
-                if 'sensor_label'+str(i) in qdict:
-                    commands['sensor_label'].append(qdict['sensor_label'+str(i)])
-                else:
-                    commands['sensor_label'].append('')
-
-                if 'sensor_id'+str(i) in qdict:
-                    commands['sensor_id'].append(qdict['sensor_id'+str(i)])
-                else:
-                    commands['sensor_id'].append('')
-
-                if 'addons_labels_1'+str(i) in qdict:
-                    commands['addons_labels_1'].append(qdict['addons_labels_1'+str(i)])
-                else:
-                    commands['addons_labels_1'].append('')
-
-                if 'addons_labels_2'+str(i) in qdict:
-                    commands['addons_labels_2'].append(qdict['addons_labels_2'+str(i)])
-                else:
-                    commands['addons_labels_2'].append('')
-
-                if 'addons_labels_3'+str(i) in qdict:
-                    commands['addons_labels_3'].append(qdict['addons_labels_3'+str(i)])
-                else:
-                    commands['addons_labels_3'].append('')
-
-                if 'addons_labels_4'+str(i) in qdict:
-                    commands['addons_labels_4'].append(qdict['addons_labels_4'+str(i)])
-                else:
-                    commands['addons_labels_4'].append('')
-
-                if 'addons_labels_5'+str(i) in qdict:
-                    commands['addons_labels_5'].append(qdict['addons_labels_5'+str(i)])
-                else:
-                    commands['addons_labels_5'].append('')
-
-                if 'reading_type'+str(i) in qdict:
-                    commands['reading_type'].append(int(qdict['reading_type'+str(i)]))
-                else:
-                    commands['reading_type'].append(int(1))
-
-                if 'sensor_ip'+str(i) in qdict:
-                    commands['sensor_ip'].append(qdict['sensor_ip'+str(i)])
-                else:
-                    commands['sensor_ip'].append('')                    
-
-            plugin_options.__setitem__('sensor_type', commands['sensor_type'])
-            plugin_options.__setitem__('gen_type', commands['gen_type'])
-            plugin_options.__setitem__('use_sensor', commands['use_sensor'])
-            plugin_options.__setitem__('sensor_label', commands['sensor_label'])
-            plugin_options.__setitem__('sensor_id', commands['sensor_id'])
-            plugin_options.__setitem__('addons_labels_1', commands['addons_labels_1'])
-            plugin_options.__setitem__('addons_labels_2', commands['addons_labels_2'])
-            plugin_options.__setitem__('addons_labels_3', commands['addons_labels_3'])
-            plugin_options.__setitem__('addons_labels_4', commands['addons_labels_4'])
-            plugin_options.__setitem__('addons_labels_5', commands['addons_labels_5'])
-            plugin_options.__setitem__('reading_type', commands['reading_type'])
-            plugin_options.__setitem__('sensor_ip', commands['sensor_ip'])
+                    message = 'not_found'
+            else:
+                raise ValueError('unknown_settings_action')
 
             if sender is not None:
                 sender.update()
+            raise web.seeother(plugin_url(sensors_page) + '?msg=' + message, True)
 
-            msg = 'saved'
-            return self.plugin_render.shelly_cloud_integration_sensors(plugin_options, msg)
-
-        except:
+        except web.SeeOther:
+            raise
+        except Exception:
             log.error(NAME, _('Shelly Cloud Integration plugin') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('shelly_cloud -> sensors_page POST')
