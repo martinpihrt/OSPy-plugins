@@ -2,7 +2,11 @@ import importlib.util
 import ast
 import json
 import pathlib
+import sys
+import types
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -12,6 +16,24 @@ SPEC = importlib.util.spec_from_file_location(
 )
 ENGINE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ENGINE)
+
+SENSOR_MODULES = {
+    'ospy': types.ModuleType('ospy'),
+    'ospy.options': types.ModuleType('ospy.options'),
+    'ospy.provider_contracts': types.ModuleType('ospy.provider_contracts'),
+    'ospy.sensors': types.ModuleType('ospy.sensors'),
+}
+SENSOR_MODULES['ospy.options'].options = SimpleNamespace(temp_unit='C')
+SENSOR_MODULES['ospy.provider_contracts'].utc_timestamp = lambda value=None: (
+    '2026-08-21T12:00:00Z')
+SENSOR_MODULES['ospy.sensors'].sensors = SimpleNamespace(get=lambda: [])
+with mock.patch.dict(sys.modules, SENSOR_MODULES):
+    SENSOR_SPEC = importlib.util.spec_from_file_location(
+        'automation_rules_sensor_provider',
+        ROOT / 'plugins' / 'automation_rules' / 'sensor_provider.py',
+    )
+    SENSOR_PROVIDER = importlib.util.module_from_spec(SENSOR_SPEC)
+    SENSOR_SPEC.loader.exec_module(SENSOR_PROVIDER)
 
 
 def snapshot(fill=20, pressure=True):
@@ -114,13 +136,48 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.0.3')
+        self.assertEqual(manifest['version'], '1.0.4')
         self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
         self.assertNotIn('stations.activate', source)
         self.assertNotIn('stations.deactivate', source)
         self.assertIn("'rule_name': rule['name']", source)
+
+    def test_builtin_ultrasonic_sensor_exposes_derived_tank_values(self):
+        sensor = SimpleNamespace(
+            index=1, enabled=True, manufacturer=0, name='Barrel level',
+            response=True, sens_type=6, multi_type=8,
+            last_read_value=[''] * 8 + [22], last_response=100,
+            distance_top=10, distance_bottom=95, diameter=100,
+            check_liters=True,
+        )
+        with mock.patch.object(
+                SENSOR_PROVIDER.sensors, 'get', return_value=[sensor]):
+            snapshot_data = SENSOR_PROVIDER.provider_snapshot()
+        resource = snapshot_data['resources'][0]
+        values = {item['id']: item for item in resource['values']}
+        self.assertEqual(resource['id'], 'sensor-1')
+        self.assertEqual(resource['name'], 'Barrel level')
+        self.assertEqual(values['sensor_distance_cm']['value'], 22.0)
+        self.assertEqual(values['level_cm']['value'], 73.0)
+        self.assertAlmostEqual(values['fill_percent']['value'], 85.882, places=3)
+        self.assertAlmostEqual(values['volume']['value'], 573.341, places=3)
+        self.assertEqual(values['volume']['unit'], 'L')
+
+    def test_builtin_shelly_sensor_exposes_selected_measurement(self):
+        sensor = SimpleNamespace(
+            index=0, enabled=True, manufacturer=1, name='Pump relay',
+            response=True, sens_type=1,
+            last_read_value=[[True], [], [], [], [], []], last_response=100,
+        )
+        with mock.patch.object(
+                SENSOR_PROVIDER.sensors, 'get', return_value=[sensor]):
+            snapshot_data = SENSOR_PROVIDER.provider_snapshot()
+        value = snapshot_data['resources'][0]['values'][0]
+        self.assertEqual(value['id'], 'output_1')
+        self.assertIs(value['value'], True)
+        self.assertEqual(value['value_type'], 'boolean')
 
     def test_test_mode_dispatch_never_calls_local_or_external_delivery(self):
         path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'

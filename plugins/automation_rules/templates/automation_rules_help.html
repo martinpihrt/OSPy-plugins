@@ -5,10 +5,11 @@ $var page: plugins
 
 <div id="plugin">
     <div class="title">$_('Automation Rules - help')</div>
-    <p>$_('Automation Rules evaluates cached measurements supplied by compatible monitoring plug-ins. Reading a rule never starts an additional hardware measurement.')</p>
+    <p>$_('Automation Rules evaluates cached measurements supplied by compatible monitoring plug-ins and enabled built-in OSPy sensors, including Pihrt and Shelly devices. Reading a rule never starts an additional hardware measurement.')</p>
     <h3>$_('Building a rule')</h3>
     <p>$_('A rule is one card. Conditions are rows on a desktop and stacked subcards on a narrow screen. Add up to twenty conditions and choose whether all conditions (AND) or at least one condition (OR) must match.')</p>
     <p>$_('Select the provider, resource and value in this order. The available unit comes from the provider and is filled automatically.')</p>
+    <p>$_('The OSPy Sensors provider lists each enabled sensor by name. Ultrasonic tank sensors expose distance, water level, fill percentage and calculated volume. An offline sensor or invalid probe value cannot satisfy a condition.')</p>
     <h3>$_('Timing')</h3>
     <p>$_('The confirmation duration requires the complete condition to remain true before the rule is triggered. The repeat interval sends another notification while the incident remains active; zero disables repetition.')</p>
     <h3>$_('Testing and safety')</h3>

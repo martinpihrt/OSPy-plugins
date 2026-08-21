@@ -11,6 +11,14 @@ editor does not invent units or perform an extra GPIO/I2C measurement. Missing,
 stale, disabled or erroneous providers never satisfy a condition and never
 silently clear an already active incident.
 
+The built-in **OSPy Sensors** provider also lists every enabled OSPy sensor by
+its configured name, independently of whether it is a Pihrt or Shelly device.
+It exposes the selected temperature, contact, motion, moisture, flow, output,
+power, voltage, humidity or illuminance reading. Pihrt multi-contact and soil
+devices expose each input separately. An ultrasonic tank sensor exposes its
+raw distance plus derived water level, fill percentage and configured volume.
+The adapter reads only the last cached sensor values and never polls hardware.
+
 Rules support a confirmation duration, repeated-notification interval, recovery
 notification, severity and these notification channels:
 
@@ -33,7 +41,9 @@ status, not credentials or complete provider snapshots.
 Automation Rules does not stop stations or execute control/safety actions.
 Existing monitoring and notification plug-ins remain independently usable.
 
-Version 1.0.3 displays every Boolean setting and notification channel as the
+Version 1.0.4 adds enabled Pihrt and Shelly OSPy sensors as rule sources while
+preserving the read-only provider model. Version 1.0.3 displays every Boolean
+setting and notification channel as the
 same red/green sliding switch used by other OSPy plug-ins. Hovering over form
 fields, selectors, switches and action buttons shows a short localized
 description of the control. General switches are kept directly beside their

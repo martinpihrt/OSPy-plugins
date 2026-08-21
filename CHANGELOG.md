@@ -2,6 +2,9 @@
 
 August 21 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.0.4<br/>
+Added every enabled built-in OSPy sensor as a read-only Automation Rules source independently of Pihrt or Shelly hardware. The adapter exposes each sensor's configured measurement without another hardware poll; Pihrt multi-contact and soil devices expose individual inputs, while ultrasonic tank sensors provide distance, derived water level, fill percentage and volume. Offline sensors and invalid probe values remain unavailable and cannot satisfy or silently clear a condition. Updated localized help, READMEs and regression coverage.
+
 (Martin Pihrt) - Automation Rules v1.0.3<br/>
 Enabled browser-notification polling on every authenticated OSPy page instead of only Home. Home popup cards remain exclusive to Home and are not marked as consumed while another page is open. Mobile push data now includes the stable rule ID, rule name and event so a matching application can localize Automation Rules notifications without parsing server display text. Updated asset cache versions, documentation and regression coverage.
 

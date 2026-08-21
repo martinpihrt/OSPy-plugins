@@ -12,6 +12,7 @@ import web
 
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.log import log
+from ospy.provider_contracts import validate_snapshot
 from ospy.webpages import ProtectedPage, pluginScripts
 from plugins import (
     PluginOptions, get, get_runtime, plugin_data_dir,
@@ -19,7 +20,7 @@ from plugins import (
     plugin_provider_snapshots, plugin_url, running,
 )
 
-from . import engine
+from . import engine, sensor_provider
 
 
 NAME = 'Automation Rules'
@@ -154,12 +155,56 @@ def _queue_local_notification(rule, event, message, channels):
     return record
 
 
+def _automation_snapshots():
+    snapshots = plugin_provider_snapshots()
+    providers = dict(snapshots.get('providers', {}))
+    errors = dict(snapshots.get('errors', {}))
+    try:
+        providers[sensor_provider.PROVIDER_ID] = validate_snapshot(
+            sensor_provider.provider_snapshot(), sensor_provider.PROVIDER_ID)
+    except Exception as error:
+        errors[sensor_provider.PROVIDER_ID] = {
+            'error': type(error).__name__, 'message': str(error),
+        }
+    return {'providers': providers, 'errors': errors}
+
+
+def _sensor_value_label(identifier):
+    labels = {
+        'contact_state': _('Contact state'),
+        'motion': _('Motion detected'),
+        'moisture_percent': _('Moisture'),
+        'temperature': _('Temperature'),
+        'voltage': _('Voltage'),
+        'humidity': _('Humidity'),
+        'illuminance': _('Illuminance'),
+        'volume': _('Volume'),
+    }
+    if identifier in labels:
+        return labels[identifier]
+    numbered = (
+        ('contact_', _('Contact input {}')),
+        ('soil_moisture_', _('Soil moisture probe {}')),
+        ('output_', _('Output {}')),
+        ('temperature_', _('Temperature {}')),
+        ('power_', _('Power {}')),
+        ('pv_power_', _('PV power {}')),
+    )
+    for prefix, label in numbered:
+        if identifier.startswith(prefix):
+            return label.format(identifier[len(prefix):])
+    return identifier
+
+
 def _provider_catalog():
     catalog = []
-    snapshots = plugin_provider_snapshots()
-    for module in plugin_provider_modules():
+    snapshots = _automation_snapshots()
+    modules = list(plugin_provider_modules()) + [sensor_provider.PROVIDER_ID]
+    for module in modules:
         try:
-            capabilities = plugin_provider_capabilities(module)
+            capabilities = (sensor_provider.provider_capabilities()
+                            if module == sensor_provider.PROVIDER_ID else
+                            plugin_provider_capabilities(module))
             snapshot = snapshots.get('providers', {}).get(module, {})
             declared = {item['id']: item for item in capabilities.get('values', [])}
             for resource in snapshot.get('resources', []):
@@ -172,9 +217,15 @@ def _provider_catalog():
                             'pressure_monitor': _('Pressure Monitor'),
                             'tank_monitor': _('Water Tank Monitor'),
                             'current_loop_tanks_monitor': _('Current Loop Tanks Monitor'),
+                            'ospy_sensors': _('OSPy Sensors'),
                         }.get(module, module),
                         'resource_id': resource.get('id', ''),
                         'resource_label': (
+                            resource.get('name') if resource.get('name') else
+                            _('Sensor {}').format(
+                                int(str(resource.get('id', '')).split('-')[-1]) + 1)
+                            if module == sensor_provider.PROVIDER_ID and
+                            str(resource.get('id', '')).startswith('sensor-') else
                             _('Main resource') if resource.get('id') == 'main' else
                             _('Tank {}').format(str(resource.get('id', '')).split('-')[-1])
                             if str(resource.get('id', '')).startswith('tank-') else
@@ -195,7 +246,10 @@ def _provider_catalog():
                             'volume_liters': _('Volume in liters'),
                             'volume_cubic_meters': _('Volume in cubic meters'),
                             'sensor_voltage': _('Sensor voltage'),
-                        }.get(value.get('id'), value.get('id', '')),
+                        }.get(value.get('id'),
+                              _sensor_value_label(value.get('id', ''))
+                              if module == sensor_provider.PROVIDER_ID else
+                              value.get('id', '')),
                         'unit': definition.get('unit', value.get('unit', '')),
                         'value_type': definition.get('value_type',
                                                      value.get('value_type', 'string')),
@@ -347,7 +401,7 @@ def evaluate_once(test_mode=None):
     """Evaluate every enabled rule against one consistent snapshot set."""
     global _test_states
     rules = load_rules()
-    snapshots = plugin_provider_snapshots()
+    snapshots = _automation_snapshots()
     now = int(time.time())
     is_test = bool(plugin_options.get('test_mode', True)
                    if test_mode is None else test_mode)
@@ -387,7 +441,7 @@ def test_rule(rule_id):
     rule = rules.get(rule_id)
     if rule is None:
         raise engine.RuleValidationError('rule was not found')
-    evaluation = engine.evaluate_rule(rule, plugin_provider_snapshots())
+    evaluation = engine.evaluate_rule(rule, _automation_snapshots())
     event = 'test_matched' if evaluation['matched'] else 'test_not_matched'
     append_history(_history_record(rule, event, evaluation, [
         {'channel': channel, 'status': 'test'} for channel in rule['channels']
