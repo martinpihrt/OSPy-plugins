@@ -26,7 +26,7 @@ from urllib.request import urlopen
 from urllib.parse import quote_plus
 from urllib.parse import urlparse
 
-from .blind_model import command_url, configured_blinds, default_blind, in_time_window, legacy_lists, parse_status, position_state, status_url
+from .blind_model import aggregate_blind_states, command_url, configured_blinds, default_blind, in_time_window, legacy_lists, parse_status, position_state, sensor_temperature, status_url, wind_window_state
 
 NAME = 'Venetian blind'      ### name for plugin in plugin manager ###
 MENU =  _(u'Package: Venetian blind')
@@ -55,10 +55,10 @@ plugin_options = PluginOptions(
         'automation_enabled': False,
         'temperature_sensor': -1,
         'temperature_limit': 30.0,
-        'temperature_hysteresis': 1.0,
         'wind_limit': 10.0,
         'safe_wind_samples': 50,
         'strong_wind_samples': 2,
+        'strong_wind_interval': 5,
         'automation_start': '08:00',
         'automation_end': '20:00',
         'close_programs': [],
@@ -90,8 +90,10 @@ class Sender(Thread):
 
         self._sleep_time = 0
         self._last_error_log = 0
-        self._wind_samples = deque(maxlen=50)
-        self._automation_latch = None
+        self._wind_samples = deque(maxlen=10000)
+        self._last_wind_measurement = None
+        self._wind_action_sent = False
+        self._temperature_action_sent = False
         self._last_active_programs = set()
         self._program_queue = deque()
         self._program_reason = ''
@@ -185,6 +187,7 @@ def health():
     worker_running = sender is not None and sender.is_alive()
     configured = [blind for blind in get_blinds() if blind.get('enabled', True)]
     status_details = sender.status.get('details', {}) if sender is not None else {}
+    automation = sender.status.get('automation', {}) if sender is not None else {}
     reachable = sum(1 for value in status_details.values() if value.get('reachable'))
     details = {
         _('Worker thread'): _('Running') if worker_running else _('Stopped'),
@@ -199,7 +202,14 @@ def health():
             datetime_string(time.localtime(state['last_command']))
             if state['last_command'] else _('Not available')
         ),
+        _('Automation enabled'): _('Yes') if plugin_options.get('automation_enabled') else _('No'),
     }
+    if plugin_options.get('automation_enabled'):
+        details[_('Automation temperature')] = '{} °C'.format(automation['temperature']) if automation.get('temperature') is not None else _('Not available')
+        details[_('Automation wind speed')] = '{} m/s'.format(automation['wind']) if automation.get('wind') is not None else _('Not available')
+        details[_('Consecutive safe wind measurements')] = '{}/{}'.format(automation.get('safe_count', 0), plugin_options['safe_wind_samples'])
+        details[_('Strong wind exceedances')] = '{}/{} ({} min)'.format(automation.get('exceedances', 0), plugin_options['strong_wind_samples'], plugin_options['strong_wind_interval'])
+        details[_('Confirmed blind states')] = '{}/{}'.format(automation.get('known_blinds', 0), automation.get('enabled_blinds', len(configured)))
     if state['last_error_message']:
         details[_('Last error')] = state['last_error_message']
     if not worker_running:
@@ -407,10 +417,10 @@ def normalize_options():
     get_blinds()
     plugin_options['temperature_sensor'] = safe_int(plugin_options.get('temperature_sensor', -1), -1)
     plugin_options['temperature_limit'] = max(-50.0, min(100.0, safe_float(plugin_options.get('temperature_limit', 30), 30)))
-    plugin_options['temperature_hysteresis'] = max(0.1, min(20.0, safe_float(plugin_options.get('temperature_hysteresis', 1), 1)))
     plugin_options['wind_limit'] = max(0.1, min(100.0, safe_float(plugin_options.get('wind_limit', 10), 10)))
     plugin_options['safe_wind_samples'] = max(1, min(500, safe_int(plugin_options.get('safe_wind_samples', 50), 50)))
     plugin_options['strong_wind_samples'] = max(1, min(20, safe_int(plugin_options.get('strong_wind_samples', 2), 2)))
+    plugin_options['strong_wind_interval'] = max(1, min(1440, safe_int(plugin_options.get('strong_wind_interval', 5), 5)))
     plugin_options['close_programs'] = [safe_int(value, -1) for value in plugin_options.get('close_programs', []) if safe_int(value, -1) >= 0]
     plugin_options['open_programs'] = [safe_int(value, -1) for value in plugin_options.get('open_programs', []) if safe_int(value, -1) >= 0]
     plugin_options['view_mode'] = plugin_options.get('view_mode') if plugin_options.get('view_mode') in ('cards', 'list') else 'cards'
@@ -424,21 +434,24 @@ def _time_minutes(text, default):
 
 def _temperature_value():
     index = plugin_options.get('temperature_sensor', -1)
+    if index < 0:
+        return None
     try:
-        sensor = sensors.get(index)
-        value = getattr(sensor, 'value', None)
-        if isinstance(value, (list, tuple)):
-            value = value[0]
-        return float(value)
+        return sensor_temperature(sensors.get(index))
     except Exception:
         return None
 
-def _wind_value():
+def _wind_reading():
     try:
         from plugins import wind_monitor
         if wind_monitor.wind_sender is None:
             return None
-        return float(wind_monitor.wind_sender.status.get('meter'))
+        status = wind_monitor.wind_sender.status
+        value = float(status.get('meter'))
+        with wind_monitor.health_lock:
+            timestamp = float(wind_monitor.health_state.get('last_reading', 0) or 0)
+        measurement_key = (timestamp, str(status.get('last_measurement', '')))
+        return value, timestamp, measurement_key
     except Exception:
         return None
 
@@ -452,63 +465,102 @@ def _start_next_program(worker):
 def _run_programs(worker, indices, reason, priority=False):
     available = {program.index for program in programs.get()}
     if priority:
-        worker._program_queue.clear()
-        active = programs.run_now_program
-        if active is not None and getattr(active, 'index', -1) in plugin_options.get('close_programs', []):
-            programs.run_now_program = None
+        _cancel_lowering_actions(worker)
+    scheduled = False
+    active_index = getattr(programs.run_now_program, 'index', -1)
     for index in indices:
-        if index in available and index not in worker._program_queue:
+        if index not in available:
+            continue
+        scheduled = True
+        if index != active_index and index not in worker._program_queue:
             worker._program_queue.append(index)
     worker._program_reason = reason
     _start_next_program(worker)
+    return scheduled
+
+def _cancel_lowering_actions(worker):
+    closing = set(plugin_options.get('close_programs', []))
+    worker._program_queue = deque(index for index in worker._program_queue if index not in closing)
+    active = programs.run_now_program
+    if active is not None and getattr(active, 'index', -1) in closing:
+        programs.run_now_program = None
 
 def automation_cycle(worker):
     if not plugin_options.get('automation_enabled', False):
         worker._program_queue.clear()
-        worker._automation_latch = None
+        worker._wind_samples.clear()
+        worker._last_wind_measurement = None
+        worker._wind_action_sent = False
+        worker._temperature_action_sent = False
         return
     _start_next_program(worker)
     normalize_options()
-    safe_count = plugin_options['safe_wind_samples']
-    wanted_size = max(safe_count, plugin_options['strong_wind_samples'])
-    if worker._wind_samples.maxlen != wanted_size:
-        worker._wind_samples = deque(worker._wind_samples, maxlen=wanted_size)
-    wind = _wind_value()
-    if wind is None:
-        return
-    worker._wind_samples.append(wind)
+    now_timestamp = time.time()
+    reading = _wind_reading()
+    if reading is not None:
+        wind, measurement_timestamp, measurement_key = reading
+        if measurement_timestamp > 0 and measurement_key != worker._last_wind_measurement:
+            worker._wind_samples.append((measurement_timestamp, wind))
+            worker._last_wind_measurement = measurement_key
+    retention = max(plugin_options['strong_wind_interval'] * 60, plugin_options['safe_wind_samples'] * STATUS_INTERVAL * 2, 600)
+    while worker._wind_samples and now_timestamp - worker._wind_samples[0][0] > retention:
+        worker._wind_samples.popleft()
+    wind_state = wind_window_state(
+        worker._wind_samples,
+        now_timestamp,
+        plugin_options['wind_limit'],
+        plugin_options['safe_wind_samples'],
+        plugin_options['strong_wind_samples'],
+        plugin_options['strong_wind_interval'] * 60,
+        STATUS_INTERVAL * 3,
+    )
     active_programs = {entry.get('program') for entry in log.active_runs() if entry.get('program') is not None and entry.get('program') >= 0}
     run_now = programs.run_now_program
     if run_now is not None and getattr(run_now, 'index', -1) >= 0:
         active_programs.add(run_now.index)
     if active_programs != worker._last_active_programs:
         if active_programs.intersection(plugin_options['open_programs']):
-            worker._automation_latch = 'open'
+            worker._wind_action_sent = True
         elif active_programs.intersection(plugin_options['close_programs']):
-            worker._automation_latch = 'closed'
+            worker._temperature_action_sent = True
         worker._last_active_programs = active_programs
     details = worker.status.get('details', {})
     enabled_indices = [index for index, blind in enumerate(get_blinds()) if blind.get('enabled', True)]
-    known_states = [details[index].get('state') for index in enabled_indices if details.get(index, {}).get('reachable')]
-    all_open = bool(enabled_indices) and len(known_states) == len(enabled_indices) and all(value == 'open' for value in known_states)
-    all_closed = bool(enabled_indices) and len(known_states) == len(enabled_indices) and all(value == 'closed' for value in known_states)
-    strong_count = plugin_options['strong_wind_samples']
-    strong = len(worker._wind_samples) >= strong_count and all(value >= plugin_options['wind_limit'] for value in list(worker._wind_samples)[-strong_count:])
-    safe = len(worker._wind_samples) >= safe_count and all(value < plugin_options['wind_limit'] for value in list(worker._wind_samples)[-safe_count:])
-    if strong:
-        if worker._automation_latch != 'open' and not all_open:
-            _run_programs(worker, plugin_options['open_programs'], _('Strong wind protection'), priority=True)
-            worker._automation_latch = 'open'
+    blind_state = aggregate_blind_states(details, enabled_indices)
+    all_open = blind_state['all_open']
+    all_closed = blind_state['all_closed']
+    worker.status['automation'] = {
+        'temperature': _temperature_value(),
+        'wind': worker._wind_samples[-1][1] if worker._wind_samples else None,
+        'safe': wind_state['safe'],
+        'safe_count': wind_state['safe_count'],
+        'strong': wind_state['strong'],
+        'exceedances': wind_state['exceedances'],
+        'enabled_blinds': len(enabled_indices),
+        'known_blinds': blind_state['known_count'],
+        'all_open': all_open,
+        'all_closed': all_closed,
+    }
+    if wind_state['strong']:
+        _cancel_lowering_actions(worker)
+        worker._temperature_action_sent = False
+        if all_open:
+            worker._wind_action_sent = False
+        elif not worker._wind_action_sent:
+            worker._wind_action_sent = _run_programs(worker, plugin_options['open_programs'], _('Strong wind protection'), priority=True)
         return
+    worker._wind_action_sent = False
     now = datetime.datetime.now()
     allowed = in_time_window(now.hour * 60 + now.minute, _time_minutes(plugin_options.get('automation_start'), 480), _time_minutes(plugin_options.get('automation_end'), 1200))
-    temperature = _temperature_value()
-    if temperature is not None and temperature >= plugin_options['temperature_limit'] and safe and allowed:
-        if worker._automation_latch != 'closed' and not all_closed:
-            _run_programs(worker, plugin_options['close_programs'], _('Temperature shading'))
-            worker._automation_latch = 'closed'
-    elif temperature is not None and temperature <= plugin_options['temperature_limit'] - plugin_options['temperature_hysteresis'] and worker._automation_latch == 'closed':
-        worker._automation_latch = None
+    temperature = worker.status['automation']['temperature']
+    shading = temperature is not None and temperature >= plugin_options['temperature_limit'] and wind_state['safe'] and allowed
+    if shading:
+        if all_closed:
+            worker._temperature_action_sent = False
+        elif not worker._temperature_action_sent:
+            worker._temperature_action_sent = _run_programs(worker, plugin_options['close_programs'], _('Temperature shading'))
+    else:
+        worker._temperature_action_sent = False
 
 def _save_blinds(blinds):
     plugin_options['blinds'] = blinds
@@ -598,10 +650,11 @@ class setup_page(ProtectedPage):
                 for key in ('use_control', 'use_log', 'use_footer', 'automation_enabled'):
                     plugin_options[key] = qdict.get(key) == 'on'
                 plugin_options['temperature_sensor'] = safe_int(qdict.get('temperature_sensor'), -1)
-                for key in ('temperature_limit', 'temperature_hysteresis', 'wind_limit'):
+                for key in ('temperature_limit', 'wind_limit'):
                     plugin_options[key] = safe_float(qdict.get(key), plugin_options.get(key))
                 plugin_options['safe_wind_samples'] = safe_int(qdict.get('safe_wind_samples'), 50)
                 plugin_options['strong_wind_samples'] = safe_int(qdict.get('strong_wind_samples'), 2)
+                plugin_options['strong_wind_interval'] = safe_int(qdict.get('strong_wind_interval'), 5)
                 plugin_options['automation_start'] = str(qdict.get('automation_start', '08:00'))
                 plugin_options['automation_end'] = str(qdict.get('automation_end', '20:00'))
                 plugin_options['close_programs'] = [safe_int(value, -1) for value in qdict.get('close_programs', [])]

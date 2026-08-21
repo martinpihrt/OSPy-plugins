@@ -49,6 +49,49 @@ class VenetianBlindModelTests(unittest.TestCase):
         self.assertTrue(model.in_time_window(23 * 60, 20 * 60, 8 * 60))
         self.assertTrue(model.in_time_window(12 * 60, 0, 0))
 
+    def test_temperature_uses_the_real_ospy_sensor_channel(self):
+        class Sensor(object):
+            manufacturer = 0
+            sens_type = 5
+            multi_type = 0
+            last_read_value = [28.4, '', '', '', '', '', '', '', '']
+
+        self.assertEqual(model.sensor_temperature(Sensor()), 28.4)
+        Sensor.last_read_value[0] = -127
+        self.assertIsNone(model.sensor_temperature(Sensor()))
+        Sensor.sens_type = 6
+        Sensor.multi_type = 2
+        Sensor.last_read_value[2] = 31.2
+        self.assertEqual(model.sensor_temperature(Sensor()), 31.2)
+        Sensor.manufacturer = 1
+        Sensor.last_read_value[2] = [29.7]
+        self.assertEqual(model.sensor_temperature(Sensor()), 29.7)
+
+    def test_wind_confirmation_counts_unique_samples_inside_the_interval(self):
+        state = model.wind_window_state([(100, 11), (200, 4), (250, 12)], 260, 10, 2, 2, 300)
+        self.assertTrue(state['strong'])
+        self.assertEqual(state['exceedances'], 2)
+        self.assertFalse(state['safe'])
+        state = model.wind_window_state([(240, 4), (250, 5)], 260, 10, 2, 2, 60)
+        self.assertTrue(state['safe'])
+        self.assertFalse(state['strong'])
+        stale = model.wind_window_state([(100, 4), (110, 5)], 260, 10, 2, 2, 300)
+        self.assertFalse(stale['safe'])
+
+    def test_mixed_or_unreachable_blinds_never_count_as_all_open_or_closed(self):
+        details = {index: {'reachable': True, 'state': 'closed'} for index in range(9)}
+        details[8]['state'] = 'open'
+        mixed = model.aggregate_blind_states(details, range(9))
+        self.assertFalse(mixed['all_open'])
+        self.assertFalse(mixed['all_closed'])
+        details = {index: {'reachable': True, 'state': 'open'} for index in range(9)}
+        details[8] = {'reachable': False, 'state': 'unknown'}
+        unreachable = model.aggregate_blind_states(details, range(9))
+        self.assertFalse(unreachable['all_open'])
+        self.assertEqual(unreachable['known_count'], 8)
+        details[8] = {'reachable': True, 'state': 'open'}
+        self.assertTrue(model.aggregate_blind_states(details, range(9))['all_open'])
+
 
 class VenetianBlindInterfaceTests(unittest.TestCase):
     def test_settings_use_crud_profiles_and_no_blind_count_input(self):
@@ -59,6 +102,8 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
         self.assertIn("$_('Add blind')", template)
         self.assertIn("$_('Edit')", template)
         self.assertIn("$_('Delete')", template)
+        self.assertNotIn('name="temperature_hysteresis"', template)
+        self.assertIn('name="strong_wind_interval"', template)
 
     def test_all_visible_checkboxes_use_sliding_switches(self):
         template = (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8')
@@ -75,23 +120,28 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
         self.assertIn('csrf_input()', template)
         self.assertIn("plugin_options['view_mode']=='list'", template)
 
-    def test_automation_requires_safe_samples_and_latches_actions(self):
+    def test_automation_uses_unique_wind_samples_and_authoritative_positions(self):
         source = (PLUGIN / '__init__.py').read_text(encoding='utf-8')
-        self.assertIn("all(value < plugin_options['wind_limit']", source)
-        self.assertIn("all(value >= plugin_options['wind_limit']", source)
-        self.assertIn("worker._automation_latch != 'open'", source)
-        self.assertIn("worker._automation_latch != 'closed'", source)
+        self.assertIn('measurement_key != worker._last_wind_measurement', source)
+        self.assertIn('wind_window_state(', source)
+        self.assertIn("worker._wind_action_sent", source)
+        self.assertIn("worker._temperature_action_sent", source)
+        self.assertIn('sensor_temperature(sensors.get(index))', source)
+        self.assertIn('if index < 0:', source)
+        self.assertNotIn("getattr(sensor, 'value'", source)
         self.assertIn('log.active_runs()', source)
         self.assertIn('run_now = programs.run_now_program', source)
         self.assertIn('enabled_indices', source)
+        self.assertIn('aggregate_blind_states(details, enabled_indices)', source)
+        self.assertIn('_cancel_lowering_actions(worker)', source)
         self.assertIn('worker._program_queue.append(index)', source)
         self.assertIn('programs.run_now_program is not None', source)
         self.assertIn('priority=True', source)
 
     def test_manifest_version_dependency_and_permissions_are_current(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.1.1')
-        self.assertIn('venetian_blind.css?v=1.1.1', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['version'], '1.2.0')
+        self.assertIn('venetian_blind.css?v=1.2.0', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
         self.assertIn('system', manifest['permissions'])
         self.assertIn('wind_monitor', [item['id'] for item in manifest['dependencies']])
 

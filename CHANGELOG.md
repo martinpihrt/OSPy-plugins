@@ -1,7 +1,13 @@
 # OSPy-plugins Changelog
 
+August 21 2026
+--------------
+(Martin Pihrt) - Venetian Blind v1.2.0<br/>
+Fixed temperature automation reading a nonexistent sensor attribute instead of the actual OSPy `last_read_value` channel, which prevented the lowering program from starting even above the configured limit. Replaced repeated cached-wind sampling with unique accepted Wind Monitor measurements and added a configurable minute window for the required strong-wind exceedances. Removed temperature hysteresis from the active settings because authoritative position checks now control re-entry. Mixed positions such as eight closed blinds and one open blind now start lowering when all environmental conditions are met; strong wind starts raising whenever any enabled blind is not confirmed open, including tilted, intermediate and unreachable devices. Continuous-condition guards prevent relay repetition, active external programs suppress duplicates, strong wind cancels pending lowering, and Diagnostics reports the current temperature, wind confirmation counts and confirmed blind-state count. Updated settings explanations, help, README and regression tests.
+
 August 20 2026
 --------------
+
 (Martin Pihrt) - Venetian Blind v1.1.1<br/>
 Replaced every visible settings checkbox with the same accessible red and green sliding switch used by other OSPy plug-ins. The change covers individual blind enablement, plug-in control, logging, footer output and temperature and wind automation while preserving all existing form names, saved values and backward compatibility.
 

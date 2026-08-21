@@ -148,9 +148,81 @@ def position_state(position, tilt_positions, tolerance=4):
     return name if distance <= tolerance else 'position'
 
 
+def aggregate_blind_states(details, enabled_indices):
+    """Return aggregate positions; an unreachable enabled blind is unconfirmed."""
+    enabled = list(enabled_indices)
+    known = [details[index].get('state') for index in enabled if details.get(index, {}).get('reachable')]
+    complete = bool(enabled) and len(known) == len(enabled)
+    return {
+        'known_count': len(known),
+        'all_open': complete and all(state == 'open' for state in known),
+        'all_closed': complete and all(state == 'closed' for state in known),
+    }
+
+
 def in_time_window(now_minutes, start_minutes, end_minutes):
     if start_minutes == end_minutes:
         return True
     if start_minutes < end_minutes:
         return start_minutes <= now_minutes < end_minutes
     return now_minutes >= start_minutes or now_minutes < end_minutes
+
+
+def sensor_temperature(sensor):
+    """Return the temperature channel used by each OSPy sensor type."""
+    values = getattr(sensor, 'last_read_value', [])
+    if int(getattr(sensor, 'manufacturer', 0)) == 1:
+        candidates = values[2] if len(values) > 2 else []
+        candidates = candidates if isinstance(candidates, (list, tuple)) else [candidates]
+        for candidate in candidates:
+            value = _temperature_number(candidate)
+            if value is not None:
+                return value
+        return None
+    sensor_type = int(getattr(sensor, 'sens_type', -1))
+    if sensor_type == 5:
+        channel = 0
+    elif sensor_type == 6 and 0 <= int(getattr(sensor, 'multi_type', -1)) <= 3:
+        channel = int(sensor.multi_type)
+    else:
+        return None
+    if channel < 0 or channel >= len(values):
+        return None
+    return _temperature_number(values[channel])
+
+
+def _temperature_number(raw_value):
+    try:
+        value = float(raw_value)
+    except (TypeError, ValueError):
+        return None
+    return value if value == value and value not in (-127.0, float('inf'), float('-inf')) else None
+
+
+def wind_window_state(samples, now, limit, safe_required, strong_required,
+                      interval_seconds, freshness_seconds=30):
+    """Evaluate unique accepted wind measurements for shading and protection."""
+    ordered = sorted(
+        (float(timestamp), float(value)) for timestamp, value in samples
+        if float(timestamp) <= float(now)
+    )
+    cutoff = float(now) - max(1.0, float(interval_seconds))
+    window = [(timestamp, value) for timestamp, value in ordered if timestamp >= cutoff]
+    exceedances = sum(1 for _timestamp, value in window if value >= float(limit))
+    strong = exceedances >= max(1, int(strong_required))
+    required = max(1, int(safe_required))
+    fresh = bool(ordered) and float(now) - ordered[-1][0] <= max(1.0, float(freshness_seconds))
+    safe_count = 0
+    if fresh:
+        for _timestamp, value in reversed(ordered):
+            if value >= float(limit):
+                break
+            safe_count += 1
+    safe = safe_count >= required
+    return {
+        'safe': safe,
+        'strong': strong,
+        'safe_count': safe_count,
+        'exceedances': exceedances,
+        'last_timestamp': ordered[-1][0] if ordered else 0,
+    }
