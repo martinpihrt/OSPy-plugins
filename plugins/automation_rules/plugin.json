@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "automation_rules",
+  "name": "Automation Rules",
+  "menu": "Package: Automation Rules",
+  "version": "1.0.0",
+  "description": "Builds graphical AND/OR monitoring rules over cached OSPy provider values and sends testable local or external notifications.",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {
+    "min_version": "3.0.348"
+  },
+  "python": {
+    "min_version": "3.8"
+  },
+  "dependencies": [
+    {"id": "water_meter", "required": false},
+    {"id": "pressure_monitor", "required": false},
+    {"id": "tank_monitor", "required": false},
+    {"id": "current_loop_tanks_monitor", "required": false},
+    {"id": "email_notifications", "required": false},
+    {"id": "email_notifications_ssl", "required": false},
+    {"id": "telegram_bot", "required": false}
+  ],
+  "permissions": [
+    "files",
+    "email",
+    "network",
+    "system"
+  ]
+}

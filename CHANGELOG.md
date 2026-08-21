@@ -82,6 +82,9 @@ Restored the latest successful plug-in backup status from existing ZIP archives 
 
 August 21 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.0.0, Telegram Bot v1.0.1, E-mail Notifications v1.0.1 and E-mail Notifications SSL v1.1.6<br/>
+Added a responsive graphical rule builder over cached `ospy.provider.v1` values. Rules support up to twenty row/card conditions, AND/OR matching, confirmation time, notification repetition, recovery messages, severity, a separate default-on test state, bounded action history and diagnostics. Notification actions include an OSPy Home popup, explicitly permitted browser notifications, e-mail, Telegram and mobile push; provider failures are isolated and cannot clear an active incident. Automation Rules performs no irrigation control actions. Telegram Bot now exposes a bounded external-notification entry point for authorized chats, and both e-mail plug-ins return delivery success to callers without changing existing notification behavior.
+
 (Martin Pihrt) - Water Meter v1.2.0, Pressure Monitor v1.1.0, Water Tank Monitor v1.1.0 and Current Loop Tanks Monitor v1.1.0<br/>
 Added the shared read-only `ospy.provider.v1` capability and snapshot interface for Automation Rules and Irrigation Safety. The four adapters expose only cached values, stable identifiers, canonical units and machine-readable alerts, without additional I²C/GPIO operations or changes to their existing workers, pages, health reports and mobile contributions. Added contract and no-hardware-access regression tests.
 

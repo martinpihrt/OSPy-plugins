@@ -1,0 +1,35 @@
+# Automation Rules
+
+Automation Rules is a graphical, optional consumer of OSPy's read-only
+`ospy.provider.v1` monitoring contract. A rule is displayed as one main card.
+Its conditions are rows on a desktop and responsive subcards on a narrow screen.
+Rules can require every condition (`AND`) or at least one condition (`OR`).
+
+Each condition selects a running provider, resource, value, comparison and
+limit. Values and canonical units come from the provider declaration, so the
+editor does not invent units or perform an extra GPIO/I2C measurement. Missing,
+stale, disabled or erroneous providers never satisfy a condition and never
+silently clear an already active incident.
+
+Rules support a confirmation duration, repeated-notification interval, recovery
+notification, severity and these notification channels:
+
+- an OSPy Home popup;
+- a browser notification after explicit browser permission;
+- E-mail Notifications SSL or E-mail Notifications;
+- Telegram Bot authorized chats;
+- OSPy Mobile API push notifications.
+
+Test mode is enabled by default. It evaluates rules and records the decisions in
+a bounded history but does not enqueue local notifications or send anything to
+external recipients. Test state is separate from live state, so testing cannot
+consume a later live trigger. The **Test saved rule** action also never sends.
+
+Browser notifications require an open OSPy page and permission granted through
+the settings button. Mobile push remains the channel for delivery while the web
+interface is closed. Notification history stores rule decisions and delivery
+status, not credentials or complete provider snapshots.
+
+Automation Rules does not stop stations or execute control/safety actions in
+version 1.0.0. Existing monitoring and notification plug-ins remain independently
+usable.

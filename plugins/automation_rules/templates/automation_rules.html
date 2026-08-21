@@ -1,0 +1,164 @@
+$def with(plugin_options, rules, new_rule, history, catalog, states, events, error)
+
+$var title: $_('Automation Rules')
+$var page: plugins
+
+<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css">
+
+<script>
+window.automationRuleCatalog = $:json.dumps(catalog, ensure_ascii=False);
+window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
+</script>
+<script src="/plugins/automation_rules/static/editor.js"></script>
+
+<div id="plugin" class="automation-rules-page">
+    <div class="title">$_('Automation Rules')</div>
+    <p><a href=$plugins.plugin_url('automation_rules.help_page') class="button upload">$_('Help')</a></p>
+
+    $if error:
+        <div class="automation-error" role="alert">$_('The automation rule is invalid. Check all required fields and values.')</div>
+
+    <section class="automation-card settings-card">
+        <h2>$_('General settings')</h2>
+        <form method="post" action="$plugins.plugin_url('automation_rules.settings_page')">
+            $:csrf_input()
+            <input type="hidden" name="action" value="save_settings">
+            <div class="settings-grid">
+                <label>$_('Automation enabled')
+                    <input name="enabled" type="checkbox"${' checked' if plugin_options.get('enabled') else ''}>
+                </label>
+                <label>$_('Test mode')
+                    <input name="test_mode" type="checkbox"${' checked' if plugin_options.get('test_mode') else ''}>
+                </label>
+                <label>$_('Evaluation interval')
+                    <span><input name="poll_interval" type="number" min="5" max="3600" value="$plugin_options.get('poll_interval', 30)"> $_('seconds')</span>
+                </label>
+                <label>$_('History limit')
+                    <input name="history_limit" type="number" min="10" max="5000" value="$plugin_options.get('history_limit', 500)">
+                </label>
+            </div>
+            <p class="automation-warning">$_('Test mode records decisions but does not send notifications. Disable it only after testing every rule.')</p>
+            <button class="submit" type="submit">$_('Save settings')</button>
+            <button class="button" type="button" id="automation-browser-permission">$_('Enable browser notifications')</button>
+            <span id="automation-browser-permission-result" role="status"></span>
+        </form>
+    </section>
+
+    <h2>$_('Rules')</h2>
+    $if not catalog:
+        <div class="automation-warning">$_('No running provider with available values was found. Enable a supported monitoring plug-in first.')</div>
+
+    $for rule in rules + [new_rule]:
+        $ is_new = rule['id'] == new_rule['id']
+        $ state = states.get(rule['id'], {})
+        <section class="automation-card rule-card${' new-rule' if is_new else ''}">
+            <form class="automation-rule-form" method="post" action="$plugins.plugin_url('automation_rules.settings_page')">
+                $:csrf_input()
+                <input type="hidden" name="rule_id" value="$rule['id']">
+                <input class="condition-count" type="hidden" name="condition_count" value="$len(rule['conditions'])">
+                <div class="rule-header">
+                    <h3>${_('New rule') if is_new else rule['name']}</h3>
+                    $if not is_new and state.get('active'):
+                        <span class="rule-state active">$_('Active')</span>
+                    <label class="compact-check">$_('Enabled')
+                        <input name="enabled" type="checkbox"${' checked' if rule.get('enabled') else ''}>
+                    </label>
+                </div>
+                <div class="rule-grid">
+                    <label>$_('Rule name')
+                        <input name="name" type="text" maxlength="120" required value="$rule['name']">
+                    </label>
+                    <label>$_('Condition matching')
+                        <select name="mode">
+                            <option value="all"${' selected' if rule['mode'] == 'all' else ''}>$_('All conditions (AND)')</option>
+                            <option value="any"${' selected' if rule['mode'] == 'any' else ''}>$_('At least one condition (OR)')</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="condition-list">
+                    $for index, condition in enumerate(rule['conditions']):
+                        <div class="condition-row" data-provider="$condition['provider_id']" data-resource="$condition['resource_id']" data-value="$condition['value_id']">
+                            <input class="condition-id" type="hidden" name="condition_id_$index" value="$condition['id']">
+                            <span class="condition-number">${index + 1}.</span>
+                            <label><span>$_('Provider')</span><select class="provider-select" name="provider_id_$index" required></select></label>
+                            <label><span>$_('Resource')</span><select class="resource-select" name="resource_id_$index" required></select></label>
+                            <label><span>$_('Value')</span><select class="value-select" name="value_id_$index" required></select></label>
+                            <label><span>$_('Operator')</span>
+                                <select class="operator-select" name="operator_$index">
+                                    <option value="eq"${' selected' if condition['operator'] == 'eq' else ''}>$_('equals')</option>
+                                    <option value="ne"${' selected' if condition['operator'] == 'ne' else ''}>$_('does not equal')</option>
+                                    <option value="gt"${' selected' if condition['operator'] == 'gt' else ''}>&gt;</option>
+                                    <option value="gte"${' selected' if condition['operator'] == 'gte' else ''}>&ge;</option>
+                                    <option value="lt"${' selected' if condition['operator'] == 'lt' else ''}>&lt;</option>
+                                    <option value="lte"${' selected' if condition['operator'] == 'lte' else ''}>&le;</option>
+                                    <option value="is_true"${' selected' if condition['operator'] == 'is_true' else ''}>$_('is active')</option>
+                                    <option value="is_false"${' selected' if condition['operator'] == 'is_false' else ''}>$_('is inactive')</option>
+                                </select>
+                            </label>
+                            <label class="expected-label"><span>$_('Limit')</span><span class="expected-wrap"><input class="expected-input" name="expected_$index" value="$condition['expected']"><span class="condition-unit"></span></span></label>
+                            <button type="button" class="remove-condition danger" title="$_('Remove condition')">&times;</button>
+                        </div>
+                </div>
+                <button type="button" class="button add-condition">+ $_('Add condition')</button>
+
+                <div class="rule-grid timing-grid">
+                    <label>$_('Conditions must remain true for')
+                        <span><input name="hold_seconds" type="number" min="0" max="86400" value="$rule['hold_seconds']"> $_('seconds')</span>
+                    </label>
+                    <label>$_('Repeat notification after')
+                        <span><input name="repeat_seconds" type="number" min="0" max="2592000" value="$rule['repeat_seconds']"> $_('seconds')</span>
+                    </label>
+                    <label>$_('Severity')
+                        <select name="severity">
+                            $for severity in ('info', 'warning', 'error', 'critical'):
+                                <option value="$severity"${' selected' if rule['severity'] == severity else ''}>${{'info': _('Information'), 'warning': _('Warning'), 'error': _('Error'), 'critical': _('Critical')}[severity]}</option>
+                        </select>
+                    </label>
+                    <label class="compact-check">$_('Notify when normal again')
+                        <input name="notify_on_clear" type="checkbox"${' checked' if rule.get('notify_on_clear') else ''}>
+                    </label>
+                </div>
+
+                <fieldset class="channels">
+                    <legend>$_('Notifications')</legend>
+                    <label><input name="channel_home" type="checkbox"${' checked' if 'home' in rule['channels'] else ''}> $_('OSPy Home window')</label>
+                    <label><input name="channel_browser" type="checkbox"${' checked' if 'browser' in rule['channels'] else ''}> $_('Browser notification')</label>
+                    <label><input name="channel_email" type="checkbox"${' checked' if 'email' in rule['channels'] else ''}> $_('E-mail')</label>
+                    <label><input name="channel_telegram" type="checkbox"${' checked' if 'telegram' in rule['channels'] else ''}> $_('Telegram')</label>
+                    <label><input name="channel_push" type="checkbox"${' checked' if 'push' in rule['channels'] else ''}> $_('Push notification')</label>
+                </fieldset>
+
+                <div class="rule-actions">
+                    <button class="submit" type="submit" name="action" value="save_rule">${_('Add rule') if is_new else _('Save rule')}</button>
+                    $if not is_new:
+                        <button class="button" type="submit" name="action" value="test_rule">$_('Test saved rule')</button>
+                        <button class="danger" type="submit" name="action" value="delete_rule" onclick="return confirm($:{json.dumps(_('Delete this rule?'), ensure_ascii=False)})">$_('Delete')</button>
+                </div>
+            </form>
+        </section>
+
+    <section class="automation-card history-card">
+        <div class="rule-header"><h2>$_('Action history')</h2>
+            <form method="post" action="$plugins.plugin_url('automation_rules.settings_page')">
+                $:csrf_input()
+                <button class="danger" type="submit" name="action" value="clear_history">$_('Clear history')</button>
+            </form>
+        </div>
+        $if history:
+            <div class="history-scroll"><table>
+                <thead><tr><th>$_('Time')</th><th>$_('Rule')</th><th>$_('Result')</th><th>$_('Mode')</th><th>$_('Notifications')</th></tr></thead>
+                <tbody>
+                $for item in history:
+                    <tr><td>$item.get('datetime', '')</td><td>$item.get('rule_name', '')</td><td>$item.get('event_text', '')</td><td>$item.get('mode_text', '')</td><td>$item.get('results_text', '')</td></tr>
+                </tbody>
+            </table></div>
+        $else:
+            <p>$_('No automation action has been recorded yet.')</p>
+    </section>
+
+    <section class="automation-card">
+        <h2>$_('Diagnostics events')</h2>
+        <textarea rows="6" readonly>$'\n'.join(events)</textarea>
+    </section>
+</div>

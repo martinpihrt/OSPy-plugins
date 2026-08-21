@@ -1,0 +1,20 @@
+$def with()
+
+$var title: $_('Automation Rules - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Automation Rules - help')</div>
+    <p>$_('Automation Rules evaluates cached measurements supplied by compatible monitoring plug-ins. Reading a rule never starts an additional hardware measurement.')</p>
+    <h3>$_('Building a rule')</h3>
+    <p>$_('A rule is one card. Conditions are rows on a desktop and stacked subcards on a narrow screen. Add up to twenty conditions and choose whether all conditions (AND) or at least one condition (OR) must match.')</p>
+    <p>$_('Select the provider, resource and value in this order. The available unit comes from the provider and is filled automatically.')</p>
+    <h3>$_('Timing')</h3>
+    <p>$_('The confirmation duration requires the complete condition to remain true before the rule is triggered. The repeat interval sends another notification while the incident remains active; zero disables repetition.')</p>
+    <h3>$_('Testing and safety')</h3>
+    <p>$_('Test mode is enabled by default. It records what would happen but does not display or send notifications. Test saved rule performs one immediate read-only evaluation and also sends nothing.')</p>
+    <p>$_('A missing or unhealthy provider cannot match a condition and does not clear an already active incident. This plug-in does not execute irrigation control actions.')</p>
+    <h3>$_('Notifications')</h3>
+    <p>$_('Home notifications appear in OSPy. Browser notifications require explicit permission and an open OSPy page. E-mail and Telegram use their existing configured plug-ins. Push uses paired mobile devices and the configured OSPy push relay.')</p>
+    <div id="controls"><a class="button danger" href=$plugins.plugin_url('automation_rules.settings_page')>$_('Back')</a></div>
+</div>

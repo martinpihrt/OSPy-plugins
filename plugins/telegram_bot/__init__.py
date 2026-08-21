@@ -511,6 +511,25 @@ def stop():
            sender = None
 
 
+def send_notification(text):
+    """Send one external notification through the configured authorized chats."""
+    if (not plugin_options.get('use_plugin', False) or sender is None or
+            sender._api is None or sender._loop is None or
+            not plugin_options.get('currentChats', [])):
+        return False
+    try:
+        future = asyncio.run_coroutine_threadsafe(
+            sender._announce(str(text)[:4096]), sender._loop)
+        future.result(timeout=20)
+        with health_lock:
+            health_state['last_message'] = time.time()
+        return True
+    except Exception:
+        log.error(NAME, _('Unable to send external Telegram notification.') +
+                  '\n' + traceback.format_exc())
+        return False
+
+
 def health():
     """Return Telegram connection and worker state without secrets."""
     with health_lock:

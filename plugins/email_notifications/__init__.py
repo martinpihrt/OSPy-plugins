@@ -600,6 +600,7 @@ def try_mail(text, logtext, attachment=None, subject=None):
             log.info(NAME, _('E-mail logging is disabled in options...'))
         else:    
             logEM.save_email_log(subject or email_options['emlsubject'], logtext, _('Sent'))
+        return True
 
     except Exception:
         record_email_error(traceback.format_exc())
@@ -618,6 +619,7 @@ def try_mail(text, logtext, attachment=None, subject=None):
             data['attachment'] = '%s' % attachment
 
             update_saved_emails(data)    # saving e-mail data to file: saved_emails.json
+        return False
 
 def maping(OldValue, OldMin, OldMax, NewMin, NewMax):
     ### Convert a number range to another range ###
