@@ -31,5 +31,10 @@ interface is closed. Notification history stores rule decisions and delivery
 status, not credentials or complete provider snapshots.
 
 Automation Rules does not stop stations or execute control/safety actions in
-version 1.0.0. Existing monitoring and notification plug-ins remain independently
+version 1.0.1. Existing monitoring and notification plug-ins remain independently
 usable.
+
+Version 1.0.1 displays every Boolean setting and notification channel as the
+same red/green sliding switch used by other OSPy plug-ins. Hovering over form
+fields, selectors, switches and action buttons shows a short localized
+description of the control.

@@ -3,17 +3,17 @@ $def with(plugin_options, rules, new_rule, history, catalog, states, events, err
 $var title: $_('Automation Rules')
 $var page: plugins
 
-<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css">
+<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.0.1">
 
 <script>
 window.automationRuleCatalog = $:json.dumps(catalog, ensure_ascii=False);
 window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
 </script>
-<script src="/plugins/automation_rules/static/editor.js"></script>
+<script src="/plugins/automation_rules/static/editor.js?v=1.0.1"></script>
 
 <div id="plugin" class="automation-rules-page">
     <div class="title">$_('Automation Rules')</div>
-    <p><a href=$plugins.plugin_url('automation_rules.help_page') class="button upload">$_('Help')</a></p>
+    <p><a href=$plugins.plugin_url('automation_rules.help_page') class="button upload" title=$:{json.dumps(_('Open a detailed description of Automation Rules and its settings.'), ensure_ascii=False)}>$_('Help')</a></p>
 
     $if error:
         <div class="automation-error" role="alert">$_('The automation rule is invalid. Check all required fields and values.')</div>
@@ -24,22 +24,22 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
             $:csrf_input()
             <input type="hidden" name="action" value="save_settings">
             <div class="settings-grid">
-                <label>$_('Automation enabled')
-                    <input name="enabled" type="checkbox"${' checked' if plugin_options.get('enabled') else ''}>
+                <div class="field-row" title=$:{json.dumps(_('Enable or disable evaluation of all automation rules.'), ensure_ascii=False)}><span>$_('Automation enabled')</span>
+                    <label class="switch"><input name="enabled" type="checkbox"${' checked' if plugin_options.get('enabled') else ''} aria-label=$:{json.dumps(_('Automation enabled'), ensure_ascii=False)}><span class="slider"></span></label>
+                </div>
+                <div class="field-row" title=$:{json.dumps(_('Evaluate rules and record decisions without sending any notifications.'), ensure_ascii=False)}><span>$_('Test mode')</span>
+                    <label class="switch"><input name="test_mode" type="checkbox"${' checked' if plugin_options.get('test_mode') else ''} aria-label=$:{json.dumps(_('Test mode'), ensure_ascii=False)}><span class="slider"></span></label>
+                </div>
+                <label title=$:{json.dumps(_('How often provider values are read and all enabled rules are evaluated.'), ensure_ascii=False)}>$_('Evaluation interval')
+                    <span><input name="poll_interval" type="number" min="5" max="3600" value="$plugin_options.get('poll_interval', 30)" title=$:{json.dumps(_('Enter an interval from 5 to 3600 seconds.'), ensure_ascii=False)}> $_('seconds')</span>
                 </label>
-                <label>$_('Test mode')
-                    <input name="test_mode" type="checkbox"${' checked' if plugin_options.get('test_mode') else ''}>
-                </label>
-                <label>$_('Evaluation interval')
-                    <span><input name="poll_interval" type="number" min="5" max="3600" value="$plugin_options.get('poll_interval', 30)"> $_('seconds')</span>
-                </label>
-                <label>$_('History limit')
-                    <input name="history_limit" type="number" min="10" max="5000" value="$plugin_options.get('history_limit', 500)">
+                <label title=$:{json.dumps(_('Maximum number of action history records retained by the plug-in.'), ensure_ascii=False)}>$_('History limit')
+                    <input name="history_limit" type="number" min="10" max="5000" value="$plugin_options.get('history_limit', 500)" title=$:{json.dumps(_('Enter how many of the newest history records should be kept.'), ensure_ascii=False)}>
                 </label>
             </div>
             <p class="automation-warning">$_('Test mode records decisions but does not send notifications. Disable it only after testing every rule.')</p>
-            <button class="submit" type="submit">$_('Save settings')</button>
-            <button class="button" type="button" id="automation-browser-permission">$_('Enable browser notifications')</button>
+            <button class="submit" type="submit" title=$:{json.dumps(_('Save the general Automation Rules settings.'), ensure_ascii=False)}>$_('Save settings')</button>
+            <button class="button" type="button" id="automation-browser-permission" title=$:{json.dumps(_('Ask this browser for permission to display desktop notifications.'), ensure_ascii=False)}>$_('Enable browser notifications')</button>
             <span id="automation-browser-permission-result" role="status"></span>
         </form>
     </section>
@@ -60,16 +60,16 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                     <h3>${_('New rule') if is_new else rule['name']}</h3>
                     $if not is_new and state.get('active'):
                         <span class="rule-state active">$_('Active')</span>
-                    <label class="compact-check">$_('Enabled')
-                        <input name="enabled" type="checkbox"${' checked' if rule.get('enabled') else ''}>
-                    </label>
+                    <div class="switch-field compact-check" title=$:{json.dumps(_('Enable or disable evaluation of this rule.'), ensure_ascii=False)}><span>$_('Enabled')</span>
+                        <label class="switch"><input name="enabled" type="checkbox"${' checked' if rule.get('enabled') else ''} aria-label=$:{json.dumps(_('Enabled'), ensure_ascii=False)}><span class="slider"></span></label>
+                    </div>
                 </div>
                 <div class="rule-grid">
-                    <label>$_('Rule name')
-                        <input name="name" type="text" maxlength="120" required value="$rule['name']">
+                    <label title=$:{json.dumps(_('A clear name used in history and notification messages.'), ensure_ascii=False)}>$_('Rule name')
+                        <input name="name" type="text" maxlength="120" required value="$rule['name']" title=$:{json.dumps(_('Enter a unique descriptive name for this rule.'), ensure_ascii=False)}>
                     </label>
-                    <label>$_('Condition matching')
-                        <select name="mode">
+                    <label title=$:{json.dumps(_('Choose whether every condition or at least one condition must be true.'), ensure_ascii=False)}>$_('Condition matching')
+                        <select name="mode" title=$:{json.dumps(_('AND requires all conditions. OR requires at least one condition.'), ensure_ascii=False)}>
                             <option value="all"${' selected' if rule['mode'] == 'all' else ''}>$_('All conditions (AND)')</option>
                             <option value="any"${' selected' if rule['mode'] == 'any' else ''}>$_('At least one condition (OR)')</option>
                         </select>
@@ -81,11 +81,11 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                         <div class="condition-row" data-provider="$condition['provider_id']" data-resource="$condition['resource_id']" data-value="$condition['value_id']">
                             <input class="condition-id" type="hidden" name="condition_id_$index" value="$condition['id']">
                             <span class="condition-number">${index + 1}.</span>
-                            <label><span>$_('Provider')</span><select class="provider-select" name="provider_id_$index" required></select></label>
-                            <label><span>$_('Resource')</span><select class="resource-select" name="resource_id_$index" required></select></label>
-                            <label><span>$_('Value')</span><select class="value-select" name="value_id_$index" required></select></label>
-                            <label><span>$_('Operator')</span>
-                                <select class="operator-select" name="operator_$index">
+                            <label title=$:{json.dumps(_('Monitoring plug-in that supplies the value for this condition.'), ensure_ascii=False)}><span>$_('Provider')</span><select class="provider-select" name="provider_id_$index" required title=$:{json.dumps(_('Select the monitoring plug-in that supplies data.'), ensure_ascii=False)}></select></label>
+                            <label title=$:{json.dumps(_('Device, tank, meter or other monitored resource exposed by the provider.'), ensure_ascii=False)}><span>$_('Resource')</span><select class="resource-select" name="resource_id_$index" required title=$:{json.dumps(_('Select which provider resource should be checked.'), ensure_ascii=False)}></select></label>
+                            <label title=$:{json.dumps(_('Measured or calculated value that the rule should evaluate.'), ensure_ascii=False)}><span>$_('Value')</span><select class="value-select" name="value_id_$index" required title=$:{json.dumps(_('Select the value to compare in this condition.'), ensure_ascii=False)}></select></label>
+                            <label title=$:{json.dumps(_('Comparison used to decide whether this condition is true.'), ensure_ascii=False)}><span>$_('Operator')</span>
+                                <select class="operator-select" name="operator_$index" title=$:{json.dumps(_('Select how the current value is compared with the limit.'), ensure_ascii=False)}>
                                     <option value="eq"${' selected' if condition['operator'] == 'eq' else ''}>$_('equals')</option>
                                     <option value="ne"${' selected' if condition['operator'] == 'ne' else ''}>$_('does not equal')</option>
                                     <option value="gt"${' selected' if condition['operator'] == 'gt' else ''}>&gt;</option>
@@ -96,44 +96,44 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                                     <option value="is_false"${' selected' if condition['operator'] == 'is_false' else ''}>$_('is inactive')</option>
                                 </select>
                             </label>
-                            <label class="expected-label"><span>$_('Limit')</span><span class="expected-wrap"><input class="expected-input" name="expected_$index" value="$condition['expected']"><span class="condition-unit"></span></span></label>
-                            <button type="button" class="remove-condition danger" title="$_('Remove condition')">&times;</button>
+                            <label class="expected-label" title=$:{json.dumps(_('Threshold or expected value used by the selected comparison.'), ensure_ascii=False)}><span>$_('Limit')</span><span class="expected-wrap"><input class="expected-input" name="expected_$index" value="$condition['expected']" title=$:{json.dumps(_('Enter the threshold or expected value for this condition.'), ensure_ascii=False)}><span class="condition-unit"></span></span></label>
+                            <button type="button" class="remove-condition danger" title=$:{json.dumps(_('Remove this condition from the rule.'), ensure_ascii=False)}>&times;</button>
                         </div>
                 </div>
-                <button type="button" class="button add-condition">+ $_('Add condition')</button>
+                <button type="button" class="button add-condition" title=$:{json.dumps(_('Add another condition to this rule. A rule can contain up to 20 conditions.'), ensure_ascii=False)}>+ $_('Add condition')</button>
 
                 <div class="rule-grid timing-grid">
-                    <label>$_('Conditions must remain true for')
-                        <span><input name="hold_seconds" type="number" min="0" max="86400" value="$rule['hold_seconds']"> $_('seconds')</span>
+                    <label title=$:{json.dumps(_('Delay activation until the matching conditions remain true continuously for this time.'), ensure_ascii=False)}>$_('Conditions must remain true for')
+                        <span><input name="hold_seconds" type="number" min="0" max="86400" value="$rule['hold_seconds']" title=$:{json.dumps(_('Use zero to activate immediately, or enter a delay in seconds.'), ensure_ascii=False)}> $_('seconds')</span>
                     </label>
-                    <label>$_('Repeat notification after')
-                        <span><input name="repeat_seconds" type="number" min="0" max="2592000" value="$rule['repeat_seconds']"> $_('seconds')</span>
+                    <label title=$:{json.dumps(_('Repeat notifications while the incident remains active.'), ensure_ascii=False)}>$_('Repeat notification after')
+                        <span><input name="repeat_seconds" type="number" min="0" max="2592000" value="$rule['repeat_seconds']" title=$:{json.dumps(_('Use zero to disable repeated notifications, or enter the repeat interval in seconds.'), ensure_ascii=False)}> $_('seconds')</span>
                     </label>
-                    <label>$_('Severity')
-                        <select name="severity">
+                    <label title=$:{json.dumps(_('Importance assigned to history entries and notification messages.'), ensure_ascii=False)}>$_('Severity')
+                        <select name="severity" title=$:{json.dumps(_('Select the severity of incidents created by this rule.'), ensure_ascii=False)}>
                             $for severity in ('info', 'warning', 'error', 'critical'):
                                 <option value="$severity"${' selected' if rule['severity'] == severity else ''}>${{'info': _('Information'), 'warning': _('Warning'), 'error': _('Error'), 'critical': _('Critical')}[severity]}</option>
                         </select>
                     </label>
-                    <label class="compact-check">$_('Notify when normal again')
-                        <input name="notify_on_clear" type="checkbox"${' checked' if rule.get('notify_on_clear') else ''}>
-                    </label>
+                    <div class="switch-field compact-check" title=$:{json.dumps(_('Send another notification after an active incident returns to normal.'), ensure_ascii=False)}><span>$_('Notify when normal again')</span>
+                        <label class="switch"><input name="notify_on_clear" type="checkbox"${' checked' if rule.get('notify_on_clear') else ''} aria-label=$:{json.dumps(_('Notify when normal again'), ensure_ascii=False)}><span class="slider"></span></label>
+                    </div>
                 </div>
 
                 <fieldset class="channels">
                     <legend>$_('Notifications')</legend>
-                    <label><input name="channel_home" type="checkbox"${' checked' if 'home' in rule['channels'] else ''}> $_('OSPy Home window')</label>
-                    <label><input name="channel_browser" type="checkbox"${' checked' if 'browser' in rule['channels'] else ''}> $_('Browser notification')</label>
-                    <label><input name="channel_email" type="checkbox"${' checked' if 'email' in rule['channels'] else ''}> $_('E-mail')</label>
-                    <label><input name="channel_telegram" type="checkbox"${' checked' if 'telegram' in rule['channels'] else ''}> $_('Telegram')</label>
-                    <label><input name="channel_push" type="checkbox"${' checked' if 'push' in rule['channels'] else ''}> $_('Push notification')</label>
+                    <div class="channel-option" title=$:{json.dumps(_('Show a dismissible warning window directly on the OSPy Home page.'), ensure_ascii=False)}><span>$_('OSPy Home window')</span><label class="switch"><input name="channel_home" type="checkbox"${' checked' if 'home' in rule['channels'] else ''} aria-label=$:{json.dumps(_('OSPy Home window'), ensure_ascii=False)}><span class="slider"></span></label></div>
+                    <div class="channel-option" title=$:{json.dumps(_('Display a desktop notification in this browser when the OSPy page is open.'), ensure_ascii=False)}><span>$_('Browser notification')</span><label class="switch"><input name="channel_browser" type="checkbox"${' checked' if 'browser' in rule['channels'] else ''} aria-label=$:{json.dumps(_('Browser notification'), ensure_ascii=False)}><span class="slider"></span></label></div>
+                    <div class="channel-option" title=$:{json.dumps(_('Send the event through an installed and configured e-mail notification plug-in.'), ensure_ascii=False)}><span>$_('E-mail')</span><label class="switch"><input name="channel_email" type="checkbox"${' checked' if 'email' in rule['channels'] else ''} aria-label=$:{json.dumps(_('E-mail'), ensure_ascii=False)}><span class="slider"></span></label></div>
+                    <div class="channel-option" title=$:{json.dumps(_('Send the event through the installed and configured Telegram Bot plug-in.'), ensure_ascii=False)}><span>$_('Telegram')</span><label class="switch"><input name="channel_telegram" type="checkbox"${' checked' if 'telegram' in rule['channels'] else ''} aria-label=$:{json.dumps(_('Telegram'), ensure_ascii=False)}><span class="slider"></span></label></div>
+                    <div class="channel-option" title=$:{json.dumps(_('Send the event to registered mobile devices through OSPy push notifications.'), ensure_ascii=False)}><span>$_('Push notification')</span><label class="switch"><input name="channel_push" type="checkbox"${' checked' if 'push' in rule['channels'] else ''} aria-label=$:{json.dumps(_('Push notification'), ensure_ascii=False)}><span class="slider"></span></label></div>
                 </fieldset>
 
                 <div class="rule-actions">
-                    <button class="submit" type="submit" name="action" value="save_rule">${_('Add rule') if is_new else _('Save rule')}</button>
+                    <button class="submit" type="submit" name="action" value="save_rule" title=$:{json.dumps(_('Save this rule and its conditions.'), ensure_ascii=False)}>${_('Add rule') if is_new else _('Save rule')}</button>
                     $if not is_new:
-                        <button class="button" type="submit" name="action" value="test_rule">$_('Test saved rule')</button>
-                        <button class="danger" type="submit" name="action" value="delete_rule" onclick="return confirm($:{json.dumps(_('Delete this rule?'), ensure_ascii=False)})">$_('Delete')</button>
+                        <button class="button" type="submit" name="action" value="test_rule" title=$:{json.dumps(_('Evaluate the saved rule once and record the result without sending notifications.'), ensure_ascii=False)}>$_('Test saved rule')</button>
+                        <button class="danger" type="submit" name="action" value="delete_rule" title=$:{json.dumps(_('Permanently delete this automation rule.'), ensure_ascii=False)} onclick="return confirm($:{json.dumps(_('Delete this rule?'), ensure_ascii=False)})">$_('Delete')</button>
                 </div>
             </form>
         </section>
@@ -142,7 +142,7 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
         <div class="rule-header"><h2>$_('Action history')</h2>
             <form method="post" action="$plugins.plugin_url('automation_rules.settings_page')">
                 $:csrf_input()
-                <button class="danger" type="submit" name="action" value="clear_history">$_('Clear history')</button>
+                <button class="danger" type="submit" name="action" value="clear_history" title=$:{json.dumps(_('Permanently remove all Automation Rules action history.'), ensure_ascii=False)}>$_('Clear history')</button>
             </form>
         </div>
         $if history:
@@ -159,6 +159,6 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
 
     <section class="automation-card">
         <h2>$_('Diagnostics events')</h2>
-        <textarea rows="6" readonly>$'\n'.join(events)</textarea>
+        <textarea rows="6" readonly title=$:{json.dumps(_('Recent diagnostic events reported by the Automation Rules worker.'), ensure_ascii=False)}>$'\n'.join(events)</textarea>
     </section>
 </div>

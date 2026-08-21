@@ -66,7 +66,7 @@
 
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/plugins/automation_rules/static/automation_rules.css';
+    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.1';
     document.head.appendChild(css);
     window.setTimeout(poll, 1500);
     window.setInterval(poll, 15000);

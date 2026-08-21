@@ -16,5 +16,5 @@ $var page: plugins
     <p>$_('A missing or unhealthy provider cannot match a condition and does not clear an already active incident. This plug-in does not execute irrigation control actions.')</p>
     <h3>$_('Notifications')</h3>
     <p>$_('Home notifications appear in OSPy. Browser notifications require explicit permission and an open OSPy page. E-mail and Telegram use their existing configured plug-ins. Push uses paired mobile devices and the configured OSPy push relay.')</p>
-    <div id="controls"><a class="button danger" href=$plugins.plugin_url('automation_rules.settings_page')>$_('Back')</a></div>
+    <div id="controls"><a class="button danger" href=$plugins.plugin_url('automation_rules.settings_page') title=$:{json.dumps(_('Return to the Automation Rules settings page.'), ensure_ascii=False)}>$_('Back')</a></div>
 </div>

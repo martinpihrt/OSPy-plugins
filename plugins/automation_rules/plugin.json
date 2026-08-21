@@ -3,7 +3,7 @@
   "id": "automation_rules",
   "name": "Automation Rules",
   "menu": "Package: Automation Rules",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Builds graphical AND/OR monitoring rules over cached OSPy provider values and sends testable local or external notifications.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",

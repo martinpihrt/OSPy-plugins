@@ -2,6 +2,9 @@
 
 August 21 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.0.1<br/>
+Replaced every visible settings checkbox and notification-channel checkbox with the red and green sliding switch used by other OSPy plug-ins. Added localized hover descriptions to editor fields, selectors, switches and action buttons, and versioned the browser assets so installed systems immediately load the updated interface.
+
 (Martin Pihrt) - Shelly Cloud Integration v1.0.8<br/>
 Fixed Shelly 2.5 roller and switch processing referencing an unassigned `a_voltage` variable even though the device response stores its shared voltage as `voltage`, which stopped the complete Integrator polling cycle with `UnboundLocalError`. Corrected the local switch-mode Wi-Fi response path and fixed Shelly 2PM Add-on and Shelly 1PM Add-on status lines so RSSI and update time are placed in their intended fields. Updated the version, cache key, help, READMEs and regression tests.
 
