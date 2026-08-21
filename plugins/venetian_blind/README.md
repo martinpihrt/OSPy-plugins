@@ -3,46 +3,42 @@ Venetian Blind Readme
 
 Tested in Python 3+
 
-The plug-in includes a `plugin.json` manifest and reports its worker, configured
-and reachable blinds, latest status update, command and errors through the OSPy
-system health interface.
+The plug-in includes a `plugin.json` manifest and reports its worker, configured and reachable blinds, latest status update, command and errors through the OSPy system health interface.
 
-This plugin can be used to control blinds and shutters via API and HW module (eg: shelly relays: https://shelly.cloud/products/shelly-25-smart-home-automation-relay/). 
-The roller shutter motor is connected to a shelly relay, or some other similar. The relay has two outputs (one for the up direction and the other for the down direction). The relay allows control via the http API rest. The relay also allows you to measure consumption.
+This plugin can be used to control blinds and shutters through an API and a hardware module such as a Shelly relay. The blind motor is connected to a Shelly relay or a similar device with separate outputs for the up and down directions. The relay supports control through its local REST or RPC API and can also measure consumption.
 
 Plugin setup
 -----------
 
-* Check Use Control:  
-  If checked enabled plugin is enabled.  
+Blinds are managed individually through Add blind, Edit and confirmed Delete actions, with a saved card or list view. Existing count-based settings retain labels, commands, status URLs and the labels for positions 0 and 100 percent. A complete standard Shelly Gen1 roller URL set is recognized automatically and restored as the Shelly Gen1 profile with its host; nonstandard commands remain in the Custom REST profile without modification.
 
-* Check Enable logging:  
-  If checked enabled logging is enabled. 
+Boolean settings use the same accessible red and green sliding switches as other OSPy plug-ins without changing the saved option names or their compatibility with existing configurations.
 
-* Show in footer:  
-  Show data from plugin in footer on home page.   
+Each blind can use Shelly Gen1, Shelly Gen2 and newer, or Custom REST URLs. Gen1 uses `/status`, `/roller/0?go=open|close|stop` and `to_pos`; Gen2+ uses `Cover.GetStatus`, `Cover.Open`, `Cover.Close`, `Cover.Stop` and `Cover.GoToPosition`. Four independently named tilt positions have configurable percentages and optional custom URLs. The reported Shelly position is classified as closed, tilt 1–4, open or an intermediate position.
 
-* Number of blinds:  
-  Blinds number (eg: 1,2,3...)  
+Testing a saved command keeps the same blind editor open so several directions and tilt positions can be checked without reopening the blind after every command.
 
-* Label for blind  
-  Naming blinds for better identification.
+Temperature shading reads the selected OSPy sensor from its actual `last_read_value` channel, compares it directly with the configured limit and operates only inside the permitted time window. Lowering is allowed only after the configured number of consecutive, fresh and unique Wind Monitor measurements is below the safe limit. No temperature hysteresis is required because the reported blind positions and one-action-per-condition guard prevent repeated relay commands.
 
-* Command for open blind:  
-  Command for open blind (eg: http://192.168.88.213/roller/0?go=open).
+Strong-wind protection is active all day and starts after the configured number of unique accepted Wind Monitor measurements reaches or exceeds the wind limit inside the configured minute interval, for example two exceedances during five minutes. It does not reuse the same cached measurement. If at least one enabled blind is closed, tilted, between positions or unreachable, the selected raising programs run; only a confirmed open state from every enabled blind suppresses the action. Pending lowering actions are cancelled first.
 
-* Command for stop blind:  
-  Command for stop blind (eg: http://192.168.88.213/roller/0?go=stop).
+For temperature shading, only a confirmed closed state from every enabled blind suppresses the selected lowering programs. A mixed state such as eight closed blinds and one open blind therefore starts lowering when the temperature, wind and time conditions are met. An unreachable blind also makes the aggregate state unconfirmed. Each continuous condition produces at most one action while movement is incomplete, but after every blind reaches the requested state a later position change can trigger the appropriate action again.
 
-* Command for close blind:  
-  Command for close blind (eg: http://192.168.88.213/roller/0?go=close).
+The plug-in observes active OSPy programs selected for raising and lowering. Programs started manually or through an ESP32 Multi Contact therefore suppress a duplicate automatic start while they are active, while the next valid Shelly position remains the authoritative state.
 
-* Command for read status:
-  Command for read blind status (eg: http://192.168.88.213/status)
+* Check Use Control: Enables or disables the plugin.
 
-* Label for position 0%:
-  Msg if position is 0% (for identification)
+* Check Enable logging: Enables or disables logging.
 
-* Label for position 100%:
-  Msg if position is 100% (for identification)
+* Show in footer: Shows plugin data in the footer on the home page.
+
+* Label for blind: Names the blind for better identification.
+
+* Command for open blind: Defines a custom command such as `http://192.168.88.213/roller/0?go=open`.
+
+* Command for stop blind: Defines a custom command such as `http://192.168.88.213/roller/0?go=stop`.
+
+* Command for close blind: Defines a custom command such as `http://192.168.88.213/roller/0?go=close`.
+
+* Command for read status: Defines a custom status address such as `http://192.168.88.213/status`.
 

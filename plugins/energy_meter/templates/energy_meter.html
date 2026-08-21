@@ -3,7 +3,7 @@ $def with(plugin_options, meters, summary, status, currency)
 $var title: $_(u'Energy Meter')
 $var page: plugins
 
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.4" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.6" rel="stylesheet" type="text/css">
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -55,41 +55,52 @@ jQuery(function(){ loadEnergyGraph(30); jQuery('.energyRange').click(function(){
         <a href=$plugins.plugin_url('energy_meter.log_page') class="button backup">$_(u'History')</a>
         <a href=$plugins.plugin_url('energy_meter.help_page') class="button upload">$_(u'Help')</a>
     </div>
-$ today = summary['periods']['today']
 $ yesterday = summary['periods']['yesterday']
 $ month = summary['periods']['month']
 $ year = summary['periods']['year']
+$ selected = summary['periods']['selected']
+    <form class="energyDayPicker" action=$plugins.plugin_url('energy_meter.overview_page') method="get">
+        <label for="energy-selected-date">$_(u'Select calendar day')</label>
+        <input id="energy-selected-date" name="date" type="date" value="$summary['selected_date']" max="$summary['current_date']">
+        <button class="button submit" type="submit">$_(u'Show day')</button>
+    </form>
     <div class="energyPeriodGrid">
         <section class="energyCard">
+        $if summary['selected_is_today']:
             <span>$_(u'Today')</span>
-            <strong>$_(u'Import') $'{:.3f}'.format(today['grid_import_kwh']) kWh</strong>
-            <b>$_(u'Export') $'{:.3f}'.format(today['grid_export_kwh']) kWh</b>
-            <small>$_(u'Cost') $'{:.2f}'.format(today['cost']) $currency / $_(u'Income') $'{:.2f}'.format(today['feed_in_income']) $currency</small>
+        $else:
+            <span>$_(u'Selected day') · <time datetime="$summary['selected_date']">$summary['selected_date']</time></span>
+        <strong>$_(u'Import') $'{:.3f}'.format(selected['grid_import_kwh']) kWh</strong>
+        <b>$_(u'Export') $'{:.3f}'.format(selected['grid_export_kwh']) kWh</b>
+        <small>$_(u'Cost') $'{:.2f}'.format(selected['cost']) $currency / $_(u'Income') $'{:.2f}'.format(selected['feed_in_income']) $currency</small>
         </section>
         <section class="energyCard">
             <span>$_(u'Yesterday')</span>
             <strong>$_(u'Import') $'{:.3f}'.format(yesterday['grid_import_kwh']) kWh</strong>
             <b>$_(u'Export') $'{:.3f}'.format(yesterday['grid_export_kwh']) kWh</b>
+            <small>$_(u'Cost') $'{:.2f}'.format(yesterday['cost']) $currency / $_(u'Income') $'{:.2f}'.format(yesterday['feed_in_income']) $currency</small>
         </section>
         <section class="energyCard">
             <span>$_(u'This month')</span>
             <strong>$_(u'Import') $'{:.3f}'.format(month['grid_import_kwh']) kWh</strong>
             <b>$_(u'Export') $'{:.3f}'.format(month['grid_export_kwh']) kWh</b>
+            <small>$_(u'Cost') $'{:.2f}'.format(month['cost']) $currency / $_(u'Income') $'{:.2f}'.format(month['feed_in_income']) $currency</small>
         </section>
         <section class="energyCard">
             <span>$_(u'This year')</span>
             <strong>$_(u'Import') $'{:.3f}'.format(year['grid_import_kwh']) kWh</strong>
             <b>$_(u'Export') $'{:.3f}'.format(year['grid_export_kwh']) kWh</b>
+            <small>$_(u'Cost') $'{:.2f}'.format(year['cost']) $currency / $_(u'Income') $'{:.2f}'.format(year['feed_in_income']) $currency</small>
         </section>
     </div>
-$if today.get('production_available'):
+$if selected.get('production_available'):
     <section class="energySolar">
-        <h3>$_(u'Solar system today')</h3>
-        <div><b>$_(u'Production'):</b> $'{:.3f}'.format(today['production_kwh']) kWh</div>
-        <div><b>$_(u'House consumption'):</b> $'{:.3f}'.format(today['house_consumption_kwh']) kWh</div>
-        <div><b>$_(u'Self-consumption'):</b> $'{:.3f}'.format(today['self_consumption_kwh']) kWh ($today['self_consumption_ratio'] %)</div>
-        <div><b>$_(u'Energy independence'):</b> $today['independence_ratio'] %</div>
-        <div><b>$_(u'Solar savings'):</b> $'{:.2f}'.format(today['solar_savings']) $currency</div>
+        <h3>$_(u'Solar system') · <time datetime="$summary['selected_date']">$summary['selected_date']</time></h3>
+        <div><b>$_(u'Production'):</b> $'{:.3f}'.format(selected['production_kwh']) kWh</div>
+        <div><b>$_(u'House consumption'):</b> $'{:.3f}'.format(selected['house_consumption_kwh']) kWh</div>
+        <div><b>$_(u'Self-consumption'):</b> $'{:.3f}'.format(selected['self_consumption_kwh']) kWh ($selected['self_consumption_ratio'] %)</div>
+        <div><b>$_(u'Energy independence'):</b> $selected['independence_ratio'] %</div>
+        <div><b>$_(u'Solar savings'):</b> $'{:.2f}'.format(selected['solar_savings']) $currency</div>
     </section>
 <h3>$_(u'Electricity meters')</h3>
 <div class="energyMeterGrid">

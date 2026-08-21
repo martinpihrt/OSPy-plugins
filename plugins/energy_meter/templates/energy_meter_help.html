@@ -1,7 +1,7 @@
 $def with()
 $var title: $_(u'Energy Meter help')
 $var page: plugins
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.4" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.6" rel="stylesheet" type="text/css">
 <div id="plugin" class="energyPanel">
 <div class="title">$_(u'Energy Meter help')</div>
 <div class="energyToolbar">
@@ -11,11 +11,16 @@ $var page: plugins
 <h3>$_(u'Connection')</h3>
 <p>$_(u'Use Direct LAN / IP whenever possible. Enter an IPv4 or IPv6 address, optional port, or a DNS name resolvable by the OSPy computer. The plug-in reads Shelly.GetStatus locally and does not require Internet access. Shelly local authentication uses the configured user and password.')</p>
 <p>$_(u'Shelly Cloud Integration is an alternative source. It only works when that plug-in is installed, enabled, configured and already exposes the selected three-phase meter.')</p>
+<p>$_(u'After OSPy or Shelly Cloud Integration starts, Energy Meter recognizes a configured meter that is still waiting for its first cached reading. Only that meter is retried every five seconds without recording a failure traceback or changing the configured sampling interval for other meters.')</p>
 <h3>$_(u'Meter roles and solar systems')</h3>
 <p>$_(u'Grid connection records energy imported from and exported to the public grid. Solar production records generated energy. Load records a separate consumer and Auxiliary is an independent meter. Grid export is never presented as solar production. With both Grid and Solar meters, house consumption equals production plus grid import minus grid export; self-consumption equals production minus grid export. Battery charging and discharging are not inferred without a dedicated meter.')</p>
 <h3>$_(u'History and counter replacement')</h3>
 <p>$_(u'Current Shelly cumulative counters and the previous sample are persisted atomically. OSPy therefore continues after restart without losing the counter baseline. If a counter decreases, the plug-in records a reset and establishes a new baseline without adding a false energy spike. Use Reset baseline before replacing or resetting a meter.')</p>
-<p>$_(u'Each completed sampling interval stores import and export energy plus power for L1, L2, L3 and the total. The default interval is 60 seconds. Local history is appended to a journal so the complete history file is not rewritten every minute. Delete history removes recorded intervals but preserves the current cumulative-counter baselines.')</p>
+<p>$_(u'Each completed sampling interval stores import and export energy plus power for L1, L2, L3 and the total. The default interval is 60 seconds. Local history is appended to a journal so the complete history file is not rewritten every minute.')</p>
+<p>$_(u'Overview totals and selected-day results are calculated from the retained interval history. Delete history therefore clears these overview values as well. Only the current cumulative-counter baselines are preserved, solely so the next sample continues from the current meter values without adding a false energy spike. Deleted historical totals cannot be reconstructed from the preserved baselines.')</p>
+<h3>$_(u'Calendar periods')</h3>
+<p>$_(u'Use the calendar-day selector on the overview to inspect any retained past day. Today, yesterday and every selected day follow the local date and time configured on the OSPy server: a day starts at 00:00 inclusive and ends at the next 00:00 exclusive. The physical Shelly cumulative counters are not reset at midnight; the plug-in splits and sums recorded intervals at calendar boundaries.')</p>
 <h3>$_(u'Prices, storage and mobile data')</h3>
-<p>$_(u'Prices active at sampling time are stored with each interval. History can be kept in local JSON, SQL through Database Connector, or both, and can be exported as CSV. The OSPy mobile API receives live meter power, period totals and bounded history.')</p>
+<p>$_(u'Applied import and feed-in prices, currency, cost and income are stored permanently with each interval in local and SQL history and CSV export. Equal tariff start and end times mean the complete selected day. If an interval crosses a tariff boundary, its price is calculated as a time-weighted combination of the applicable tariff segments. The history table shows the stored tariff, currency and both applied prices, while the overview displays the resulting cost and feed-in income for the selected day, yesterday, the current month and the current year. Later tariff changes do not recalculate historical prices or totals. Overview monetary totals include only records in the currently configured currency because currencies are not converted or added together.')</p>
+<p>$_(u'History can be kept in local JSON, SQL through Database Connector, or both. The OSPy mobile API receives live meter power, period totals and bounded history.')</p>
 </div>

@@ -3,7 +3,7 @@ $def with(plugin_options, status, events)
 $var title: $_(u'Wind Speed Monitor')
 $var page: plugins
 
-<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.1.1" rel="stylesheet" type="text/css">
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.2.1" rel="stylesheet" type="text/css">
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -148,6 +148,10 @@ function updateWindStatus() {
         jQuery("#wind-status").text(data.status);
         jQuery("#wind-last").text(data.last_measurement || "-");
         jQuery("#wind-pulses").text(data.raw_pulses);
+        jQuery("#wind-source-value").text(data.source === "rs485" ? "RS485" : "PCF8583 / I2C");
+        jQuery("#wind-force-row").toggle(data.source === "rs485");
+        jQuery("#wind-force").text(data.wind_force === null || data.wind_force === undefined ? "-" : data.wind_force);
+        jQuery("#wind-pulses-row").toggle(data.source !== "rs485");
         jQuery("#wind-interval").text(Number(data.elapsed || 0).toFixed(3) + " s");
         jQuery("#wind-confirmation").text(data.confirmation_count + " / " + data.confirmation_required);
         jQuery("#wind-activity").val(data.activity || "");
@@ -205,7 +209,9 @@ jQuery(document).ready(function() {
     </div>
 
     <div class="windTechnicalStatus">
-        <span>$_(u'Raw pulses'): <b id="wind-pulses">0</b></span>
+        <span>$_(u'Signal source'): <b id="wind-source-value">--</b></span>
+        <span id="wind-pulses-row">$_(u'Raw pulses'): <b id="wind-pulses">0</b></span>
+        <span id="wind-force-row">$_(u'Wind force'): <b id="wind-force">-</b></span>
         <span>$_(u'Actual measurement interval'): <b id="wind-interval">0.000 s</b></span>
         <span>$_(u'Action confirmation'): <b id="wind-confirmation">0 / 0</b></span>
         <span id="wind-rejected" class="windRejected">$_(u'The last measurement was rejected by the plausibility filter.')</span>

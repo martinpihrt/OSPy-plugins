@@ -3,19 +3,27 @@ $def with()
 $var title: $_(u'Wind Speed Monitor settings - help')
 $var page: plugins
 
-<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.1.0" rel="stylesheet" type="text/css">
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.2.1" rel="stylesheet" type="text/css">
 
 <div id="plugin" class="windPanel">
     <div class="title">$_(u'Wind Speed Monitor settings - help')</div>
-    <p>$_(u'The plug-in measures wind with a PCF8583 event counter at I2C address 0x50 or 0x51. It can stop selected stations, send an e-mail or run a program when confirmed wind thresholds are exceeded.')</p>
+    <p>$_(u'The plug-in measures wind from either the original PCF8583 event counter at I2C address 0x50 or 0x51, or a ZTS-3000-FSJT wind sensor using Modbus RTU over the shared RS485 Communication plug-in. It can stop selected stations, send an e-mail or run a program when confirmed wind thresholds are exceeded.')</p>
+    <p>$_(u'The original source is a PCF8583 pulse counter connected to the Raspberry Pi I2C bus; it is not a direct Raspberry Pi GPIO pulse input. Pulses-per-rotation and speed-per-rotation calibration apply only to this source.')</p>
+    <p>$_(u'When the RS485 source is selected and measurement is enabled, the RS485 Communication plug-in must be installed, enabled and running. It is not required for the PCF8583 source. Wind Monitor sends its transactions through the shared FIFO queue and never opens the serial port directly.')</p>
+    <p>$_(u'The ZTS-3000-FSJT is queried at input register 0 with Modbus function 03. The returned wind-speed register has a resolution of 0.1 m/s and the second register contains wind force. Every response is checked for address, function, length and Modbus CRC before it is accepted.')</p>
+    <p>$_(u'The sensor factory settings documented by its manufacturer are Modbus address 1, 4800 baud and 8N1. Configure communication speed and framing in RS485 Communication because all devices on one RS485 bus share those serial settings. Configure the sensor address in Wind Monitor.')</p>
+    <p><a href="https://www.laskakit.cz/yoc-fs-cidlo-rychlosti-vetru-anemometr/?variantId=12676" target="_blank" rel="noopener noreferrer">$_(u'ZTS-3000-FSJT RS485 wind speed sensor — product page')</a></p>
     <p>$_(u'The two I2C addresses are alternatives. If the preferred address is occupied during activation, OSPy selects the free alternative. The settings page rejects an address already used by another enabled plug-in, preserves the previous settings and displays the conflict in a red status bar.')</p>
     <p>$_(u'Each measurement resets the counter, waits approximately ten seconds and divides the pulse count by the actual monotonic elapsed time. This prevents I2C lock waiting from incorrectly increasing the calculated wind speed.')</p>
     <p>$_(u'The PCF8583 counter bytes are read directly from registers 0x01 to 0x03 and every BCD digit is validated. A failed setup, short read or invalid digit is rejected.')</p>
     <p>$_(u'The plausibility filter rejects speeds above the configured maximum accepted speed. Rejected values do not change the current or maximum speed and cannot be logged or trigger an automatic action.')</p>
     <p>$_(u'Station stopping and e-mail notification require the configured number of consecutive accepted threshold exceedances. Program actions retain their separate exceedance count and time interval.')</p>
+    <p>$_(u'The E-mail settings contain two independent notification controls. Send e-mail when stations are stopped belongs to wind-hazard protection, while Send measurement errors by e-mail reports technical sensor and communication failures. Both notification types use the selected e-mail plug-in and message subject.')</p>
+    <p>$_(u'Technical fault notifications cover an unavailable I2C bus, PCF8583 setup and read errors, a missing or stopped RS485 Communication dependency, RS485 queue, serial, timeout and protocol errors, rejected implausible values and unexpected measurement-worker errors. A valid accepted zero wind speed is not an error.')</p>
+    <p>$_(u'The first failure sends one error e-mail immediately. Repeated failures in the same active incident are suppressed until the configured reminder interval expires. One accepted measurement closes the incident, so a later independent failure can send a new immediate notification. If the selected e-mail plug-in or mail connection fails, the delivery failure is recorded in the OSPy log and Diagnostics but cannot be reported through the unavailable e-mail path.')</p>
     <p>$_(u'The trend compares older and newer samples from approximately the last minute. The arrow shows rising, falling or steady wind after enough samples have been collected.')</p>
     <p>$_(u'The mobile application translates the trend states into the matching localized arrow and refreshes the expanded operating data automatically.')</p>
-    <p>$_(u'I2C diagnostic logging records setup, retries, raw counter bytes, actual elapsed time, pulse rate, calculated speed and rejection reason. The file is size limited and rotated automatically. Enable it only while investigating a problem.')</p>
+    <p>$_(u'Measurement diagnostic logging records the selected source and its raw data. For PCF8583 it includes setup, retries, counter bytes, actual elapsed time and pulse rate; for RS485 it includes the device address, complete Modbus response, decoded speed, wind force and protocol errors. The file is size limited and rotated automatically. Enable it only while investigating a problem.')</p>
     <p>$_(u'Decimal calibration and threshold values accept both a decimal point and a decimal comma.')</p>
     <p>$_(u'One meter per second equals 3.6 kilometers per hour. Measurement accuracy depends on the pulses-per-rotation and speed-per-rotation calibration.')</p>
 </div>

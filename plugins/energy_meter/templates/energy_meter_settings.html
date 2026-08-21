@@ -3,7 +3,7 @@ $def with(plugin_options, meters, tariffs, validation_error=None)
 $var title: $_(u'Energy Meter settings')
 $var page: plugins
 
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.4" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.6" rel="stylesheet" type="text/css">
 <script>
 var meters = $:{json.dumps(meters, ensure_ascii=False)}; var tariffs = $:{json.dumps(tariffs, ensure_ascii=False)};
 var dayLabels = [$:{json.dumps(_('Mon'), ensure_ascii=False)}, $:{json.dumps(_('Tue'), ensure_ascii=False)}, $:{json.dumps(_('Wed'), ensure_ascii=False)}, $:{json.dumps(_('Thu'), ensure_ascii=False)}, $:{json.dumps(_('Fri'), ensure_ascii=False)}, $:{json.dumps(_('Sat'), ensure_ascii=False)}, $:{json.dumps(_('Sun'), ensure_ascii=False)}];
@@ -101,7 +101,7 @@ $if validation_error:
                     <td><input name="default_export_price" inputmode="decimal" value="$plugin_options['default_export_price']"></td>
                 </tr>
             </table>
-            <p>$_(u'The first enabled tariff matching the selected day and time is used. Click the day buttons to include or exclude Monday through Sunday. The applied prices are stored in every history interval, so later price changes do not rewrite past costs.')</p>
+            <p>$_(u'The first enabled tariff matching the selected day and time is used. Click the day buttons to include or exclude Monday through Sunday. Equal From and To times define a full-day tariff. Applied import and feed-in prices and the currency are stored in every history interval, so later changes do not rewrite or relabel past costs. An interval crossing a tariff boundary uses time-weighted prices for its respective tariff segments. Overview monetary totals include only records in the currently selected currency because the plug-in does not perform currency conversion.')</p>
             <div class="energyTableWrap">
                 <table class="energyConfig">
                     <thead>

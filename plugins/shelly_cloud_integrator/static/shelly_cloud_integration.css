@@ -1,0 +1,41 @@
+.shellySettings .title { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+#msgHint.visible { color: #197327; font-size: .9rem; }
+.shellyTopActions, .shellyFormActions, .shellyActions, .shellyViewChooser, .shellyManagerHeader { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+.shellyGlobalForm fieldset, .shellyEditor, .shellyDeviceManager { border: 1px solid #c8ced9; border-radius: 8px; margin-top: 1rem; padding: 1rem; }
+.shellyGlobalForm input[type="text"], .shellyGlobalForm input[type="password"], .shellyEditor input[type="text"], .shellyEditor select { box-sizing: border-box; max-width: 100%; width: 28rem; }
+.shellyManagerHeader { justify-content: space-between; }
+.shellyManagerHeader h2, .shellyDeviceCard h3 { margin: 0; }
+.shellyViewChooser { justify-content: flex-end; margin: .75rem 0; }
+.shellyViewChooser form, .shellyActions form { display: inline; margin: 0; }
+.shellyViewChooser button.active { background: #2e8b24; color: #fff; }
+.shellyListWrap { overflow-x: auto; }
+.shellyDeviceList { border-collapse: collapse; width: 100%; }
+.shellyDeviceList th, .shellyDeviceList td { border-bottom: 1px solid #d8dce4; padding: .65rem; text-align: left; vertical-align: middle; }
+.shellyDeviceCards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.shellyDeviceCard { border: 1px solid #c8ced9; border-left: 5px solid #30456f; border-radius: 7px; padding: 1rem; }
+.shellyCardHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.shellyEditorPreview { align-items: center; display: inline-flex; gap: 1rem; text-decoration: none; }
+.shellyEditorPreview img { height: 120px; object-fit: contain; width: 120px; }
+.shellyCardPreview { align-items: center; display: flex; justify-content: center; min-height: 130px; padding: .5rem; }
+.shellyCardPreview img { height: 120px; max-width: 100%; object-fit: contain; width: 160px; }
+.shellyListPreview { height: 52px; object-fit: contain; width: 68px; }
+.shellyDeviceCard dl { display: grid; grid-template-columns: minmax(5.5rem, auto) 1fr; gap: .35rem .75rem; }
+.shellyDeviceCard dt { font-weight: bold; }
+.shellyDeviceCard dd { margin: 0; overflow-wrap: anywhere; }
+.shellyState { border-radius: 999px; color: #fff; display: inline-block; padding: .18rem .55rem; white-space: nowrap; }
+.shellyState.enabled { background: #278636; }
+.shellyState.disabled { background: #70747b; }
+.shellyEmptyState { background: #f2f4f8; border-radius: 7px; padding: 1.25rem; text-align: center; }
+.switch { display: inline-block; height: 20px; position: relative; width: 40px; }
+.switch input { height: 0; opacity: 0; width: 0; }
+.slider { background-color: #b21f2d; border-radius: 20px; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .25s; }
+.slider::before { background-color: #fff; border-radius: 50%; bottom: 2px; content: ""; height: 16px; left: 2px; position: absolute; transition: .25s; width: 16px; }
+input:checked + .slider { background-color: #278636; }
+input:checked + .slider::before { transform: translateX(20px); }
+
+@media (max-width: 700px) {
+    .shellySettings .title, .shellyManagerHeader { align-items: stretch; flex-direction: column; }
+    .shellyEditorTable, .shellyEditorTable tbody, .shellyEditorTable tr, .shellyEditorTable td { display: block; width: 100%; }
+    .shellyEditorTable td { padding-bottom: .4rem; }
+    .shellyViewChooser { justify-content: flex-start; }
+}

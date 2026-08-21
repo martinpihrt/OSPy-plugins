@@ -97,7 +97,7 @@ def monitor(state_path, token):
     acknowledgement = str(state.get("acknowledgement", state_path + ".ack"))
     result_path = str(state.get("result", state_path + ".result"))
     ready_path = str(state.get("ready", state_path + ".ready"))
-    deadline = float(state.get("deadline", time.time() + 120))
+    deadline = float(state.get("deadline", time.time() + 300))
     _write_json(ready_path, {
         "token": token,
         "time": time.time(),

@@ -1,0 +1,196 @@
+$def with(plugin_options, ports, state, events)
+
+$var title: $_('RS485 Communication')
+$var page: plugins
+
+<link href="/plugins/rs485_communication/static/rs485_communication.css?v=1.0.1" rel="stylesheet" type="text/css">
+
+<style>
+.rs485-status-title {
+    font-size: 1.05em;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.rs485-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) 1fr;
+    gap: 4px 12px;
+    margin-top: 10px;
+}
+.rs485-detail-grid .label { font-weight: bold; }
+.rs485-mono { font-family: monospace; }
+@media (max-width: 700px) {
+    .rs485-detail-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<script>
+function setAction(actionName) {
+    jQuery('#formAction').val(actionName);
+    jQuery('#pluginForm').submit();
+}
+
+function updateStatus() {
+    jQuery.getJSON("$plugins.plugin_url('rs485_communication.status_json')", function(data) {
+        var status = data.status || 'waiting';
+        var badge = jQuery('#rs485State');
+        badge.text(data.status_label || status);
+        var statusClass = '';
+        if (status === 'ok') statusClass = 'success';
+        else if (status === 'communicating') statusClass = 'info';
+        else if (status === 'disabled' || status === 'waiting') statusClass = 'warning';
+        jQuery('#rs485StatusBox').attr('class', 'alert ' + statusClass);
+        jQuery('#rs485Summary').text(data.summary || '');
+        jQuery('#activePort').text(data.active_port || '-');
+        jQuery('#detectedPort').text(data.detected_port || '-');
+        jQuery('#deviceDescription').text(data.description || '-');
+        jQuery('#usbId').text(data.usb_id || '-');
+        jQuery('#lastAdapterTest').text(data.last_test_result || data.last_test_text || '-');
+        jQuery('#lastCommunication').text(data.last_success_text || '-');
+        jQuery('#traffic').text((data.tx_bytes || 0) + ' / ' + (data.rx_bytes || 0));
+        jQuery('#transactions').text(data.transactions || 0);
+        jQuery('#queueDepth').text(data.queue_depth || 0);
+        jQuery('#queueCurrent').text(
+            data.queue_current_client
+                ? data.queue_current_client + ' / ' + (data.queue_current_operation || '-')
+                : '-'
+        );
+        jQuery('#queueCounters').text(
+            (data.queue_completed || 0) + ' / ' + (data.queue_failed || 0) +
+            ' / ' + (data.queue_peak || 0)
+        );
+        jQuery('#queueWait').text((data.queue_last_wait_ms || 0) + ' ms');
+        jQuery('#lastClient').text(data.last_client || '-');
+        jQuery('#lastError').text(data.last_error_message || '-');
+    });
+}
+
+jQuery(document).ready(function() {
+    jQuery('#cSubmit').click(function() { setAction('save'); });
+    jQuery('#scanButton').click(function() { setAction('scan'); });
+    jQuery('#testButton').click(function() { setAction('test'); });
+    window.setInterval(updateStatus, 2000);
+});
+</script>
+
+<div id="plugin">
+    <div class="title">$_('RS485 Communication')</div>
+    <p><a href=$plugins.plugin_url('rs485_communication.help_page') class="button upload">$_('Help')</a></p>
+
+    <div id="rs485StatusBox" class="alert ${'success' if state['status'] == 'ok' else 'info' if state['status'] == 'communicating' else 'warning' if state['status'] in ('disabled', 'waiting') else ''}">
+        <div class="rs485-status-title">
+            $_('Adapter status'):
+            <span id="rs485State">$state['status_label']</span>
+        </div>
+        <div id="rs485Summary" role="status" aria-live="polite">$state['summary']</div>
+        <div class="rs485-detail-grid">
+            <div class="label">$_('Configured port'):</div><div class="rs485-mono">$plugin_options['port']</div>
+            <div class="label">$_('Detected port'):</div><div id="detectedPort" class="rs485-mono">${state['detected_port'] if state['detected_port'] else '-'}</div>
+            <div class="label">$_('Active port'):</div><div id="activePort" class="rs485-mono">${state['active_port'] if state['active_port'] else '-'}</div>
+            <div class="label">$_('Device'):</div><div id="deviceDescription">${state['description'] if state['description'] else '-'}</div>
+            <div class="label">$_('USB ID'):</div><div id="usbId" class="rs485-mono">${state['usb_id'] if state['usb_id'] else '-'}</div>
+            <div class="label">$_('Last adapter test'):</div><div id="lastAdapterTest">${state['last_test_result'] if state['last_test_result'] else state['last_test_text']}</div>
+            <div class="label">$_('Last communication'):</div><div id="lastCommunication">$state['last_success_text']</div>
+            <div class="label">$_('TX / RX bytes'):</div><div id="traffic">$state['tx_bytes'] / $state['rx_bytes']</div>
+            <div class="label">$_('Transactions'):</div><div id="transactions">$state['transactions']</div>
+            <div class="label">$_('RS485 queue waiting'):</div><div id="queueDepth">$state['queue_depth']</div>
+            <div class="label">$_('RS485 queue current'):</div><div id="queueCurrent">${(state['queue_current_client'] + ' / ' + state['queue_current_operation']) if state['queue_current_client'] else '-'}</div>
+            <div class="label">$_('Queue completed / errors / peak'):</div><div id="queueCounters">$state['queue_completed'] / $state['queue_failed'] / $state['queue_peak']</div>
+            <div class="label">$_('Last queue wait'):</div><div id="queueWait">$state['queue_last_wait_ms'] ms</div>
+            <div class="label">$_('Last client plug-in'):</div><div id="lastClient">${state['last_client'] if state['last_client'] else '-'}</div>
+            <div class="label">$_('Last error'):</div><div id="lastError">${state['last_error_message'] if state['last_error_message'] else '-'}</div>
+        </div>
+    </div>
+
+    <form id="pluginForm" action="$plugins.plugin_url('rs485_communication.settings_page')" method="post">
+        $:csrf_input()
+        <input id="formAction" name="action" type="hidden" value="save">
+
+        <p>
+            <button id="scanButton" type="button" class="button backup">$_('Find adapter')</button>
+            <button id="testButton" type="button" class="button submit">$_('Test adapter')</button>
+        </p>
+
+        <table class="optionList">
+            <tr>
+                <td style='text-transform: none;'>$_('Enable RS485 worker'):</td>
+                <td title=$:{json.dumps(_('When enabled, this plug-in owns the serial port and provides synchronized RS485 access to other OSPy plug-ins.'), ensure_ascii=False)}>
+                    <label class="switch">
+                        <input name="enabled" type="checkbox"${" checked" if plugin_options['enabled'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Serial port'):</td>
+                <td title=$:{json.dumps(_('Use auto for automatic Waveshare CH343G detection, or enter a fixed Linux serial device path.'), ensure_ascii=False)}>
+                    <input name="port" list="rs485Ports" type="text" style="width: 260px" value="$plugin_options['port']">
+                    <datalist id="rs485Ports">
+                        <option value="auto">$_('Automatic Waveshare CH343G detection')</option>
+                        $for port in ports:
+                            <option value="$port['device']">$port['description'] ${('[' + port['vid_text'] + ':' + port['pid_text'] + ']') if port['vid_text'] else ''}</option>
+                    </datalist>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Communication speed'):</td>
+                <td title=$:{json.dumps(_('RS485 baud rate. All devices on one RS485 bus normally use the same serial format.'), ensure_ascii=False)}>
+                    <input name="baudrate" list="rs485Baudrates" type="number" min="50" max="3000000" value="$plugin_options['baudrate']"> $_('baud')
+                    <datalist id="rs485Baudrates">
+                        $for baud in [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
+                            <option value="$baud"></option>
+                    </datalist>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Data bits'):</td>
+                <td>
+                    <select name="bytesize">
+                        $for bits in [5, 6, 7, 8]:
+                            <option value="$bits" ${"selected" if plugin_options['bytesize'] == bits else ""}>$bits</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Parity'):</td>
+                <td>
+                    <select name="parity">
+                        <option value="N" ${"selected" if plugin_options['parity'] == 'N' else ""}>$_('None')</option>
+                        <option value="E" ${"selected" if plugin_options['parity'] == 'E' else ""}>$_('Even')</option>
+                        <option value="O" ${"selected" if plugin_options['parity'] == 'O' else ""}>$_('Odd')</option>
+                        <option value="M" ${"selected" if plugin_options['parity'] == 'M' else ""}>$_('Mark')</option>
+                        <option value="S" ${"selected" if plugin_options['parity'] == 'S' else ""}>$_('Space')</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Stop bits'):</td>
+                <td>
+                    <select name="stopbits">
+                        $for stop in [1.0, 1.5, 2.0]:
+                            <option value="$stop" ${"selected" if plugin_options['stopbits'] == stop else ""}>$stop</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Read timeout'):</td>
+                <td><input name="timeout" type="number" min="0.05" max="30" step="0.05" value="$plugin_options['timeout']"> $_('s')</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Write timeout'):</td>
+                <td><input name="write_timeout" type="number" min="0.05" max="30" step="0.05" value="$plugin_options['write_timeout']"> $_('s')</td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Status log'):</td>
+                <td colspan="2">
+                    <textarea style="font-family: monospace;" rows="8" cols="75" readonly>$'\n'.join(events)</textarea>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <a href="/" class="button danger">$_('Cancel')</a>
+</div>

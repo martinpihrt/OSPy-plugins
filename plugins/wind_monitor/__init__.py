@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Martin Pihrt'
-# This plugins check wind speed in meter per second. 
-# This plugin read data from I2C counter PCF8583 on I2C address 0x50. Max count PCF8583 is 1 milion pulses per seconds
+# This plug-in measures wind speed from a PCF8583 pulse counter or an RS485 sensor.
 
 import json
 import time as time_
@@ -11,6 +10,7 @@ import sys
 import traceback
 import os
 import mimetypes
+import html
 
 from collections import deque
 from threading import Thread, Lock
@@ -36,9 +36,12 @@ from ospy.programs import programs
 
 from ospy.webpages import showInFooter # Enable plugin to display readings in UI footer
 from .methods import (
+    build_zts_wind_request,
     calculate_speed,
     calculate_trend,
     decode_bcd_counter,
+    fault_email_due,
+    parse_zts_wind_response,
     parse_decimal,
     update_confirmation,
     validate_measurement,
@@ -49,6 +52,9 @@ NAME = 'Wind Speed Monitor'
 MENU =  _('Package: Wind Speed Monitor')
 LINK = 'overview_page'
 MEASUREMENT_SECONDS = 10.0
+I2C_READ_SKIPPED = object()
+SOURCE_PCF8583 = 'pcf8583'
+SOURCE_RS485 = 'rs485'
 DIAGNOSTIC_LOG_NAME = 'diagnostic.log'
 DIAGNOSTIC_LOG_BACKUP_NAME = 'diagnostic.log.1'
 DIAGNOSTIC_LOG_MAX_BYTES = 1024 * 1024
@@ -58,8 +64,12 @@ wind_options = PluginOptions(
     NAME,
     {
         'use_wind_monitor': False,
+        'source': SOURCE_PCF8583,
         'address': False,            # True = 0x51, False = 0x50 for PCF8583
-        'sendeml': True,             # True = send email with error
+        'rs485_address': 1,          # ZTS-3000-FSJT factory Modbus address
+        'sendeml': True,             # send e-mail after confirmed wind hazard
+        'send_error_email': False,   # send bounded measurement fault e-mails
+        'error_email_reminder_hours': 6,
         'pulses': 2.0,               # 2 pulses per rotation
         'metperrot': 1.492,          # 1.492 meter per hour per rotation
         'maxspeed': 20.0,            # 20 max speed to deactivate stations
@@ -113,6 +123,11 @@ health_state = {
     'last_error_message': '',
     'last_rejected': 0,
     'rejected_count': 0,
+    'fault_active': False,
+    'fault_since': 0,
+    'fault_failures': 0,
+    'fault_message': '',
+    'last_fault_email': 0,
 }
 
 
@@ -179,6 +194,46 @@ def clear_diagnostic_log():
                 pass
 
 
+def wind_source(value=None):
+    selected = wind_options.get('source', SOURCE_PCF8583) if value is None else value
+    return SOURCE_RS485 if str(selected).lower() == SOURCE_RS485 else SOURCE_PCF8583
+
+
+def rs485_dependency_error():
+    """Return a user-facing error while the selected RS485 provider is unavailable."""
+    try:
+        from plugins.rs485_communication import get_rs485_status, worker
+    except (ImportError, AttributeError):
+        return _('RS485 Communication plug-in is required for the RS485 signal source.')
+    state = get_rs485_status()
+    if not state.get('enabled', False):
+        return _('Enable the RS485 Communication plug-in before using the RS485 signal source.')
+    if worker is None or not worker.is_alive():
+        return _('The RS485 Communication worker is not running.')
+    if not state.get('serial_available', False):
+        return _('Python serial support required by RS485 Communication is unavailable.')
+    return ''
+
+
+def send_wind_email(message, log_message, subject):
+    """Send through the configured OSPy e-mail plug-in without recursion."""
+    try:
+        try_mail = None
+        if wind_options.get('eplug', 0) == 0:
+            from plugins.email_notifications import try_mail
+        elif wind_options.get('eplug', 0) == 1:
+            from plugins.email_notifications_ssl import try_mail
+        if try_mail is None:
+            raise RuntimeError(_('The selected e-mail plug-in is unavailable.'))
+        try_mail(message, log_message, attachment=None, subject=subject)
+        with health_lock:
+            health_state['last_email'] = time_.time()
+        return True
+    except Exception:
+        log.error(NAME, _('Sending Wind Speed Monitor e-mail failed:') + '\n' + traceback.format_exc())
+        return False
+
+
 ################################################################################
 # Main function loop:                                                          #
 ################################################################################
@@ -200,6 +255,8 @@ class WindSender(Thread):
         self.status['last_raw_pulses'] = 0
         self.status['last_pulse_rate'] = 0.0
         self.status['last_elapsed'] = 0.0
+        self.status['source'] = wind_source()
+        self.status['last_wind_force'] = None
         self.status['last_rejected_reason'] = ''
         self.status['action_confirmation_count'] = 0
         self._trend_samples = deque(maxlen=12)
@@ -207,6 +264,7 @@ class WindSender(Thread):
         self._sleep_time = 0
         self._last_error_log = 0
         self._last_rejected_log = 0
+        self._pcf_failure_reported = False
         self.start()
         runtime.register_thread(self)
 
@@ -224,12 +282,72 @@ class WindSender(Thread):
 
     def _log_problem(self, message):
         now = time_.time()
-        with health_lock:
-            health_state['last_error'] = now
-            health_state['last_error_message'] = str(message).splitlines()[-1]
+        self._activate_fault(message, now)
         if now - self._last_error_log >= 300:
             log.error(NAME, message)
             self._last_error_log = now
+
+    def _activate_fault(self, message, now=None):
+        now = time_.time() if now is None else float(now)
+        clean_message = str(message).splitlines()[-1][:1000]
+        with health_lock:
+            was_active = bool(health_state.get('fault_active', False))
+            last_sent = health_state.get('last_fault_email', 0)
+            health_state['last_error'] = now
+            health_state['last_error_message'] = clean_message
+            health_state['fault_active'] = True
+            if not was_active:
+                health_state['fault_since'] = now
+                health_state['fault_failures'] = 0
+            health_state['fault_failures'] = health_state.get('fault_failures', 0) + 1
+            health_state['fault_message'] = clean_message
+            due = bool(wind_options.get('send_error_email', False)) and fault_email_due(
+                was_active,
+                last_sent,
+                now,
+                wind_options.get('error_email_reminder_hours', 6),
+            )
+            if due:
+                health_state['last_fault_email'] = now
+        if due:
+            self._send_fault_email(clean_message)
+
+    def _send_fault_email(self, message):
+        source = wind_source()
+        source_label = _('ZTS-3000-FSJT sensor over RS485') if source == SOURCE_RS485 else _('PCF8583 pulse counter over I2C')
+        with health_lock:
+            last_reading = health_state.get('last_reading', 0)
+            failures = health_state.get('fault_failures', 1)
+        last_reading_text = (
+            datetime.datetime.fromtimestamp(last_reading).strftime('%Y-%m-%d %H:%M:%S')
+            if last_reading else _('No successful measurement yet.')
+        )
+        subject = '{} - {}'.format(
+            wind_options.get('emlsubject', NAME),
+            _('measurement error'),
+        )
+        message_text = '{}: {}. {}: {}. {}: {}. {}: {}.'.format(
+            _('Wind measurement failed'), message,
+            _('Signal source'), source_label,
+            _('Last successful measurement'), last_reading_text,
+            _('Consecutive failures'), failures,
+        )
+        message_html = '<b>{}</b><br><p style="color:red;">{}</p><p>{}: {}</p><p>{}: {}</p><p>{}: {}</p>'.format(
+            html.escape(_('Wind Speed Monitor measurement error')),
+            html.escape(message),
+            html.escape(_('Signal source')), html.escape(source_label),
+            html.escape(_('Last successful measurement')), html.escape(last_reading_text),
+            html.escape(_('Consecutive failures')), failures,
+        )
+        diagnostic_event('fault_email', source=source, error=message, failures=failures)
+        send_wind_email(message_html, message_text, subject)
+
+    def _clear_fault(self):
+        with health_lock:
+            health_state['fault_active'] = False
+            health_state['fault_since'] = 0
+            health_state['fault_failures'] = 0
+            health_state['fault_message'] = ''
 
     def _open_bus(self):
         if self.bus is not None:
@@ -237,9 +355,13 @@ class WindSender(Thread):
         try:
             import smbus
             self.bus = smbus.SMBus(0 if helpers.get_rpi_revision() == 1 else 1)
-        except ImportError:
-            log.warning(NAME, _('Could not import smbus.'))
+        except Exception as error:
             self.bus = None
+            self._report_pcf_fault(_('Opening the I2C bus failed: {}').format(error))
+
+    def _report_pcf_fault(self, message):
+        self._pcf_failure_reported = True
+        self._log_problem(message)
 
     def close_bus(self):
         bus = self.bus
@@ -249,6 +371,44 @@ class WindSender(Thread):
                 bus.close()
             except (AttributeError, OSError):
                 pass
+
+    def _read_rs485(self):
+        started = time_.monotonic()
+        if self._stop_event.wait(MEASUREMENT_SECONDS):
+            return None
+        address = wind_options.get('rs485_address', 1)
+        request = build_zts_wind_request(address)
+        try:
+            dependency_error = rs485_dependency_error()
+            if dependency_error:
+                raise RuntimeError(dependency_error)
+            from plugins.rs485_communication import get_rs485_status, rs485_queue
+            serial_timeout = safe_float(
+                get_rs485_status().get('settings', {}).get('timeout', 1.0), 1.0)
+            response = rs485_queue.transaction(
+                request=request,
+                response_length=9,
+                client=NAME,
+                queue_timeout=2.0,
+                wait_timeout=max(5.0, serial_timeout + 5.0),
+            )
+            parsed = parse_zts_wind_response(response, address)
+            finished = time_.monotonic()
+            return {
+                'source': SOURCE_RS485,
+                'address': int(address),
+                'raw_bytes': [int(value) for value in response],
+                'raw_pulses': 0,
+                'pulse_rate': 0.0,
+                'elapsed': finished - started,
+                'speed_mps': parsed['speed_mps'],
+                'wind_force': parsed['wind_force'],
+                'raw_speed': parsed['raw_speed'],
+            }
+        except Exception as error:
+            diagnostic_event('rs485_error', address=int(address), error=str(error))
+            self._log_problem(_('RS485 wind sensor read failed: {}').format(error))
+            return None
 
     def run(self):
         millis = int(round(time_.time() * 1000))
@@ -284,20 +444,39 @@ class WindSender(Thread):
                 normalize_options()
                 if wind_options['use_wind_monitor']:    # if wind plugin is enabled
                     disable_text = True
-                    self._open_bus()
                     measurement = None
-                    if self.bus is not None and set_counter(self.bus):
-                        measurement = counter(self.bus, self._stop_event)
+                    source = wind_source()
+                    self.status['source'] = source
+                    if source == SOURCE_RS485:
+                        self.close_bus()
+                        measurement = self._read_rs485()
+                    else:
+                        self._pcf_failure_reported = False
+                        self._open_bus()
+                        if self.bus is not None:
+                            setup_result = set_counter(self.bus, self._report_pcf_fault)
+                            if setup_result:
+                                measurement = counter(self.bus, self._stop_event, self._report_pcf_fault)
+                            elif setup_result is None:
+                                measurement = I2C_READ_SKIPPED
+
+                    if measurement is I2C_READ_SKIPPED:
+                        self._sleep(1)
+                        continue
 
                     if measurement is not None:
                         raw_pulses = measurement['raw_pulses']
                         elapsed = measurement['elapsed']
-                        pulse_rate, val = calculate_speed(
-                            raw_pulses,
-                            elapsed,
-                            wind_options['pulses'],
-                            wind_options['metperrot'],
-                        )
+                        if source == SOURCE_RS485:
+                            pulse_rate = measurement['pulse_rate']
+                            val = measurement['speed_mps']
+                        else:
+                            pulse_rate, val = calculate_speed(
+                                raw_pulses,
+                                elapsed,
+                                wind_options['pulses'],
+                                wind_options['metperrot'],
+                            )
                         accepted, rejected_reason = validate_measurement(
                             val,
                             wind_options['filter_invalid'],
@@ -306,10 +485,12 @@ class WindSender(Thread):
                         self.status['last_raw_pulses'] = raw_pulses
                         self.status['last_pulse_rate'] = round(pulse_rate, 3)
                         self.status['last_elapsed'] = round(elapsed, 3)
+                        self.status['last_wind_force'] = measurement.get('wind_force')
                         self.status['last_measurement'] = datetime_string()
                         self.status['last_rejected_reason'] = rejected_reason
                         diagnostic_event(
                             'measurement',
+                            source=source,
                             address=measurement['address'],
                             raw_bytes=measurement['raw_bytes'],
                             raw_pulses=raw_pulses,
@@ -318,6 +499,7 @@ class WindSender(Thread):
                             speed_mps=round(val, 6),
                             accepted=accepted,
                             reason=rejected_reason,
+                            wind_force=measurement.get('wind_force'),
                         )
                         if not accepted:
                             action_confirmation_count = 0
@@ -325,6 +507,9 @@ class WindSender(Thread):
                             with health_lock:
                                 health_state['last_rejected'] = time_.time()
                                 health_state['rejected_count'] += 1
+                            self._activate_fault(
+                                _('Wind measurement was rejected as implausible: {} ({:.2f} m/s).').format(
+                                    rejected_reason, val))
                             if time_.time() - self._last_rejected_log >= 300:
                                 log.warning(
                                     NAME,
@@ -336,6 +521,7 @@ class WindSender(Thread):
 
                         with health_lock:
                             health_state['last_reading'] = time_.time()
+                        self._clear_fault()
 
                         self.status['meter']  = round(val*1.0, 2)
                         self.status['kmeter'] = round(val*3.6, 2)
@@ -352,9 +538,14 @@ class WindSender(Thread):
 
                         log.info(NAME, datetime_string())
                         if wind_options['use_kmh']:
-                            log.info(NAME, _('Speed') + ': ' + '%.1f' % round(self.status['meter']*3.6, 2) + ' ' + _('km/h') + ', ' + _('Pulses') + ': ' + '%.3f' % pulse_rate + ' ' + _('pulses/sec'))
+                            measurement_text = _('Speed') + ': ' + '%.1f' % round(self.status['meter']*3.6, 2) + ' ' + _('km/h')
                         else:
-                            log.info(NAME, _('Speed') + ': ' + '%.1f' % round(self.status['meter'], 2) + ' ' + _('m/sec') + ', ' + _('Pulses') + ': ' +  '%.3f' % pulse_rate + ' ' + _('pulses/sec'))
+                            measurement_text = _('Speed') + ': ' + '%.1f' % round(self.status['meter'], 2) + ' ' + _('m/sec')
+                        if source == SOURCE_RS485:
+                            measurement_text += ', ' + _('Wind force') + ': ' + str(measurement.get('wind_force'))
+                        else:
+                            measurement_text += ', ' + _('Pulses') + ': ' + '%.3f' % pulse_rate + ' ' + _('pulses/sec')
+                        log.info(NAME, measurement_text)
 
                         if wind_options['use_kmh']:
                             log.info(NAME, '%s' % self.status['log_date_maxspeed'] + ' ' + _('Maximal speed') + ': ' + '%s' % round(self.status['max_meter']*3.6, 2) + ' ' + _('km/h'))  
@@ -470,9 +661,13 @@ class WindSender(Thread):
                             if wind_mon is not None:
                                 wind_mon.val = tempText.encode('utf8').decode('utf8')         # value on footer
                     else:
+                        if (not self._stop_event.is_set() and source == SOURCE_PCF8583 and
+                                not self._pcf_failure_reported):
+                            self._log_problem(_('No valid measurement was received from the PCF8583 pulse counter over I2C.'))
                         self._sleep(1)
 
                 else:
+                    self._clear_fault()
                     if disable_text:
                         log.clear(NAME)
                         log.info(NAME, _('Wind speed monitor plug-in is disabled.'))
@@ -483,19 +678,7 @@ class WindSender(Thread):
                     msg = '<b>' + _('Wind speed monitor plug-in') + '</b> ' + '<br><p style="color:red;">' + _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + '%.1f' % (round(val*3.6,2)) + ' ' + _('km/h') + '. </p>'
                     msglog= _('System detected error: wind speed monitor. All stations set to OFF. Wind is') + ': ' + '%.1f' % (round(val,2)*3.6) + ' ' + _('km/h') + '.'
                     send = False
-                    try:
-                        try_mail = None
-                        if wind_options['eplug']==0: # email_notifications
-                            from plugins.email_notifications import try_mail
-                        if wind_options['eplug']==1: # email_notifications SSL
-                            from plugins.email_notifications_ssl import try_mail    
-                        if try_mail is not None:                        
-                            try_mail(msg, msglog, attachment=None, subject=wind_options['emlsubject']) # try_mail(text, logtext, attachment=None, subject=None)
-                            with health_lock:
-                                health_state['last_email'] = time_.time()
-
-                    except Exception:
-                        self._log_problem(_('Wind Speed monitor plug-in') + ':\n' + traceback.format_exc())
+                    send_wind_email(msg, msglog, wind_options['emlsubject'])
 
             except Exception:
                 log.clear(NAME)
@@ -513,13 +696,14 @@ wind_sender = None
 def start():
     global wind_sender
     if wind_sender is None:
-        preferred = '0x51' if wind_options['address'] else '0x50'
-        selected = select_plugin_i2c_address('wind_monitor', preferred)
-        if not selected:
-            raise RuntimeError(
-                _('No non-conflicting I2C address is available for Wind Speed Monitor.')
-            )
-        wind_options['address'] = selected == '0x51'
+        if wind_source() == SOURCE_PCF8583:
+            preferred = '0x51' if wind_options['address'] else '0x50'
+            selected = select_plugin_i2c_address('wind_monitor', preferred)
+            if not selected:
+                raise RuntimeError(
+                    _('No non-conflicting I2C address is available for Wind Speed Monitor.')
+                )
+            wind_options['address'] = selected == '0x51'
         wind_sender = WindSender()
 
 
@@ -587,6 +771,9 @@ def decimal_input(qdict, key, default):
 
 def normalize_options():
     normalized = {
+        'source': wind_source(),
+        'rs485_address': max(1, min(247, safe_int(
+            wind_options.get('rs485_address', 1), 1))),
         'pulses': max(0.001, min(1000000.0, safe_float(wind_options.get('pulses', 2), 2))),
         'metperrot': max(0.001, min(1000000.0, safe_float(wind_options.get('metperrot', 1.492), 1.492))),
         'maxspeed': max(0, min(1000, safe_float(wind_options.get('maxspeed', 20), 20))),
@@ -600,6 +787,8 @@ def normalize_options():
             wind_options.get('max_accepted_speed', 40.0), 40.0))),
         'action_confirmations': max(1, min(10, safe_int(
             wind_options.get('action_confirmations', 2), 2))),
+        'error_email_reminder_hours': max(1, min(168, safe_int(
+            wind_options.get('error_email_reminder_hours', 6), 6))),
         'eplug': 1 if safe_int(wind_options.get('eplug', 0), 0) == 1 else 0,
         'used_stations': [
             safe_int(station, -1)
@@ -623,7 +812,7 @@ def normalize_options():
             wind_options[key] = value
 
 
-def set_counter(i2cbus):
+def set_counter(i2cbus, error_callback=None):
     try:
         addr = 0
         if wind_options['address']:
@@ -642,7 +831,11 @@ def set_counter(i2cbus):
         diagnostic_event('setup', address='0x%02X' % addr, status=status, result='ok')
         log.debug(NAME, _('Wind speed monitor plug-in') + ': ' + _('Setup PCF8583 as event counter - OK')) 
         return True
-    except Exception:
+    except Exception as error:
+        if str(error) == 'I2C bus is busy.':
+            diagnostic_event('setup_skipped', address='0x%02X' % addr, reason='i2c_busy')
+            log.debug(NAME, datetime_string() + ': ' + _('I2C bus is busy, wind counter setup skipped.'))
+            return None
         diagnostic_event(
             'setup_error',
             address='0x%02X' % addr,
@@ -650,10 +843,12 @@ def set_counter(i2cbus):
         )
         log.error(NAME, _('Wind speed monitor plug-in') + ':\n' + _('Setup PCF8583 as event counter - FAULT'))
         log.error(NAME, _('Wind speed monitor plug-in') + '%s' % traceback.format_exc())
+        if error_callback is not None:
+            error_callback(_('PCF8583 setup over I2C failed: {}').format(error))
         return False
 
 
-def counter(i2cbus, stop_event=None):
+def counter(i2cbus, stop_event=None, error_callback=None):
     """Reset PCF8583, measure pulses and return raw count with actual duration."""
     try:
         addr = 0
@@ -696,16 +891,22 @@ def counter(i2cbus, stop_event=None):
     except IOError as e:
         if str(e) == 'I2C bus is busy.':
             log.debug(NAME, datetime_string() + ': ' + _('I2C bus is busy, wind counter read skipped.'))
+            diagnostic_event('counter_skipped', reason='i2c_busy')
+            return I2C_READ_SKIPPED
         else:
             log.error(NAME, _('Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
+            if error_callback is not None:
+                error_callback(_('Reading the PCF8583 counter over I2C failed: {}').format(e))
         diagnostic_event('counter_error', error=str(e))
         return None
-    except Exception:
+    except Exception as error:
         diagnostic_event(
             'counter_error',
             error=traceback.format_exc().splitlines()[-1],
         )
         log.error(NAME, _('Wind speed monitor plug-in') + u'%s' % traceback.format_exc())
+        if error_callback is not None:
+            error_callback(_('Reading the PCF8583 counter over I2C failed: {}').format(error))
         return None
 
 
@@ -876,6 +1077,8 @@ def _empty_status():
         'last_raw_pulses': 0,
         'last_pulse_rate': 0.0,
         'last_elapsed': 0.0,
+        'source': wind_source(),
+        'last_wind_force': None,
         'last_rejected_reason': '',
         'action_confirmation_count': 0,
     }
@@ -935,19 +1138,38 @@ class settings_page(ProtectedPage):
         )
         qdict = web.input(used_stations=[], used_program=[])
         verify_csrf(qdict)
-        requested_address = '0x51' if qdict.get('address', 'off') == 'on' else '0x50'
-        address_error = plugin_i2c_address_error(
-            'wind_monitor', requested_address
-        )
-        if address_error:
-            return self.plugin_render.wind_monitor_settings(
-                wind_options, address_error
+        requested_source = wind_source(qdict.get('source', SOURCE_PCF8583))
+        if requested_source == SOURCE_PCF8583:
+            requested_address = '0x51' if qdict.get('address', 'off') == 'on' else '0x50'
+            address_error = plugin_i2c_address_error(
+                'wind_monitor', requested_address
             )
+            if address_error:
+                return self.plugin_render.wind_monitor_settings(
+                    wind_options, address_error
+                )
+        try:
+            requested_rs485_address = int(qdict.get(
+                'rs485_address', wind_options.get('rs485_address', 1)))
+        except (TypeError, ValueError):
+            return self.plugin_render.wind_monitor_settings(
+                wind_options, _('The RS485 device address must be a number from 1 to 247.'))
+        if requested_rs485_address < 1 or requested_rs485_address > 247:
+            return self.plugin_render.wind_monitor_settings(
+                wind_options, _('The RS485 device address must be a number from 1 to 247.'))
+        if (requested_source == SOURCE_RS485 and
+                qdict.get('use_wind_monitor', 'off') == 'on'):
+            dependency_error = rs485_dependency_error()
+            if dependency_error:
+                return self.plugin_render.wind_monitor_settings(
+                    wind_options, dependency_error)
         decimal_values = {
             key: decimal_input(qdict, key, wind_options.get(key))
             for key in decimal_fields
         }
         wind_options.web_update(qdict, skipped=decimal_fields)
+        wind_options['source'] = requested_source
+        wind_options['rs485_address'] = requested_rs485_address
         for key, value in decimal_values.items():
             wind_options[key] = value
         normalize_options()
@@ -1004,7 +1226,7 @@ class log_page(ProtectedPage):
 
 
 class diagnostic_page(ProtectedPage):
-    """Display the bounded PCF8583 and I2C diagnostic log."""
+    """Display the bounded source-specific measurement diagnostic log."""
 
     def GET(self):
         qdict = web.input()
@@ -1288,6 +1510,8 @@ class wind_json(ProtectedPage):
             'raw_pulses': status.get('last_raw_pulses', 0),
             'pulse_rate': status.get('last_pulse_rate', 0.0),
             'elapsed': status.get('last_elapsed', 0.0),
+            'source': status.get('source', wind_source()),
+            'wind_force': status.get('last_wind_force'),
             'rejected_reason': status.get('last_rejected_reason', ''),
             'confirmation_count': status.get('action_confirmation_count', 0),
             'confirmation_required': wind_options.get('action_confirmations', 2),
@@ -1312,25 +1536,27 @@ class wind_json(ProtectedPage):
 def health():
     """Return a compact status for the OSPy diagnostics page."""
     worker_alive = wind_sender is not None and wind_sender.is_alive()
+    source = wind_source()
     bus_open = wind_sender is not None and wind_sender.bus is not None
+    dependency_error = rs485_dependency_error() if source == SOURCE_RS485 else ''
     with health_lock:
         state = dict(health_state)
     status_data = wind_sender.status if wind_sender is not None else {
         'meter': 0.0, 'kmeter': 0.0, 'max_meter': 0.0, 'log_date_maxspeed': '',
         'trend': 'unknown', 'last_elapsed': 0.0, 'last_raw_pulses': 0,
-        'last_rejected_reason': '',
+        'last_rejected_reason': '', 'last_wind_force': None,
     }
     details = {
         'worker': _('Running') if worker_alive else _('Stopped'),
         'enabled': bool(wind_options.get('use_wind_monitor', False)),
-        'i2c_address': '0x51' if wind_options.get('address', False) else '0x50',
-        'i2c_bus': _('Open') if bus_open else _('Unavailable'),
+        'source': source,
         'speed_mps': status_data['meter'],
         'maximum_mps': status_data['max_meter'],
         'maximum_at': status_data['log_date_maxspeed'],
         'trend': status_data.get('trend', 'unknown'),
         'measurement_seconds': status_data.get('last_elapsed', 0.0),
         'raw_pulses': status_data.get('last_raw_pulses', 0),
+        'wind_force': status_data.get('last_wind_force'),
         'filter_enabled': bool(wind_options.get('filter_invalid', True)),
         'maximum_accepted_mps': wind_options.get('max_accepted_speed', 40.0),
         'last_rejected_reason': status_data.get('last_rejected_reason', ''),
@@ -1342,7 +1568,25 @@ def health():
         'last_email': state['last_email'],
         'last_action': state['last_action'],
         'last_error': state['last_error'],
+        'error_email_enabled': bool(wind_options.get('send_error_email', False)),
+        'fault_active': bool(state.get('fault_active', False)),
+        'fault_since': state.get('fault_since', 0),
+        'fault_failures': state.get('fault_failures', 0),
+        'fault_message': state.get('fault_message', ''),
+        'last_fault_email': state.get('last_fault_email', 0),
     }
+    if source == SOURCE_RS485:
+        details['rs485_address'] = wind_options.get('rs485_address', 1)
+        try:
+            from plugins.rs485_communication import get_rs485_status
+            rs485_state = get_rs485_status()
+            details['rs485_baudrate'] = rs485_state.get('settings', {}).get('baudrate')
+            details['rs485_port'] = rs485_state.get('active_port') or rs485_state.get('detected_port') or ''
+        except (ImportError, AttributeError):
+            pass
+    else:
+        details['i2c_address'] = '0x51' if wind_options.get('address', False) else '0x50'
+        details['i2c_bus'] = _('Open') if bus_open else _('Unavailable')
     if state['last_error_message']:
         details['error'] = state['last_error_message']
     if not worker_alive:
@@ -1351,7 +1595,10 @@ def health():
     elif not wind_options.get('use_wind_monitor', False):
         status = 'unknown'
         summary = _('Wind monitor is disabled.')
-    elif not bus_open:
+    elif source == SOURCE_RS485 and dependency_error:
+        status = 'error'
+        summary = dependency_error
+    elif source == SOURCE_PCF8583 and not bus_open:
         status = 'error'
         summary = _('Wind counter is not available.')
     elif state['last_error'] and state['last_error'] > state['last_reading']:
@@ -1359,7 +1606,9 @@ def health():
         summary = _('Wind monitor reported an error.')
     else:
         status = 'ok'
-        summary = _('Wind monitor is reading the counter.')
+        summary = (_('Wind monitor is reading the RS485 sensor.')
+                   if source == SOURCE_RS485 else
+                   _('Wind monitor is reading the counter.'))
     return {'status': status, 'summary': summary, 'details': details}
 
 
@@ -1396,6 +1645,13 @@ def mobile_cards(from_time=None, to_time=None, max_points=400):
     factor = 3.6 if use_kmh else 1.0
     unit = _('km/h') if use_kmh else _('m/sec')
     series, history = _mobile_series(from_time, to_time, max_points)
+    source_metric = (
+        {'id': 'wind_force', 'label': _('Wind force'),
+         'value': current.get('last_wind_force'), 'unit': ''}
+        if wind_source() == SOURCE_RS485 else
+        {'id': 'pulses', 'label': _('Pulses'),
+         'value': current.get('last_raw_pulses', 0), 'unit': ''}
+    )
     return [{
         'id': 'wind',
         'title': _('Wind speed'),
@@ -1407,9 +1663,7 @@ def mobile_cards(from_time=None, to_time=None, max_points=400):
             {'id': 'trend', 'label': _('Trend'),
              'value': current.get('trend', 'unknown'),
              'unit': ''},
-            {'id': 'pulses', 'label': _('Pulses'),
-             'value': current.get('last_raw_pulses', 0),
-             'unit': ''},
+            source_metric,
         ],
         'series': series,
         'history': history,

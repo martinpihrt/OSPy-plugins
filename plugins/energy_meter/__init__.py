@@ -18,8 +18,8 @@ from ospy.log import log
 from ospy.webpages import ProtectedPage, clear_plugin_runtime_data, showInFooter
 from plugins import PluginOptions, get_runtime, plugin_data_dir, plugin_url
 
-from .model import make_interval, normalized_reading, period_bounds, solar_summary, tariff_at
-from .sources import read_direct, read_integrator
+from .model import make_interval, normalized_reading, period_bounds, price_interval, selected_day_bounds, solar_summary, tariff_at
+from .sources import IntegratorMeterDisabled, IntegratorMeterError, IntegratorMeterOffline, IntegratorMeterUnavailable, IntegratorReadingPending, read_direct, read_integrator
 from .storage import JsonStore
 
 
@@ -144,13 +144,20 @@ def selected_history():
     return sql_history() if options.get('storage') == 'sql' else local_history()
 
 
-def current_summary():
-    bounds = period_bounds()
+def current_summary(selected_date=None):
+    now = datetime.datetime.now()
+    bounds = period_bounds(now)
+    selected = selected_day_bounds(selected_date, now)
     history = selected_history()
-    summary = solar_summary(history, bounds['today'], bounds['now'])
+    currency = str(options.get('currency', 'CZK'))
+    summary = solar_summary(history, bounds['today'], bounds['now'], currency)
+    summary['selected_date'] = selected['date']
+    summary['current_date'] = selected['current_date']
+    summary['selected_is_today'] = selected['is_today']
     summary['periods'] = {}
     for name, start_value, end_value in (('today', bounds['today'], bounds['now']), ('yesterday', bounds['yesterday'], bounds['today']), ('month', bounds['month'], bounds['now']), ('year', bounds['year'], bounds['now'])):
-        summary['periods'][name] = solar_summary(history, start_value, end_value)
+        summary['periods'][name] = solar_summary(history, start_value, end_value, currency)
+    summary['periods']['selected'] = solar_summary(history, selected['start'], selected['end'], currency)
     return summary
 
 
@@ -162,6 +169,7 @@ class EnergyWorker(Thread):
         self.session = requests.Session()
         self.status = {'last_success': 0, 'last_error': 0, 'error': '', 'meters': {}, 'resets': 0}
         self.reset_requests = set()
+        self.pending_integrator_meters = set()
         self.footer = None
         self.start()
         runtime.register_thread(self)
@@ -192,8 +200,13 @@ class EnergyWorker(Thread):
             started = time.time()
             states = store().states()
             records = []
+            retry_only = set(self.pending_integrator_meters)
+            pending_integrator_meters = set()
+            cycle_error = ''
             for meter in meters():
                 if not meter['enabled']:
+                    continue
+                if retry_only and meter['id'] not in retry_only:
                     continue
                 try:
                     reading = read_integrator(meter) if meter['source'] == 'integrator' else read_direct(meter, self.session)
@@ -210,8 +223,11 @@ class EnergyWorker(Thread):
                         states.pop(meter['id'], None)
                         self.status['resets'] += 1
                     interval_started = previous.get('timestamp', started) if previous else started
-                    tariff = tariff_at(datetime.datetime.fromtimestamp(ended), tariffs(), options.get('default_import_price', 0), options.get('default_export_price', 0))
+                    configured_tariffs = tariffs()
+                    tariff = tariff_at(datetime.datetime.fromtimestamp(ended), configured_tariffs, options.get('default_import_price', 0), options.get('default_export_price', 0))
                     interval, state = make_interval(meter, reading, previous, interval_started, ended, tariff)
+                    interval = price_interval(interval, configured_tariffs, options.get('default_import_price', 0), options.get('default_export_price', 0))
+                    interval['currency'] = str(options.get('currency', 'CZK'))
                     states[meter['id']] = state
                     self.status['meters'][meter['id']] = {'label': meter['label'], 'role': meter['role'], 'source': meter['source'], 'online': True, 'power_w': interval['power_w'], 'power_l1_w': interval['power_l1_w'], 'power_l2_w': interval['power_l2_w'], 'power_l3_w': interval['power_l3_w'], 'updated': ended, 'error': ''}
                     if previous:
@@ -219,11 +235,31 @@ class EnergyWorker(Thread):
                     if interval['counter_reset']:
                         self.status['resets'] += 1
                     self.status['last_success'] = ended
+                except IntegratorReadingPending:
+                    message = _('Waiting for the selected Shelly meter to provide its first reading.')
+                    pending_integrator_meters.add(meter['id'])
+                    self.status['meters'][meter['id']] = {'label': meter['label'], 'role': meter['role'], 'source': meter['source'], 'online': False, 'power_w': 0, 'updated': time.time(), 'error': message, 'pending': True}
+                    cycle_error = cycle_error or message
+                except IntegratorMeterError as error:
+                    if isinstance(error, IntegratorMeterOffline):
+                        message = _('The selected Shelly meter is offline.')
+                    elif isinstance(error, IntegratorMeterDisabled):
+                        message = _('The selected Shelly meter is disabled in Shelly Cloud Integration.')
+                    elif isinstance(error, IntegratorMeterUnavailable):
+                        message = _('The selected Shelly meter is not available in Shelly Cloud Integration.')
+                    else:
+                        message = _('The selected Shelly meter could not be read.')
+                    self.status['last_error'] = time.time()
+                    cycle_error = message
+                    self.status['meters'][meter['id']] = {'label': meter['label'], 'role': meter['role'], 'source': meter['source'], 'online': False, 'power_w': 0, 'updated': time.time(), 'error': message}
+                    log.error(NAME, message)
                 except Exception as error:
                     self.status['last_error'] = time.time()
-                    self.status['error'] = str(error)
+                    cycle_error = str(error)
                     self.status['meters'][meter['id']] = {'label': meter['label'], 'role': meter['role'], 'source': meter['source'], 'online': False, 'power_w': 0, 'updated': time.time(), 'error': str(error)}
                     log.error(NAME, _('Energy Meter reading failed') + ':\n' + traceback.format_exc())
+            self.pending_integrator_meters = pending_integrator_meters
+            self.status['error'] = cycle_error
             with lock:
                 current_store = store()
                 current_store.save_state(states)
@@ -235,7 +271,8 @@ class EnergyWorker(Thread):
                 except Exception:
                     log.error(NAME, _('Saving Energy Meter history to SQL failed') + ':\n' + traceback.format_exc())
             self._sync_footer()
-            self.stop_event.wait(max(5, min(3600, safe_int(options.get('sample_interval'), 60))))
+            wait_seconds = 5 if pending_integrator_meters else max(5, min(3600, safe_int(options.get('sample_interval'), 60)))
+            self.stop_event.wait(wait_seconds)
 
 
 worker = None
@@ -260,7 +297,8 @@ def stop():
 
 class overview_page(ProtectedPage):
     def GET(self):
-        return self.plugin_render.energy_meter(options, meters(), current_summary(), worker.status if worker else {}, options.get('currency', 'CZK'))
+        qdict = web.input(date='')
+        return self.plugin_render.energy_meter(options, meters(), current_summary(qdict.get('date')), worker.status if worker else {}, options.get('currency', 'CZK'))
 
 
 class settings_page(ProtectedPage):
@@ -343,7 +381,7 @@ class reset_meter_page(ProtectedPage):
 class log_csv(ProtectedPage):
     def GET(self):
         output = io.StringIO()
-        fields = ['started', 'ended', 'meter_id', 'label', 'role', 'import_l1_kwh', 'import_l2_kwh', 'import_l3_kwh', 'import_kwh', 'export_l1_kwh', 'export_l2_kwh', 'export_l3_kwh', 'export_kwh', 'power_l1_w', 'power_l2_w', 'power_l3_w', 'power_w', 'tariff_name', 'import_price', 'export_price', 'cost', 'income', 'counter_reset']
+        fields = ['started', 'ended', 'meter_id', 'label', 'role', 'import_l1_kwh', 'import_l2_kwh', 'import_l3_kwh', 'import_kwh', 'export_l1_kwh', 'export_l2_kwh', 'export_l3_kwh', 'export_kwh', 'power_l1_w', 'power_l2_w', 'power_l3_w', 'power_w', 'tariff_name', 'currency', 'import_price', 'export_price', 'cost', 'income', 'counter_reset']
         writer = csv.DictWriter(output, fieldnames=fields, extrasaction='ignore', delimiter=';')
         writer.writeheader()
         writer.writerows(selected_history())
@@ -360,6 +398,8 @@ def health():
         return {'status': 'unknown', 'summary': _('Energy Meter is disabled.'), 'details': details}
     online = [value for value in worker.status.get('meters', {}).values() if value.get('online')]
     if not online:
+        if any(value.get('pending') for value in worker.status.get('meters', {}).values()):
+            return {'status': 'unknown', 'summary': _('Energy Meter is waiting for its first Shelly reading.'), 'details': details}
         return {'status': 'error', 'summary': _('No configured electricity meter is available.'), 'details': details}
     return {'status': 'ok', 'summary': _('Energy Meter is collecting data.'), 'details': details}
 

@@ -1,0 +1,117 @@
+$def with()
+
+$var title: $_('RS485 Communication - help')
+$var page: plugins
+
+<style>
+.rs485-help-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+    margin: 12px 0 18px 0;
+}
+.rs485-help-images a {
+    display: block;
+    max-width: 100%;
+}
+.rs485-help-images img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+}
+</style>
+
+<div id="plugin">
+    <div class="title">$_('RS485 Communication - help')</div>
+
+    <p>$_('This plug-in provides one shared RS485 serial interface for OSPy and other plug-ins. It is designed primarily for the Waveshare industrial USB TO RS485 (B) adapter with the CH343G USB chip.')</p>
+
+    <h3>$_('Waveshare industrial USB to RS485 adapter')</h3>
+    <p>$_('The adapter uses a WCH CH343G USB interface and an SP485EEN RS485 transceiver. It converts USB to a two-way, half-duplex RS485 connection and controls the transmit/receive direction automatically in hardware.')</p>
+    <ul>
+        <li>$_('RS485 terminals: A+, B- and GND; USB-A host connection and 5 V USB power.')</li>
+        <li>$_('Supported communication speed: 300 baud to 3 Mbps.')</li>
+        <li>$_('Approximate RS485 reach: up to 1.2 km at a suitably low speed and with correct bus wiring.')</li>
+        <li>$_('Point-to-multipoint operation for up to 32 nodes; a repeater is recommended by the vendor for 16 or more nodes.')</li>
+        <li>$_('Automatic direction control, built-in 120 ohm matching resistor, resettable fuse, TVS surge protection and ESD protection.')</li>
+        <li>$_('PWR, TXD and RXD LEDs indicate power and communication activity.')</li>
+    </ul>
+    <p><a href="https://rpishop.cz/datove-redukce/5360-waveshare-prumyslovy-prevodnik-usb-na-rs485-obousmerny.html" target="_blank" rel="noopener noreferrer">$_('Product information and specifications on RPishop.cz')</a></p>
+
+    <div class="rs485-help-images">
+        <a href="/plugins/rs485_communication/static/images/Waveshare-USB-to-RS485-1.webp">
+            <img src="/plugins/rs485_communication/static/images/Waveshare-USB-to-RS485-1.webp" alt="Waveshare USB to RS485 adapter">
+        </a>
+        <a href="/plugins/rs485_communication/static/images/Waveshare-USB-to-RS485-2.webp">
+            <img src="/plugins/rs485_communication/static/images/Waveshare-USB-to-RS485-2.webp" alt="Waveshare USB to RS485 adapter connection">
+        </a>
+        <a href="/plugins/rs485_communication/static/images/Waveshare-USB-to-RS485-detail.gif">
+            <img src="/plugins/rs485_communication/static/images/Waveshare-USB-to-RS485-detail.gif" alt="Waveshare USB to RS485 adapter details">
+        </a>
+    </div>
+
+    <h3>$_('Connection')</h3>
+    <ul>
+        <li>$_('Connect the USB adapter to the Raspberry Pi.')</li>
+        <li>$_('Connect RS485 A+ to A / D+ / 485+ of the target device.')</li>
+        <li>$_('Connect RS485 B- to B / D- / 485- of the target device.')</li>
+        <li>$_('Connect GND when required by the installation and the target device documentation.')</li>
+    </ul>
+
+    <h3>$_('Port selection')</h3>
+    <p>$_('The default value auto searches specifically for a WCH CH343G adapter. On Raspberry Pi it normally appears as /dev/ttyACM0. You can also enter a fixed path manually, including a /dev/serial/by-id path.')</p>
+
+    <h3>$_('Communication speed')</h3>
+    <p>$_('The selected baud rate and serial format apply to the complete physical bus. All devices connected to the same A/B pair normally have to use the same values. The default 4800 8N1 matches the documented factory setting of the ZTS-3000-FSJT wind sensor.')</p>
+    <p><b>$_('Important'):</b> $_('Saving a new speed changes how OSPy opens the USB adapter; it does not change a slave device. A device-specific plug-in must first send the documented configuration command and then switch the bus to the same speed.')</p>
+
+    <h3>$_('Adapter test')</h3>
+    <p>$_('The Test adapter button verifies that the USB serial adapter is detected and that OSPy can open the selected serial port with the configured parameters. The test intentionally sends no arbitrary bytes to the live RS485 bus.')</p>
+    <p><b>$_('Important'):</b> $_('A successful adapter test does not prove A/B wiring or communication with a slave device. A complete RS485 line test requires a responding device or a second RS485 adapter.')</p>
+
+    <h3>$_('RS485 queue')</h3>
+    <p>$_('All dependent plug-ins should use the public rs485_queue object. Requests are processed in FIFO order by one worker, so two plug-ins cannot transmit on the half-duplex RS485 bus at the same time.')</p>
+
+    <p><b>$_('Synchronous transaction'):</b></p>
+    <pre>from plugins.rs485_communication import rs485_queue
+
+response = rs485_queue.transaction(
+    request=b'\x01\x03\x00\x00\x00\x02\xC4\x0B',
+    response_length=9,
+    client='My sensor plug-in',
+)</pre>
+
+    <p><b>$_('Asynchronous queued transaction'):</b></p>
+    <pre>job = rs485_queue.submit_transaction(
+    request=frame,
+    response_length=9,
+    client='My sensor plug-in',
+)
+
+# Do other work...
+response = job.wait(timeout=3)</pre>
+
+    <p><b>$_('Atomic multi-step protocol'):</b></p>
+    <p>$_('Use call() when one protocol operation needs several writes and reads. The callback runs entirely inside the RS485 worker and remains atomic with respect to other queued plug-ins.')</p>
+    <pre>def read_device(ser):
+    ser.reset_input_buffer()
+    ser.write(frame_1)
+    first = ser.read(8)
+    ser.write(frame_2)
+    second = ser.read(8)
+    return first, second
+
+first, second = rs485_queue.call(
+    read_device,
+    client='My protocol plug-in',
+)</pre>
+
+    <p>$_('The settings page shows the current queue depth, active queue client, completed/error counters, peak queue depth and the last queue waiting time.')</p>
+
+    <p><a href=$plugins.plugin_url('rs485_communication.settings_page') class="button cancel">$_('Back')</a></p>
+</div>

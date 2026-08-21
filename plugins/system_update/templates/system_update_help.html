@@ -7,7 +7,7 @@ $var page: plugins
     <div class="title">$_('System update from GitHub - Help')</div>
     <p>$_('This plugin compares the local copy with the remote repository and can automatically update the local copy').</p>
     <p>$_('This plugin also allows you to restore a previous version of the OSPy software (you can go back 10 steps)').</p>    
-    <p>$_('Before changing OSPy files, the plug-in starts an external watchdog. The updated process confirms a healthy start after the scheduler responds and the web interface is listening. If confirmation is not received within two minutes, the previous commit is restored and OSPy is restarted automatically.')</p>
+    <p>$_('Before changing OSPy files, the plug-in starts an external watchdog. The updated process confirms a healthy start after the scheduler responds and the web interface is listening. If confirmation is not received within five minutes, the previous commit is restored and OSPy is restarted automatically.')</p>
     <p>$_('If the external watchdog cannot be started, the update is stopped before tracked files are changed.')</p>
     <p>$_('The status page shows the exact current and target commits. A verified stable release is an annotated vX.Y.Z Git tag whose commit belongs to the master branch; its tag message is displayed as the release notes.')</p>
     <p>$_('Rollback to the last verified stable release and manual commit rollback both create a verified safety backup and start the external watchdog before changing OSPy files.')</p>

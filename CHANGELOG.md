@@ -1,5 +1,56 @@
 # OSPy-plugins Changelog
 
+August 21 2026
+--------------
+(Martin Pihrt) - Shelly Cloud Integration v1.0.8<br/>
+Fixed Shelly 2.5 roller and switch processing referencing an unassigned `a_voltage` variable even though the device response stores its shared voltage as `voltage`, which stopped the complete Integrator polling cycle with `UnboundLocalError`. Corrected the local switch-mode Wi-Fi response path and fixed Shelly 2PM Add-on and Shelly 1PM Add-on status lines so RSSI and update time are placed in their intended fields. Updated the version, cache key, help, READMEs and regression tests.
+
+(Martin Pihrt) - Energy Meter v1.0.6 and Shelly Cloud Integration v1.0.7<br/>
+Fixed Energy Meter reporting a configured Shelly meter as unavailable when it started before Shelly Cloud Integration had populated its runtime cache. Shelly Cloud Integration now safely exposes snapshots of configured identities and cached readings even before its worker starts, while Energy Meter also understands the previous parallel-list interface. Energy Meter distinguishes missing, disabled, offline and still-loading devices; a still-loading meter is retried every five seconds without logging a failure traceback, while other successful meters keep their configured sampling interval and Diagnostics reports a waiting state until data arrives. Shelly IDs are matched case-insensitively and labels remain exact. Updated versions, cache keys, help, READMEs and regression tests.
+
+(Martin Pihrt) - Venetian Blind v1.2.1<br/>
+Recognized complete standard Shelly Gen1 roller URL sets during both initial and already completed legacy migration, restoring the Shelly Gen1 profile and host instead of displaying them as Custom REST URLs while preserving nonstandard custom configurations unchanged. Test command buttons now return to the editor for the same blind, allowing consecutive command checks without reopening it. Updated the README, cache version and regression tests.
+
+(Martin Pihrt) - Venetian Blind v1.2.0<br/>
+Fixed temperature automation reading a nonexistent sensor attribute instead of the actual OSPy `last_read_value` channel, which prevented the lowering program from starting even above the configured limit. Replaced repeated cached-wind sampling with unique accepted Wind Monitor measurements and added a configurable minute window for the required strong-wind exceedances. Removed temperature hysteresis from the active settings because authoritative position checks now control re-entry. Mixed positions such as eight closed blinds and one open blind now start lowering when all environmental conditions are met; strong wind starts raising whenever any enabled blind is not confirmed open, including tilted, intermediate and unreachable devices. Continuous-condition guards prevent relay repetition, active external programs suppress duplicates, strong wind cancels pending lowering, and Diagnostics reports the current temperature, wind confirmation counts and confirmed blind-state count. Updated settings explanations, help, README and regression tests.
+
+August 20 2026
+--------------
+
+(Martin Pihrt) - Venetian Blind v1.1.1<br/>
+Replaced every visible settings checkbox with the same accessible red and green sliding switch used by other OSPy plug-ins. The change covers individual blind enablement, plug-in control, logging, footer output and temperature and wind automation while preserving all existing form names, saved values and backward compatibility.
+
+(Martin Pihrt) - Shelly Cloud Integration v1.0.6<br/>
+Restored local device previews in the add and edit form and added them to both the compact list and responsive card views. Changing the selected device type or generation refreshes the editor preview immediately, and selecting any preview opens the matching current official Shelly Knowledge Base page in a new tab. Reused the complete local image set already stored in the plug-in, corrected Shelly 2.5, Gen1 and Gen2 Plug S, 1 Mini and Add-on mappings, and avoided external image requests from the settings page.
+
+(Martin Pihrt) - Energy Meter v1.0.5<br/>
+Added a calendar-day selector to the overview, displayed historically calculated cost and feed-in income for every summary period, and applied the selected day to solar calculations. Fixed equal tariff start and end times to cover the complete selected day, replaced end-of-interval tariff assignment with time-weighted pricing across tariff boundaries, rejected non-finite price values, and exposed the stored import and feed-in prices in the history table. Local JSON, optional SQL and CSV now preserve the tariff, currency, applied unit prices, cost and income for every interval; the history uses the stored currency and overview monetary totals no longer combine records from different currencies. Clarified that calendar days use the OSPy server's local time from 00:00 inclusive to the next 00:00 exclusive without resetting Shelly cumulative counters. The delete-history confirmation, in-app help and README now state explicitly that overview totals are derived from retained interval history and are therefore cleared with it, while the preserved counter baseline only prevents a false spike in the next sample.
+
+(Martin Pihrt) - Wind Speed Monitor v1.2.1<br/>
+Added independent technical fault e-mail notifications for PCF8583/I2C setup and read failures, RS485 dependency, queue, serial and protocol failures, rejected implausible measurements and unexpected worker errors. Moved the shared e-mail subject and provider selection into a dedicated E-mail settings section, added a separate error-notification switch and a configurable one-to-168-hour reminder interval, and exposed active incident details through plug-in health diagnostics. The first failure sends immediately, repeated failures are bounded to the reminder interval, and one accepted measurement closes the incident; temporary I2C lock contention and valid zero wind remain non-error states. Updated the in-app help, README, cache version and regression tests.
+
+(Martin Pihrt) - Shelly Cloud Integration v1.0.5<br/>
+Replaced sensor-count based configuration with individual Add new Shelly, Edit and confirmed Delete actions. Existing installations retain their device order, enabled state, labels, Shelly IDs, types, generation, reading source, local addresses and add-on labels through a backward-compatible migration that adds stable internal device identifiers. Added a saved List or Cards display choice, responsive external styling, isolated global and per-device forms, immediate cache invalidation for changed or removed device IDs, bounded input normalization, updated help and README documentation, and regression tests.
+
+(Martin Pihrt) - Venetian Blind v1.1.0<br/>
+Replaced blind-count configuration with individual Add, Edit and confirmed Delete actions plus saved list or card display. Added backward-compatible migration of all existing labels and REST URLs, Shelly Gen1 roller and Gen2+ Cover RPC profiles, four configurable tilt positions, authoritative position classification and responsive manual controls. Added temperature-sensor shading inside a configurable time window after a required safe-wind sample window, continuous confirmed strong-wind raising through multiple sequentially queued programs, strong-wind priority over pending lowering actions, active-program observation for ESP32 or manual starts, and a state latch that prevents repeated relay commands while a condition remains active. Updated permissions, optional Wind Monitor dependency, help, README and regression coverage.
+
+August 19 2026
+--------------
+(Martin Pihrt) - RS485 Communication v1.0.1<br/>
+Added a central RS485 service plug-in for the Waveshare industrial CH343G USB-to-RS485 adapter. It owns one configurable serial interface, serializes dependent plug-in traffic through a bounded FIFO worker, supports synchronous, asynchronous and atomic multi-step operations, automatically detects the adapter, exposes protected status and health diagnostics, validates manual device paths and communication parameters, and safely tests the adapter without transmitting arbitrary bus data. Added CSRF-protected OSPy-themed settings, responsive local product images and adapter documentation, bounded frame/read/delay handling, the required pyserial dependency, and automated security, queue, manifest, template and validation tests.
+
+August 17 2026
+--------------
+(Martin Pihrt) - System Update v1.2.6<br/>
+Extended the external watchdog confirmation window from two to five minutes. Large installations that initialize many plug-ins sequentially now have enough time to start System Update, produce a fresh scheduler heartbeat and open the web interface before automatic rollback, while the existing commit, token and health checks remain unchanged.
+
+(Martin Pihrt) - Astro Sunrise and Sunset v1.0.6<br/>
+Replaced the placeholder Astral region `OSPy` with the region detected from the OSPy weather location. Existing installations fall back to the detected country code until the next weather location lookup stores the more precise region.
+
+(Martin Pihrt) - Astro Sunrise and Sunset v1.0.5<br/>
+Added a stable read-only astronomical provider for native OSPy sunrise and sunset program types. The provider reports whether Astral and location calculation are ready and returns validated dawn, sunrise, noon, sunset and dusk datetimes for a requested day without guessing fallback clock times. Existing plug-in scheduling and the mobile daylight interface remain available.
+
 August 14 2026
 --------------
 (Martin Pihrt) - Weather Dashboard v1.0.2, Astro Sunrise and Sunset v1.0.4 and Wind Speed Monitor v1.1.9<br/>
