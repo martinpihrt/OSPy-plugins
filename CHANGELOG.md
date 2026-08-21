@@ -2,6 +2,9 @@
 
 August 21 2026
 --------------
+(Martin Pihrt) - Energy Meter v1.0.6 and Shelly Cloud Integration v1.0.7<br/>
+Fixed Energy Meter reporting a configured Shelly meter as unavailable when it started before Shelly Cloud Integration had populated its runtime cache. Shelly Cloud Integration now safely exposes snapshots of configured identities and cached readings even before its worker starts, while Energy Meter also understands the previous parallel-list interface. Energy Meter distinguishes missing, disabled, offline and still-loading devices; a still-loading meter is retried every five seconds without logging a failure traceback, while other successful meters keep their configured sampling interval and Diagnostics reports a waiting state until data arrives. Shelly IDs are matched case-insensitively and labels remain exact. Updated versions, cache keys, help, READMEs and regression tests.
+
 (Martin Pihrt) - Venetian Blind v1.2.1<br/>
 Recognized complete standard Shelly Gen1 roller URL sets during both initial and already completed legacy migration, restoring the Shelly Gen1 profile and host instead of displaying them as Custom REST URLs while preserving nonstandard custom configurations unchanged. Test command buttons now return to the editor for the same blind, allowing consecutive command checks without reopening it. Updated the README, cache version and regression tests.
 

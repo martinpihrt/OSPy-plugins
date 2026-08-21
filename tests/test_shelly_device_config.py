@@ -112,11 +112,17 @@ class ShellyDeviceManagementTemplateTests(unittest.TestCase):
                 self.assertTrue((PLUGIN_ROOT / 'static' / 'images' / preview['image']).is_file())
                 self.assertTrue(preview['url'].startswith('https://kb.shelly.cloud/knowledge-base/'))
 
-    def test_manifest_and_active_css_use_version_1_0_6(self):
+    def test_public_device_service_exposes_configuration_and_handles_stopped_worker(self):
+        source = (PLUGIN_ROOT / '__init__.py').read_text(encoding='utf-8')
+        self.assertIn('return list(sender.devices) if sender is not None else []', source)
+        self.assertIn("'id': device.get('sensor_id', '')", source)
+        self.assertIn("'enabled': bool(device.get('use_sensor', False))", source)
+
+    def test_manifest_and_active_css_use_version_1_0_7(self):
         manifest = json.loads((PLUGIN_ROOT / 'plugin.json').read_text(encoding='utf-8'))
         template = (PLUGIN_ROOT / 'templates' / 'shelly_cloud_integration_devices.html').read_text(encoding='utf-8')
-        self.assertEqual(manifest['version'], '1.0.6')
-        self.assertIn('shelly_cloud_integration.css?v=1.0.6', template)
+        self.assertEqual(manifest['version'], '1.0.7')
+        self.assertIn('shelly_cloud_integration.css?v=1.0.7', template)
         self.assertTrue((PLUGIN_ROOT / 'static' / 'shelly_cloud_integration.css').is_file())
 
 

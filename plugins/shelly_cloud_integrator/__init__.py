@@ -1914,6 +1914,17 @@ class _ShellyDevices():
         super(_ShellyDevices, self).__init__()
 
     def devices(self):
-        return sender.devices
+        return list(sender.devices) if sender is not None else []
+
+    def configured(self):
+        return [
+            {
+                'id': device.get('sensor_id', ''),
+                'label': device.get('sensor_label', ''),
+                'enabled': bool(device.get('use_sensor', False)),
+                'type': int(device.get('sensor_type', 0)),
+            }
+            for device in configured_devices()
+        ]
 
 shelly_devices = _ShellyDevices()

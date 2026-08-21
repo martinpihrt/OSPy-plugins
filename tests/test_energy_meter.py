@@ -1,5 +1,6 @@
 import datetime
 import importlib.util
+import json
 import pathlib
 import sys
 import tempfile
@@ -165,6 +166,38 @@ class EnergyMeterTests(unittest.TestCase):
         self.assertEqual(result['import_kwh'], [1, 2, 3])
         self.assertEqual(result['export_kwh'], [0.4, 0.5, 0.6])
         self.assertEqual(result['power_w'], [10, -20, 30])
+
+    def test_integrator_selection_distinguishes_cached_pending_disabled_and_missing(self):
+        cached = [{'id': 'D885AC0CAD5C', 'label': 'Meter', 'online': True, 'energy': [1, 2, 3]}]
+        self.assertIs(sources.select_integrator_device(cached, [], 'd885ac0cad5c'), cached[0])
+        configured = [{'id': 'd885ac0cad5c', 'label': 'Meter', 'enabled': True}]
+        with self.assertRaises(sources.IntegratorReadingPending):
+            sources.select_integrator_device([], configured, 'd885ac0cad5c')
+        configured[0]['enabled'] = False
+        with self.assertRaises(sources.IntegratorMeterDisabled):
+            sources.select_integrator_device([], configured, 'd885ac0cad5c')
+        with self.assertRaises(sources.IntegratorMeterUnavailable):
+            sources.select_integrator_device([], configured, 'missing')
+
+    def test_older_integrator_parallel_lists_are_available_during_warm_up(self):
+        configured = sources.legacy_integrator_configuration({'number_sensors': 2, 'sensor_id': ['first', 'second'], 'sensor_label': ['One', 'Two'], 'use_sensor': [True, False], 'sensor_type': [10, 2]})
+        self.assertEqual(configured[0], {'id': 'first', 'label': 'One', 'enabled': True, 'type': 10})
+        self.assertFalse(configured[1]['enabled'])
+
+    def test_integrator_warm_up_retries_only_pending_meters(self):
+        source = (PLUGIN / '__init__.py').read_text(encoding='utf-8')
+        self.assertIn('retry_only = set(self.pending_integrator_meters)', source)
+        self.assertIn("if retry_only and meter['id'] not in retry_only:", source)
+        self.assertIn('wait_seconds = 5 if pending_integrator_meters else', source)
+        self.assertIn('except IntegratorReadingPending:', source)
+        self.assertIn("value.get('pending')", source)
+
+    def test_manifest_and_cache_keys_use_version_1_0_6(self):
+        manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['version'], '1.0.6')
+        for template_name in ('energy_meter.html', 'energy_meter_settings.html', 'energy_meter_help.html', 'energy_meter_log.html'):
+            template = (PLUGIN / 'templates' / template_name).read_text(encoding='utf-8')
+            self.assertIn('energy_meter.css?v=1.0.6', template)
 
     def test_state_and_history_survive_new_store_instance(self):
         with tempfile.TemporaryDirectory() as directory:

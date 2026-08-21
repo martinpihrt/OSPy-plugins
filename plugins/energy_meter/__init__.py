@@ -19,7 +19,7 @@ from ospy.webpages import ProtectedPage, clear_plugin_runtime_data, showInFooter
 from plugins import PluginOptions, get_runtime, plugin_data_dir, plugin_url
 
 from .model import make_interval, normalized_reading, period_bounds, price_interval, selected_day_bounds, solar_summary, tariff_at
-from .sources import read_direct, read_integrator
+from .sources import IntegratorMeterDisabled, IntegratorMeterError, IntegratorMeterOffline, IntegratorMeterUnavailable, IntegratorReadingPending, read_direct, read_integrator
 from .storage import JsonStore
 
 
@@ -169,6 +169,7 @@ class EnergyWorker(Thread):
         self.session = requests.Session()
         self.status = {'last_success': 0, 'last_error': 0, 'error': '', 'meters': {}, 'resets': 0}
         self.reset_requests = set()
+        self.pending_integrator_meters = set()
         self.footer = None
         self.start()
         runtime.register_thread(self)
@@ -199,8 +200,13 @@ class EnergyWorker(Thread):
             started = time.time()
             states = store().states()
             records = []
+            retry_only = set(self.pending_integrator_meters)
+            pending_integrator_meters = set()
+            cycle_error = ''
             for meter in meters():
                 if not meter['enabled']:
+                    continue
+                if retry_only and meter['id'] not in retry_only:
                     continue
                 try:
                     reading = read_integrator(meter) if meter['source'] == 'integrator' else read_direct(meter, self.session)
@@ -229,11 +235,31 @@ class EnergyWorker(Thread):
                     if interval['counter_reset']:
                         self.status['resets'] += 1
                     self.status['last_success'] = ended
+                except IntegratorReadingPending:
+                    message = _('Waiting for the selected Shelly meter to provide its first reading.')
+                    pending_integrator_meters.add(meter['id'])
+                    self.status['meters'][meter['id']] = {'label': meter['label'], 'role': meter['role'], 'source': meter['source'], 'online': False, 'power_w': 0, 'updated': time.time(), 'error': message, 'pending': True}
+                    cycle_error = cycle_error or message
+                except IntegratorMeterError as error:
+                    if isinstance(error, IntegratorMeterOffline):
+                        message = _('The selected Shelly meter is offline.')
+                    elif isinstance(error, IntegratorMeterDisabled):
+                        message = _('The selected Shelly meter is disabled in Shelly Cloud Integration.')
+                    elif isinstance(error, IntegratorMeterUnavailable):
+                        message = _('The selected Shelly meter is not available in Shelly Cloud Integration.')
+                    else:
+                        message = _('The selected Shelly meter could not be read.')
+                    self.status['last_error'] = time.time()
+                    cycle_error = message
+                    self.status['meters'][meter['id']] = {'label': meter['label'], 'role': meter['role'], 'source': meter['source'], 'online': False, 'power_w': 0, 'updated': time.time(), 'error': message}
+                    log.error(NAME, message)
                 except Exception as error:
                     self.status['last_error'] = time.time()
-                    self.status['error'] = str(error)
+                    cycle_error = str(error)
                     self.status['meters'][meter['id']] = {'label': meter['label'], 'role': meter['role'], 'source': meter['source'], 'online': False, 'power_w': 0, 'updated': time.time(), 'error': str(error)}
                     log.error(NAME, _('Energy Meter reading failed') + ':\n' + traceback.format_exc())
+            self.pending_integrator_meters = pending_integrator_meters
+            self.status['error'] = cycle_error
             with lock:
                 current_store = store()
                 current_store.save_state(states)
@@ -245,7 +271,8 @@ class EnergyWorker(Thread):
                 except Exception:
                     log.error(NAME, _('Saving Energy Meter history to SQL failed') + ':\n' + traceback.format_exc())
             self._sync_footer()
-            self.stop_event.wait(max(5, min(3600, safe_int(options.get('sample_interval'), 60))))
+            wait_seconds = 5 if pending_integrator_meters else max(5, min(3600, safe_int(options.get('sample_interval'), 60)))
+            self.stop_event.wait(wait_seconds)
 
 
 worker = None
@@ -371,6 +398,8 @@ def health():
         return {'status': 'unknown', 'summary': _('Energy Meter is disabled.'), 'details': details}
     online = [value for value in worker.status.get('meters', {}).values() if value.get('online')]
     if not online:
+        if any(value.get('pending') for value in worker.status.get('meters', {}).values()):
+            return {'status': 'unknown', 'summary': _('Energy Meter is waiting for its first Shelly reading.'), 'details': details}
         return {'status': 'error', 'summary': _('No configured electricity meter is available.'), 'details': details}
     return {'status': 'ok', 'summary': _('Energy Meter is collecting data.'), 'details': details}
 

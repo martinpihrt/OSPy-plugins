@@ -4,7 +4,7 @@ Energy Meter is a multi-meter electricity monitor for OSPy. It is designed for S
 
 ## Connection sources
 
-Direct LAN / IP is the default and recommended source. Enter an IP address, an optional port, or a DNS name such as `meter.local`; OSPy reads `http://HOST/rpc/Shelly.GetStatus` directly, works without Shelly Cloud or Internet access, and can use Shelly local digest authentication. The second source is the device cache of Shelly Cloud Integration. That mode requires Shelly Cloud Integration to be installed, configured, enabled and running, and the selected three-phase meter must be available in its cache.
+Direct LAN / IP is the default and recommended source. Enter an IP address, an optional port, or a DNS name such as `meter.local`; OSPy reads `http://HOST/rpc/Shelly.GetStatus` directly, works without Shelly Cloud or Internet access, and can use Shelly local digest authentication. The second source is the device cache of Shelly Cloud Integration. That mode requires Shelly Cloud Integration to be installed, configured, enabled and running. Energy Meter distinguishes a missing or disabled Shelly ID from an enabled device that is still waiting for its first cached reading after startup or configuration changes, including when paired with the previous parallel-list Integrator interface. A waiting meter is retried every five seconds without an error traceback, while successfully read meters retain the configured sampling interval and Diagnostics reports a waiting state until data arrives.
 
 ## Multiple meters and roles
 
