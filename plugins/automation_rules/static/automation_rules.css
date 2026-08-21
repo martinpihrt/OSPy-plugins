@@ -2,8 +2,10 @@
 .automation-card { background: rgba(255,255,255,.95); border: 2px solid #2f3b5b; border-radius: 14px; margin: 14px 0; padding: 16px; }
 .rule-header { display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap; }
 .rule-header h2, .rule-header h3 { margin: 0; }
-.settings-grid, .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; }
-.settings-grid label, .rule-grid label, .field-row, .switch-field { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.settings-grid { align-items: center; display: flex; flex-wrap: wrap; gap: 14px 34px; margin: 12px 0; }
+.rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; }
+.settings-grid label, .rule-grid label, .field-row, .switch-field { display: flex; align-items: center; gap: 10px; }
+.settings-grid > label, .settings-grid > .field-row, .switch-field { justify-content: flex-start; }
 .switch { display: inline-block; flex: 0 0 50px; height: 24px; position: relative; width: 50px; }
 .switch input { height: 0; opacity: 0; width: 0; }
 .slider { background-color: #9a1c28; border-radius: 34px; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .25s; }
@@ -41,6 +43,7 @@
     .condition-row .remove-condition { grid-column: 2; justify-self: end; }
     .condition-number { grid-row: 1 / 6; align-self: start; }
     .settings-grid > label, .rule-grid > label { align-items: stretch; flex-direction: column; }
-    .field-row, .switch-field, .channel-option { align-items: center; flex-direction: row; justify-content: space-between; }
+    .settings-grid > label, .settings-grid > .field-row { box-sizing: border-box; flex-basis: 100%; }
+    .field-row, .switch-field, .channel-option { align-items: center; flex-direction: row; justify-content: flex-start; }
     .channels { display: grid; grid-template-columns: 1fr; }
 }

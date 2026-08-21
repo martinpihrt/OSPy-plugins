@@ -26,7 +26,7 @@ NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.1'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.2'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,
@@ -211,6 +211,7 @@ def _display_history():
         'cleared': _('Returned to normal'),
         'test_matched': _('Test matched'),
         'test_not_matched': _('Test did not match'),
+        'notification_test': _('Test notification'),
     }
     channel_labels = {
         'home': _('OSPy Home window'), 'browser': _('Browser notification'),
@@ -226,7 +227,9 @@ def _display_history():
     for item in load_history():
         record = dict(item)
         record['event_text'] = event_labels.get(item.get('event'), _('Unknown'))
-        record['mode_text'] = _('Test') if item.get('test_mode') else _('Live')
+        record['mode_text'] = (_('Notification test')
+                               if item.get('event') == 'notification_test' else
+                               _('Test') if item.get('test_mode') else _('Live'))
         record['results_text'] = ', '.join(
             '{}: {}'.format(channel_labels.get(value.get('channel'), _('Unknown')),
                             status_labels.get(value.get('status'), _('Unknown')))
@@ -237,6 +240,8 @@ def _display_history():
 
 
 def _event_text(rule, event):
+    if event == 'notification_test':
+        return _('Automation Rules test notification: {}').format(rule['name'])
     if event == 'cleared':
         return _('Automation rule returned to normal: {}').format(rule['name'])
     if event == 'repeated':
@@ -385,6 +390,16 @@ def test_rule(rule_id):
         {'channel': channel, 'status': 'test'} for channel in rule['channels']
     ], True))
     return evaluation
+
+
+def send_test_notifications(rule):
+    """Send one explicit test without evaluating or changing rule state."""
+    rule = engine.normalize_rule(rule)
+    results = dispatch_notifications(rule, 'notification_test', test_mode=False)
+    evaluation = {'matched': True, 'available': True, 'conditions': []}
+    append_history(_history_record(
+        rule, 'notification_test', evaluation, results, False))
+    return results
 
 
 class AutomationWorker(Thread):
@@ -557,6 +572,8 @@ class settings_page(ProtectedPage):
                 save_states(states)
             elif action == 'test_rule':
                 test_rule(str(qdict.get('rule_id', '')))
+            elif action == 'test_notifications':
+                send_test_notifications(_rule_from_input(qdict))
             elif action == 'clear_history':
                 clear_history()
         except (ValueError, TypeError, engine.RuleValidationError) as exception:

@@ -114,7 +114,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.0.1')
+        self.assertEqual(manifest['version'], '1.0.2')
         self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
@@ -148,6 +148,40 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertEqual({item['status'] for item in results}, {'test'})
 
+    def test_explicit_notification_test_delivers_without_changing_rule_state(self):
+        path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'
+        source = path.read_text(encoding='utf-8')
+        tree = ast.parse(source)
+        selected = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                    and node.name in ('_event_text', 'dispatch_notifications',
+                                      'send_test_notifications')]
+        calls = []
+        history = []
+
+        def called(name):
+            def inner(*args, **kwargs):
+                calls.append(name)
+                return {'channel': name, 'status': 'sent'}
+            return inner
+
+        namespace = {
+            '_': lambda value: value, 'engine': ENGINE,
+            '_queue_local_notification': called('local'),
+            '_send_email': called('email'), '_send_telegram': called('telegram'),
+            '_send_push': called('push'),
+            '_history_record': lambda definition, event, evaluation, results, test_mode: {
+                'event': event, 'results': results, 'test_mode': test_mode},
+            'append_history': history.append,
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]), str(path), 'exec'), namespace)
+        definition = rule()
+        definition['channels'] = list(ENGINE.CHANNELS)
+        results = namespace['send_test_notifications'](definition)
+        self.assertEqual(calls, ['local', 'email', 'telegram', 'push'])
+        self.assertEqual(len(results), len(ENGINE.CHANNELS))
+        self.assertEqual(history[0]['event'], 'notification_test')
+        self.assertFalse(history[0]['test_mode'])
+
     def test_editor_is_row_based_and_browser_permission_is_explicit(self):
         plugin = ROOT / 'plugins' / 'automation_rules'
         template = (plugin / 'templates' / 'automation_rules.html').read_text(encoding='utf-8')
@@ -162,7 +196,9 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(template.count('type="checkbox"'), template.count('class="slider"'))
         self.assertGreaterEqual(template.count('title=$:{json.dumps(_('), 20)
         self.assertIn('.switch input:checked + .slider', css)
-        self.assertIn('automation_rules.css?v=1.0.1', template)
+        self.assertIn('automation_rules.css?v=1.0.2', template)
+        self.assertIn('value="test_notifications"', template)
+        self.assertIn('.settings-grid > label, .settings-grid > .field-row, .switch-field { justify-content: flex-start; }', css)
         self.assertIn('Notification.requestPermission()', editor)
         self.assertNotIn('Notification.requestPermission()', home)
         self.assertIn("Notification.permission !== 'granted'", home)

@@ -2,6 +2,9 @@
 
 August 21 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.0.2<br/>
+Kept the general switches directly beside their labels so each control is visually unambiguous. Added a confirmed Test notifications action that ignores conditions and timing, sends one real message through every channel currently selected in the rule even while global test mode is enabled, records individual delivery results and does not alter incident state. Updated the help, README, asset cache versions and regression tests.
+
 (Martin Pihrt) - Automation Rules v1.0.1<br/>
 Replaced every visible settings checkbox and notification-channel checkbox with the red and green sliding switch used by other OSPy plug-ins. Added localized hover descriptions to editor fields, selectors, switches and action buttons, and versioned the browser assets so installed systems immediately load the updated interface.
 

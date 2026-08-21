@@ -34,7 +34,10 @@ Automation Rules does not stop stations or execute control/safety actions in
 version 1.0.1. Existing monitoring and notification plug-ins remain independently
 usable.
 
-Version 1.0.1 displays every Boolean setting and notification channel as the
+Version 1.0.2 displays every Boolean setting and notification channel as the
 same red/green sliding switch used by other OSPy plug-ins. Hovering over form
 fields, selectors, switches and action buttons shows a short localized
-description of the control.
+description of the control. General switches are kept directly beside their
+labels. An explicit confirmed notification test bypasses conditions and timing,
+sends one real message through the channels currently selected in the rule and
+records each delivery result without changing incident state.
