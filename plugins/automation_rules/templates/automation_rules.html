@@ -3,13 +3,13 @@ $def with(plugin_options, rules, new_rule, history, catalog, states, events, err
 $var title: $_('Automation Rules')
 $var page: plugins
 
-<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.0.3">
+<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.0.5">
 
 <script>
 window.automationRuleCatalog = $:json.dumps(catalog, ensure_ascii=False);
-window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
+window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
 </script>
-<script src="/plugins/automation_rules/static/editor.js?v=1.0.3"></script>
+<script src="/plugins/automation_rules/static/editor.js?v=1.0.5"></script>
 
 <div id="plugin" class="automation-rules-page">
     <div class="title">$_('Automation Rules')</div>
@@ -92,11 +92,13 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                                     <option value="gte"${' selected' if condition['operator'] == 'gte' else ''}>&ge;</option>
                                     <option value="lt"${' selected' if condition['operator'] == 'lt' else ''}>&lt;</option>
                                     <option value="lte"${' selected' if condition['operator'] == 'lte' else ''}>&le;</option>
+                                    <option value="between"${' selected' if condition['operator'] == 'between' else ''}>$_('is in range')</option>
+                                    <option value="not_between"${' selected' if condition['operator'] == 'not_between' else ''}>$_('is outside range')</option>
                                     <option value="is_true"${' selected' if condition['operator'] == 'is_true' else ''}>$_('is active')</option>
                                     <option value="is_false"${' selected' if condition['operator'] == 'is_false' else ''}>$_('is inactive')</option>
                                 </select>
                             </label>
-                            <label class="expected-label" title=$:{json.dumps(_('Threshold or expected value used by the selected comparison.'), ensure_ascii=False)}><span>$_('Limit')</span><span class="expected-wrap"><input class="expected-input" name="expected_$index" value="$condition['expected']" title=$:{json.dumps(_('Enter the threshold or expected value for this condition.'), ensure_ascii=False)}><span class="condition-unit"></span></span></label>
+                            <label class="expected-label" title=$:{json.dumps(_('Threshold, expected value or range used by the selected comparison. Enter ranges as start..end.'), ensure_ascii=False)}><span>$_('Limit')</span><span class="expected-wrap"><input class="expected-input" name="expected_$index" value="$condition['expected']" title=$:{json.dumps(_('Enter one limit, or enter a range as start..end, for example 08:00..18:00.'), ensure_ascii=False)}><span class="condition-unit"></span></span></label>
                             <button type="button" class="remove-condition danger" title=$:{json.dumps(_('Remove this condition from the rule.'), ensure_ascii=False)}>&times;</button>
                         </div>
                 </div>

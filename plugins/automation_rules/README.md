@@ -19,6 +19,13 @@ devices expose each input separately. An ultrasonic tank sensor exposes its
 raw distance plus derived water level, fill percentage and configured volume.
 The adapter reads only the last cached sensor values and never polls hardware.
 
+The built-in **Date and time** provider exposes the current local ISO date,
+24-hour time, weekday, month and day of month. Conditions support **in range**
+and **outside range** comparisons written as `start..end`, for example
+`2026-05-01..2026-09-30` or `08:00..18:00`. Reversed time ranges such as
+`22:00..06:00` cross midnight, allowing one time condition to be combined with
+sensor limits through `AND`.
+
 Rules support a confirmation duration, repeated-notification interval, recovery
 notification, severity and these notification channels:
 
@@ -34,13 +41,18 @@ external recipients. Test state is separate from live state, so testing cannot
 consume a later live trigger. The **Test saved rule** action also never sends.
 
 Browser notifications require an open OSPy page and permission granted through
-the settings button. Mobile push remains the channel for delivery while the web
-interface is closed. Notification history stores rule decisions and delivery
-status, not credentials or complete provider snapshots.
+the settings button. Granting permission immediately sends a browser test; a
+Service Worker fallback covers browsers that reject the direct Notification
+constructor. Mobile push remains the channel for delivery while the web
+interface is closed. Every live notification includes the evaluated value,
+operator and configured limit. Notification history stores rule decisions and
+delivery status, not credentials or complete provider snapshots.
 
 Automation Rules does not stop stations or execute control/safety actions.
 Existing monitoring and notification plug-ins remain independently usable.
 
+Version 1.0.5 adds local date/time range conditions, detailed notification
+messages and verifiable browser delivery with a Service Worker fallback.
 Version 1.0.4 adds enabled Pihrt and Shelly OSPy sensors as rule sources while
 preserving the read-only provider model. Version 1.0.3 displays every Boolean
 setting and notification channel as the

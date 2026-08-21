@@ -20,14 +20,14 @@ from plugins import (
     plugin_provider_snapshots, plugin_url, running,
 )
 
-from . import engine, sensor_provider
+from . import engine, sensor_provider, time_provider
 
 
 NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.3'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.5'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,
@@ -166,6 +166,13 @@ def _automation_snapshots():
         errors[sensor_provider.PROVIDER_ID] = {
             'error': type(error).__name__, 'message': str(error),
         }
+    try:
+        providers[time_provider.PROVIDER_ID] = validate_snapshot(
+            time_provider.provider_snapshot(), time_provider.PROVIDER_ID)
+    except Exception as error:
+        errors[time_provider.PROVIDER_ID] = {
+            'error': type(error).__name__, 'message': str(error),
+        }
     return {'providers': providers, 'errors': errors}
 
 
@@ -199,12 +206,18 @@ def _sensor_value_label(identifier):
 def _provider_catalog():
     catalog = []
     snapshots = _automation_snapshots()
-    modules = list(plugin_provider_modules()) + [sensor_provider.PROVIDER_ID]
+    modules = list(plugin_provider_modules()) + [
+        sensor_provider.PROVIDER_ID, time_provider.PROVIDER_ID,
+    ]
     for module in modules:
         try:
-            capabilities = (sensor_provider.provider_capabilities()
-                            if module == sensor_provider.PROVIDER_ID else
-                            plugin_provider_capabilities(module))
+            capabilities = (
+                sensor_provider.provider_capabilities()
+                if module == sensor_provider.PROVIDER_ID else
+                time_provider.provider_capabilities()
+                if module == time_provider.PROVIDER_ID else
+                plugin_provider_capabilities(module)
+            )
             snapshot = snapshots.get('providers', {}).get(module, {})
             declared = {item['id']: item for item in capabilities.get('values', [])}
             for resource in snapshot.get('resources', []):
@@ -218,10 +231,13 @@ def _provider_catalog():
                             'tank_monitor': _('Water Tank Monitor'),
                             'current_loop_tanks_monitor': _('Current Loop Tanks Monitor'),
                             'ospy_sensors': _('OSPy Sensors'),
+                            'ospy_datetime': _('Date and time'),
                         }.get(module, module),
                         'resource_id': resource.get('id', ''),
                         'resource_label': (
                             resource.get('name') if resource.get('name') else
+                            _('OSPy local time')
+                            if module == time_provider.PROVIDER_ID else
                             _('Sensor {}').format(
                                 int(str(resource.get('id', '')).split('-')[-1]) + 1)
                             if module == sensor_provider.PROVIDER_ID and
@@ -246,6 +262,11 @@ def _provider_catalog():
                             'volume_liters': _('Volume in liters'),
                             'volume_cubic_meters': _('Volume in cubic meters'),
                             'sensor_voltage': _('Sensor voltage'),
+                            'current_date': _('Current date'),
+                            'current_time': _('Current time'),
+                            'weekday': _('Day of week'),
+                            'month': _('Month'),
+                            'day_of_month': _('Day of month'),
                         }.get(value.get('id'),
                               _sensor_value_label(value.get('id', ''))
                               if module == sensor_provider.PROVIDER_ID else
@@ -303,6 +324,60 @@ def _event_text(rule, event):
     return _('Automation rule was triggered: {}').format(rule['name'])
 
 
+def _display_value(value, unit=''):
+    if isinstance(value, bool):
+        result = _('Active') if value else _('Inactive')
+    elif isinstance(value, float):
+        result = ('{:.3f}'.format(value)).rstrip('0').rstrip('.')
+    else:
+        result = str(value)
+    return '{} {}'.format(result, unit).strip()
+
+
+def _condition_summary(rule, evaluation):
+    if not isinstance(evaluation, dict):
+        return ''
+    catalog = {
+        (item['provider_id'], item['resource_id'], item['value_id']): item
+        for item in _provider_catalog()
+    }
+    results = {item.get('id'): item
+               for item in evaluation.get('conditions', [])}
+    operators = {
+        'eq': '=', 'ne': '!=', 'gt': '>', 'gte': '>=', 'lt': '<', 'lte': '<=',
+        'between': _('is in range'), 'not_between': _('is outside range'),
+        'is_true': _('is active'), 'is_false': _('is inactive'),
+    }
+    lines = []
+    for condition in rule.get('conditions', []):
+        result = results.get(condition.get('id'), {})
+        definition = catalog.get((
+            condition.get('provider_id'), condition.get('resource_id'),
+            condition.get('value_id'),
+        ), {})
+        label = definition.get('value_label') or condition.get('value_id', '')
+        resource = definition.get('resource_label', '')
+        prefix = '{} – {}'.format(resource, label) if resource else label
+        if not result.get('available'):
+            lines.append('{}: {}'.format(prefix, _('value unavailable')))
+            continue
+        unit = result.get('unit', '')
+        operator = condition.get('operator', 'eq')
+        actual = _display_value(result.get('actual'), unit)
+        if operator in ('is_true', 'is_false'):
+            lines.append('{}: {} ({})'.format(
+                prefix, actual, operators.get(operator, operator)))
+            continue
+        expected = result.get('expected', condition.get('expected'))
+        if operator in ('between', 'not_between'):
+            expected = str(expected).replace('..', ' – ')
+        else:
+            expected = _display_value(expected, unit)
+        lines.append('{}: {} {} {}'.format(
+            prefix, actual, operators.get(operator, operator), expected))
+    return '\n'.join(lines)
+
+
 def _send_email(title, message):
     for module in ('email_notifications_ssl', 'email_notifications'):
         if module not in running():
@@ -326,7 +401,7 @@ def _send_telegram(title, message):
     return {'channel': 'telegram', 'status': 'sent' if sent else 'unavailable'}
 
 
-def _send_push(rule, event, message):
+def _send_push(rule, event, message, condition_summary=''):
     try:
         from api.v1.push import push_dispatcher
         queued = push_dispatcher.enqueue_notification({
@@ -337,7 +412,7 @@ def _send_push(rule, event, message):
             'title': _('Automation Rules'), 'message': message,
             'data': {
                 'rule_id': rule['id'], 'rule_name': rule['name'],
-                'event': event,
+                'event': event, 'condition_summary': condition_summary,
             },
         })
         return {'channel': 'push', 'status': 'queued' if queued else 'unavailable'}
@@ -346,8 +421,11 @@ def _send_push(rule, event, message):
                 'error': type(error).__name__}
 
 
-def dispatch_notifications(rule, event, test_mode=False):
+def dispatch_notifications(rule, event, test_mode=False, evaluation=None):
     message = _event_text(rule, event)
+    condition_summary = _condition_summary(rule, evaluation)
+    if condition_summary:
+        message += '\n' + condition_summary
     title = _('Automation Rules')
     results = []
     local_channels = [channel for channel in rule['channels']
@@ -372,7 +450,8 @@ def dispatch_notifications(rule, event, test_mode=False):
             elif channel == 'telegram':
                 results.append(_send_telegram(title, message))
             elif channel == 'push':
-                results.append(_send_push(rule, event, message))
+                results.append(_send_push(
+                    rule, event, message, condition_summary))
         except Exception as error:
             results.append({'channel': channel, 'status': 'error',
                             'error': type(error).__name__})
@@ -393,6 +472,9 @@ def _history_record(rule, event, evaluation, results, test_mode):
             'available': bool(item.get('available')), 'actual': item.get('actual'),
             'expected': item.get('expected'), 'unit': item.get('unit', ''),
             'reason': item.get('reason', ''),
+            'operator': next((condition.get('operator')
+                              for condition in rule.get('conditions', [])
+                              if condition.get('id') == item.get('id')), ''),
         } for item in evaluation.get('conditions', [])],
     }
 
@@ -418,7 +500,8 @@ def evaluate_once(test_mode=None):
         should_notify = event in ('triggered', 'repeated') or (
             event == 'cleared' and rule['notify_on_clear'])
         if should_notify:
-            results = dispatch_notifications(rule, event, test_mode=is_test)
+            results = dispatch_notifications(
+                rule, event, test_mode=is_test, evaluation=evaluation)
             append_history(_history_record(rule, event, evaluation, results, is_test))
             with health_lock:
                 health_state['last_action'] = time.time()
@@ -452,8 +535,9 @@ def test_rule(rule_id):
 def send_test_notifications(rule):
     """Send one explicit test without evaluating or changing rule state."""
     rule = engine.normalize_rule(rule)
-    results = dispatch_notifications(rule, 'notification_test', test_mode=False)
-    evaluation = {'matched': True, 'available': True, 'conditions': []}
+    evaluation = engine.evaluate_rule(rule, _automation_snapshots())
+    results = dispatch_notifications(
+        rule, 'notification_test', test_mode=False, evaluation=evaluation)
     append_history(_history_record(
         rule, 'notification_test', evaluation, results, False))
     return results

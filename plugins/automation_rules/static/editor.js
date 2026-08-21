@@ -77,7 +77,9 @@
         var operator = row.querySelector('.operator-select').value;
         var expected = row.querySelector('.expected-input');
         var booleanOperator = operator === 'is_true' || operator === 'is_false';
+        var rangeOperator = operator === 'between' || operator === 'not_between';
         expected.disabled = booleanOperator;
+        expected.placeholder = rangeOperator ? window.automationRuleText.rangeExample : '';
         row.querySelector('.expected-label').classList.toggle('boolean-condition', booleanOperator);
     }
 
@@ -146,9 +148,36 @@
             return;
         }
         Notification.requestPermission().then(function (permission) {
-            result.textContent = permission === 'granted' ?
-                window.automationRuleText.permissionGranted :
-                window.automationRuleText.permissionDenied;
+            if (permission !== 'granted') {
+                result.textContent = window.automationRuleText.permissionDenied;
+                return;
+            }
+            result.textContent = window.automationRuleText.permissionGranted;
+            try {
+                var notification = new Notification(
+                    window.automationRuleText.browserTestTitle,
+                    {body: window.automationRuleText.browserTestMessage,
+                     tag: 'automation-browser-permission-test'});
+                notification.onclick = function () {
+                    window.focus();
+                    notification.close();
+                };
+            } catch (error) {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register(
+                        '/plugins/automation_rules/static/browser_sw.js?v=1.0.5'
+                    ).then(function (registration) {
+                        return registration.showNotification(
+                            window.automationRuleText.browserTestTitle,
+                            {body: window.automationRuleText.browserTestMessage,
+                             tag: 'automation-browser-permission-test'});
+                    }).catch(function () {
+                        result.textContent = window.automationRuleText.permissionDeliveryFailed;
+                    });
+                } else {
+                    result.textContent = window.automationRuleText.permissionDeliveryFailed;
+                }
+            }
         });
     }
 

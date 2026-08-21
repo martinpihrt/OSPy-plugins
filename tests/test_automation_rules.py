@@ -34,6 +34,12 @@ with mock.patch.dict(sys.modules, SENSOR_MODULES):
     )
     SENSOR_PROVIDER = importlib.util.module_from_spec(SENSOR_SPEC)
     SENSOR_SPEC.loader.exec_module(SENSOR_PROVIDER)
+    TIME_SPEC = importlib.util.spec_from_file_location(
+        'automation_rules_time_provider',
+        ROOT / 'plugins' / 'automation_rules' / 'time_provider.py',
+    )
+    TIME_PROVIDER = importlib.util.module_from_spec(TIME_SPEC)
+    TIME_SPEC.loader.exec_module(TIME_PROVIDER)
 
 
 def snapshot(fill=20, pressure=True):
@@ -88,6 +94,27 @@ class AutomationRuleEngineTests(unittest.TestCase):
         self.assertFalse(result['matched'])
         self.assertEqual(result['conditions'][1]['reason'], 'provider_unavailable')
 
+    def test_date_and_time_ranges_include_overnight_windows(self):
+        definition = rule()
+        definition['conditions'] = [{
+            'id': 'time-window', 'provider_id': 'ospy_datetime',
+            'resource_id': 'local', 'value_id': 'current_time',
+            'operator': 'between', 'expected': '22:00..06:00',
+        }]
+        data = {'providers': {'ospy_datetime': {
+            'status': 'ok', 'resources': [{
+                'id': 'local', 'status': 'ok', 'values': [{
+                    'id': 'current_time', 'value': '23:15', 'unit': '',
+                }],
+            }],
+        }}}
+        self.assertTrue(ENGINE.evaluate_rule(definition, data)['matched'])
+        data['providers']['ospy_datetime']['resources'][0]['values'][0][
+            'value'] = '12:00'
+        self.assertFalse(ENGINE.evaluate_rule(definition, data)['matched'])
+        definition['conditions'][0]['operator'] = 'not_between'
+        self.assertTrue(ENGINE.evaluate_rule(definition, data)['matched'])
+
     def test_hold_trigger_repeat_and_clear_transitions(self):
         definition = rule()
         matched = ENGINE.evaluate_rule(definition, snapshot())
@@ -136,7 +163,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.0.4')
+        self.assertEqual(manifest['version'], '1.0.5')
         self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
@@ -195,6 +222,8 @@ class AutomationRulePluginTests(unittest.TestCase):
 
         namespace = {
             '_': lambda value: value,
+            '_condition_summary': lambda definition, evaluation: '',
+            '_automation_snapshots': lambda: snapshot(),
             '_queue_local_notification': called('local'),
             '_send_email': called('email'), '_send_telegram': called('telegram'),
             '_send_push': called('push'),
@@ -224,6 +253,8 @@ class AutomationRulePluginTests(unittest.TestCase):
 
         namespace = {
             '_': lambda value: value, 'engine': ENGINE,
+            '_condition_summary': lambda definition, evaluation: '',
+            '_automation_snapshots': lambda: snapshot(),
             '_queue_local_notification': called('local'),
             '_send_email': called('email'), '_send_telegram': called('telegram'),
             '_send_push': called('push'),
@@ -240,6 +271,36 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(history[0]['event'], 'notification_test')
         self.assertFalse(history[0]['test_mode'])
 
+    def test_notification_summary_contains_actual_value_operator_and_limit(self):
+        path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'
+        tree = ast.parse(path.read_text(encoding='utf-8'))
+        selected = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                    and node.name in ('_display_value', '_condition_summary')]
+        namespace = {
+            '_': lambda value: value,
+            '_provider_catalog': lambda: [{
+                'provider_id': 'tank_monitor', 'resource_id': 'tank-1',
+                'value_id': 'fill_percent', 'resource_label': 'Barrel',
+                'value_label': 'Tank fill',
+            }],
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]), str(path), 'exec'), namespace)
+        definition = rule()
+        definition['conditions'] = definition['conditions'][:1]
+        evaluation = ENGINE.evaluate_rule(definition, snapshot(fill=20))
+        summary = namespace['_condition_summary'](definition, evaluation)
+        self.assertIn('Barrel', summary)
+        self.assertIn('20 % <= 25 %', summary)
+
+    def test_local_date_time_provider_uses_comparable_iso_values(self):
+        import datetime
+        data = TIME_PROVIDER.provider_snapshot(datetime.datetime(2026, 8, 21, 16, 5))
+        values = {item['id']: item['value']
+                  for item in data['resources'][0]['values']}
+        self.assertEqual(values['current_date'], '2026-08-21')
+        self.assertEqual(values['current_time'], '16:05')
+        self.assertEqual(values['weekday'], 5)
+
     def test_editor_is_row_based_and_browser_permission_is_explicit(self):
         plugin = ROOT / 'plugins' / 'automation_rules'
         template = (plugin / 'templates' / 'automation_rules.html').read_text(encoding='utf-8')
@@ -254,12 +315,15 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(template.count('type="checkbox"'), template.count('class="slider"'))
         self.assertGreaterEqual(template.count('title=$:{json.dumps(_('), 20)
         self.assertIn('.switch input:checked + .slider', css)
-        self.assertIn('automation_rules.css?v=1.0.3', template)
+        self.assertIn('automation_rules.css?v=1.0.5', template)
+        self.assertIn('value="between"', template)
         self.assertIn('value="test_notifications"', template)
         self.assertIn('.settings-grid > label, .settings-grid > .field-row, .switch-field { justify-content: flex-start; }', css)
         self.assertIn('Notification.requestPermission()', editor)
         self.assertNotIn('Notification.requestPermission()', home)
         self.assertIn("Notification.permission !== 'granted'", home)
+        self.assertIn('serviceWorkerNotification', home)
+        self.assertIn('browser_sw.js?v=1.0.5', home)
         self.assertNotIn("if (window.location.pathname !== '/') { return; }", home)
         self.assertIn("if (window.location.pathname === '/') { showHome(item); }", home)
 

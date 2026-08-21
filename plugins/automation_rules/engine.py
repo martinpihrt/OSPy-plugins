@@ -5,7 +5,10 @@ import re
 
 
 RULE_MODES = ('all', 'any')
-OPERATORS = ('eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'is_true', 'is_false')
+OPERATORS = (
+    'eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'between', 'not_between',
+    'is_true', 'is_false',
+)
 SEVERITIES = ('info', 'warning', 'error', 'critical')
 CHANNELS = ('home', 'browser', 'email', 'telegram', 'push')
 _IDENTIFIER = re.compile(r'^[a-z0-9][a-z0-9_.-]{0,127}$')
@@ -54,6 +57,13 @@ def normalize_condition(condition, index=0):
             raise RuleValidationError('expected value must be numeric')
         if not math.isfinite(result['expected']):
             raise RuleValidationError('expected value must be finite')
+    elif operator in ('between', 'not_between'):
+        if not isinstance(result['expected'], str) or '..' not in result['expected']:
+            raise RuleValidationError('range must use start..end')
+        start, end = [item.strip() for item in result['expected'].split('..', 1)]
+        if not start or not end:
+            raise RuleValidationError('range must contain both limits')
+        result['expected'] = '{}..{}'.format(start, end)
     elif operator in ('is_true', 'is_false'):
         result['expected'] = operator == 'is_true'
     elif not isinstance(result['expected'], (str, int, float, bool)):
@@ -152,6 +162,13 @@ def evaluate_condition(condition, snapshots):
             matched = actual < expected
         elif operator == 'lte':
             matched = actual <= expected
+        elif operator in ('between', 'not_between'):
+            start, end = expected.split('..', 1)
+            start = _coerce_expected(actual, start)
+            end = _coerce_expected(actual, end)
+            inside = (start <= actual <= end if start <= end else
+                      actual >= start or actual <= end)
+            matched = inside if operator == 'between' else not inside
         elif operator == 'is_true':
             matched = actual is True
         else:

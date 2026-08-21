@@ -2,6 +2,7 @@
     'use strict';
     var endpoint = '/plugins/automation_rules/notifications_json';
     var storagePrefix = 'ospy-automation-notification-';
+    var pending = {};
 
     function alreadyShown(id, channel) {
         return localStorage.getItem(storagePrefix + channel + '-' + id) === '1';
@@ -41,11 +42,39 @@
         ensureContainer().appendChild(card);
     }
 
+    function serviceWorkerNotification(title, options) {
+        if (!('serviceWorker' in navigator)) {
+            return Promise.reject(new Error('service_worker_unavailable'));
+        }
+        return navigator.serviceWorker.register(
+            '/plugins/automation_rules/static/browser_sw.js?v=1.0.5'
+        ).then(function (registration) {
+            return registration.showNotification(title, options);
+        });
+    }
+
+    function deliverBrowser(title, message, tag) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') {
+            return Promise.reject(new Error('notification_permission_missing'));
+        }
+        try {
+            var notification = new Notification(title, {body: message, tag: tag});
+            notification.onclick = function () { window.focus(); notification.close(); };
+            return Promise.resolve();
+        } catch (error) {
+            return serviceWorkerNotification(title, {body: message, tag: tag});
+        }
+    }
+
     function showBrowser(item) {
-        if (!item.browser || alreadyShown(item.id, 'browser')) { return; }
-        if (!('Notification' in window) || Notification.permission !== 'granted') { return; }
-        markShown(item.id, 'browser');
-        new Notification(item.title, {body: item.message, tag: item.id});
+        if (!item.browser || alreadyShown(item.id, 'browser') || pending[item.id]) { return; }
+        pending[item.id] = true;
+        deliverBrowser(item.title, item.message, item.id).then(function () {
+            markShown(item.id, 'browser');
+            delete pending[item.id];
+        }).catch(function () {
+            delete pending[item.id];
+        });
     }
 
     function poll() {
@@ -65,7 +94,7 @@
 
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.3';
+    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.5';
     document.head.appendChild(css);
     window.setTimeout(poll, 1500);
     window.setInterval(poll, 15000);
