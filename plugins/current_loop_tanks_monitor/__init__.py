@@ -544,6 +544,103 @@ def health():
     }
 
 
+def _provider_timestamp(epoch):
+    return (datetime.datetime.utcfromtimestamp(epoch).isoformat() + 'Z') if epoch else None
+
+
+def provider_capabilities():
+    """Describe cached current-loop tank measurements."""
+    return {
+        'contract': 'ospy.provider.v1',
+        'provider_id': 'current_loop_tanks_monitor',
+        'resource_types': ['tank'],
+        'values': [
+            {'id': 'level_cm', 'quantity': 'water_level', 'unit': 'cm', 'value_type': 'number'},
+            {'id': 'fill_percent', 'quantity': 'fill_ratio', 'unit': '%', 'value_type': 'number'},
+            {'id': 'volume_liters', 'quantity': 'volume', 'unit': 'L', 'value_type': 'number'},
+            {'id': 'sensor_voltage', 'quantity': 'voltage', 'unit': 'V', 'value_type': 'number'},
+        ],
+        'events': [{'code': 'current_loop_tanks_monitor.measurement'}],
+        'alerts': [
+            {'code': 'current_loop_tanks_monitor.channel_error'},
+            {'code': 'current_loop_tanks_monitor.low_level'},
+        ],
+        'actions': [],
+    }
+
+
+def provider_snapshot():
+    """Return all enabled tanks from cache without reading the ADS1115."""
+    with health_lock:
+        state = dict(health_state)
+    current = {
+        key: list(tanks[key]) if isinstance(tanks.get(key), list) else tanks.get(key)
+        for key in ('levelCm', 'volumeLiter', 'levelPercent', 'voltage',
+                    'label', 'use', 'channel_error')
+    }
+    observed_at = _provider_timestamp(state['last_success'])
+    enabled = [index for index in range(4)
+               if plugin_options.get('en_tank{}'.format(index + 1), False)]
+    if not enabled:
+        provider_status = 'disabled'
+    elif sender is None or not sender.is_alive():
+        provider_status = 'unavailable'
+    elif state['last_error'] > state['last_success']:
+        provider_status = 'error'
+    elif not state['last_success']:
+        provider_status = 'stale'
+    else:
+        provider_status = 'ok'
+    resources = []
+    all_alerts = []
+    for index in enabled:
+        resource_id = 'tank-{}'.format(index + 1)
+        channel_error = bool(current['channel_error'][index])
+        resource_status = 'error' if channel_error else provider_status
+        alerts = []
+        error_time = state['last_error'] or state['last_success']
+        if channel_error and error_time:
+            alerts.append({
+                'id': '{}.channel-error'.format(resource_id),
+                'code': 'current_loop_tanks_monitor.channel_error',
+                'severity': 'error', 'state': 'active',
+                'opened_at': _provider_timestamp(error_time),
+                'context': {'resource_id': resource_id},
+            })
+        low_enabled = plugin_options.get('en_eml_tank{}_low'.format(index + 1), False)
+        low_limit = float(plugin_options.get('eml_tank{}_low_lvl'.format(index + 1), 0))
+        if low_enabled and float(current['levelPercent'][index]) <= low_limit and observed_at:
+            alerts.append({
+                'id': '{}.low-level'.format(resource_id),
+                'code': 'current_loop_tanks_monitor.low_level',
+                'severity': 'warning', 'state': 'active', 'opened_at': observed_at,
+                'context': {'resource_id': resource_id, 'minimum_percent': low_limit},
+            })
+        values = [
+            ('level_cm', 'water_level', current['levelCm'][index], 'cm', 'derived'),
+            ('fill_percent', 'fill_ratio', current['levelPercent'][index], '%', 'derived'),
+            ('volume_liters', 'volume', current['volumeLiter'][index], 'L', 'derived'),
+            ('sensor_voltage', 'voltage', current['voltage'][index], 'V', 'measured'),
+        ]
+        resources.append({
+            'id': resource_id, 'type': 'tank', 'status': resource_status,
+            'values': [{
+                'id': item[0], 'quantity': item[1],
+                'value': float(item[2]) if observed_at else None,
+                'unit': item[3], 'value_type': 'number', 'quality': item[4],
+                'observed_at': observed_at,
+            } for item in values],
+            'alerts': alerts,
+        })
+        all_alerts.extend(alerts)
+    return {
+        'contract': 'ospy.provider.v1',
+        'provider_id': 'current_loop_tanks_monitor',
+        'status': provider_status, 'observed_at': observed_at,
+        'resources': resources, 'events': [], 'alerts': all_alerts,
+    }
+
+
 def _mobile_tank_series(from_time=None, to_time=None, max_points=400):
     from plugins.current_loop_tanks_monitor.mobile_history import mobile_history
     definitions = []

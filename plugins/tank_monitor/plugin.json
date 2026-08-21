@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "tank_monitor",
   "name": "Water Tank Monitor",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -38,6 +38,9 @@
     "email",
     "system"
   ],
+  "provider": {
+    "contract": "ospy.provider.v1"
+  },
   "mobile": {
     "api_version": 1,
     "actions": []

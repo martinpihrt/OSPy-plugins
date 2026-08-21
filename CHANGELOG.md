@@ -80,6 +80,11 @@ Fixed Shelly Pro 3EM and Shelly 3EM-63T Gen3 processing by using all three phase
 (Martin Pihrt) - OSPy Package Backup v1.0.2<br/>
 Restored the latest successful plug-in backup status from existing ZIP archives after OSPy or the plug-in restarts. The native mobile status and diagnostics now report the newest persistent archive name, modification time and size instead of resetting to “no backup created”. Added regression tests for archive discovery.
 
+August 21 2026
+--------------
+(Martin Pihrt) - Water Meter v1.2.0, Pressure Monitor v1.1.0, Water Tank Monitor v1.1.0 and Current Loop Tanks Monitor v1.1.0<br/>
+Added the shared read-only `ospy.provider.v1` capability and snapshot interface for Automation Rules and Irrigation Safety. The four adapters expose only cached values, stable identifiers, canonical units and machine-readable alerts, without additional I²C/GPIO operations or changes to their existing workers, pages, health reports and mobile contributions. Added contract and no-hardware-access regression tests.
+
 August 7 2026
 -------------
 (Martin Pihrt) - Water Meter v1.1.1<br/>

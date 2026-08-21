@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "pressure_monitor",
   "name": "Pressure Monitor",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -40,5 +40,8 @@
     "gpio",
     "email",
     "system"
-  ]
+  ],
+  "provider": {
+    "contract": "ospy.provider.v1"
+  }
 }

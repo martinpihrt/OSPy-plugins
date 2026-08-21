@@ -7,6 +7,8 @@ The plug-in includes a `plugin.json` manifest and reports its worker, monitoring
 configuration, pressure input, master state, latest check, safety shutdown and
 errors through the OSPy system health interface.
 
+Version 1.1.0 implements the read-only `ospy.provider.v1` contract. It exposes the cached binary pressure-present and master-active states; it does not report an invented pressure value in bar or kPa and never reads GPIO on a provider request.
+
 This plugin checked pressure in pipe, if master station is switched on must be activated pressure sensor.  
 If is not sensor activated in a certain time, switches off all station  and sends E-mail with error. Prevent safety for master station pump.  
 

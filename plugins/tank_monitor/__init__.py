@@ -497,6 +497,103 @@ def health():
     }
 
 
+def _provider_timestamp(epoch):
+    return (datetime.datetime.utcfromtimestamp(epoch).isoformat() + 'Z') if epoch else None
+
+
+def _provider_number(value):
+    try:
+        value = float(value)
+        return value if value >= 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def provider_capabilities():
+    """Describe cached ultrasonic tank measurements."""
+    return {
+        'contract': 'ospy.provider.v1',
+        'provider_id': 'tank_monitor',
+        'resource_types': ['tank'],
+        'values': [
+            {'id': 'level_cm', 'quantity': 'water_level', 'unit': 'cm', 'value_type': 'number'},
+            {'id': 'fill_percent', 'quantity': 'fill_ratio', 'unit': '%', 'value_type': 'number'},
+            {'id': 'sensor_distance_cm', 'quantity': 'distance', 'unit': 'cm', 'value_type': 'number'},
+            {'id': 'volume_liters', 'quantity': 'volume', 'unit': 'L', 'value_type': 'number'},
+            {'id': 'volume_cubic_meters', 'quantity': 'volume', 'unit': 'm3', 'value_type': 'number'},
+        ],
+        'events': [{'code': 'tank_monitor.measurement'}],
+        'alerts': [
+            {'code': 'tank_monitor.sensor_error'},
+            {'code': 'tank_monitor.low_level'},
+        ],
+        'actions': [],
+    }
+
+
+def provider_snapshot():
+    """Return the latest cached tank state without performing an I2C read."""
+    with health_lock:
+        state = dict(health_state)
+    current = dict(status)
+    observed_at = _provider_timestamp(state['last_read'])
+    worker_running = sender is not None and sender.is_alive()
+    if not tank_options.get('use_sonic', False):
+        provider_status = 'disabled'
+    elif not worker_running:
+        provider_status = 'unavailable'
+    elif state['sensor_error'] or (state['last_error'] and state['last_error'] >= state['last_read']):
+        provider_status = 'error'
+    elif not state['last_read']:
+        provider_status = 'stale'
+    else:
+        provider_status = 'ok'
+    alerts = []
+    error_time = state['last_error'] or state['last_read']
+    if (state['sensor_error'] or
+            (state['last_error'] and state['last_error'] >= state['last_read'])) and error_time:
+        alerts.append({
+            'id': 'tank-monitor.sensor-error', 'code': 'tank_monitor.sensor_error',
+            'severity': 'error', 'state': 'active',
+            'opened_at': _provider_timestamp(error_time),
+        })
+    level = _provider_number(current.get('level'))
+    if level is not None and level <= int(tank_options.get('water_minimum', 0)):
+        alerts.append({
+            'id': 'tank-monitor.low-level', 'code': 'tank_monitor.low_level',
+            'severity': 'warning', 'state': 'active', 'opened_at': observed_at,
+            'context': {'minimum_cm': int(tank_options.get('water_minimum', 0))},
+        })
+    stored_volume = _provider_number(current.get('volume'))
+    if stored_volume is None:
+        volume_liters = volume_cubic_meters = None
+    elif tank_options.get('check_liters', False):
+        volume_liters, volume_cubic_meters = stored_volume, stored_volume / 1000.0
+    else:
+        volume_liters, volume_cubic_meters = stored_volume * 1000.0, stored_volume
+    values = [
+        ('level_cm', 'water_level', level, 'cm', 'measured'),
+        ('fill_percent', 'fill_ratio', _provider_number(current.get('percent')), '%', 'derived'),
+        ('sensor_distance_cm', 'distance', _provider_number(current.get('ping')), 'cm', 'measured'),
+        ('volume_liters', 'volume', volume_liters, 'L', 'derived'),
+        ('volume_cubic_meters', 'volume', volume_cubic_meters, 'm3', 'derived'),
+    ]
+    return {
+        'contract': 'ospy.provider.v1', 'provider_id': 'tank_monitor',
+        'status': provider_status, 'observed_at': observed_at,
+        'resources': [{
+            'id': 'tank-1', 'type': 'tank', 'status': provider_status,
+            'values': [{
+                'id': item[0], 'quantity': item[1], 'value': item[2],
+                'unit': item[3], 'value_type': 'number', 'quality': item[4],
+                'observed_at': observed_at,
+            } for item in values],
+            'alerts': list(alerts),
+        }],
+        'events': [], 'alerts': alerts,
+    }
+
+
 def _mobile_tank_series(from_time=None, to_time=None, max_points=400):
     from plugins.tank_monitor.mobile_history import mobile_history
     units = ('cm', 'cm', 'cm', 'l')

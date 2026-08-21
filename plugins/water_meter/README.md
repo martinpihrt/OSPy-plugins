@@ -3,6 +3,8 @@ Water Meter Readme
 
 The Water Meter plug-in measures a pulse-output water meter through a PCF8583 I2C counter. It performs uninterrupted one-second measurements and reports current flow in liters per second, the equivalent liters per minute, consumption in the current minute and hour, and total consumption.
 
+Version 1.2.0 implements the read-only `ospy.provider.v1` contract. Automation consumers can read cached flow and accumulated volumes without causing another PCF8583 access or changing the existing measurement loop.
+
 Addresses `0x50` and `0x51` are alternatives; the plug-in occupies only the address selected in its settings. OSPy can install and run Water Meter beside another selectable-address plug-in when each receives a different address. If the preferred address is occupied during activation, the plug-in selects the free alternative. The settings page refuses an address currently used by another enabled plug-in, keeps the preceding settings and displays the conflict in a red status bar without leaving the page.
 
 Overview and settings are separate pages. The overview refreshes live values every second, includes activity and counter information, and shows a selectable history graph when local or SQL logging is enabled. The measurement log can be viewed and downloaded as CSV.

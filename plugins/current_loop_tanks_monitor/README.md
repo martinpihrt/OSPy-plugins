@@ -8,6 +8,8 @@ Visit [Martin Pihrt's blog](https://pihrt.com/clanky/mereni-vysky-tl136) for mor
 
 The measurement interval is configurable in seconds. Longer intervals reduce CPU usage and I2C bus load. The plug-in reads only tanks that are enabled or needed by regulation, stop-station or e-mail rules.
 
+Version 1.1.0 implements the read-only `ospy.provider.v1` contract. Every enabled 4–20 mA channel is a separate tank resource with cached level, fill, volume and sensor voltage; provider reads never start an ADS1115 conversion.
+
 The plug-in includes an OSPy `plugin.json` manifest, registers its measurement
 worker with the shared plug-in runtime, uses the common stop signal, and
 implements `health()`. Diagnostics reports configured tanks, worker state,

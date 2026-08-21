@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "water_meter",
   "name": "Water Meter",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -50,6 +50,9 @@
     "files",
     "i2c"
   ],
+  "provider": {
+    "contract": "ospy.provider.v1"
+  },
   "mobile": {
     "api_version": 1,
     "actions": []
