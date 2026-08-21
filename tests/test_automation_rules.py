@@ -114,12 +114,13 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.0.2')
+        self.assertEqual(manifest['version'], '1.0.3')
         self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
         self.assertNotIn('stations.activate', source)
         self.assertNotIn('stations.deactivate', source)
+        self.assertIn("'rule_name': rule['name']", source)
 
     def test_test_mode_dispatch_never_calls_local_or_external_delivery(self):
         path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'
@@ -196,12 +197,14 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(template.count('type="checkbox"'), template.count('class="slider"'))
         self.assertGreaterEqual(template.count('title=$:{json.dumps(_('), 20)
         self.assertIn('.switch input:checked + .slider', css)
-        self.assertIn('automation_rules.css?v=1.0.2', template)
+        self.assertIn('automation_rules.css?v=1.0.3', template)
         self.assertIn('value="test_notifications"', template)
         self.assertIn('.settings-grid > label, .settings-grid > .field-row, .switch-field { justify-content: flex-start; }', css)
         self.assertIn('Notification.requestPermission()', editor)
         self.assertNotIn('Notification.requestPermission()', home)
         self.assertIn("Notification.permission !== 'granted'", home)
+        self.assertNotIn("if (window.location.pathname !== '/') { return; }", home)
+        self.assertIn("if (window.location.pathname === '/') { showHome(item); }", home)
 
     def test_existing_notification_plugins_expose_delivery_results(self):
         telegram = (ROOT / 'plugins' / 'telegram_bot' / '__init__.py').read_text(encoding='utf-8')

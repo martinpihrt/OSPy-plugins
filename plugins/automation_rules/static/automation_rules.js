@@ -49,7 +49,6 @@
     }
 
     function poll() {
-        if (window.location.pathname !== '/') { return; }
         fetch(endpoint, {credentials: 'same-origin', cache: 'no-store'})
             .then(function (response) {
                 if (!response.ok) { throw new Error('notification_http_error'); }
@@ -57,7 +56,7 @@
             })
             .then(function (payload) {
                 (payload.notifications || []).slice().reverse().forEach(function (item) {
-                    showHome(item);
+                    if (window.location.pathname === '/') { showHome(item); }
                     showBrowser(item);
                 });
             })
@@ -66,7 +65,7 @@
 
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.2';
+    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.3';
     document.head.appendChild(css);
     window.setTimeout(poll, 1500);
     window.setInterval(poll, 15000);

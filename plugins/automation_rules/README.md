@@ -30,14 +30,19 @@ the settings button. Mobile push remains the channel for delivery while the web
 interface is closed. Notification history stores rule decisions and delivery
 status, not credentials or complete provider snapshots.
 
-Automation Rules does not stop stations or execute control/safety actions in
-version 1.0.1. Existing monitoring and notification plug-ins remain independently
-usable.
+Automation Rules does not stop stations or execute control/safety actions.
+Existing monitoring and notification plug-ins remain independently usable.
 
-Version 1.0.2 displays every Boolean setting and notification channel as the
+Version 1.0.3 displays every Boolean setting and notification channel as the
 same red/green sliding switch used by other OSPy plug-ins. Hovering over form
 fields, selectors, switches and action buttons shows a short localized
 description of the control. General switches are kept directly beside their
 labels. An explicit confirmed notification test bypasses conditions and timing,
 sends one real message through the channels currently selected in the rule and
 records each delivery result without changing incident state.
+Browser notifications are polled on every authenticated OSPy page. Home popup
+cards remain restricted to the Home page and are not consumed while the user
+is viewing another page.
+Mobile push uses the dedicated `automation` category when supported by OSPy and
+includes the stable rule ID, rule name and event in structured notification
+data. Older OSPy releases continue to classify the same event as `other`.

@@ -26,7 +26,7 @@ NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.2'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.3'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,
@@ -281,7 +281,10 @@ def _send_push(rule, event, message):
             'severity': 'info' if event == 'cleared' else rule['severity'],
             'code': 'automation_rule_{}'.format(event),
             'title': _('Automation Rules'), 'message': message,
-            'data': {'rule_id': rule['id'], 'event': event},
+            'data': {
+                'rule_id': rule['id'], 'rule_name': rule['name'],
+                'event': event,
+            },
         })
         return {'channel': 'push', 'status': 'queued' if queued else 'unavailable'}
     except Exception as error:

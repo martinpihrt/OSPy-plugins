@@ -2,6 +2,9 @@
 
 August 21 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.0.3<br/>
+Enabled browser-notification polling on every authenticated OSPy page instead of only Home. Home popup cards remain exclusive to Home and are not marked as consumed while another page is open. Mobile push data now includes the stable rule ID, rule name and event so a matching application can localize Automation Rules notifications without parsing server display text. Updated asset cache versions, documentation and regression coverage.
+
 (Martin Pihrt) - Automation Rules v1.0.2<br/>
 Kept the general switches directly beside their labels so each control is visually unambiguous. Added a confirmed Test notifications action that ignores conditions and timing, sends one real message through every channel currently selected in the rule even while global test mode is enabled, records individual delivery results and does not alter incident state. Updated the help, README, asset cache versions and regression tests.
 
