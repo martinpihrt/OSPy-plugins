@@ -3,13 +3,13 @@ $def with(plugin_options, rules, new_rule, history, catalog, states, events, err
 $var title: $_('Automation Rules')
 $var page: plugins
 
-<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.0.5">
+<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.0.6">
 
 <script>
 window.automationRuleCatalog = $:json.dumps(catalog, ensure_ascii=False);
 window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
 </script>
-<script src="/plugins/automation_rules/static/editor.js?v=1.0.5"></script>
+<script src="/plugins/automation_rules/static/editor.js?v=1.0.6"></script>
 
 <div id="plugin" class="automation-rules-page">
     <div class="title">$_('Automation Rules')</div>
@@ -39,7 +39,7 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
             </div>
             <p class="automation-warning">$_('Test mode records decisions but does not send notifications. Disable it only after testing every rule.')</p>
             <button class="submit" type="submit" title=$:{json.dumps(_('Save the general Automation Rules settings.'), ensure_ascii=False)}>$_('Save settings')</button>
-            <button class="button" type="button" id="automation-browser-permission" title=$:{json.dumps(_('Ask this browser for permission to display desktop notifications.'), ensure_ascii=False)}>$_('Enable browser notifications')</button>
+            <button class="button" type="button" id="automation-browser-permission" title=$:{json.dumps(_('Ask this browser for permission and immediately display a test notification.'), ensure_ascii=False)}>$_('Enable and test browser notifications')</button>
             <span id="automation-browser-permission-result" role="status"></span>
         </form>
     </section>

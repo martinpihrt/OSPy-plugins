@@ -2,6 +2,9 @@
 
 August 21 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.0.6<br/>
+Changed browser delivery to prefer the standards-based Service Worker notification path used by Firefox, with the direct Notification constructor retained as a fallback. The permission action now explicitly enables and tests notifications, asset cache versions force updated browser code, and delivery failures are displayed on the Automation Rules page instead of being silently discarded. Updated READMEs and regression coverage.
+
 (Martin Pihrt) - Automation Rules v1.0.5<br/>
 Added a built-in local Date and time source with ISO date, 24-hour time, weekday, month and day-of-month values. New in-range and outside-range comparisons accept `start..end` and correctly support overnight windows such as `22:00..06:00`, so time windows can be combined with measurements through AND. Trigger, repeat and recovery notifications now state each resource, value, actual reading, operator and configured limit, including structured details for the mobile app. Browser permission now sends an immediate visible test, browser delivery falls back to a Service Worker where the direct Notification API is unavailable, and Home messages preserve multiline details. Updated help, READMEs, asset cache versions and regression coverage.
 

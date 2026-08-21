@@ -152,8 +152,7 @@
                 result.textContent = window.automationRuleText.permissionDenied;
                 return;
             }
-            result.textContent = window.automationRuleText.permissionGranted;
-            try {
+            function directNotification() {
                 var notification = new Notification(
                     window.automationRuleText.browserTestTitle,
                     {body: window.automationRuleText.browserTestMessage,
@@ -162,22 +161,22 @@
                     window.focus();
                     notification.close();
                 };
-            } catch (error) {
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register(
-                        '/plugins/automation_rules/static/browser_sw.js?v=1.0.5'
-                    ).then(function (registration) {
-                        return registration.showNotification(
-                            window.automationRuleText.browserTestTitle,
-                            {body: window.automationRuleText.browserTestMessage,
-                             tag: 'automation-browser-permission-test'});
-                    }).catch(function () {
-                        result.textContent = window.automationRuleText.permissionDeliveryFailed;
-                    });
-                } else {
-                    result.textContent = window.automationRuleText.permissionDeliveryFailed;
-                }
             }
+            var delivery = ('serviceWorker' in navigator) ?
+                navigator.serviceWorker.register(
+                    '/plugins/automation_rules/static/browser_sw.js?v=1.0.6'
+                ).then(function (registration) {
+                    return registration.showNotification(
+                        window.automationRuleText.browserTestTitle,
+                        {body: window.automationRuleText.browserTestMessage,
+                         tag: 'automation-browser-permission-test'});
+                }).catch(directNotification) : Promise.resolve().then(directNotification);
+            delivery.then(function () {
+                result.textContent = window.automationRuleText.permissionGranted;
+            }).catch(function (error) {
+                result.textContent = window.automationRuleText.permissionDeliveryFailed +
+                    ' (' + (error.name || 'Error') + ')';
+            });
         });
     }
 

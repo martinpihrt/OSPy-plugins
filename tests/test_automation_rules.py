@@ -163,7 +163,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.0.5')
+        self.assertEqual(manifest['version'], '1.0.6')
         self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
@@ -315,7 +315,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(template.count('type="checkbox"'), template.count('class="slider"'))
         self.assertGreaterEqual(template.count('title=$:{json.dumps(_('), 20)
         self.assertIn('.switch input:checked + .slider', css)
-        self.assertIn('automation_rules.css?v=1.0.5', template)
+        self.assertIn('automation_rules.css?v=1.0.6', template)
         self.assertIn('value="between"', template)
         self.assertIn('value="test_notifications"', template)
         self.assertIn('.settings-grid > label, .settings-grid > .field-row, .switch-field { justify-content: flex-start; }', css)
@@ -323,7 +323,9 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertNotIn('Notification.requestPermission()', home)
         self.assertIn("Notification.permission !== 'granted'", home)
         self.assertIn('serviceWorkerNotification', home)
-        self.assertIn('browser_sw.js?v=1.0.5', home)
+        self.assertIn('browser_sw.js?v=1.0.6', home)
+        self.assertLess(home.index('serviceWorkerNotification(title'),
+                        home.index('new Notification(title'))
         self.assertNotIn("if (window.location.pathname !== '/') { return; }", home)
         self.assertIn("if (window.location.pathname === '/') { showHome(item); }", home)
 

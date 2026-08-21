@@ -47,7 +47,7 @@
             return Promise.reject(new Error('service_worker_unavailable'));
         }
         return navigator.serviceWorker.register(
-            '/plugins/automation_rules/static/browser_sw.js?v=1.0.5'
+            '/plugins/automation_rules/static/browser_sw.js?v=1.0.6'
         ).then(function (registration) {
             return registration.showNotification(title, options);
         });
@@ -57,13 +57,11 @@
         if (!('Notification' in window) || Notification.permission !== 'granted') {
             return Promise.reject(new Error('notification_permission_missing'));
         }
-        try {
-            var notification = new Notification(title, {body: message, tag: tag});
-            notification.onclick = function () { window.focus(); notification.close(); };
-            return Promise.resolve();
-        } catch (error) {
-            return serviceWorkerNotification(title, {body: message, tag: tag});
-        }
+        return serviceWorkerNotification(title, {body: message, tag: tag})
+            .catch(function () {
+                var notification = new Notification(title, {body: message, tag: tag});
+                notification.onclick = function () { window.focus(); notification.close(); };
+            });
     }
 
     function showBrowser(item) {
@@ -72,8 +70,13 @@
         deliverBrowser(item.title, item.message, item.id).then(function () {
             markShown(item.id, 'browser');
             delete pending[item.id];
-        }).catch(function () {
+        }).catch(function (error) {
             delete pending[item.id];
+            var result = document.getElementById('automation-browser-permission-result');
+            if (result && window.automationRuleText) {
+                result.textContent = window.automationRuleText.permissionDeliveryFailed +
+                    ' (' + (error.name || 'Error') + ')';
+            }
         });
     }
 
@@ -94,7 +97,7 @@
 
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.5';
+    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.6';
     document.head.appendChild(css);
     window.setTimeout(poll, 1500);
     window.setInterval(poll, 15000);
