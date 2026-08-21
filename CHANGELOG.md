@@ -2,6 +2,9 @@
 
 August 21 2026
 --------------
+(Martin Pihrt) - Venetian Blind v1.2.1<br/>
+Recognized complete standard Shelly Gen1 roller URL sets during both initial and already completed legacy migration, restoring the Shelly Gen1 profile and host instead of displaying them as Custom REST URLs while preserving nonstandard custom configurations unchanged. Test command buttons now return to the editor for the same blind, allowing consecutive command checks without reopening it. Updated the README, cache version and regression tests.
+
 (Martin Pihrt) - Venetian Blind v1.2.0<br/>
 Fixed temperature automation reading a nonexistent sensor attribute instead of the actual OSPy `last_read_value` channel, which prevented the lowering program from starting even above the configured limit. Replaced repeated cached-wind sampling with unique accepted Wind Monitor measurements and added a configurable minute window for the required strong-wind exceedances. Removed temperature hysteresis from the active settings because authoritative position checks now control re-entry. Mixed positions such as eight closed blinds and one open blind now start lowering when all environmental conditions are met; strong wind starts raising whenever any enabled blind is not confirmed open, including tilted, intermediate and unreachable devices. Continuous-condition guards prevent relay repetition, active external programs suppress duplicates, strong wind cancels pending lowering, and Diagnostics reports the current temperature, wind confirmation counts and confirmed blind-state count. Updated settings explanations, help, README and regression tests.
 

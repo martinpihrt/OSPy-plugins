@@ -1,6 +1,6 @@
 """Pure configuration, Shelly protocol and automation helpers."""
 
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 
 PROFILES = ('custom', 'gen1', 'gen2')
@@ -31,6 +31,24 @@ def _integer(value, default, minimum, maximum):
     return max(minimum, min(maximum, value))
 
 
+def _legacy_gen1_host(blind):
+    """Return the host when custom URLs are exactly a Shelly Gen1 roller set."""
+    open_url = str(blind.get('open_url', '') or '').strip().rstrip('/')
+    parsed = urlsplit(open_url)
+    if parsed.scheme not in ('http', 'https') or not parsed.netloc:
+        return ''
+    base = '{}://{}'.format(parsed.scheme, parsed.netloc)
+    expected = {
+        'open_url': base + '/roller/0?go=open',
+        'stop_url': base + '/roller/0?go=stop',
+        'close_url': base + '/roller/0?go=close',
+        'status_url': base + '/status',
+    }
+    if all(str(blind.get(key, '') or '').strip().rstrip('/') == value for key, value in expected.items()):
+        return base
+    return ''
+
+
 def normalize_blind(blind, uid_factory):
     result = default_blind(blind.get('uid') or uid_factory())
     result.update(blind)
@@ -39,6 +57,11 @@ def normalize_blind(blind, uid_factory):
     result['profile'] = result.get('profile') if result.get('profile') in PROFILES else 'custom'
     for key in ('label', 'host', 'open_url', 'stop_url', 'close_url', 'status_url', 'closed_label', 'open_label'):
         result[key] = str(result.get(key, '') or '').strip()
+    if result['profile'] == 'custom' and not result['host']:
+        legacy_host = _legacy_gen1_host(result)
+        if legacy_host:
+            result['profile'] = 'gen1'
+            result['host'] = legacy_host
     positions = list(result.get('tilt_positions', []))
     labels = list(result.get('tilt_labels', []))
     urls = list(result.get('tilt_urls', []))

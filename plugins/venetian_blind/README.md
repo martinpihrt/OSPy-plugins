@@ -10,11 +10,13 @@ This plugin can be used to control blinds and shutters through an API and a hard
 Plugin setup
 -----------
 
-Blinds are managed individually through Add blind, Edit and confirmed Delete actions, with a saved card or list view. Existing count-based settings migrate automatically to the Custom REST profile without changing labels, open, stop, close or status URLs, or the labels for positions 0 and 100 percent.
+Blinds are managed individually through Add blind, Edit and confirmed Delete actions, with a saved card or list view. Existing count-based settings retain labels, commands, status URLs and the labels for positions 0 and 100 percent. A complete standard Shelly Gen1 roller URL set is recognized automatically and restored as the Shelly Gen1 profile with its host; nonstandard commands remain in the Custom REST profile without modification.
 
 Boolean settings use the same accessible red and green sliding switches as other OSPy plug-ins without changing the saved option names or their compatibility with existing configurations.
 
 Each blind can use Shelly Gen1, Shelly Gen2 and newer, or Custom REST URLs. Gen1 uses `/status`, `/roller/0?go=open|close|stop` and `to_pos`; Gen2+ uses `Cover.GetStatus`, `Cover.Open`, `Cover.Close`, `Cover.Stop` and `Cover.GoToPosition`. Four independently named tilt positions have configurable percentages and optional custom URLs. The reported Shelly position is classified as closed, tilt 1–4, open or an intermediate position.
+
+Testing a saved command keeps the same blind editor open so several directions and tilt positions can be checked without reopening the blind after every command.
 
 Temperature shading reads the selected OSPy sensor from its actual `last_read_value` channel, compares it directly with the configured limit and operates only inside the permitted time window. Lowering is allowed only after the configured number of consecutive, fresh and unique Wind Monitor measurements is below the safe limit. No temperature hysteresis is required because the reported blind positions and one-action-per-condition guard prevent repeated relay commands.
 

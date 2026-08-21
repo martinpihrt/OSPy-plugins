@@ -685,7 +685,10 @@ class setup_page(ProtectedPage):
                     send_cmd_to_blind(index, str(qdict.get('target', 'stop')))
                 msg = 'tested'
             normalize_options()
-            raise web.seeother(plugin_url(setup_page) + '?msg=' + msg, True)
+            redirect = plugin_url(setup_page) + '?msg=' + msg
+            if action == 'test_command' and requested:
+                redirect += '&action=edit&blind=' + quote_plus(requested)
+            raise web.seeother(redirect, True)
 
         except web.SeeOther:
             raise

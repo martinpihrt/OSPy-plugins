@@ -19,6 +19,36 @@ class VenetianBlindModelTests(unittest.TestCase):
         self.assertEqual(model.command_url(blinds[0], 'open'), 'http://a/open')
         self.assertEqual(model.status_url(blinds[0]), 'http://a/status')
 
+    def test_legacy_shelly_gen1_urls_restore_the_gen1_profile_and_host(self):
+        settings = {
+            'number_blinds': 1,
+            'label': ['South'],
+            'open': ['http://192.168.1.20/roller/0?go=open'],
+            'stop': ['http://192.168.1.20/roller/0?go=stop'],
+            'close': ['http://192.168.1.20/roller/0?go=close'],
+            'status': ['http://192.168.1.20/status'],
+        }
+        blind = model.configured_blinds(settings, lambda: 'stable')[0]
+        self.assertEqual(blind['profile'], 'gen1')
+        self.assertEqual(blind['host'], 'http://192.168.1.20')
+
+    def test_already_migrated_gen1_urls_are_repaired_without_touching_custom_sets(self):
+        migrated = model.default_blind('stable')
+        migrated.update({
+            'profile': 'custom',
+            'host': '',
+            'open_url': 'http://192.168.1.20/roller/0?go=open',
+            'stop_url': 'http://192.168.1.20/roller/0?go=stop',
+            'close_url': 'http://192.168.1.20/roller/0?go=close',
+            'status_url': 'http://192.168.1.20/status',
+        })
+        repaired = model.configured_blinds({'blinds': [migrated]}, lambda: 'new')[0]
+        self.assertEqual(repaired['profile'], 'gen1')
+        self.assertEqual(repaired['host'], 'http://192.168.1.20')
+        migrated['stop_url'] = 'http://192.168.1.20/custom-stop'
+        custom = model.configured_blinds({'blinds': [migrated]}, lambda: 'new')[0]
+        self.assertEqual(custom['profile'], 'custom')
+
     def test_gen1_and_gen2_commands_use_the_correct_api(self):
         blind = model.default_blind('a')
         blind['host'] = '192.168.1.20'
@@ -105,6 +135,11 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
         self.assertNotIn('name="temperature_hysteresis"', template)
         self.assertIn('name="strong_wind_interval"', template)
 
+    def test_command_returns_to_the_same_blind_editor(self):
+        source = (PLUGIN / '__init__.py').read_text(encoding='utf-8')
+        self.assertIn("if action == 'test_command' and requested:", source)
+        self.assertIn("'&action=edit&blind=' + quote_plus(requested)", source)
+
     def test_all_visible_checkboxes_use_sliding_switches(self):
         template = (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8')
         css = (PLUGIN / 'static' / 'venetian_blind.css').read_text(encoding='utf-8')
@@ -140,8 +175,9 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
 
     def test_manifest_version_dependency_and_permissions_are_current(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.2.0')
-        self.assertIn('venetian_blind.css?v=1.2.0', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['version'], '1.2.1')
+        self.assertIn('venetian_blind.css?v=1.2.1', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
+        self.assertIn('venetian_blind.css?v=1.2.1', (PLUGIN / 'templates' / 'venetian_blind_overview.html').read_text(encoding='utf-8'))
         self.assertIn('system', manifest['permissions'])
         self.assertIn('wind_monitor', [item['id'] for item in manifest['dependencies']])
 

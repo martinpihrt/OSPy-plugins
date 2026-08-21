@@ -1,7 +1,7 @@
 $def with(plugin_options, msg, blinds, editor, is_new, sensor_items, program_items)
 $var title: $_('Venetian blind settings')
 $var page: plugins
-<link href="/plugins/venetian_blind/static/venetian_blind.css?v=1.2.0" rel="stylesheet" type="text/css">
+<link href="/plugins/venetian_blind/static/venetian_blind.css?v=1.2.1" rel="stylesheet" type="text/css">
 <script>jQuery(function(){jQuery('.blindDelete').on('submit',function(e){if(!confirm($:{json.dumps(_('Delete this blind configuration?'),ensure_ascii=False)}))e.preventDefault();});function profile(){var custom=jQuery('#profile').val()==='custom';jQuery('.customUrls').toggle(custom);jQuery('.shellyHost').toggle(!custom);}jQuery('#profile').on('change',profile);profile();});</script>
 <div id="plugin" class="blindPanel"><div class="title">$_('Venetian blind settings')</div><div class="blindTop"><a href=$plugins.plugin_url('venetian_blind.help_page') class="button upload">$_('Help')</a><a href=$plugins.plugin_url('venetian_blind.home_page') class="button danger">$_('Back')</a></div>
 $if editor is not None:
