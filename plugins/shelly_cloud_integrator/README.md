@@ -23,6 +23,8 @@ The device overview can be displayed as a compact list or responsive cards. The 
 
 The internal Shelly device service exposes snapshots of both cached readings and configured device identities. Dependent plug-ins can therefore distinguish a missing or disabled device from an enabled device that is still waiting for its first reading. Reading the service before the worker starts safely returns an empty cache.
 
+Shelly 2.5 reports its shared voltage consistently in roller and switch modes over both cloud and local connections. Status output uses that value directly and no longer references a channel-specific variable that is not provided by Shelly 2.5. Local switch mode reads its IP address and RSSI from the standard `wifi` object. Shelly 2PM Add-on and Shelly 1PM Add-on status lines display both the actual RSSI and update timestamp in their correct fields.
+
 The add and edit form, compact list and responsive cards show a local preview image for every supported device type. Selecting a different device type or generation updates the editor preview immediately, and selecting an image opens the matching official Shelly Knowledge Base page in a new tab. Preview files are stored locally with the plug-in, so the settings page does not depend on loading images from an external server.
 
 * Server uri:  

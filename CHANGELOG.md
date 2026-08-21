@@ -2,6 +2,9 @@
 
 August 21 2026
 --------------
+(Martin Pihrt) - Shelly Cloud Integration v1.0.8<br/>
+Fixed Shelly 2.5 roller and switch processing referencing an unassigned `a_voltage` variable even though the device response stores its shared voltage as `voltage`, which stopped the complete Integrator polling cycle with `UnboundLocalError`. Corrected the local switch-mode Wi-Fi response path and fixed Shelly 2PM Add-on and Shelly 1PM Add-on status lines so RSSI and update time are placed in their intended fields. Updated the version, cache key, help, READMEs and regression tests.
+
 (Martin Pihrt) - Energy Meter v1.0.6 and Shelly Cloud Integration v1.0.7<br/>
 Fixed Energy Meter reporting a configured Shelly meter as unavailable when it started before Shelly Cloud Integration had populated its runtime cache. Shelly Cloud Integration now safely exposes snapshots of configured identities and cached readings even before its worker starts, while Energy Meter also understands the previous parallel-list interface. Energy Meter distinguishes missing, disabled, offline and still-loading devices; a still-loading meter is retried every five seconds without logging a failure traceback, while other successful meters keep their configured sampling interval and Diagnostics reports a waiting state until data arrives. Shelly IDs are matched case-insensitively and labels remain exact. Updated versions, cache keys, help, READMEs and regression tests.
 

@@ -118,11 +118,20 @@ class ShellyDeviceManagementTemplateTests(unittest.TestCase):
         self.assertIn("'id': device.get('sensor_id', '')", source)
         self.assertIn("'enabled': bool(device.get('use_sensor', False))", source)
 
-    def test_manifest_and_active_css_use_version_1_0_7(self):
+    def test_shelly_25_and_addon_status_use_initialized_network_values(self):
+        source = (PLUGIN_ROOT / '__init__.py').read_text(encoding='utf-8')
+        shelly_25 = source.split('# typ: 4=Shelly 2.5', 1)[1].split('# typ: 5=Shelly Pro 4PM', 1)[0]
+        self.assertNotIn('a_voltage', shelly_25)
+        self.assertNotIn('wifi = response_data["sta_ip"]', shelly_25)
+        self.assertIn('wifi = response_data["wifi"]', shelly_25)
+        self.assertIn('sta_ip = wifi["sta_ip"]', shelly_25)
+        self.assertEqual(source.count("RSSI:{} dbm {}\\n').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))"), 4)
+
+    def test_manifest_and_active_css_use_version_1_0_8(self):
         manifest = json.loads((PLUGIN_ROOT / 'plugin.json').read_text(encoding='utf-8'))
         template = (PLUGIN_ROOT / 'templates' / 'shelly_cloud_integration_devices.html').read_text(encoding='utf-8')
-        self.assertEqual(manifest['version'], '1.0.7')
-        self.assertIn('shelly_cloud_integration.css?v=1.0.7', template)
+        self.assertEqual(manifest['version'], '1.0.8')
+        self.assertIn('shelly_cloud_integration.css?v=1.0.8', template)
         self.assertTrue((PLUGIN_ROOT / 'static' / 'shelly_cloud_integration.css').is_file())
 
 

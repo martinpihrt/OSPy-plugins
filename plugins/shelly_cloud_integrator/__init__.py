@@ -636,8 +636,8 @@ class Sender(Thread):
                                                         voltage = response_data["switch:0"]["voltage"]
                                                         a_output = response_data["switch:0"]["output"]
                                                         b_output = response_data["switch:1"]["output"]
-                                                        wifi = response_data["sta_ip"]
-                                                        sta_ip = wifi["ip"]
+                                                        wifi = response_data["wifi"]
+                                                        sta_ip = wifi["sta_ip"]
                                                         pass  
                                                     updated = now()
                                                     online = True
@@ -646,10 +646,10 @@ class Sender(Thread):
                                                     if roller is None:
                                                         if a_output:
                                                             msg += _('[{}: 1-ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                            msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)
+                                                            msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
                                                         else:
                                                             msg += _('[{}: 1-OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                            msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), a_voltage, sta_ip, rssi)    
+                                                            msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi)
                                                         if b_output:
                                                             msg += _('2-ON {} W ({} kW/h)] ').format(b_power, round(b_total/1000.0, 2))
                                                             msg_info += _('2-ON {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), format_timestamp(updated))
@@ -658,7 +658,7 @@ class Sender(Thread):
                                                             msg_info += _('2-OFF {} W ({} kW/h) {}\n').format(b_power, round(b_total/1000.0, 2), format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h)] ').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2))
-                                                        msg_info += _('{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), a_voltage, sta_ip, rssi, format_timestamp(updated))
+                                                        msg_info += _('{}: {} 1: {} W ({} kW/h) 2: {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, roller, a_power, round(a_total/1000.0, 2), b_power, round(b_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                 else:
                                                     msg += _('[{}: -] ').format(name)
                                                     msg_info += _('{}: OFFLINE\n').format(name)
@@ -981,10 +981,10 @@ class Sender(Thread):
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1-ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
+                                                        msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: 1-OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
+                                                        msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                     if b_output:
                                                         msg += _('2-ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
                                                         msg_info += _('2-ON {} W ({} kW/h) ').format(b_power, round(b_total/1000.0, 2))
@@ -1139,10 +1139,10 @@ class Sender(Thread):
                                                 if online:
                                                     if a_output:
                                                         msg += _('[{}: 1-ON {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
+                                                        msg_info += _('{}: 1-ON {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                     else:
                                                         msg += _('[{}: 1-OFF {} W ({} kW/h) ').format(name, a_power, round(a_total/1000.0, 2))
-                                                        msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm ').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, format_timestamp(updated))
+                                                        msg_info += _('{}: 1-OFF {} W ({} kW/h) {} V IP:{} RSSI:{} dbm {}\n').format(name, a_power, round(a_total/1000.0, 2), voltage, sta_ip, rssi, format_timestamp(updated))
                                                     if temperature100 is not None:
                                                         msg += _('{} {} °C ').format(temp100name, temperature100)
                                                         msg_info += _('{} {} °C ').format(temp100name, temperature100)
