@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Graphical automation rules over cached ospy.provider.v1 snapshots."""
 
+import datetime
 import json
 import os
 import time
@@ -9,6 +10,7 @@ import uuid
 from threading import RLock, Thread
 
 import web
+import plugins as ospy_plugins
 
 from ospy.helpers import datetime_string, verify_csrf
 from ospy.log import log
@@ -27,11 +29,12 @@ NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.8'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.1.0'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,
     'test_mode': True,
+    'control_enabled': False,
     'poll_interval': 30,
     'history_limit': 500,
 })
@@ -42,6 +45,7 @@ health_state = {
     'last_cycle': 0, 'last_action': 0, 'last_error': 0,
     'last_error_message': '', 'evaluated_rules': 0,
     'active_rules': 0, 'provider_errors': 0,
+    'control_actions': 0, 'control_errors': 0,
 }
 _test_states = {}
 
@@ -305,6 +309,82 @@ def _provider_catalog(snapshots=None):
     return catalog
 
 
+def _action_catalog(snapshots=None):
+    """Return built-in and provider-declared actions for the graphical editor."""
+    from ospy.programs import programs
+    from ospy.stations import stations
+
+    station_targets = [
+        {'value': str(station.index),
+         'label': '{}. {}'.format(station.index + 1, station.name)}
+        for station in stations.get()
+        if not station.is_master and not station.is_master_two and
+        not station.is_master_by_program
+    ]
+    program_targets = [{'value': '*', 'label': _('Every running program')}]
+    program_targets.extend({
+        'value': str(index),
+        'label': '{}. {}'.format(index + 1, program.name),
+    } for index, program in enumerate(programs.get()))
+    result = [
+        {'key': 'stop_station', 'type': 'stop_station',
+         'label': _('Stop selected station'), 'targets': station_targets,
+         'target_label': _('Station'), 'value_kind': 'none'},
+        {'key': 'stop_all_outputs', 'type': 'stop_all_outputs',
+         'label': _('Stop all outputs'), 'targets': [],
+         'target_label': '', 'value_kind': 'none'},
+        {'key': 'disable_scheduler', 'type': 'disable_scheduler',
+         'label': _('Disable scheduler'), 'targets': [],
+         'target_label': '', 'value_kind': 'none'},
+        {'key': 'stop_program', 'type': 'stop_program',
+         'label': _('Stop running program'), 'targets': program_targets,
+         'target_label': _('Program'), 'value_kind': 'none'},
+        {'key': 'output_on', 'type': 'output_on',
+         'label': _('Turn output on'), 'targets': station_targets,
+         'target_label': _('Output'), 'value_kind': 'duration',
+         'value_label': _('Duration in seconds')},
+        {'key': 'output_off', 'type': 'output_off',
+         'label': _('Turn output off'), 'targets': station_targets,
+         'target_label': _('Output'), 'value_kind': 'none'},
+        {'key': 'set_water_level', 'type': 'set_water_level',
+         'label': _('Set water level adjustment'), 'targets': [],
+         'target_label': '', 'value_kind': 'percent',
+         'value_label': _('Water level percent')},
+    ]
+    snapshots = _automation_snapshots() if snapshots is None else snapshots
+    for module in plugin_provider_modules():
+        try:
+            capabilities = plugin_provider_capabilities(module)
+            resources = snapshots.get('providers', {}).get(module, {}).get(
+                'resources', [])
+            targets = [{'value': item.get('id', ''),
+                        'label': item.get('name') or item.get('id', '')}
+                       for item in resources if item.get('id')]
+            targets.insert(0, {'value': '', 'label': _('Provider default')})
+            for action in capabilities.get('actions', []):
+                action_id = action.get('id', '')
+                result.append({
+                    'key': 'provider::{}::{}'.format(module, action_id),
+                    'type': 'provider_action',
+                    'provider_id': module, 'provider_action_id': action_id,
+                    'label': '{} – {}'.format(module, action_id),
+                    'targets': targets, 'target_label': _('Resource'),
+                    'value_kind': 'parameters',
+                    'value_label': _('Parameters (JSON object)'),
+                    'risk': action.get('risk', 'control'),
+                })
+        except Exception:
+            log.error(NAME, _('Unable to read provider actions') + ': ' + module)
+    return result
+
+
+def _configured_action_key(action):
+    if action.get('type') == 'provider_action':
+        return 'provider::{}::{}'.format(
+            action.get('provider_id', ''), action.get('provider_action_id', ''))
+    return action.get('type', '')
+
+
 def _display_history():
     event_labels = {
         'triggered': _('Triggered'), 'repeated': _('Repeated'),
@@ -312,6 +392,7 @@ def _display_history():
         'test_matched': _('Test matched'),
         'test_not_matched': _('Test did not match'),
         'notification_test': _('Test notification'),
+        'unlocked': _('Incident unlocked'),
     }
     channel_labels = {
         'home': _('OSPy Home window'), 'browser': _('Browser notification'),
@@ -322,6 +403,8 @@ def _display_history():
         'test': _('Test only'), 'queued': _('Queued'), 'sent': _('Sent'),
         'unavailable': _('Unavailable'), 'unsupported': _('Unsupported'),
         'error': _('Error'),
+        'simulated': _('Simulated'), 'blocked': _('Blocked'),
+        'executed': _('Executed'),
     }
     result = []
     for item in load_history():
@@ -334,6 +417,11 @@ def _display_history():
             '{}: {}'.format(channel_labels.get(value.get('channel'), _('Unknown')),
                             status_labels.get(value.get('status'), _('Unknown')))
             for value in item.get('results', [])
+        )
+        record['actions_text'] = ', '.join(
+            '{}: {}'.format(value.get('label', value.get('type', _('Unknown'))),
+                            status_labels.get(value.get('status'), _('Unknown')))
+            for value in item.get('action_results', [])
         )
         result.append(record)
     return result
@@ -455,7 +543,23 @@ def _rule_header_summary(rule, catalog=None):
                 for channel in rule.get('channels', [])]
     notification_text = (', '.join(channels) if channels else
                          _('no notification channel'))
-    return '{} → {} {}'.format(condition_text, _('notify via'), notification_text)
+    action_labels = {
+        'stop_station': _('stop station'),
+        'stop_all_outputs': _('stop all outputs'),
+        'disable_scheduler': _('disable scheduler'),
+        'stop_program': _('stop program'),
+        'output_on': _('turn output on'), 'output_off': _('turn output off'),
+        'set_water_level': _('set water level'),
+        'provider_action': _('run provider action'),
+    }
+    actions = [action_labels.get(item.get('type'), item.get('type', ''))
+               for item in rule.get('actions', [])]
+    outcome = '{} {}'.format(_('notify via'), notification_text)
+    if actions:
+        outcome += '; {} {}'.format(_('perform'), ', '.join(actions))
+    if rule.get('latch_incident'):
+        outcome += '; ' + _('lock incident')
+    return '{} → {}'.format(condition_text, outcome)
 
 
 def _rules_for_display(rules, catalog):
@@ -463,6 +567,15 @@ def _rules_for_display(rules, catalog):
     for rule in rules:
         displayed = dict(rule)
         displayed['header_summary'] = _rule_header_summary(rule, catalog)
+        displayed['actions'] = []
+        for action in rule.get('actions', []):
+            editor_action = dict(action)
+            editor_action['editor_key'] = _configured_action_key(action)
+            editor_action['editor_value'] = (
+                json.dumps(action.get('parameters', {}), ensure_ascii=False)
+                if action.get('type') == 'provider_action' else
+                action.get('value', ''))
+            displayed['actions'].append(editor_action)
         result.append(displayed)
     return result
 
@@ -491,6 +604,10 @@ def _mobile_rule_card(rule, evaluation, state, catalog, automation_enabled=True)
         {'id': 'enabled', 'label': _('Enabled'),
          'value': _('Yes') if rule.get('enabled') else _('No'), 'unit': ''},
         {'id': 'state', 'label': _('Rule state'), 'value': state_text, 'unit': ''},
+        {'id': 'incident_locked', 'label': _('Incident locked'),
+         'value': _('Yes') if state.get('latched') else _('No'), 'unit': ''},
+        {'id': 'control_actions', 'label': _('Configured control actions'),
+         'value': len(rule.get('actions', [])), 'unit': ''},
     ]
     for index, condition in enumerate(rule.get('conditions', [])):
         result = results.get(condition.get('id'), {})
@@ -563,6 +680,160 @@ def _send_push(rule, event, message, condition_summary=''):
                 'error': type(error).__name__}
 
 
+def _action_label(action):
+    labels = {
+        'stop_station': _('Stop selected station'),
+        'stop_all_outputs': _('Stop all outputs'),
+        'disable_scheduler': _('Disable scheduler'),
+        'stop_program': _('Stop running program'),
+        'output_on': _('Turn output on'),
+        'output_off': _('Turn output off'),
+        'set_water_level': _('Set water level adjustment'),
+        'provider_action': _('Provider action'),
+    }
+    return labels.get(action.get('type'), action.get('type', _('Unknown')))
+
+
+def _finish_station_runs(station_ids):
+    from ospy.stations import stations
+
+    station_ids = set(station_ids)
+    for interval in list(log.active_runs()):
+        if interval.get('station') in station_ids:
+            log.finish_run(interval)
+    for station_id in station_ids:
+        stations.deactivate(station_id)
+
+
+def _execute_control_action(action):
+    """Execute one normalized action and return a JSON-safe result."""
+    from ospy.options import options
+    from ospy.programs import programs
+    from ospy.runonce import run_once
+    from ospy.stations import stations
+
+    action_type = action['type']
+    if action_type == 'stop_station':
+        station_id = int(action['target'])
+        if not 0 <= station_id < stations.count():
+            raise ValueError(_('Selected station does not exist.'))
+        _finish_station_runs([station_id])
+        detail = stations.get(station_id).name
+    elif action_type == 'stop_all_outputs':
+        programs.run_now_program = None
+        run_once.clear()
+        log.finish_run(None)
+        stations.clear()
+        try:
+            from ospy.outputs import outputs
+            outputs.relay_output = False
+        except Exception:
+            log.error(NAME, _('Unable to switch off the master relay.') + '\n' +
+                      traceback.format_exc())
+        detail = _('All outputs stopped')
+    elif action_type == 'disable_scheduler':
+        options.scheduler_enabled = False
+        detail = _('Scheduler disabled')
+    elif action_type == 'stop_program':
+        target = action['target']
+        matched = []
+        for interval in list(log.active_runs()):
+            if target == '*' or interval.get('program') == int(target):
+                matched.append(interval.get('station'))
+                log.finish_run(interval)
+        for station_id in set(item for item in matched if isinstance(item, int)):
+            stations.deactivate(station_id)
+        running_program = programs.run_now_program
+        if running_program is not None and (
+                target == '*' or getattr(running_program, 'index', None) == int(target)):
+            programs.run_now_program = None
+        if target == '*':
+            run_once.clear()
+        detail = _('Stopped active program runs')
+    elif action_type == 'output_off':
+        station_id = int(action['target'])
+        if not 0 <= station_id < stations.count():
+            raise ValueError(_('Selected output does not exist.'))
+        _finish_station_runs([station_id])
+        detail = stations.get(station_id).name
+    elif action_type == 'output_on':
+        station_id = int(action['target'])
+        if not options.manual_mode:
+            raise RuntimeError(_('Manual mode is required before an automation can turn on an output.'))
+        if not 0 <= station_id < stations.count():
+            raise ValueError(_('Selected output does not exist.'))
+        station = stations.get(station_id)
+        if (not station.enabled or station.is_master or station.is_master_two or
+                station.is_master_by_program):
+            raise RuntimeError(_('The selected output cannot be started directly.'))
+        start = datetime.datetime.now()
+        duration = int(action['value'])
+        interval = {
+            'active': True, 'program': -1, 'station': station_id,
+            'program_name': _('Automation Rules'), 'fixed': True,
+            'cut_off': 0, 'manual': True, 'blocked': False,
+            'start': start, 'original_start': start,
+            'end': start + datetime.timedelta(seconds=duration),
+            'uid': '{}-automation-{}-{}'.format(start, station_id, action['id']),
+            'usage': station.usage,
+        }
+        log.start_run(interval)
+        stations.activate(station_id)
+        detail = '{} ({} {})'.format(station.name, duration, _('seconds'))
+    elif action_type == 'set_water_level':
+        options.level_adjustment = float(action['value']) / 100.0
+        detail = '{} %'.format(_display_value(float(action['value'])))
+    elif action_type == 'provider_action':
+        execute = getattr(ospy_plugins, 'plugin_provider_execute_action', None)
+        if not callable(execute):
+            raise RuntimeError(_('This OSPy version does not support provider actions.'))
+        provider_result = execute(
+            action['provider_id'], action['provider_action_id'],
+            action.get('resource_id', ''), action.get('parameters', {}))
+        if provider_result.get('status') not in ('ok', 'executed', 'success'):
+            raise RuntimeError(str(provider_result.get('message') or
+                                   provider_result.get('status') or
+                                   _('Provider action failed.')))
+        detail = str(provider_result.get('message') or action['provider_action_id'])
+    else:
+        raise ValueError(_('Unsupported control action.'))
+    return {'action_id': action['id'], 'type': action_type,
+            'label': _action_label(action), 'status': 'executed',
+            'detail': detail}
+
+
+def execute_control_actions(rule, test_mode=False):
+    results = []
+    for action in rule.get('actions', []):
+        if test_mode:
+            results.append({'action_id': action['id'], 'type': action['type'],
+                            'label': _action_label(action),
+                            'status': 'simulated'})
+            continue
+        if not plugin_options.get('control_enabled', False):
+            results.append({'action_id': action['id'], 'type': action['type'],
+                            'label': _action_label(action),
+                            'status': 'blocked',
+                            'detail': _('Control actions are disabled.')})
+            continue
+        try:
+            results.append(_execute_control_action(action))
+            with health_lock:
+                health_state['control_actions'] += 1
+        except Exception as error:
+            results.append({'action_id': action['id'], 'type': action['type'],
+                            'label': _action_label(action), 'status': 'error',
+                            'error': type(error).__name__, 'detail': str(error)})
+            with health_lock:
+                health_state['control_errors'] += 1
+                health_state['last_error'] = time.time()
+                health_state['last_error_message'] = '{}: {}'.format(
+                    type(error).__name__, error)
+            log.error(NAME, _('Automation control action failed') + ': ' +
+                      '{}\n{}'.format(_action_label(action), traceback.format_exc()))
+    return results
+
+
 def dispatch_notifications(rule, event, test_mode=False, evaluation=None):
     message = _event_text(rule, event)
     condition_summary = _condition_summary(rule, evaluation)
@@ -602,13 +873,15 @@ def dispatch_notifications(rule, event, test_mode=False, evaluation=None):
     return results
 
 
-def _history_record(rule, event, evaluation, results, test_mode):
+def _history_record(rule, event, evaluation, results, test_mode,
+                    action_results=None):
     return {
         'timestamp': int(time.time()), 'datetime': datetime_string(),
         'rule_id': rule['id'], 'rule_name': rule['name'], 'event': event,
         'matched': bool(evaluation.get('matched')),
         'available': bool(evaluation.get('available')),
         'test_mode': bool(test_mode), 'results': results,
+        'action_results': list(action_results or []),
         'conditions': [{
             'id': item.get('id'), 'matched': bool(item.get('matched')),
             'available': bool(item.get('available')), 'actual': item.get('actual'),
@@ -631,6 +904,7 @@ def evaluate_once(test_mode=None):
                    if test_mode is None else test_mode)
     states = _test_states if is_test else load_states()
     evaluated = 0
+    cycle_action_error = False
     for rule in rules:
         if not rule['enabled']:
             continue
@@ -642,9 +916,14 @@ def evaluate_once(test_mode=None):
         should_notify = event in ('triggered', 'repeated') or (
             event == 'cleared' and rule['notify_on_clear'])
         if should_notify:
+            action_results = (execute_control_actions(rule, test_mode=is_test)
+                              if event == 'triggered' else [])
+            cycle_action_error = cycle_action_error or any(
+                item.get('status') == 'error' for item in action_results)
             results = dispatch_notifications(
                 rule, event, test_mode=is_test, evaluation=evaluation)
-            append_history(_history_record(rule, event, evaluation, results, is_test))
+            append_history(_history_record(
+                rule, event, evaluation, results, is_test, action_results))
             with health_lock:
                 health_state['last_action'] = time.time()
     if is_test:
@@ -653,7 +932,8 @@ def evaluate_once(test_mode=None):
         save_states(states)
     with health_lock:
         health_state['last_cycle'] = time.time()
-        health_state['last_error_message'] = ''
+        if not cycle_action_error:
+            health_state['last_error_message'] = ''
         health_state['evaluated_rules'] = evaluated
         health_state['active_rules'] = sum(1 for value in states.values()
                                            if value.get('active'))
@@ -668,9 +948,11 @@ def test_rule(rule_id):
         raise engine.RuleValidationError('rule was not found')
     evaluation = engine.evaluate_rule(rule, _automation_snapshots())
     event = 'test_matched' if evaluation['matched'] else 'test_not_matched'
+    action_results = (execute_control_actions(rule, test_mode=True)
+                      if evaluation['matched'] else [])
     append_history(_history_record(rule, event, evaluation, [
         {'channel': channel, 'status': 'test'} for channel in rule['channels']
-    ], True))
+    ], True, action_results))
     return evaluation
 
 
@@ -683,6 +965,27 @@ def send_test_notifications(rule):
     append_history(_history_record(
         rule, 'notification_test', evaluation, results, False))
     return results
+
+
+def unlock_incident(rule_id):
+    rules = {item['id']: item for item in load_rules()}
+    rule = rules.get(rule_id)
+    if rule is None:
+        raise engine.RuleValidationError('rule was not found')
+    evaluation = engine.evaluate_rule(rule, _automation_snapshots())
+    if not evaluation.get('available'):
+        raise engine.RuleValidationError(
+            _('The incident cannot be unlocked while a condition is unavailable.'))
+    if evaluation.get('matched'):
+        raise engine.RuleValidationError(
+            _('The incident cannot be unlocked while its conditions are still active.'))
+    states = load_states()
+    state = dict(states.get(rule_id, {}))
+    state.update({'active': False, 'latched': False, 'matched_since': 0,
+                  'last_trigger': 0, 'last_evaluation': int(time.time())})
+    states[rule_id] = state
+    save_states(states)
+    append_history(_history_record(rule, 'unlocked', evaluation, [], False))
 
 
 class AutomationWorker(Thread):
@@ -744,10 +1047,16 @@ def health():
         _('Worker thread'): _('Running') if worker_running else _('Stopped'),
         _('Automation enabled'): _('Yes') if plugin_options.get('enabled') else _('No'),
         _('Test mode'): _('Yes') if plugin_options.get('test_mode') else _('No'),
+        _('Control actions enabled'): (_('Yes') if plugin_options.get('control_enabled')
+                                       else _('No')),
         _('Saved rules'): len(load_rules()),
         _('Evaluated rules'): state['evaluated_rules'],
         _('Active rules'): state['active_rules'],
         _('Provider errors'): state['provider_errors'],
+        _('Executed control actions'): state['control_actions'],
+        _('Control action errors'): state['control_errors'],
+        _('Locked incidents'): sum(1 for value in load_states().values()
+                                   if value.get('latched')),
         _('Last evaluation'): (datetime_string(time.localtime(state['last_cycle']))
                                if state['last_cycle'] else _('Not available')),
         _('Last action'): (datetime_string(time.localtime(state['last_action']))
@@ -824,6 +1133,7 @@ def _new_rule():
         }],
         'hold_seconds': 0, 'repeat_seconds': 0,
         'notify_on_clear': True, 'severity': 'warning', 'channels': [],
+        'actions': [], 'latch_incident': False,
     }
 
 
@@ -843,6 +1153,40 @@ def _rule_from_input(qdict):
             'operator': qdict.get('operator_{}'.format(index), 'eq'),
             'expected': qdict.get('expected_{}'.format(index), ''),
         })
+    action_count = max(0, min(20, int(qdict.get('action_count', 0))))
+    actions = []
+    for index in range(action_count):
+        action_key = str(qdict.get('action_key_{}'.format(index), '')).strip()
+        if not action_key:
+            continue
+        provider_id = ''
+        provider_action_id = ''
+        action_type = action_key
+        if action_key.startswith('provider::'):
+            parts = action_key.split('::', 2)
+            if len(parts) != 3:
+                raise engine.RuleValidationError('invalid provider action')
+            action_type = 'provider_action'
+            provider_id, provider_action_id = parts[1], parts[2]
+        parameters_text = str(
+            qdict.get('action_value_{}'.format(index), '') or '').strip()
+        parameters = {}
+        value = parameters_text
+        if action_type == 'provider_action':
+            try:
+                parameters = json.loads(parameters_text or '{}')
+            except (TypeError, ValueError):
+                raise engine.RuleValidationError('provider action parameters must be valid JSON')
+        actions.append({
+            'id': qdict.get('action_id_{}'.format(index)) or uuid.uuid4().hex,
+            'type': action_type,
+            'target': qdict.get('action_target_{}'.format(index), ''),
+            'value': value, 'provider_id': provider_id,
+            'provider_action_id': provider_action_id,
+            'resource_id': (qdict.get('action_target_{}'.format(index), '')
+                            if action_type == 'provider_action' else ''),
+            'parameters': parameters,
+        })
     return engine.normalize_rule({
         'id': qdict.get('rule_id') or uuid.uuid4().hex,
         'name': qdict.get('name', ''), 'enabled': qdict.get('enabled') == 'on',
@@ -853,6 +1197,8 @@ def _rule_from_input(qdict):
         'severity': qdict.get('severity', 'warning'),
         'channels': [channel for channel in engine.CHANNELS
                      if qdict.get('channel_' + channel) == 'on'],
+        'actions': actions,
+        'latch_incident': qdict.get('latch_incident') == 'on',
     })
 
 
@@ -862,10 +1208,12 @@ class settings_page(ProtectedPage):
         catalog = _provider_catalog()
         return self.plugin_render.automation_rules(
             plugin_options, _rules_for_display(load_rules(), catalog),
-            _new_rule(), _display_history(), catalog, load_states(),
+            _new_rule(), _display_history(), catalog, _action_catalog(), load_states(),
             log.events(NAME), '', str(request.get('open_rule', '')))
 
     def POST(self):
+        from ospy import server
+
         qdict = web.input()
         verify_csrf(qdict)
         action = qdict.get('action', '')
@@ -873,14 +1221,24 @@ class settings_page(ProtectedPage):
         open_rule = ''
         try:
             if action == 'save_settings':
+                requested_control = qdict.get('control_enabled') == 'on'
+                if (requested_control != plugin_options.get('control_enabled', False)
+                        and server.session.get('category') != 'admin'):
+                    raise engine.RuleValidationError(
+                        _('Only an administrator can change control action settings.'))
                 plugin_options['enabled'] = qdict.get('enabled') == 'on'
                 plugin_options['test_mode'] = qdict.get('test_mode') == 'on'
+                plugin_options['control_enabled'] = requested_control
                 plugin_options['poll_interval'] = max(
                     5, min(3600, int(qdict.get('poll_interval', 30))))
                 plugin_options['history_limit'] = max(
                     10, min(5000, int(qdict.get('history_limit', 500))))
             elif action == 'save_rule':
                 saved = _rule_from_input(qdict)
+                if ((saved.get('actions') or saved.get('latch_incident')) and
+                        server.session.get('category') != 'admin'):
+                    raise engine.RuleValidationError(
+                        _('Only an administrator can configure control actions.'))
                 rules = load_rules()
                 for index, rule in enumerate(rules):
                     if rule['id'] == saved['id']:
@@ -901,6 +1259,12 @@ class settings_page(ProtectedPage):
                 test_rule(str(qdict.get('rule_id', '')))
             elif action == 'test_notifications':
                 send_test_notifications(_rule_from_input(qdict))
+            elif action == 'unlock_incident':
+                if server.session.get('category') != 'admin':
+                    raise engine.RuleValidationError(
+                        _('Only an administrator can unlock an incident.'))
+                unlock_incident(str(qdict.get('rule_id', '')))
+                open_rule = str(qdict.get('rule_id', ''))
             elif action == 'clear_history':
                 clear_history()
         except (ValueError, TypeError, engine.RuleValidationError) as exception:
@@ -913,7 +1277,7 @@ class settings_page(ProtectedPage):
         catalog = _provider_catalog()
         return self.plugin_render.automation_rules(
             plugin_options, _rules_for_display(load_rules(), catalog),
-            _new_rule(), _display_history(), catalog, load_states(),
+            _new_rule(), _display_history(), catalog, _action_catalog(), load_states(),
             log.events(NAME), error, str(qdict.get('rule_id', '')))
 
 

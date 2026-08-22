@@ -1,15 +1,16 @@
-$def with(plugin_options, rules, new_rule, history, catalog, states, events, error, open_rule)
+$def with(plugin_options, rules, new_rule, history, catalog, action_catalog, states, events, error, open_rule)
 
 $var title: $_('Automation Rules')
 $var page: plugins
 
-<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.0.8">
+<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.1.0">
 
 <script>
 window.automationRuleCatalog = $:json.dumps(catalog, ensure_ascii=False);
-window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
+window.automationActionCatalog = $:json.dumps(action_catalog, ensure_ascii=False);
+window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'removeAction': _('Remove control action'), 'action': _('Control action'), 'target': _('Target'), 'actionValue': _('Action value'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
 </script>
-<script src="/plugins/automation_rules/static/editor.js?v=1.0.8"></script>
+<script src="/plugins/automation_rules/static/editor.js?v=1.1.0"></script>
 
 <div id="plugin" class="automation-rules-page">
     <div class="title">$_('Automation Rules')</div>
@@ -30,6 +31,9 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                 <div class="field-row" title=$:{json.dumps(_('Evaluate rules and record decisions without sending any notifications.'), ensure_ascii=False)}><span>$_('Test mode')</span>
                     <label class="switch"><input name="test_mode" type="checkbox"${' checked' if plugin_options.get('test_mode') else ''} aria-label=$:{json.dumps(_('Test mode'), ensure_ascii=False)}><span class="slider"></span></label>
                 </div>
+                <div class="field-row" title=$:{json.dumps(_('Allow live rules to execute their configured control actions. Keep disabled until every rule has been tested.'), ensure_ascii=False)}><span>$_('Control actions enabled')</span>
+                    <label class="switch"><input name="control_enabled" type="checkbox"${' checked' if plugin_options.get('control_enabled') else ''} aria-label=$:{json.dumps(_('Control actions enabled'), ensure_ascii=False)}><span class="slider"></span></label>
+                </div>
                 <label title=$:{json.dumps(_('How often provider values are read and all enabled rules are evaluated.'), ensure_ascii=False)}>$_('Evaluation interval')
                     <span><input name="poll_interval" type="number" min="5" max="3600" value="$plugin_options.get('poll_interval', 30)" title=$:{json.dumps(_('Enter an interval from 5 to 3600 seconds.'), ensure_ascii=False)}> $_('seconds')</span>
                 </label>
@@ -37,7 +41,7 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                     <input name="history_limit" type="number" min="10" max="5000" value="$plugin_options.get('history_limit', 500)" title=$:{json.dumps(_('Enter how many of the newest history records should be kept.'), ensure_ascii=False)}>
                 </label>
             </div>
-            <p class="automation-warning">$_('Test mode records decisions but does not send notifications. Disable it only after testing every rule.')</p>
+            <p class="automation-warning">$_('Test mode records decisions and simulates control actions without changing OSPy or hardware. Disable test mode and separately enable control actions only after testing every rule.')</p>
             <button class="submit" type="submit" title=$:{json.dumps(_('Save the general Automation Rules settings.'), ensure_ascii=False)}>$_('Save settings')</button>
             <button class="button" type="button" id="automation-browser-permission" title=$:{json.dumps(_('Ask this browser for permission and immediately display a test notification.'), ensure_ascii=False)}>$_('Enable and test browser notifications')</button>
             <span id="automation-browser-permission-result" role="status"></span>
@@ -72,6 +76,7 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                 $:csrf_input()
                 <input type="hidden" name="rule_id" value="$rule['id']">
                 <input class="condition-count" type="hidden" name="condition_count" value="$len(rule['conditions'])">
+                <input class="action-count" type="hidden" name="action_count" value="$len(rule.get('actions', []))">
                 <div class="rule-header rule-controls">
                     <div class="switch-field compact-check" title=$:{json.dumps(_('Enable or disable evaluation of this rule.'), ensure_ascii=False)}><span>$_('Enabled')</span>
                         <label class="switch"><input name="enabled" type="checkbox"${' checked' if rule.get('enabled') else ''} aria-label=$:{json.dumps(_('Enabled'), ensure_ascii=False)}><span class="slider"></span></label>
@@ -117,6 +122,28 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                 </div>
                 <button type="button" class="button add-condition" title=$:{json.dumps(_('Add another condition to this rule. A rule can contain up to 20 conditions.'), ensure_ascii=False)}>+ $_('Add condition')</button>
 
+                <fieldset class="control-actions">
+                    <legend>$_('Control actions')</legend>
+                    <p class="automation-warning">$_('Control actions run once when the rule is first triggered. Repeated and recovery notifications never repeat or reverse an action.')</p>
+                    <div class="action-list">
+                        $for index, configured_action in enumerate(rule.get('actions', [])):
+                            $ action_key = configured_action.get('editor_key', configured_action.get('type', ''))
+                            $ action_value = configured_action.get('editor_value', configured_action.get('value', ''))
+                            <div class="action-row" data-action-key="$action_key" data-target="$configured_action.get('target', '')" data-action-value="$action_value">
+                                <input class="action-id" type="hidden" name="action_id_$index" value="$configured_action['id']">
+                                <span class="action-number">${index + 1}.</span>
+                                <label title=$:{json.dumps(_('Operation performed once when this rule is triggered.'), ensure_ascii=False)}><span>$_('Control action')</span><select class="action-select" name="action_key_$index" required></select></label>
+                                <label class="action-target-label" title=$:{json.dumps(_('Station, output, program or provider resource affected by this action.'), ensure_ascii=False)}><span>$_('Target')</span><select class="action-target" name="action_target_$index"></select></label>
+                                <label class="action-value-label" title=$:{json.dumps(_('Duration, percentage or JSON parameters required by the selected action.'), ensure_ascii=False)}><span>$_('Action value')</span><input class="action-value" name="action_value_$index" value="$action_value"></label>
+                                <button type="button" class="remove-action danger" title=$:{json.dumps(_('Remove this control action from the rule.'), ensure_ascii=False)}>&times;</button>
+                            </div>
+                    </div>
+                    <button type="button" class="button add-action" title=$:{json.dumps(_('Add another control action. A rule can contain up to 20 actions.'), ensure_ascii=False)}>+ $_('Add control action')</button>
+                    <div class="switch-field compact-check latch-control" title=$:{json.dumps(_('Keep the incident active after conditions return to normal until an administrator explicitly unlocks it.'), ensure_ascii=False)}><span>$_('Lock incident until acknowledged')</span>
+                        <label class="switch"><input name="latch_incident" type="checkbox"${' checked' if rule.get('latch_incident') else ''} aria-label=$:{json.dumps(_('Lock incident until acknowledged'), ensure_ascii=False)}><span class="slider"></span></label>
+                    </div>
+                </fieldset>
+
                 <div class="rule-grid timing-grid">
                     <label title=$:{json.dumps(_('Delay activation until the matching conditions remain true continuously for this time.'), ensure_ascii=False)}>$_('Conditions must remain true for')
                         <span><input name="hold_seconds" type="number" min="0" max="86400" value="$rule['hold_seconds']" title=$:{json.dumps(_('Use zero to activate immediately, or enter a delay in seconds.'), ensure_ascii=False)}> $_('seconds')</span>
@@ -149,6 +176,8 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
                     $if not is_new:
                         <button class="button" type="submit" name="action" value="test_rule" title=$:{json.dumps(_('Evaluate the saved rule once and record the result without sending notifications.'), ensure_ascii=False)}>$_('Test saved rule')</button>
                         <button class="button" type="submit" name="action" value="test_notifications" title=$:{json.dumps(_('Send one real test message through every notification channel currently enabled in this rule. Conditions and delays are ignored.'), ensure_ascii=False)} onclick="return confirm($:{json.dumps(_('Send a real test message through the enabled notification channels?'), ensure_ascii=False)})">$_('Test notifications')</button>
+                        $if state.get('latched'):
+                            <button class="danger" type="submit" name="action" value="unlock_incident" title=$:{json.dumps(_('Acknowledge this incident and allow the rule to create a new incident later.'), ensure_ascii=False)} onclick="return confirm($:{json.dumps(_('Acknowledge and unlock this incident? Outputs and settings changed by its actions are not restored automatically.'), ensure_ascii=False)})">$_('Acknowledge and unlock incident')</button>
                         <button class="danger" type="submit" name="action" value="delete_rule" title=$:{json.dumps(_('Permanently delete this automation rule.'), ensure_ascii=False)} onclick="return confirm($:{json.dumps(_('Delete this rule?'), ensure_ascii=False)})">$_('Delete')</button>
                 </div>
             </form>
@@ -163,10 +192,10 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
         </div>
         $if history:
             <div class="history-scroll"><table>
-                <thead><tr><th>$_('Time')</th><th>$_('Rule')</th><th>$_('Result')</th><th>$_('Mode')</th><th>$_('Notifications')</th></tr></thead>
+                <thead><tr><th>$_('Time')</th><th>$_('Rule')</th><th>$_('Result')</th><th>$_('Mode')</th><th>$_('Control actions')</th><th>$_('Notifications')</th></tr></thead>
                 <tbody>
                 $for item in history:
-                    <tr><td>$item.get('datetime', '')</td><td>$item.get('rule_name', '')</td><td>$item.get('event_text', '')</td><td>$item.get('mode_text', '')</td><td>$item.get('results_text', '')</td></tr>
+                    <tr><td>$item.get('datetime', '')</td><td>$item.get('rule_name', '')</td><td>$item.get('event_text', '')</td><td>$item.get('mode_text', '')</td><td>$item.get('actions_text', '')</td><td>$item.get('results_text', '')</td></tr>
                 </tbody>
             </table></div>
         $else:

@@ -11,6 +11,11 @@ OPERATORS = (
 )
 SEVERITIES = ('info', 'warning', 'error', 'critical')
 CHANNELS = ('home', 'browser', 'email', 'telegram', 'push')
+ACTION_TYPES = (
+    'stop_station', 'stop_all_outputs', 'disable_scheduler',
+    'stop_program', 'output_on', 'output_off', 'set_water_level',
+    'provider_action',
+)
 _IDENTIFIER = re.compile(r'^[a-z0-9][a-z0-9_.-]{0,127}$')
 
 
@@ -71,6 +76,53 @@ def normalize_condition(condition, index=0):
     return result
 
 
+def normalize_action(action, index=0):
+    if not isinstance(action, dict):
+        raise RuleValidationError('action must be an object')
+    action_type = str(action.get('type') or '').strip().lower()
+    if action_type not in ACTION_TYPES:
+        raise RuleValidationError('action type is not supported')
+    result = {
+        'id': _identifier(action.get('id') or 'action-{}'.format(index + 1),
+                          'action id'),
+        'type': action_type,
+        'target': str(action.get('target') or '').strip(),
+        'value': action.get('value', ''),
+        'provider_id': str(action.get('provider_id') or '').strip().lower(),
+        'provider_action_id': str(
+            action.get('provider_action_id') or '').strip().lower(),
+        'resource_id': str(action.get('resource_id') or '').strip().lower(),
+        'parameters': action.get('parameters', {}),
+    }
+    if not isinstance(result['parameters'], dict):
+        raise RuleValidationError('action parameters must be an object')
+    if action_type in ('stop_station', 'output_on', 'output_off'):
+        result['target'] = str(_integer(result['target'], 0, 255,
+                                        'station target'))
+    if action_type == 'stop_program':
+        if result['target'] != '*':
+            result['target'] = str(_integer(result['target'], 0, 999,
+                                            'program target'))
+    if action_type == 'output_on':
+        result['value'] = _integer(result['value'], 1, 86400,
+                                   'output duration')
+    elif action_type == 'set_water_level':
+        try:
+            result['value'] = float(result['value'])
+        except (TypeError, ValueError):
+            raise RuleValidationError('water level must be numeric')
+        if not math.isfinite(result['value']) or not 0 <= result['value'] <= 500:
+            raise RuleValidationError('water level is outside the allowed range')
+    elif action_type == 'provider_action':
+        result['provider_id'] = _identifier(result['provider_id'], 'provider id')
+        result['provider_action_id'] = _identifier(
+            result['provider_action_id'], 'provider action id')
+        if result['resource_id']:
+            result['resource_id'] = _identifier(
+                result['resource_id'], 'provider resource id')
+    return result
+
+
 def normalize_rule(rule):
     if not isinstance(rule, dict):
         raise RuleValidationError('rule must be an object')
@@ -86,6 +138,9 @@ def normalize_rule(rule):
     conditions = rule.get('conditions')
     if not isinstance(conditions, list) or not conditions or len(conditions) > 20:
         raise RuleValidationError('a rule must contain between 1 and 20 conditions')
+    actions = rule.get('actions', [])
+    if not isinstance(actions, list) or len(actions) > 20:
+        raise RuleValidationError('a rule may contain at most 20 actions')
     channels = []
     for channel in rule.get('channels', []):
         channel = str(channel or '').strip().lower()
@@ -105,6 +160,9 @@ def normalize_rule(rule):
         'notify_on_clear': bool(rule.get('notify_on_clear', True)),
         'severity': severity,
         'channels': channels,
+        'actions': [normalize_action(item, index)
+                    for index, item in enumerate(actions)],
+        'latch_incident': bool(rule.get('latch_incident', False)),
     }
 
 
@@ -207,6 +265,7 @@ def transition(rule, evaluation, state=None, now=0):
     state.setdefault('active', False)
     state.setdefault('matched_since', 0)
     state.setdefault('last_trigger', 0)
+    state.setdefault('latched', False)
     event = 'none'
     if not evaluation.get('available'):
         event = 'unavailable'
@@ -216,6 +275,7 @@ def transition(rule, evaluation, state=None, now=0):
         held = now - state['matched_since'] >= rule['hold_seconds']
         if held and not state['active']:
             state['active'] = True
+            state['latched'] = bool(rule.get('latch_incident'))
             state['last_trigger'] = now
             event = 'triggered'
         elif (held and state['active'] and rule['repeat_seconds'] and
@@ -224,7 +284,7 @@ def transition(rule, evaluation, state=None, now=0):
             event = 'repeated'
     else:
         state['matched_since'] = 0
-        if state['active']:
+        if state['active'] and not state.get('latched'):
             state['active'] = False
             event = 'cleared'
     state['last_evaluation'] = now

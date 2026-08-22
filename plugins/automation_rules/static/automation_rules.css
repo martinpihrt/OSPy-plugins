@@ -2,7 +2,7 @@
 .automation-card { background: rgba(255,255,255,.95); border: 2px solid #2f3b5b; border-radius: 14px; margin: 14px 0; padding: 16px; }
 .rule-header { display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap; }
 .rule-header h2, .rule-header h3 { margin: 0; }
-.settings-grid { align-items: center; display: grid; grid-template-columns: repeat(4, max-content); gap: 14px 34px; margin: 12px 0; }
+.settings-grid { align-items: center; display: grid; grid-template-columns: repeat(5, max-content); gap: 14px 22px; margin: 12px 0; }
 .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; }
 .settings-grid label, .rule-grid label, .field-row, .switch-field { display: flex; align-items: center; gap: 10px; }
 .settings-grid > label, .settings-grid > .field-row, .switch-field { justify-content: flex-start; }
@@ -22,6 +22,13 @@
 .condition-number { align-self: center; font-weight: bold; }
 .expected-wrap { display: flex; align-items: center; gap: 6px; }
 .condition-unit { white-space: nowrap; }
+.control-actions { margin: 14px 0; }
+.control-actions legend { font-weight: bold; }
+.action-row { display: grid; grid-template-columns: 2em minmax(220px,1.3fr) minmax(180px,1fr) minmax(200px,1fr) 2.5em; gap: 8px; align-items: end; border-top: 1px solid #ccd1dc; padding: 12px 0; }
+.action-row label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.action-row select, .action-row input { box-sizing: border-box; width: 100%; }
+.action-number { align-self: center; font-weight: bold; }
+.latch-control { margin-top: 12px; }
 .boolean-condition { opacity: .55; }
 .channels { display: flex; flex-wrap: wrap; gap: 12px 22px; margin: 14px 0; }
 .channels legend { font-weight: bold; }
@@ -54,8 +61,12 @@
 .automation-home-notification.severity-error, .automation-home-notification.severity-critical { background: #941a28; }
 @media (max-width: 850px) {
     .condition-row { grid-template-columns: 2em 1fr; border: 1px solid #ccd1dc; border-radius: 10px; padding: 10px; margin: 10px 0; }
+    .action-row { grid-template-columns: 2em 1fr; border: 1px solid #ccd1dc; border-radius: 10px; padding: 10px; margin: 10px 0; }
     .condition-row label { grid-column: 2; }
     .condition-row .remove-condition { grid-column: 2; justify-self: end; }
+    .action-row label { grid-column: 2; }
+    .action-row .remove-action { grid-column: 2; justify-self: end; }
+    .action-number { grid-row: 1 / 5; align-self: start; }
     .condition-number { grid-row: 1 / 6; align-self: start; }
     .settings-grid { grid-template-columns: 1fr; }
     .settings-grid > label, .rule-grid > label { align-items: stretch; flex-direction: column; }

@@ -2,6 +2,9 @@
 
 August 22 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.1.0<br/>
+Added guarded one-shot control actions for selected stations, all outputs, scheduler disabling, running programs, bounded manual output control, global water-level adjustment and actions explicitly declared by another provider. Control execution is separately disabled by default, test mode simulates actions without touching OSPy or hardware, and every result is recorded without suppressing notifications. Optional incident locking requires administrator acknowledgement and refuses to unlock while conditions remain active or unavailable. Added action state to diagnostics and the mobile rule cards, updated localized help and expanded regression coverage.
+
 (Martin Pihrt) - CHMI v1.0.7<br/>
 Fixed manual CHMI rain-delay removal being undone by the next rainy radar evaluation. A manual removal is now persisted for the current rainy period and cleared only after a valid dry radar sample; disabling CHMI rain-delay control immediately removes the CHMI-owned block. The synchronized update path prevents the radar worker from recreating a block concurrently, while manual and other plug-in delays remain untouched. Added visible override status, diagnostics, help, README and regression coverage without changing gettext catalogs.
 

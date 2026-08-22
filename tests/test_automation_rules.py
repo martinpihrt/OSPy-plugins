@@ -154,6 +154,35 @@ class AutomationRuleEngineTests(unittest.TestCase):
         self.assertEqual(event, 'unavailable')
         self.assertTrue(next_state['active'])
 
+    def test_latched_incident_stays_active_until_explicit_unlock(self):
+        definition = rule()
+        definition['hold_seconds'] = 0
+        definition['latch_incident'] = True
+        matched = ENGINE.evaluate_rule(definition, snapshot())
+        state, event = ENGINE.transition(definition, matched, now=100)
+        self.assertEqual(event, 'triggered')
+        self.assertTrue(state['latched'])
+        clear = ENGINE.evaluate_rule(definition, snapshot(fill=50, pressure=False))
+        state, event = ENGINE.transition(definition, clear, state, now=101)
+        self.assertEqual(event, 'none')
+        self.assertTrue(state['active'])
+        self.assertTrue(state['latched'])
+
+    def test_control_actions_are_normalized_with_safe_limits(self):
+        definition = rule()
+        definition['actions'] = [{
+            'id': 'start-pump', 'type': 'output_on', 'target': '2',
+            'value': '60',
+        }, {
+            'id': 'set-level', 'type': 'set_water_level', 'value': '85.5',
+        }]
+        normalized = ENGINE.normalize_rule(definition)
+        self.assertEqual(normalized['actions'][0]['value'], 60)
+        self.assertEqual(normalized['actions'][1]['value'], 85.5)
+        definition['actions'][0]['value'] = 0
+        with self.assertRaises(ENGINE.RuleValidationError):
+            ENGINE.normalize_rule(definition)
+
     def test_validation_rejects_unsafe_or_ambiguous_rules(self):
         invalid = rule()
         invalid['conditions'] = []
@@ -175,17 +204,46 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.0.8')
+        self.assertEqual(manifest['version'], '1.1.0')
         self.assertEqual(manifest['mobile']['api_version'], 1)
         self.assertEqual(manifest['mobile']['actions'], [])
         self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
-        self.assertNotIn('stations.activate', source)
-        self.assertNotIn('stations.deactivate', source)
+        self.assertIn("'control_enabled': False", source)
+        self.assertIn('def execute_control_actions(', source)
+        self.assertIn("if not plugin_options.get('control_enabled', False)", source)
+        self.assertIn("if test_mode:", source)
         self.assertIn("'rule_name': rule['name']", source)
         self.assertIn('def mobile_status(', source)
         self.assertIn('def mobile_cards(', source)
+
+    def test_control_actions_are_simulated_or_blocked_before_execution(self):
+        path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'
+        tree = ast.parse(path.read_text(encoding='utf-8'))
+        selected = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                    and node.name in ('_action_label', 'execute_control_actions')]
+        calls = []
+        definition = rule()
+        definition['actions'] = [{
+            'id': 'stop-pump', 'type': 'stop_station', 'target': '0',
+        }]
+        namespace = {
+            '_': lambda value: value,
+            '_execute_control_action': lambda action: calls.append(action),
+            'plugin_options': {'control_enabled': False},
+            'health_lock': mock.MagicMock(),
+            'health_state': {'control_actions': 0, 'control_errors': 0},
+            'time': SimpleNamespace(time=lambda: 1),
+            'traceback': SimpleNamespace(format_exc=lambda: ''),
+            'log': SimpleNamespace(error=lambda *args: None), 'NAME': 'test',
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]), str(path), 'exec'), namespace)
+        simulated = namespace['execute_control_actions'](definition, test_mode=True)
+        blocked = namespace['execute_control_actions'](definition, test_mode=False)
+        self.assertEqual(calls, [])
+        self.assertEqual(simulated[0]['status'], 'simulated')
+        self.assertEqual(blocked[0]['status'], 'blocked')
 
     def test_builtin_ultrasonic_sensor_exposes_derived_tank_values(self):
         sensor = SimpleNamespace(
@@ -420,13 +478,16 @@ class AutomationRulePluginTests(unittest.TestCase):
         home = (plugin / 'static' / 'automation_rules.js').read_text(encoding='utf-8')
         self.assertIn('condition-row', template)
         self.assertIn('add-condition', template)
+        self.assertIn('add-action', template)
+        self.assertIn('latch_incident', template)
+        self.assertIn('unlock_incident', template)
         self.assertIn("value=\"all\"", template)
         self.assertIn("value=\"any\"", template)
         self.assertIn('@media (max-width: 850px)', css)
         self.assertEqual(template.count('type="checkbox"'), template.count('class="slider"'))
         self.assertGreaterEqual(template.count('title=$:{json.dumps(_('), 20)
         self.assertIn('.switch input:checked + .slider', css)
-        self.assertIn('automation_rules.css?v=1.0.8', template)
+        self.assertIn('automation_rules.css?v=1.1.0', template)
         self.assertIn('<details class="automation-card rule-card', template)
         self.assertIn("rule['id'] == open_rule", template)
         self.assertNotIn("' open' if is_new", template)
@@ -441,7 +502,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertNotIn('Notification.requestPermission()', home)
         self.assertIn("Notification.permission !== 'granted'", home)
         self.assertIn('serviceWorkerNotification', home)
-        self.assertIn('browser_sw.js?v=1.0.8', home)
+        self.assertIn('browser_sw.js?v=1.1.0', home)
         self.assertLess(home.index('serviceWorkerNotification(title'),
                         home.index('new Notification(title'))
         self.assertNotIn("if (window.location.pathname !== '/') { return; }", home)
