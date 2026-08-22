@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 22 2026
+--------------
+(Martin Pihrt) - Automation Rules v1.0.7<br/>
+Added a built-in read-only OSPy status source for scheduler state, manual and scheduled modes, water-level adjustment, remaining rain delay, rain-sensor configuration and activity, cached OSPy update state, cached plug-in update state and known plug-in update count. The source never starts a network update check. General settings now stay on one readable desktop row, saved rule cards are collapsible, and rule headings distinguish Disabled, Ready and Triggered states with a plain green Triggered indicator. Updated help, READMEs, cache versions and regression coverage.
+
 August 21 2026
 --------------
 (Martin Pihrt) - Automation Rules v1.0.6<br/>

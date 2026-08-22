@@ -47,7 +47,7 @@
             return Promise.reject(new Error('service_worker_unavailable'));
         }
         return navigator.serviceWorker.register(
-            '/plugins/automation_rules/static/browser_sw.js?v=1.0.6'
+            '/plugins/automation_rules/static/browser_sw.js?v=1.0.7'
         ).then(function (registration) {
             return registration.showNotification(title, options);
         });
@@ -97,7 +97,7 @@
 
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.6';
+    css.href = '/plugins/automation_rules/static/automation_rules.css?v=1.0.7';
     document.head.appendChild(css);
     window.setTimeout(poll, 1500);
     window.setInterval(poll, 15000);

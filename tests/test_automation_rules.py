@@ -19,11 +19,17 @@ SPEC.loader.exec_module(ENGINE)
 
 SENSOR_MODULES = {
     'ospy': types.ModuleType('ospy'),
+    'ospy.inputs': types.ModuleType('ospy.inputs'),
     'ospy.options': types.ModuleType('ospy.options'),
     'ospy.provider_contracts': types.ModuleType('ospy.provider_contracts'),
     'ospy.sensors': types.ModuleType('ospy.sensors'),
 }
-SENSOR_MODULES['ospy.options'].options = SimpleNamespace(temp_unit='C')
+SENSOR_MODULES['ospy.inputs'].inputs = SimpleNamespace(rain_sensed=lambda: False)
+SENSOR_MODULES['ospy.options'].options = SimpleNamespace(
+    temp_unit='C', scheduler_enabled=True, manual_mode=False,
+    level_adjustment=0.85, rain_sensor_enabled=True, plugin_status={})
+SENSOR_MODULES['ospy.options'].rain_blocks = SimpleNamespace(
+    seconds_left=lambda: 7200)
 SENSOR_MODULES['ospy.provider_contracts'].utc_timestamp = lambda value=None: (
     '2026-08-21T12:00:00Z')
 SENSOR_MODULES['ospy.sensors'].sensors = SimpleNamespace(get=lambda: [])
@@ -40,6 +46,12 @@ with mock.patch.dict(sys.modules, SENSOR_MODULES):
     )
     TIME_PROVIDER = importlib.util.module_from_spec(TIME_SPEC)
     TIME_SPEC.loader.exec_module(TIME_PROVIDER)
+    SYSTEM_SPEC = importlib.util.spec_from_file_location(
+        'automation_rules_system_provider',
+        ROOT / 'plugins' / 'automation_rules' / 'system_provider.py',
+    )
+    SYSTEM_PROVIDER = importlib.util.module_from_spec(SYSTEM_SPEC)
+    SYSTEM_SPEC.loader.exec_module(SYSTEM_PROVIDER)
 
 
 def snapshot(fill=20, pressure=True):
@@ -163,7 +175,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.0.6')
+        self.assertEqual(manifest['version'], '1.0.7')
         self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
@@ -301,6 +313,26 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(values['current_time'], '16:05')
         self.assertEqual(values['weekday'], 5)
 
+    def test_builtin_ospy_status_provider_exposes_operating_states(self):
+        with mock.patch.object(SYSTEM_PROVIDER, '_plugin_update_count',
+                               return_value=2), mock.patch.object(
+                                   SYSTEM_PROVIDER, '_ospy_update_available',
+                                   return_value=True):
+            data = SYSTEM_PROVIDER.provider_snapshot()
+        values = {item['id']: item
+                  for item in data['resources'][0]['values']}
+        self.assertIs(values['scheduler_enabled']['value'], True)
+        self.assertIs(values['manual_mode']['value'], False)
+        self.assertIs(values['scheduled_mode']['value'], True)
+        self.assertEqual(values['water_level_percent']['value'], 85.0)
+        self.assertEqual(values['rain_delay_seconds']['value'], 7200.0)
+        self.assertIs(values['rain_sensor_enabled']['value'], True)
+        self.assertIs(values['rain_sensor_active']['value'], False)
+        self.assertIs(values['ospy_update_available']['value'], True)
+        self.assertIs(values['plugin_update_available']['value'], True)
+        self.assertEqual(values['plugin_update_count']['value'], 2)
+        self.assertIs(values['any_update_available']['value'], True)
+
     def test_editor_is_row_based_and_browser_permission_is_explicit(self):
         plugin = ROOT / 'plugins' / 'automation_rules'
         template = (plugin / 'templates' / 'automation_rules.html').read_text(encoding='utf-8')
@@ -315,7 +347,10 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(template.count('type="checkbox"'), template.count('class="slider"'))
         self.assertGreaterEqual(template.count('title=$:{json.dumps(_('), 20)
         self.assertIn('.switch input:checked + .slider', css)
-        self.assertIn('automation_rules.css?v=1.0.6', template)
+        self.assertIn('automation_rules.css?v=1.0.7', template)
+        self.assertIn('<details class="automation-card rule-card', template)
+        self.assertIn('rule-state active', template)
+        self.assertIn("not rule.get('enabled')", template)
         self.assertIn('value="between"', template)
         self.assertIn('value="test_notifications"', template)
         self.assertIn('.settings-grid > label, .settings-grid > .field-row, .switch-field { justify-content: flex-start; }', css)
@@ -323,7 +358,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertNotIn('Notification.requestPermission()', home)
         self.assertIn("Notification.permission !== 'granted'", home)
         self.assertIn('serviceWorkerNotification', home)
-        self.assertIn('browser_sw.js?v=1.0.6', home)
+        self.assertIn('browser_sw.js?v=1.0.7', home)
         self.assertLess(home.index('serviceWorkerNotification(title'),
                         home.index('new Notification(title'))
         self.assertNotIn("if (window.location.pathname !== '/') { return; }", home)

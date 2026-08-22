@@ -20,14 +20,14 @@ from plugins import (
     plugin_provider_snapshots, plugin_url, running,
 )
 
-from . import engine, sensor_provider, time_provider
+from . import engine, sensor_provider, system_provider, time_provider
 
 
 NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.6'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.7'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,
@@ -173,6 +173,13 @@ def _automation_snapshots():
         errors[time_provider.PROVIDER_ID] = {
             'error': type(error).__name__, 'message': str(error),
         }
+    try:
+        providers[system_provider.PROVIDER_ID] = validate_snapshot(
+            system_provider.provider_snapshot(), system_provider.PROVIDER_ID)
+    except Exception as error:
+        errors[system_provider.PROVIDER_ID] = {
+            'error': type(error).__name__, 'message': str(error),
+        }
     return {'providers': providers, 'errors': errors}
 
 
@@ -208,6 +215,7 @@ def _provider_catalog():
     snapshots = _automation_snapshots()
     modules = list(plugin_provider_modules()) + [
         sensor_provider.PROVIDER_ID, time_provider.PROVIDER_ID,
+        system_provider.PROVIDER_ID,
     ]
     for module in modules:
         try:
@@ -216,6 +224,8 @@ def _provider_catalog():
                 if module == sensor_provider.PROVIDER_ID else
                 time_provider.provider_capabilities()
                 if module == time_provider.PROVIDER_ID else
+                system_provider.provider_capabilities()
+                if module == system_provider.PROVIDER_ID else
                 plugin_provider_capabilities(module)
             )
             snapshot = snapshots.get('providers', {}).get(module, {})
@@ -232,12 +242,15 @@ def _provider_catalog():
                             'current_loop_tanks_monitor': _('Current Loop Tanks Monitor'),
                             'ospy_sensors': _('OSPy Sensors'),
                             'ospy_datetime': _('Date and time'),
+                            'ospy_system': _('OSPy status'),
                         }.get(module, module),
                         'resource_id': resource.get('id', ''),
                         'resource_label': (
                             resource.get('name') if resource.get('name') else
                             _('OSPy local time')
                             if module == time_provider.PROVIDER_ID else
+                            _('OSPy system')
+                            if module == system_provider.PROVIDER_ID else
                             _('Sensor {}').format(
                                 int(str(resource.get('id', '')).split('-')[-1]) + 1)
                             if module == sensor_provider.PROVIDER_ID and
@@ -267,6 +280,17 @@ def _provider_catalog():
                             'weekday': _('Day of week'),
                             'month': _('Month'),
                             'day_of_month': _('Day of month'),
+                            'scheduler_enabled': _('Scheduler enabled'),
+                            'manual_mode': _('Manual mode'),
+                            'scheduled_mode': _('Scheduled mode'),
+                            'water_level_percent': _('Water level adjustment'),
+                            'rain_delay_seconds': _('Rain delay remaining'),
+                            'rain_sensor_enabled': _('Rain sensor enabled'),
+                            'rain_sensor_active': _('Rain sensor active'),
+                            'ospy_update_available': _('OSPy update available'),
+                            'plugin_update_available': _('Plug-in update available'),
+                            'plugin_update_count': _('Available plug-in updates'),
+                            'any_update_available': _('Any update available'),
                         }.get(value.get('id'),
                               _sensor_value_label(value.get('id', ''))
                               if module == sensor_provider.PROVIDER_ID else

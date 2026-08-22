@@ -2,10 +2,13 @@
 .automation-card { background: rgba(255,255,255,.95); border: 2px solid #2f3b5b; border-radius: 14px; margin: 14px 0; padding: 16px; }
 .rule-header { display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap; }
 .rule-header h2, .rule-header h3 { margin: 0; }
-.settings-grid { align-items: center; display: flex; flex-wrap: wrap; gap: 14px 34px; margin: 12px 0; }
+.settings-grid { align-items: center; display: grid; grid-template-columns: repeat(4, max-content); gap: 14px 34px; margin: 12px 0; }
 .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; }
 .settings-grid label, .rule-grid label, .field-row, .switch-field { display: flex; align-items: center; gap: 10px; }
 .settings-grid > label, .settings-grid > .field-row, .switch-field { justify-content: flex-start; }
+.settings-grid > label, .settings-grid > .field-row { white-space: nowrap; }
+.settings-grid > label > span { align-items: center; display: inline-flex; gap: 6px; }
+.settings-grid input[type="number"] { box-sizing: border-box; width: 120px; }
 .switch { display: inline-block; flex: 0 0 50px; height: 24px; position: relative; width: 50px; }
 .switch input { height: 0; opacity: 0; width: 0; }
 .slider { background-color: #9a1c28; border-radius: 34px; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .25s; }
@@ -15,7 +18,7 @@
 .switch input:checked + .slider:before { transform: translateX(24px); }
 .condition-row { display: grid; grid-template-columns: 2em minmax(140px,1.2fr) minmax(110px,1fr) minmax(130px,1.2fr) minmax(120px,.8fr) minmax(120px,.8fr) 2.5em; gap: 8px; align-items: end; border-top: 1px solid #ccd1dc; padding: 12px 0; }
 .condition-row label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.condition-row select, .condition-row input, .rule-grid select, .rule-grid input, .settings-grid input { width: 100%; box-sizing: border-box; }
+.condition-row select, .condition-row input, .rule-grid select, .rule-grid input { width: 100%; box-sizing: border-box; }
 .condition-number { align-self: center; font-weight: bold; }
 .expected-wrap { display: flex; align-items: center; gap: 6px; }
 .condition-unit { white-space: nowrap; }
@@ -24,7 +27,16 @@
 .channels legend { font-weight: bold; }
 .channel-option { align-items: center; display: flex; gap: 9px; }
 .rule-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-.rule-state.active { background: #9a1c28; color: #fff; border-radius: 12px; padding: 4px 10px; }
+.rule-card > .rule-summary { align-items: center; cursor: pointer; display: flex; gap: 16px; justify-content: space-between; list-style-position: inside; }
+.rule-card[open] > .rule-summary { border-bottom: 1px solid #ccd1dc; margin-bottom: 14px; padding-bottom: 12px; }
+.rule-summary-title { font-size: 1.2em; font-weight: bold; }
+.rule-summary-meta { align-items: center; display: inline-flex; gap: 16px; margin-left: auto; }
+.rule-details-label { color: #2f3b5b; font-weight: bold; }
+.rule-controls { justify-content: flex-end; }
+.rule-state { font-weight: bold; }
+.rule-state.active { color: #2f861e; }
+.rule-state.idle { color: #596273; }
+.rule-state.disabled { color: #7a7a7a; }
 .automation-warning { border-left: 5px solid #d68a00; background: #fff5dc; padding: 10px; }
 .automation-error { border-left: 5px solid #a71928; background: #ffe4e7; padding: 10px; font-weight: bold; }
 .history-scroll { overflow-x: auto; }
@@ -43,8 +55,14 @@
     .condition-row label { grid-column: 2; }
     .condition-row .remove-condition { grid-column: 2; justify-self: end; }
     .condition-number { grid-row: 1 / 6; align-self: start; }
+    .settings-grid { grid-template-columns: 1fr; }
     .settings-grid > label, .rule-grid > label { align-items: stretch; flex-direction: column; }
-    .settings-grid > label, .settings-grid > .field-row { box-sizing: border-box; flex-basis: 100%; }
+    .settings-grid > label, .settings-grid > .field-row { box-sizing: border-box; white-space: normal; }
+    .settings-grid input[type="number"] { width: 100%; }
     .field-row, .switch-field, .channel-option { align-items: center; flex-direction: row; justify-content: flex-start; }
     .channels { display: grid; grid-template-columns: 1fr; }
+    .rule-summary-meta { gap: 8px; }
+}
+@media (min-width: 851px) and (max-width: 1150px) {
+    .settings-grid { grid-template-columns: repeat(2, max-content); }
 }

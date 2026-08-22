@@ -11,6 +11,8 @@ $var page: plugins
     <p>$_('Select the provider, resource and value in this order. The available unit comes from the provider and is filled automatically.')</p>
     <p>$_('The OSPy Sensors provider lists each enabled sensor by name. Ultrasonic tank sensors expose distance, water level, fill percentage and calculated volume. An offline sensor or invalid probe value cannot satisfy a condition.')</p>
     <p>$_('The Date and time provider exposes the current local date, time, weekday, month and day of month. Use the range operators with start..end, for example 2026-05-01..2026-09-30 or 08:00..18:00. A time range such as 22:00..06:00 automatically crosses midnight.')</p>
+    <p>$_('The OSPy status provider exposes scheduler and operating modes, water-level adjustment, remaining rain delay, rain-sensor state and cached OSPy or plug-in update availability. It never starts an update check or network request.')</p>
+    <p>$_('Saved rules are collapsed by default. Expand a rule by selecting its heading. Disabled means the rule is not evaluated, Ready means no incident is active, and Triggered means a live incident was created after the confirmation time.')</p>
     <h3>$_('Timing')</h3>
     <p>$_('The confirmation duration requires the complete condition to remain true before the rule is triggered. The repeat interval sends another notification while the incident remains active; zero disables repetition.')</p>
     <h3>$_('Testing and safety')</h3>
