@@ -2,6 +2,9 @@
 
 August 22 2026
 --------------
+(Martin Pihrt) - UPS Monitor v1.0.5<br/>
+Added an enabled-by-default Automatic system shutdown switch. Administrators can now keep power-line monitoring, logging and fault or recovery E-mail notifications active without pulsing the UPS shutdown output or shutting down OSPy. Countdown, health and mobile status text now distinguish automatic shutdown from monitor-only operation, and the help and README describe both modes.
+
 (Martin Pihrt) - Automation Rules v1.0.8<br/>
 Collapsed all saved rules and the New rule card on an ordinary page load. Saving an existing or new rule now returns to the same expanded card while every other rule remains collapsed. Added a compact localized header summary of configured conditions, AND/OR matching, limits, units and notification channels, with the complete summary available as hover text and responsive wrapping on narrow screens. Added native mobile API v1 metrics cards that report each rule as Disabled, Ready, Triggered, Conditions active, Unavailable or Automation disabled and expose every individual condition as Active, Inactive, Unavailable or Not evaluated using read-only cached provider values. Updated help, README, asset cache versions and regression coverage without changing gettext catalogs.
 

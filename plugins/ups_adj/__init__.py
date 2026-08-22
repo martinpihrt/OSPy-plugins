@@ -36,6 +36,7 @@ ups_options = PluginOptions(
     {
         'time': 60, # in minutes
         'ups': False,
+        'shutdown_enabled': True,                     # preserve legacy shutdown behaviour by default
         'sendeml': False,
         'emlsubject': _('Report from OSPy UPS plugin'),
         'enable_log': False,
@@ -83,6 +84,19 @@ except NameError:
 # Main function loop:                                                          #
 ################################################################################
 
+
+def automatic_shutdown_enabled(settings=None):
+    """Return whether a confirmed power fault may shut down OSPy and the UPS."""
+    settings = ups_options if settings is None else settings
+    return bool(settings.get('shutdown_enabled', True))
+
+
+def countdown_label():
+    """Return a label that accurately describes the configured fault action."""
+    if automatic_shutdown_enabled():
+        return _('Time to shutdown')
+    return _('Power-fault confirmation countdown')
+
 class UPSSender(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -109,11 +123,19 @@ class UPSSender(Thread):
             time.sleep(1)
             self._sleep_time -= 1
 
+    def _perform_shutdown(self):
+        """Pulse the UPS shutdown output and request an OSPy system shutdown."""
+        GPIO.output(pin_ups_down, GPIO.HIGH)
+        self._sleep(4)
+        GPIO.output(pin_ups_down, GPIO.LOW)
+        poweroff(1, True)
+
     def run(self):
         reboot_time = False
         once = True
         once_two = True
         once_three = False
+        monitor_only_alerted = False
         last_countdown_log = None
 
         last_time = int(time.time())
@@ -147,11 +169,20 @@ class UPSSender(Thread):
                     if not test:
                         last_time = int(time.time())
                         reboot_time = False
+                        monitor_only_alerted = False
                         self.status['countdown_remaining'] = None
                         last_countdown_log = None
 
                     if test:                                               # if power line is not active
-                        reboot_time = True                                 # start countdown timer
+                        if monitor_only_alerted and automatic_shutdown_enabled():
+                            # Start a new full countdown when shutdown is enabled
+                            # during an already confirmed monitor-only incident.
+                            monitor_only_alerted = False
+                            once_two = True
+                            last_time = int(time.time())
+                            last_countdown_log = None
+                        if not monitor_only_alerted:
+                            reboot_time = True                             # start countdown timer
                         if once:
                             # send email with info power line fault
                             msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _('Detected fault on power line.') + '</p>'
@@ -183,19 +214,29 @@ class UPSSender(Thread):
                         if countdown_log != last_countdown_log:
                             last_countdown_log = countdown_log
                             log.clear(NAME)
-                            log.info(NAME, _('Time to shutdown') + ': ' + format_seconds(remaining))
+                            log.info(NAME, countdown_label() + ': ' + format_seconds(remaining))
                         if ((actual_time - last_time) >= count_val):        # if countdown is 0
                             last_time = actual_time
                             test = get_check_power()
                             if test:                                         # if power line is current not active
                                 log.clear(NAME)
-                                log.info(NAME, _('Power line is not restore in time -> sends email and shutdown system.'))
+                                shutdown_enabled = automatic_shutdown_enabled()
+                                if shutdown_enabled:
+                                    if ups_options['sendeml']:
+                                        action_message = _('Power line was not restored in time. An E-mail will be sent and the system will shut down.')
+                                    else:
+                                        action_message = _('Power line was not restored in time. The system will shut down.')
+                                else:
+                                    if ups_options['sendeml']:
+                                        action_message = _('Power line was not restored in time. An E-mail will be sent, but automatic system shutdown is disabled and monitoring continues.')
+                                    else:
+                                        action_message = _('Power line was not restored in time. Automatic system shutdown is disabled and monitoring continues.')
+                                log.info(NAME, action_message)
                                 reboot_time = False
                                 if ups_options['sendeml']:                    # if enabled send email
                                     if once_two:
-                                        # send email with info shutdown system
-                                        msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + _('Power line is not restore in time -> shutdown system!') + '</p>'
-                                        msglog =  _('UPS plug-in') + ': ' + _('Power line is not restore in time -> shutdown system!')
+                                        msg = '<b>' + _('UPS plug-in') + '</b> ' + '<br><p style="color:red;">' + action_message + '</p>'
+                                        msglog = _('UPS plug-in') + ': ' + action_message
                                         try:
                                             try_mail = None
                                             if ups_options['eplug']==0: # email_notifications
@@ -209,10 +250,11 @@ class UPSSender(Thread):
                                             log.error(NAME, _('UPS plug-in') + ':\n' + traceback.format_exc()) 
                                         once_two = False
 
-                                GPIO.output(pin_ups_down, GPIO.HIGH)          # switch on GPIO fo countdown UPS battery power off
-                                self._sleep(4)
-                                GPIO.output(pin_ups_down, GPIO.LOW)
-                                poweroff(1, True)                             # shutdown system
+                                if shutdown_enabled:
+                                    self._perform_shutdown()
+                                else:
+                                    monitor_only_alerted = True
+                                    self.status['countdown_remaining'] = 0
 
                     if not test:
                         if once_three:
@@ -236,6 +278,7 @@ class UPSSender(Thread):
                             once = True
                             once_two = True
                             once_three = False
+                            monitor_only_alerted = False
                             reboot_time = False
                             self.status['countdown_remaining'] = None
                             last_countdown_log = None
@@ -292,6 +335,7 @@ def health():
     details = {
         _('Worker thread'): _('Running') if worker_running else _('Stopped'),
         _('UPS monitoring enabled'): _('Yes') if ups_options['ups'] else _('No'),
+        _('Automatic system shutdown'): _('Enabled') if automatic_shutdown_enabled() else _('Disabled'),
         _('Power line'): (
             _('Fault') if state['power_fault'] else _('OK')
             if state['power_fault'] is not None else _('Not available')
@@ -372,6 +416,9 @@ def mobile_cards(from_time=None, to_time=None, max_points=400):
         'title': _('Power line'),
         'metrics': [
             {'label': _('State'), 'value': power.get('ups_state', ''), 'unit': ''},
+            {'label': _('Automatic system shutdown'),
+             'value': _('Enabled') if automatic_shutdown_enabled() else _('Disabled'),
+             'unit': ''},
             {'label': _('Shutdown countdown'),
              'value': (
                  format_seconds(power['countdown_remaining'])
@@ -414,7 +461,7 @@ def get_power_state_data():
         if ups_sender is not None:
             remaining = ups_sender.status.get('countdown_remaining')
         if remaining is not None:
-            message = _('Detected fault on power line!') + ' ' + _('Time to shutdown') + ': ' + format_seconds(remaining)
+            message = _('Detected fault on power line!') + ' ' + countdown_label() + ': ' + format_seconds(remaining)
         else:
             message = _('Detected fault on power line!')
         css = 'fault'
