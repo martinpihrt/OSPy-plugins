@@ -335,7 +335,9 @@ $var page: plugins
                 <td class="chmiLabel">$_('Delay time'):</td>
                 <td title=$:{json.dumps(_(u'Delay time in hours.'), ensure_ascii=False)}>
                     <input name='RAIN_DELAY' type='number' min='1' value='$plugin_options["RAIN_DELAY"]'> $_('(in hours)')
-                    <a href="?del_rain&$csrf_query()"  class="button cancel danger">$_('Removing Rain Delay')</a>
+                    <a href="?del_rain&$csrf_query()" class="button cancel danger">$_('Remove CHMI Rain Delay')</a>
+                    $if plugin_options.get('RAIN_DELAY_SUPPRESSED', False):
+                        <small>$_('Manually removed until dry weather is detected.')</small>
                 </td>
             </tr>
             <tr>

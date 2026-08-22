@@ -52,6 +52,7 @@ plugin_options = PluginOptions(
         'log_records': 0,            # Number of max logs (0=unlimited)
         'USE_RAIN_DELAY': False,     # If the box is checked, a rain delay will be set if rain is detected. The location coordinates are obtained from the OSPy settings from the weather/location menu. For proper function, you need to enter your location in the settings (for example, Prague).
         'RAIN_DELAY': 1,             # In hours
+        'RAIN_DELAY_SUPPRESSED': False, # manual removal remains active until a dry radar sample
         'LON_0': 11.2673442,         # TOP LEFT CORNER
         'LAT_0': 52.1670717,
         'LON_1': 20.7703153,         # LOWER RIGHT CORNER
@@ -92,6 +93,7 @@ dependency_install_lock = Lock()
 dependency_install_running = False
 runtime = get_runtime()
 health_lock = Lock()
+rain_delay_lock = Lock()
 health_state = {
     'last_success': 0,
     'last_error': 0,
@@ -110,6 +112,44 @@ def update_home_widget_script():
             pluginScripts.remove(HOME_WIDGET_SCRIPT)
 
 update_home_widget_script()
+
+
+def rain_delay_suppressed():
+    """Return whether the current rainy period was manually overridden."""
+    return bool(plugin_options.get('RAIN_DELAY_SUPPRESSED', False))
+
+
+def _set_rain_delay_suppressed(value):
+    value = bool(value)
+    if rain_delay_suppressed() != value:
+        plugin_options['RAIN_DELAY_SUPPRESSED'] = value
+
+
+def remove_chmi_rain_delay(suppress_until_dry=True):
+    """Remove only the CHMI block and optionally suppress it until dry weather."""
+    with rain_delay_lock:
+        _set_rain_delay_suppressed(suppress_until_dry)
+        return rain_blocks.pop(NAME, None) is not None
+
+
+def apply_chmi_rain_delay(delay_hours):
+    """Set the CHMI block unless the current rainy period was overridden."""
+    with rain_delay_lock:
+        if rain_delay_suppressed():
+            return False
+        rain_blocks[NAME] = (
+            datetime.datetime.now()
+            + datetime.timedelta(hours=float(delay_hours))
+        )
+        return True
+
+
+def reset_rain_delay_suppression_after_dry_sample():
+    """Allow a future rainy period to create a new delay."""
+    with rain_delay_lock:
+        was_suppressed = rain_delay_suppressed()
+        _set_rain_delay_suppressed(False)
+        return was_suppressed
 
 # We work in the WGS-84 coordinate system
 # In order to be able to convert degrees of latitude and longitude into pixels,
@@ -308,12 +348,16 @@ class CHMI_Checker(Thread):
                                     # RAIND DELAY and FOOTER
                                     if plugin_options['USE_RAIN_DELAY']:
                                         delaytime = int(plugin_options['RAIN_DELAY'])
-                                        rain_blocks[NAME] = datetime.datetime.now() + datetime.timedelta(hours=float(delaytime))
-                                        stop_onrain()
-                                        tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours')
+                                        if apply_chmi_rain_delay(delaytime):
+                                            stop_onrain()
+                                            tempText += _('Detected Rain') + '. ' + _('Adding delay of') + ' ' + str(delaytime) + ' ' + _('hours')
+                                        else:
+                                            tempText += _('Detected Rain') + '. ' + _('Rain delay was manually removed and remains suppressed until dry weather is detected.')
                                     else:
                                         tempText += _('Probably raining right now')
                                 else:
+                                    if reset_rain_delay_suppression_after_dry_sample():
+                                        log.info(NAME, datetime_string() + ' ' + _('Dry weather was detected. A future rainy period may activate the CHMI rain delay again.'))
                                     draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=(0, 0, 0), outline=(255, 255, 255))
                                     log.info(NAME, datetime_string() + ' ' + _('In my location latitude {} longitude {} it is probably not rain.').format(options.weather_lat, options.weather_lon))
                                     log.info(NAME, datetime_string() + ' ' + _('Rain detection area: {} of {} pixels ({}%) are above the threshold.').format(rain_area['rainy_pixels'], rain_area['total_pixels'], rain_area['rainy_percent']))
@@ -439,6 +483,9 @@ def health():
         ),
         _('Location configured'): (
             _('Yes') if location is not None else _('No')
+        ),
+        _('CHMI rain delay manually suppressed'): (
+            _('Yes') if rain_delay_suppressed() else _('No')
         ),
         _('Dependency installation'): (
             _('Running') if shmu_dependencies_installing() else _('Stopped')
@@ -1120,9 +1167,11 @@ class settings_page(ProtectedPage):
 
             if checker is not None and del_rain:
                 verify_csrf(qdict)
-                if NAME in rain_blocks:
-                    del rain_blocks[NAME]
-                    log.info(NAME, datetime_string() + ': ' + _('Removing Rain Delay') + '.')
+                removed = remove_chmi_rain_delay(suppress_until_dry=True)
+                if removed:
+                    log.info(NAME, datetime_string() + ': ' + _('CHMI rain delay was removed and will remain suppressed until dry weather is detected.'))
+                else:
+                    log.info(NAME, datetime_string() + ': ' + _('No CHMI rain delay was active. New CHMI rain delays will remain suppressed until dry weather is detected.'))
 
             if checker is not None and refresh:
                 verify_csrf(qdict)
@@ -1160,7 +1209,10 @@ class settings_page(ProtectedPage):
         try:
             qdict = web.input()
             verify_csrf(qdict)
-            plugin_options.web_update(qdict)
+            plugin_options.web_update(qdict, skipped=['RAIN_DELAY_SUPPRESSED'])
+            if not plugin_options['USE_RAIN_DELAY']:
+                if remove_chmi_rain_delay(suppress_until_dry=False):
+                    log.info(NAME, datetime_string() + ': ' + _('CHMI rain delay was removed because rain delay control was disabled.'))
             update_home_widget_script()
             if checker is not None:
                 checker.update()

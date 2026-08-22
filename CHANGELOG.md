@@ -2,6 +2,9 @@
 
 August 22 2026
 --------------
+(Martin Pihrt) - CHMI v1.0.7<br/>
+Fixed manual CHMI rain-delay removal being undone by the next rainy radar evaluation. A manual removal is now persisted for the current rainy period and cleared only after a valid dry radar sample; disabling CHMI rain-delay control immediately removes the CHMI-owned block. The synchronized update path prevents the radar worker from recreating a block concurrently, while manual and other plug-in delays remain untouched. Added visible override status, diagnostics, help, README and regression coverage without changing gettext catalogs.
+
 (Martin Pihrt) - UPS Monitor v1.0.5<br/>
 Added an enabled-by-default Automatic system shutdown switch. Administrators can now keep power-line monitoring, logging and fault or recovery E-mail notifications active without pulsing the UPS shutdown output or shutting down OSPy. Countdown, health and mobile status text now distinguish automatic shutdown from monitor-only operation, and the help and README describe both modes.
 
