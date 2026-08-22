@@ -3,7 +3,7 @@
   "id": "automation_rules",
   "name": "Automation Rules",
   "menu": "Package: Automation Rules",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Builds collapsible graphical AND/OR monitoring rules over cached plug-in values, built-in OSPy sensors, system states and local date/time ranges, then sends detailed notifications.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
@@ -12,6 +12,10 @@
   },
   "python": {
     "min_version": "3.8"
+  },
+  "mobile": {
+    "api_version": 1,
+    "actions": []
   },
   "dependencies": [
     {"id": "water_meter", "required": false},

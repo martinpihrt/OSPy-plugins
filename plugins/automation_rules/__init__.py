@@ -27,7 +27,7 @@ NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.7'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.0.8'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,
@@ -210,9 +210,10 @@ def _sensor_value_label(identifier):
     return identifier
 
 
-def _provider_catalog():
+def _provider_catalog(snapshots=None):
     catalog = []
-    snapshots = _automation_snapshots()
+    if snapshots is None:
+        snapshots = _automation_snapshots()
     modules = list(plugin_provider_modules()) + [
         sensor_provider.PROVIDER_ID, time_provider.PROVIDER_ID,
         system_provider.PROVIDER_ID,
@@ -400,6 +401,123 @@ def _condition_summary(rule, evaluation):
         lines.append('{}: {} {} {}'.format(
             prefix, actual, operators.get(operator, operator), expected))
     return '\n'.join(lines)
+
+
+def _condition_definitions(catalog):
+    return {
+        (item['provider_id'], item['resource_id'], item['value_id']): item
+        for item in catalog
+    }
+
+
+def _configured_condition_text(condition, definitions):
+    operators = {
+        'eq': '=', 'ne': '!=', 'gt': '>', 'gte': '>=', 'lt': '<', 'lte': '<=',
+        'between': _('is in range'), 'not_between': _('is outside range'),
+        'is_true': _('is active'), 'is_false': _('is inactive'),
+    }
+    definition = definitions.get((
+        condition.get('provider_id'), condition.get('resource_id'),
+        condition.get('value_id'),
+    ), {})
+    resource = definition.get('resource_label') or condition.get('resource_id', '')
+    value = definition.get('value_label') or condition.get('value_id', '')
+    label = '{} – {}'.format(resource, value) if resource else value
+    operator = condition.get('operator', 'eq')
+    operator_label = operators.get(operator, operator)
+    if operator in ('is_true', 'is_false'):
+        return '{} {}'.format(label, operator_label)
+    expected = condition.get('expected', '')
+    if operator in ('between', 'not_between'):
+        expected = str(expected).replace('..', ' – ')
+    else:
+        expected = _display_value(expected, definition.get('unit', ''))
+    return '{} {} {}'.format(label, operator_label, expected)
+
+
+def _rule_header_summary(rule, catalog=None):
+    """Describe configured conditions and notification channels for a card header."""
+    definitions = _condition_definitions(
+        catalog if catalog is not None else _provider_catalog())
+    conditions = [
+        _configured_condition_text(condition, definitions)
+        for condition in rule.get('conditions', [])
+    ]
+
+    connector = ' {} '.format(_('AND') if rule.get('mode') == 'all' else _('OR'))
+    condition_text = connector.join(conditions)
+    channel_labels = {
+        'home': _('OSPy Home window'), 'browser': _('Browser notification'),
+        'email': _('E-mail'), 'telegram': _('Telegram'),
+        'push': _('Push notification'),
+    }
+    channels = [channel_labels.get(channel, channel)
+                for channel in rule.get('channels', [])]
+    notification_text = (', '.join(channels) if channels else
+                         _('no notification channel'))
+    return '{} → {} {}'.format(condition_text, _('notify via'), notification_text)
+
+
+def _rules_for_display(rules, catalog):
+    result = []
+    for rule in rules:
+        displayed = dict(rule)
+        displayed['header_summary'] = _rule_header_summary(rule, catalog)
+        result.append(displayed)
+    return result
+
+
+def _mobile_rule_card(rule, evaluation, state, catalog, automation_enabled=True):
+    definitions = _condition_definitions(catalog)
+    results = {
+        item.get('id'): item for item in (evaluation or {}).get('conditions', [])
+    }
+    if not automation_enabled:
+        card_status, state_text = 'unknown', _('Automation disabled')
+    elif not rule.get('enabled'):
+        card_status, state_text = 'unknown', _('Disabled')
+    elif not evaluation or not evaluation.get('available'):
+        card_status, state_text = 'warning', _('Unavailable')
+    elif state.get('active'):
+        card_status = ('error' if rule.get('severity') in ('error', 'critical')
+                       else 'warning')
+        state_text = _('Triggered')
+    elif evaluation.get('matched'):
+        card_status, state_text = 'warning', _('Conditions active')
+    else:
+        card_status, state_text = 'ok', _('Ready')
+
+    metrics = [
+        {'id': 'enabled', 'label': _('Enabled'),
+         'value': _('Yes') if rule.get('enabled') else _('No'), 'unit': ''},
+        {'id': 'state', 'label': _('Rule state'), 'value': state_text, 'unit': ''},
+    ]
+    for index, condition in enumerate(rule.get('conditions', [])):
+        result = results.get(condition.get('id'), {})
+        if not automation_enabled or not rule.get('enabled'):
+            condition_state = _('Not evaluated')
+        elif not result.get('available'):
+            condition_state = _('Unavailable')
+        elif result.get('matched'):
+            condition_state = _('Active')
+        else:
+            condition_state = _('Inactive')
+        metrics.append({
+            'id': 'condition_{}'.format(index + 1),
+            'label': _configured_condition_text(condition, definitions),
+            'value': condition_state, 'unit': '',
+        })
+    if state.get('last_evaluation'):
+        metrics.append({
+            'id': 'last_evaluation', 'label': _('Last evaluation'),
+            'value': datetime_string(time.localtime(state['last_evaluation'])),
+            'unit': '',
+        })
+    return {
+        'id': 'rule_{}'.format(rule['id']), 'kind': 'metrics',
+        'title': rule['name'], 'status': card_status,
+        'summary': state_text, 'metrics': metrics,
+    }
 
 
 def _send_email(title, message):
@@ -658,6 +776,45 @@ def health():
             'details': details}
 
 
+def mobile_status():
+    result = health()
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Automation Rules'),
+        'summary': result.get('summary', ''),
+        'updated': datetime_string(),
+    }
+
+
+def mobile_cards(**_kwargs):
+    """Expose each rule and every current condition result without changing state."""
+    rules = load_rules()
+    states = load_states()
+    automation_enabled = bool(plugin_options.get('enabled'))
+    snapshots = {'providers': {}, 'errors': {}}
+    catalog = []
+    if automation_enabled:
+        try:
+            snapshots = _automation_snapshots()
+            catalog = _provider_catalog(snapshots)
+        except Exception:
+            snapshots = {'providers': {}, 'errors': {}}
+    cards = []
+    for rule in rules:
+        evaluation = None
+        if automation_enabled and rule.get('enabled'):
+            try:
+                evaluation = engine.evaluate_rule(rule, snapshots)
+            except Exception:
+                evaluation = {
+                    'available': False, 'matched': False, 'conditions': [],
+                }
+        cards.append(_mobile_rule_card(
+            rule, evaluation, states.get(rule['id'], {}), catalog,
+            automation_enabled=automation_enabled))
+    return cards
+
+
 def _new_rule():
     return {
         'id': uuid.uuid4().hex, 'name': '', 'enabled': True, 'mode': 'all',
@@ -701,15 +858,19 @@ def _rule_from_input(qdict):
 
 class settings_page(ProtectedPage):
     def GET(self):
+        request = web.input(open_rule='')
+        catalog = _provider_catalog()
         return self.plugin_render.automation_rules(
-            plugin_options, load_rules(), _new_rule(), _display_history(),
-            _provider_catalog(), load_states(), log.events(NAME), '')
+            plugin_options, _rules_for_display(load_rules(), catalog),
+            _new_rule(), _display_history(), catalog, load_states(),
+            log.events(NAME), '', str(request.get('open_rule', '')))
 
     def POST(self):
         qdict = web.input()
         verify_csrf(qdict)
         action = qdict.get('action', '')
         error = ''
+        open_rule = ''
         try:
             if action == 'save_settings':
                 plugin_options['enabled'] = qdict.get('enabled') == 'on'
@@ -728,6 +889,7 @@ class settings_page(ProtectedPage):
                 else:
                     rules.append(saved)
                 save_rules(rules)
+                open_rule = saved['id']
             elif action == 'delete_rule':
                 rule_id = str(qdict.get('rule_id', ''))
                 save_rules([item for item in load_rules()
@@ -744,10 +906,15 @@ class settings_page(ProtectedPage):
         except (ValueError, TypeError, engine.RuleValidationError) as exception:
             error = str(exception)
         if not error:
-            raise web.seeother(plugin_url(settings_page), True)
+            target = plugin_url(settings_page)
+            if open_rule:
+                target += '?open_rule={}'.format(open_rule)
+            raise web.seeother(target, True)
+        catalog = _provider_catalog()
         return self.plugin_render.automation_rules(
-            plugin_options, load_rules(), _new_rule(), _display_history(),
-            _provider_catalog(), load_states(), log.events(NAME), error)
+            plugin_options, _rules_for_display(load_rules(), catalog),
+            _new_rule(), _display_history(), catalog, load_states(),
+            log.events(NAME), error, str(qdict.get('rule_id', '')))
 
 
 class notifications_json(ProtectedPage):

@@ -175,13 +175,17 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.0.7')
+        self.assertEqual(manifest['version'], '1.0.8')
+        self.assertEqual(manifest['mobile']['api_version'], 1)
+        self.assertEqual(manifest['mobile']['actions'], [])
         self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
         self.assertNotIn('stations.activate', source)
         self.assertNotIn('stations.deactivate', source)
         self.assertIn("'rule_name': rule['name']", source)
+        self.assertIn('def mobile_status(', source)
+        self.assertIn('def mobile_cards(', source)
 
     def test_builtin_ultrasonic_sensor_exposes_derived_tank_values(self):
         sensor = SimpleNamespace(
@@ -304,6 +308,81 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertIn('Barrel', summary)
         self.assertIn('20 % <= 25 %', summary)
 
+    def test_rule_header_summary_describes_conditions_and_notifications(self):
+        path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'
+        tree = ast.parse(path.read_text(encoding='utf-8'))
+        selected = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                    and node.name in (
+                        '_display_value', '_condition_definitions',
+                        '_configured_condition_text', '_rule_header_summary')]
+        namespace = {'_': lambda value: value}
+        exec(compile(ast.Module(body=selected, type_ignores=[]), str(path), 'exec'), namespace)
+        catalog = [{
+            'provider_id': 'tank_monitor', 'resource_id': 'tank-1',
+            'value_id': 'fill_percent', 'resource_label': 'Barrel',
+            'value_label': 'Tank fill', 'unit': '%',
+        }, {
+            'provider_id': 'pressure_monitor', 'resource_id': 'main',
+            'value_id': 'pressure_present', 'resource_label': 'Main pump',
+            'value_label': 'Pressure', 'unit': '',
+        }]
+
+        summary = namespace['_rule_header_summary'](rule(), catalog)
+
+        self.assertIn('Barrel – Tank fill <= 25 %', summary)
+        self.assertIn('AND', summary)
+        self.assertIn('Main pump – Pressure is active', summary)
+        self.assertIn('notify via OSPy Home window', summary)
+        self.assertIn('Push notification', summary)
+
+    def test_mobile_rule_card_reports_rule_and_condition_states(self):
+        path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'
+        tree = ast.parse(path.read_text(encoding='utf-8'))
+        names = ('_display_value', '_condition_definitions',
+                 '_configured_condition_text', '_mobile_rule_card')
+        selected = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                    and node.name in names]
+        namespace = {
+            '_': lambda value: value,
+            'datetime_string': lambda *_args: '2026-08-22 11:00',
+            'time': SimpleNamespace(localtime=lambda value: value),
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]), str(path), 'exec'), namespace)
+        definition = rule()
+        catalog = [{
+            'provider_id': 'tank_monitor', 'resource_id': 'tank-1',
+            'value_id': 'fill_percent', 'resource_label': 'Barrel',
+            'value_label': 'Tank fill', 'unit': '%',
+        }, {
+            'provider_id': 'pressure_monitor', 'resource_id': 'main',
+            'value_id': 'pressure_present', 'resource_label': 'Main pump',
+            'value_label': 'Pressure', 'unit': '',
+        }]
+        evaluation = {
+            'available': True, 'matched': True,
+            'conditions': [
+                {'id': 'tank-low', 'available': True, 'matched': True},
+                {'id': 'pressure-ok', 'available': True, 'matched': False},
+            ],
+        }
+
+        card = namespace['_mobile_rule_card'](
+            definition, evaluation, {'active': True}, catalog)
+        metrics = {item['id']: item['value'] for item in card['metrics']}
+
+        self.assertEqual(card['summary'], 'Triggered')
+        self.assertEqual(card['status'], 'warning')
+        self.assertEqual(metrics['enabled'], 'Yes')
+        self.assertEqual(metrics['condition_1'], 'Active')
+        self.assertEqual(metrics['condition_2'], 'Inactive')
+
+        disabled = namespace['_mobile_rule_card'](
+            definition, None, {}, catalog, automation_enabled=False)
+        disabled_metrics = {
+            item['id']: item['value'] for item in disabled['metrics']}
+        self.assertEqual(disabled['summary'], 'Automation disabled')
+        self.assertEqual(disabled_metrics['condition_1'], 'Not evaluated')
+
     def test_local_date_time_provider_uses_comparable_iso_values(self):
         import datetime
         data = TIME_PROVIDER.provider_snapshot(datetime.datetime(2026, 8, 21, 16, 5))
@@ -347,8 +426,12 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(template.count('type="checkbox"'), template.count('class="slider"'))
         self.assertGreaterEqual(template.count('title=$:{json.dumps(_('), 20)
         self.assertIn('.switch input:checked + .slider', css)
-        self.assertIn('automation_rules.css?v=1.0.7', template)
+        self.assertIn('automation_rules.css?v=1.0.8', template)
         self.assertIn('<details class="automation-card rule-card', template)
+        self.assertIn("rule['id'] == open_rule", template)
+        self.assertNotIn("' open' if is_new", template)
+        self.assertIn('rule-summary-description', template)
+        self.assertIn("'?open_rule={}'", (plugin / '__init__.py').read_text(encoding='utf-8'))
         self.assertIn('rule-state active', template)
         self.assertIn("not rule.get('enabled')", template)
         self.assertIn('value="between"', template)
@@ -358,7 +441,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertNotIn('Notification.requestPermission()', home)
         self.assertIn("Notification.permission !== 'granted'", home)
         self.assertIn('serviceWorkerNotification', home)
-        self.assertIn('browser_sw.js?v=1.0.7', home)
+        self.assertIn('browser_sw.js?v=1.0.8', home)
         self.assertLess(home.index('serviceWorkerNotification(title'),
                         home.index('new Notification(title'))
         self.assertNotIn("if (window.location.pathname !== '/') { return; }", home)

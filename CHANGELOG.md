@@ -2,6 +2,9 @@
 
 August 22 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.0.8<br/>
+Collapsed all saved rules and the New rule card on an ordinary page load. Saving an existing or new rule now returns to the same expanded card while every other rule remains collapsed. Added a compact localized header summary of configured conditions, AND/OR matching, limits, units and notification channels, with the complete summary available as hover text and responsive wrapping on narrow screens. Added native mobile API v1 metrics cards that report each rule as Disabled, Ready, Triggered, Conditions active, Unavailable or Automation disabled and expose every individual condition as Active, Inactive, Unavailable or Not evaluated using read-only cached provider values. Updated help, README, asset cache versions and regression coverage without changing gettext catalogs.
+
 (Martin Pihrt) - Automation Rules v1.0.7<br/>
 Added a built-in read-only OSPy status source for scheduler state, manual and scheduled modes, water-level adjustment, remaining rain delay, rain-sensor configuration and activity, cached OSPy update state, cached plug-in update state and known plug-in update count. The source never starts a network update check. General settings now stay on one readable desktop row, saved rule cards are collapsible, and rule headings distinguish Disabled, Ready and Triggered states with a plain green Triggered indicator. Updated help, READMEs, cache versions and regression coverage.
 

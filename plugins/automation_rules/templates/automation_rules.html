@@ -1,15 +1,15 @@
-$def with(plugin_options, rules, new_rule, history, catalog, states, events, error)
+$def with(plugin_options, rules, new_rule, history, catalog, states, events, error, open_rule)
 
 $var title: $_('Automation Rules')
 $var page: plugins
 
-<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.0.7">
+<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.0.8">
 
 <script>
 window.automationRuleCatalog = $:json.dumps(catalog, ensure_ascii=False);
 window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
 </script>
-<script src="/plugins/automation_rules/static/editor.js?v=1.0.7"></script>
+<script src="/plugins/automation_rules/static/editor.js?v=1.0.8"></script>
 
 <div id="plugin" class="automation-rules-page">
     <div class="title">$_('Automation Rules')</div>
@@ -51,9 +51,13 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
     $for rule in rules + [new_rule]:
         $ is_new = rule['id'] == new_rule['id']
         $ state = states.get(rule['id'], {})
-        <details class="automation-card rule-card${' new-rule' if is_new else ''}"${' open' if is_new else ''}>
+        <details class="automation-card rule-card${' new-rule' if is_new else ''}"${' open' if not is_new and rule['id'] == open_rule else ''}>
             <summary class="rule-summary" title=$:{json.dumps(_('Expand or collapse this automation rule.'), ensure_ascii=False)}>
-                <span class="rule-summary-title">${_('New rule') if is_new else rule['name']}</span>
+                <span class="rule-summary-main">
+                    <span class="rule-summary-title">${_('New rule') if is_new else rule['name']}</span>
+                    $if not is_new and rule.get('header_summary'):
+                        <span class="rule-summary-description" title=$:{json.dumps(rule['header_summary'], ensure_ascii=False)}>$rule['header_summary']</span>
+                </span>
                 <span class="rule-summary-meta">
                     $if not is_new and not rule.get('enabled'):
                         <span class="rule-state disabled">$_('Disabled')</span>

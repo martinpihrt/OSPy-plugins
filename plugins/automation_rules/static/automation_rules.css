@@ -29,7 +29,9 @@
 .rule-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 .rule-card > .rule-summary { align-items: center; cursor: pointer; display: flex; gap: 16px; justify-content: space-between; list-style-position: inside; }
 .rule-card[open] > .rule-summary { border-bottom: 1px solid #ccd1dc; margin-bottom: 14px; padding-bottom: 12px; }
+.rule-summary-main { align-items: baseline; display: flex; flex: 1 1 auto; gap: 12px; min-width: 0; }
 .rule-summary-title { font-size: 1.2em; font-weight: bold; }
+.rule-summary-description { color: #6c7280; font-size: .72em; font-weight: normal; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rule-summary-meta { align-items: center; display: inline-flex; gap: 16px; margin-left: auto; }
 .rule-details-label { color: #2f3b5b; font-weight: bold; }
 .rule-controls { justify-content: flex-end; }
@@ -62,6 +64,9 @@
     .field-row, .switch-field, .channel-option { align-items: center; flex-direction: row; justify-content: flex-start; }
     .channels { display: grid; grid-template-columns: 1fr; }
     .rule-summary-meta { gap: 8px; }
+    .rule-card > .rule-summary { align-items: flex-start; flex-wrap: wrap; }
+    .rule-summary-main { align-items: flex-start; flex-direction: column; gap: 3px; width: 100%; }
+    .rule-summary-description { overflow: visible; white-space: normal; }
 }
 @media (min-width: 851px) and (max-width: 1150px) {
     .settings-grid { grid-template-columns: repeat(2, max-content); }

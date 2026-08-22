@@ -164,7 +164,7 @@
             }
             var delivery = ('serviceWorker' in navigator) ?
                 navigator.serviceWorker.register(
-                    '/plugins/automation_rules/static/browser_sw.js?v=1.0.7'
+                    '/plugins/automation_rules/static/browser_sw.js?v=1.0.8'
                 ).then(function (registration) {
                     return registration.showNotification(
                         window.automationRuleText.browserTestTitle,
