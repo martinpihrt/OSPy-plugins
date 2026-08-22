@@ -3,15 +3,15 @@
   "id": "automation_rules",
   "name": "Automation Rules",
   "menu": "Package: Automation Rules",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Builds graphical AND/OR rules over cached provider and OSPy values, sends detailed notifications and optionally performs guarded control actions with incident locking.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
-    "min_version": "3.0.348"
+    "min": "3.0.354"
   },
   "python": {
-    "min_version": "3.8"
+    "min": "3.8"
   },
   "mobile": {
     "api_version": 1,

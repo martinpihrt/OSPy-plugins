@@ -3,14 +3,14 @@ $def with(plugin_options, rules, new_rule, history, catalog, action_catalog, sta
 $var title: $_('Automation Rules')
 $var page: plugins
 
-<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.1.0">
+<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.1.1">
 
 <script>
 window.automationRuleCatalog = $:json.dumps(catalog, ensure_ascii=False);
 window.automationActionCatalog = $:json.dumps(action_catalog, ensure_ascii=False);
-window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'removeAction': _('Remove control action'), 'action': _('Control action'), 'target': _('Target'), 'actionValue': _('Action value'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
+window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'removeAction': _('Remove control action'), 'action': _('Control action'), 'target': _('Target'), 'actionValue': _('Action value'), 'cycleMode': _('Output mode'), 'once': _('Run once'), 'cycle': _('Cycle while conditions match'), 'pauseSeconds': _('Pause between runs'), 'cycleTotalSeconds': _('Maximum cycling time'), 'seconds': _('seconds'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
 </script>
-<script src="/plugins/automation_rules/static/editor.js?v=1.1.0"></script>
+<script src="/plugins/automation_rules/static/editor.js?v=1.1.1"></script>
 
 <div id="plugin" class="automation-rules-page">
     <div class="title">$_('Automation Rules')</div>
@@ -124,18 +124,23 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
 
                 <fieldset class="control-actions">
                     <legend>$_('Control actions')</legend>
-                    <p class="automation-warning">$_('Control actions run once when the rule is first triggered. Repeated and recovery notifications never repeat or reverse an action.')</p>
+                    <p class="automation-warning">$_('Control actions normally run once when the rule is first triggered. An output action may instead cycle for a bounded time while every required condition remains available and matched. Repeated notifications never start another action.')</p>
                     <div class="action-list">
                         $for index, configured_action in enumerate(rule.get('actions', [])):
                             $ action_key = configured_action.get('editor_key', configured_action.get('type', ''))
                             $ action_value = configured_action.get('editor_value', configured_action.get('value', ''))
-                            <div class="action-row" data-action-key="$action_key" data-target="$configured_action.get('target', '')" data-action-value="$action_value">
+                            <div class="action-row" data-action-key="$action_key" data-target="$configured_action.get('target', '')" data-action-value="$action_value" data-cycle-mode="$configured_action.get('editor_cycle_mode', 'once')" data-pause-seconds="$configured_action.get('editor_pause_seconds', 300)" data-cycle-total-seconds="$configured_action.get('editor_cycle_total_seconds', 3600)">
                                 <input class="action-id" type="hidden" name="action_id_$index" value="$configured_action['id']">
                                 <span class="action-number">${index + 1}.</span>
                                 <label title=$:{json.dumps(_('Operation performed once when this rule is triggered.'), ensure_ascii=False)}><span>$_('Control action')</span><select class="action-select" name="action_key_$index" required></select></label>
                                 <label class="action-target-label" title=$:{json.dumps(_('Station, output, program or provider resource affected by this action.'), ensure_ascii=False)}><span>$_('Target')</span><select class="action-target" name="action_target_$index"></select></label>
                                 <label class="action-value-label" title=$:{json.dumps(_('Duration, percentage or JSON parameters required by the selected action.'), ensure_ascii=False)}><span>$_('Action value')</span><input class="action-value" name="action_value_$index" value="$action_value"></label>
                                 <button type="button" class="remove-action danger" title=$:{json.dumps(_('Remove this control action from the rule.'), ensure_ascii=False)}>&times;</button>
+                                <div class="action-cycle-settings">
+                                    <label class="action-cycle-mode-label" title=$:{json.dumps(_('Run the output once, or repeatedly alternate the configured run and pause while the rule conditions remain true.'), ensure_ascii=False)}><span>$_('Output mode')</span><select class="action-cycle-mode" name="action_cycle_mode_$index"><option value="once">$_('Run once')</option><option value="cycle">$_('Cycle while conditions match')</option></select></label>
+                                    <label class="action-pause-label" title=$:{json.dumps(_('How long the output remains off before the next cyclic run.'), ensure_ascii=False)}><span>$_('Pause between runs')</span><span><input class="action-pause-seconds" name="action_pause_seconds_$index" type="number" min="1" max="86400" value="$configured_action.get('editor_pause_seconds', 300)"> $_('seconds')</span></label>
+                                    <label class="action-cycle-total-label" title=$:{json.dumps(_('Safety limit for the complete cycle. The output is stopped when this time expires.'), ensure_ascii=False)}><span>$_('Maximum cycling time')</span><span><input class="action-cycle-total-seconds" name="action_cycle_total_seconds_$index" type="number" min="1" max="604800" value="$configured_action.get('editor_cycle_total_seconds', 3600)"> $_('seconds')</span></label>
+                                </div>
                             </div>
                     </div>
                     <button type="button" class="button add-action" title=$:{json.dumps(_('Add another control action. A rule can contain up to 20 actions.'), ensure_ascii=False)}>+ $_('Add control action')</button>

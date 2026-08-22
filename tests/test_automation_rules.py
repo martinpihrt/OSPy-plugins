@@ -183,6 +183,26 @@ class AutomationRuleEngineTests(unittest.TestCase):
         with self.assertRaises(ENGINE.RuleValidationError):
             ENGINE.normalize_rule(definition)
 
+    def test_cyclic_output_action_requires_bounded_safe_timing(self):
+        definition = rule()
+        definition['actions'] = [{
+            'id': 'cycle-pump', 'type': 'output_on', 'target': '2',
+            'value': '100', 'cycle_mode': 'cycle',
+            'pause_seconds': '300', 'cycle_total_seconds': '3600',
+        }]
+        action = ENGINE.normalize_rule(definition)['actions'][0]
+        self.assertEqual(action['cycle_mode'], 'cycle')
+        self.assertEqual(action['value'], 100)
+        self.assertEqual(action['pause_seconds'], 300)
+        self.assertEqual(action['cycle_total_seconds'], 3600)
+        definition['actions'][0]['pause_seconds'] = 0
+        with self.assertRaises(ENGINE.RuleValidationError):
+            ENGINE.normalize_rule(definition)
+        definition['actions'][0]['pause_seconds'] = 300
+        definition['actions'][0]['cycle_total_seconds'] = 99
+        with self.assertRaises(ENGINE.RuleValidationError):
+            ENGINE.normalize_rule(definition)
+
     def test_validation_rejects_unsafe_or_ambiguous_rules(self):
         invalid = rule()
         invalid['conditions'] = []
@@ -204,10 +224,11 @@ class AutomationRulePluginTests(unittest.TestCase):
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
         source = (plugin / '__init__.py').read_text(encoding='utf-8')
         self.assertEqual(manifest['id'], 'automation_rules')
-        self.assertEqual(manifest['version'], '1.1.0')
+        self.assertEqual(manifest['version'], '1.1.1')
         self.assertEqual(manifest['mobile']['api_version'], 1)
         self.assertEqual(manifest['mobile']['actions'], [])
-        self.assertGreaterEqual(manifest['ospy']['min_version'], '3.0.348')
+        self.assertEqual(manifest['ospy'], {'min': '3.0.354'})
+        self.assertEqual(manifest['python'], {'min': '3.8'})
         self.assertIn("'enabled': False", source)
         self.assertIn("'test_mode': True", source)
         self.assertIn("'control_enabled': False", source)
@@ -217,6 +238,8 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertIn("'rule_name': rule['name']", source)
         self.assertIn('def mobile_status(', source)
         self.assertIn('def mobile_cards(', source)
+        self.assertIn('def _advance_rule_cycles(', source)
+        self.assertIn("_stop_all_cycles(_('plug-in stopped'))", source)
 
     def test_control_actions_are_simulated_or_blocked_before_execution(self):
         path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'
@@ -244,6 +267,60 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertEqual(simulated[0]['status'], 'simulated')
         self.assertEqual(blocked[0]['status'], 'blocked')
+
+    def test_output_cycle_stops_when_conditions_clear_and_advances_without_sleep(self):
+        import threading
+        path = ROOT / 'plugins' / 'automation_rules' / '__init__.py'
+        tree = ast.parse(path.read_text(encoding='utf-8'))
+        names = ('_cycle_key', '_cycle_conflict', '_drop_cycle',
+                 '_register_output_cycle', '_advance_rule_cycles')
+        selected = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                    and node.name in names]
+        stopped = []
+        executed = []
+        namespace = {
+            '_': lambda value: value, 'cycle_lock': threading.RLock(),
+            'cycle_runtime': {}, '_finish_station_runs': lambda ids: stopped.extend(ids),
+            'health_lock': mock.MagicMock(),
+            'health_state': {'cycle_starts': 0, 'cycle_stops': 0,
+                             'control_actions': 0, 'control_errors': 0,
+                             'last_error': 0, 'last_error_message': ''},
+            'log': SimpleNamespace(info=lambda *args: None, error=lambda *args: None),
+            'NAME': 'test', '_action_label': lambda action: action['type'],
+            'time': SimpleNamespace(time=lambda: 100),
+            'traceback': SimpleNamespace(format_exc=lambda: ''),
+            '_execute_control_action': lambda action: executed.append(dict(action)),
+            'plugin_options': {'enabled': True, 'test_mode': False,
+                               'control_enabled': True},
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]), str(path), 'exec'), namespace)
+        definition = rule()
+        action = ENGINE.normalize_action({
+            'id': 'cycle-pump', 'type': 'output_on', 'target': '2',
+            'value': 100, 'cycle_mode': 'cycle', 'pause_seconds': 300,
+            'cycle_total_seconds': 3600,
+        })
+        definition['actions'] = [action]
+        option_modules = {
+            'ospy': types.ModuleType('ospy'),
+            'ospy.options': types.ModuleType('ospy.options'),
+        }
+        option_modules['ospy.options'].options = SimpleNamespace(manual_mode=True)
+        with mock.patch.dict(sys.modules, option_modules):
+            namespace['_register_output_cycle'](definition, action, now=100)
+            namespace['_advance_rule_cycles'](
+                definition, {'available': True, 'matched': True}, 200)
+            self.assertEqual(stopped, [2])
+            cycle = next(iter(namespace['cycle_runtime'].values()))
+            self.assertEqual(cycle['phase'], 'pause')
+            namespace['_advance_rule_cycles'](
+                definition, {'available': True, 'matched': True}, 500)
+            self.assertEqual(len(executed), 1)
+            self.assertEqual(executed[0]['value'], 100)
+            namespace['_advance_rule_cycles'](
+                definition, {'available': True, 'matched': False}, 550)
+        self.assertFalse(namespace['cycle_runtime'])
+        self.assertEqual(stopped, [2, 2])
 
     def test_builtin_ultrasonic_sensor_exposes_derived_tank_values(self):
         sensor = SimpleNamespace(
@@ -404,6 +481,7 @@ class AutomationRulePluginTests(unittest.TestCase):
             '_': lambda value: value,
             'datetime_string': lambda *_args: '2026-08-22 11:00',
             'time': SimpleNamespace(localtime=lambda value: value),
+            'cycle_lock': mock.MagicMock(), 'cycle_runtime': {},
         }
         exec(compile(ast.Module(body=selected, type_ignores=[]), str(path), 'exec'), namespace)
         definition = rule()
@@ -487,7 +565,7 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertEqual(template.count('type="checkbox"'), template.count('class="slider"'))
         self.assertGreaterEqual(template.count('title=$:{json.dumps(_('), 20)
         self.assertIn('.switch input:checked + .slider', css)
-        self.assertIn('automation_rules.css?v=1.1.0', template)
+        self.assertIn('automation_rules.css?v=1.1.1', template)
         self.assertIn('<details class="automation-card rule-card', template)
         self.assertIn("rule['id'] == open_rule", template)
         self.assertNotIn("' open' if is_new", template)
@@ -502,7 +580,11 @@ class AutomationRulePluginTests(unittest.TestCase):
         self.assertNotIn('Notification.requestPermission()', home)
         self.assertIn("Notification.permission !== 'granted'", home)
         self.assertIn('serviceWorkerNotification', home)
-        self.assertIn('browser_sw.js?v=1.1.0', home)
+        self.assertIn('browser_sw.js?v=1.1.1', home)
+        self.assertIn('action-cycle-mode', template)
+        self.assertIn('action-pause-seconds', template)
+        self.assertIn('action-cycle-total-seconds', template)
+        self.assertIn('updateCycleFields', editor)
         self.assertLess(home.index('serviceWorkerNotification(title'),
                         home.index('new Notification(title'))
         self.assertNotIn("if (window.location.pathname !== '/') { return; }", home)

@@ -29,7 +29,7 @@ NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.1.0'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.1.1'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,
@@ -41,11 +41,14 @@ plugin_options = PluginOptions(NAME, {
 runtime = get_runtime()
 storage_lock = RLock()
 health_lock = RLock()
+cycle_lock = RLock()
+cycle_runtime = {}
 health_state = {
     'last_cycle': 0, 'last_action': 0, 'last_error': 0,
     'last_error_message': '', 'evaluated_rules': 0,
     'active_rules': 0, 'provider_errors': 0,
     'control_actions': 0, 'control_errors': 0,
+    'cycle_starts': 0, 'cycle_stops': 0,
 }
 _test_states = {}
 
@@ -575,6 +578,10 @@ def _rules_for_display(rules, catalog):
                 json.dumps(action.get('parameters', {}), ensure_ascii=False)
                 if action.get('type') == 'provider_action' else
                 action.get('value', ''))
+            editor_action['editor_cycle_mode'] = action.get('cycle_mode', 'once')
+            editor_action['editor_pause_seconds'] = action.get('pause_seconds', 300)
+            editor_action['editor_cycle_total_seconds'] = action.get(
+                'cycle_total_seconds', 3600)
             displayed['actions'].append(editor_action)
         result.append(displayed)
     return result
@@ -600,6 +607,9 @@ def _mobile_rule_card(rule, evaluation, state, catalog, automation_enabled=True)
     else:
         card_status, state_text = 'ok', _('Ready')
 
+    with cycle_lock:
+        active_cycles = sum(1 for item in cycle_runtime.values()
+                            if item.get('rule_id') == rule.get('id'))
     metrics = [
         {'id': 'enabled', 'label': _('Enabled'),
          'value': _('Yes') if rule.get('enabled') else _('No'), 'unit': ''},
@@ -608,6 +618,8 @@ def _mobile_rule_card(rule, evaluation, state, catalog, automation_enabled=True)
          'value': _('Yes') if state.get('latched') else _('No'), 'unit': ''},
         {'id': 'control_actions', 'label': _('Configured control actions'),
          'value': len(rule.get('actions', [])), 'unit': ''},
+        {'id': 'active_output_cycles', 'label': _('Active output cycles'),
+         'value': active_cycles, 'unit': ''},
     ]
     for index, condition in enumerate(rule.get('conditions', [])):
         result = results.get(condition.get('id'), {})
@@ -705,6 +717,154 @@ def _finish_station_runs(station_ids):
         stations.deactivate(station_id)
 
 
+def _cycle_key(rule_id, action_id):
+    return '{}:{}'.format(rule_id, action_id)
+
+
+def _cycle_conflict(station_id, exclude_key=''):
+    with cycle_lock:
+        return next((item for key, item in cycle_runtime.items()
+                     if key != exclude_key and item.get('station_id') == station_id), None)
+
+
+def _drop_cycle(key, reason='', stop_output=True):
+    with cycle_lock:
+        cycle = cycle_runtime.pop(key, None)
+    if cycle is None:
+        return False
+    if stop_output:
+        _finish_station_runs([cycle['station_id']])
+    with health_lock:
+        health_state['cycle_stops'] += 1
+    log.info(NAME, '{}: {} ({})'.format(
+        _('Output cycle stopped'), cycle.get('label', key),
+        reason or _('completed')))
+    return True
+
+
+def _stop_rule_cycles(rule_id, reason=''):
+    with cycle_lock:
+        keys = [key for key, item in cycle_runtime.items()
+                if item.get('rule_id') == rule_id]
+    for key in keys:
+        _drop_cycle(key, reason)
+
+
+def _stop_cycles_for_station(station_id, reason=''):
+    with cycle_lock:
+        keys = [key for key, item in cycle_runtime.items()
+                if item.get('station_id') == station_id]
+    for key in keys:
+        _drop_cycle(key, reason, stop_output=False)
+
+
+def _stop_all_cycles(reason=''):
+    with cycle_lock:
+        keys = list(cycle_runtime)
+    for key in keys:
+        _drop_cycle(key, reason)
+
+
+def _register_output_cycle(rule, action, now=None):
+    now = time.time() if now is None else float(now)
+    station_id = int(action['target'])
+    key = _cycle_key(rule['id'], action['id'])
+    with cycle_lock:
+        conflict = next((item for other_key, item in cycle_runtime.items()
+                         if other_key != key and item.get('station_id') == station_id), None)
+        if conflict is not None:
+            raise RuntimeError(_('The selected output is already controlled by another cycle.'))
+        cycle_runtime[key] = {
+            'rule_id': rule['id'], 'rule_name': rule['name'],
+            'action_id': action['id'], 'station_id': station_id,
+            'action': dict(action), 'phase': 'on', 'started_at': now,
+            'next_at': now + int(action['value']),
+            'deadline': now + int(action['cycle_total_seconds']),
+            'label': '{} / {}'.format(rule['name'], _action_label(action)),
+        }
+    with health_lock:
+        health_state['cycle_starts'] += 1
+    log.info(NAME, '{}: {}'.format(_('Output cycle started'), rule['name']))
+
+
+def _advance_rule_cycles(rule, evaluation, now):
+    from ospy.options import options
+
+    with cycle_lock:
+        items = [(key, dict(item)) for key, item in cycle_runtime.items()
+                 if item.get('rule_id') == rule['id']]
+    for key, cycle in items:
+        stop_reason = ''
+        if not rule.get('enabled'):
+            stop_reason = _('rule disabled')
+        elif not plugin_options.get('enabled', False):
+            stop_reason = _('automation disabled')
+        elif plugin_options.get('test_mode', True):
+            stop_reason = _('test mode enabled')
+        elif not plugin_options.get('control_enabled', False):
+            stop_reason = _('control actions disabled')
+        elif not options.manual_mode:
+            stop_reason = _('manual mode disabled')
+        elif not evaluation.get('available'):
+            stop_reason = _('condition unavailable')
+        elif not evaluation.get('matched'):
+            stop_reason = _('condition no longer matches')
+        elif now >= cycle['deadline']:
+            stop_reason = _('maximum cycle duration reached')
+        if stop_reason:
+            _drop_cycle(key, stop_reason)
+            continue
+
+        if cycle['phase'] == 'on' and now >= cycle['next_at']:
+            _finish_station_runs([cycle['station_id']])
+            pause_end = cycle['next_at'] + int(cycle['action']['pause_seconds'])
+            with cycle_lock:
+                current = cycle_runtime.get(key)
+                if current is not None:
+                    current['phase'] = 'pause'
+                    current['next_at'] = pause_end
+            cycle['phase'] = 'pause'
+            cycle['next_at'] = pause_end
+            log.info(NAME, '{}: {}'.format(_('Output cycle pause'), cycle['label']))
+        if cycle['phase'] == 'pause' and now >= cycle['next_at']:
+            remaining = max(0, int(cycle['deadline'] - now))
+            if remaining <= 0:
+                _drop_cycle(key, _('maximum cycle duration reached'))
+                continue
+            action = dict(cycle['action'])
+            action['value'] = min(int(action['value']), remaining)
+            try:
+                _execute_control_action(action)
+            except Exception as error:
+                _drop_cycle(key, '{}: {}'.format(type(error).__name__, error))
+                with health_lock:
+                    health_state['control_errors'] += 1
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = '{}: {}'.format(
+                        type(error).__name__, error)
+                log.error(NAME, _('Automation output cycle failed') + ':\n' +
+                          traceback.format_exc())
+                continue
+            with cycle_lock:
+                current = cycle_runtime.get(key)
+                if current is not None:
+                    current['phase'] = 'on'
+                    current['next_at'] = now + int(action['value'])
+            with health_lock:
+                health_state['control_actions'] += 1
+            log.info(NAME, '{}: {}'.format(_('Output cycle started another run'),
+                                            cycle['label']))
+
+
+def _cancel_orphan_cycles(rules):
+    enabled_ids = {rule['id'] for rule in rules if rule.get('enabled')}
+    with cycle_lock:
+        orphan_ids = {item.get('rule_id') for item in cycle_runtime.values()
+                      if item.get('rule_id') not in enabled_ids}
+    for rule_id in orphan_ids:
+        _stop_rule_cycles(rule_id, _('rule removed or disabled'))
+
+
 def _execute_control_action(action):
     """Execute one normalized action and return a JSON-safe result."""
     from ospy.options import options
@@ -717,9 +877,11 @@ def _execute_control_action(action):
         station_id = int(action['target'])
         if not 0 <= station_id < stations.count():
             raise ValueError(_('Selected station does not exist.'))
+        _stop_cycles_for_station(station_id, _('stopped by another action'))
         _finish_station_runs([station_id])
         detail = stations.get(station_id).name
     elif action_type == 'stop_all_outputs':
+        _stop_all_cycles(_('all outputs stopped'))
         programs.run_now_program = None
         run_once.clear()
         log.finish_run(None)
@@ -754,6 +916,7 @@ def _execute_control_action(action):
         station_id = int(action['target'])
         if not 0 <= station_id < stations.count():
             raise ValueError(_('Selected output does not exist.'))
+        _stop_cycles_for_station(station_id, _('output switched off'))
         _finish_station_runs([station_id])
         detail = stations.get(station_id).name
     elif action_type == 'output_on':
@@ -817,7 +980,15 @@ def execute_control_actions(rule, test_mode=False):
                             'detail': _('Control actions are disabled.')})
             continue
         try:
+            if action['type'] == 'output_on':
+                conflict = _cycle_conflict(int(action['target']))
+                if conflict is not None:
+                    raise RuntimeError(
+                        _('The selected output is already controlled by another cycle.'))
             results.append(_execute_control_action(action))
+            if (action['type'] == 'output_on' and
+                    action.get('cycle_mode') == 'cycle'):
+                _register_output_cycle(rule, action)
             with health_lock:
                 health_state['control_actions'] += 1
         except Exception as error:
@@ -905,11 +1076,13 @@ def evaluate_once(test_mode=None):
     states = _test_states if is_test else load_states()
     evaluated = 0
     cycle_action_error = False
+    _cancel_orphan_cycles(rules)
     for rule in rules:
         if not rule['enabled']:
             continue
         evaluated += 1
         evaluation = engine.evaluate_rule(rule, snapshots)
+        _advance_rule_cycles(rule, evaluation, now)
         next_state, event = engine.transition(rule, evaluation,
                                               states.get(rule['id']), now)
         states[rule['id']] = next_state
@@ -1035,6 +1208,7 @@ def stop():
         worker.join(15)
         if not worker.is_alive():
             worker = None
+    _stop_all_cycles(_('plug-in stopped'))
     if SCRIPT_PATH in pluginScripts:
         pluginScripts.remove(SCRIPT_PATH)
 
@@ -1042,6 +1216,8 @@ def stop():
 def health():
     with health_lock:
         state = dict(health_state)
+    with cycle_lock:
+        active_cycle_count = len(cycle_runtime)
     worker_running = worker is not None and worker.is_alive()
     details = {
         _('Worker thread'): _('Running') if worker_running else _('Stopped'),
@@ -1057,6 +1233,9 @@ def health():
         _('Control action errors'): state['control_errors'],
         _('Locked incidents'): sum(1 for value in load_states().values()
                                    if value.get('latched')),
+        _('Active output cycles'): active_cycle_count,
+        _('Output cycles started'): state['cycle_starts'],
+        _('Output cycles stopped'): state['cycle_stops'],
         _('Last evaluation'): (datetime_string(time.localtime(state['last_cycle']))
                                if state['last_cycle'] else _('Not available')),
         _('Last action'): (datetime_string(time.localtime(state['last_action']))
@@ -1186,6 +1365,11 @@ def _rule_from_input(qdict):
             'resource_id': (qdict.get('action_target_{}'.format(index), '')
                             if action_type == 'provider_action' else ''),
             'parameters': parameters,
+            'cycle_mode': qdict.get('action_cycle_mode_{}'.format(index), 'once'),
+            'pause_seconds': qdict.get(
+                'action_pause_seconds_{}'.format(index), 300),
+            'cycle_total_seconds': qdict.get(
+                'action_cycle_total_seconds_{}'.format(index), 3600),
         })
     return engine.normalize_rule({
         'id': qdict.get('rule_id') or uuid.uuid4().hex,
@@ -1233,12 +1417,17 @@ class settings_page(ProtectedPage):
                     5, min(3600, int(qdict.get('poll_interval', 30))))
                 plugin_options['history_limit'] = max(
                     10, min(5000, int(qdict.get('history_limit', 500))))
+                if (not plugin_options.get('enabled') or
+                        plugin_options.get('test_mode') or
+                        not plugin_options.get('control_enabled')):
+                    _stop_all_cycles(_('automation settings changed'))
             elif action == 'save_rule':
                 saved = _rule_from_input(qdict)
                 if ((saved.get('actions') or saved.get('latch_incident')) and
                         server.session.get('category') != 'admin'):
                     raise engine.RuleValidationError(
                         _('Only an administrator can configure control actions.'))
+                _stop_rule_cycles(saved['id'], _('rule configuration changed'))
                 rules = load_rules()
                 for index, rule in enumerate(rules):
                     if rule['id'] == saved['id']:
@@ -1250,6 +1439,7 @@ class settings_page(ProtectedPage):
                 open_rule = saved['id']
             elif action == 'delete_rule':
                 rule_id = str(qdict.get('rule_id', ''))
+                _stop_rule_cycles(rule_id, _('rule deleted'))
                 save_rules([item for item in load_rules()
                             if item['id'] != rule_id])
                 states = load_states()

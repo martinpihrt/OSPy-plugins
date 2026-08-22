@@ -2,6 +2,9 @@
 
 August 22 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.1.1<br/>
+Added a bounded cyclic mode to the output-on action with configurable run duration, off pause and maximum total cycling time. Cycles continue only while all required rule data remains available and the rule still matches; disabling the rule, automation, control actions or manual mode, editing or deleting the rule, stopping the plug-in, losing a condition or reaching the limit cancels the cycle and switches its output off. Cycles are not resumed after restart and one output cannot be owned by multiple cycles. Corrected the minimum compatible OSPy version from 3.0.348 to 3.0.354 and replaced the ineffective `min_version` manifest key with the supported `min` key, so OSPy must be updated before installing this Automation Rules release. Updated help, READMEs, diagnostics, cache versions and regression coverage without changing gettext catalogs.
+
 (Martin Pihrt) - Automation Rules v1.1.0<br/>
 Added guarded one-shot control actions for selected stations, all outputs, scheduler disabling, running programs, bounded manual output control, global water-level adjustment and actions explicitly declared by another provider. Control execution is separately disabled by default, test mode simulates actions without touching OSPy or hardware, and every result is recorded without suppressing notifications. Optional incident locking requires administrator acknowledgement and refuses to unlock while conditions remain active or unavailable. Added action state to diagnostics and the mobile rule cards, updated localized help and expanded regression coverage.
 

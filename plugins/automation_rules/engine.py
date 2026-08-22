@@ -93,6 +93,9 @@ def normalize_action(action, index=0):
             action.get('provider_action_id') or '').strip().lower(),
         'resource_id': str(action.get('resource_id') or '').strip().lower(),
         'parameters': action.get('parameters', {}),
+        'cycle_mode': str(action.get('cycle_mode') or 'once').strip().lower(),
+        'pause_seconds': action.get('pause_seconds', 300),
+        'cycle_total_seconds': action.get('cycle_total_seconds', 3600),
     }
     if not isinstance(result['parameters'], dict):
         raise RuleValidationError('action parameters must be an object')
@@ -106,7 +109,22 @@ def normalize_action(action, index=0):
     if action_type == 'output_on':
         result['value'] = _integer(result['value'], 1, 86400,
                                    'output duration')
-    elif action_type == 'set_water_level':
+        if result['cycle_mode'] not in ('once', 'cycle'):
+            raise RuleValidationError('output cycle mode is not supported')
+        if result['cycle_mode'] == 'cycle':
+            result['pause_seconds'] = _integer(
+                result['pause_seconds'], 1, 86400, 'output cycle pause')
+            result['cycle_total_seconds'] = _integer(
+                result['cycle_total_seconds'], result['value'], 604800,
+                'output cycle total duration')
+        else:
+            result['pause_seconds'] = 0
+            result['cycle_total_seconds'] = 0
+    else:
+        result['cycle_mode'] = 'once'
+        result['pause_seconds'] = 0
+        result['cycle_total_seconds'] = 0
+    if action_type == 'set_water_level':
         try:
             result['value'] = float(result['value'])
         except (TypeError, ValueError):

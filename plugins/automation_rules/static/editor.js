@@ -186,6 +186,29 @@
         } else {
             valueInput.value = '';
         }
+        updateCycleFields(row, definition);
+    }
+
+    function updateCycleFields(row, definition) {
+        var settings = row.querySelector('.action-cycle-settings');
+        var mode = row.querySelector('.action-cycle-mode');
+        var pause = row.querySelector('.action-pause-seconds');
+        var total = row.querySelector('.action-cycle-total-seconds');
+        var outputAction = !!(definition && definition.type === 'output_on');
+        settings.style.display = outputAction ? 'grid' : 'none';
+        mode.disabled = !outputAction;
+        if (!outputAction) {
+            pause.disabled = true; total.disabled = true;
+            return;
+        }
+        mode.value = row.dataset.cycleMode || 'once';
+        var cyclic = mode.value === 'cycle';
+        row.querySelector('.action-pause-label').style.display = cyclic ? '' : 'none';
+        row.querySelector('.action-cycle-total-label').style.display = cyclic ? '' : 'none';
+        pause.disabled = !cyclic; total.disabled = !cyclic;
+        pause.required = cyclic; total.required = cyclic;
+        pause.value = row.dataset.pauseSeconds || '300';
+        total.value = row.dataset.cycleTotalSeconds || '3600';
     }
 
     function fillActions(row) {
@@ -202,6 +225,9 @@
             row.dataset.actionKey = this.value;
             row.dataset.target = '';
             row.dataset.actionValue = '';
+            row.dataset.cycleMode = 'once';
+            row.dataset.pauseSeconds = '300';
+            row.dataset.cycleTotalSeconds = '3600';
             updateAction(row);
         });
         row.querySelector('.action-target').addEventListener('change', function () {
@@ -209,6 +235,16 @@
         });
         row.querySelector('.action-value').addEventListener('input', function () {
             row.dataset.actionValue = this.value;
+        });
+        row.querySelector('.action-cycle-mode').addEventListener('change', function () {
+            row.dataset.cycleMode = this.value;
+            updateCycleFields(row, actionDefinition(row));
+        });
+        row.querySelector('.action-pause-seconds').addEventListener('input', function () {
+            row.dataset.pauseSeconds = this.value;
+        });
+        row.querySelector('.action-cycle-total-seconds').addEventListener('input', function () {
+            row.dataset.cycleTotalSeconds = this.value;
         });
         row.querySelector('.remove-action').addEventListener('click', function () {
             var form = row.closest('form');
@@ -224,6 +260,9 @@
         row.dataset.actionKey = '';
         row.dataset.target = '';
         row.dataset.actionValue = '';
+        row.dataset.cycleMode = 'once';
+        row.dataset.pauseSeconds = '300';
+        row.dataset.cycleTotalSeconds = '3600';
         var identifier = document.createElement('input');
         identifier.className = 'action-id'; identifier.type = 'hidden'; identifier.value = '';
         row.appendChild(identifier);
@@ -243,6 +282,25 @@
         var remove = document.createElement('button'); remove.type = 'button';
         remove.className = 'remove-action danger'; remove.textContent = '\u00d7';
         remove.title = window.automationRuleText.removeAction; row.appendChild(remove);
+        var cycleSettings = document.createElement('div');
+        cycleSettings.className = 'action-cycle-settings'; row.appendChild(cycleSettings);
+        function cycleField(className, labelText, control) {
+            var label = document.createElement('label'); label.className = className;
+            var caption = document.createElement('span'); caption.textContent = labelText;
+            label.appendChild(caption); label.appendChild(control); cycleSettings.appendChild(label);
+        }
+        var mode = document.createElement('select'); mode.className = 'action-cycle-mode';
+        mode.appendChild(new Option(window.automationRuleText.once, 'once'));
+        mode.appendChild(new Option(window.automationRuleText.cycle, 'cycle'));
+        cycleField('action-cycle-mode-label', window.automationRuleText.cycleMode, mode);
+        var pause = document.createElement('input'); pause.className = 'action-pause-seconds';
+        pause.type = 'number'; pause.min = '1'; pause.max = '86400'; pause.value = '300';
+        cycleField('action-pause-label', window.automationRuleText.pauseSeconds +
+            ' (' + window.automationRuleText.seconds + ')', pause);
+        var total = document.createElement('input'); total.className = 'action-cycle-total-seconds';
+        total.type = 'number'; total.min = '1'; total.max = '604800'; total.value = '3600';
+        cycleField('action-cycle-total-label', window.automationRuleText.cycleTotalSeconds +
+            ' (' + window.automationRuleText.seconds + ')', total);
         return row;
     }
 
@@ -254,6 +312,9 @@
             row.querySelector('.action-select').name = 'action_key_' + index;
             row.querySelector('.action-target').name = 'action_target_' + index;
             row.querySelector('.action-value').name = 'action_value_' + index;
+            row.querySelector('.action-cycle-mode').name = 'action_cycle_mode_' + index;
+            row.querySelector('.action-pause-seconds').name = 'action_pause_seconds_' + index;
+            row.querySelector('.action-cycle-total-seconds').name = 'action_cycle_total_seconds_' + index;
         });
         form.querySelector('.action-count').value = rows.length;
     }
@@ -290,7 +351,7 @@
             }
             var delivery = ('serviceWorker' in navigator) ?
                 navigator.serviceWorker.register(
-                    '/plugins/automation_rules/static/browser_sw.js?v=1.1.0'
+                    '/plugins/automation_rules/static/browser_sw.js?v=1.1.1'
                 ).then(function (registration) {
                     return registration.showNotification(
                         window.automationRuleText.browserTestTitle,

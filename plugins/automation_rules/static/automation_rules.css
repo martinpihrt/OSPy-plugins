@@ -28,6 +28,8 @@
 .action-row label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .action-row select, .action-row input { box-sizing: border-box; width: 100%; }
 .action-number { align-self: center; font-weight: bold; }
+.action-cycle-settings { grid-column: 2 / -2; display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 8px; padding: 8px; background: #eef4e9; border-radius: 8px; }
+.action-cycle-settings label { display: flex; flex-direction: column; gap: 4px; }
 .latch-control { margin-top: 12px; }
 .boolean-condition { opacity: .55; }
 .channels { display: flex; flex-wrap: wrap; gap: 12px 22px; margin: 14px 0; }
@@ -65,6 +67,8 @@
     .condition-row label { grid-column: 2; }
     .condition-row .remove-condition { grid-column: 2; justify-self: end; }
     .action-row label { grid-column: 2; }
+    .action-cycle-settings { grid-column: 2; grid-template-columns: 1fr; width: 100%; box-sizing: border-box; }
+    .action-cycle-settings label { grid-column: auto; }
     .action-row .remove-action { grid-column: 2; justify-self: end; }
     .action-number { grid-row: 1 / 5; align-self: start; }
     .condition-number { grid-row: 1 / 6; align-self: start; }
