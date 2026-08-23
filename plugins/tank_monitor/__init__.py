@@ -426,6 +426,20 @@ def stop_tank_regulation():
         log.error(NAME, _('Unable to release the tank regulation output.'))
 
 
+def reset_tank_minimum_maximum():
+    """Reset recorded extrema to the latest cached level."""
+    level = status.get('level', -1)
+    if level is None or float(level) < 0:
+        raise RuntimeError(_('The current tank level is not available.'))
+    status['minlevel'] = level
+    status['maxlevel'] = level
+    tank_options['saved_max'] = level
+    tank_options['saved_min'] = level
+    status['minlevel_datetime'] = datetime_string()
+    status['maxlevel_datetime'] = datetime_string()
+    log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
+
+
 def health():
     """Return tank level, sensor and worker state."""
     with health_lock:
@@ -527,7 +541,10 @@ def provider_capabilities():
             {'code': 'tank_monitor.sensor_error'},
             {'code': 'tank_monitor.low_level'},
         ],
-        'actions': [],
+        'actions': [
+            {'id': 'stop_regulation', 'risk': 'safety', 'parameters': {}},
+            {'id': 'reset_minimum_maximum', 'risk': 'control', 'parameters': {}},
+        ],
     }
 
 
@@ -592,6 +609,24 @@ def provider_snapshot():
         }],
         'events': [], 'alerts': alerts,
     }
+
+
+def provider_execute_action(action_id, resource_id='', parameters=None):
+    """Execute a declared Water Tank Monitor action."""
+    parameters = {} if parameters is None else parameters
+    if resource_id not in ('', 'tank-1'):
+        raise ValueError(_('Selected tank resource does not exist.'))
+    if not isinstance(parameters, dict) or parameters:
+        raise ValueError(_('The selected tank action does not accept parameters.'))
+    if action_id == 'stop_regulation':
+        stop_tank_regulation()
+        return {'status': 'ok',
+                'message': _('Water Tank Monitor regulation was stopped.')}
+    if action_id == 'reset_minimum_maximum':
+        reset_tank_minimum_maximum()
+        return {'status': 'ok',
+                'message': _('Recorded tank minimum and maximum were reset.')}
+    raise ValueError(_('Unsupported Water Tank Monitor provider action.'))
 
 
 def _mobile_tank_series(from_time=None, to_time=None, max_points=400):
@@ -1156,13 +1191,7 @@ class settings_page(ProtectedPage):
 
             if sender is not None and reset:
                 verify_csrf(qdict)
-                status['minlevel'] = status['level']
-                status['maxlevel'] = status['level']
-                tank_options['saved_max'] = status['level']
-                tank_options['saved_min'] = status['level']
-                status['minlevel_datetime'] = datetime_string()
-                status['maxlevel_datetime'] = datetime_string()
-                log.info(NAME, datetime_string() + ': ' + _('Minimum and maximum has reseted.'))
+                reset_tank_minimum_maximum()
                 raise web.seeother(plugin_url(settings_page), True)
 
             if sender is not None and 'dt_from' in qdict and 'dt_to' in qdict:

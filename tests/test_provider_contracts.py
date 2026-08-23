@@ -13,6 +13,8 @@ PROVIDERS = (
     'pressure_monitor',
     'tank_monitor',
     'current_loop_tanks_monitor',
+    'venetian_blind',
+    'ospy_backup',
 )
 IDENTIFIER = re.compile(r'^[a-z][a-z0-9_.-]{0,127}$')
 
@@ -75,6 +77,8 @@ class ProviderAdapterContractTests(unittest.TestCase):
             with self.subTest(plugin=plugin):
                 manifest = json.loads((ROOT / 'plugins' / plugin / 'plugin.json').read_text(encoding='utf-8-sig'))
                 self.assertEqual(manifest.get('provider'), {'contract': 'ospy.provider.v1'})
+                self.assertIn('min', manifest.get('ospy', {}))
+                self.assertNotIn('min_version', manifest.get('ospy', {}))
                 functions = provider_functions(plugin)
                 declaration = functions['provider_capabilities']()
                 self.assertEqual(declaration['contract'], 'ospy.provider.v1')
@@ -85,6 +89,189 @@ class ProviderAdapterContractTests(unittest.TestCase):
                 self.assertIsInstance(declaration['alerts'], list)
                 self.assertIsInstance(declaration['actions'], list)
                 json.dumps(declaration, allow_nan=False)
+
+    def test_water_meter_declares_and_executes_reset_action(self):
+        source = provider_source('water_meter')
+        tree = ast.parse(source)
+        selected = [
+            node for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name in (
+                'provider_capabilities', '_reset_total_consumption',
+                'provider_execute_action')
+        ]
+        persisted = []
+        sender = DummyWorker({
+            'total_liters': 12.5, 'minute_liters': 2.0,
+            'hour_liters': 7.0,
+        })
+        sender._persist_total = lambda: persisted.append(True)
+        namespace = {
+            '_': lambda value: value, 'options': {
+                'sum': 12.5, 'log_date_last_reset': 'old'},
+            'water_sender': sender,
+            'datetime_string': lambda: '2026-08-23 12:00:00',
+            'log': type('Log', (), {'info': staticmethod(lambda *args: None)}),
+            'NAME': 'Water Meter',
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]),
+                     'water_meter', 'exec'), namespace)
+
+        declaration = namespace['provider_capabilities']()
+        self.assertEqual(declaration['actions'], [{
+            'id': 'reset_total_consumption', 'risk': 'control',
+            'parameters': {},
+        }])
+        result = namespace['provider_execute_action'](
+            'reset_total_consumption', resource_id='main', parameters={})
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['data']['previous_total_liters'], 12.5)
+        self.assertEqual(sender.status['total_liters'], 0.0)
+        self.assertEqual(sender.status['minute_liters'], 0.0)
+        self.assertEqual(sender.status['hour_liters'], 0.0)
+        self.assertEqual(persisted, [True])
+
+    def test_tank_monitor_executes_reset_extrema_action(self):
+        source = provider_source('tank_monitor')
+        tree = ast.parse(source)
+        selected = [node for node in tree.body
+                    if isinstance(node, ast.FunctionDef) and node.name in (
+                        'reset_tank_minimum_maximum', 'provider_execute_action')]
+        status = {'level': 42, 'minlevel': 10, 'maxlevel': 90}
+        settings = {'saved_min': 10, 'saved_max': 90}
+        namespace = {
+            '_': lambda value: value, 'status': status,
+            'tank_options': settings,
+            'datetime_string': lambda: '2026-08-23 12:00:00',
+            'log': type('Log', (), {
+                'info': staticmethod(lambda *args: None)}), 'NAME': 'Tank',
+            'stop_tank_regulation': lambda: None,
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]),
+                     'tank_monitor', 'exec'), namespace)
+        result = namespace['provider_execute_action'](
+            'reset_minimum_maximum', 'tank-1', {})
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(status['minlevel'], 42)
+        self.assertEqual(status['maxlevel'], 42)
+        self.assertEqual(settings['saved_min'], 42)
+        self.assertEqual(settings['saved_max'], 42)
+
+    def test_current_loop_tank_action_stops_only_selected_regulation(self):
+        source = provider_source('current_loop_tanks_monitor')
+        tree = ast.parse(source)
+        selected = [node for node in tree.body
+                    if isinstance(node, ast.FunctionDef) and node.name in (
+                        'stop_tank_regulation', 'provider_execute_action')]
+        intervals = [
+            {'station': 3, 'program_name': 'Tank B'},
+            {'station': 4, 'program_name': 'Other'},
+        ]
+        finished = []
+        deactivated = []
+        fake_log = type('Log', (), {
+            'active_runs': staticmethod(lambda: list(intervals)),
+            'finish_run': staticmethod(lambda item: finished.append(item)),
+            'info': staticmethod(lambda *args: None),
+        })
+        namespace = {
+            '_': lambda value: value,
+            'plugin_options': {
+                'en_tank2': True, 'label2': 'Tank B',
+                'reg_out_tank2': 3, 'mini_reg_out_tank2': 4,
+            },
+            'tanks': {'label': ['A', 'Tank B', 'C', 'D']},
+            'log': fake_log, 'NAME': 'Current Loop',
+            'stations': type('Stations', (), {
+                'deactivate': staticmethod(lambda sid: deactivated.append(sid))}),
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]),
+                     'current_loop', 'exec'), namespace)
+        result = namespace['provider_execute_action'](
+            'stop_regulation', 'tank-2', {})
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['data']['stopped_runs'], 1)
+        self.assertEqual(deactivated, [3])
+        self.assertEqual(finished, [intervals[0]])
+
+    def test_venetian_blind_provider_action_reuses_mobile_command(self):
+        source = provider_source('venetian_blind')
+        tree = ast.parse(source)
+        selected = [node for node in tree.body
+                    if isinstance(node, ast.FunctionDef) and node.name in (
+                        '_blind_resource_id', 'provider_execute_action')]
+        calls = []
+        blinds = [{'uid': 'blind-a', 'enabled': True}]
+        namespace = {
+            '_': lambda value: value, 'hashlib': __import__('hashlib'),
+            'get_blinds': lambda: blinds,
+            'mobile_action': lambda action, payload: (
+                calls.append((action, payload)) or {'status': 'ok'}),
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]),
+                     'venetian_blind', 'exec'), namespace)
+        resource_id = namespace['_blind_resource_id']('blind-a')
+        result = namespace['provider_execute_action'](
+            'tilt_2', resource_id, {})
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(calls, [('tilt2', {'blind_uid': 'blind-a'})])
+
+    def test_ospy_backup_provider_action_uses_existing_backup_path(self):
+        source = provider_source('ospy_backup')
+        tree = ast.parse(source)
+        selected = [node for node in tree.body
+                    if isinstance(node, ast.FunctionDef) and
+                    node.name == 'provider_execute_action']
+        namespace = {
+            '_': lambda value: value, 'get_backup': lambda: True,
+            'health_lock': DummyLock(),
+            'health_state': {'last_file': 'backup.zip', 'last_size': 123},
+            'datetime_string': lambda: '2026-08-23 12:00:00',
+            'log': type('Log', (), {
+                'info': staticmethod(lambda *args: None)}), 'NAME': 'Backup',
+        }
+        exec(compile(ast.Module(body=selected, type_ignores=[]),
+                     'ospy_backup', 'exec'), namespace)
+        result = namespace['provider_execute_action'](
+            'create_backup', 'main', {})
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['data'], {'filename': 'backup.zip', 'size': 123})
+
+    def test_venetian_blind_snapshot_is_cached_and_valid(self):
+        functions = provider_functions('venetian_blind')
+        functions.update({
+            '_': lambda value: value,
+            'plugin_options': {'use_control': True},
+            'get_blinds': lambda: [{
+                'uid': 'abc', 'enabled': True, 'label': 'Kitchen'}],
+            'sender': DummyWorker({
+                'details': {0: {'reachable': True, 'position': 55}},
+                'bstatus': {0: 'stopped'},
+            }),
+            'health_lock': DummyLock(),
+            'health_state': {'last_status': 100.0},
+            '_blind_resource_id': lambda uid: 'blind-' + uid,
+        })
+        result = functions['provider_snapshot']()
+        assert_snapshot(self, result, 'venetian_blind')
+        self.assertEqual(result['resources'][0]['id'], 'blind-abc')
+        self.assertEqual(result['resources'][0]['values'][0]['value'], 55.0)
+
+    def test_ospy_backup_snapshot_is_cached_and_valid(self):
+        functions = provider_functions('ospy_backup')
+        functions.update({
+            '_': lambda value: value, 'sender': object(),
+            'health_lock': DummyLock(),
+            'health_state': {
+                'running': False, 'last_success': 100.0,
+                'last_file': 'backup.zip', 'last_size': 123,
+                'last_error': 0, 'last_error_message': '',
+            },
+        })
+        result = functions['provider_snapshot']()
+        assert_snapshot(self, result, 'ospy_backup')
+        values = {item['id']: item for item in result['resources'][0]['values']}
+        self.assertIs(values['in_progress']['value'], False)
+        self.assertEqual(values['last_backup_size']['value'], 123)
 
     def test_snapshot_functions_do_not_call_hardware_or_existing_health(self):
         forbidden = {

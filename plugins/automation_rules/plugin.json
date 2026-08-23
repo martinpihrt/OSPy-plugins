@@ -3,7 +3,7 @@
   "id": "automation_rules",
   "name": "Automation Rules",
   "menu": "Package: Automation Rules",
-  "version": "1.1.1",
+  "version": "1.1.3",
   "description": "Builds graphical AND/OR rules over cached provider and OSPy values, sends detailed notifications and optionally performs guarded control actions with incident locking.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
@@ -22,6 +22,8 @@
     {"id": "pressure_monitor", "required": false},
     {"id": "tank_monitor", "required": false},
     {"id": "current_loop_tanks_monitor", "required": false},
+    {"id": "venetian_blind", "required": false},
+    {"id": "ospy_backup", "required": false},
     {"id": "email_notifications", "required": false},
     {"id": "email_notifications_ssl", "required": false},
     {"id": "telegram_bot", "required": false}

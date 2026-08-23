@@ -30,7 +30,7 @@ class SelectableI2cAddressUiTests(unittest.TestCase):
     def test_inline_alert_release_versions_are_incremented(self):
         expected = {
             'wind_monitor': '1.2.1',
-            'water_meter': '1.2.0',
+            'water_meter': '1.2.1',
         }
         for plugin, version in expected.items():
             with self.subTest(plugin=plugin):

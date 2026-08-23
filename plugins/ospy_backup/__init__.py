@@ -10,6 +10,7 @@ import time
 from threading import Lock
 import os
 import mimetypes
+import datetime
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir, get_runtime
 from ospy.log import log
@@ -163,6 +164,80 @@ def mobile_cards(**_kwargs):
     ]
     return [{'id': 'plugin_backup', 'kind': 'metrics',
              'title': _('Plug-in data backup'), 'metrics': metrics}]
+
+
+def _provider_timestamp(epoch):
+    return (datetime.datetime.utcfromtimestamp(epoch).isoformat() + 'Z') if epoch else None
+
+
+def provider_capabilities():
+    """Describe cached backup state and the explicit backup action."""
+    return {
+        'contract': 'ospy.provider.v1', 'provider_id': 'ospy_backup',
+        'resource_types': ['backup'],
+        'values': [
+            {'id': 'in_progress', 'quantity': 'state', 'unit': '',
+             'value_type': 'boolean'},
+            {'id': 'last_backup_size', 'quantity': 'data_size', 'unit': 'B',
+             'value_type': 'integer'},
+        ],
+        'events': [], 'alerts': [],
+        'actions': [
+            {'id': 'create_backup', 'risk': 'control', 'parameters': {}},
+        ],
+    }
+
+
+def provider_snapshot():
+    """Return cached backup state without creating or scanning an archive."""
+    with health_lock:
+        state = dict(health_state)
+    observed_at = _provider_timestamp(state['last_success'])
+    provider_status = ('unavailable' if sender is None else
+                       'error' if state['last_error'] >= state['last_success'] and
+                       state['last_error'] else
+                       'stale' if not state['last_success'] else 'ok')
+    return {
+        'contract': 'ospy.provider.v1', 'provider_id': 'ospy_backup',
+        'status': provider_status, 'observed_at': observed_at,
+        'resources': [{
+            'id': 'main', 'type': 'backup', 'status': provider_status,
+            'name': _('Plug-in data backup'),
+            'values': [
+                {'id': 'in_progress', 'quantity': 'state',
+                 'value': bool(state['running']), 'unit': '',
+                 'value_type': 'boolean', 'quality': 'measured',
+                 'observed_at': observed_at},
+                {'id': 'last_backup_size', 'quantity': 'data_size',
+                 'value': int(state['last_size']), 'unit': 'B',
+                 'value_type': 'integer', 'quality': 'measured',
+                 'observed_at': observed_at},
+            ],
+            'alerts': [],
+        }],
+        'events': [], 'alerts': [],
+    }
+
+
+def provider_execute_action(action_id, resource_id='', parameters=None):
+    """Create a plug-in data backup through the existing guarded path."""
+    parameters = {} if parameters is None else parameters
+    if action_id != 'create_backup':
+        raise ValueError(_('Unsupported OSPy Backup provider action.'))
+    if resource_id not in ('', 'main'):
+        raise ValueError(_('Selected backup resource does not exist.'))
+    if not isinstance(parameters, dict) or parameters:
+        raise ValueError(_('Create backup does not accept parameters.'))
+    if not get_backup():
+        raise RuntimeError(_('Plug-in data backup could not be created.'))
+    with health_lock:
+        filename = health_state['last_file']
+        size = int(health_state['last_size'])
+    log.info(NAME, datetime_string() + '\n' + _('Created all backup files OK.'))
+    return {
+        'status': 'ok', 'message': _('Plug-in data backup was created.'),
+        'data': {'filename': filename, 'size': size},
+    }
 
 
 def get_backup():

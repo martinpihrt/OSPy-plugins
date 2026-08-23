@@ -481,6 +481,32 @@ def stop():
             sender = None
 
 
+def stop_tank_regulation(tank_index=None):
+    """Release regulation runs created for one tank or for every tank."""
+    indexes = range(4) if tank_index is None else (int(tank_index),)
+    stopped = 0
+    for index in indexes:
+        if not 0 <= index < 4:
+            raise ValueError(_('Selected tank resource does not exist.'))
+        label = str(plugin_options.get('label{}'.format(index + 1), '') or
+                    tanks.get('label', [''] * 4)[index])
+        station_ids = {
+            int(plugin_options.get('reg_out_tank{}'.format(index + 1), 0)),
+            int(plugin_options.get('mini_reg_out_tank{}'.format(index + 1), 0)),
+        }
+        matching = [
+            interval for interval in list(log.active_runs())
+            if interval.get('station') in station_ids and
+            interval.get('program_name') == label
+        ]
+        for interval in matching:
+            stations.deactivate(interval['station'])
+            log.finish_run(interval)
+            stopped += 1
+    log.info(NAME, _('Tank regulation was stopped by a provider action.'))
+    return stopped
+
+
 def record_measurement_success():
     with health_lock:
         health_state['last_success'] = time.time()
@@ -565,7 +591,9 @@ def provider_capabilities():
             {'code': 'current_loop_tanks_monitor.channel_error'},
             {'code': 'current_loop_tanks_monitor.low_level'},
         ],
-        'actions': [],
+        'actions': [
+            {'id': 'stop_regulation', 'risk': 'safety', 'parameters': {}},
+        ],
     }
 
 
@@ -638,6 +666,33 @@ def provider_snapshot():
         'provider_id': 'current_loop_tanks_monitor',
         'status': provider_status, 'observed_at': observed_at,
         'resources': resources, 'events': [], 'alerts': all_alerts,
+    }
+
+
+def provider_execute_action(action_id, resource_id='', parameters=None):
+    """Execute a declared Current Loop Tanks Monitor action."""
+    parameters = {} if parameters is None else parameters
+    if action_id != 'stop_regulation':
+        raise ValueError(_('Unsupported Current Loop Tanks Monitor provider action.'))
+    if not isinstance(parameters, dict) or parameters:
+        raise ValueError(_('Stop regulation does not accept parameters.'))
+    if resource_id:
+        if not resource_id.startswith('tank-'):
+            raise ValueError(_('Selected tank resource does not exist.'))
+        try:
+            tank_index = int(resource_id.split('-', 1)[1]) - 1
+        except (TypeError, ValueError):
+            raise ValueError(_('Selected tank resource does not exist.'))
+        if not 0 <= tank_index < 4 or not plugin_options.get(
+                'en_tank{}'.format(tank_index + 1), False):
+            raise ValueError(_('Selected tank resource does not exist.'))
+    else:
+        tank_index = None
+    stopped = stop_tank_regulation(tank_index)
+    return {
+        'status': 'ok',
+        'message': _('Current Loop tank regulation was stopped.'),
+        'data': {'stopped_runs': stopped},
     }
 
 

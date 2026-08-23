@@ -29,7 +29,7 @@ NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.1.1'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.1.3'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,
@@ -366,11 +366,30 @@ def _action_catalog(snapshots=None):
             targets.insert(0, {'value': '', 'label': _('Provider default')})
             for action in capabilities.get('actions', []):
                 action_id = action.get('id', '')
+                action_label = {
+                    ('water_meter', 'reset_total_consumption'):
+                        _('Reset Water Meter total consumption'),
+                    ('tank_monitor', 'stop_regulation'):
+                        _('Stop Water Tank Monitor regulation'),
+                    ('tank_monitor', 'reset_minimum_maximum'):
+                        _('Reset recorded tank minimum and maximum'),
+                    ('current_loop_tanks_monitor', 'stop_regulation'):
+                        _('Stop Current Loop tank regulation'),
+                    ('ospy_backup', 'create_backup'):
+                        _('Create plug-in data backup'),
+                    ('venetian_blind', 'open'): _('Open Venetian blind'),
+                    ('venetian_blind', 'stop'): _('Stop Venetian blind'),
+                    ('venetian_blind', 'close'): _('Close Venetian blind'),
+                    ('venetian_blind', 'tilt_1'): _('Set Venetian blind tilt 1'),
+                    ('venetian_blind', 'tilt_2'): _('Set Venetian blind tilt 2'),
+                    ('venetian_blind', 'tilt_3'): _('Set Venetian blind tilt 3'),
+                    ('venetian_blind', 'tilt_4'): _('Set Venetian blind tilt 4'),
+                }.get((module, action_id), '{} – {}'.format(module, action_id))
                 result.append({
                     'key': 'provider::{}::{}'.format(module, action_id),
                     'type': 'provider_action',
                     'provider_id': module, 'provider_action_id': action_id,
-                    'label': '{} – {}'.format(module, action_id),
+                    'label': action_label,
                     'targets': targets, 'target_label': _('Resource'),
                     'value_kind': 'parameters',
                     'value_label': _('Parameters (JSON object)'),
@@ -396,6 +415,11 @@ def _display_history():
         'test_not_matched': _('Test did not match'),
         'notification_test': _('Test notification'),
         'unlocked': _('Incident unlocked'),
+        'cycle_started': _('Output cycle started'),
+        'cycle_paused': _('Output cycle paused'),
+        'cycle_resumed': _('Output cycle started another run'),
+        'cycle_stopped': _('Output cycle stopped'),
+        'cycle_error': _('Output cycle failed'),
     }
     channel_labels = {
         'home': _('OSPy Home window'), 'browser': _('Browser notification'),
@@ -422,8 +446,10 @@ def _display_history():
             for value in item.get('results', [])
         )
         record['actions_text'] = ', '.join(
-            '{}: {}'.format(value.get('label', value.get('type', _('Unknown'))),
-                            status_labels.get(value.get('status'), _('Unknown')))
+            '{}: {}{}'.format(
+                value.get('label', value.get('type', _('Unknown'))),
+                status_labels.get(value.get('status'), _('Unknown')),
+                ' – {}'.format(value.get('detail')) if value.get('detail') else '')
             for value in item.get('action_results', [])
         )
         result.append(record)
@@ -727,7 +753,39 @@ def _cycle_conflict(station_id, exclude_key=''):
                      if key != exclude_key and item.get('station_id') == station_id), None)
 
 
-def _drop_cycle(key, reason='', stop_output=True):
+def _cycle_event_label(event):
+    return {
+        'cycle_started': _('Output cycle started'),
+        'cycle_paused': _('Output cycle paused'),
+        'cycle_resumed': _('Output cycle started another run'),
+        'cycle_stopped': _('Output cycle stopped'),
+        'cycle_error': _('Output cycle failed'),
+    }.get(event, _('Output cycle'))
+
+
+def _append_cycle_history(cycle, event, status='executed', detail=''):
+    """Record every runtime cycle transition in the bounded action history."""
+    try:
+        append_history({
+            'timestamp': int(time.time()), 'datetime': datetime_string(),
+            'rule_id': cycle.get('rule_id', ''),
+            'rule_name': cycle.get('rule_name', ''), 'event': event,
+            'matched': event not in ('cycle_stopped', 'cycle_error'),
+            'available': event != 'cycle_error', 'test_mode': False, 'results': [],
+            'action_results': [{
+                'action_id': cycle.get('action_id', ''), 'type': 'output_cycle',
+                'label': _cycle_event_label(event), 'status': status,
+                'detail': detail or cycle.get('label', ''),
+            }],
+            'conditions': [],
+        })
+    except Exception:
+        log.error(NAME, _('Unable to save output cycle history') + ':\n' +
+                  traceback.format_exc())
+
+
+def _drop_cycle(key, reason='', stop_output=True, event='cycle_stopped',
+                status='executed'):
     with cycle_lock:
         cycle = cycle_runtime.pop(key, None)
     if cycle is None:
@@ -739,6 +797,9 @@ def _drop_cycle(key, reason='', stop_output=True):
     log.info(NAME, '{}: {} ({})'.format(
         _('Output cycle stopped'), cycle.get('label', key),
         reason or _('completed')))
+    _append_cycle_history(
+        cycle, event, status,
+        '{} ({})'.format(cycle.get('label', key), reason or _('completed')))
     return True
 
 
@@ -774,7 +835,7 @@ def _register_output_cycle(rule, action, now=None):
                          if other_key != key and item.get('station_id') == station_id), None)
         if conflict is not None:
             raise RuntimeError(_('The selected output is already controlled by another cycle.'))
-        cycle_runtime[key] = {
+        cycle = {
             'rule_id': rule['id'], 'rule_name': rule['name'],
             'action_id': action['id'], 'station_id': station_id,
             'action': dict(action), 'phase': 'on', 'started_at': now,
@@ -782,9 +843,11 @@ def _register_output_cycle(rule, action, now=None):
             'deadline': now + int(action['cycle_total_seconds']),
             'label': '{} / {}'.format(rule['name'], _action_label(action)),
         }
+        cycle_runtime[key] = cycle
     with health_lock:
         health_state['cycle_starts'] += 1
     log.info(NAME, '{}: {}'.format(_('Output cycle started'), rule['name']))
+    _append_cycle_history(cycle, 'cycle_started')
 
 
 def _advance_rule_cycles(rule, evaluation, now):
@@ -826,6 +889,7 @@ def _advance_rule_cycles(rule, evaluation, now):
             cycle['phase'] = 'pause'
             cycle['next_at'] = pause_end
             log.info(NAME, '{}: {}'.format(_('Output cycle pause'), cycle['label']))
+            _append_cycle_history(cycle, 'cycle_paused')
         if cycle['phase'] == 'pause' and now >= cycle['next_at']:
             remaining = max(0, int(cycle['deadline'] - now))
             if remaining <= 0:
@@ -836,7 +900,9 @@ def _advance_rule_cycles(rule, evaluation, now):
             try:
                 _execute_control_action(action)
             except Exception as error:
-                _drop_cycle(key, '{}: {}'.format(type(error).__name__, error))
+                _drop_cycle(
+                    key, '{}: {}'.format(type(error).__name__, error),
+                    event='cycle_error', status='error')
                 with health_lock:
                     health_state['control_errors'] += 1
                     health_state['last_error'] = time.time()
@@ -854,6 +920,7 @@ def _advance_rule_cycles(rule, evaluation, now):
                 health_state['control_actions'] += 1
             log.info(NAME, '{}: {}'.format(_('Output cycle started another run'),
                                             cycle['label']))
+            _append_cycle_history(cycle, 'cycle_resumed')
 
 
 def _cancel_orphan_cycles(rules):

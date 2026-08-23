@@ -3,6 +3,8 @@ Venetian Blind Readme
 
 Tested in Python 3+
 
+Version 1.2.4 implements `ospy.provider.v1` and exposes every enabled blind as a cached resource with explicit open, stop, close and tilt 1–4 actions for Automation Rules. The actions reuse the same validated command path as Mobile API v1.
+
 The plug-in includes a `plugin.json` manifest and reports its worker, configured and reachable blinds, latest status update, command and errors through the OSPy system health interface. Mobile API v1 exposes one native status card for every configured blind, including its current state, position, connection and Shelly profile. It also declares bounded open, stop, close and tilt actions for clients that support per-card manual controls.
 
 This plugin can be used to control blinds and shutters through an API and a hardware module such as a Shelly relay. The blind motor is connected to a Shelly relay or a similar device with separate outputs for the up and down directions. The relay supports control through its local REST or RPC API and can also measure consumption.

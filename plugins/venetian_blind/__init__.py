@@ -9,6 +9,7 @@ import os
 import mimetypes
 import uuid
 import datetime
+import hashlib
 from collections import deque
 
 from ospy.helpers import datetime_string, verify_csrf
@@ -256,6 +257,105 @@ def mobile_status():
         'summary': result.get('summary', ''),
         'updated': datetime_string(time.localtime(updated)) if updated else '',
     }
+
+
+def _provider_timestamp(epoch):
+    return (datetime.datetime.utcfromtimestamp(epoch).isoformat() + 'Z') if epoch else None
+
+
+def _blind_resource_id(uid):
+    return 'blind-{}'.format(
+        hashlib.sha256(str(uid).encode('utf-8')).hexdigest()[:24])
+
+
+def _provider_number(value):
+    try:
+        number = float(value)
+        return None if number != number or number in (float('inf'), float('-inf')) else number
+    except (TypeError, ValueError):
+        return None
+
+
+def provider_capabilities():
+    """Describe cached blind state and explicitly supported commands."""
+    return {
+        'contract': 'ospy.provider.v1',
+        'provider_id': 'venetian_blind',
+        'resource_types': ['blind'],
+        'values': [
+            {'id': 'position', 'quantity': 'position', 'unit': '%', 'value_type': 'number'},
+            {'id': 'reachable', 'quantity': 'connectivity', 'unit': '', 'value_type': 'boolean'},
+        ],
+        'events': [], 'alerts': [],
+        'actions': [
+            {'id': action_id, 'risk': 'control', 'parameters': {}}
+            for action_id in ('open', 'stop', 'close', 'tilt_1', 'tilt_2',
+                              'tilt_3', 'tilt_4')
+        ],
+    }
+
+
+def provider_snapshot():
+    """Return cached blind state without sending another network request."""
+    blinds = get_blinds()
+    details = sender.status.get('details', {}) if sender is not None else {}
+    with health_lock:
+        observed_at = _provider_timestamp(health_state['last_status'])
+    provider_status = ('disabled' if not plugin_options.get('use_control') else
+                       'unavailable' if sender is None or not sender.is_alive() else
+                       'stale' if not observed_at else 'ok')
+    resources = []
+    for index, blind in enumerate(blinds):
+        if not blind.get('enabled', True):
+            continue
+        detail = details.get(index, {})
+        reachable = bool(detail.get('reachable'))
+        position = detail.get('position')
+        resource_status = ('disabled' if provider_status == 'disabled' else
+                           'unavailable' if not reachable else provider_status)
+        resources.append({
+            'id': _blind_resource_id(blind['uid']), 'type': 'blind',
+            'name': blind.get('label') or _('Venetian blind'),
+            'status': resource_status,
+            'values': [
+                {'id': 'position', 'quantity': 'position',
+                 'value': _provider_number(position),
+                 'unit': '%', 'value_type': 'number', 'quality': 'measured',
+                 'observed_at': observed_at},
+                {'id': 'reachable', 'quantity': 'connectivity',
+                 'value': reachable if observed_at else None,
+                 'unit': '', 'value_type': 'boolean', 'quality': 'measured',
+                 'observed_at': observed_at},
+            ],
+            'alerts': [],
+        })
+    return {
+        'contract': 'ospy.provider.v1', 'provider_id': 'venetian_blind',
+        'status': provider_status, 'observed_at': observed_at,
+        'resources': resources, 'events': [], 'alerts': [],
+    }
+
+
+def provider_execute_action(action_id, resource_id='', parameters=None):
+    """Execute a declared blind command through the existing control path."""
+    parameters = {} if parameters is None else parameters
+    targets = {
+        'open': 'open', 'stop': 'stop', 'close': 'closed',
+        'tilt_1': 'tilt1', 'tilt_2': 'tilt2',
+        'tilt_3': 'tilt3', 'tilt_4': 'tilt4',
+    }
+    if action_id not in targets:
+        raise ValueError(_('Unknown command.'))
+    if not isinstance(parameters, dict) or parameters:
+        raise ValueError(_('The selected blind action does not accept parameters.'))
+    blind = next((item for item in get_blinds()
+                  if item.get('enabled', True) and
+                  _blind_resource_id(item['uid']) == resource_id), None)
+    if blind is None:
+        raise ValueError(_('Blind index is invalid.'))
+    return mobile_action(targets[action_id], {
+        'blind_uid': blind['uid'],
+    })
 
 
 def mobile_cards(**_kwargs):
