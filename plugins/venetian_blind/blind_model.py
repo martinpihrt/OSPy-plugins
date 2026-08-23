@@ -132,6 +132,15 @@ def aggregate_blind_states(details, enabled_indices):
     }
 
 
+def shading_arm_state(armed, was_all_open, all_open):
+    """Arm shading once on a transition to a confirmed all-open state."""
+    if all_open and not was_all_open:
+        armed = True
+    elif not all_open:
+        armed = False
+    return bool(armed), bool(all_open)
+
+
 def run_now_deadline(program):
     """Return the final interval end of a Run-Now program, if it has work."""
     if program is None or not getattr(program, 'start', None):

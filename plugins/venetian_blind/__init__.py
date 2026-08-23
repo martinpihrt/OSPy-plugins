@@ -26,7 +26,7 @@ from urllib.request import urlopen
 from urllib.parse import quote_plus
 from urllib.parse import urlparse
 
-from .blind_model import aggregate_blind_states, command_url, default_blind, in_time_window, parse_status, position_state, run_now_deadline, sensor_temperature, status_url, stored_blinds, wind_window_state
+from .blind_model import aggregate_blind_states, command_url, default_blind, in_time_window, parse_status, position_state, run_now_deadline, sensor_temperature, shading_arm_state, status_url, stored_blinds, wind_window_state
 
 NAME = 'Venetian blind'      ### name for plugin in plugin manager ###
 MENU =  _(u'Package: Venetian blind')
@@ -87,7 +87,8 @@ class Sender(Thread):
         self._wind_samples = deque(maxlen=10000)
         self._last_wind_measurement = None
         self._wind_action_sent = False
-        self._temperature_action_sent = False
+        self._shading_armed = False
+        self._last_all_open = False
         self._last_active_programs = set()
         self._program_queue = deque()
         self._program_reason = ''
@@ -253,7 +254,7 @@ def mobile_status():
         'status': result.get('status', 'unknown'),
         'title': _('Venetian blind'),
         'summary': result.get('summary', ''),
-        'updated': updated,
+        'updated': datetime_string(time.localtime(updated)) if updated else '',
     }
 
 
@@ -575,7 +576,8 @@ def automation_cycle(worker):
         worker._wind_samples.clear()
         worker._last_wind_measurement = None
         worker._wind_action_sent = False
-        worker._temperature_action_sent = False
+        worker._shading_armed = False
+        worker._last_all_open = False
         return
     _start_next_program(worker)
     normalize_options()
@@ -605,14 +607,14 @@ def automation_cycle(worker):
     if active_programs != worker._last_active_programs:
         if active_programs.intersection(plugin_options['open_programs']):
             worker._wind_action_sent = True
-        elif active_programs.intersection(plugin_options['close_programs']):
-            worker._temperature_action_sent = True
         worker._last_active_programs = active_programs
     details = worker.status.get('details', {})
     enabled_indices = [index for index, blind in enumerate(get_blinds()) if blind.get('enabled', True)]
     blind_state = aggregate_blind_states(details, enabled_indices)
     all_open = blind_state['all_open']
     all_closed = blind_state['all_closed']
+    worker._shading_armed, worker._last_all_open = shading_arm_state(
+        worker._shading_armed, worker._last_all_open, all_open)
     worker.status['automation'] = {
         'temperature': _temperature_value(),
         'wind': worker._wind_samples[-1][1] if worker._wind_samples else None,
@@ -624,10 +626,10 @@ def automation_cycle(worker):
         'known_blinds': blind_state['known_count'],
         'all_open': all_open,
         'all_closed': all_closed,
+        'shading_armed': worker._shading_armed,
     }
     if wind_state['strong']:
         _cancel_lowering_actions(worker)
-        worker._temperature_action_sent = False
         if all_open:
             worker._wind_action_sent = False
         elif not worker._wind_action_sent:
@@ -638,13 +640,10 @@ def automation_cycle(worker):
     allowed = in_time_window(now.hour * 60 + now.minute, _time_minutes(plugin_options.get('automation_start'), 480), _time_minutes(plugin_options.get('automation_end'), 1200))
     temperature = worker.status['automation']['temperature']
     shading = temperature is not None and temperature >= plugin_options['temperature_limit'] and wind_state['safe'] and allowed
-    if shading:
-        if all_closed:
-            worker._temperature_action_sent = False
-        elif not worker._temperature_action_sent:
-            worker._temperature_action_sent = _run_programs(worker, plugin_options['close_programs'], _('Temperature shading'))
-    else:
-        worker._temperature_action_sent = False
+    if shading and worker._shading_armed:
+        if _run_programs(worker, plugin_options['close_programs'], _('Temperature shading')):
+            worker._shading_armed = False
+            worker.status['automation']['shading_armed'] = False
 
 def _save_blinds(blinds):
     plugin_options['blinds'] = blinds

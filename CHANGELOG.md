@@ -2,6 +2,9 @@
 
 August 23 2026
 --------------
+(Martin Pihrt) - Venetian Blind v1.2.3<br/>
+Changed temperature shading to arm only on a confirmed transition of every enabled blind to fully open. One lowering action consumes the armed state, so manually tilting or partially moving a blind afterward no longer causes repeated closing while temperature remains high; a later full opening by strong-wind protection or by the user rearms the next cycle. Changed Mobile API status `updated` from a raw Unix timestamp to the same `YYYY-MM-DD HH:MM:SS` text used by other plug-ins. Updated help, READMEs, cache versions and regression coverage without changing gettext catalogs.
+
 (Martin Pihrt) - Venetian Blind v1.2.2<br/>
 Fixed complete blind records being discarded after an OSPy restart, update or live plug-in reload because the saved list did not match the `None` default type. The complete Gen1/Gen2/Custom configuration is now stored only as a structured list in OSPy `PluginOptions`; old parallel settings and migration paths were removed, and the plug-in creates no configuration JSON file. Profiles, hosts, labels and all tilt positions, labels and URLs now persist. Fixed the automation queue remaining blocked by OSPy's completed Run-Now object after its first raising or lowering program, so temperature shading and strong-wind protection can alternate repeatedly without restarting OSPy. Added a native Mobile API v1 status card for every configured blind with state, position, connection and profile data, plus declared open, stop, close and tilt actions for clients that support manual card controls. Updated both READMEs, the manifest and regression coverage without changing gettext catalogs.
 

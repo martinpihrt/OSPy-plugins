@@ -113,6 +113,19 @@ class VenetianBlindModelTests(unittest.TestCase):
         details[8] = {'reachable': True, 'state': 'open'}
         self.assertTrue(model.aggregate_blind_states(details, range(9))['all_open'])
 
+    def test_shading_rearms_only_after_all_blinds_transition_to_open(self):
+        armed, was_open = model.shading_arm_state(False, False, True)
+        self.assertTrue(armed)
+        armed = False  # One automatic lowering action consumes the arm.
+        armed, was_open = model.shading_arm_state(armed, was_open, True)
+        self.assertFalse(armed)
+        armed, was_open = model.shading_arm_state(armed, was_open, False)
+        self.assertFalse(armed)  # Closed, tilted and intermediate are equivalent.
+        armed, was_open = model.shading_arm_state(armed, was_open, False)
+        self.assertFalse(armed)
+        armed, was_open = model.shading_arm_state(armed, was_open, True)
+        self.assertTrue(armed)  # Wind or a manual full opening rearms shading.
+
 
 class VenetianBlindInterfaceTests(unittest.TestCase):
     def test_settings_use_crud_profiles_and_no_blind_count_input(self):
@@ -151,7 +164,9 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
         self.assertIn('measurement_key != worker._last_wind_measurement', source)
         self.assertIn('wind_window_state(', source)
         self.assertIn("worker._wind_action_sent", source)
-        self.assertIn("worker._temperature_action_sent", source)
+        self.assertIn('shading_arm_state(', source)
+        self.assertIn('worker._shading_armed', source)
+        self.assertNotIn('worker._temperature_action_sent', source)
         self.assertIn('sensor_temperature(sensors.get(index))', source)
         self.assertIn('if index < 0:', source)
         self.assertNotIn("getattr(sensor, 'value'", source)
@@ -175,6 +190,7 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
         self.assertIn('def mobile_status(', source)
         self.assertIn('def mobile_cards(', source)
         self.assertIn('def mobile_action(', source)
+        self.assertIn("datetime_string(time.localtime(updated))", source)
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
         self.assertEqual(manifest['mobile']['api_version'], 1)
         self.assertEqual(
@@ -184,9 +200,9 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
 
     def test_manifest_version_dependency_and_permissions_are_current(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.2.2')
-        self.assertIn('venetian_blind.css?v=1.2.2', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
-        self.assertIn('venetian_blind.css?v=1.2.2', (PLUGIN / 'templates' / 'venetian_blind_overview.html').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['version'], '1.2.3')
+        self.assertIn('venetian_blind.css?v=1.2.3', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
+        self.assertIn('venetian_blind.css?v=1.2.3', (PLUGIN / 'templates' / 'venetian_blind_overview.html').read_text(encoding='utf-8'))
         self.assertIn('system', manifest['permissions'])
         self.assertIn('wind_monitor', [item['id'] for item in manifest['dependencies']])
 
