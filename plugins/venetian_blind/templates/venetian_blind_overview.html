@@ -1,7 +1,7 @@
 $def with(plugin_options, blinds)
 $var title: $_('Venetian blind')
 $var page: plugins
-<link href="/plugins/venetian_blind/static/venetian_blind.css?v=1.2.1" rel="stylesheet" type="text/css">
+<link href="/plugins/venetian_blind/static/venetian_blind.css?v=1.2.2" rel="stylesheet" type="text/css">
 <script>
 function refreshBlindStatus(){jQuery.getJSON('/plugins/venetian_blind/blind_status_json',function(data){jQuery.each(data,function(index,value){jQuery('#blindStatus'+index).text(value);});});}
 jQuery(function(){refreshBlindStatus();setInterval(refreshBlindStatus,2000);});

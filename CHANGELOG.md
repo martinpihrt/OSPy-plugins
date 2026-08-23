@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 23 2026
+--------------
+(Martin Pihrt) - Venetian Blind v1.2.2<br/>
+Fixed complete blind records being discarded after an OSPy restart, update or live plug-in reload because the saved list did not match the `None` default type. The complete Gen1/Gen2/Custom configuration is now stored only as a structured list in OSPy `PluginOptions`; old parallel settings and migration paths were removed, and the plug-in creates no configuration JSON file. Profiles, hosts, labels and all tilt positions, labels and URLs now persist. Fixed the automation queue remaining blocked by OSPy's completed Run-Now object after its first raising or lowering program, so temperature shading and strong-wind protection can alternate repeatedly without restarting OSPy. Added a native Mobile API v1 status card for every configured blind with state, position, connection and profile data, plus declared open, stop, close and tilt actions for clients that support manual card controls. Updated both READMEs, the manifest and regression coverage without changing gettext catalogs.
+
 August 22 2026
 --------------
 (Martin Pihrt) - Automation Rules v1.1.1<br/>

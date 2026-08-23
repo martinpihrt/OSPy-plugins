@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "venetian_blind",
   "name": "Venetian Blind",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
@@ -10,6 +10,18 @@
   },
   "python": {
     "min_version": "3.8"
+  },
+  "mobile": {
+    "api_version": 1,
+    "actions": [
+      "open",
+      "stop",
+      "closed",
+      "tilt1",
+      "tilt2",
+      "tilt3",
+      "tilt4"
+    ]
   },
   "permissions": [
     "network",

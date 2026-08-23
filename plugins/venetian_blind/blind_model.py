@@ -1,6 +1,8 @@
 """Pure configuration, Shelly protocol and automation helpers."""
 
-from urllib.parse import quote, urlsplit
+import datetime
+
+from urllib.parse import quote
 
 
 PROFILES = ('custom', 'gen1', 'gen2')
@@ -18,35 +20,12 @@ def default_blind(uid):
     }
 
 
-def _list_value(settings, key, index, default=''):
-    values = settings.get(key, [])
-    return values[index] if isinstance(values, (list, tuple)) and index < len(values) else default
-
-
 def _integer(value, default, minimum, maximum):
     try:
         value = int(value)
     except (TypeError, ValueError):
         value = default
     return max(minimum, min(maximum, value))
-
-
-def _legacy_gen1_host(blind):
-    """Return the host when custom URLs are exactly a Shelly Gen1 roller set."""
-    open_url = str(blind.get('open_url', '') or '').strip().rstrip('/')
-    parsed = urlsplit(open_url)
-    if parsed.scheme not in ('http', 'https') or not parsed.netloc:
-        return ''
-    base = '{}://{}'.format(parsed.scheme, parsed.netloc)
-    expected = {
-        'open_url': base + '/roller/0?go=open',
-        'stop_url': base + '/roller/0?go=stop',
-        'close_url': base + '/roller/0?go=close',
-        'status_url': base + '/status',
-    }
-    if all(str(blind.get(key, '') or '').strip().rstrip('/') == value for key, value in expected.items()):
-        return base
-    return ''
 
 
 def normalize_blind(blind, uid_factory):
@@ -57,11 +36,6 @@ def normalize_blind(blind, uid_factory):
     result['profile'] = result.get('profile') if result.get('profile') in PROFILES else 'custom'
     for key in ('label', 'host', 'open_url', 'stop_url', 'close_url', 'status_url', 'closed_label', 'open_label'):
         result[key] = str(result.get(key, '') or '').strip()
-    if result['profile'] == 'custom' and not result['host']:
-        legacy_host = _legacy_gen1_host(result)
-        if legacy_host:
-            result['profile'] = 'gen1'
-            result['host'] = legacy_host
     positions = list(result.get('tilt_positions', []))
     labels = list(result.get('tilt_labels', []))
     urls = list(result.get('tilt_urls', []))
@@ -71,44 +45,19 @@ def normalize_blind(blind, uid_factory):
     return result
 
 
-def configured_blinds(settings, uid_factory, maximum=100):
+def stored_blinds(settings, uid_factory, maximum=100):
     stored = settings.get('blinds')
-    if isinstance(stored, list):
-        result = [normalize_blind(item, uid_factory) for item in stored[:maximum] if isinstance(item, dict)]
-    else:
-        count = _integer(settings.get('number_blinds', 1), 1, 0, maximum)
-        result = []
-        for index in range(count):
-            blind = default_blind(uid_factory())
-            blind.update({
-                'profile': 'custom',
-                'label': _list_value(settings, 'label', index),
-                'open_url': _list_value(settings, 'open', index),
-                'stop_url': _list_value(settings, 'stop', index),
-                'close_url': _list_value(settings, 'close', index),
-                'status_url': _list_value(settings, 'status', index),
-                'closed_label': _list_value(settings, 'label0', index),
-                'open_label': _list_value(settings, 'label100', index),
-            })
-            result.append(normalize_blind(blind, uid_factory))
+    result = (
+        [normalize_blind(item, uid_factory)
+         for item in stored[:maximum] if isinstance(item, dict)]
+        if isinstance(stored, list) else []
+    )
     seen = set()
     for blind in result:
         if blind['uid'] in seen:
             blind['uid'] = str(uid_factory())
         seen.add(blind['uid'])
     return result
-
-
-def legacy_lists(blinds):
-    return {
-        'number_blinds': len(blinds), 'label': [item['label'] for item in blinds],
-        'open': [command_url(item, 'open') for item in blinds],
-        'stop': [command_url(item, 'stop') for item in blinds],
-        'close': [command_url(item, 'closed') for item in blinds],
-        'status': [status_url(item) for item in blinds],
-        'label0': [item['closed_label'] for item in blinds],
-        'label100': [item['open_label'] for item in blinds],
-    }
 
 
 def _base(blind):
@@ -181,6 +130,20 @@ def aggregate_blind_states(details, enabled_indices):
         'all_open': complete and all(state == 'open' for state in known),
         'all_closed': complete and all(state == 'closed' for state in known),
     }
+
+
+def run_now_deadline(program):
+    """Return the final interval end of a Run-Now program, if it has work."""
+    if program is None or not getattr(program, 'start', None):
+        return None
+    horizon = program.start + datetime.timedelta(days=1, minutes=1)
+    deadlines = []
+    for station in getattr(program, 'stations', []):
+        for interval in program.active_intervals(program.start, horizon, station):
+            end = interval.get('end')
+            if end is not None:
+                deadlines.append(end)
+    return max(deadlines) if deadlines else None
 
 
 def in_time_window(now_minutes, start_minutes, end_minutes):

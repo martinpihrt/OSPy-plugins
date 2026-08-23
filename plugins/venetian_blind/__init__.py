@@ -26,7 +26,7 @@ from urllib.request import urlopen
 from urllib.parse import quote_plus
 from urllib.parse import urlparse
 
-from .blind_model import aggregate_blind_states, command_url, configured_blinds, default_blind, in_time_window, legacy_lists, parse_status, position_state, sensor_temperature, status_url, wind_window_state
+from .blind_model import aggregate_blind_states, command_url, default_blind, in_time_window, parse_status, position_state, run_now_deadline, sensor_temperature, status_url, stored_blinds, wind_window_state
 
 NAME = 'Venetian blind'      ### name for plugin in plugin manager ###
 MENU =  _(u'Package: Venetian blind')
@@ -41,16 +41,10 @@ plugin_options = PluginOptions(
     {
         'use_control': False,
         'use_log': False, 
-        'number_blinds': 1,
         'use_footer': True,
-        'label':  [_('Living room')],
-        'open':   ["http://192.168.88.213/roller/0?go=open"],
-        'stop':   ["http://192.168.88.213/roller/0?go=stop"],
-        'close':  ["http://192.168.88.213/roller/0?go=close"],
-        'status': ["http://192.168.88.213/status"],
-        'label0':   [_('Closed blind')],
-        'label100': [_('Open blind')],
-        'blinds': None,
+        # PluginOptions restores values only when their type matches the default.
+        # This must stay a list so profiles and tilt settings survive a reload.
+        'blinds': [],
         'view_mode': 'cards',
         'automation_enabled': False,
         'temperature_sensor': -1,
@@ -250,6 +244,88 @@ def health():
     }
 
 
+def mobile_status():
+    """Return the cached plug-in state without polling the blinds again."""
+    result = health()
+    with health_lock:
+        updated = health_state['last_status']
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Venetian blind'),
+        'summary': result.get('summary', ''),
+        'updated': updated,
+    }
+
+
+def mobile_cards(**_kwargs):
+    """Return one native mobile status card for every configured blind."""
+    blinds = get_blinds()
+    details = sender.status.get('details', {}) if sender is not None else {}
+    statuses = sender.status.get('bstatus', {}) if sender is not None else {}
+    cards = []
+    action_labels = {
+        'open': _('open'), 'stop': _('stop'), 'closed': _('close'),
+        'tilt1': _('tilt 1'), 'tilt2': _('tilt 2'),
+        'tilt3': _('tilt 3'), 'tilt4': _('tilt 4'),
+    }
+    for index, blind in enumerate(blinds):
+        detail = details.get(index, {})
+        reachable = bool(detail.get('reachable'))
+        position = detail.get('position')
+        metrics = [
+            {'id': 'state', 'label': _('State'),
+             'value': statuses.get(index, _('unknown state')), 'unit': ''},
+            {'id': 'position', 'label': _('Position'),
+             'value': round(position, 1) if position is not None else None,
+             'unit': '%'},
+            {'id': 'connection', 'label': _('Connection'),
+             'value': _('Available') if reachable else _('Unavailable'),
+             'unit': ''},
+            {'id': 'profile', 'label': _('Profile'),
+             'value': blind.get('profile', 'custom'), 'unit': ''},
+        ]
+        actions = [
+            {'id': target, 'label': label,
+             'payload': {'blind_uid': blind['uid']}}
+            for target, label in action_labels.items()
+        ] if blind.get('enabled', True) and plugin_options.get('use_control') else []
+        cards.append({
+            'id': 'blind_{}'.format(blind['uid']),
+            'kind': 'metrics',
+            'title': blind.get('label') or _('Venetian blind'),
+            'status': ('disabled' if not blind.get('enabled', True) else
+                       'ok' if reachable else 'unavailable'),
+            'metrics': metrics,
+            'actions': actions,
+        })
+    return cards
+
+
+def mobile_action(action, payload):
+    """Execute a declared manual blind command from Mobile API v1."""
+    targets = ('open', 'stop', 'closed', 'tilt1', 'tilt2', 'tilt3', 'tilt4')
+    if action not in targets:
+        raise ValueError(_('Unknown command.'))
+    if not plugin_options.get('use_control'):
+        raise RuntimeError(_('Venetian blind is disabled.'))
+    if not isinstance(payload, dict):
+        raise ValueError(_('Blind index is invalid.'))
+    uid = str(payload.get('blind_uid', ''))
+    blinds = get_blinds()
+    index = next((i for i, blind in enumerate(blinds)
+                  if blind['uid'] == uid and blind.get('enabled', True)), -1)
+    if index < 0:
+        raise ValueError(_('Blind index is invalid.'))
+    message = send_cmd_to_blind(index, action)
+    success = message == _('The command has been executed.')
+    return {
+        'status': 'ok' if success else 'error',
+        'message': message,
+        'blind_uid': uid,
+        'target': action,
+    }
+
+
 def fetch_json(url):
     with urlopen(url, timeout=HTTP_TIMEOUT) as response:
         charset = response.info().get_content_charset('utf-8')
@@ -263,7 +339,7 @@ def uri_validator(x):
         return False
 
 def valid_blind_index(index):
-    return 0 <= index < plugin_options['number_blinds']
+    return 0 <= index < len(get_blinds())
 
 def send_cmd_to_blind(button, position):
     """Send command via REST API to blinds."""
@@ -404,13 +480,9 @@ def safe_float(value, default=0.0):
         return default
 
 def get_blinds():
-    blinds = configured_blinds(dict(plugin_options), lambda: uuid.uuid4().hex)
+    blinds = stored_blinds(dict(plugin_options), lambda: uuid.uuid4().hex)
     if plugin_options.get('blinds') != blinds:
         plugin_options['blinds'] = blinds
-    legacy = legacy_lists(blinds)
-    for key, value in legacy.items():
-        if plugin_options.get(key) != value:
-            plugin_options[key] = value
     return blinds
 
 def normalize_options():
@@ -455,8 +527,20 @@ def _wind_reading():
     except Exception:
         return None
 
+def _active_run_now_index():
+    """Return an active Run-Now index and discard OSPy's completed object."""
+    active = programs.run_now_program
+    if active is None:
+        return -1
+    deadline = run_now_deadline(active)
+    if deadline is None or deadline <= datetime.datetime.now():
+        programs.run_now_program = None
+        return -1
+    return getattr(active, 'index', -1)
+
+
 def _start_next_program(worker):
-    if not worker._program_queue or programs.run_now_program is not None:
+    if not worker._program_queue or _active_run_now_index() >= 0:
         return
     index = worker._program_queue.popleft()
     programs.run_now(index)
@@ -467,7 +551,7 @@ def _run_programs(worker, indices, reason, priority=False):
     if priority:
         _cancel_lowering_actions(worker)
     scheduled = False
-    active_index = getattr(programs.run_now_program, 'index', -1)
+    active_index = _active_run_now_index()
     for index in indices:
         if index not in available:
             continue
@@ -482,7 +566,7 @@ def _cancel_lowering_actions(worker):
     closing = set(plugin_options.get('close_programs', []))
     worker._program_queue = deque(index for index in worker._program_queue if index not in closing)
     active = programs.run_now_program
-    if active is not None and getattr(active, 'index', -1) in closing:
+    if active is not None and _active_run_now_index() in closing:
         programs.run_now_program = None
 
 def automation_cycle(worker):
@@ -515,9 +599,9 @@ def automation_cycle(worker):
         STATUS_INTERVAL * 3,
     )
     active_programs = {entry.get('program') for entry in log.active_runs() if entry.get('program') is not None and entry.get('program') >= 0}
-    run_now = programs.run_now_program
-    if run_now is not None and getattr(run_now, 'index', -1) >= 0:
-        active_programs.add(run_now.index)
+    run_now_index = _active_run_now_index()
+    if run_now_index >= 0:
+        active_programs.add(run_now_index)
     if active_programs != worker._last_active_programs:
         if active_programs.intersection(plugin_options['open_programs']):
             worker._wind_action_sent = True
@@ -564,8 +648,6 @@ def automation_cycle(worker):
 
 def _save_blinds(blinds):
     plugin_options['blinds'] = blinds
-    for key, value in legacy_lists(blinds).items():
-        plugin_options[key] = value
     if sender is not None:
         sender.update()
 
@@ -752,7 +834,7 @@ class blind_status_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         data=[]
         normalize_options()
-        for i in range(0, plugin_options['number_blinds']):
+        for i in range(len(get_blinds())):
             try:
                 if sender is None:
                     raise KeyError()

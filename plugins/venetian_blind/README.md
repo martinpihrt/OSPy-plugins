@@ -3,14 +3,16 @@ Venetian Blind Readme
 
 Tested in Python 3+
 
-The plug-in includes a `plugin.json` manifest and reports its worker, configured and reachable blinds, latest status update, command and errors through the OSPy system health interface.
+The plug-in includes a `plugin.json` manifest and reports its worker, configured and reachable blinds, latest status update, command and errors through the OSPy system health interface. Mobile API v1 exposes one native status card for every configured blind, including its current state, position, connection and Shelly profile. It also declares bounded open, stop, close and tilt actions for clients that support per-card manual controls.
 
 This plugin can be used to control blinds and shutters through an API and a hardware module such as a Shelly relay. The blind motor is connected to a Shelly relay or a similar device with separate outputs for the up and down directions. The relay supports control through its local REST or RPC API and can also measure consumption.
 
 Plugin setup
 -----------
 
-Blinds are managed individually through Add blind, Edit and confirmed Delete actions, with a saved card or list view. Existing count-based settings retain labels, commands, status URLs and the labels for positions 0 and 100 percent. A complete standard Shelly Gen1 roller URL set is recognized automatically and restored as the Shelly Gen1 profile with its host; nonstandard commands remain in the Custom REST profile without modification.
+Blinds are managed individually through Add blind, Edit and confirmed Delete actions, with a saved card or list view.
+
+The complete structured blind list is stored directly in OSPy `PluginOptions`; the plug-in does not create a separate configuration JSON file. The selected Gen1/Gen2/Custom profile, host, labels and all four tilt percentages, labels and custom URLs therefore remain persistent after a restart, update or live plug-in replacement. The only plug-in-owned JSON file is the optional operating log.
 
 Boolean settings use the same accessible red and green sliding switches as other OSPy plug-ins without changing the saved option names or their compatibility with existing configurations.
 
@@ -25,6 +27,8 @@ Strong-wind protection is active all day and starts after the configured number 
 For temperature shading, only a confirmed closed state from every enabled blind suppresses the selected lowering programs. A mixed state such as eight closed blinds and one open blind therefore starts lowering when the temperature, wind and time conditions are met. An unreachable blind also makes the aggregate state unconfirmed. Each continuous condition produces at most one action while movement is incomplete, but after every blind reaches the requested state a later position change can trigger the appropriate action again.
 
 The plug-in observes active OSPy programs selected for raising and lowering. Programs started manually or through an ESP32 Multi Contact therefore suppress a duplicate automatic start while they are active, while the next valid Shelly position remains the authoritative state.
+
+OSPy retains the last Run-Now program object after its final interval has ended. The plug-in checks the real final interval deadline, releases that completed object and continues its own queue. Temperature shading and strong-wind protection can consequently alternate repeatedly without restarting OSPy.
 
 * Check Use Control: Enables or disables the plugin.
 
