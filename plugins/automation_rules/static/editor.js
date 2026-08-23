@@ -70,17 +70,75 @@
             return item.provider_id === provider && item.resource_id === resource && item.value_id === value;
         });
         row.querySelector('.condition-unit').textContent = definition ? definition.unit : '';
-        updateOperator(row);
+        updateOperator(row, definition);
     }
 
-    function updateOperator(row) {
-        var operator = row.querySelector('.operator-select').value;
+    function updateOperator(row, definition) {
+        if (!definition) {
+            var provider = row.querySelector('.provider-select').value;
+            var resource = row.querySelector('.resource-select').value;
+            var value = row.querySelector('.value-select').value;
+            definition = catalogFor(row).find(function (item) {
+                return item.provider_id === provider &&
+                    item.resource_id === resource && item.value_id === value;
+            });
+        }
+        var select = row.querySelector('.operator-select');
         var expected = row.querySelector('.expected-input');
+        var valueType = definition ? definition.value_type : 'string';
+        var operator = row.dataset.operator || select.value || 'eq';
+        var options;
+        if (valueType === 'boolean') {
+            if (operator !== 'is_true' && operator !== 'is_false') {
+                var oldExpected = String(expected.value || '').trim().toLowerCase();
+                var expectedActive = ['0', 'false', 'no', 'off'].indexOf(oldExpected) < 0;
+                if (operator === 'ne') { expectedActive = !expectedActive; }
+                operator = (operator === 'eq' || operator === 'ne') && !expectedActive ?
+                    'is_false' : 'is_true';
+            }
+            options = [
+                {value: 'is_true', label: window.automationRuleText.isActive},
+                {value: 'is_false', label: window.automationRuleText.isInactive}
+            ];
+        } else {
+            if (operator === 'is_true' || operator === 'is_false') {
+                operator = (valueType === 'number' || valueType === 'integer') ? 'lte' : 'eq';
+            }
+            options = [
+                {value: 'eq', label: window.automationRuleText.equals},
+                {value: 'ne', label: window.automationRuleText.notEquals},
+                {value: 'gt', label: '>'}, {value: 'gte', label: '≥'},
+                {value: 'lt', label: '<'}, {value: 'lte', label: '≤'},
+                {value: 'between', label: window.automationRuleText.inRange},
+                {value: 'not_between', label: window.automationRuleText.outsideRange}
+            ];
+        }
+        select.innerHTML = '';
+        options.forEach(function (item) { addOption(select, item.value, item.label, operator); });
+        select.value = operator;
+        row.dataset.operator = operator;
         var booleanOperator = operator === 'is_true' || operator === 'is_false';
         var rangeOperator = operator === 'between' || operator === 'not_between';
         expected.disabled = booleanOperator;
+        expected.required = !booleanOperator;
+        if (!booleanOperator && !rangeOperator &&
+                (valueType === 'number' || valueType === 'integer')) {
+            expected.type = 'number';
+            expected.step = valueType === 'integer' ? '1' : 'any';
+        } else {
+            expected.type = 'text';
+            expected.removeAttribute('step');
+        }
         expected.placeholder = rangeOperator ? window.automationRuleText.rangeExample : '';
+        expected.title = booleanOperator ? window.automationRuleText.booleanLimitHelp :
+            (rangeOperator ? window.automationRuleText.rangeLimitHelp :
+                (valueType === 'number' || valueType === 'integer' ?
+                    window.automationRuleText.numberLimitHelp :
+                    window.automationRuleText.textLimitHelp));
+        select.title = booleanOperator ? window.automationRuleText.booleanOperatorHelp :
+            window.automationRuleText.operatorHelp;
         row.querySelector('.expected-label').classList.toggle('boolean-condition', booleanOperator);
+        row.classList.toggle('boolean-value', booleanOperator);
     }
 
     function bindRow(row) {
@@ -100,6 +158,7 @@
             updateValue(row);
         });
         row.querySelector('.operator-select').addEventListener('change', function () {
+            row.dataset.operator = this.value;
             updateOperator(row);
         });
         row.querySelector('.remove-condition').addEventListener('click', function () {
@@ -133,6 +192,7 @@
         row.dataset.provider = '';
         row.dataset.resource = '';
         row.dataset.value = '';
+        row.dataset.operator = 'lte';
         row.querySelector('.condition-id').value = '';
         row.querySelector('.expected-input').value = '0';
         row.querySelector('.operator-select').value = 'lte';
@@ -351,7 +411,7 @@
             }
             var delivery = ('serviceWorker' in navigator) ?
                 navigator.serviceWorker.register(
-                    '/plugins/automation_rules/static/browser_sw.js?v=1.1.3'
+                    '/plugins/automation_rules/static/browser_sw.js?v=1.1.4'
                 ).then(function (registration) {
                     return registration.showNotification(
                         window.automationRuleText.browserTestTitle,

@@ -31,7 +31,8 @@
 .action-cycle-settings { grid-column: 2 / -2; display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 8px; padding: 8px; background: #eef4e9; border-radius: 8px; }
 .action-cycle-settings label { display: flex; flex-direction: column; gap: 4px; }
 .latch-control { margin-top: 12px; }
-.boolean-condition { opacity: .55; }
+.condition-row.boolean-value { grid-template-columns: 2em minmax(140px,1.2fr) minmax(110px,1fr) minmax(130px,1.2fr) minmax(180px,1fr) 2.5em; }
+.expected-label.boolean-condition { display: none; }
 .channels { display: flex; flex-wrap: wrap; gap: 12px 22px; margin: 14px 0; }
 .channels legend { font-weight: bold; }
 .channel-option { align-items: center; display: flex; gap: 9px; }
