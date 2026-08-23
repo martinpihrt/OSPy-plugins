@@ -368,6 +368,115 @@ def get_all_values():
     return round(status['total_liters'], 2), options['log_date_last_reset']
 
 
+def _provider_timestamp(epoch):
+    return (datetime.datetime.utcfromtimestamp(epoch).isoformat() + 'Z') if epoch else None
+
+
+def provider_capabilities():
+    """Describe cached measurements exposed through ospy.provider.v1."""
+    return {
+        'contract': 'ospy.provider.v1',
+        'provider_id': 'water_meter',
+        'resource_types': ['water_meter'],
+        'values': [
+            {'id': 'flow_lps', 'quantity': 'volume_flow_rate', 'unit': 'L/s', 'value_type': 'number'},
+            {'id': 'flow_lpm', 'quantity': 'volume_flow_rate', 'unit': 'L/min', 'value_type': 'number'},
+            {'id': 'minute_volume', 'quantity': 'volume', 'unit': 'L', 'value_type': 'number'},
+            {'id': 'hour_volume', 'quantity': 'volume', 'unit': 'L', 'value_type': 'number'},
+            {'id': 'total_volume', 'quantity': 'volume', 'unit': 'L', 'value_type': 'number'},
+        ],
+        'events': [{'code': 'water_meter.measurement'}],
+        'alerts': [{'code': 'water_meter.sensor_error'}],
+        'actions': [{
+            'id': 'reset_total_consumption',
+            'risk': 'control',
+            'parameters': {},
+        }],
+    }
+
+
+def provider_snapshot():
+    """Return the last cached reading without accessing the I2C counter."""
+    current = dict(water_sender.status) if water_sender is not None else _empty_status()
+    with health_lock:
+        state = dict(health_state)
+    observed_at = _provider_timestamp(state['last_reading'])
+    if not options.get('enabled', False):
+        provider_status = 'disabled'
+    elif water_sender is None or not water_sender.is_alive():
+        provider_status = 'unavailable'
+    elif state['last_error'] and state['last_error'] > state['last_reading']:
+        provider_status = 'error'
+    elif not state['last_reading']:
+        provider_status = 'stale'
+    else:
+        provider_status = 'ok'
+    values = [
+        ('flow_lps', 'volume_flow_rate', current.get('meter'), 'L/s', 'measured'),
+        ('flow_lpm', 'volume_flow_rate', current.get('minute_rate'), 'L/min', 'derived'),
+        ('minute_volume', 'volume', current.get('minute_liters'), 'L', 'derived'),
+        ('hour_volume', 'volume', current.get('hour_liters'), 'L', 'derived'),
+        ('total_volume', 'volume', current.get('total_liters'), 'L', 'measured'),
+    ]
+    alerts = []
+    if state['last_error'] and state['last_error'] > state['last_reading']:
+        alerts.append({
+            'id': 'water-meter.sensor-error', 'code': 'water_meter.sensor_error',
+            'severity': 'error', 'state': 'active',
+            'opened_at': _provider_timestamp(state['last_error']),
+        })
+    return {
+        'contract': 'ospy.provider.v1', 'provider_id': 'water_meter',
+        'status': provider_status, 'observed_at': observed_at,
+        'resources': [{
+            'id': 'main', 'type': 'water_meter', 'status': provider_status,
+            'values': [{
+                'id': item[0], 'quantity': item[1],
+                'value': (float(item[2] or 0)
+                          if observed_at or item[0] == 'total_volume' else None),
+                'unit': item[3], 'value_type': 'number', 'quality': item[4],
+                'observed_at': observed_at,
+            } for item in values],
+            'alerts': list(alerts),
+        }],
+        'events': [], 'alerts': alerts,
+    }
+
+
+def _reset_total_consumption():
+    """Reset the same counters as the protected overview action."""
+    previous_total = float(
+        water_sender.status.get('total_liters', 0.0)
+        if water_sender is not None else options.get('sum', 0.0))
+    options['sum'] = 0.0
+    options['log_date_last_reset'] = datetime_string()
+    if water_sender is not None:
+        water_sender.status['total_liters'] = 0.0
+        water_sender.status['minute_liters'] = 0.0
+        water_sender.status['hour_liters'] = 0.0
+        water_sender._persist_total()
+    log.info(NAME, _('Total consumption was reset.'))
+    return previous_total
+
+
+def provider_execute_action(action_id, resource_id='', parameters=None):
+    """Execute an explicitly declared Water Meter provider action."""
+    parameters = {} if parameters is None else parameters
+    if action_id != 'reset_total_consumption':
+        raise ValueError(_('Unsupported Water Meter provider action.'))
+    if resource_id not in ('', 'main'):
+        raise ValueError(_('Selected Water Meter resource does not exist.'))
+    if not isinstance(parameters, dict) or parameters:
+        raise ValueError(_('Reset total consumption does not accept parameters.'))
+    previous_total = _reset_total_consumption()
+    return {
+        'status': 'ok',
+        'message': _('Water Meter total consumption was reset.'),
+        'data': {'previous_total_liters': previous_total,
+                 'total_liters': 0.0},
+    }
+
+
 def _log_path():
     return os.path.join(plugin_data_dir('water_meter'), 'log.json')
 
@@ -459,13 +568,7 @@ class overview_page(ProtectedPage):
         qdict = web.input()
         if helpers.get_input(qdict, 'reset', False, lambda value: True):
             verify_csrf(qdict)
-            options['sum'] = 0.0
-            options['log_date_last_reset'] = datetime_string()
-            if water_sender is not None:
-                water_sender.status['total_liters'] = 0.0
-                water_sender.status['minute_liters'] = 0.0
-                water_sender.status['hour_liters'] = 0.0
-                water_sender._persist_total()
+            _reset_total_consumption()
             raise web.seeother(plugin_url(overview_page), True)
         status = water_sender.status if water_sender is not None else _empty_status()
         return self.plugin_render.water_meter(options, status, log.events(NAME))

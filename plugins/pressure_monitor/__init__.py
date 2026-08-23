@@ -326,6 +326,80 @@ def health():
     }
 
 
+def _provider_timestamp(epoch):
+    return (datetime.datetime.utcfromtimestamp(epoch).isoformat() + 'Z') if epoch else None
+
+
+def provider_capabilities():
+    """Describe the cached binary pressure state for provider consumers."""
+    return {
+        'contract': 'ospy.provider.v1',
+        'provider_id': 'pressure_monitor',
+        'resource_types': ['pressure_switch'],
+        'values': [
+            {'id': 'pressure_present', 'quantity': 'pressure_presence', 'unit': '', 'value_type': 'boolean'},
+            {'id': 'master_active', 'quantity': 'master_state', 'unit': '', 'value_type': 'boolean'},
+        ],
+        'events': [{'code': 'pressure_monitor.measurement'}],
+        'alerts': [
+            {'code': 'pressure_monitor.sensor_error'},
+            {'code': 'pressure_monitor.pressure_missing'},
+        ],
+        'actions': [],
+    }
+
+
+def provider_snapshot():
+    """Return cached pressure state without reading the GPIO input."""
+    with health_lock:
+        state = dict(health_state)
+    observed_at = _provider_timestamp(state['last_cycle'])
+    worker_running = pressure_sender is not None and pressure_sender.is_alive()
+    if not pressure_options.get('use_press_monitor', False):
+        provider_status = 'disabled'
+    elif not worker_running:
+        provider_status = 'unavailable'
+    elif state['last_error'] and state['last_error'] >= state['last_cycle']:
+        provider_status = 'error'
+    elif not state['last_cycle']:
+        provider_status = 'stale'
+    elif master and state['sensor_active'] is False:
+        provider_status = 'error'
+    else:
+        provider_status = 'ok'
+    alerts = []
+    if state['last_error'] and state['last_error'] >= state['last_cycle']:
+        alerts.append({
+            'id': 'pressure-monitor.sensor-error',
+            'code': 'pressure_monitor.sensor_error', 'severity': 'error',
+            'state': 'active', 'opened_at': _provider_timestamp(state['last_error']),
+        })
+    if master and state['sensor_active'] is False and state['last_cycle']:
+        alerts.append({
+            'id': 'pressure-monitor.pressure-missing',
+            'code': 'pressure_monitor.pressure_missing', 'severity': 'critical',
+            'state': 'active', 'opened_at': observed_at,
+            'context': {'master_active': True},
+        })
+    values = [
+        {'id': 'pressure_present', 'quantity': 'pressure_presence',
+         'value': state['sensor_active'], 'unit': '', 'value_type': 'boolean',
+         'quality': 'measured', 'observed_at': observed_at},
+        {'id': 'master_active', 'quantity': 'master_state', 'value': bool(master),
+         'unit': '', 'value_type': 'boolean', 'quality': 'derived',
+         'observed_at': observed_at},
+    ]
+    return {
+        'contract': 'ospy.provider.v1', 'provider_id': 'pressure_monitor',
+        'status': provider_status, 'observed_at': observed_at,
+        'resources': [{
+            'id': 'main', 'type': 'pressure_switch', 'status': provider_status,
+            'values': values, 'alerts': list(alerts),
+        }],
+        'events': [], 'alerts': alerts,
+    }
+
+
 def get_check_pressure():
     try:
         if pressure_options['normally']:

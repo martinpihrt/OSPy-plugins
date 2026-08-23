@@ -7,6 +7,8 @@ The plug-in includes a `plugin.json` manifest and reports its worker, configured
 I²C address, water level, fill, sensor distance, volume, regulation, watering
 block, latest reading and errors through the OSPy system health interface.
 
+Version 1.1.1 adds explicit Automation Rules provider actions for safely stopping the active tank-regulation output and resetting the recorded minimum and maximum to the latest available level. Version 1.1.0 implements the read-only `ospy.provider.v1` contract for the single ultrasonic tank. Cached level, fill, distance and volume are available in stable units without triggering an I²C measurement.
+
 This plugin measures the water level in the tank. If water level is small, this plugin stop irigation system (stop runing stations in scheduler) and sends E-mail with error Safety for master station pump if no water.
 
 

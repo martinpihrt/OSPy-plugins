@@ -3,14 +3,11 @@ UPS Monitor Readme
 
 Tested in Python 3+
 
-The plug-in includes a `plugin.json` manifest and reports its worker, power-line
-input, shutdown countdown and delay, latest check and errors through the OSPy
-system health interface. The UPS shutdown output is returned low when the
-plug-in stops.
+The plug-in includes a `plugin.json` manifest and reports its worker, power-line input, automatic shutdown setting, countdown and delay, latest check and errors through the OSPy system health interface. The UPS shutdown output is returned low when the plug-in stops.
 
 UPS Uninterruptible Power Supply (Source)
 This plugin checked power line for system.  
-If is error with power line in a certain time, sends plugin email with error and shutdown system (and generate pulse to GPIO for shutdown Your UPS).</p>
+If a power-line fault lasts for the configured time, the plug-in can send an E-mail and automatically shut down the system and UPS.</p>
 
 
 Plugin setup
@@ -21,6 +18,9 @@ Plugin setup
 * Check Send email with error:  
   If checked send email with error e-mail notification plugin sends e-mail with error.    
   For this function required e-mail notification plugin with all setup in plugin.  
+
+* Automatic system shutdown:
+  Enabled by default to preserve the existing plug-in behaviour. Disable it to continue monitoring, logging and sending E-mail notifications without shutting down OSPy and without sending the UPS shutdown pulse.
 
 * Max time for shutdown countdown:  
   Type maximum certain time to shutdown system and UPS. Maximum time is 999 minutes.  
@@ -41,7 +41,7 @@ Plugin setup
   Use quick ranges (Today, 24 h, 7 days, 30 days, All) or set a custom From/To range. The graph refreshes without reloading the settings page.     
 
 Power line is connected via optocoupler between GPIO 23 - pin 16 and ground.
-Output pulse on GPIO 24 - pin 18 (via optocoupler open colector and ground) to UPS for shutdown battery in UPS.  
+When automatic shutdown is enabled, the output pulse on GPIO 24 - pin 18 (via optocoupler open collector and ground) shuts down the UPS battery.
 
 
 The hardware should be connected as follows:  

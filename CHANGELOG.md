@@ -1,7 +1,59 @@
 # OSPy-plugins Changelog
 
+August 23 2026
+--------------
+(Martin Pihrt) - Automation Rules v1.1.3, Venetian Blind v1.2.4, Water Meter v1.2.1, Pressure Monitor v1.1.1, Water Tank Monitor v1.1.1, Current Loop Tanks Monitor v1.1.1 and OSPy Backup v1.0.3<br/>
+Added concrete provider actions for opening, stopping, closing or tilting one Venetian blind, safely stopping ultrasonic or current-loop tank regulation, resetting the ultrasonic tank's recorded minimum and maximum, and creating a plug-in data backup. Automation Rules displays localized action names and uses only actions declared by running providers. Existing mobile blind control, tank regulation cleanup and guarded backup implementations are reused. Updated manifests, help, READMEs and regression coverage.
+
+(Martin Pihrt) - Automation Rules v1.1.2 and Water Meter v1.2.1<br/>
+Added bounded action-history records for every output-cycle start, pause, resumed run, failure and final stop, including the stop reason. Water Meter now declares and implements the first concrete external provider action, allowing an explicitly configured live Automation Rules rule to reset its total, current-minute and current-hour consumption counters through OSPy's validated provider-action entry point. Updated help, READMEs, manifests and regression coverage.
+
+(Martin Pihrt) - Venetian Blind v1.2.3<br/>
+Changed temperature shading to arm only on a confirmed transition of every enabled blind to fully open. One lowering action consumes the armed state, so manually tilting or partially moving a blind afterward no longer causes repeated closing while temperature remains high; a later full opening by strong-wind protection or by the user rearms the next cycle. Changed Mobile API status `updated` from a raw Unix timestamp to the same `YYYY-MM-DD HH:MM:SS` text used by other plug-ins. Updated help, READMEs, cache versions and regression coverage.
+
+(Martin Pihrt) - Venetian Blind v1.2.2<br/>
+Fixed complete blind records being discarded after an OSPy restart, update or live plug-in reload because the saved list did not match the `None` default type. The complete Gen1/Gen2/Custom configuration is now stored only as a structured list in OSPy `PluginOptions`; old parallel settings and migration paths were removed, and the plug-in creates no configuration JSON file. Profiles, hosts, labels and all tilt positions, labels and URLs now persist. Fixed the automation queue remaining blocked by OSPy's completed Run-Now object after its first raising or lowering program, so temperature shading and strong-wind protection can alternate repeatedly without restarting OSPy. Added a native Mobile API v1 status card for every configured blind with state, position, connection and profile data, plus declared open, stop, close and tilt actions for clients that support manual card controls. Updated both READMEs, the manifest and regression coverage.
+
+August 22 2026
+--------------
+(Martin Pihrt) - Automation Rules v1.1.1<br/>
+Added a bounded cyclic mode to the output-on action with configurable run duration, off pause and maximum total cycling time. Cycles continue only while all required rule data remains available and the rule still matches; disabling the rule, automation, control actions or manual mode, editing or deleting the rule, stopping the plug-in, losing a condition or reaching the limit cancels the cycle and switches its output off. Cycles are not resumed after restart and one output cannot be owned by multiple cycles. Corrected the minimum compatible OSPy version from 3.0.348 to 3.0.354 and replaced the ineffective `min_version` manifest key with the supported `min` key, so OSPy must be updated before installing this Automation Rules release. Updated help, READMEs, diagnostics, cache versions and regression coverage.
+
+(Martin Pihrt) - Automation Rules v1.1.0<br/>
+Added guarded one-shot control actions for selected stations, all outputs, scheduler disabling, running programs, bounded manual output control, global water-level adjustment and actions explicitly declared by another provider. Control execution is separately disabled by default, test mode simulates actions without touching OSPy or hardware, and every result is recorded without suppressing notifications. Optional incident locking requires administrator acknowledgement and refuses to unlock while conditions remain active or unavailable. Added action state to diagnostics and the mobile rule cards, updated localized help and expanded regression coverage.
+
+(Martin Pihrt) - CHMI v1.0.7<br/>
+Fixed manual CHMI rain-delay removal being undone by the next rainy radar evaluation. A manual removal is now persisted for the current rainy period and cleared only after a valid dry radar sample; disabling CHMI rain-delay control immediately removes the CHMI-owned block. The synchronized update path prevents the radar worker from recreating a block concurrently, while manual and other plug-in delays remain untouched. Added visible override status, diagnostics, help, README and regression coverage.
+
+(Martin Pihrt) - UPS Monitor v1.0.5<br/>
+Added an enabled-by-default Automatic system shutdown switch. Administrators can now keep power-line monitoring, logging and fault or recovery E-mail notifications active without pulsing the UPS shutdown output or shutting down OSPy. Countdown, health and mobile status text now distinguish automatic shutdown from monitor-only operation, and the help and README describe both modes.
+
+(Martin Pihrt) - Automation Rules v1.0.8<br/>
+Collapsed all saved rules and the New rule card on an ordinary page load. Saving an existing or new rule now returns to the same expanded card while every other rule remains collapsed. Added a compact localized header summary of configured conditions, AND/OR matching, limits, units and notification channels, with the complete summary available as hover text and responsive wrapping on narrow screens. Added native mobile API v1 metrics cards that report each rule as Disabled, Ready, Triggered, Conditions active, Unavailable or Automation disabled and expose every individual condition as Active, Inactive, Unavailable or Not evaluated using read-only cached provider values. Updated help, README, asset cache versions and regression coverage.
+
+(Martin Pihrt) - Automation Rules v1.0.7<br/>
+Added a built-in read-only OSPy status source for scheduler state, manual and scheduled modes, water-level adjustment, remaining rain delay, rain-sensor configuration and activity, cached OSPy update state, cached plug-in update state and known plug-in update count. The source never starts a network update check. General settings now stay on one readable desktop row, saved rule cards are collapsible, and rule headings distinguish Disabled, Ready and Triggered states with a plain green Triggered indicator. Updated help, READMEs, cache versions and regression coverage.
+
 August 21 2026
 --------------
+(Martin Pihrt) - Automation Rules v1.0.6<br/>
+Changed browser delivery to prefer the standards-based Service Worker notification path used by Firefox, with the direct Notification constructor retained as a fallback. The permission action now explicitly enables and tests notifications, asset cache versions force updated browser code, and delivery failures are displayed on the Automation Rules page instead of being silently discarded. Updated READMEs and regression coverage.
+
+(Martin Pihrt) - Automation Rules v1.0.5<br/>
+Added a built-in local Date and time source with ISO date, 24-hour time, weekday, month and day-of-month values. New in-range and outside-range comparisons accept `start..end` and correctly support overnight windows such as `22:00..06:00`, so time windows can be combined with measurements through AND. Trigger, repeat and recovery notifications now state each resource, value, actual reading, operator and configured limit, including structured details for the mobile app. Browser permission now sends an immediate visible test, browser delivery falls back to a Service Worker where the direct Notification API is unavailable, and Home messages preserve multiline details. Updated help, READMEs, asset cache versions and regression coverage.
+
+(Martin Pihrt) - Automation Rules v1.0.4<br/>
+Added every enabled built-in OSPy sensor as a read-only Automation Rules source independently of Pihrt or Shelly hardware. The adapter exposes each sensor's configured measurement without another hardware poll; Pihrt multi-contact and soil devices expose individual inputs, while ultrasonic tank sensors provide distance, derived water level, fill percentage and volume. Offline sensors and invalid probe values remain unavailable and cannot satisfy or silently clear a condition. Updated localized help, READMEs and regression coverage.
+
+(Martin Pihrt) - Automation Rules v1.0.3<br/>
+Enabled browser-notification polling on every authenticated OSPy page instead of only Home. Home popup cards remain exclusive to Home and are not marked as consumed while another page is open. Mobile push data now includes the stable rule ID, rule name and event so a matching application can localize Automation Rules notifications without parsing server display text. Updated asset cache versions, documentation and regression coverage.
+
+(Martin Pihrt) - Automation Rules v1.0.2<br/>
+Kept the general switches directly beside their labels so each control is visually unambiguous. Added a confirmed Test notifications action that ignores conditions and timing, sends one real message through every channel currently selected in the rule even while global test mode is enabled, records individual delivery results and does not alter incident state. Updated the help, README, asset cache versions and regression tests.
+
+(Martin Pihrt) - Automation Rules v1.0.1<br/>
+Replaced every visible settings checkbox and notification-channel checkbox with the red and green sliding switch used by other OSPy plug-ins. Added localized hover descriptions to editor fields, selectors, switches and action buttons, and versioned the browser assets so installed systems immediately load the updated interface.
+
 (Martin Pihrt) - Shelly Cloud Integration v1.0.8<br/>
 Fixed Shelly 2.5 roller and switch processing referencing an unassigned `a_voltage` variable even though the device response stores its shared voltage as `voltage`, which stopped the complete Integrator polling cycle with `UnboundLocalError`. Corrected the local switch-mode Wi-Fi response path and fixed Shelly 2PM Add-on and Shelly 1PM Add-on status lines so RSSI and update time are placed in their intended fields. Updated the version, cache key, help, READMEs and regression tests.
 
@@ -79,6 +131,14 @@ Fixed Shelly Pro 3EM and Shelly 3EM-63T Gen3 processing by using all three phase
 
 (Martin Pihrt) - OSPy Package Backup v1.0.2<br/>
 Restored the latest successful plug-in backup status from existing ZIP archives after OSPy or the plug-in restarts. The native mobile status and diagnostics now report the newest persistent archive name, modification time and size instead of resetting to “no backup created”. Added regression tests for archive discovery.
+
+August 21 2026
+--------------
+(Martin Pihrt) - Automation Rules v1.0.0, Telegram Bot v1.0.1, E-mail Notifications v1.0.1 and E-mail Notifications SSL v1.1.6<br/>
+Added a responsive graphical rule builder over cached `ospy.provider.v1` values. Rules support up to twenty row/card conditions, AND/OR matching, confirmation time, notification repetition, recovery messages, severity, a separate default-on test state, bounded action history and diagnostics. Notification actions include an OSPy Home popup, explicitly permitted browser notifications, e-mail, Telegram and mobile push; provider failures are isolated and cannot clear an active incident. Automation Rules performs no irrigation control actions. Telegram Bot now exposes a bounded external-notification entry point for authorized chats, and both e-mail plug-ins return delivery success to callers without changing existing notification behavior.
+
+(Martin Pihrt) - Water Meter v1.2.0, Pressure Monitor v1.1.0, Water Tank Monitor v1.1.0 and Current Loop Tanks Monitor v1.1.0<br/>
+Added the shared read-only `ospy.provider.v1` capability and snapshot interface for Automation Rules and Irrigation Safety. The four adapters expose only cached values, stable identifiers, canonical units and machine-readable alerts, without additional I²C/GPIO operations or changes to their existing workers, pages, health reports and mobile contributions. Added contract and no-hardware-access regression tests.
 
 August 7 2026
 -------------

@@ -3,7 +3,7 @@
   "id": "email_notifications",
   "name": "E-mail Notifications",
   "menu": "Package: E-mail Notifications",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sends OSPy event notifications through a STARTTLS SMTP server with an optional retry queue.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/email_notifications",

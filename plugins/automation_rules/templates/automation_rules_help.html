@@ -1,0 +1,31 @@
+$def with()
+
+$var title: $_('Automation Rules - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Automation Rules - help')</div>
+    <p>$_('Automation Rules evaluates cached measurements supplied by compatible monitoring plug-ins and enabled built-in OSPy sensors, including Pihrt and Shelly devices. Reading a rule never starts an additional hardware measurement.')</p>
+    <h3>$_('Building a rule')</h3>
+    <p>$_('A rule is one card. Conditions are rows on a desktop and stacked subcards on a narrow screen. Add up to twenty conditions and choose whether all conditions (AND) or at least one condition (OR) must match.')</p>
+    <p>$_('Select the provider, resource and value in this order. The available unit comes from the provider and is filled automatically.')</p>
+    <p>$_('The OSPy Sensors provider lists each enabled sensor by name. Ultrasonic tank sensors expose distance, water level, fill percentage and calculated volume. An offline sensor or invalid probe value cannot satisfy a condition.')</p>
+    <p>$_('The Date and time provider exposes the current local date, time, weekday, month and day of month. Use the range operators with start..end, for example 2026-05-01..2026-09-30 or 08:00..18:00. A time range such as 22:00..06:00 automatically crosses midnight.')</p>
+    <p>$_('The OSPy status provider exposes scheduler and operating modes, water-level adjustment, remaining rain delay, rain-sensor state and cached OSPy or plug-in update availability. It never starts an update check or network request.')</p>
+    <p>$_('Saved rules and the New rule card are collapsed when the page is opened. Expand a rule by selecting its heading; after saving, that rule remains expanded. A smaller description beside its name summarizes the conditions, AND or OR matching and notification channels. Disabled means the rule is not evaluated, Ready means no incident is active, and Triggered means a live incident was created after the confirmation time.')</p>
+    <h3>$_('Timing')</h3>
+    <p>$_('The confirmation duration requires the complete condition to remain true before the rule is triggered. The repeat interval sends another notification while the incident remains active; zero disables repetition.')</p>
+    <h3>$_('Testing and safety')</h3>
+    <p>$_('Test mode is enabled by default. It records what would happen but does not display or send notifications. Test saved rule performs one immediate read-only evaluation and also sends nothing. Test notifications ignores conditions and timing and sends one real message through every channel currently enabled in the rule, even while test mode is enabled.')</p>
+    <p>$_('A missing or unhealthy provider cannot match a condition and does not clear an already active incident.')</p>
+    <p>$_('Control actions can stop selected stations, stop every current output, disable the scheduler, stop a selected or every running program, turn a specific output off, turn a specific output on for a required limited duration, change the global water-level adjustment, or call an action declared by another provider. Add a separate action row for every selected station or output.')</p>
+    <p>$_('Control actions have a separate global switch that is disabled by default. Test mode only simulates actions. Live actions run once when an incident is first triggered and are never repeated by reminder notifications or reversed by a recovery notification. Turning an output on requires manual mode and cannot directly start a master or disabled output.')</p>
+    <p>$_('An output-on action can run once or cycle for a bounded time. Cyclic mode alternates the configured run duration and off pause until the maximum cycling time is reached, but only while the rule conditions remain available and matched. A false or unavailable condition, disabled rule or automation, test mode, disabled control actions, disabled manual mode, rule edit, plug-in stop or restart cancels the cycle and leaves the output off. One output cannot be controlled by two cycles at the same time.')</p>
+    <p>$_('The action history records every cycle start, pause, resumed run, failure and final stop, including the reason why a cycle ended. Water Meter 1.2.1 or newer provides the first external action: reset its accumulated total consumption.')</p>
+    <p>$_('Provider actions can also operate a configured Venetian blind, stop Water Tank Monitor or Current Loop Tanks Monitor regulation, reset the ultrasonic tank minimum and maximum, or create an OSPy plug-in data backup. Only actions declared by a running compatible provider are offered.')</p>
+    <p>$_('Lock incident until acknowledged keeps an incident active after its conditions return to normal. Only an administrator can unlock it, and only after every condition is available and no longer active. Unlocking does not restore settings or outputs changed by an action.')</p>
+    <p>$_('The native mobile API shows one card for every saved rule. Each card reports whether automation and the rule are enabled, whether the rule is ready, triggered, waiting on active conditions or unavailable, and whether every individual condition is active, inactive, unavailable or not evaluated. Opening the mobile view reads cached provider values without changing rule or incident state.')</p>
+    <h3>$_('Notifications')</h3>
+    <p>$_('Every live notification includes each evaluated value, comparison and configured limit. Home notifications appear in OSPy. Browser notifications require explicit permission and an open OSPy page; the permission button immediately displays a test and uses a Service Worker fallback where required. E-mail and Telegram use their existing configured plug-ins. Push uses paired mobile devices and the configured OSPy push relay.')</p>
+    <div id="controls"><a class="button danger" href=$plugins.plugin_url('automation_rules.settings_page') title=$:{json.dumps(_('Return to the Automation Rules settings page.'), ensure_ascii=False)}>$_('Back')</a></div>
+</div>

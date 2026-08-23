@@ -1,4 +1,5 @@
 import importlib.util
+import datetime
 import json
 import pathlib
 import unittest
@@ -11,43 +12,14 @@ SPEC.loader.exec_module(model)
 
 
 class VenetianBlindModelTests(unittest.TestCase):
-    def test_legacy_settings_migrate_without_changing_urls_or_labels(self):
-        settings = {'number_blinds': 1, 'label': ['South'], 'open': ['http://a/open'], 'stop': ['http://a/stop'], 'close': ['http://a/close'], 'status': ['http://a/status'], 'label0': ['Closed'], 'label100': ['Open']}
-        blinds = model.configured_blinds(settings, lambda: 'stable')
-        self.assertEqual(blinds[0]['profile'], 'custom')
-        self.assertEqual(blinds[0]['label'], 'South')
-        self.assertEqual(model.command_url(blinds[0], 'open'), 'http://a/open')
-        self.assertEqual(model.status_url(blinds[0]), 'http://a/status')
-
-    def test_legacy_shelly_gen1_urls_restore_the_gen1_profile_and_host(self):
-        settings = {
-            'number_blinds': 1,
-            'label': ['South'],
-            'open': ['http://192.168.1.20/roller/0?go=open'],
-            'stop': ['http://192.168.1.20/roller/0?go=stop'],
-            'close': ['http://192.168.1.20/roller/0?go=close'],
-            'status': ['http://192.168.1.20/status'],
-        }
-        blind = model.configured_blinds(settings, lambda: 'stable')[0]
-        self.assertEqual(blind['profile'], 'gen1')
-        self.assertEqual(blind['host'], 'http://192.168.1.20')
-
-    def test_already_migrated_gen1_urls_are_repaired_without_touching_custom_sets(self):
-        migrated = model.default_blind('stable')
-        migrated.update({
-            'profile': 'custom',
-            'host': '',
-            'open_url': 'http://192.168.1.20/roller/0?go=open',
-            'stop_url': 'http://192.168.1.20/roller/0?go=stop',
-            'close_url': 'http://192.168.1.20/roller/0?go=close',
-            'status_url': 'http://192.168.1.20/status',
-        })
-        repaired = model.configured_blinds({'blinds': [migrated]}, lambda: 'new')[0]
-        self.assertEqual(repaired['profile'], 'gen1')
-        self.assertEqual(repaired['host'], 'http://192.168.1.20')
-        migrated['stop_url'] = 'http://192.168.1.20/custom-stop'
-        custom = model.configured_blinds({'blinds': [migrated]}, lambda: 'new')[0]
-        self.assertEqual(custom['profile'], 'custom')
+    def test_structured_settings_are_loaded_directly(self):
+        blind = model.default_blind('stable')
+        blind.update({'profile': 'gen2', 'host': '192.168.1.20',
+                      'tilt_positions': [15, 35, 65, 85]})
+        loaded = model.stored_blinds({'blinds': [blind]}, lambda: 'new')
+        self.assertEqual(loaded[0]['profile'], 'gen2')
+        self.assertEqual(loaded[0]['tilt_positions'], [15, 35, 65, 85])
+        self.assertEqual(model.stored_blinds({}, lambda: 'new'), [])
 
     def test_gen1_and_gen2_commands_use_the_correct_api(self):
         blind = model.default_blind('a')
@@ -72,6 +44,25 @@ class VenetianBlindModelTests(unittest.TestCase):
         self.assertEqual(model.position_state(79, positions), 'tilt4')
         self.assertEqual(model.position_state(100, positions), 'open')
         self.assertEqual(model.position_state(51, positions), 'position')
+
+    def test_run_now_deadline_uses_the_last_real_program_interval(self):
+        start = datetime.datetime(2026, 8, 23, 10, 0)
+
+        class Program(object):
+            stations = [0, 1]
+
+            def __init__(self):
+                self.start = start
+
+            def active_intervals(self, _from, _to, station):
+                return [{'end': start + datetime.timedelta(minutes=station + 1)}]
+
+        self.assertEqual(
+            model.run_now_deadline(Program()),
+            start + datetime.timedelta(minutes=2),
+        )
+        Program.stations = []
+        self.assertIsNone(model.run_now_deadline(Program()))
 
     def test_time_window_supports_daytime_overnight_and_full_day(self):
         self.assertTrue(model.in_time_window(9 * 60, 8 * 60, 20 * 60))
@@ -122,6 +113,19 @@ class VenetianBlindModelTests(unittest.TestCase):
         details[8] = {'reachable': True, 'state': 'open'}
         self.assertTrue(model.aggregate_blind_states(details, range(9))['all_open'])
 
+    def test_shading_rearms_only_after_all_blinds_transition_to_open(self):
+        armed, was_open = model.shading_arm_state(False, False, True)
+        self.assertTrue(armed)
+        armed = False  # One automatic lowering action consumes the arm.
+        armed, was_open = model.shading_arm_state(armed, was_open, True)
+        self.assertFalse(armed)
+        armed, was_open = model.shading_arm_state(armed, was_open, False)
+        self.assertFalse(armed)  # Closed, tilted and intermediate are equivalent.
+        armed, was_open = model.shading_arm_state(armed, was_open, False)
+        self.assertFalse(armed)
+        armed, was_open = model.shading_arm_state(armed, was_open, True)
+        self.assertTrue(armed)  # Wind or a manual full opening rearms shading.
+
 
 class VenetianBlindInterfaceTests(unittest.TestCase):
     def test_settings_use_crud_profiles_and_no_blind_count_input(self):
@@ -160,24 +164,45 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
         self.assertIn('measurement_key != worker._last_wind_measurement', source)
         self.assertIn('wind_window_state(', source)
         self.assertIn("worker._wind_action_sent", source)
-        self.assertIn("worker._temperature_action_sent", source)
+        self.assertIn('shading_arm_state(', source)
+        self.assertIn('worker._shading_armed', source)
+        self.assertNotIn('worker._temperature_action_sent', source)
         self.assertIn('sensor_temperature(sensors.get(index))', source)
         self.assertIn('if index < 0:', source)
         self.assertNotIn("getattr(sensor, 'value'", source)
         self.assertIn('log.active_runs()', source)
-        self.assertIn('run_now = programs.run_now_program', source)
+        self.assertIn('active = programs.run_now_program', source)
         self.assertIn('enabled_indices', source)
         self.assertIn('aggregate_blind_states(details, enabled_indices)', source)
         self.assertIn('_cancel_lowering_actions(worker)', source)
         self.assertIn('worker._program_queue.append(index)', source)
-        self.assertIn('programs.run_now_program is not None', source)
+        self.assertIn('active = programs.run_now_program', source)
         self.assertIn('priority=True', source)
+        self.assertIn('deadline <= datetime.datetime.now()', source)
+        self.assertIn('programs.run_now_program = None', source)
+
+    def test_structured_blinds_persist_and_mobile_cards_are_declared(self):
+        source = (PLUGIN / '__init__.py').read_text(encoding='utf-8')
+        self.assertIn("'blinds': []", source)
+        self.assertNotIn("'blinds_migrated'", source)
+        self.assertNotIn("'number_blinds'", source)
+        self.assertNotIn('legacy_lists', source)
+        self.assertIn('def mobile_status(', source)
+        self.assertIn('def mobile_cards(', source)
+        self.assertIn('def mobile_action(', source)
+        self.assertIn("datetime_string(time.localtime(updated))", source)
+        manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['mobile']['api_version'], 1)
+        self.assertEqual(
+            set(manifest['mobile']['actions']),
+            {'open', 'stop', 'closed', 'tilt1', 'tilt2', 'tilt3', 'tilt4'},
+        )
 
     def test_manifest_version_dependency_and_permissions_are_current(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.2.1')
-        self.assertIn('venetian_blind.css?v=1.2.1', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
-        self.assertIn('venetian_blind.css?v=1.2.1', (PLUGIN / 'templates' / 'venetian_blind_overview.html').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['version'], '1.2.4')
+        self.assertIn('venetian_blind.css?v=1.2.3', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
+        self.assertIn('venetian_blind.css?v=1.2.3', (PLUGIN / 'templates' / 'venetian_blind_overview.html').read_text(encoding='utf-8'))
         self.assertIn('system', manifest['permissions'])
         self.assertIn('wind_monitor', [item['id'] for item in manifest['dependencies']])
 

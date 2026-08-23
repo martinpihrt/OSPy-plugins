@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "telegram_bot",
   "name": "Telegram Bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

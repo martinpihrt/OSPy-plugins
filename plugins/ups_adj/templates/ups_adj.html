@@ -318,6 +318,15 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'><b>$_('Automatic system shutdown'):</b></td>
+                <td title=$:{json.dumps(_('When enabled, a confirmed power fault shuts down OSPy and sends a shutdown pulse to the UPS. When disabled, power monitoring, logging and E-mail notifications continue without shutting down the system or UPS.'), ensure_ascii=False)}>
+                    <label class="switch">
+                        <input name='shutdown_enabled' type='checkbox'${" checked" if plugin_options.get('shutdown_enabled', True) else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'><b>$_('Enable local logging'):</b></td>
                 <td title=$:{json.dumps(_('The measured data will be saved locally in a json file. This option rapidly reduces the lifespan of the SD/USB card of the Raspberry Pi system!'), ensure_ascii=False)}>
                     <label class="switch">

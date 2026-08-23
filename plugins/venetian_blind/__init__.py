@@ -9,6 +9,7 @@ import os
 import mimetypes
 import uuid
 import datetime
+import hashlib
 from collections import deque
 
 from ospy.helpers import datetime_string, verify_csrf
@@ -26,7 +27,7 @@ from urllib.request import urlopen
 from urllib.parse import quote_plus
 from urllib.parse import urlparse
 
-from .blind_model import aggregate_blind_states, command_url, configured_blinds, default_blind, in_time_window, legacy_lists, parse_status, position_state, sensor_temperature, status_url, wind_window_state
+from .blind_model import aggregate_blind_states, command_url, default_blind, in_time_window, parse_status, position_state, run_now_deadline, sensor_temperature, shading_arm_state, status_url, stored_blinds, wind_window_state
 
 NAME = 'Venetian blind'      ### name for plugin in plugin manager ###
 MENU =  _(u'Package: Venetian blind')
@@ -41,16 +42,10 @@ plugin_options = PluginOptions(
     {
         'use_control': False,
         'use_log': False, 
-        'number_blinds': 1,
         'use_footer': True,
-        'label':  [_('Living room')],
-        'open':   ["http://192.168.88.213/roller/0?go=open"],
-        'stop':   ["http://192.168.88.213/roller/0?go=stop"],
-        'close':  ["http://192.168.88.213/roller/0?go=close"],
-        'status': ["http://192.168.88.213/status"],
-        'label0':   [_('Closed blind')],
-        'label100': [_('Open blind')],
-        'blinds': None,
+        # PluginOptions restores values only when their type matches the default.
+        # This must stay a list so profiles and tilt settings survive a reload.
+        'blinds': [],
         'view_mode': 'cards',
         'automation_enabled': False,
         'temperature_sensor': -1,
@@ -93,7 +88,8 @@ class Sender(Thread):
         self._wind_samples = deque(maxlen=10000)
         self._last_wind_measurement = None
         self._wind_action_sent = False
-        self._temperature_action_sent = False
+        self._shading_armed = False
+        self._last_all_open = False
         self._last_active_programs = set()
         self._program_queue = deque()
         self._program_reason = ''
@@ -250,6 +246,187 @@ def health():
     }
 
 
+def mobile_status():
+    """Return the cached plug-in state without polling the blinds again."""
+    result = health()
+    with health_lock:
+        updated = health_state['last_status']
+    return {
+        'status': result.get('status', 'unknown'),
+        'title': _('Venetian blind'),
+        'summary': result.get('summary', ''),
+        'updated': datetime_string(time.localtime(updated)) if updated else '',
+    }
+
+
+def _provider_timestamp(epoch):
+    return (datetime.datetime.utcfromtimestamp(epoch).isoformat() + 'Z') if epoch else None
+
+
+def _blind_resource_id(uid):
+    return 'blind-{}'.format(
+        hashlib.sha256(str(uid).encode('utf-8')).hexdigest()[:24])
+
+
+def _provider_number(value):
+    try:
+        number = float(value)
+        return None if number != number or number in (float('inf'), float('-inf')) else number
+    except (TypeError, ValueError):
+        return None
+
+
+def provider_capabilities():
+    """Describe cached blind state and explicitly supported commands."""
+    return {
+        'contract': 'ospy.provider.v1',
+        'provider_id': 'venetian_blind',
+        'resource_types': ['blind'],
+        'values': [
+            {'id': 'position', 'quantity': 'position', 'unit': '%', 'value_type': 'number'},
+            {'id': 'reachable', 'quantity': 'connectivity', 'unit': '', 'value_type': 'boolean'},
+        ],
+        'events': [], 'alerts': [],
+        'actions': [
+            {'id': action_id, 'risk': 'control', 'parameters': {}}
+            for action_id in ('open', 'stop', 'close', 'tilt_1', 'tilt_2',
+                              'tilt_3', 'tilt_4')
+        ],
+    }
+
+
+def provider_snapshot():
+    """Return cached blind state without sending another network request."""
+    blinds = get_blinds()
+    details = sender.status.get('details', {}) if sender is not None else {}
+    with health_lock:
+        observed_at = _provider_timestamp(health_state['last_status'])
+    provider_status = ('disabled' if not plugin_options.get('use_control') else
+                       'unavailable' if sender is None or not sender.is_alive() else
+                       'stale' if not observed_at else 'ok')
+    resources = []
+    for index, blind in enumerate(blinds):
+        if not blind.get('enabled', True):
+            continue
+        detail = details.get(index, {})
+        reachable = bool(detail.get('reachable'))
+        position = detail.get('position')
+        resource_status = ('disabled' if provider_status == 'disabled' else
+                           'unavailable' if not reachable else provider_status)
+        resources.append({
+            'id': _blind_resource_id(blind['uid']), 'type': 'blind',
+            'name': blind.get('label') or _('Venetian blind'),
+            'status': resource_status,
+            'values': [
+                {'id': 'position', 'quantity': 'position',
+                 'value': _provider_number(position),
+                 'unit': '%', 'value_type': 'number', 'quality': 'measured',
+                 'observed_at': observed_at},
+                {'id': 'reachable', 'quantity': 'connectivity',
+                 'value': reachable if observed_at else None,
+                 'unit': '', 'value_type': 'boolean', 'quality': 'measured',
+                 'observed_at': observed_at},
+            ],
+            'alerts': [],
+        })
+    return {
+        'contract': 'ospy.provider.v1', 'provider_id': 'venetian_blind',
+        'status': provider_status, 'observed_at': observed_at,
+        'resources': resources, 'events': [], 'alerts': [],
+    }
+
+
+def provider_execute_action(action_id, resource_id='', parameters=None):
+    """Execute a declared blind command through the existing control path."""
+    parameters = {} if parameters is None else parameters
+    targets = {
+        'open': 'open', 'stop': 'stop', 'close': 'closed',
+        'tilt_1': 'tilt1', 'tilt_2': 'tilt2',
+        'tilt_3': 'tilt3', 'tilt_4': 'tilt4',
+    }
+    if action_id not in targets:
+        raise ValueError(_('Unknown command.'))
+    if not isinstance(parameters, dict) or parameters:
+        raise ValueError(_('The selected blind action does not accept parameters.'))
+    blind = next((item for item in get_blinds()
+                  if item.get('enabled', True) and
+                  _blind_resource_id(item['uid']) == resource_id), None)
+    if blind is None:
+        raise ValueError(_('Blind index is invalid.'))
+    return mobile_action(targets[action_id], {
+        'blind_uid': blind['uid'],
+    })
+
+
+def mobile_cards(**_kwargs):
+    """Return one native mobile status card for every configured blind."""
+    blinds = get_blinds()
+    details = sender.status.get('details', {}) if sender is not None else {}
+    statuses = sender.status.get('bstatus', {}) if sender is not None else {}
+    cards = []
+    action_labels = {
+        'open': _('open'), 'stop': _('stop'), 'closed': _('close'),
+        'tilt1': _('tilt 1'), 'tilt2': _('tilt 2'),
+        'tilt3': _('tilt 3'), 'tilt4': _('tilt 4'),
+    }
+    for index, blind in enumerate(blinds):
+        detail = details.get(index, {})
+        reachable = bool(detail.get('reachable'))
+        position = detail.get('position')
+        metrics = [
+            {'id': 'state', 'label': _('State'),
+             'value': statuses.get(index, _('unknown state')), 'unit': ''},
+            {'id': 'position', 'label': _('Position'),
+             'value': round(position, 1) if position is not None else None,
+             'unit': '%'},
+            {'id': 'connection', 'label': _('Connection'),
+             'value': _('Available') if reachable else _('Unavailable'),
+             'unit': ''},
+            {'id': 'profile', 'label': _('Profile'),
+             'value': blind.get('profile', 'custom'), 'unit': ''},
+        ]
+        actions = [
+            {'id': target, 'label': label,
+             'payload': {'blind_uid': blind['uid']}}
+            for target, label in action_labels.items()
+        ] if blind.get('enabled', True) and plugin_options.get('use_control') else []
+        cards.append({
+            'id': 'blind_{}'.format(blind['uid']),
+            'kind': 'metrics',
+            'title': blind.get('label') or _('Venetian blind'),
+            'status': ('disabled' if not blind.get('enabled', True) else
+                       'ok' if reachable else 'unavailable'),
+            'metrics': metrics,
+            'actions': actions,
+        })
+    return cards
+
+
+def mobile_action(action, payload):
+    """Execute a declared manual blind command from Mobile API v1."""
+    targets = ('open', 'stop', 'closed', 'tilt1', 'tilt2', 'tilt3', 'tilt4')
+    if action not in targets:
+        raise ValueError(_('Unknown command.'))
+    if not plugin_options.get('use_control'):
+        raise RuntimeError(_('Venetian blind is disabled.'))
+    if not isinstance(payload, dict):
+        raise ValueError(_('Blind index is invalid.'))
+    uid = str(payload.get('blind_uid', ''))
+    blinds = get_blinds()
+    index = next((i for i, blind in enumerate(blinds)
+                  if blind['uid'] == uid and blind.get('enabled', True)), -1)
+    if index < 0:
+        raise ValueError(_('Blind index is invalid.'))
+    message = send_cmd_to_blind(index, action)
+    success = message == _('The command has been executed.')
+    return {
+        'status': 'ok' if success else 'error',
+        'message': message,
+        'blind_uid': uid,
+        'target': action,
+    }
+
+
 def fetch_json(url):
     with urlopen(url, timeout=HTTP_TIMEOUT) as response:
         charset = response.info().get_content_charset('utf-8')
@@ -263,7 +440,7 @@ def uri_validator(x):
         return False
 
 def valid_blind_index(index):
-    return 0 <= index < plugin_options['number_blinds']
+    return 0 <= index < len(get_blinds())
 
 def send_cmd_to_blind(button, position):
     """Send command via REST API to blinds."""
@@ -404,13 +581,9 @@ def safe_float(value, default=0.0):
         return default
 
 def get_blinds():
-    blinds = configured_blinds(dict(plugin_options), lambda: uuid.uuid4().hex)
+    blinds = stored_blinds(dict(plugin_options), lambda: uuid.uuid4().hex)
     if plugin_options.get('blinds') != blinds:
         plugin_options['blinds'] = blinds
-    legacy = legacy_lists(blinds)
-    for key, value in legacy.items():
-        if plugin_options.get(key) != value:
-            plugin_options[key] = value
     return blinds
 
 def normalize_options():
@@ -455,8 +628,20 @@ def _wind_reading():
     except Exception:
         return None
 
+def _active_run_now_index():
+    """Return an active Run-Now index and discard OSPy's completed object."""
+    active = programs.run_now_program
+    if active is None:
+        return -1
+    deadline = run_now_deadline(active)
+    if deadline is None or deadline <= datetime.datetime.now():
+        programs.run_now_program = None
+        return -1
+    return getattr(active, 'index', -1)
+
+
 def _start_next_program(worker):
-    if not worker._program_queue or programs.run_now_program is not None:
+    if not worker._program_queue or _active_run_now_index() >= 0:
         return
     index = worker._program_queue.popleft()
     programs.run_now(index)
@@ -467,7 +652,7 @@ def _run_programs(worker, indices, reason, priority=False):
     if priority:
         _cancel_lowering_actions(worker)
     scheduled = False
-    active_index = getattr(programs.run_now_program, 'index', -1)
+    active_index = _active_run_now_index()
     for index in indices:
         if index not in available:
             continue
@@ -482,7 +667,7 @@ def _cancel_lowering_actions(worker):
     closing = set(plugin_options.get('close_programs', []))
     worker._program_queue = deque(index for index in worker._program_queue if index not in closing)
     active = programs.run_now_program
-    if active is not None and getattr(active, 'index', -1) in closing:
+    if active is not None and _active_run_now_index() in closing:
         programs.run_now_program = None
 
 def automation_cycle(worker):
@@ -491,7 +676,8 @@ def automation_cycle(worker):
         worker._wind_samples.clear()
         worker._last_wind_measurement = None
         worker._wind_action_sent = False
-        worker._temperature_action_sent = False
+        worker._shading_armed = False
+        worker._last_all_open = False
         return
     _start_next_program(worker)
     normalize_options()
@@ -515,20 +701,20 @@ def automation_cycle(worker):
         STATUS_INTERVAL * 3,
     )
     active_programs = {entry.get('program') for entry in log.active_runs() if entry.get('program') is not None and entry.get('program') >= 0}
-    run_now = programs.run_now_program
-    if run_now is not None and getattr(run_now, 'index', -1) >= 0:
-        active_programs.add(run_now.index)
+    run_now_index = _active_run_now_index()
+    if run_now_index >= 0:
+        active_programs.add(run_now_index)
     if active_programs != worker._last_active_programs:
         if active_programs.intersection(plugin_options['open_programs']):
             worker._wind_action_sent = True
-        elif active_programs.intersection(plugin_options['close_programs']):
-            worker._temperature_action_sent = True
         worker._last_active_programs = active_programs
     details = worker.status.get('details', {})
     enabled_indices = [index for index, blind in enumerate(get_blinds()) if blind.get('enabled', True)]
     blind_state = aggregate_blind_states(details, enabled_indices)
     all_open = blind_state['all_open']
     all_closed = blind_state['all_closed']
+    worker._shading_armed, worker._last_all_open = shading_arm_state(
+        worker._shading_armed, worker._last_all_open, all_open)
     worker.status['automation'] = {
         'temperature': _temperature_value(),
         'wind': worker._wind_samples[-1][1] if worker._wind_samples else None,
@@ -540,10 +726,10 @@ def automation_cycle(worker):
         'known_blinds': blind_state['known_count'],
         'all_open': all_open,
         'all_closed': all_closed,
+        'shading_armed': worker._shading_armed,
     }
     if wind_state['strong']:
         _cancel_lowering_actions(worker)
-        worker._temperature_action_sent = False
         if all_open:
             worker._wind_action_sent = False
         elif not worker._wind_action_sent:
@@ -554,18 +740,13 @@ def automation_cycle(worker):
     allowed = in_time_window(now.hour * 60 + now.minute, _time_minutes(plugin_options.get('automation_start'), 480), _time_minutes(plugin_options.get('automation_end'), 1200))
     temperature = worker.status['automation']['temperature']
     shading = temperature is not None and temperature >= plugin_options['temperature_limit'] and wind_state['safe'] and allowed
-    if shading:
-        if all_closed:
-            worker._temperature_action_sent = False
-        elif not worker._temperature_action_sent:
-            worker._temperature_action_sent = _run_programs(worker, plugin_options['close_programs'], _('Temperature shading'))
-    else:
-        worker._temperature_action_sent = False
+    if shading and worker._shading_armed:
+        if _run_programs(worker, plugin_options['close_programs'], _('Temperature shading')):
+            worker._shading_armed = False
+            worker.status['automation']['shading_armed'] = False
 
 def _save_blinds(blinds):
     plugin_options['blinds'] = blinds
-    for key, value in legacy_lists(blinds).items():
-        plugin_options[key] = value
     if sender is not None:
         sender.update()
 
@@ -752,7 +933,7 @@ class blind_status_json(ProtectedPage):
         web.header('Content-Type', 'application/json')
         data=[]
         normalize_options()
-        for i in range(0, plugin_options['number_blinds']):
+        for i in range(len(get_blinds())):
             try:
                 if sender is None:
                     raise KeyError()

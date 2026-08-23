@@ -10,6 +10,8 @@ The SHMU source requires the h5py and numpy Python libraries. If they are missin
 The interactive map of the Czech Republic is based on an ESP32 microcontroller and contains 72 WS2812 RGB LEDs on the front - each for one district city. It is thus possible, for example, to display current warnings in given locations, or other dates. Different sensors can be connected and all usable pins are brought out on solder pads for possible connection of different sensors and devices. The board is equipped with a USB programming converter, so all you need to program it is a cable with a USB-C connector and, for example, the Arduino IDE. https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/.
 The extension allows you to set a rain delay when rain is detected at your location. The plug-in uses only the location managed by the OSPy weather settings and does not keep a separate location. Weather must be enabled and valid coordinates must be configured in OSPy. Otherwise, the settings page shows a link to the OSPy weather settings and local rain detection remains inactive.
 
+Removing the CHMI rain delay suppresses new CHMI delays for the current rainy period. The override is cleared only after a valid dry radar sample, allowing a future rainy period to activate the delay again. Disabling Use a rain delay removes an existing CHMI delay immediately. Manual delays and delays created by other plug-ins remain independent and are not removed by the CHMI button.
+
 The plug-in includes an OSPy `plugin.json` manifest, registers its radar and
 optional dependency-installation workers with the shared plug-in runtime, uses
 the common stop signal, and implements `health()`. Diagnostics reports selected
@@ -66,10 +68,10 @@ Plugin setup
   A downloaded map from the Meteo Institute is displayed here.
 
 * Use a rain delay:
-  If checked, a rain delay is set when rain is detected at the location configured in OSPy. Enable weather and configure the location in OSPy first. The plug-in does not use a separate map or location setting.
+  If checked, a rain delay is set when rain is detected at the location configured in OSPy. Enable weather and configure the location in OSPy first. The plug-in does not use a separate map or location setting. Disabling this switch immediately removes a delay created by CHMI.
 
 * Delay time:
-  Delay time in hours.
+  Delay time in hours. Remove CHMI Rain Delay removes only the CHMI delay and prevents the same rainy period from immediately creating it again. This manual override ends after the radar reports dry weather.
 
 * Intensity threshold:
   Intensity threshold for activate rain delay in my location. Each RGB channel can be enabled or disabled. Enabled channels use "or" logic. This means that when enabled red exceeds the value 50, or enabled green 100, or enabled blue 200, for example, the pixel is marked as rainy. Disabled channels are ignored completely.
