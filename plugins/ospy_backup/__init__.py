@@ -162,8 +162,49 @@ def mobile_cards(**_kwargs):
          'value': value, 'unit': ''}
         for index, (label, value) in enumerate(result.get('details', {}).items())
     ]
-    return [{'id': 'plugin_backup', 'kind': 'metrics',
-             'title': _('Plug-in data backup'), 'metrics': metrics}]
+    card = {
+        'id': 'plugin_backup', 'kind': 'metrics',
+        'title': _('Plug-in data backup'), 'metrics': metrics,
+        'actions': [
+            {'id': 'create_backup', 'label': _('Create backup'), 'payload': {}},
+        ],
+    }
+    with health_lock:
+        filename = health_state['last_file']
+    if filename:
+        card['downloads'] = [{
+            'id': 'latest_backup', 'label': _('Download backup'),
+            'filename': filename,
+        }]
+    return [card]
+
+
+def mobile_action(action, payload):
+    """Create a fresh plug-in data archive from the native mobile client."""
+    if action != 'create_backup':
+        raise ValueError(_('Unsupported OSPy Backup provider action.'))
+    if not isinstance(payload, dict) or payload:
+        raise ValueError(_('Create backup does not accept parameters.'))
+    return provider_execute_action('create_backup')
+
+
+def mobile_download(download_id):
+    """Return the newest archive descriptor for guarded API streaming."""
+    if download_id != 'latest_backup':
+        raise ValueError(_('Selected backup resource does not exist.'))
+    backup = latest_backup(plugin_data_dir())
+    if backup is None:
+        raise RuntimeError(_('No plug-in data backup has been created yet.'))
+    filename = os.path.basename(backup['filename'])
+    path = os.path.realpath(os.path.join(plugin_data_dir(), filename))
+    data_dir = os.path.realpath(plugin_data_dir())
+    if os.path.commonpath([path, data_dir]) != data_dir or not os.path.isfile(path):
+        raise RuntimeError(_('Backup file not found!'))
+    return {
+        'path': path,
+        'filename': filename,
+        'mime_type': 'application/zip',
+    }
 
 
 def _provider_timestamp(epoch):

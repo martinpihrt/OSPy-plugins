@@ -1101,15 +1101,25 @@ def mobile_status():
 
 def mobile_cards(**_kwargs):
     result = health()
-    wanted = ('enabled', 'automatic_update', 'checking', 'update_available',
-              'current_version', 'current_commit', 'target_commit',
-              'stable_release', 'upstream_branch', _('Update channel'),
-              _('Update watchdog'), _('Last watchdog result'))
+    wanted = (
+        ('enabled', 'enabled'),
+        ('automatic_update', 'automatic_update'),
+        ('checking', 'checking'),
+        ('update_available', 'update_available'),
+        ('current_version', 'current_version'),
+        ('current_commit', 'current_commit'),
+        ('target_commit', 'target_commit'),
+        ('stable_release', 'stable_release'),
+        ('upstream_branch', 'upstream_branch'),
+        ('update_channel', _('Update channel')),
+        ('update_watchdog', _('Update watchdog')),
+        ('last_watchdog_result', _('Last watchdog result')),
+    )
     details = result.get('details', {})
     metrics = [
-        {'id': 'update_{}'.format(index), 'label': label,
+        {'id': metric_id, 'label': label,
          'value': details.get(label, ''), 'unit': ''}
-        for index, label in enumerate(wanted)
+        for metric_id, label in wanted
     ]
     return [{'id': 'system_update', 'kind': 'metrics',
              'title': _('System Update'), 'metrics': metrics}]

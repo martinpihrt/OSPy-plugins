@@ -385,10 +385,15 @@ def mobile_cards(**_kwargs):
             {'id': 'profile', 'label': _('Profile'),
              'value': blind.get('profile', 'custom'), 'unit': ''},
         ]
+        configured_labels = dict(action_labels)
+        for tilt_index in range(4):
+            configured = blind.get('tilt_labels', [''] * 4)[tilt_index]
+            if configured:
+                configured_labels['tilt{}'.format(tilt_index + 1)] = configured
         actions = [
             {'id': target, 'label': label,
              'payload': {'blind_uid': blind['uid']}}
-            for target, label in action_labels.items()
+            for target, label in configured_labels.items()
         ] if blind.get('enabled', True) and plugin_options.get('use_control') else []
         cards.append({
             'id': 'blind_{}'.format(blind['uid']),

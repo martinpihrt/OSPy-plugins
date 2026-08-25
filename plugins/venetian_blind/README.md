@@ -3,7 +3,9 @@ Venetian Blind Readme
 
 Tested in Python 3+
 
-Version 1.2.4 implements `ospy.provider.v1` and exposes every enabled blind as a cached resource with explicit open, stop, close and tilt 1–4 actions for Automation Rules. The actions reuse the same validated command path as Mobile API v1.
+Version 1.2.5 implements `ospy.provider.v1` and exposes every enabled blind as a cached resource with explicit open, stop, close and tilt 1–4 actions for Automation Rules and the native mobile application. Configured tilt labels are preserved. The actions reuse the same validated command path as Mobile API v1.
+
+Mobile action IDs are `open`, `stop`, `close`, `tilt1`, `tilt2`, `tilt3` and `tilt4`. Every request supplies `{"blind_uid":"..."}`; the UID must identify a currently configured enabled blind and plug-in control must be enabled. The four tilt actions retain stable IDs while their visible labels come from the saved blind configuration.
 
 The plug-in includes a `plugin.json` manifest and reports its worker, configured and reachable blinds, latest status update, command and errors through the OSPy system health interface. Mobile API v1 exposes one native status card for every configured blind, including its current state, position, connection and Shelly profile. It also declares bounded open, stop, close and tilt actions for clients that support per-card manual controls.
 

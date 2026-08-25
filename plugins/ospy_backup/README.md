@@ -3,7 +3,9 @@ OSPy Backup Readme
 
 Tested in Python 3+
 
-Version 1.0.3 implements `ospy.provider.v1` and declares an explicit Automation Rules action that creates a plug-in data ZIP through the same guarded backup path as the web interface. Concurrent requests remain rejected and the resulting file name and size are returned to action history.
+Version 1.0.4 implements `ospy.provider.v1`, declares an explicit Automation Rules action and exposes guarded mobile create/download controls for the newest plug-in data ZIP. Concurrent requests remain rejected and the resulting file name and size are returned to action history.
+
+The mobile manifest declares action ID `create_backup` with an empty JSON payload and download ID `latest_backup`. After a successful creation, the mobile card advertises the available ZIP; `mobile_download('latest_backup')` returns only its verified path, base file name and `application/zip` MIME type for streaming by the matching OSPy Mobile API endpoint. This is a plug-in-data archive and is separate from complete OSPy system backups.
 
 This extension creates a backup of data directories from all available installed extensions in OSPy. Example: "Air Temperature and Humidity Monitor/data". Local records from plugins (for example json files with temperature, etc...) are most often found in the plugins data directories. Backups can be downloaded to our computer (phone) and possibly uploaded back to data directories in specific plugins after unpacking. Backups are in zip format (example: 20240417-201606-PluginsBackup.zip. If possible, store all records from the plugins on to your own database storage (MySQL) instead of in local "data" directories. Not only does this save the Raspberry Pi SD card, but in the event of an OSPy crash, we won't lose the saved data (since it's outside of OSPy in the database). To connect to the database, we can use an extension called: database_connector. Which will ensure the storage of data from our plugins.
 
