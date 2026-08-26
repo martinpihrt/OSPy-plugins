@@ -27,13 +27,14 @@ from urllib.request import urlopen
 from urllib.parse import quote_plus
 from urllib.parse import urlparse
 
-from .blind_model import aggregate_blind_states, command_url, default_blind, in_time_window, parse_status, position_state, run_now_deadline, sensor_temperature, shading_arm_state, status_url, stored_blinds, wind_window_state
+from .blind_model import aggregate_blind_states, command_url, default_blind, in_time_window, parse_status, position_state, run_now_deadline, sensor_temperature, shading_arm_state, status_url, stored_blinds, target_retry_state, wind_window_state
 
 NAME = 'Venetian blind'      ### name for plugin in plugin manager ###
 MENU =  _(u'Package: Venetian blind')
 LINK = 'home_page'           ### link for page in plugin manager ###
 HTTP_TIMEOUT = 5
 STATUS_INTERVAL = 10
+AUTOMATION_RETRY_DELAY = 60
 ERROR_LOG_THROTTLE = 300
 MAX_LOG_RECORDS = 200
 
@@ -88,6 +89,9 @@ class Sender(Thread):
         self._wind_samples = deque(maxlen=10000)
         self._last_wind_measurement = None
         self._wind_action_sent = False
+        self._open_retry_at = 0
+        self._close_retry_at = 0
+        self._close_target_pending = False
         self._shading_armed = False
         self._last_all_open = False
         self._last_active_programs = set()
@@ -365,7 +369,7 @@ def mobile_cards(**_kwargs):
     statuses = sender.status.get('bstatus', {}) if sender is not None else {}
     cards = []
     action_labels = {
-        'open': _('open'), 'stop': _('stop'), 'closed': _('close'),
+        'open': _('Open'), 'stop': _('Stop'), 'closed': _('Close'),
         'tilt1': _('tilt 1'), 'tilt2': _('tilt 2'),
         'tilt3': _('tilt 3'), 'tilt4': _('tilt 4'),
     }
@@ -385,10 +389,15 @@ def mobile_cards(**_kwargs):
             {'id': 'profile', 'label': _('Profile'),
              'value': blind.get('profile', 'custom'), 'unit': ''},
         ]
+        configured_labels = dict(action_labels)
+        for tilt_index in range(4):
+            configured = blind.get('tilt_labels', [''] * 4)[tilt_index]
+            if configured:
+                configured_labels['tilt{}'.format(tilt_index + 1)] = configured
         actions = [
             {'id': target, 'label': label,
              'payload': {'blind_uid': blind['uid']}}
-            for target, label in action_labels.items()
+            for target, label in configured_labels.items()
         ] if blind.get('enabled', True) and plugin_options.get('use_control') else []
         cards.append({
             'id': 'blind_{}'.format(blind['uid']),
@@ -663,6 +672,11 @@ def _run_programs(worker, indices, reason, priority=False):
     _start_next_program(worker)
     return scheduled
 
+def _programs_pending(worker, indices, active_programs):
+    selected = set(indices)
+    return bool(selected.intersection(active_programs) or
+                selected.intersection(worker._program_queue))
+
 def _cancel_lowering_actions(worker):
     closing = set(plugin_options.get('close_programs', []))
     worker._program_queue = deque(index for index in worker._program_queue if index not in closing)
@@ -676,6 +690,9 @@ def automation_cycle(worker):
         worker._wind_samples.clear()
         worker._last_wind_measurement = None
         worker._wind_action_sent = False
+        worker._open_retry_at = 0
+        worker._close_retry_at = 0
+        worker._close_target_pending = False
         worker._shading_armed = False
         worker._last_all_open = False
         return
@@ -704,10 +721,7 @@ def automation_cycle(worker):
     run_now_index = _active_run_now_index()
     if run_now_index >= 0:
         active_programs.add(run_now_index)
-    if active_programs != worker._last_active_programs:
-        if active_programs.intersection(plugin_options['open_programs']):
-            worker._wind_action_sent = True
-        worker._last_active_programs = active_programs
+    worker._last_active_programs = active_programs
     details = worker.status.get('details', {})
     enabled_indices = [index for index, blind in enumerate(get_blinds()) if blind.get('enabled', True)]
     blind_state = aggregate_blind_states(details, enabled_indices)
@@ -727,23 +741,53 @@ def automation_cycle(worker):
         'all_open': all_open,
         'all_closed': all_closed,
         'shading_armed': worker._shading_armed,
+        'close_target_pending': worker._close_target_pending,
+        'open_retry_at': worker._open_retry_at or None,
+        'close_retry_at': worker._close_retry_at or None,
     }
     if wind_state['strong']:
         _cancel_lowering_actions(worker)
-        if all_open:
-            worker._wind_action_sent = False
-        elif not worker._wind_action_sent:
-            worker._wind_action_sent = _run_programs(worker, plugin_options['open_programs'], _('Strong wind protection'), priority=True)
+        worker._close_target_pending = False
+        worker._close_retry_at = 0
+        open_pending = _programs_pending(
+            worker, plugin_options['open_programs'], active_programs)
+        run_open, worker._open_retry_at = target_retry_state(
+            now_timestamp, bool(enabled_indices), all_open, open_pending,
+            worker._open_retry_at, AUTOMATION_RETRY_DELAY)
+        if run_open:
+            _run_programs(
+                worker, plugin_options['open_programs'],
+                _('Strong wind protection'), priority=True)
+        worker._wind_action_sent = bool(
+            not all_open and
+            (open_pending or worker._open_retry_at > now_timestamp))
         return
     worker._wind_action_sent = False
+    worker._open_retry_at = 0
     now = datetime.datetime.now()
     allowed = in_time_window(now.hour * 60 + now.minute, _time_minutes(plugin_options.get('automation_start'), 480), _time_minutes(plugin_options.get('automation_end'), 1200))
     temperature = worker.status['automation']['temperature']
     shading = temperature is not None and temperature >= plugin_options['temperature_limit'] and wind_state['safe'] and allowed
-    if shading and worker._shading_armed:
+    close_requested = worker._shading_armed or worker._close_target_pending
+    close_pending = _programs_pending(
+        worker, plugin_options['close_programs'], active_programs)
+    run_close, worker._close_retry_at = target_retry_state(
+        now_timestamp, bool(enabled_indices) and shading and close_requested,
+        all_closed, close_pending, worker._close_retry_at,
+        AUTOMATION_RETRY_DELAY)
+    if all_closed:
+        worker._close_target_pending = False
+    elif close_pending and shading and close_requested:
+        worker._close_target_pending = True
+        worker._shading_armed = False
+        worker.status['automation']['shading_armed'] = False
+    elif run_close:
         if _run_programs(worker, plugin_options['close_programs'], _('Temperature shading')):
+            worker._close_target_pending = True
             worker._shading_armed = False
             worker.status['automation']['shading_armed'] = False
+    worker.status['automation']['close_target_pending'] = worker._close_target_pending
+    worker.status['automation']['close_retry_at'] = worker._close_retry_at or None
 
 def _save_blinds(blinds):
     plugin_options['blinds'] = blinds

@@ -3,14 +3,14 @@ $def with(plugin_options, rules, new_rule, history, catalog, action_catalog, sta
 $var title: $_('Automation Rules')
 $var page: plugins
 
-<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.1.3">
+<link rel="stylesheet" href="/plugins/automation_rules/static/automation_rules.css?v=1.1.4">
 
 <script>
 window.automationRuleCatalog = $:json.dumps(catalog, ensure_ascii=False);
 window.automationActionCatalog = $:json.dumps(action_catalog, ensure_ascii=False);
-window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'removeAction': _('Remove control action'), 'action': _('Control action'), 'target': _('Target'), 'actionValue': _('Action value'), 'cycleMode': _('Output mode'), 'once': _('Run once'), 'cycle': _('Cycle while conditions match'), 'pauseSeconds': _('Pause between runs'), 'cycleTotalSeconds': _('Maximum cycling time'), 'seconds': _('seconds'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'limit': _('Limit')}, ensure_ascii=False);
+window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource': _('Resource'), 'value': _('Value'), 'choose': _('Select'), 'remove': _('Remove condition'), 'removeAction': _('Remove control action'), 'action': _('Control action'), 'target': _('Target'), 'actionValue': _('Action value'), 'cycleMode': _('Output mode'), 'once': _('Run once'), 'cycle': _('Cycle while conditions match'), 'pauseSeconds': _('Pause between runs'), 'cycleTotalSeconds': _('Maximum cycling time'), 'seconds': _('seconds'), 'and': _('AND'), 'or': _('OR'), 'permissionGranted': _('Browser notifications are enabled. A test notification was sent.'), 'permissionDenied': _('Browser notification permission was not granted.'), 'permissionDeliveryFailed': _('The browser granted permission but could not display the test notification.'), 'browserTestTitle': _('Automation Rules'), 'browserTestMessage': _('Browser notifications are working.'), 'rangeExample': _('start..end'), 'equals': _('equals'), 'notEquals': _('does not equal'), 'isActive': _('is active'), 'isInactive': _('is inactive'), 'inRange': _('is in range'), 'outsideRange': _('is outside range'), 'limit': _('Limit'), 'operatorHelp': _('Select how the current value is compared with the limit.'), 'booleanOperatorHelp': _('Choose whether the selected state must be active or inactive. No limit value is required.'), 'numberLimitHelp': _('Enter a numeric limit.'), 'textLimitHelp': _('Enter the expected value.'), 'rangeLimitHelp': _('Enter the beginning and end separated by two dots, for example 08:00..18:00.')}, ensure_ascii=False);
 </script>
-<script src="/plugins/automation_rules/static/editor.js?v=1.1.3"></script>
+<script src="/plugins/automation_rules/static/editor.js?v=1.1.4"></script>
 
 <div id="plugin" class="automation-rules-page">
     <div class="title">$_('Automation Rules')</div>
@@ -96,7 +96,7 @@ window.automationRuleText = $:json.dumps({'provider': _('Provider'), 'resource':
 
                 <div class="condition-list">
                     $for index, condition in enumerate(rule['conditions']):
-                        <div class="condition-row" data-provider="$condition['provider_id']" data-resource="$condition['resource_id']" data-value="$condition['value_id']">
+                        <div class="condition-row" data-provider="$condition['provider_id']" data-resource="$condition['resource_id']" data-value="$condition['value_id']" data-operator="$condition['operator']">
                             <input class="condition-id" type="hidden" name="condition_id_$index" value="$condition['id']">
                             <span class="condition-number">${index + 1}.</span>
                             <label title=$:{json.dumps(_('Monitoring plug-in that supplies the value for this condition.'), ensure_ascii=False)}><span>$_('Provider')</span><select class="provider-select" name="provider_id_$index" required title=$:{json.dumps(_('Select the monitoring plug-in that supplies data.'), ensure_ascii=False)}></select></label>

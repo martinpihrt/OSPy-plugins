@@ -126,6 +126,36 @@ class VenetianBlindModelTests(unittest.TestCase):
         armed, was_open = model.shading_arm_state(armed, was_open, True)
         self.assertTrue(armed)  # Wind or a manual full opening rearms shading.
 
+    def test_target_retry_waits_for_confirmation_and_delay(self):
+        run, retry_at = model.target_retry_state(
+            100, True, False, False, 0)
+        self.assertTrue(run)
+        self.assertEqual(retry_at, 160)
+
+        run, retry_at = model.target_retry_state(
+            130, True, False, False, retry_at)
+        self.assertFalse(run)
+        self.assertEqual(retry_at, 160)
+
+        run, retry_at = model.target_retry_state(
+            160, True, False, True, retry_at)
+        self.assertFalse(run)  # Never overlap an active or queued program.
+        self.assertEqual(retry_at, 160)
+
+        run, retry_at = model.target_retry_state(
+            170, True, False, False, retry_at)
+        self.assertTrue(run)
+        self.assertEqual(retry_at, 230)
+
+        self.assertEqual(
+            model.target_retry_state(180, True, True, False, retry_at),
+            (False, 0),
+        )
+        self.assertEqual(
+            model.target_retry_state(180, False, False, False, retry_at),
+            (False, 0),
+        )
+
 
 class VenetianBlindInterfaceTests(unittest.TestCase):
     def test_settings_use_crud_profiles_and_no_blind_count_input(self):
@@ -200,7 +230,7 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
 
     def test_manifest_version_dependency_and_permissions_are_current(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.2.4')
+        self.assertEqual(manifest['version'], '1.2.7')
         self.assertIn('venetian_blind.css?v=1.2.3', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
         self.assertIn('venetian_blind.css?v=1.2.3', (PLUGIN / 'templates' / 'venetian_blind_overview.html').read_text(encoding='utf-8'))
         self.assertIn('system', manifest['permissions'])

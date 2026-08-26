@@ -1,6 +1,6 @@
 # Automation Rules
 
-Version 1.1.3 adds concrete provider actions from Venetian Blind 1.2.4, Water Tank Monitor 1.1.1, Current Loop Tanks Monitor 1.1.1 and OSPy Backup 1.0.3. Rules can operate one configured blind, safely release tank regulation, reset the ultrasonic tank's recorded extrema or create a plug-in data backup.
+Version 1.1.4 makes condition entry type-aware. Boolean states such as manual mode, scheduler state, pressure presence or update availability now offer only the localized **is active** and **is inactive** choices and do not display an unused limit field. Numeric values use a numeric limit input, while text and range comparisons retain their appropriate input format. Version 1.1.3 adds concrete provider actions from Venetian Blind 1.2.4, Water Tank Monitor 1.1.1, Current Loop Tanks Monitor 1.1.1 and OSPy Backup 1.0.3. Rules can operate one configured blind, safely release tank regulation, reset the ultrasonic tank's recorded extrema or create a plug-in data backup.
 
 Automation Rules is a graphical, optional consumer of OSPy's read-only `ospy.provider.v1` monitoring contract. A rule is displayed as one main card. Its conditions are rows on a desktop and responsive subcards on a narrow screen. Rules can require every condition (`AND`) or at least one condition (`OR`).
 

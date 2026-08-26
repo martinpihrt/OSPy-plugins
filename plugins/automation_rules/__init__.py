@@ -29,7 +29,7 @@ NAME = 'Automation Rules'
 MENU = _('Package: Automation Rules')
 LINK = 'settings_page'
 MAX_RULES = 100
-SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.1.3'
+SCRIPT_PATH = 'automation_rules/static/automation_rules.js?v=1.1.4'
 
 plugin_options = PluginOptions(NAME, {
     'enabled': False,

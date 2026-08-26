@@ -17,6 +17,37 @@ def function_source(path, name):
 
 
 class MobileVisualInterfaceTests(unittest.TestCase):
+    def test_ospy_backup_declares_mobile_create_and_download(self):
+        plugin = ROOT / 'plugins' / 'ospy_backup'
+        manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))
+        cards = function_source(plugin / '__init__.py', 'mobile_cards')
+        download = function_source(plugin / '__init__.py', 'mobile_download')
+
+        self.assertIn('create_backup', manifest['mobile']['actions'])
+        self.assertIn('latest_backup', manifest['mobile']['downloads'])
+        self.assertIn("'actions':", cards)
+        self.assertIn("card['downloads']", cards)
+        self.assertIn("'id': 'last_backup_size'", cards)
+        self.assertIn("'quantity': 'data_size'", cards)
+        self.assertIn("os.path.commonpath", download)
+
+    def test_system_update_mobile_metrics_use_stable_ids(self):
+        plugin = ROOT / 'plugins' / 'system_update'
+        cards = function_source(plugin / '__init__.py', 'mobile_cards')
+
+        self.assertIn("('current_commit', 'current_commit')", cards)
+        self.assertIn("('target_commit', 'target_commit')", cards)
+        self.assertIn("('update_available', 'update_available')", cards)
+
+    def test_venetian_blind_cards_include_each_blind_actions(self):
+        plugin = ROOT / 'plugins' / 'venetian_blind'
+        cards = function_source(plugin / '__init__.py', 'mobile_cards')
+
+        self.assertIn("'payload': {'blind_uid': blind['uid']}", cards)
+        self.assertIn("blind.get('tilt_labels'", cards)
+        self.assertIn("'open': _('Open')", cards)
+        self.assertIn("'closed': _('Close')", cards)
+
     def test_weather_dashboard_declares_native_gauge_contract(self):
         plugin = ROOT / 'plugins' / 'weather_dashboard'
         manifest = json.loads((plugin / 'plugin.json').read_text(encoding='utf-8'))

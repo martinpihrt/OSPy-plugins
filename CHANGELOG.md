@@ -1,5 +1,24 @@
 # OSPy-plugins Changelog
 
+August 26 2026
+--------------
+(Martin Pihrt) - Venetian Blind v1.2.7<br/>
+Changed native mobile blind captions from state adjectives to the Open, Stop and Close command verbs. Automatic opening in strong wind and closing for temperature shading now remain pending until every enabled Shelly confirms the requested end position. An active or queued program is never overlapped; after a minimum 60-second verification delay, an unconfirmed target is retried whenever its safety or shading conditions remain satisfied. Configured tilt captions remain unchanged. Updated documentation and regression coverage.
+
+(Martin Pihrt) - OSPy Backup v1.0.5<br/>
+Added stable native mobile metric IDs and marked `last_backup_size` as a byte-sized `data_size` quantity, allowing clients to display a readable B, kB or MB value instead of a raw integer.
+
+August 25 2026
+--------------
+(Martin Pihrt) - OSPy Backup v1.0.4<br/>
+Added native mobile creation and download of the newest plug-in-data ZIP. The manifest declares the guarded `create_backup` action and `latest_backup` download, mobile cards expose only the download currently available, and the download descriptor is restricted to a verified archive inside the plug-in data directory. Concurrent backup protection and the existing provider action remain authoritative. Updated the README, manifest and mobile-interface regression coverage. Downloading requires matching OSPy Mobile API v1 plug-in-download support.
+
+(Martin Pihrt) - System Update v1.2.7<br/>
+Replaced position-based mobile metric identifiers with stable language-neutral IDs for enabled state, automatic updates, check state, update availability, current and target commits, stable release, branch, channel and watchdog results. Native clients can now localize and safely bind Check and Install controls without depending on translated labels or metric order. Updated the README, manifest and regression coverage; update execution remains on the scoped core `/updates/actions/check|apply|rollback` endpoints.
+
+(Martin Pihrt) - Venetian Blind v1.2.5<br/>
+Exposed open, stop, close and all four configured tilt actions on every enabled mobile blind card. Each action carries the stable blind UID, uses the same validated control path as the web interface and Automation Rules, and displays the administrator's saved tilt label when present. Updated the README, manifest and regression coverage.
+
 August 23 2026
 --------------
 (Martin Pihrt) - Automation Rules v1.1.3, Venetian Blind v1.2.4, Water Meter v1.2.1, Pressure Monitor v1.1.1, Water Tank Monitor v1.1.1, Current Loop Tanks Monitor v1.1.1 and OSPy Backup v1.0.3<br/>
