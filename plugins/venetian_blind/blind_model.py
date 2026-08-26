@@ -141,6 +141,18 @@ def shading_arm_state(armed, was_all_open, all_open):
     return bool(armed), bool(all_open)
 
 
+def target_retry_state(now, condition_active, target_confirmed,
+                       program_pending, retry_at, delay=60):
+    """Return whether to run a target action and its next retry deadline."""
+    if not condition_active or target_confirmed:
+        return False, 0
+    if program_pending:
+        return False, retry_at if retry_at > 0 else now + delay
+    if retry_at > now:
+        return False, retry_at
+    return True, now + delay
+
+
 def run_now_deadline(program):
     """Return the final interval end of a Run-Now program, if it has work."""
     if program is None or not getattr(program, 'start', None):

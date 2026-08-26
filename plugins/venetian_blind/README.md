@@ -3,7 +3,7 @@ Venetian Blind Readme
 
 Tested in Python 3+
 
-Version 1.2.5 implements `ospy.provider.v1` and exposes every enabled blind as a cached resource with explicit open, stop, close and tilt 1–4 actions for Automation Rules and the native mobile application. Configured tilt labels are preserved. The actions reuse the same validated command path as Mobile API v1.
+Version 1.2.7 implements `ospy.provider.v1` and exposes every enabled blind as a cached resource with explicit open, stop, close and tilt 1–4 actions for Automation Rules and the native mobile application. Mobile action captions use command verbs instead of state adjectives, while configured tilt labels are preserved. The actions reuse the same validated command path as Mobile API v1.
 
 Mobile action IDs are `open`, `stop`, `close`, `tilt1`, `tilt2`, `tilt3` and `tilt4`. Every request supplies `{"blind_uid":"..."}`; the UID must identify a currently configured enabled blind and plug-in control must be enabled. The four tilt actions retain stable IDs while their visible labels come from the saved blind configuration.
 
@@ -26,9 +26,11 @@ Testing a saved command keeps the same blind editor open so several directions a
 
 Temperature shading reads the selected OSPy sensor from its actual `last_read_value` channel, compares it directly with the configured limit and operates only inside the permitted time window. Lowering is allowed only after the configured number of consecutive, fresh and unique Wind Monitor measurements is below the safe limit. It is armed only by a transition in which every enabled blind is confirmed fully open.
 
+Automatic opening and closing are completed only after every enabled and reachable Shelly reports the requested end position. After starting a configured program, the plug-in waits at least 60 seconds and never overlaps an active or queued program. If the target remains unconfirmed while the applicable wind or shading conditions are still satisfied, the program is started again. A temporary loss of the condition pauses retries; confirmation of fully open or fully closed clears the pending target.
+
 Strong-wind protection is active all day and starts after the configured number of unique accepted Wind Monitor measurements reaches or exceeds the wind limit inside the configured minute interval, for example two exceedances during five minutes. It does not reuse the same cached measurement. If at least one enabled blind is closed, tilted, between positions or unreachable, the selected raising programs run; only a confirmed open state from every enabled blind suppresses the action. Pending lowering actions are cancelled first.
 
-One automatic lowering action consumes the armed state. Manually tilting, closing or moving a blind to an intermediate position therefore does not cause another lowering action while the temperature condition remains true. Shading is rearmed only after every enabled blind is confirmed fully open again, whether the blinds were raised by strong-wind protection or manually. This both preserves a deliberate manual tilt and allows a later manual full opening to start a new shading cycle.
+An automatic lowering request consumes the armed state but remains pending until every enabled blind is confirmed fully closed. A partial, unchanged or unreachable position therefore causes another attempt after the verification delay while shading conditions remain valid. Once full closure is confirmed, shading is rearmed only after every enabled blind becomes fully open again, whether raised by strong-wind protection or manually.
 
 The plug-in observes active OSPy programs selected for raising and lowering. Programs started manually or through an ESP32 Multi Contact therefore suppress a duplicate automatic start while they are active, while the next valid Shelly position remains the authoritative state.
 

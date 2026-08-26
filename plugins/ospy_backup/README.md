@@ -3,7 +3,7 @@ OSPy Backup Readme
 
 Tested in Python 3+
 
-Version 1.0.4 implements `ospy.provider.v1`, declares an explicit Automation Rules action and exposes guarded mobile create/download controls for the newest plug-in data ZIP. Concurrent requests remain rejected and the resulting file name and size are returned to action history.
+Version 1.0.5 implements `ospy.provider.v1`, declares an explicit Automation Rules action and exposes guarded mobile create/download controls for the newest plug-in data ZIP. Mobile metrics use stable IDs and declare `last_backup_size` as `quantity=data_size` with unit `B`, allowing clients to format the byte count for display. Concurrent requests remain rejected and the resulting file name and size are returned to action history.
 
 The mobile manifest declares action ID `create_backup` with an empty JSON payload and download ID `latest_backup`. After a successful creation, the mobile card advertises the available ZIP; `mobile_download('latest_backup')` returns only its verified path, base file name and `application/zip` MIME type for streaming by the matching OSPy Mobile API endpoint. This is a plug-in-data archive and is separate from complete OSPy system backups.
 

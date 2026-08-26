@@ -157,11 +157,27 @@ def mobile_status():
 
 def mobile_cards(**_kwargs):
     result = health()
+    details = result.get('details', {})
+    with health_lock:
+        state = dict(health_state)
     metrics = [
-        {'id': 'backup_{}'.format(index), 'label': label,
-         'value': value, 'unit': ''}
-        for index, (label, value) in enumerate(result.get('details', {}).items())
+        {'id': 'lifecycle', 'label': _('Lifecycle'),
+         'value': details.get(_('Lifecycle'), ''), 'unit': ''},
+        {'id': 'backup_in_progress', 'label': _('Backup in progress'),
+         'value': bool(state['running']), 'unit': ''},
+        {'id': 'last_successful_backup', 'label': _('Last successful backup'),
+         'value': details.get(_('Last successful backup'), ''), 'unit': ''},
+        {'id': 'last_backup_file', 'label': _('Last backup file'),
+         'value': state['last_file'] or _('Not available'), 'unit': ''},
+        {'id': 'last_backup_size', 'label': _('Last backup size'),
+         'quantity': 'data_size', 'value': int(state['last_size']),
+         'unit': 'B'},
     ]
+    if state['last_error_message']:
+        metrics.append({
+            'id': 'last_error', 'label': _('Last error'),
+            'value': state['last_error_message'], 'unit': '',
+        })
     card = {
         'id': 'plugin_backup', 'kind': 'metrics',
         'title': _('Plug-in data backup'), 'metrics': metrics,
@@ -169,8 +185,7 @@ def mobile_cards(**_kwargs):
             {'id': 'create_backup', 'label': _('Create backup'), 'payload': {}},
         ],
     }
-    with health_lock:
-        filename = health_state['last_file']
+    filename = state['last_file']
     if filename:
         card['downloads'] = [{
             'id': 'latest_backup', 'label': _('Download backup'),

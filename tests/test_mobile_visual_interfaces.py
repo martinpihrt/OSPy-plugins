@@ -27,6 +27,8 @@ class MobileVisualInterfaceTests(unittest.TestCase):
         self.assertIn('latest_backup', manifest['mobile']['downloads'])
         self.assertIn("'actions':", cards)
         self.assertIn("card['downloads']", cards)
+        self.assertIn("'id': 'last_backup_size'", cards)
+        self.assertIn("'quantity': 'data_size'", cards)
         self.assertIn("os.path.commonpath", download)
 
     def test_system_update_mobile_metrics_use_stable_ids(self):
@@ -43,6 +45,8 @@ class MobileVisualInterfaceTests(unittest.TestCase):
 
         self.assertIn("'payload': {'blind_uid': blind['uid']}", cards)
         self.assertIn("blind.get('tilt_labels'", cards)
+        self.assertIn("'open': _('Open')", cards)
+        self.assertIn("'closed': _('Close')", cards)
 
     def test_weather_dashboard_declares_native_gauge_contract(self):
         plugin = ROOT / 'plugins' / 'weather_dashboard'

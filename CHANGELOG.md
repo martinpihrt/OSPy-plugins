@@ -1,5 +1,13 @@
 # OSPy-plugins Changelog
 
+August 26 2026
+--------------
+(Martin Pihrt) - Venetian Blind v1.2.7<br/>
+Changed native mobile blind captions from state adjectives to the Open, Stop and Close command verbs. Automatic opening in strong wind and closing for temperature shading now remain pending until every enabled Shelly confirms the requested end position. An active or queued program is never overlapped; after a minimum 60-second verification delay, an unconfirmed target is retried whenever its safety or shading conditions remain satisfied. Configured tilt captions remain unchanged. Updated documentation and regression coverage.
+
+(Martin Pihrt) - OSPy Backup v1.0.5<br/>
+Added stable native mobile metric IDs and marked `last_backup_size` as a byte-sized `data_size` quantity, allowing clients to display a readable B, kB or MB value instead of a raw integer.
+
 August 25 2026
 --------------
 (Martin Pihrt) - OSPy Backup v1.0.4<br/>
