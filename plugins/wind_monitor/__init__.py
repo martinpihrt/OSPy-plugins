@@ -203,15 +203,22 @@ def rs485_dependency_error():
     """Return a user-facing error while the selected RS485 provider is unavailable."""
     try:
         from plugins.rs485_communication import get_rs485_status, worker
-    except (ImportError, AttributeError):
+        state = get_rs485_status()
+    except Exception:
+        # OSPy protects disabled plug-ins with a module wrapper whose attribute
+        # access raises a generic "plug-in is not running" exception.  Treat it
+        # like any other unavailable optional dependency instead of letting the
+        # settings or diagnostics page fail with an internal error.
         return _('RS485 Communication plug-in is required for the RS485 signal source.')
-    state = get_rs485_status()
     if not state.get('enabled', False):
         return _('Enable the RS485 Communication plug-in before using the RS485 signal source.')
     if worker is None or not worker.is_alive():
         return _('The RS485 Communication worker is not running.')
     if not state.get('serial_available', False):
         return _('Python serial support required by RS485 Communication is unavailable.')
+    if state.get('status') in ('waiting', 'error', 'dependency_error'):
+        return state.get('summary') or _(
+            'RS485 Communication is not ready for the RS485 signal source.')
     return ''
 
 
@@ -383,8 +390,12 @@ class WindSender(Thread):
             if dependency_error:
                 raise RuntimeError(dependency_error)
             from plugins.rs485_communication import get_rs485_status, rs485_queue
+            rs485_state = get_rs485_status()
+            if rs485_state.get('scan_active', False):
+                diagnostic_event('rs485_measurement_paused_for_bus_scan')
+                return None
             serial_timeout = safe_float(
-                get_rs485_status().get('settings', {}).get('timeout', 1.0), 1.0)
+                rs485_state.get('settings', {}).get('timeout', 1.0), 1.0)
             response = rs485_queue.transaction(
                 request=request,
                 response_length=9,

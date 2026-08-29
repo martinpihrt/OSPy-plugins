@@ -10,6 +10,7 @@ The plug-in owns one serial RS485 interface and provides one public FIFO queue (
 - Automatic Waveshare CH343G detection (USB VID:PID `1A86:55D3`).
 - Manual Linux serial port selection (`/dev/ttyACM0`, `/dev/serial/by-id/...`, etc.).
 - Configurable baud rate, data bits, parity, stop bits and timeouts.
+- Background Modbus discovery using address 255 broadcast probes, addresses 1-254, functions 03 and 04, one- and two-register reads, common sensor baud rates and 8N1/8E1/8O1 framing, with live test details and validated response frames.
 - Live state: Disabled / Waiting / OK / Communicating / Error.
 - Shows detected and active port, device description, USB ID, last communication, last client plug-in and TX/RX counters.
 - Safe adapter test (USB discovery + opening the selected serial port).

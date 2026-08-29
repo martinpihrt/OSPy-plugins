@@ -148,16 +148,25 @@ class WindMonitorTemplateTests(unittest.TestCase):
         self.assertIn("_('PCF8583 setup over I2C failed: {}')", source)
         self.assertIn("_('Reading the PCF8583 counter over I2C failed: {}')", source)
         self.assertIn("_('RS485 wind sensor read failed: {}')", source)
+        self.assertIn("diagnostic_event('rs485_measurement_paused_for_bus_scan')", source)
         self.assertIn('self._clear_fault()', source)
+
+    def test_disabled_rs485_dependency_is_handled_without_internal_error(self):
+        source = (PLUGIN_ROOT / '__init__.py').read_text(encoding='utf-8')
+        dependency_check = source[
+            source.index('def rs485_dependency_error():'):
+            source.index('\ndef send_wind_email(', source.index('def rs485_dependency_error():'))
+        ]
+        self.assertIn('except Exception:', dependency_check)
 
     def test_manifest_and_template_assets_use_current_version(self):
         manifest = json.loads(
             (PLUGIN_ROOT / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.2.1')
+        self.assertEqual(manifest['version'], '1.2.2')
         for template_path in (PLUGIN_ROOT / 'templates').glob('*.html'):
             template = template_path.read_text(encoding='utf-8')
             if 'wind_monitor.css?' in template:
-                self.assertIn('wind_monitor.css?v=1.2.1', template)
+                self.assertIn('wind_monitor.css?v=1.2.2', template)
 
     def test_rs485_and_smbus_dependencies_are_optional(self):
         manifest = json.loads(
