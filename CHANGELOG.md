@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 29 2026
+--------------
+(Martin Pihrt) - Wind Speed Monitor v1.2.2 and RS485 Communication v1.0.2<br/>
+Handled a disabled, stopped or unavailable optional RS485 Communication provider as a visible Wind Monitor validation and health error instead of an internal page failure. Fixed fixed-length RS485 transactions treating an empty or partial response as successful communication: missing bytes now produce a timeout error, fail the queue job, preserve transmitted and received byte counters, and expose the real no-response condition in RS485 status and diagnostics. Added a background RS485 bus discovery action that scans Modbus addresses 1-247 at eight common sensor speeds, validates normal and exception response CRCs, pauses ordinary queue traffic during discovery, and reports live progress and all discovered devices. Updated documentation, versions, asset cache keys and regression coverage.
+
 August 26 2026
 --------------
 (Martin Pihrt) - Venetian Blind v1.2.7<br/>

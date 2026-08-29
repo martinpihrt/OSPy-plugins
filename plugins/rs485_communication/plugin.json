@@ -3,7 +3,7 @@
   "id": "rs485_communication",
   "name": "RS485 Communication",
   "menu": "Package: RS485 Communication",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Provides a central RS485 worker and FIFO rs485_queue for OSPy plug-ins, with Waveshare CH343G auto-detection, status monitoring and adapter testing.",
   "author": "Martin Pihrt",
   "homepage": "https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins/rs485_communication",

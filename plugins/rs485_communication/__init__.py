@@ -38,6 +38,10 @@ DEFAULT_BAUDRATE = 4800
 MAX_PORT_LENGTH = 255
 MAX_FRAME_LENGTH = 65536
 MAX_TRANSACTION_DELAY = 30.0
+BUS_SCAN_BAUDRATES = (1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200)
+BUS_SCAN_FIRST_ADDRESS = 1
+BUS_SCAN_LAST_ADDRESS = 247
+BUS_SCAN_TIMEOUT = 0.12
 
 
 try:
@@ -102,6 +106,16 @@ _state = {
     'queue_current_operation': '',
     'queue_current_since': 0,
     'queue_last_wait_ms': 0,
+    'scan_active': False,
+    'scan_started': 0,
+    'scan_finished': 0,
+    'scan_baudrate': 0,
+    'scan_address': 0,
+    'scan_completed': 0,
+    'scan_total': len(BUS_SCAN_BAUDRATES) * BUS_SCAN_LAST_ADDRESS,
+    'scan_found': [],
+    'scan_message': _('Bus scan has not been run yet.'),
+    'scan_error': '',
 }
 
 
@@ -320,6 +334,15 @@ def _record_success(client='', tx=0, rx=0):
         _state['rx_bytes'] += int(rx or 0)
 
 
+def _record_failed_transfer(client='', tx=0, rx=0):
+    """Account for bytes transferred by an unsuccessful transaction."""
+    with _state_lock:
+        _state['last_client'] = str(client or '')[:120]
+        _state['transactions'] += 1
+        _state['tx_bytes'] += int(tx or 0)
+        _state['rx_bytes'] += int(rx or 0)
+
+
 def _record_error(key, message):
     now = time.time()
     text = str(message).splitlines()[-1] if message else _('Unknown serial error.')
@@ -338,6 +361,7 @@ def _status_label(status):
         'waiting': _('Waiting'),
         'ok': _('OK'),
         'communicating': _('Communicating'),
+        'scanning': _('Scanning'),
         'error': _('Error'),
         'dependency_error': _('Dependency error'),
     }
@@ -537,6 +561,8 @@ class RS485Bus(object):
             ser = self._ensure_open_locked()
             port = getattr(ser, 'port', self._port)
             _set_status('communicating', _('Communication in progress on {}.').format(port), port)
+            written = 0
+            response = b''
             try:
                 if clear_input:
                     try:
@@ -549,7 +575,6 @@ class RS485Bus(object):
                 if delay:
                     time.sleep(delay)
 
-                response = b''
                 if response_length > 0:
                     response = ser.read(response_length)
                 elif read_until is not None:
@@ -558,6 +583,13 @@ class RS485Bus(object):
                         response = ser.read_until(terminator, size=max(1, int(max_read)))
                     except AttributeError:
                         response = _read_until_compat(ser, terminator, max(1, int(max_read)))
+
+                if response_length > 0 and len(response) != response_length:
+                    _record_failed_transfer(
+                        client=client, tx=written, rx=len(response))
+                    raise RuntimeError(_(
+                        'RS485 response timeout: expected {} bytes, received {}.'
+                    ).format(response_length, len(response)))
 
                 _record_success(client=client, tx=written, rx=len(response))
                 _set_status('ok', _('Adapter is ready on {}.').format(port), port)
@@ -700,6 +732,10 @@ class RS485Queue(object):
         current_worker = globals().get('worker')
         if current_worker is None or not current_worker.is_alive():
             raise RuntimeError(_('RS485 worker is not running.'))
+        with _state_lock:
+            scan_active = bool(_state.get('scan_active', False))
+        if scan_active and operation != 'bus_scan':
+            raise RuntimeError(_('RS485 bus scan is in progress.'))
 
         job = RS485QueueJob(self._next_id(), operation, client, runner)
         try:
@@ -851,6 +887,154 @@ class RS485Queue(object):
 # Public FIFO queue. Dependent plug-ins should use this object instead of
 # opening /dev/tty* directly.
 rs485_queue = RS485Queue(maxsize=100)
+
+
+def _modbus_crc16(data):
+    """Return a Modbus RTU CRC-16 for discovery requests and responses."""
+    crc = 0xFFFF
+    for byte in bytes(bytearray(data)):
+        crc ^= byte
+        for _unused in range(8):
+            crc = (crc >> 1) ^ 0xA001 if crc & 1 else crc >> 1
+    return crc
+
+
+def _scan_request(address):
+    frame = bytearray((int(address), 0x03, 0x00, 0x00, 0x00, 0x02))
+    crc = _modbus_crc16(frame)
+    frame.extend((crc & 0xFF, (crc >> 8) & 0xFF))
+    return bytes(frame)
+
+
+def _valid_scan_response(response, address):
+    """Accept a valid normal or Modbus exception response from this address."""
+    frame = bytes(response or b'')
+    if len(frame) < 5 or frame[0] != int(address):
+        return False
+    expected = _modbus_crc16(frame[:-2])
+    received = frame[-2] | (frame[-1] << 8)
+    if expected != received:
+        return False
+    if frame[1] == 0x83:
+        return len(frame) == 5
+    return len(frame) == 9 and frame[1] == 0x03 and frame[2] == 0x04
+
+
+def _scan_bus_serial(ser):
+    """Scan all Modbus addresses at common ZTS sensor baud rates."""
+    original_baudrate = ser.baudrate
+    original_timeout = ser.timeout
+    found = []
+    completed = 0
+    try:
+        ser.timeout = BUS_SCAN_TIMEOUT
+        for baudrate in BUS_SCAN_BAUDRATES:
+            if runtime.stop_event.is_set():
+                raise RuntimeError(_('RS485 bus scan was stopped.'))
+            ser.baudrate = baudrate
+            try:
+                ser.reset_input_buffer()
+            except Exception:
+                pass
+            # Give the USB/UART driver time to apply the new line rate.
+            time.sleep(0.05)
+            for address in range(BUS_SCAN_FIRST_ADDRESS, BUS_SCAN_LAST_ADDRESS + 1):
+                if runtime.stop_event.is_set():
+                    raise RuntimeError(_('RS485 bus scan was stopped.'))
+                request = _scan_request(address)
+                try:
+                    ser.reset_input_buffer()
+                except Exception:
+                    pass
+                written = ser.write(request)
+                ser.flush()
+                response = ser.read(9)
+                completed += 1
+                with _state_lock:
+                    _state['transactions'] += 1
+                    _state['tx_bytes'] += int(written or 0)
+                    _state['rx_bytes'] += len(response)
+                    _state['last_client'] = _('RS485 bus scan')
+                    _state['scan_baudrate'] = baudrate
+                    _state['scan_address'] = address
+                    _state['scan_completed'] = completed
+                if _valid_scan_response(response, address):
+                    item = {
+                        'address': address,
+                        'baudrate': baudrate,
+                        'response': ' '.join('{:02X}'.format(value) for value in response),
+                    }
+                    found.append(item)
+                    with _state_lock:
+                        _state['scan_found'] = list(found)
+        return found
+    finally:
+        try:
+            ser.baudrate = original_baudrate
+            ser.timeout = original_timeout
+            ser.reset_input_buffer()
+        except Exception:
+            pass
+
+
+def start_bus_scan():
+    """Queue a non-blocking exclusive Modbus bus scan."""
+    if not plugin_options.get('enabled', False):
+        return False, _('Enable and save the RS485 worker before scanning the bus.')
+    if not SERIAL_AVAILABLE:
+        return False, _('Python serial module is not installed.')
+    current_worker = globals().get('worker')
+    if current_worker is None or not current_worker.is_alive():
+        return False, _('RS485 worker is not running.')
+
+    with _state_lock:
+        if _state.get('scan_active', False):
+            return False, _('RS485 bus scan is already in progress.')
+        _state['scan_active'] = True
+        _state['scan_started'] = time.time()
+        _state['scan_finished'] = 0
+        _state['scan_baudrate'] = 0
+        _state['scan_address'] = 0
+        _state['scan_completed'] = 0
+        _state['scan_found'] = []
+        _state['scan_error'] = ''
+        _state['scan_message'] = _('Scanning RS485 bus for Modbus devices...')
+
+    def runner(bus):
+        error = None
+        found = []
+        try:
+            found = bus.call(_scan_bus_serial, client=_('RS485 bus scan'))
+            return found
+        except Exception as err:
+            error = err
+            raise
+        finally:
+            with _state_lock:
+                _state['scan_active'] = False
+                _state['scan_finished'] = time.time()
+                if error is not None:
+                    _state['scan_error'] = str(error)
+                    _state['scan_message'] = _('RS485 bus scan failed: {}').format(error)
+                elif found:
+                    _state['scan_message'] = _(
+                        'RS485 bus scan completed; {} device(s) found.'
+                    ).format(len(found))
+                else:
+                    _state['scan_message'] = _(
+                        'RS485 bus scan completed; no Modbus device responded.'
+                    )
+
+    try:
+        rs485_queue._enqueue('bus_scan', _('RS485 bus scan'), runner, 0.0)
+    except Exception as err:
+        with _state_lock:
+            _state['scan_active'] = False
+            _state['scan_finished'] = time.time()
+            _state['scan_error'] = str(err)
+            _state['scan_message'] = _('Unable to start RS485 bus scan: {}').format(err)
+        return False, str(err)
+    return True, _('RS485 bus scan started.')
 
 
 # -----------------------------------------------------------------------------
@@ -1155,8 +1339,16 @@ class settings_page(ProtectedPage):
             qdict = web.input()
             verify_csrf(qdict)
             action = str(qdict.get('action', 'save'))
-            if action not in ('save', 'scan', 'test'):
+            if action not in ('save', 'scan', 'test', 'scan_bus'):
                 raise web.badrequest(_('Unknown RS485 settings action.'))
+
+            if action == 'scan_bus':
+                started, message = start_bus_scan()
+                if started:
+                    log.info(NAME, message)
+                else:
+                    log.error(NAME, message)
+                raise web.seeother(plugin_url(settings_page), True)
 
             if action == 'scan':
                 found = detect_waveshare_adapter()

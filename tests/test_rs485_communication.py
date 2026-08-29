@@ -60,7 +60,7 @@ class TrackingOptions(dict):
 class RS485CommunicationTests(unittest.TestCase):
     def test_manifest_declares_required_serial_dependency_and_permission(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.0.1')
+        self.assertEqual(manifest['version'], '1.0.2')
         self.assertIn('system', manifest['permissions'])
         self.assertIn(
             {'module': 'serial', 'package': 'pyserial', 'required': True},
@@ -84,6 +84,72 @@ class RS485CommunicationTests(unittest.TestCase):
         self.assertIn('name="baudrate"', template)
         self.assertIn('4800', template)
         self.assertIn('9600', template)
+
+    def test_bus_scan_is_background_bounded_and_visible(self):
+        template = (PLUGIN / 'templates' / 'rs485_communication.html').read_text(encoding='utf-8')
+        self.assertIn("action not in ('save', 'scan', 'test', 'scan_bus')", SOURCE)
+        self.assertIn('def start_bus_scan():', SOURCE)
+        self.assertIn('BUS_SCAN_BAUDRATES = (1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200)', SOURCE)
+        self.assertIn('BUS_SCAN_LAST_ADDRESS = 247', SOURCE)
+        self.assertIn("rs485_queue._enqueue('bus_scan'", SOURCE)
+        self.assertIn('id="scanBusButton"', template)
+        self.assertIn('id="busScanProgress"', template)
+        self.assertIn('id="busScanFound"', template)
+
+    def test_bus_scan_validates_frames_and_restores_serial_settings(self):
+        state = {
+            'transactions': 0,
+            'tx_bytes': 0,
+            'rx_bytes': 0,
+            'last_client': '',
+            'scan_baudrate': 0,
+            'scan_address': 0,
+            'scan_completed': 0,
+        }
+        runtime = type('Runtime', (), {'stop_event': threading.Event()})()
+        symbols = load_selected_symbols(
+            {'_modbus_crc16', '_scan_request', '_valid_scan_response', '_scan_bus_serial'},
+            {
+                '_state': state,
+                '_state_lock': threading.RLock(),
+                'runtime': runtime,
+                'BUS_SCAN_BAUDRATES': (4800, 9600),
+                'BUS_SCAN_FIRST_ADDRESS': 1,
+                'BUS_SCAN_LAST_ADDRESS': 10,
+                'BUS_SCAN_TIMEOUT': 0.01,
+            },
+        )
+
+        class FakeSerial:
+            def __init__(self):
+                self.baudrate = 4800
+                self.timeout = 1.0
+                self.request = b''
+
+            def reset_input_buffer(self):
+                pass
+
+            def write(self, request):
+                self.request = request
+                return len(request)
+
+            def flush(self):
+                pass
+
+            def read(self, _size):
+                if self.baudrate == 9600 and self.request[0] == 7:
+                    frame = bytearray((7, 3, 4, 0, 36, 0, 3))
+                    crc = symbols['_modbus_crc16'](frame)
+                    frame.extend((crc & 0xFF, crc >> 8))
+                    return bytes(frame)
+                return b''
+
+        serial_port = FakeSerial()
+        found = symbols['_scan_bus_serial'](serial_port)
+        self.assertEqual(found[0]['address'], 7)
+        self.assertEqual(found[0]['baudrate'], 9600)
+        self.assertEqual(serial_port.baudrate, 4800)
+        self.assertEqual(serial_port.timeout, 1.0)
 
     def test_settings_use_standard_plugin_switch_without_text_labels(self):
         template = (PLUGIN / 'templates' / 'rs485_communication.html').read_text(encoding='utf-8')
@@ -109,6 +175,11 @@ class RS485CommunicationTests(unittest.TestCase):
             bounded_length(65537, 'read')
         with self.assertRaises(ValueError):
             bounded_length(-1, 'read')
+
+    def test_fixed_length_transaction_rejects_short_response(self):
+        self.assertIn('len(response) != response_length', SOURCE)
+        self.assertIn('RS485 response timeout:', SOURCE)
+        self.assertIn('_record_failed_transfer(', SOURCE)
 
     def test_manual_port_validation_rejects_relative_and_control_paths(self):
         symbols = load_selected_symbols({'_normalize_port'})

@@ -3,7 +3,7 @@ $def with(plugin_options, ports, state, events)
 $var title: $_('RS485 Communication')
 $var page: plugins
 
-<link href="/plugins/rs485_communication/static/rs485_communication.css?v=1.0.1" rel="stylesheet" type="text/css">
+<link href="/plugins/rs485_communication/static/rs485_communication.css?v=1.0.2" rel="stylesheet" type="text/css">
 
 <style>
 .rs485-status-title {
@@ -62,6 +62,32 @@ function updateStatus() {
         jQuery('#queueWait').text((data.queue_last_wait_ms || 0) + ' ms');
         jQuery('#lastClient').text(data.last_client || '-');
         jQuery('#lastError').text(data.last_error_message || '-');
+        var scanTotal = data.scan_total || 0;
+        var scanCompleted = data.scan_completed || 0;
+        var scanPercent = scanTotal ? Math.floor(scanCompleted * 100 / scanTotal) : 0;
+        jQuery('#busScanStatus').text(data.scan_message || '-');
+        jQuery('#busScanProgress').text(
+            scanCompleted + ' / ' + scanTotal + ' (' + scanPercent + '%)'
+        );
+        jQuery('#busScanCurrent').text(
+            data.scan_active
+                ? (data.scan_baudrate || '-') + ' baud / ' + (data.scan_address || '-')
+                : '-'
+        );
+        var found = data.scan_found || [];
+        jQuery('#busScanFound').empty();
+        if (!found.length) {
+            jQuery('#busScanFound').text('-');
+        } else {
+            jQuery.each(found, function(index, device) {
+                jQuery('<div/>').text(
+                    (index + 1) + '. ' + device.baudrate + ' baud, ' +
+                    $:{json.dumps(_('Address'), ensure_ascii=False)} + ' ' +
+                    device.address + ', RX: ' + device.response
+                ).appendTo('#busScanFound');
+            });
+        }
+        jQuery('#scanBusButton').prop('disabled', !!data.scan_active);
     });
 }
 
@@ -69,6 +95,7 @@ jQuery(document).ready(function() {
     jQuery('#cSubmit').click(function() { setAction('save'); });
     jQuery('#scanButton').click(function() { setAction('scan'); });
     jQuery('#testButton').click(function() { setAction('test'); });
+    jQuery('#scanBusButton').click(function() { setAction('scan_bus'); });
     window.setInterval(updateStatus, 2000);
 });
 </script>
@@ -99,6 +126,17 @@ jQuery(document).ready(function() {
             <div class="label">$_('Last queue wait'):</div><div id="queueWait">$state['queue_last_wait_ms'] ms</div>
             <div class="label">$_('Last client plug-in'):</div><div id="lastClient">${state['last_client'] if state['last_client'] else '-'}</div>
             <div class="label">$_('Last error'):</div><div id="lastError">${state['last_error_message'] if state['last_error_message'] else '-'}</div>
+            <div class="label">$_('Bus scan status'):</div><div id="busScanStatus">$state['scan_message']</div>
+            <div class="label">$_('Bus scan progress'):</div><div id="busScanProgress">$state['scan_completed'] / $state['scan_total']</div>
+            <div class="label">$_('Scanning speed / address'):</div><div id="busScanCurrent">${(str(state['scan_baudrate']) + ' baud / ' + str(state['scan_address'])) if state['scan_active'] else '-'}</div>
+            <div class="label">$_('Devices found'):</div>
+            <div id="busScanFound" class="rs485-mono">
+                $if state['scan_found']:
+                    $for device in state['scan_found']:
+                        <div>${loop.index}. $device['baudrate'] baud, $_('address') $device['address'], RX: $device['response']</div>
+                $else:
+                    -
+            </div>
         </div>
     </div>
 
@@ -109,7 +147,10 @@ jQuery(document).ready(function() {
         <p>
             <button id="scanButton" type="button" class="button backup">$_('Find adapter')</button>
             <button id="testButton" type="button" class="button submit">$_('Test adapter')</button>
+            <button id="scanBusButton" type="button" class="button backup"${' disabled' if state['scan_active'] else ''}>$_('Find devices on bus')</button>
         </p>
+
+        <p>$_('The bus scan tests Modbus addresses 1 to 247 at 1200, 2400, 4800, 9600, 19200, 38400, 57600 and 115200 baud using the configured data bits, parity and stop bits. It can take several minutes. Normal RS485 requests are paused for the duration of the scan.')</p>
 
         <table class="optionList">
             <tr>
