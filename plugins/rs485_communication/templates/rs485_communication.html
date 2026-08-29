@@ -3,7 +3,7 @@ $def with(plugin_options, ports, state, events)
 $var title: $_('RS485 Communication')
 $var page: plugins
 
-<link href="/plugins/rs485_communication/static/rs485_communication.css?v=1.0.2" rel="stylesheet" type="text/css">
+<link href="/plugins/rs485_communication/static/rs485_communication.css?v=1.0.3" rel="stylesheet" type="text/css">
 
 <style>
 .rs485-status-title {
@@ -69,11 +69,20 @@ function updateStatus() {
         jQuery('#busScanProgress').text(
             scanCompleted + ' / ' + scanTotal + ' (' + scanPercent + '%)'
         );
-        jQuery('#busScanCurrent').text(
-            data.scan_active
-                ? (data.scan_baudrate || '-') + ' baud / ' + (data.scan_address || '-')
-                : '-'
-        );
+        jQuery('#busScanPhase').text(data.scan_phase || '-');
+        jQuery('#busScanCurrent').text(data.scan_active ? (
+            (data.scan_baudrate || '-') + ' baud, ' +
+            (data.scan_bytesize || 8) + (data.scan_parity || 'N') +
+            (data.scan_stopbits || 1) + ', ' +
+            $:{json.dumps(_('Address'), ensure_ascii=False)} + ' ' +
+            (data.scan_address || '-') + ', FC ' +
+            (data.scan_function || '-') + ', ' +
+            (data.scan_register_count || '-') + ' ' +
+            $:{json.dumps(_('register(s)'), ensure_ascii=False)} + ', ' +
+            (data.scan_timeout || '-') + ' s'
+        ) : '-');
+        jQuery('#busScanRequest').text(data.scan_request || '-');
+        jQuery('#busScanResponse').text(data.scan_response || '-');
         var found = data.scan_found || [];
         jQuery('#busScanFound').empty();
         if (!found.length) {
@@ -83,7 +92,11 @@ function updateStatus() {
                 jQuery('<div/>').text(
                     (index + 1) + '. ' + device.baudrate + ' baud, ' +
                     $:{json.dumps(_('Address'), ensure_ascii=False)} + ' ' +
-                    device.address + ', RX: ' + device.response
+                    device.address + ', ' + device.bytesize + device.parity +
+                    device.stopbits + ', FC ' + device.function + ', ' +
+                    device.register_count + ' ' +
+                    $:{json.dumps(_('register(s)'), ensure_ascii=False)} +
+                    ', RX: ' + device.response
                 ).appendTo('#busScanFound');
             });
         }
@@ -128,12 +141,15 @@ jQuery(document).ready(function() {
             <div class="label">$_('Last error'):</div><div id="lastError">${state['last_error_message'] if state['last_error_message'] else '-'}</div>
             <div class="label">$_('Bus scan status'):</div><div id="busScanStatus">$state['scan_message']</div>
             <div class="label">$_('Bus scan progress'):</div><div id="busScanProgress">$state['scan_completed'] / $state['scan_total']</div>
-            <div class="label">$_('Scanning speed / address'):</div><div id="busScanCurrent">${(str(state['scan_baudrate']) + ' baud / ' + str(state['scan_address'])) if state['scan_active'] else '-'}</div>
+            <div class="label">$_('Bus scan phase'):</div><div id="busScanPhase">${state['scan_phase'] if state['scan_phase'] else '-'}</div>
+            <div class="label">$_('Current bus scan test'):</div><div id="busScanCurrent">${(str(state['scan_baudrate']) + ' baud, ' + str(state['scan_bytesize']) + state['scan_parity'] + str(state['scan_stopbits']) + ', ' + _('address') + ' ' + str(state['scan_address']) + ', FC ' + str(state['scan_function']) + ', ' + str(state['scan_register_count']) + ' ' + _('register(s)')) if state['scan_active'] else '-'}</div>
+            <div class="label">$_('Current TX frame'):</div><div id="busScanRequest" class="rs485-mono">${state['scan_request'] if state['scan_request'] else '-'}</div>
+            <div class="label">$_('Last RX frame'):</div><div id="busScanResponse" class="rs485-mono">${state['scan_response'] if state['scan_response'] else '-'}</div>
             <div class="label">$_('Devices found'):</div>
             <div id="busScanFound" class="rs485-mono">
                 $if state['scan_found']:
                     $for device in state['scan_found']:
-                        <div>${loop.index}. $device['baudrate'] baud, $_('address') $device['address'], RX: $device['response']</div>
+                        <div>${loop.index}. $device['baudrate'] baud, $_('address') $device['address'], $device['bytesize']$device['parity']$device['stopbits'], FC $device['function'], $device['register_count'] $_('register(s)'), RX: $device['response']</div>
                 $else:
                     -
             </div>
@@ -150,7 +166,7 @@ jQuery(document).ready(function() {
             <button id="scanBusButton" type="button" class="button backup"${' disabled' if state['scan_active'] else ''}>$_('Find devices on bus')</button>
         </p>
 
-        <p>$_('The bus scan tests Modbus addresses 1 to 247 at 1200, 2400, 4800, 9600, 19200, 38400, 57600 and 115200 baud using the configured data bits, parity and stop bits. It can take several minutes. Normal RS485 requests are paused for the duration of the scan.')</p>
+        <p>$_('The scan first tries address 255 and the likely factory address 1 with longer timeouts, Modbus functions 03 and 04, one and two registers, 8N1, 8E1 and 8O1. It then scans addresses 1 to 254 with function 03 and one or two registers at 1200, 2400, 4800, 9600, 19200, 38400, 57600 and 115200 baud. With no responding device it can take about 13 minutes. Normal RS485 requests are paused for the duration of the scan.')</p>
 
         <table class="optionList">
             <tr>

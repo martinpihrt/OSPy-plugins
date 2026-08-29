@@ -60,7 +60,7 @@ class TrackingOptions(dict):
 class RS485CommunicationTests(unittest.TestCase):
     def test_manifest_declares_required_serial_dependency_and_permission(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.0.2')
+        self.assertEqual(manifest['version'], '1.0.3')
         self.assertIn('system', manifest['permissions'])
         self.assertIn(
             {'module': 'serial', 'package': 'pyserial', 'required': True},
@@ -90,7 +90,10 @@ class RS485CommunicationTests(unittest.TestCase):
         self.assertIn("action not in ('save', 'scan', 'test', 'scan_bus')", SOURCE)
         self.assertIn('def start_bus_scan():', SOURCE)
         self.assertIn('BUS_SCAN_BAUDRATES = (1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200)', SOURCE)
-        self.assertIn('BUS_SCAN_LAST_ADDRESS = 247', SOURCE)
+        self.assertIn('BUS_SCAN_LAST_ADDRESS = 254', SOURCE)
+        self.assertIn('BUS_SCAN_BROADCAST_VARIANTS', SOURCE)
+        self.assertIn('BUS_SCAN_TARGET_ADDRESSES = (1,)', SOURCE)
+        self.assertIn("BUS_SCAN_FORMATS = ((8, 'N', 1.0), (8, 'E', 1.0), (8, 'O', 1.0))", SOURCE)
         self.assertIn("rs485_queue._enqueue('bus_scan'", SOURCE)
         self.assertIn('id="scanBusButton"', template)
         self.assertIn('id="busScanProgress"', template)
@@ -108,7 +111,10 @@ class RS485CommunicationTests(unittest.TestCase):
         }
         runtime = type('Runtime', (), {'stop_event': threading.Event()})()
         symbols = load_selected_symbols(
-            {'_modbus_crc16', '_scan_request', '_valid_scan_response', '_scan_bus_serial'},
+            {
+                '_modbus_crc16', '_scan_request', '_valid_scan_response',
+                '_hex_frame', '_scan_probe', '_scan_bus_serial',
+            },
             {
                 '_state': state,
                 '_state_lock': threading.RLock(),
@@ -117,6 +123,11 @@ class RS485CommunicationTests(unittest.TestCase):
                 'BUS_SCAN_FIRST_ADDRESS': 1,
                 'BUS_SCAN_LAST_ADDRESS': 10,
                 'BUS_SCAN_TIMEOUT': 0.01,
+                'BUS_SCAN_BROADCAST_TIMEOUT': 0.01,
+                'BUS_SCAN_FORMATS': ((8, 'N', 1.0),),
+                'BUS_SCAN_BROADCAST_VARIANTS': ((0x03, 1),),
+                'BUS_SCAN_TARGET_ADDRESSES': (1,),
+                'BUS_SCAN_DIRECT_VARIANTS': ((0x03, 1),),
             },
         )
 
@@ -124,6 +135,9 @@ class RS485CommunicationTests(unittest.TestCase):
             def __init__(self):
                 self.baudrate = 4800
                 self.timeout = 1.0
+                self.bytesize = 7
+                self.parity = 'E'
+                self.stopbits = 2.0
                 self.request = b''
 
             def reset_input_buffer(self):
@@ -138,7 +152,7 @@ class RS485CommunicationTests(unittest.TestCase):
 
             def read(self, _size):
                 if self.baudrate == 9600 and self.request[0] == 7:
-                    frame = bytearray((7, 3, 4, 0, 36, 0, 3))
+                    frame = bytearray((7, 3, 2, 0, 36))
                     crc = symbols['_modbus_crc16'](frame)
                     frame.extend((crc & 0xFF, crc >> 8))
                     return bytes(frame)
@@ -150,6 +164,9 @@ class RS485CommunicationTests(unittest.TestCase):
         self.assertEqual(found[0]['baudrate'], 9600)
         self.assertEqual(serial_port.baudrate, 4800)
         self.assertEqual(serial_port.timeout, 1.0)
+        self.assertEqual(serial_port.bytesize, 7)
+        self.assertEqual(serial_port.parity, 'E')
+        self.assertEqual(serial_port.stopbits, 2.0)
 
     def test_settings_use_standard_plugin_switch_without_text_labels(self):
         template = (PLUGIN / 'templates' / 'rs485_communication.html').read_text(encoding='utf-8')
