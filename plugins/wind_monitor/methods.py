@@ -116,6 +116,12 @@ def fault_email_due(fault_active, last_sent, now, reminder_hours):
     return not fault_active or previous <= 0 or current - previous >= interval
 
 
+def fault_program_due(failure_count, required_failures, already_triggered):
+    """Return whether one fault incident should start its safety program."""
+    required = max(1, int(required_failures))
+    return not bool(already_triggered) and int(failure_count) >= required
+
+
 def calculate_trend(samples, minimum_span=40.0):
     """Return up/down/steady/unknown from a roughly one-minute sample window."""
     if len(samples) < 4:

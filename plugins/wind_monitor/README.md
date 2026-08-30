@@ -2,7 +2,7 @@
 
 Tested with Python 3.8+.
 
-The plug-in measures an anemometer from either the original PCF8583 event counter on I2C address `0x50` or `0x51`, or a ZTS-3000-FSJT wind sensor using Modbus RTU through the shared RS485 Communication plug-in. It can display and log wind, stop selected running stations, send an e-mail, or start a configured program after validated wind thresholds are exceeded.
+The plug-in measures an anemometer from either the original PCF8583 event counter on I2C address `0x50` or `0x51`, or a ZTS-3000-FSJT wind sensor using Modbus RTU through the shared RS485 Communication plug-in. It can display and log wind, stop selected running stations, send an e-mail, start a configured program after validated wind thresholds are exceeded, or run a separate safety program once when measurement fails repeatedly.
 
 ## Measurement
 
@@ -57,7 +57,15 @@ The E-mail section in settings contains the shared message subject and e-mail pl
 
 When technical notifications are enabled, the plug-in sends an e-mail for a failed I2C bus open, PCF8583 setup or counter read, a missing or stopped RS485 Communication dependency, RS485 queue or serial failure, timeout, invalid address, function, response length or CRC, rejected implausible measurement, and an unexpected measurement-worker error. A valid accepted measurement, including zero wind speed, is not an error.
 
-The first failure starts one fault incident and sends one message immediately. Repeated failures belonging to the active incident do not send another message until the configurable reminder interval expires, which defaults to six hours and can be set from one to 168 hours. The first accepted measurement closes the incident, allowing a later independent failure to send a new immediate notification. Delivery failures are written to the OSPy log and Diagnostics state but cannot themselves be reported by e-mail when the selected e-mail plug-in or mail connection is unavailable.
+The first failure starts one fault incident and sends one message immediately. Repeated failures belonging to the active incident do not send another message until the configurable reminder interval expires, which defaults to six hours and can be set from one to 168 hours. The first accepted measurement closes the incident, allowing a later independent failure to send a new immediate notification. Delivery failures are written to the OSPy log and Diagnostics state and retried after the reminder interval; a failed attempt is not recorded as a successfully sent fault e-mail.
+
+## Sensor-failure safety program
+
+The sensor-failure program is independent of the wind-threshold program. When enabled, it counts consecutive failed or rejected measurements and starts the separately selected OSPy program when the configured count is reached. The default confirmation count is three and the accepted range is one to 100 failures.
+
+Only one start is attempted during a continuous fault incident. Further failure actions remain blocked regardless of subsequent error count or e-mail reminders. One valid accepted measurement, including zero wind speed, closes the incident and arms the action for a future independent failure. An intentional RS485 device scan pauses measurement and does not increment the failure counter or start the safety program.
+
+While measurement is unavailable, ordinary Wind Monitor threshold actions cannot be evaluated. Venetian Blind temperature shading independently requires fresh accepted safe-wind samples, so it does not lower blinds until valid wind measurements resume.
 
 ## Measurement diagnostic log
 

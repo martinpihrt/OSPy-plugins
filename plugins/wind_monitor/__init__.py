@@ -41,6 +41,7 @@ from .methods import (
     calculate_trend,
     decode_bcd_counter,
     fault_email_due,
+    fault_program_due,
     parse_zts_wind_response,
     parse_decimal,
     update_confirmation,
@@ -70,6 +71,9 @@ wind_options = PluginOptions(
         'sendeml': True,             # send e-mail after confirmed wind hazard
         'send_error_email': False,   # send bounded measurement fault e-mails
         'error_email_reminder_hours': 6,
+        'use_fault_program': False,  # run a safety program after sensor failures
+        'fault_program_failures': 3,
+        'fault_program': [],
         'pulses': 2.0,               # 2 pulses per rotation
         'metperrot': 1.492,          # 1.492 meter per hour per rotation
         'maxspeed': 20.0,            # 20 max speed to deactivate stations
@@ -128,6 +132,10 @@ health_state = {
     'fault_failures': 0,
     'fault_message': '',
     'last_fault_email': 0,
+    'last_fault_email_attempt': 0,
+    'fault_program_triggered': False,
+    'last_fault_program': -1,
+    'last_fault_program_time': 0,
 }
 
 
@@ -271,6 +279,7 @@ class WindSender(Thread):
         self._sleep_time = 0
         self._last_error_log = 0
         self._last_rejected_log = 0
+        self._last_fault_program_error_log = 0
         self._pcf_failure_reported = False
         self.start()
         runtime.register_thread(self)
@@ -299,7 +308,7 @@ class WindSender(Thread):
         clean_message = str(message).splitlines()[-1][:1000]
         with health_lock:
             was_active = bool(health_state.get('fault_active', False))
-            last_sent = health_state.get('last_fault_email', 0)
+            last_attempt = health_state.get('last_fault_email_attempt', 0)
             health_state['last_error'] = now
             health_state['last_error_message'] = clean_message
             health_state['fault_active'] = True
@@ -310,14 +319,17 @@ class WindSender(Thread):
             health_state['fault_message'] = clean_message
             due = bool(wind_options.get('send_error_email', False)) and fault_email_due(
                 was_active,
-                last_sent,
+                last_attempt,
                 now,
                 wind_options.get('error_email_reminder_hours', 6),
             )
             if due:
-                health_state['last_fault_email'] = now
+                health_state['last_fault_email_attempt'] = now
+        self._run_fault_program_if_due()
         if due:
-            self._send_fault_email(clean_message)
+            if self._send_fault_email(clean_message):
+                with health_lock:
+                    health_state['last_fault_email'] = now
 
     def _send_fault_email(self, message):
         source = wind_source()
@@ -347,7 +359,61 @@ class WindSender(Thread):
             html.escape(_('Consecutive failures')), failures,
         )
         diagnostic_event('fault_email', source=source, error=message, failures=failures)
-        send_wind_email(message_html, message_text, subject)
+        return send_wind_email(message_html, message_text, subject)
+
+    def _run_fault_program_if_due(self):
+        if not wind_options.get('use_fault_program', False):
+            return
+        with health_lock:
+            failures = health_state.get('fault_failures', 0)
+            already_triggered = health_state.get('fault_program_triggered', False)
+        if not fault_program_due(
+                failures,
+                wind_options.get('fault_program_failures', 3),
+                already_triggered):
+            return
+
+        selected = wind_options.get('fault_program', [-1])
+        program_index = safe_int(selected[0], -1) if selected else -1
+        selected_program = next(
+            (program for program in programs.get()
+             if program.index == program_index),
+            None,
+        )
+        if selected_program is None:
+            now = time_.time()
+            if now - self._last_fault_program_error_log >= 300:
+                log.error(NAME, _('No valid sensor-failure program is selected.'))
+                self._last_fault_program_error_log = now
+            return
+
+        now = time_.time()
+        with health_lock:
+            if health_state.get('fault_program_triggered', False):
+                return
+            health_state['fault_program_triggered'] = True
+            health_state['last_fault_program'] = program_index
+            health_state['last_fault_program_time'] = now
+            health_state['last_action'] = now
+        try:
+            programs.run_now(program_index)
+            running = programs.run_now_program
+            if running is None or getattr(running, 'index', -1) != program_index:
+                raise RuntimeError(_('OSPy did not start the selected program.'))
+            diagnostic_event(
+                'fault_program', program=program_index, failures=failures)
+            log.info(
+                NAME,
+                datetime_string() + ' ' +
+                _('Starting sensor-failure program # {} after {} consecutive failures.').format(
+                    program_index, failures))
+        except Exception as error:
+            diagnostic_event(
+                'fault_program_error', program=program_index,
+                failures=failures, error=str(error))
+            log.error(
+                NAME,
+                _('Starting sensor-failure program failed: {}').format(error))
 
     def _clear_fault(self):
         with health_lock:
@@ -355,6 +421,7 @@ class WindSender(Thread):
             health_state['fault_since'] = 0
             health_state['fault_failures'] = 0
             health_state['fault_message'] = ''
+            health_state['fault_program_triggered'] = False
 
     def _open_bus(self):
         if self.bus is not None:
@@ -800,6 +867,8 @@ def normalize_options():
             wind_options.get('action_confirmations', 2), 2))),
         'error_email_reminder_hours': max(1, min(168, safe_int(
             wind_options.get('error_email_reminder_hours', 6), 6))),
+        'fault_program_failures': max(1, min(100, safe_int(
+            wind_options.get('fault_program_failures', 3), 3))),
         'eplug': 1 if safe_int(wind_options.get('eplug', 0), 0) == 1 else 0,
         'used_stations': [
             safe_int(station, -1)
@@ -811,9 +880,16 @@ def normalize_options():
             for program in wind_options.get('used_program', [])
             if safe_int(program, -1) >= 0
         ],
+        'fault_program': [
+            safe_int(program, -1)
+            for program in wind_options.get('fault_program', [])
+            if safe_int(program, -1) >= 0
+        ],
     }
     if not normalized['used_program']:
         normalized['used_program'] = [-1]
+    if not normalized['fault_program']:
+        normalized['fault_program'] = [-1]
 
     # Normalization runs in the measurement loop. Persist only an actual
     # correction instead of rewriting every setting on every sample.
@@ -1147,8 +1223,17 @@ class settings_page(ProtectedPage):
             'm_speed_trig',
             'max_accepted_speed',
         )
-        qdict = web.input(used_stations=[], used_program=[])
+        qdict = web.input(used_stations=[], used_program=[], fault_program=[])
         verify_csrf(qdict)
+        requested_fault_programs = [
+            safe_int(value, -1) for value in qdict.get('fault_program', [])
+            if safe_int(value, -1) >= 0
+        ]
+        if (qdict.get('use_fault_program', 'off') == 'on' and
+                not requested_fault_programs):
+            return self.plugin_render.wind_monitor_settings(
+                wind_options,
+                _('Select a program to run when wind measurement fails.'))
         requested_source = wind_source(qdict.get('source', SOURCE_PCF8583))
         if requested_source == SOURCE_PCF8583:
             requested_address = '0x51' if qdict.get('address', 'off') == 'on' else '0x50'
@@ -1575,6 +1660,7 @@ def health():
         'diagnostic_logging': bool(wind_options.get('diagnostic_logging', False)),
         'station_stop_enabled': bool(wind_options.get('stoperr', False)),
         'program_action_enabled': bool(wind_options.get('use_stop_pgm', False)),
+        'fault_program_enabled': bool(wind_options.get('use_fault_program', False)),
         'last_reading': state['last_reading'],
         'last_email': state['last_email'],
         'last_action': state['last_action'],
@@ -1585,6 +1671,10 @@ def health():
         'fault_failures': state.get('fault_failures', 0),
         'fault_message': state.get('fault_message', ''),
         'last_fault_email': state.get('last_fault_email', 0),
+        'last_fault_email_attempt': state.get('last_fault_email_attempt', 0),
+        'fault_program_triggered': bool(state.get('fault_program_triggered', False)),
+        'last_fault_program': state.get('last_fault_program', -1),
+        'last_fault_program_time': state.get('last_fault_program_time', 0),
     }
     if source == SOURCE_RS485:
         details['rs485_address'] = wind_options.get('rs485_address', 1)

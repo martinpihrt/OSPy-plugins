@@ -3,7 +3,7 @@ Venetian Blind Readme
 
 Tested in Python 3+
 
-Version 1.2.7 implements `ospy.provider.v1` and exposes every enabled blind as a cached resource with explicit open, stop, close and tilt 1–4 actions for Automation Rules and the native mobile application. Mobile action captions use command verbs instead of state adjectives, while configured tilt labels are preserved. The actions reuse the same validated command path as Mobile API v1.
+Version 1.2.8 implements `ospy.provider.v1` and exposes every enabled blind as a cached resource with explicit open, stop, close and tilt 1–4 actions for Automation Rules and the native mobile application. Mobile action captions use command verbs instead of state adjectives, while configured tilt labels are preserved. The actions reuse the same validated command path as Mobile API v1.
 
 Mobile action IDs are `open`, `stop`, `close`, `tilt1`, `tilt2`, `tilt3` and `tilt4`. Every request supplies `{"blind_uid":"..."}`; the UID must identify a currently configured enabled blind and plug-in control must be enabled. The four tilt actions retain stable IDs while their visible labels come from the saved blind configuration.
 
@@ -25,6 +25,8 @@ Each blind can use Shelly Gen1, Shelly Gen2 and newer, or Custom REST URLs. Gen1
 Testing a saved command keeps the same blind editor open so several directions and tilt positions can be checked without reopening the blind after every command.
 
 Temperature shading reads the selected OSPy sensor from its actual `last_read_value` channel, compares it directly with the configured limit and operates only inside the permitted time window. Lowering is allowed only after the configured number of consecutive, fresh and unique Wind Monitor measurements is below the safe limit. It is armed only by a transition in which every enabled blind is confirmed fully open.
+
+Wind automation is blocked immediately while Wind Monitor is disabled, stopped, paused by an RS485 device scan or reports an active measurement fault. Pending automatic raising and lowering actions are discarded, and an active automatic lowering program is cancelled. A safety program already started directly by Wind Monitor after sensor failure is not cancelled, allowing it to raise the blinds once. Automatic operation resumes only after Wind Monitor accepts a valid measurement and clears the fault.
 
 Automatic opening and closing are completed only after every enabled and reachable Shelly reports the requested end position. After starting a configured program, the plug-in waits at least 60 seconds and never overlaps an active or queued program. If the target remains unconfirmed while the applicable wind or shading conditions are still satisfied, the program is started again. A temporary loss of the condition pauses retries; confirmation of fully open or fully closed clears the pending target.
 

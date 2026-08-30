@@ -210,6 +210,7 @@ def health():
         details[_('Consecutive safe wind measurements')] = '{}/{}'.format(automation.get('safe_count', 0), plugin_options['safe_wind_samples'])
         details[_('Strong wind exceedances')] = '{}/{} ({} min)'.format(automation.get('exceedances', 0), plugin_options['strong_wind_samples'], plugin_options['strong_wind_interval'])
         details[_('Confirmed blind states')] = '{}/{}'.format(automation.get('known_blinds', 0), automation.get('enabled_blinds', len(configured)))
+        details[_('Automation blocked by wind measurement')] = _('Yes') if automation.get('measurement_blocked') else _('No')
     if state['last_error_message']:
         details[_('Last error')] = state['last_error_message']
     if not worker_running:
@@ -637,6 +638,24 @@ def _wind_reading():
     except Exception:
         return None
 
+def _wind_measurement_blocked():
+    """Fail closed while Wind Monitor is disabled, stopped or in a fault."""
+    try:
+        from plugins import wind_monitor
+        worker = wind_monitor.wind_sender
+        if (not wind_monitor.wind_options.get('use_wind_monitor', False) or
+                worker is None or not worker.is_alive()):
+            return True
+        with wind_monitor.health_lock:
+            if wind_monitor.health_state.get('fault_active', False):
+                return True
+        if wind_monitor.wind_source() == wind_monitor.SOURCE_RS485:
+            from plugins.rs485_communication import get_rs485_status
+            return bool(get_rs485_status().get('scan_active', False))
+        return False
+    except Exception:
+        return True
+
 def _active_run_now_index():
     """Return an active Run-Now index and discard OSPy's completed object."""
     active = programs.run_now_program
@@ -696,7 +715,6 @@ def automation_cycle(worker):
         worker._shading_armed = False
         worker._last_all_open = False
         return
-    _start_next_program(worker)
     normalize_options()
     now_timestamp = time.time()
     reading = _wind_reading()
@@ -744,7 +762,20 @@ def automation_cycle(worker):
         'close_target_pending': worker._close_target_pending,
         'open_retry_at': worker._open_retry_at or None,
         'close_retry_at': worker._close_retry_at or None,
+        'measurement_blocked': _wind_measurement_blocked(),
     }
+    if worker.status['automation']['measurement_blocked']:
+        _cancel_lowering_actions(worker)
+        worker._program_queue.clear()
+        worker._wind_action_sent = False
+        worker._open_retry_at = 0
+        worker._close_retry_at = 0
+        worker._close_target_pending = False
+        worker.status['automation']['close_target_pending'] = False
+        worker.status['automation']['open_retry_at'] = None
+        worker.status['automation']['close_retry_at'] = None
+        return
+    _start_next_program(worker)
     if wind_state['strong']:
         _cancel_lowering_actions(worker)
         worker._close_target_pending = False
