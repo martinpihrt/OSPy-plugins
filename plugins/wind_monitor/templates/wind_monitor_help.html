@@ -3,7 +3,7 @@ $def with()
 $var title: $_(u'Wind Speed Monitor settings - help')
 $var page: plugins
 
-<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.2.2" rel="stylesheet" type="text/css">
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.2.3" rel="stylesheet" type="text/css">
 
 <div id="plugin" class="windPanel">
     <div class="title">$_(u'Wind Speed Monitor settings - help')</div>
@@ -21,6 +21,8 @@ $var page: plugins
     <p>$_(u'The E-mail settings contain two independent notification controls. Send e-mail when stations are stopped belongs to wind-hazard protection, while Send measurement errors by e-mail reports technical sensor and communication failures. Both notification types use the selected e-mail plug-in and message subject.')</p>
     <p>$_(u'Technical fault notifications cover an unavailable I2C bus, PCF8583 setup and read errors, a missing or stopped RS485 Communication dependency, RS485 queue, serial, timeout and protocol errors, rejected implausible values and unexpected measurement-worker errors. A valid accepted zero wind speed is not an error.')</p>
     <p>$_(u'The first failure sends one error e-mail immediately. Repeated failures in the same active incident are suppressed until the configured reminder interval expires. One accepted measurement closes the incident, so a later independent failure can send a new immediate notification. If the selected e-mail plug-in or mail connection fails, the delivery failure is recorded in the OSPy log and Diagnostics but cannot be reported through the unavailable e-mail path.')</p>
+    <p>$_(u'The independent sensor-failure program can run a selected safety program after the configured number of consecutive failed or rejected measurements. It runs only once during one fault incident and is armed again only after a valid measurement is accepted. An intentional RS485 bus scan pauses wind measurement and does not count as a sensor failure.')</p>
+    <p>$_(u'While wind measurement is unavailable, Wind Monitor cannot evaluate ordinary wind thresholds. Venetian Blind temperature shading also requires fresh accepted safe-wind samples, so automatic lowering remains blocked until valid wind measurements resume.')</p>
     <p>$_(u'The trend compares older and newer samples from approximately the last minute. The arrow shows rising, falling or steady wind after enough samples have been collected.')</p>
     <p>$_(u'The mobile application translates the trend states into the matching localized arrow and refreshes the expanded operating data automatically.')</p>
     <p>$_(u'Measurement diagnostic logging records the selected source and its raw data. For PCF8583 it includes setup, retries, counter bytes, actual elapsed time and pulse rate; for RS485 it includes the device address, complete Modbus response, decoded speed, wind force and protocol errors. The file is size limited and rotated automatically. Enable it only while investigating a problem.')</p>

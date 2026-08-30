@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 30 2026
+--------------
+(Martin Pihrt) - Wind Speed Monitor v1.2.3 and Venetian Blind v1.2.8<br/>
+Added an independent Wind Monitor sensor-failure safety program with a configurable consecutive-failure count and separate program selection. The program starts once during a continuous measurement fault and is armed again only after an accepted reading; intentional RS485 bus scans remain neutral pauses. Diagnostics expose the action state, and failed e-mail delivery is distinguished from a successful notification and retried after the reminder interval. Venetian Blind now immediately blocks and clears pending automatic raising and lowering while Wind Monitor is unavailable or faulty, without cancelling the one safety program started directly by Wind Monitor.
+
 August 29 2026
 --------------
 (Martin Pihrt) - RS485 Communication v1.0.3<br/>

@@ -193,6 +193,10 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
         source = (PLUGIN / '__init__.py').read_text(encoding='utf-8')
         self.assertIn('measurement_key != worker._last_wind_measurement', source)
         self.assertIn('wind_window_state(', source)
+        self.assertIn('def _wind_measurement_blocked():', source)
+        self.assertIn("worker.status['automation']['measurement_blocked']", source)
+        self.assertIn('worker._program_queue.clear()', source)
+        self.assertIn('_cancel_lowering_actions(worker)', source)
         self.assertIn("worker._wind_action_sent", source)
         self.assertIn('shading_arm_state(', source)
         self.assertIn('worker._shading_armed', source)
@@ -230,7 +234,7 @@ class VenetianBlindInterfaceTests(unittest.TestCase):
 
     def test_manifest_version_dependency_and_permissions_are_current(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.2.7')
+        self.assertEqual(manifest['version'], '1.2.8')
         self.assertIn('venetian_blind.css?v=1.2.3', (PLUGIN / 'templates' / 'venetian_blind_settings.html').read_text(encoding='utf-8'))
         self.assertIn('venetian_blind.css?v=1.2.3', (PLUGIN / 'templates' / 'venetian_blind_overview.html').read_text(encoding='utf-8'))
         self.assertIn('system', manifest['permissions'])

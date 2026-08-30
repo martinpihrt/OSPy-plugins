@@ -3,7 +3,7 @@ $def with(plugin_options, validation_error=None)
 $var title: $_(u'Wind Speed Monitor settings')
 $var page: plugins
 
-<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.2.2" rel="stylesheet" type="text/css">
+<link href="/plugins/wind_monitor/static/wind_monitor.css?v=1.2.3" rel="stylesheet" type="text/css">
 
 <script>
 jQuery(document).ready(function() {
@@ -127,6 +127,22 @@ jQuery(document).ready(function() {
                 <tr><td>$_(u'Exceedance interval'):</td><td><input name="event_interval" type="number" min="1" max="1440" value="$plugin_options['event_interval']"> min</td></tr>
                 <tr><td>$_(u'Ignore further events'):</td><td><input name="ignore_interval" type="number" min="1" max="8760" value="$plugin_options['ignore_interval']"> h</td></tr>
             </table>
+        </fieldset>
+
+        <fieldset>
+            <legend>$_(u'Sensor failure program')</legend>
+            <table class="optionList windOptions">
+                <tr><td>$_(u'Run program when the sensor fails'):</td><td><label class="switch"><input name="use_fault_program" type="checkbox"${" checked" if plugin_options.get('use_fault_program', False) else ""}><span class="slider"></span></label></td></tr>
+                <tr><td>$_(u'Consecutive measurement failures'):</td><td><input name="fault_program_failures" type="number" min="1" max="100" value="$plugin_options.get('fault_program_failures', 3)"></td></tr>
+                <tr>
+                    <td>$_(u'Program to run after sensor failure'):</td>
+                    <td><select name="fault_program" size="8">
+                        $for program in programs.get():
+                            <option value="${str(program.index)}"${" selected" if program.index in plugin_options.get('fault_program', []) else ""}>${program.name}</option>
+                    </select></td>
+                </tr>
+            </table>
+            <p class="windHint">$_(u'After the configured number of consecutive failed or rejected measurements, the selected safety program runs once. Further sensor-failure actions remain blocked until one valid measurement is accepted. A bus scan pauses measurement without counting as a failure.')</p>
         </fieldset>
     </form>
 </div>

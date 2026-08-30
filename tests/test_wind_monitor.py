@@ -89,6 +89,13 @@ class WindMonitorMethodTests(unittest.TestCase):
         self.assertFalse(methods.fault_email_due(True, 100, 100 + 3599, 0))
         self.assertTrue(methods.fault_email_due(True, 100, 100 + 3600, 0))
 
+    def test_fault_program_runs_once_after_required_failures_until_reset(self):
+        self.assertFalse(methods.fault_program_due(1, 3, False))
+        self.assertFalse(methods.fault_program_due(2, 3, False))
+        self.assertTrue(methods.fault_program_due(3, 3, False))
+        self.assertFalse(methods.fault_program_due(4, 3, True))
+        self.assertTrue(methods.fault_program_due(1, 0, False))
+
     def test_trend_detects_rising_falling_and_steady_samples(self):
         rising = [(0, 1.0), (20, 1.1), (40, 2.0), (60, 2.2)]
         falling = [(0, 3.0), (20, 2.8), (40, 1.0), (60, 0.8)]
@@ -142,6 +149,20 @@ class WindMonitorTemplateTests(unittest.TestCase):
         self.assertNotIn('name="emlsubject"', template[:email_section])
         self.assertNotIn('name="eplug"', template[:email_section])
 
+    def test_settings_have_independent_sensor_failure_program_controls(self):
+        template = (
+            PLUGIN_ROOT / 'templates' / 'wind_monitor_settings.html'
+        ).read_text(encoding='utf-8')
+        section = template.index("<legend>$_(u'Sensor failure program')</legend>")
+        failure_section = template[section:]
+        self.assertIn('class="switch"', failure_section)
+        self.assertIn('name="use_fault_program"', failure_section)
+        self.assertIn('name="fault_program_failures"', failure_section)
+        self.assertIn('min="1" max="100"', failure_section)
+        self.assertIn('name="fault_program"', failure_section)
+        source = (PLUGIN_ROOT / '__init__.py').read_text(encoding='utf-8')
+        self.assertIn("_('Select a program to run when wind measurement fails.')", source)
+
     def test_worker_reports_both_sensor_sources_and_suppresses_fault_spam(self):
         source = (PLUGIN_ROOT / '__init__.py').read_text(encoding='utf-8')
         self.assertIn('fault_email_due(', source)
@@ -150,6 +171,18 @@ class WindMonitorTemplateTests(unittest.TestCase):
         self.assertIn("_('RS485 wind sensor read failed: {}')", source)
         self.assertIn("diagnostic_event('rs485_measurement_paused_for_bus_scan')", source)
         self.assertIn('self._clear_fault()', source)
+        self.assertIn('self._run_fault_program_if_due()', source)
+        self.assertIn("health_state['fault_program_triggered'] = True", source)
+        self.assertIn("health_state['fault_program_triggered'] = False", source)
+        activate_start = source.index('    def _activate_fault(')
+        activate = source[
+            activate_start:
+            source.index('    def _send_fault_email(', activate_start)
+        ]
+        self.assertLess(
+            activate.index('self._run_fault_program_if_due()'),
+            activate.index('self._send_fault_email(clean_message)'))
+        self.assertIn("getattr(running, 'index', -1) != program_index", source)
 
     def test_disabled_rs485_dependency_is_handled_without_internal_error(self):
         source = (PLUGIN_ROOT / '__init__.py').read_text(encoding='utf-8')
@@ -162,11 +195,11 @@ class WindMonitorTemplateTests(unittest.TestCase):
     def test_manifest_and_template_assets_use_current_version(self):
         manifest = json.loads(
             (PLUGIN_ROOT / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.2.2')
+        self.assertEqual(manifest['version'], '1.2.3')
         for template_path in (PLUGIN_ROOT / 'templates').glob('*.html'):
             template = template_path.read_text(encoding='utf-8')
             if 'wind_monitor.css?' in template:
-                self.assertIn('wind_monitor.css?v=1.2.2', template)
+                self.assertIn('wind_monitor.css?v=1.2.3', template)
 
     def test_rs485_and_smbus_dependencies_are_optional(self):
         manifest = json.loads(
