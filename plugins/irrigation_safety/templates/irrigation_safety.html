@@ -1,0 +1,234 @@
+$def with(plugin_options, data, error='')
+
+$var title: $_('Irrigation Safety')
+$var page: plugins
+
+<link href="/plugins/irrigation_safety/static/irrigation_safety.css?v=1.0.0" rel="stylesheet" type="text/css">
+<script>
+window.irrigationSafetyConfig = {
+    statusUrl: $:json.dumps(plugins.plugin_url('irrigation_safety.status_json'), ensure_ascii=False),
+    texts: {
+        unavailable: $:{json.dumps(_('Unavailable'), ensure_ascii=False)},
+        none: $:{json.dumps(_('None'), ensure_ascii=False)},
+        active: $:{json.dumps(_('Active'), ensure_ascii=False)},
+        cleared: $:{json.dumps(_('Cleared'), ensure_ascii=False)},
+        locked: $:{json.dumps(_('Locked'), ensure_ascii=False)},
+        unlocked: $:{json.dumps(_('Unlocked'), ensure_ascii=False)},
+        pollingError: $:{json.dumps(_('Live safety data could not be loaded.'), ensure_ascii=False)}
+    }
+};
+</script>
+<script src="/plugins/irrigation_safety/static/irrigation_safety.js?v=1.0.0"></script>
+
+<div id="plugin">
+    <div class="title">$_('Irrigation Safety')</div>
+    <a href=$plugins.plugin_url('irrigation_safety.help_page') class="button upload">$_('Help')</a><br/>
+
+    $if error:
+        <div class="safetyError" role="alert">$error</div>
+    <div id="safetyLiveError" class="safetyError safetyHidden" role="alert"></div>
+
+    <section class="safetyDashboard" aria-label=$:{json.dumps(_('Live irrigation safety status'), ensure_ascii=False)}>
+        <article class="safetyMetric safetyModeMetric">
+            <span>$_('Safety mode')</span><strong id="safetyMode">---</strong>
+        </article>
+        <article class="safetyMetric">
+            <span>$_('Current flow')</span><strong id="safetyFlow">---</strong>
+        </article>
+        <article class="safetyMetric">
+            <span>$_('Expected flow')</span><strong id="safetyExpected">---</strong>
+        </article>
+        <article class="safetyMetric">
+            <span>$_('Active stations')</span><strong id="safetyStations">---</strong>
+        </article>
+        <article class="safetyMetric">
+            <span>$_('Active incidents')</span><strong id="safetyIncidents">0</strong>
+        </article>
+        <article class="safetyMetric">
+            <span>$_('Temporary bypass')</span><strong id="safetyBypass">$_('Inactive')</strong>
+        </article>
+    </section>
+
+    <details class="safetyCard" open>
+        <summary><span>$_('General protection settings')</span><span class="safetyCardButton">$_('Edit')</span></summary>
+        <form action="$plugins.plugin_url('irrigation_safety.settings_page')" method="post">
+            $:csrf_input()
+            <input name="action" type="hidden" value="save_settings">
+            <table class="optionList safetyOptions">
+                <tr>
+                    <td style="text-transform:none;">$_('Safety mode'):</td>
+                    <td>
+                        <select name="mode">
+                            $for mode_id, mode_label in data['modes']:
+                                <option value="$mode_id"${' selected' if plugin_options['mode'] == mode_id else ''}>$mode_label</option>
+                        </select>
+                    </td>
+                    <td style="text-transform:none;">$_('Check interval'):</td>
+                    <td><input name="check_interval" type="number" min="1" max="60" value="$plugin_options['check_interval']"> $_('seconds')</td>
+                </tr>
+                <tr>
+                    <td style="text-transform:none;">$_('Measurement timeout'):</td>
+                    <td><input name="data_timeout" type="number" min="3" max="3600" value="$plugin_options['data_timeout']"> $_('seconds')</td>
+                    <td style="text-transform:none;">$_('History limit'):</td>
+                    <td><input name="history_limit" type="number" min="10" max="5000" value="$plugin_options['history_limit']"></td>
+                </tr>
+                <tr>
+                    <td style="text-transform:none;">$_('Stop all outputs'):</td>
+                    <td><label class="safetySwitch"><input name="stop_all_outputs" type="checkbox"${' checked' if plugin_options['stop_all_outputs'] else ''}><span class="safetySlider"></span></label></td>
+                    <td style="text-transform:none;">$_('Disable scheduler'):</td>
+                    <td><label class="safetySwitch"><input name="disable_scheduler" type="checkbox"${' checked' if plugin_options['disable_scheduler'] else ''}><span class="safetySlider"></span></label></td>
+                </tr>
+                <tr>
+                    <td style="text-transform:none;">$_('Lock incidents until acknowledgement'):</td>
+                    <td><label class="safetySwitch"><input name="latch_incidents" type="checkbox"${' checked' if plugin_options['latch_incidents'] else ''}><span class="safetySlider"></span></label></td>
+                    <td style="text-transform:none;">$_('Show in footer'):</td>
+                    <td><label class="safetySwitch"><input name="use_footer" type="checkbox"${' checked' if plugin_options['use_footer'] else ''}><span class="safetySlider"></span></label></td>
+                </tr>
+                <tr>
+                    <td style="text-transform:none;">$_('Send e-mail'):</td>
+                    <td><label class="safetySwitch"><input name="send_email" type="checkbox"${' checked' if plugin_options['send_email'] else ''}><span class="safetySlider"></span></label></td>
+                    <td style="text-transform:none;">$_('Send mobile push notification'):</td>
+                    <td><label class="safetySwitch"><input name="send_push" type="checkbox"${' checked' if plugin_options['send_push'] else ''}><span class="safetySlider"></span></label></td>
+                </tr>
+                <tr>
+                    <td style="text-transform:none;">$_('Notify when condition returns to normal'):</td>
+                    <td><label class="safetySwitch"><input name="notify_recovery" type="checkbox"${' checked' if plugin_options['notify_recovery'] else ''}><span class="safetySlider"></span></label></td>
+                    <td></td><td></td>
+                </tr>
+            </table>
+
+            <h3>$_('Flow without irrigation')</h3>
+            <table class="optionList safetyOptions">
+                <tr>
+                    <td style="text-transform:none;">$_('Detect flow without an active station'):</td>
+                    <td><label class="safetySwitch"><input name="unexpected_flow_enabled" type="checkbox"${' checked' if plugin_options['unexpected_flow_enabled'] else ''}><span class="safetySlider"></span></label></td>
+                    <td style="text-transform:none;">$_('Flow limit'):</td>
+                    <td><input name="unexpected_flow_lpm" type="number" min="0.01" step="0.01" value="$plugin_options['unexpected_flow_lpm']"> L/min</td>
+                </tr>
+                <tr>
+                    <td style="text-transform:none;">$_('Confirmation time'):</td>
+                    <td><input name="unexpected_flow_confirm" type="number" min="1" max="3600" value="$plugin_options['unexpected_flow_confirm']"> $_('seconds')</td>
+                    <td></td><td></td>
+                </tr>
+            </table>
+
+            <h3>$_('Pressure protection')</h3>
+            <table class="optionList safetyOptions">
+                <tr>
+                    <td style="text-transform:none;">$_('Monitor pressure'):</td>
+                    <td><label class="safetySwitch"><input name="pressure_enabled" type="checkbox"${' checked' if plugin_options['pressure_enabled'] else ''}><span class="safetySlider"></span></label></td>
+                    <td style="text-transform:none;">$_('Confirmation time'):</td>
+                    <td><input name="pressure_confirm" type="number" min="1" max="3600" value="$plugin_options['pressure_confirm']"> $_('seconds')</td>
+                </tr>
+            </table>
+
+            <h3>$_('Tank protection')</h3>
+            $ selected_tank = '%s|%s|%s' % (plugin_options['tank_provider_id'], plugin_options['tank_resource_id'], plugin_options['tank_value_id'])
+            <table class="optionList safetyOptions">
+                <tr>
+                    <td style="text-transform:none;">$_('Monitor tank level'):</td>
+                    <td><label class="safetySwitch"><input name="tank_enabled" type="checkbox"${' checked' if plugin_options['tank_enabled'] else ''}><span class="safetySlider"></span></label></td>
+                    <td style="text-transform:none;">$_('Tank source'):</td>
+                    <td>
+                        <select name="tank_source">
+                            $for source in data['tank_sources']:
+                                $ source_value = '%s|%s|%s' % (source['provider_id'], source['resource_id'], source['value_id'])
+                                <option value="$source_value"${' selected' if selected_tank == source_value else ''}>$source['label']</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-transform:none;">$_('Minimum tank value'):</td>
+                    <td><input name="tank_minimum" type="number" min="0" step="0.1" value="$plugin_options['tank_minimum']"></td>
+                    <td style="text-transform:none;">$_('Confirmation time'):</td>
+                    <td><input name="tank_confirm" type="number" min="1" max="3600" value="$plugin_options['tank_confirm']"> $_('seconds')</td>
+                </tr>
+            </table>
+            <div class="safetyActions"><button class="submit" type="submit">$_('Save general settings')</button></div>
+        </form>
+    </details>
+
+    <h2>$_('Station flow profiles')</h2>
+    <p>$_('Automatic learning collects flow only while exactly one selected station is active. It ignores startup delay and calculates a robust range from the required number of samples.')</p>
+    $for profile in data['profiles']:
+        <details class="safetyCard">
+            <summary>
+                <span class="safetyCardTitle"><span>$profile['name']</span><span class="safetyCardState ${'safetyEnabled' if profile['enabled'] else 'safetyDisabled'}">${_('Enabled') if profile['enabled'] else _('Disabled')}</span></span>
+                <span class="safetyCardButton">$_('Edit')</span>
+            </summary>
+            <form action="$plugins.plugin_url('irrigation_safety.settings_page')" method="post">
+                $:csrf_input()
+                <input name="station_id" type="hidden" value="$profile['station_id']">
+                <table class="optionList safetyOptions">
+                    <tr>
+                        <td style="text-transform:none;">$_('Protect station'):</td>
+                        <td><label class="safetySwitch"><input name="enabled" type="checkbox"${' checked' if profile['enabled'] else ''}><span class="safetySlider"></span></label></td>
+                        <td style="text-transform:none;">$_('Station'):</td><td>$profile['name']</td>
+                    </tr>
+                    <tr>
+                        <td style="text-transform:none;">$_('Minimum flow'):</td>
+                        <td><input name="minimum_flow_lpm" type="number" min="0" step="0.01" value="$profile['minimum_flow_lpm']"> L/min</td>
+                        <td style="text-transform:none;">$_('Maximum flow'):</td>
+                        <td><input name="maximum_flow_lpm" type="number" min="0.01" step="0.01" value="$profile['maximum_flow_lpm']"> L/min</td>
+                    </tr>
+                    <tr>
+                        <td style="text-transform:none;">$_('Startup delay'):</td>
+                        <td><input name="startup_delay" type="number" min="0" max="3600" value="$profile['startup_delay']"> $_('seconds')</td>
+                        <td style="text-transform:none;">$_('Fault confirmation'):</td>
+                        <td><input name="confirm_seconds" type="number" min="1" max="3600" value="$profile['confirm_seconds']"> $_('seconds')</td>
+                    </tr>
+                    <tr>
+                        <td style="text-transform:none;">$_('Learning samples'):</td>
+                        <td><input name="learning_samples" type="number" min="10" max="600" value="$profile['learning_samples']"></td>
+                        <td style="text-transform:none;">$_('Learning tolerance'):</td>
+                        <td><input name="learning_tolerance_percent" type="number" min="1" max="100" step="0.1" value="$profile['learning_tolerance_percent']"> %</td>
+                    </tr>
+                    <tr>
+                        <td style="text-transform:none;">$_('Minimum learning margin'):</td>
+                        <td><input name="learning_minimum_margin_lpm" type="number" min="0" step="0.01" value="$profile['learning_minimum_margin_lpm']"> L/min</td>
+                        <td style="text-transform:none;">$_('Learning status'):</td>
+                        <td id="learningStatus-$profile['station_id']">${_('Waiting for a single-station run') if profile['learning'] else _('Inactive')}</td>
+                    </tr>
+                </table>
+                <div class="safetyActions">
+                    <button class="submit" name="action" value="save_profile" type="submit">$_('Save station profile')</button>
+                    $if profile['learning']:
+                        <button class="danger" name="action" value="stop_learning" type="submit">$_('Stop learning')</button>
+                    $else:
+                        <button class="execute" name="action" value="start_learning" type="submit">$_('Start automatic learning')</button>
+                </div>
+            </form>
+        </details>
+
+    <h2>$_('Incident control')</h2>
+    <div class="safetyControlGrid">
+        <form action="$plugins.plugin_url('irrigation_safety.settings_page')" method="post">
+            $:csrf_input()<input name="action" type="hidden" value="acknowledge">
+            <button class="submit" type="submit">$_('Acknowledge cleared incidents')</button>
+        </form>
+        <form action="$plugins.plugin_url('irrigation_safety.settings_page')" method="post">
+            $:csrf_input()<input name="action" type="hidden" value="start_bypass">
+            <input name="bypass_minutes" type="number" min="1" max="1440" value="15"> $_('minutes')
+            <button class="execute" type="submit">$_('Start temporary bypass')</button>
+        </form>
+        <form action="$plugins.plugin_url('irrigation_safety.settings_page')" method="post">
+            $:csrf_input()<input name="action" type="hidden" value="cancel_bypass">
+            <button class="danger" type="submit">$_('Cancel temporary bypass')</button>
+        </form>
+        <form action="$plugins.plugin_url('irrigation_safety.settings_page')" method="post">
+            $:csrf_input()<input name="action" type="hidden" value="test_notifications">
+            <button class="execute" type="submit">$_('Send test notification')</button>
+        </form>
+    </div>
+
+    <h2>$_('Incidents')</h2>
+    <div class="safetyTableWrap"><table class="safetyTable"><thead><tr><th>$_('Opened')</th><th>$_('Incident')</th><th>$_('State')</th><th>$_('Action')</th></tr></thead><tbody id="safetyIncidentRows"><tr><td colspan="4">$_('No incidents')</td></tr></tbody></table></div>
+
+    <h2>$_('History')</h2>
+    <form class="safetyClear" action="$plugins.plugin_url('irrigation_safety.settings_page')" method="post" onsubmit="return confirm($:{json.dumps(_('Clear Irrigation Safety history?'), ensure_ascii=False)})">
+        $:csrf_input()<input name="action" type="hidden" value="clear_history"><button class="danger" type="submit">$_('Clear history')</button>
+    </form>
+    <div class="safetyTableWrap"><table class="safetyTable"><thead><tr><th>$_('Date and time')</th><th>$_('Event')</th><th>$_('Detail')</th><th>$_('Action')</th></tr></thead><tbody id="safetyHistoryRows"><tr><td colspan="4">$_('No history')</td></tr></tbody></table></div>
+</div>
+
+<div id="controls"><button id="cCancel" class="cancel danger" onclick="window.location='/'">$_('Cancel')</button></div>

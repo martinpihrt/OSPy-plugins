@@ -1,0 +1,39 @@
+$def with()
+
+$var title: $_('Irrigation Safety help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Irrigation Safety help')</div>
+
+    <h2>$_('Purpose')</h2>
+    <p>$_('Irrigation Safety combines the current OSPy station state with cached Water Meter, Pressure Monitor and tank-monitor values. It never polls I2C or GPIO hardware itself.')</p>
+    <p>$_('Use Monitor only first. This records and reports incidents without changing outputs. After every station profile has been checked, Active protection can stop all outputs, disable the scheduler and keep the incident locked until an administrator acknowledges it.')</p>
+
+    <h2>$_('Station flow profiles')</h2>
+    <p>$_('Each enabled non-master OSPy station has its own expected minimum and maximum flow. When several configured stations run together, their limits are added. A station without an enabled profile prevents range enforcement for that combination instead of guessing a limit.')</p>
+    <p>$_('Startup delay begins whenever the active station combination changes. A flow fault must then remain present for the configured confirmation time before an incident is opened.')</p>
+
+    <h2>$_('Automatic learning')</h2>
+    <p>$_('Start learning for one station and run that station by itself. Samples are accepted only after startup delay, only from a current Water Meter reading and only while exactly that station is active.')</p>
+    <p>$_('After the requested number of samples, the plug-in calculates the median and robust tenth-to-ninetieth-percentile range. It expands that range by the configured percentage or minimum margin, whichever is larger, saves the new limits and stops learning automatically.')</p>
+
+    <h2>$_('Additional protection')</h2>
+    <ul>
+        <li>$_('Flow without an active irrigation station can indicate a leaking valve or pipe.')</li>
+        <li>$_('Pressure protection checks that the pressure input is present while the master output is active.')</li>
+        <li>$_('Tank protection can use fill percentage or water level from either supported tank monitor.')</li>
+        <li>$_('Missing or stale data is treated as a separate safety fault while irrigation is active.')</li>
+    </ul>
+
+    <h2>$_('Incidents and actions')</h2>
+    <p>$_('A confirmed incident is written to bounded history before notifications are sent. In Active protection, output shutdown and scheduler disabling happen before e-mail or push delivery.')</p>
+    <p>$_('A locked incident continuously prevents irrigation outputs from remaining active. It can be acknowledged only after every associated fault condition has returned to normal. Acknowledgement never enables the scheduler again.')</p>
+    <p>$_('Temporary bypass suppresses control actions for a bounded time but keeps monitoring, history and notifications active. It expires automatically.')</p>
+
+    <h2>$_('Notifications and live page')</h2>
+    <p>$_('E-mail uses the running E-mail Notifications SSL or E-mail Notifications plug-in. Mobile push uses OSPy Mobile API push delivery and its Automation notification category. Delivery runs outside the safety evaluation worker.')</p>
+    <p>$_('The overview reloads current measurements, stations, learning progress, incidents and history in the background. The page does not need to be refreshed.')</p>
+
+    <p><a href=$plugins.plugin_url('irrigation_safety.settings_page') class="button cancel">$_('Back')</a></p>
+</div>
