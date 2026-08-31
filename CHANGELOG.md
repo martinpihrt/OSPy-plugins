@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+August 31 2026
+--------------
+(Martin Pihrt) - Thermostat v1.1.0<br/>
+Replaced the three fixed thermostat slots with create, edit and delete cards for up to 20 thermostats while retaining existing settings. Added optional per-card operating windows with continuous, daytime and overnight operation, exact boundary wakeups and program stopping when a window ends or a thermostat is disabled or deleted. Enforced one distinct OSPy program per enabled thermostat, added stable card identities, responsive styling, updated documentation and regression coverage.
+
 August 30 2026
 --------------
 (Martin Pihrt) - Wind Speed Monitor v1.2.3 and Venetian Blind v1.2.8<br/>

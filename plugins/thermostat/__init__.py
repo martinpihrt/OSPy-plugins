@@ -4,6 +4,7 @@ __author__ = 'Martin Pihrt'
 import json
 import time
 import traceback
+import uuid
 from threading import Thread, Lock
 
 import web
@@ -15,6 +16,7 @@ from ospy.programs import programs
 from ospy.stations import stations
 from ospy.webpages import ProtectedPage, showInFooter, clear_plugin_runtime_data
 from plugins import PluginOptions, plugin_url, get_runtime
+from plugins.thermostat import model
 
 try:
     from ospy.sensors import sensors
@@ -26,57 +28,12 @@ NAME = 'Thermostat'
 MENU = _('Package: Thermostat')
 LINK = 'settings_page'
 
-THERMOSTAT_COUNT = 3
-INVALID_TEMPERATURE = -127
-MIN_CHECK_INTERVAL = 5
-MAX_CHECK_INTERVAL = 3600
 ERROR_LOG_THROTTLE = 300
-SHELLY_VALUE_TYPES = [
-    'temperature',
-    'temperature_2',
-    'temperature_3',
-    'temperature_4',
-    'temperature_5',
-]
-
-DEFAULT_ZONES = [
-    {
-        'enabled': False,
-        'name': 'Thermostat 1',
-        'source': 'air_temp',
-        'channel': 0,
-        'value_type': 'temperature',
-        'low_temp': 22.4,
-        'high_temp': 22.6,
-        'low_action': 'start',
-        'high_action': 'stop',
-        'program': 0,
-    },
-    {
-        'enabled': False,
-        'name': 'Thermostat 2',
-        'source': 'air_temp',
-        'channel': 1,
-        'value_type': 'temperature',
-        'low_temp': 22.4,
-        'high_temp': 22.6,
-        'low_action': 'start',
-        'high_action': 'stop',
-        'program': 0,
-    },
-    {
-        'enabled': False,
-        'name': 'Thermostat 3',
-        'source': 'air_temp',
-        'channel': 2,
-        'value_type': 'temperature',
-        'low_temp': 22.4,
-        'high_temp': 22.6,
-        'low_action': 'start',
-        'high_action': 'stop',
-        'program': 0,
-    },
-]
+MAX_THERMOSTATS = model.MAX_THERMOSTATS
+INVALID_TEMPERATURE = model.INVALID_TEMPERATURE
+MIN_CHECK_INTERVAL = model.MIN_CHECK_INTERVAL
+MAX_CHECK_INTERVAL = model.MAX_CHECK_INTERVAL
+SHELLY_VALUE_TYPES = model.SHELLY_VALUE_TYPES
 
 plugin_options = PluginOptions(
     NAME,
@@ -84,7 +41,7 @@ plugin_options = PluginOptions(
         'enabled': False,
         'check_interval': 30,
         'use_footer': False,
-        'zones': [dict(zone) for zone in DEFAULT_ZONES],
+        'zones': [],
     }
 )
 runtime = get_runtime()
@@ -96,57 +53,26 @@ health_state = {
 }
 
 
-def _safe_int(value, default=0):
-    try:
-        return int(value)
-    except Exception:
-        return default
-
-
-def _safe_float(value, default=0.0):
-    try:
-        return float(str(value).replace(',', '.'))
-    except Exception:
-        return default
-
-
-def _clamp(value, minimum, maximum):
-    return max(minimum, min(maximum, value))
-
-
 def _normalize_zones():
     zones = plugin_options.get('zones', [])
-    if not isinstance(zones, list):
-        zones = []
-
-    normalized = []
-    for index in range(THERMOSTAT_COUNT):
-        base = dict(DEFAULT_ZONES[index])
-        if index < len(zones) and isinstance(zones[index], dict):
-            base.update(zones[index])
-        base['enabled'] = bool(base.get('enabled', False))
-        base['name'] = str(base.get('name') or _('Thermostat {}').format(index + 1))
-        base['source'] = str(base.get('source') or 'air_temp')
-        if base['source'] not in ('air_temp', 'ospy_sensor', 'shelly_cloud'):
-            base['source'] = 'air_temp'
-        base['channel'] = max(0, _safe_int(base.get('channel'), 0))
-        base['value_type'] = str(base.get('value_type') or 'temperature')
-        if base['value_type'] not in SHELLY_VALUE_TYPES:
-            base['value_type'] = 'temperature'
-        base['low_temp'] = _clamp(_safe_float(base.get('low_temp'), 22.4), -50, 100)
-        base['high_temp'] = _clamp(_safe_float(base.get('high_temp'), 22.6), -50, 100)
-        base['low_action'] = str(base.get('low_action') or 'start')
-        base['high_action'] = str(base.get('high_action') or 'stop')
-        if base['low_action'] not in ('none', 'start', 'stop'):
-            base['low_action'] = 'start'
-        if base['high_action'] not in ('none', 'start', 'stop'):
-            base['high_action'] = 'stop'
-        base['program'] = _clamp(_safe_int(base.get('program'), 0), 0, max(0, len(programs.get()) - 1))
-        normalized.append(base)
+    normalized = model.normalize_zones(
+        zones,
+        len(programs.get()),
+        lambda: uuid.uuid4().hex,
+        lambda index: _('Thermostat {}').format(index + 1),
+    )
 
     if normalized != zones:
         plugin_options['zones'] = normalized
     return normalized
+
+
+def _safe_int(value, default=0):
+    return model.safe_int(value, default)
+
+
+def _clamp(value, minimum, maximum):
+    return model.clamp(value, minimum, maximum)
 
 
 def source_title(source):
@@ -390,8 +316,8 @@ class ThermostatChecker(Thread):
         self.daemon = True
         self._stop_event = runtime.stop_event
         self._sleep_time = 0
-        self.zone_state = ['unknown'] * THERMOSTAT_COUNT
-        self.zone_temperatures = [None] * THERMOSTAT_COUNT
+        self.zone_state = {}
+        self.zone_temperatures = {}
         self.footer = None
         self._last_error_log = 0
         self.start()
@@ -429,14 +355,30 @@ class ThermostatChecker(Thread):
             log.error(NAME, message)
             self._last_error_log = now
 
+    def _reconcile_zones(self, zones):
+        zone_ids = {zone['id'] for zone in zones}
+        self.zone_state = {
+            zone_id: self.zone_state.get(zone_id, 'unknown')
+            for zone_id in zone_ids
+        }
+        self.zone_temperatures = {
+            zone_id: self.zone_temperatures.get(zone_id)
+            for zone_id in zone_ids
+        }
+
     def run(self):
         last_enabled = None
         while not self._stop_event.is_set():
             try:
-                _normalize_zones()
+                zones = _normalize_zones()
+                self._reconcile_zones(zones)
                 plugin_options['check_interval'] = _clamp(_safe_int(plugin_options.get('check_interval'), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL)
                 if not plugin_options['enabled']:
                     if last_enabled is not False:
+                        if last_enabled is True:
+                            for zone in zones:
+                                if zone['enabled']:
+                                    stop_program(zone['program'])
                         log.clear(NAME)
                         log.info(NAME, _('Thermostat plug-in is disabled.'))
                         self.update_footer(_('Disabled'))
@@ -450,31 +392,55 @@ class ThermostatChecker(Thread):
                     last_enabled = True
 
                 footer_parts = []
-                for index, zone in enumerate(plugin_options['zones']):
+                now = time.localtime()
+                now_minutes = now.tm_hour * 60 + now.tm_min
+                duplicate_programs = model.duplicate_enabled_program_ids(zones)
+                handled_programs = set()
+                for zone in zones:
+                    zone_id = zone['id']
+                    state = self.zone_state[zone_id]
                     if not zone['enabled']:
-                        self.zone_state[index] = 'disabled'
-                        self.zone_temperatures[index] = None
+                        self.zone_state[zone_id] = 'disabled'
+                        self.zone_temperatures[zone_id] = None
+                        continue
+
+                    if zone['program'] in duplicate_programs and zone['program'] in handled_programs:
+                        if state != 'setup_error':
+                            log.info(NAME, datetime_string() + ' ' + _('{} uses a program already assigned to another enabled thermostat.').format(zone['name']))
+                        self.zone_state[zone_id] = 'setup_error'
+                        self.zone_temperatures[zone_id] = None
+                        footer_parts.append('{} {}'.format(zone['name'], _('setup error')))
+                        continue
+                    handled_programs.add(zone['program'])
+
+                    if not model.zone_in_time_window(zone, now_minutes):
+                        if state != 'scheduled_off':
+                            stopped = stop_program(zone['program'])
+                            log.info(NAME, datetime_string() + ' ' + _('{} is outside its operating time. Program stop result: {}.').format(zone['name'], _('OK') if stopped else _('not changed')))
+                        self.zone_state[zone_id] = 'scheduled_off'
+                        self.zone_temperatures[zone_id] = None
+                        footer_parts.append('{} {}'.format(zone['name'], _('outside operating time')))
                         continue
 
                     if zone['low_temp'] >= zone['high_temp']:
-                        if self.zone_state[index] != 'setup_error':
+                        if state != 'setup_error':
                             log.info(NAME, datetime_string() + ' ' + _('{} has invalid temperature limits. Low temperature must be lower than high temperature.').format(zone['name']))
-                        self.zone_state[index] = 'setup_error'
-                        self.zone_temperatures[index] = None
+                        self.zone_state[zone_id] = 'setup_error'
+                        self.zone_temperatures[zone_id] = None
                         footer_parts.append('{} {}'.format(zone['name'], _('setup error')))
                         continue
 
                     temperature = get_temperature(zone['source'], zone['channel'], zone['value_type'])
                     if temperature == INVALID_TEMPERATURE:
-                        if self.zone_state[index] != 'missing':
+                        if state != 'missing':
                             log.info(NAME, datetime_string() + ' ' + _('{} temperature is not available.').format(zone['name']))
-                        self.zone_state[index] = 'missing'
-                        self.zone_temperatures[index] = None
+                        self.zone_state[zone_id] = 'missing'
+                        self.zone_temperatures[zone_id] = None
                         footer_parts.append('{} ---'.format(zone['name']))
                         continue
-                    self.zone_temperatures[index] = temperature
+                    self.zone_temperatures[zone_id] = temperature
 
-                    new_state = self.zone_state[index]
+                    new_state = state
                     action = None
                     if temperature >= zone['high_temp']:
                         new_state = 'high'
@@ -482,19 +448,19 @@ class ThermostatChecker(Thread):
                     elif temperature <= zone['low_temp']:
                         new_state = 'low'
                         action = zone['low_action']
-                    elif self.zone_state[index] in ('unknown', 'disabled'):
+                    elif state in ('unknown', 'disabled', 'scheduled_off'):
                         new_state = 'hold'
 
                     footer_parts.append('{} {:.1f}C'.format(zone['name'], temperature))
 
                     should_repeat_start = (
                         action == 'start'
-                        and new_state == self.zone_state[index]
+                        and new_state == state
                         and not program_is_active(zone['program'])
                     )
 
-                    if new_state != self.zone_state[index] or should_repeat_start:
-                        self.zone_state[index] = new_state
+                    if new_state != state or should_repeat_start:
+                        self.zone_state[zone_id] = new_state
                         if action and action != 'none':
                             ok = execute_action(action, zone['program'])
                             program_name = program_label(programs.get(zone['program'])) if program_exists(zone['program']) else _('Unknown program')
@@ -510,7 +476,12 @@ class ThermostatChecker(Thread):
                 with health_lock:
                     health_state['last_cycle'] = time.time()
                     health_state['last_error_message'] = ''
-                self._sleep(_clamp(_safe_int(plugin_options.get('check_interval'), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL))
+                sleep_time = _clamp(_safe_int(plugin_options.get('check_interval'), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL)
+                current = time.localtime()
+                boundary = model.seconds_until_boundary(current.tm_hour * 3600 + current.tm_min * 60 + current.tm_sec, zones)
+                if boundary is not None:
+                    sleep_time = min(sleep_time, max(1, boundary))
+                self._sleep(sleep_time)
             except Exception:
                 self._log_problem(_('Thermostat plug-in') + ':\n' + traceback.format_exc())
                 self._sleep(60)
@@ -543,33 +514,33 @@ def health():
         state = dict(health_state)
     worker_running = checker is not None and checker.is_alive()
     zones = _normalize_zones()
-    enabled_indexes = [index for index, zone in enumerate(zones) if zone['enabled']]
-    zone_states = checker.zone_state if checker is not None else ['unknown'] * THERMOSTAT_COUNT
-    temperatures = (
-        checker.zone_temperatures if checker is not None else [None] * THERMOSTAT_COUNT
-    )
+    enabled_zones = [zone for zone in zones if zone['enabled']]
+    zone_states = checker.zone_state if checker is not None else {}
+    temperatures = checker.zone_temperatures if checker is not None else {}
     missing = sum(
-        1 for index in enabled_indexes
-        if zone_states[index] in ('missing', 'setup_error')
+        1 for zone in enabled_zones
+        if zone_states.get(zone['id'], 'unknown') in ('missing', 'setup_error')
     )
     details = {
         _('Worker thread'): _('Running') if worker_running else _('Stopped'),
         _('Thermostat enabled'): _('Yes') if plugin_options['enabled'] else _('No'),
-        _('Enabled zones'): len(enabled_indexes),
+        _('Enabled zones'): len(enabled_zones),
         _('Zones with unavailable temperature or setup error'): missing,
         _('Active program actions'): sum(
-            1 for index in enabled_indexes
-            if program_is_active(zones[index]['program'])
+            1 for zone in enabled_zones
+            if program_is_active(zone['program'])
         ),
         _('Last successful cycle'): (
             datetime_string(time.localtime(state['last_cycle']))
             if state['last_cycle'] else _('Not available')
         ),
     }
-    for index in enabled_indexes:
-        details[zones[index]['name']] = (
-            '{:.1f} C ({})'.format(temperatures[index], zone_states[index])
-            if temperatures[index] is not None else zone_states[index]
+    for zone in enabled_zones:
+        zone_state = zone_states.get(zone['id'], 'unknown')
+        temperature = temperatures.get(zone['id'])
+        details[zone['name']] = (
+            '{:.1f} C ({})'.format(temperature, zone_state)
+            if temperature is not None else zone_state
         )
     if state['last_error_message']:
         details[_('Last error')] = state['last_error_message']
@@ -591,7 +562,7 @@ def health():
             'summary': state['last_error_message'],
             'details': details,
         }
-    if not enabled_indexes:
+    if not enabled_zones:
         return {
             'status': 'warning',
             'summary': _('No thermostat zone is enabled.'),
@@ -635,7 +606,7 @@ def mobile_cards(**_kwargs):
 
 
 def template_data():
-    _normalize_zones()
+    zones = _normalize_zones()
     return {
         'sources': [
             ('air_temp', source_title('air_temp')),
@@ -649,41 +620,119 @@ def template_data():
             'ospy_sensor': get_sensor_channel_names(),
             'shelly_cloud': get_shelly_channel_names(),
         },
+        'max_thermostats': MAX_THERMOSTATS,
+        'new_zone': model.default_zone(_('New thermostat')),
+        'can_add': len(zones) < MAX_THERMOSTATS,
     }
+
+
+def _zone_from_input(qdict, existing=None):
+    zones = _normalize_zones()
+    raw = dict(existing or model.default_zone(_('New thermostat')))
+    raw.update({
+        'id': str(qdict.get('zone_id') or raw.get('id') or uuid.uuid4().hex),
+        'enabled': 'enabled' in qdict,
+        'name': str(qdict.get('name', raw['name'])).strip()[:120],
+        'source': qdict.get('source', raw['source']),
+        'channel': qdict.get('channel', raw['channel']),
+        'value_type': qdict.get('value_type', raw['value_type']),
+        'low_temp': qdict.get('low_temp', raw['low_temp']),
+        'high_temp': qdict.get('high_temp', raw['high_temp']),
+        'low_action': qdict.get('low_action', raw['low_action']),
+        'high_action': qdict.get('high_action', raw['high_action']),
+        'program': qdict.get('program', raw['program']),
+        'time_limited': 'time_limited' in qdict,
+        'start_time': qdict.get('start_time', raw['start_time']),
+        'end_time': qdict.get('end_time', raw['end_time']),
+    })
+    if not raw['name']:
+        raise ValueError(_('Enter a thermostat name.'))
+    if raw['time_limited'] and (
+            not model.valid_time(str(raw['start_time']))
+            or not model.valid_time(str(raw['end_time']))):
+        raise ValueError(_('Enter valid operating times.'))
+    zone = model.normalize_zone(
+        raw, raw['name'], len(programs.get()), lambda: uuid.uuid4().hex)
+    if not programs.get() and zone['enabled']:
+        raise ValueError(_('Create an OSPy program before enabling this thermostat.'))
+    try:
+        model.validate_zone(zone)
+    except ValueError as error:
+        if str(error) == 'invalid temperature limits':
+            raise ValueError(_('Low temperature must be lower than high temperature.'))
+        if str(error) == 'empty time window':
+            raise ValueError(_('Start and end time must be different when operating time is enabled.'))
+        raise ValueError(_('Enter valid operating times.'))
+    if model.duplicate_enabled_program(zones, zone):
+        raise ValueError(_('Each enabled thermostat must use a different program.'))
+    return zone
 
 
 class settings_page(ProtectedPage):
     """Load an html page for entering thermostat settings."""
 
     def GET(self):
-        return self.plugin_render.thermostat(plugin_options, log.events(NAME), template_data())
+        request = web.input(open='')
+        return self.plugin_render.thermostat(
+            plugin_options, log.events(NAME), template_data(), '',
+            str(request.get('open', '')))
 
     def POST(self):
         qdict = web.input()
         verify_csrf(qdict)
-        zones = []
-        for index, default_zone in enumerate(plugin_options['zones']):
-            zone = dict(default_zone)
-            zone['enabled'] = 'enabled{}'.format(index) in qdict
-            zone['name'] = qdict.get('name{}'.format(index), zone['name'])
-            zone['source'] = qdict.get('source{}'.format(index), zone['source'])
-            zone['channel'] = _safe_int(qdict.get('channel{}'.format(index), zone['channel']), zone['channel'])
-            zone['value_type'] = qdict.get('value_type{}'.format(index), zone['value_type'])
-            zone['low_temp'] = _safe_float(qdict.get('low_temp{}'.format(index), zone['low_temp']), zone['low_temp'])
-            zone['high_temp'] = _safe_float(qdict.get('high_temp{}'.format(index), zone['high_temp']), zone['high_temp'])
-            zone['low_action'] = qdict.get('low_action{}'.format(index), zone['low_action'])
-            zone['high_action'] = qdict.get('high_action{}'.format(index), zone['high_action'])
-            zone['program'] = _safe_int(qdict.get('program{}'.format(index), zone['program']), zone['program'])
-            zones.append(zone)
-
-        plugin_options['enabled'] = 'enabled' in qdict
-        plugin_options['use_footer'] = 'use_footer' in qdict
-        plugin_options['check_interval'] = _clamp(_safe_int(qdict.get('check_interval', plugin_options['check_interval']), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL)
-        plugin_options['zones'] = zones
-        _normalize_zones()
+        default_action = 'save_zone' if qdict.get('form_kind') == 'zone' else 'save_settings'
+        action = str(qdict.get('action', default_action))
+        open_zone = str(qdict.get('zone_id', ''))
+        try:
+            zones = _normalize_zones()
+            if action == 'save_settings':
+                was_enabled = plugin_options['enabled']
+                plugin_options['enabled'] = 'enabled' in qdict
+                plugin_options['use_footer'] = 'use_footer' in qdict
+                plugin_options['check_interval'] = _clamp(_safe_int(qdict.get('check_interval', plugin_options['check_interval']), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL)
+                if was_enabled and not plugin_options['enabled']:
+                    for zone in zones:
+                        if zone['enabled']:
+                            stop_program(zone['program'])
+                open_zone = ''
+            elif action == 'save_zone':
+                existing = next((zone for zone in zones if zone['id'] == open_zone), None)
+                if existing is None and len(zones) >= MAX_THERMOSTATS:
+                    raise ValueError(_('A maximum of {} thermostats can be configured.').format(MAX_THERMOSTATS))
+                saved = _zone_from_input(qdict, existing)
+                if existing is not None:
+                    local_time = time.localtime()
+                    now_minutes = local_time.tm_hour * 60 + local_time.tm_min
+                    if existing['enabled'] and (
+                            not saved['enabled']
+                            or existing['program'] != saved['program']
+                            or not model.zone_in_time_window(saved, now_minutes)):
+                        stop_program(existing['program'])
+                    zones[zones.index(existing)] = saved
+                else:
+                    zones.append(saved)
+                plugin_options['zones'] = zones
+                open_zone = saved['id']
+            elif action == 'delete_zone':
+                existing = next((zone for zone in zones if zone['id'] == open_zone), None)
+                if existing is not None:
+                    if existing['enabled']:
+                        stop_program(existing['program'])
+                    plugin_options['zones'] = [zone for zone in zones if zone['id'] != open_zone]
+                open_zone = ''
+            else:
+                raise ValueError(_('Unknown thermostat settings action.'))
+        except ValueError as error:
+            web.ctx.status = '400 Bad Request'
+            return self.plugin_render.thermostat(
+                plugin_options, log.events(NAME), template_data(), str(error),
+                open_zone)
         if checker is not None:
             checker.update()
-        raise web.seeother(plugin_url(settings_page), True)
+        target = plugin_url(settings_page)
+        if open_zone:
+            target += '?open=' + open_zone
+        raise web.seeother(target, True)
 
 
 class help_page(ProtectedPage):
