@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "irrigation_safety",
+  "name": "Irrigation Safety",
+  "version": "1.0.0",
+  "description": "Monitors irrigation flow, pressure and tank level, learns station flow ranges and can stop outputs and disable the scheduler when a confirmed fault occurs.",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {"min": "3.0.354"},
+  "python": {"min_version": "3.8"},
+  "dependencies": [
+    {"id": "water_meter", "required": true},
+    {"id": "pressure_monitor", "required": false},
+    {"id": "tank_monitor", "required": false},
+    {"id": "current_loop_tanks_monitor", "required": false},
+    {"id": "email_notifications", "required": false},
+    {"id": "email_notifications_ssl", "required": false}
+  ],
+  "permissions": ["email", "system"],
+  "provider": {"contract": "ospy.provider.v1"},
+  "mobile": {"api_version": 1, "actions": []}
+}
