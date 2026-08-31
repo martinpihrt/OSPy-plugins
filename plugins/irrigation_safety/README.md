@@ -26,3 +26,4 @@ Version 1.0.0 provides:
 5. Select **Active protection** only after the displayed limits and startup delays have been verified on the actual irrigation hardware.
 
 If a confirmed fault occurs in Active protection, output shutdown is executed before e-mail or push delivery. A notification outage therefore cannot delay valve or pump shutdown.
+All user-visible source strings use OSPy gettext. Translation `.pot`, `.po` and `.mo` files are intentionally not included in this version.
