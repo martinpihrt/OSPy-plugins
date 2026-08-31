@@ -115,12 +115,15 @@ class IrrigationSafetyInterfaceTests(unittest.TestCase):
         self.assertIn("'mode': 'off'", source)
         self.assertIn("if _mode() != 'protect'", source)
 
-    def test_all_plugin_text_uses_gettext_without_catalog_files(self):
+    def test_gettext_source_calls_without_catalog_files(self):
+        source = (PLUGIN / '__init__.py').read_text(encoding='utf-8')
+        template = (PLUGIN / 'templates' / 'irrigation_safety.html').read_text(
+            encoding='utf-8')
         help_template = (PLUGIN / 'templates' / 'irrigation_safety_help.html').read_text(
             encoding='utf-8')
-        readme = (PLUGIN / 'README.md').read_text(encoding='utf-8')
+        self.assertIn("_('Irrigation Safety')", source)
+        self.assertIn("$_('Safety mode')", template)
         self.assertIn("$_('Purpose')", help_template)
-        self.assertIn('All user-visible source strings use OSPy gettext', readme)
         self.assertEqual(list(PLUGIN.rglob('*.po')), [])
         self.assertEqual(list(PLUGIN.rglob('*.mo')), [])
         self.assertEqual(list(PLUGIN.rglob('*.pot')), [])
