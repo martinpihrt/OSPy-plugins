@@ -2,6 +2,9 @@
 
 August 31 2026
 --------------
+(Martin Pihrt) - Thermostat v1.1.1<br/>
+Moved the enabled or disabled state directly behind each thermostat name with green or red text and replaced the plain Edit or Add caption with a colored button-style card control.
+
 (Martin Pihrt) - Thermostat v1.1.0<br/>
 Replaced the three fixed thermostat slots with create, edit and delete cards for up to 20 thermostats while retaining existing settings. Added optional per-card operating windows with continuous, daytime and overnight operation, exact boundary wakeups and program stopping when a window ends or a thermostat is disabled or deleted. Enforced one distinct OSPy program per enabled thermostat, added stable card identities, responsive styling, updated documentation and regression coverage.
 

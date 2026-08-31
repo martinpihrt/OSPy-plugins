@@ -124,7 +124,11 @@ class ThermostatInterfaceTests(unittest.TestCase):
         self.assertIn('name="start_time" type="time"', template)
         self.assertIn('name="end_time" type="time"', template)
         self.assertIn('class="thermostatSlider"', template)
-        self.assertIn('/plugins/thermostat/static/thermostat.css?v=1.1.0', template)
+        self.assertIn('/plugins/thermostat/static/thermostat.css?v=1.1.1', template)
+        self.assertIn('class="thermostatCardTitle"', template)
+        self.assertIn('thermostatCardEnabled', template)
+        self.assertIn('thermostatCardDisabled', template)
+        self.assertIn('thermostatCardButton', template)
         self.assertNotIn('<style>', template)
         self.assertNotIn('enabled${i}', template)
 
@@ -134,7 +138,7 @@ class ThermostatInterfaceTests(unittest.TestCase):
         help_template = (PLUGIN / 'templates' / 'thermostat_help.html').read_text(
             encoding='utf-8')
         self.assertEqual(model.MAX_THERMOSTATS, 20)
-        self.assertEqual(manifest['version'], '1.1.0')
+        self.assertEqual(manifest['version'], '1.1.1')
         self.assertIn('Up to 20 thermostats', readme)
         self.assertIn('Overnight windows', readme)
         self.assertIn("$_('Create, edit or delete up to 20 thermostat cards.", help_template)

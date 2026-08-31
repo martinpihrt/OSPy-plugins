@@ -14,7 +14,47 @@
 }
 
 .thermostatCardState {
-    font-weight: normal;
+    font-weight: bold;
+}
+
+.thermostatCardTitle {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.thermostatCardEnabled {
+    color: #278636;
+}
+
+.thermostatCardDisabled {
+    color: #b21f2d;
+}
+
+.thermostatCardButton {
+    background: #e0a800;
+    border: 1px solid #b88900;
+    border-radius: 12px;
+    color: #fff;
+    display: inline-block;
+    font-size: .85em;
+    font-weight: bold;
+    padding: 3px 12px;
+    text-transform: uppercase;
+}
+
+.thermostatCard summary:hover .thermostatCardButton {
+    background: #c99700;
+}
+
+.thermostatAddButton {
+    background: #278636;
+    border-color: #1f6b2b;
+}
+
+.thermostatCard summary:hover .thermostatAddButton {
+    background: #1f6b2b;
 }
 
 .thermostatActions {

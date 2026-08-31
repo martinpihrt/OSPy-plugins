@@ -3,7 +3,7 @@ $def with(plugin_options, events, data, error='', open_zone='')
 $var title: $_('Thermostat')
 $var page: plugins
 
-<link href="/plugins/thermostat/static/thermostat.css?v=1.1.0" rel="stylesheet" type="text/css">
+<link href="/plugins/thermostat/static/thermostat.css?v=1.1.1" rel="stylesheet" type="text/css">
 
 <script>
     function updateThermostatForm(form) {
@@ -73,8 +73,12 @@ $var page: plugins
         $ is_new = not zone.get('id')
         <details class="thermostatCard${' thermostatNewCard' if is_new else ''}"${' open' if not is_new and zone.get('id') == open_zone else ''}>
             <summary>
-                <span>${_('New thermostat') if is_new else zone['name']}</span>
-                <span class="thermostatCardState">${_('Enabled') if zone.get('enabled') else _('Disabled')} · ${_('Add') if is_new else _('Edit')}</span>
+                <span class="thermostatCardTitle">
+                    <span>${_('New thermostat') if is_new else zone['name']}</span>
+                    $if not is_new:
+                        <span class="thermostatCardState ${'thermostatCardEnabled' if zone.get('enabled') else 'thermostatCardDisabled'}">(${_('Enabled') if zone.get('enabled') else _('Disabled')})</span>
+                </span>
+                <span class="thermostatCardButton${' thermostatAddButton' if is_new else ''}">${_('Add') if is_new else _('Edit')}</span>
             </summary>
             <form class="thermostatForm" action="$plugins.plugin_url('thermostat.settings_page')" method="post">
                 $:csrf_input()
