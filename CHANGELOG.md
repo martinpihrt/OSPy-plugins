@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+September 2 2026
+----------------
+(Martin Pihrt) - System Update v1.2.8<br/>
+Forced GitHub fetch operations to use HTTP/1.1, avoiding HTTP/2 transport failures that returned misleading HTTP 401 and `expected flush after ref listing` errors for public repositories. Required command failures and timeouts now preserve the command, exit status and Git output in diagnostics instead of reporting only a generic exit code 128. Added regression coverage for the fetch transport and error reporting on both stable and beta update channels.
+
 August 31 2026
 --------------
 (Martin Pihrt) - Irrigation Safety v1.0.0<br/>
