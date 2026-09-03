@@ -10,8 +10,7 @@ are not included in diagnostics.
 
 Control your sprinkler using SMS (Short Message Service).  
 For this plugin is needed to SMS modem with the telephone service provider.  
-This plugin needs Gammu. If not installed Gammu and Python-Gammu, plugin installs Gammu and Python-Gammu in to the system himself.  
-On first use (if run installation gammu) please wait for status.  
+This plugin needs Gammu. If not installed use: `sudo apt install -y gammu python3-gammu`.  
 Reports shall be transmitted only on the phone number of administrator who sent the order (to other phone numbers plugin unresponsive and SMS messages deletes).
 
 Plugin setup
