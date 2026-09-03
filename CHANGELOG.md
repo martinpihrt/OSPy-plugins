@@ -1,5 +1,21 @@
 # OSPy-plugins Changelog
 
+September 2 2026
+----------------
+(Martin Pihrt) - System Update v1.2.8<br/>
+Forced GitHub fetch operations to use HTTP/1.1, avoiding HTTP/2 transport failures that returned misleading HTTP 401 and `expected flush after ref listing` errors for public repositories. Required command failures and timeouts now preserve the command, exit status and Git output in diagnostics instead of reporting only a generic exit code 128. Added regression coverage for the fetch transport and error reporting on both stable and beta update channels.
+
+August 31 2026
+--------------
+(Martin Pihrt) - Irrigation Safety v1.0.0<br/>
+Added a dedicated irrigation protection plug-in over cached Water Meter, Pressure Monitor and tank-provider data. It provides per-station flow profiles, robust one-station automatic learning, combined ranges for simultaneous stations, startup and confirmation timing, unexpected-flow, pressure, tank and unavailable-data incidents, Off/Monitor only/Active protection modes, guarded output shutdown, scheduler disabling, persistent administrator acknowledgement, bounded temporary bypass, asynchronous e-mail and mobile push delivery, live background page updates, health/mobile/provider contributions, documentation and regression coverage. Active protection is never enabled by default.
+
+(Martin Pihrt) - Thermostat v1.1.1<br/>
+Moved the enabled or disabled state directly behind each thermostat name with green or red text and replaced the plain Edit or Add caption with a colored button-style card control.
+
+(Martin Pihrt) - Thermostat v1.1.0<br/>
+Replaced the three fixed thermostat slots with create, edit and delete cards for up to 20 thermostats while retaining existing settings. Added optional per-card operating windows with continuous, daytime and overnight operation, exact boundary wakeups and program stopping when a window ends or a thermostat is disabled or deleted. Enforced one distinct OSPy program per enabled thermostat, added stable card identities, responsive styling, updated documentation and regression coverage.
+
 August 30 2026
 --------------
 (Martin Pihrt) - Wind Speed Monitor v1.2.3 and Venetian Blind v1.2.8<br/>

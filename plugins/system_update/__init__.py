@@ -214,7 +214,7 @@ class StatusChecker(Thread):
         self.status['checking'] = True
 
         try:
-            run_required_command(['git', 'fetch', '--prune', '--tags', 'origin'], timeout=45)
+            run_required_command(git_fetch_command('--prune', '--tags', 'origin'), timeout=45)
             remote = git_output(['git', 'config', '--get', 'remote.origin.url'])
             if remote:
                 self.status['remote'] = remote
@@ -400,10 +400,38 @@ def run_command(cmd, timeout=60):
 
 def run_required_command(cmd, timeout=60):
     args = shlex.split(cmd) if isinstance(cmd, str) else cmd
-    output = subprocess.check_output(args, stderr=subprocess.STDOUT, timeout=timeout).decode('utf-8')
+    try:
+        output = subprocess.check_output(
+            args,
+            stderr=subprocess.STDOUT,
+            timeout=timeout
+        ).decode('utf-8', errors='replace')
+    except subprocess.CalledProcessError as error:
+        command_output = (error.output or b'').decode('utf-8', errors='replace').strip()
+        message = 'Command failed with exit code {}: {}'.format(
+            error.returncode,
+            ' '.join(str(arg) for arg in args)
+        )
+        if command_output:
+            message += '\n' + command_output
+        raise RuntimeError(message) from error
+    except subprocess.TimeoutExpired as error:
+        command_output = (error.output or b'').decode('utf-8', errors='replace').strip()
+        message = 'Command timed out after {} seconds: {}'.format(
+            timeout,
+            ' '.join(str(arg) for arg in args)
+        )
+        if command_output:
+            message += '\n' + command_output
+        raise RuntimeError(message) from error
     if output.strip():
         log.info(NAME, output.strip())
     return output.strip()
+
+
+def git_fetch_command(*args):
+    """Build a Git fetch command that avoids unreliable HTTP/2 transports."""
+    return ['git', '-c', 'http.version=HTTP/1.1', 'fetch'] + list(args)
 
 
 def _read_json(path):
@@ -675,7 +703,7 @@ def perform_update():
         branch = selected_branch()
         remote_branch = selected_remote_branch()
         run_required_command(['git', 'config', 'core.filemode', 'false'])
-        run_required_command(['git', 'fetch', '--prune', 'origin'], timeout=120)
+        run_required_command(git_fetch_command('--prune', 'origin'), timeout=120)
         target_commit = git_output(['git', 'rev-parse', '--verify', remote_branch])
         previous_commit = git_output(['git', 'rev-parse', 'HEAD'])
         from ospy.options import options as current_options
@@ -920,7 +948,7 @@ class rollback_stable_page(ProtectedPage):
         data = web.input()
         verify_csrf(data)
         try:
-            run_required_command(['git', 'fetch', '--prune', '--tags', 'origin'], timeout=45)
+            run_required_command(git_fetch_command('--prune', '--tags', 'origin'), timeout=45)
             release = stable_release_info()
         except Exception:
             release = {}
