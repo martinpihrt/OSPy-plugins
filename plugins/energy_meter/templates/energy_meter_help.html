@@ -1,7 +1,7 @@
 $def with()
 $var title: $_(u'Energy Meter help')
 $var page: plugins
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.6" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.7" rel="stylesheet" type="text/css">
 <div id="plugin" class="energyPanel">
 <div class="title">$_(u'Energy Meter help')</div>
 <div class="energyToolbar">
@@ -14,9 +14,10 @@ $var page: plugins
 <p>$_(u'After OSPy or Shelly Cloud Integration starts, Energy Meter recognizes a configured meter that is still waiting for its first cached reading. Only that meter is retried every five seconds without recording a failure traceback or changing the configured sampling interval for other meters.')</p>
 <h3>$_(u'Meter roles and solar systems')</h3>
 <p>$_(u'Grid connection records energy imported from and exported to the public grid. Solar production records generated energy. Load records a separate consumer and Auxiliary is an independent meter. Grid export is never presented as solar production. With both Grid and Solar meters, house consumption equals production plus grid import minus grid export; self-consumption equals production minus grid export. Battery charging and discharging are not inferred without a dedicated meter.')</p>
+<p>$_(u'Phase-by-phase accounting adds import and export from every phase separately. Net / vector sum accounting compensates simultaneous phase import and export inside every sampling interval, then records only the remaining import or export as the accounted total. This matches grid meters that settle the vector sum of all phases. It is not a net calculation over the complete day: import and export in different intervals remain separate. Per-phase history always retains the raw Shelly counter differences for diagnostics. Shorter sampling intervals follow rapid direction changes more closely, while producing more history records.')</p>
 <h3>$_(u'History and counter replacement')</h3>
 <p>$_(u'Current Shelly cumulative counters and the previous sample are persisted atomically. OSPy therefore continues after restart without losing the counter baseline. If a counter decreases, the plug-in records a reset and establishes a new baseline without adding a false energy spike. Use Reset baseline before replacing or resetting a meter.')</p>
-<p>$_(u'Each completed sampling interval stores import and export energy plus power for L1, L2, L3 and the total. The default interval is 60 seconds. Local history is appended to a journal so the complete history file is not rewritten every minute.')</p>
+<p>$_(u'Each completed sampling interval stores raw import and export energy plus power for L1, L2 and L3, the configured accounting mode and the accounted totals. The default interval is 60 seconds. Changing the accounting mode affects only new intervals and does not reinterpret retained history. Local history is appended to a journal so the complete history file is not rewritten every minute.')</p>
 <p>$_(u'Overview totals and selected-day results are calculated from the retained interval history. Delete history therefore clears these overview values as well. Only the current cumulative-counter baselines are preserved, solely so the next sample continues from the current meter values without adding a false energy spike. Deleted historical totals cannot be reconstructed from the preserved baselines.')</p>
 <h3>$_(u'Calendar periods')</h3>
 <p>$_(u'Use the calendar-day selector on the overview to inspect any retained past day. Today, yesterday and every selected day follow the local date and time configured on the OSPy server: a day starts at 00:00 inclusive and ends at the next 00:00 exclusive. The physical Shelly cumulative counters are not reset at midnight; the plug-in splits and sums recorded intervals at calendar boundaries.')</p>

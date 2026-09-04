@@ -66,9 +66,11 @@ def meters():
         item['label'] = str(item.get('label') or _('Meter {}').format(index + 1))
         item['role'] = item.get('role') if item.get('role') in ('grid', 'production', 'load', 'auxiliary') else 'grid'
         item['source'] = 'integrator' if item.get('source') == 'integrator' else 'direct'
+        item['metering_mode'] = 'net' if item.get('metering_mode') == 'net' else 'phase'
         item['enabled'] = bool(item.get('enabled', True))
         item['role_label'] = role_label(item['role'])
         item['source_label'] = source_label(item['source'])
+        item['metering_mode_label'] = metering_mode_label(item['metering_mode'])
         result.append(item)
     return result
 
@@ -79,6 +81,10 @@ def role_label(role):
 
 def source_label(source):
     return _('Shelly Cloud Integration') if source == 'integrator' else _('Direct LAN / IP')
+
+
+def metering_mode_label(mode):
+    return _('Net / vector sum') if mode == 'net' else _('Phase-by-phase')
 
 
 def tariffs():
@@ -328,6 +334,7 @@ class log_page(ProtectedPage):
         for record in selected_history():
             item = dict(record)
             item['role_label'] = role_label(item.get('role'))
+            item['metering_mode_label'] = metering_mode_label(item.get('metering_mode', 'phase'))
             records.append(item)
         return self.plugin_render.energy_meter_log(records, options)
 
@@ -381,7 +388,7 @@ class reset_meter_page(ProtectedPage):
 class log_csv(ProtectedPage):
     def GET(self):
         output = io.StringIO()
-        fields = ['started', 'ended', 'meter_id', 'label', 'role', 'import_l1_kwh', 'import_l2_kwh', 'import_l3_kwh', 'import_kwh', 'export_l1_kwh', 'export_l2_kwh', 'export_l3_kwh', 'export_kwh', 'power_l1_w', 'power_l2_w', 'power_l3_w', 'power_w', 'tariff_name', 'currency', 'import_price', 'export_price', 'cost', 'income', 'counter_reset']
+        fields = ['started', 'ended', 'meter_id', 'label', 'role', 'metering_mode', 'import_l1_kwh', 'import_l2_kwh', 'import_l3_kwh', 'import_kwh', 'export_l1_kwh', 'export_l2_kwh', 'export_l3_kwh', 'export_kwh', 'power_l1_w', 'power_l2_w', 'power_l3_w', 'power_w', 'tariff_name', 'currency', 'import_price', 'export_price', 'cost', 'income', 'counter_reset']
         writer = csv.DictWriter(output, fieldnames=fields, extrasaction='ignore', delimiter=';')
         writer.writeheader()
         writer.writerows(selected_history())

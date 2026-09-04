@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+September 4 2026
+----------------
+(Martin Pihrt) - Energy Meter v1.0.7<br/>
+Added a per-meter Phase-by-phase or Net / vector sum accounting mode. Net accounting compensates simultaneous import and export across L1-L3 inside every sampling interval and uses only the remaining direction for period totals, tariffs, cost, feed-in income, solar calculations, graphs and mobile summaries, while retaining raw phase counter differences for diagnostics. New history and CSV records store the applied accounting mode, old configurations and records retain Phase-by-phase behavior, and later setting changes do not reinterpret historical data. Updated the settings, overview, history, help, READMEs, cache version and regression coverage.
+
 September 2 2026
 ----------------
 (Martin Pihrt) - System Update v1.2.8<br/>
