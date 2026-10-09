@@ -42,6 +42,10 @@ class EnergyMeterTests(unittest.TestCase):
         self.assertIn("var dayLabels = [$:{json.dumps(_('Mon')", settings)
         self.assertIn("r.find('.energyDay.on')", settings)
         self.assertNotIn('class="t-days"', settings)
+        self.assertIn('class="m-metering"', settings)
+        self.assertIn("metering_mode:r.find('.m-metering').val()", settings)
+        self.assertIn("m.metering_mode||'phase'", settings)
+        self.assertIn('Net / vector sum accounting compensates phase import and export inside each sampling interval', settings)
         switch_css = (PLUGIN / 'static' / 'energy_meter.css').read_text(encoding='utf-8')
         self.assertIn('.switch input {\n    display: none;', switch_css)
         self.assertIn('input:checked + .slider:before', switch_css)
@@ -50,11 +54,12 @@ class EnergyMeterTests(unittest.TestCase):
         self.assertIn("record.get('power_l1_w', 0)", history)
         self.assertIn("record.get('import_price', 0)", history)
         self.assertIn("record.get('export_price', 0)", history)
+        self.assertIn("record['metering_mode_label']", history)
         self.assertIn('\n</tbody>\n</table>\n</div>\n</div>', history)
         self.assertIn("$if selected.get('production_available'):", overview)
         self.assertIn("\n<h3>$_(u'Electricity meters')</h3>", overview)
         self.assertIn('\n</div>\n<section class="energyGraphSection">', overview)
-        self.assertIn("Import and export energy by phase", overview)
+        self.assertIn("Import and export energy by phase and accounted total", overview)
         self.assertIn("Power by phase", overview)
         self.assertIn("#energy-power-graph", overview)
         self.assertIn("import_l1_kwh", overview)
@@ -78,7 +83,30 @@ class EnergyMeterTests(unittest.TestCase):
         self.assertEqual(interval['cost'], 30)
         self.assertEqual(interval['income'], 3)
         self.assertEqual(interval['power_w'], 75)
+        self.assertEqual(interval['metering_mode'], 'phase')
         self.assertEqual(state['import_kwh'], [11, 22, 33])
+
+    def test_net_metering_compensates_phases_inside_each_interval(self):
+        meter = {'id': 'grid', 'label': 'Grid', 'role': 'grid', 'metering_mode': 'net'}
+        reading = model.normalized_reading({'import_kwh': [10.0, 16.23, 30.0], 'export_kwh': [4.0, 5.0, 10.049], 'power_w': [-530, 1031, -470]})
+        previous = {'import_kwh': [10.0, 10.0, 30.0], 'export_kwh': [4.0, 5.0, 4.0]}
+        interval, unused_state = model.make_interval(meter, reading, previous, 100, 200, {'id': 'default', 'name': 'Default', 'import_price': 5, 'export_price': 2})
+        self.assertAlmostEqual(interval['import_kwh'], 0.181)
+        self.assertEqual(interval['export_kwh'], 0)
+        self.assertAlmostEqual(interval['cost'], 0.905)
+        self.assertEqual(interval['income'], 0)
+        self.assertEqual(interval['power_w'], 31)
+        self.assertAlmostEqual(interval['import_l2_kwh'], 6.23)
+        self.assertAlmostEqual(interval['export_l3_kwh'], 6.049)
+        self.assertEqual(interval['metering_mode'], 'net')
+
+    def test_net_metering_records_only_export_for_negative_interval_balance(self):
+        imported, exported = model.metered_totals([0.1, 0.0, 0.2], [0.0, 0.5, 0.0], 'net')
+        self.assertEqual(imported, 0)
+        self.assertAlmostEqual(exported, 0.2)
+
+    def test_unknown_metering_mode_keeps_legacy_phase_accounting(self):
+        self.assertEqual(model.metered_totals([1, 2, 3], [0.5, 0.5, 0.5], 'unknown'), (6, 1.5))
 
     def test_tariff_supports_midnight_range_and_weekdays(self):
         tariff = {'id': 'night', 'name': 'Night', 'enabled': True, 'start_minute': 22 * 60, 'end_minute': 6 * 60, 'weekdays': [0], 'import_price': 3, 'export_price': 1}
@@ -192,12 +220,12 @@ class EnergyMeterTests(unittest.TestCase):
         self.assertIn('except IntegratorReadingPending:', source)
         self.assertIn("value.get('pending')", source)
 
-    def test_manifest_and_cache_keys_use_version_1_0_6(self):
+    def test_manifest_and_cache_keys_use_version_1_0_7(self):
         manifest = json.loads((PLUGIN / 'plugin.json').read_text(encoding='utf-8'))
-        self.assertEqual(manifest['version'], '1.0.6')
+        self.assertEqual(manifest['version'], '1.0.7')
         for template_name in ('energy_meter.html', 'energy_meter_settings.html', 'energy_meter_help.html', 'energy_meter_log.html'):
             template = (PLUGIN / 'templates' / template_name).read_text(encoding='utf-8')
-            self.assertIn('energy_meter.css?v=1.0.6', template)
+            self.assertIn('energy_meter.css?v=1.0.7', template)
 
     def test_state_and_history_survive_new_store_instance(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -3,7 +3,7 @@ $def with(plugin_options, meters, summary, status, currency)
 $var title: $_(u'Energy Meter')
 $var page: plugins
 
-<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.6" rel="stylesheet" type="text/css">
+<link href="/plugins/energy_meter/static/energy_meter.css?v=1.0.7" rel="stylesheet" type="text/css">
 <script src="/static/scripts/jquery.flot.js"></script>
 <script src="/static/scripts/jquery.flot.time.js"></script>
 <script src="/static/scripts/jquery.flot.resize.js"></script>
@@ -114,7 +114,7 @@ $for meter in meters:
         $else:
             <span class="energyBadge fault">$_(u'Unavailable')</span>
         </div>
-        <p>$_(u'Role'): $meter['role_label'] · $_(u'Source'): $meter['source_label']</p>
+        <p>$_(u'Role'): $meter['role_label'] · $_(u'Accounting'): $meter['metering_mode_label'] · $_(u'Source'): $meter['source_label']</p>
         <div class="energyPhases">
             <span>L1 $'{:.1f}'.format(live.get('power_l1_w', 0)) W</span>
             <span>L2 $'{:.1f}'.format(live.get('power_l2_w', 0)) W</span>
@@ -138,7 +138,7 @@ $for meter in meters:
         <button class="button backup energyRange" data-days="365">365 $_(u'days')</button>
     </div>
     <div id="energy-empty">$_(u'No records found for selected range.')</div>
-    <h4>$_(u'Import and export energy by phase')</h4>
+    <h4>$_(u'Import and export energy by phase and accounted total')</h4>
     <div id="energy-graph"></div>
     <h4>$_(u'Power by phase')</h4>
     <div id="energy-power-graph"></div>

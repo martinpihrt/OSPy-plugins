@@ -5,6 +5,7 @@ import math
 
 
 ROLES = ('grid', 'production', 'load', 'auxiliary')
+METERING_MODES = ('phase', 'net')
 
 
 def number(value, default=0.0):
@@ -41,6 +42,18 @@ def counter_delta(current, previous):
     return current - previous, False
 
 
+def metered_totals(imported, exported, mode='phase'):
+    """Return accounted import/export while retaining raw per-phase energy."""
+    total_imported = sum(imported)
+    total_exported = sum(exported)
+    if mode != 'net':
+        return total_imported, total_exported
+    net = total_imported - total_exported
+    if abs(net) < 1e-9:
+        net = 0.0
+    return max(0.0, net), max(0.0, -net)
+
+
 def tariff_at(moment, tariffs, default_import=0.0, default_export=0.0):
     if not isinstance(moment, datetime.datetime):
         moment = datetime.datetime.fromtimestamp(float(moment))
@@ -72,7 +85,9 @@ def make_interval(meter, reading, previous, started, ended, tariff):
         delta, was_reset = counter_delta(reading['export_kwh'][index], previous_export[index] if previous_export else None)
         exported.append(delta)
         reset = reset or was_reset
-    interval = {'meter_id': meter['id'], 'label': meter['label'], 'role': meter['role'], 'started': float(started), 'ended': float(ended), 'datetime': datetime.datetime.fromtimestamp(float(ended)).strftime('%Y-%m-%d %H:%M:%S'), 'import_l1_kwh': imported[0], 'import_l2_kwh': imported[1], 'import_l3_kwh': imported[2], 'import_kwh': sum(imported), 'export_l1_kwh': exported[0], 'export_l2_kwh': exported[1], 'export_l3_kwh': exported[2], 'export_kwh': sum(exported), 'power_l1_w': reading['power_w'][0], 'power_l2_w': reading['power_w'][1], 'power_l3_w': reading['power_w'][2], 'power_w': sum(reading['power_w']), 'tariff_id': tariff['id'], 'tariff_name': tariff['name'], 'import_price': tariff['import_price'], 'export_price': tariff['export_price'], 'cost': sum(imported) * tariff['import_price'], 'income': sum(exported) * tariff['export_price'], 'counter_reset': reset}
+    metering_mode = meter.get('metering_mode') if meter.get('metering_mode') in METERING_MODES else 'phase'
+    total_imported, total_exported = metered_totals(imported, exported, metering_mode)
+    interval = {'meter_id': meter['id'], 'label': meter['label'], 'role': meter['role'], 'metering_mode': metering_mode, 'started': float(started), 'ended': float(ended), 'datetime': datetime.datetime.fromtimestamp(float(ended)).strftime('%Y-%m-%d %H:%M:%S'), 'import_l1_kwh': imported[0], 'import_l2_kwh': imported[1], 'import_l3_kwh': imported[2], 'import_kwh': total_imported, 'export_l1_kwh': exported[0], 'export_l2_kwh': exported[1], 'export_l3_kwh': exported[2], 'export_kwh': total_exported, 'power_l1_w': reading['power_w'][0], 'power_l2_w': reading['power_w'][1], 'power_l3_w': reading['power_w'][2], 'power_w': sum(reading['power_w']), 'tariff_id': tariff['id'], 'tariff_name': tariff['name'], 'import_price': tariff['import_price'], 'export_price': tariff['export_price'], 'cost': total_imported * tariff['import_price'], 'income': total_exported * tariff['export_price'], 'counter_reset': reset}
     state = {'import_kwh': list(reading['import_kwh']), 'export_kwh': list(reading['export_kwh']), 'timestamp': float(ended), 'identity': reading.get('identity', '')}
     return interval, state
 
