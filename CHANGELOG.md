@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+October 10 2026
+---------------
+(Martin Pihrt) - Database Connector v1.1.0<br/>
+Added an optional durable SQLite-backed queue for database commands submitted by other plug-ins. Queued commands are replayed in order by a background worker, remain saved through database outages and OSPy restarts, and are visible and manually clearable from settings. Updated the Database Connector README and settings UI translations.
+
 September 4 2026
 ----------------
 (Martin Pihrt) - Energy Meter v1.0.7<br/>

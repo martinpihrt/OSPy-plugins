@@ -11,11 +11,16 @@ is enabled and available, its version, configured server and database, and the
 result of the latest real database operation. Database connections and cursors
 are closed after every operation.
 
+October 10, 2026 GitHub/OSPy-plugins/plugins/database_connector — Added an optional durable SQLite-backed database command queue. When Use buffer is enabled, SQL commands from other plug-ins are saved locally in order and replayed in the background; commands remain queued during database outages and survive OSPy restarts. The settings page shows the queued command count and provides a CSRF-protected Clear queue action. Disabling the buffer stops queue replay and new commands use the direct database path.
+
 Plugin setup
 -----------
 
 * Use plugin:  
   If checked enabled plugin is enabled. When the box is checked, the extension will be active. After filling in all the fields, ospy must be restarted!
+
+* Use buffer:
+  When enabled, database commands are saved in a local queue and processed in order. If the database connection is unavailable, commands remain queued and are saved after the connection is restored. This helps prevent data loss from logging in other plugins. The queue is stored in SQLite in the plug-in data directory and survives OSPy restarts. The page displays the number of queued commands and lets the administrator clear the queue manually. Clearing permanently discards every queued command. Disabling the buffer stops background replay and sends new commands through the direct database path.
 
 * Host:  
   IP address to the database server.

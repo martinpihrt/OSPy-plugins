@@ -98,6 +98,23 @@ input:checked + .slider:before {
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>$_('Use buffer'):</td>
+                <td title=$:{json.dumps(_('When enabled, database commands are saved in a local queue and processed in order. If the database connection is unavailable, commands remain queued and are saved after the connection is restored. This helps prevent data loss from logging in other plugins.'), ensure_ascii=False)}>
+                    <label class="switch">
+                        <input name='use_buffer' type='checkbox' ${" checked" if plugin_options['use_buffer'] else ""}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>
+            $if plugin_options['use_buffer']:
+                <tr>
+                    <td style='text-transform: none;'>$_('Messages in queue'):</td>
+                    <td>
+                        <span>$queue_size</span>
+                        <a href="?clear_queue&$csrf_query()" class="button danger" onclick="return confirm($:{json.dumps(_('Clear all queued database commands?'), ensure_ascii=False)});">$_('Clear queue')</a>
+                    </td>
+                </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Host'):</td>
                 <td title=$:{json.dumps(_('IP address to the database server.'), ensure_ascii=False)}>
                 <input name='host' class="Input IPnumbersOnly" type='text' size='15' maxlength='15' id='IPnumbersOnly' value='$plugin_options["host"]'>
