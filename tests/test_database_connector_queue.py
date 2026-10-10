@@ -77,6 +77,12 @@ class DatabaseConnectorQueueTests(unittest.TestCase):
             setattr(module, key, value)
         self._install_module(name, module)
 
+    def test_settings_template_reads_queue_count_from_plugin_options(self):
+        template = (ROOT / 'plugins' / 'database_connector' / 'templates' / 'database_connector.html').read_text(encoding='utf-8')
+
+        self.assertIn("$plugin_options['queue_size']", template)
+        self.assertNotIn('$queue_size', template)
+
     def test_enqueue_preserves_command_order_and_commit_flag(self):
         self.module.enqueue_db('INSERT INTO sample VALUES (1)', commit=True)
         self.module.enqueue_db('INSERT INTO sample VALUES (2)', commit=False)

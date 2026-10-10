@@ -110,7 +110,7 @@ input:checked + .slider:before {
                 <tr>
                     <td style='text-transform: none;'>$_('Messages in queue'):</td>
                     <td>
-                        <span>$queue_size</span>
+                        <span>$plugin_options['queue_size']</span>
                         <a href="?clear_queue&$csrf_query()" class="button danger" onclick="return confirm($:{json.dumps(_('Clear all queued database commands?'), ensure_ascii=False)});">$_('Clear queue')</a>
                     </td>
                 </tr>
