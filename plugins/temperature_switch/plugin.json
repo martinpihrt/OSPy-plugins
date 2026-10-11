@@ -3,6 +3,7 @@
   "id": "temperature_switch",
   "name": "Temperature Switch",
   "version": "1.0.0",
+  "description": "Starts and stops OSPy programs from configured temperature sources and hysteresis limits.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

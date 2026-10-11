@@ -3,6 +3,7 @@
   "id": "ping_monitor",
   "name": "Ping Monitor",
   "version": "1.0.0",
+  "description": "Monitors host reachability, logs outages and can notify or restart a device after repeated failures.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

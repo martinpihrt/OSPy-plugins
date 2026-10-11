@@ -3,6 +3,7 @@
   "id": "proto",
   "name": "Proto",
   "version": "1.0.0",
+  "description": "Provides a minimal working example and starting point for developing OSPy plug-ins.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

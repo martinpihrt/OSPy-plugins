@@ -3,6 +3,7 @@
   "id": "energy_meter",
   "name": "Energy Meter",
   "version": "1.0.7",
+  "description": "Monitors Shelly three-phase electricity meters and stores import, export, tariff, cost and solar calculations.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {"min_version": "3.0.318"},

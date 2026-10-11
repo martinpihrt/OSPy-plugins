@@ -3,6 +3,7 @@
   "id": "venetian_blind",
   "name": "Venetian Blind",
   "version": "1.2.8",
+  "description": "Controls configured Shelly or compatible blinds, including tilt positions, automation rules and mobile actions.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

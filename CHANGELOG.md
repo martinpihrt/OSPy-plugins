@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+October 11 2026
+---------------
+(Martin Pihrt) - Repository documentation<br/>
+Added concise descriptions to every official `plugin.json` and replaced the manually maintained plug-in list in the repository README with a deterministic table of plug-in names, versions and descriptions. The generator and regression test fail when a manifest lacks catalog metadata or the committed table is stale.
+
 October 10 2026
 ---------------
 (Martin Pihrt) - Database Connector v1.1.0<br/>

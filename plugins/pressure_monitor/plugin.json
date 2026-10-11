@@ -3,6 +3,7 @@
   "id": "pressure_monitor",
   "name": "Pressure Monitor",
   "version": "1.1.1",
+  "description": "Checks binary pipe pressure while the master station runs and can stop irrigation when pressure is missing.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

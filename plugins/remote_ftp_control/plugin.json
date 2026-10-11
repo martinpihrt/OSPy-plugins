@@ -3,6 +3,7 @@
   "id": "remote_ftp_control",
   "name": "Remote FTP Control",
   "version": "1.0.0",
+  "description": "Exchanges command and status files through FTP for legacy remote control of OSPy.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

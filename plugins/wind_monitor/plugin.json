@@ -3,6 +3,7 @@
   "id": "wind_monitor",
   "name": "Wind Speed Monitor",
   "version": "1.2.3",
+  "description": "Measures wind through PCF8583 or Modbus sensors and can log, notify or run safety actions.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

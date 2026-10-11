@@ -3,6 +3,7 @@
   "id": "tank_monitor",
   "name": "Water Tank Monitor",
   "version": "1.1.1",
+  "description": "Measures ultrasonic tank level and volume, blocks irrigation on low water and exposes tank provider actions.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

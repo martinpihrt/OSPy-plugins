@@ -3,6 +3,7 @@
   "id": "water_meter",
   "name": "Water Meter",
   "version": "1.2.1",
+  "description": "Measures pulse-output water meters through a PCF8583 counter with live flow, history, CSV and optional SQL logging.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

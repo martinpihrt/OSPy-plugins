@@ -3,6 +3,7 @@
   "id": "voice_station",
   "name": "Voice Station",
   "version": "1.0.0",
+  "description": "Queues and plays audio when station outputs change, regardless of what triggered the station.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

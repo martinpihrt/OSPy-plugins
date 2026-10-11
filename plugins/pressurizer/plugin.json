@@ -3,6 +3,7 @@
   "id": "pressurizer",
   "name": "Pressurizer",
   "version": "1.0.0",
+  "description": "Pre-runs the master pump to build pressure before selected irrigation stations start.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

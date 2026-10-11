@@ -3,6 +3,7 @@
   "id": "system_update",
   "name": "System Update",
   "version": "1.2.8",
+  "description": "Checks, installs and safely rolls back OSPy updates from stable or beta Git branches with backup and watchdog protection.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

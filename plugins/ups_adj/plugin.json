@@ -3,6 +3,7 @@
   "id": "ups_adj",
   "name": "UPS Monitor",
   "version": "1.0.5",
+  "description": "Monitors mains power and can notify, shut down OSPy and switch off a UPS after a sustained outage.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

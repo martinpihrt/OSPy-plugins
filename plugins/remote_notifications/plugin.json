@@ -3,6 +3,7 @@
   "id": "remote_notifications",
   "name": "Remote Notifications",
   "version": "1.0.0",
+  "description": "Sends OSPy status and event notifications to a configured remote PHP and SQL web service.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

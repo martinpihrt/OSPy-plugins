@@ -3,6 +3,7 @@
   "id": "speed_monitor",
   "name": "Speed Monitor",
   "version": "1.0.0",
+  "description": "Measures and logs Internet ping, download and upload performance at scheduled intervals.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

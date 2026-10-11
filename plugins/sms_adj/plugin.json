@@ -3,6 +3,7 @@
   "id": "sms_adj",
   "name": "SMS Modem",
   "version": "1.0.0",
+  "description": "Receives authorized SMS commands through a Gammu-compatible modem and returns OSPy status by SMS.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

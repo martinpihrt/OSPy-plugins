@@ -3,6 +3,7 @@
   "id": "shelly_cloud_integrator",
   "name": "Shelly Cloud Integration",
   "version": "1.0.8",
+  "description": "Loads and caches configured Shelly device states from the Shelly Cloud API for OSPy and other plug-ins.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
