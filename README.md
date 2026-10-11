@@ -1,4 +1,10 @@
 # OSPy-plugins
+
+[![Plugins](https://img.shields.io/github/directory-file-count/martinpihrt/OSPy-plugins/plugins?type=dir&label=plugins&logo=github)](https://github.com/martinpihrt/OSPy-plugins/tree/master/plugins)
+[![Tests](https://img.shields.io/github/actions/workflow/status/martinpihrt/OSPy-plugins/tests.yml?branch=master&event=push&label=tests&logo=githubactions)](https://github.com/martinpihrt/OSPy-plugins/actions/workflows/tests.yml?query=branch%3Amaster)
+[![Master updated](https://img.shields.io/github/last-commit/martinpihrt/OSPy-plugins/master?label=master%20updated&logo=github)](https://github.com/martinpihrt/OSPy-plugins/commits/master)
+[![License](https://img.shields.io/github/license/martinpihrt/OSPy-plugins?label=license)](LICENSE)
+
 ### A collection of user contributed plugins for the Raspberry Pi based irrigation controll software OSPy - Open Sprinkler Python (OSPy).
 
 Please note: Unless otherwise stated: This is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
