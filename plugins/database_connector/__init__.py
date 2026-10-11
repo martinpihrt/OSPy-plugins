@@ -11,8 +11,9 @@ import subprocess
 import os
 import mimetypes
 import shlex
+import sqlite3
 
-from threading import Lock
+from threading import Event, Lock, Thread
 
 from plugins import PluginOptions, plugin_url, plugin_data_dir
 from ospy.log import log
@@ -29,11 +30,14 @@ LINK = 'settings_page'
 DB_CONNECT_TIMEOUT = 5
 DB_ERROR_LOG_THROTTLE = 60
 DB_COMMAND_LOG_THROTTLE = 60
+DB_QUEUE_RETRY_INTERVAL = 10
+QUEUE_FILENAME = 'database_queue.sqlite3'
 
 plugin_options = PluginOptions(
     NAME,
     {
         'use': False,
+        'use_buffer': False,
         'host': '192.168.88.248',
         'user': 'username',
         'pass': 'password',
@@ -41,6 +45,7 @@ plugin_options = PluginOptions(
         'database': 'ospy',
         'sql_name': [],                # a list of all sql names in the plugin data directory
         'sql_size': [],                # sql size in bytes        
+        'queue_size': 0,
     }
 )
 
@@ -59,12 +64,15 @@ health_state = {
 # Main function loop:                                                          #
 ################################################################################
 started = False
+queue_thread = None
+queue_stop_event = Event()
+queue_db_lock = Lock()
 
 ################################################################################
 # Helper functions:                                                            #
 ################################################################################
 def start():
-    global is_installed_ok, started
+    global is_installed_ok, started, queue_thread
     started = True
     log.clear(NAME)
     if not plugin_options['use']:
@@ -78,6 +86,8 @@ def start():
             health_state['last_error_message'] = ''
         is_installed_ok = True
         log.info(NAME, _('Installed version mysql-connector-python:') + ' ' + version_text)
+        if plugin_options['use_buffer']:
+            start_queue_worker()
     except Exception as error:
         is_installed_ok = False
         record_db_error(error)
@@ -88,6 +98,20 @@ def start():
 def stop():
     global started
     started = False
+    queue_stop_event.set()
+    if queue_thread is not None and queue_thread.is_alive():
+        queue_thread.join(timeout=DB_CONNECT_TIMEOUT * 2 + 1)
+
+
+def start_queue_worker():
+    global queue_thread
+    if not plugin_options['use'] or not plugin_options['use_buffer'] or not is_installed_ok:
+        return
+    init_db_queue()
+    if queue_thread is None or not queue_thread.is_alive():
+        queue_stop_event.clear()
+        queue_thread = Thread(target=process_db_queue, name='database-connector-queue', daemon=True)
+        queue_thread.start()
 
 
 def record_db_success():
@@ -211,6 +235,72 @@ def is_idempotent_table_create(sql):
     return normalized.startswith('CREATE TABLE IF NOT EXISTS ')
 
 
+def queue_path():
+    return os.path.join(plugin_data_dir(), QUEUE_FILENAME)
+
+
+def init_db_queue():
+    """Create the durable SQLite outbox used while the remote database is unavailable."""
+    path = queue_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with queue_db_lock, sqlite3.connect(path, timeout=10) as connection:
+        connection.execute('CREATE TABLE IF NOT EXISTS pending_queries (id INTEGER PRIMARY KEY AUTOINCREMENT, sql TEXT NOT NULL, commit_after INTEGER NOT NULL DEFAULT 0, created_at REAL NOT NULL)')
+
+
+def db_queue_size():
+    if not plugin_options['use_buffer']:
+        return 0
+    try:
+        init_db_queue()
+        with queue_db_lock, sqlite3.connect(queue_path(), timeout=10) as connection:
+            return connection.execute('SELECT COUNT(*) FROM pending_queries').fetchone()[0]
+    except Exception as error:
+        log_db_error(_('Unable to read database queue') + ': {}'.format(error))
+        return 0
+
+
+def clear_db_queue():
+    init_db_queue()
+    with queue_db_lock:
+        with sqlite3.connect(queue_path(), timeout=10) as connection:
+            connection.execute('DELETE FROM pending_queries')
+
+
+def enqueue_db(sql, commit=False):
+    init_db_queue()
+    with queue_db_lock, sqlite3.connect(queue_path(), timeout=10) as connection:
+        connection.execute('INSERT INTO pending_queries (sql, commit_after, created_at) VALUES (?, ?, ?)', (str(sql), int(bool(commit)), time.time()))
+    return -1
+
+
+def process_db_queue(_queue_failure=False):
+    """Replay queued SQL in order and keep the head item until the database accepts it."""
+    while started and not queue_stop_event.is_set() and plugin_options['use_buffer']:
+        try:
+            init_db_queue()
+            with queue_db_lock:
+                with sqlite3.connect(queue_path(), timeout=10) as connection:
+                    row = connection.execute('SELECT id, sql, commit_after FROM pending_queries ORDER BY id LIMIT 1').fetchone()
+                if row is None:
+                    if _queue_failure:
+                        return
+                    queue_stop_event.wait(1)
+                    continue
+                result = execute_db(row[1], commit=bool(row[2]), test=False, fetch=False, _from_queue=True, _queue_failure=True)
+                if result is None:
+                    if _queue_failure:
+                        log_db_error(_('Database queue replay failed; command remains queued.'))
+                    queue_stop_event.wait(DB_QUEUE_RETRY_INTERVAL)
+                    continue
+                with sqlite3.connect(queue_path(), timeout=10) as connection:
+                    connection.execute('DELETE FROM pending_queries WHERE id = ?', (row[0],))
+            if _queue_failure:
+                return
+        except Exception as error:
+            log_db_error(_('Database queue processing failed') + ': {}'.format(error))
+            queue_stop_event.wait(DB_QUEUE_RETRY_INTERVAL)
+
+
 def table_exists(table_name):
     table_name = str(table_name).strip()
     if not table_name or not table_name.replace('_', '').isalnum():
@@ -224,7 +314,7 @@ def table_exists(table_name):
     return bool(rows)
 
 
-def execute_db(sql = "", commit = False, test = False, fetch = False):
+def execute_db(sql = "", commit = False, test = False, fetch = False, _from_queue=False, _queue_failure=False):
     global is_installed_ok
     if is_installed_ok:
         import mysql.connector
@@ -271,11 +361,15 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
                 record_db_success()
             else:
                 log_db_error(_('Database connection/query failed') + ': ' + _('Not connected'))
+                if plugin_options['use_buffer'] and not test and not fetch and not _from_queue:
+                    return queue_failed_db_command(sql, commit)
                 return None
 
             return -1 if msg is None else msg
 
         except mysql.connector.Error as err:
+            if plugin_options['use_buffer'] and not test and not fetch and not _from_queue and is_database_connection_error(err, errorcode):
+                return queue_failed_db_command(sql, commit)
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 log_db_error(_('Something is wrong with your user name or password'))
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
@@ -294,7 +388,17 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
             return None
 
         except Exception as err:
+            if plugin_options['use_buffer'] and not test and not fetch and not _from_queue:
+                try:
+                    from mysql.connector import Error as ConnectorError, errorcode
+                except Exception:
+                    ConnectorError = ()
+                    errorcode = None
+                if ConnectorError and isinstance(err, ConnectorError) and is_database_connection_error(err, errorcode):
+                    return queue_failed_db_command(sql, commit)
             log_db_error(_('Database connection/query failed') + ': {}'.format(err))
+            if _queue_failure:
+                log_db_error(_('Database queue replay failed; command remains queued.'))
             return None
 
         finally:
@@ -312,6 +416,28 @@ def execute_db(sql = "", commit = False, test = False, fetch = False):
         return None
 
     return None
+
+
+def queue_failed_db_command(sql, commit):
+    try:
+        log_db_error(_('Database command failed; saving it to the queue for retry.'))
+        return enqueue_db(sql, commit=commit)
+    except Exception as error:
+        log_db_error(_('Unable to queue database command') + ': {}'.format(error))
+        return None
+
+
+def is_database_connection_error(error, errorcode):
+    if errorcode is None:
+        return False
+    connection_errors = {
+        getattr(errorcode, 'CR_CONNECTION_ERROR', -1),
+        getattr(errorcode, 'CR_CONN_HOST_ERROR', -1),
+        getattr(errorcode, 'CR_SERVER_GONE_ERROR', -1),
+        getattr(errorcode, 'CR_SERVER_LOST', -1),
+        getattr(errorcode, 'ER_CON_COUNT_ERROR', -1),
+    }
+    return getattr(error, 'errno', None) in connection_errors
 
 
 def get_dump():
@@ -380,6 +506,7 @@ class settings_page(ProtectedPage):
             qdict  = web.input()
             test = get_input(qdict, 'test', False, lambda x: True)
             install = get_input(qdict, 'install', False, lambda x: True)
+            clear_queue = get_input(qdict, 'clear_queue', False, lambda x: True)
 
             if test:
                 verify_csrf(qdict)
@@ -390,6 +517,12 @@ class settings_page(ProtectedPage):
                 verify_csrf(qdict)
                 install_db()
 
+            if clear_queue:
+                verify_csrf(qdict)
+                clear_db_queue()
+                log.info(NAME, _('Database queue cleared manually.'))
+
+            plugin_options.__setitem__('queue_size', db_queue_size())
             return self.plugin_render.database_connector(plugin_options, log.events(NAME))
 
         except:
@@ -403,6 +536,12 @@ class settings_page(ProtectedPage):
             qdict = web.input()
             verify_csrf(qdict)
             plugin_options.web_update(qdict)
+            plugin_options.__setitem__('use_buffer', 'use_buffer' in qdict)
+            plugin_options.__setitem__('use', 'use' in qdict)
+            if plugin_options['use_buffer'] and plugin_options['use'] and is_installed_ok:
+                start_queue_worker()
+            elif not plugin_options['use_buffer']:
+                queue_stop_event.set()
             raise web.seeother(plugin_url(settings_page), True)
         except:
             log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
