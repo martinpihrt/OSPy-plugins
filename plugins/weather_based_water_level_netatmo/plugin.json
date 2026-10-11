@@ -3,6 +3,7 @@
   "id": "weather_based_water_level_netatmo",
   "name": "Weather-based Water Level Netatmo",
   "version": "1.0.0",
+  "description": "Adjusts OSPy water level using rainfall history from a configured Netatmo rain module.",
   "author": "Martin Pihrt, Vaclav Hrabe",
   "license": "GPL-3.0",
   "ospy": {

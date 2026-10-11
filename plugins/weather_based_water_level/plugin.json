@@ -3,6 +3,7 @@
   "id": "weather_based_water_level",
   "name": "Weather-based Water Level",
   "version": "1.1.2",
+  "description": "Calculates hourly OSPy water-level adjustment from weather balance, Zimmerman or evapotranspiration methods.",
   "author": "Rimco, Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

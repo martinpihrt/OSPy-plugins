@@ -3,6 +3,7 @@
   "id": "pool_heating",
   "name": "Pool Heating",
   "version": "1.0.0",
+  "description": "Controls a pool circulation pump from pool and solar collector temperatures.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

@@ -3,6 +3,7 @@
   "id": "relay_16",
   "name": "Direct 16 Relay Outputs",
   "version": "1.0.0",
+  "description": "Controls up to 16 direct Raspberry Pi GPIO relay outputs with configurable trigger polarity.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

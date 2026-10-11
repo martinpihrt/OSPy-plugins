@@ -3,6 +3,7 @@
   "id": "voice_notification",
   "name": "Voice Notification",
   "version": "1.0.0",
+  "description": "Plays scheduled voice announcements before configured OSPy program and station events.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

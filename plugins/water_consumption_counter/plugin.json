@@ -3,6 +3,7 @@
   "id": "water_consumption_counter",
   "name": "Water Consumption Counter",
   "version": "1.2.7",
+  "description": "Estimates and reports water consumption from configured station flow rates and master-station runtime.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

@@ -3,6 +3,7 @@
   "id": "sunrise_and_sunset",
   "name": "Astro Sunrise and Sunset",
   "version": "1.0.6",
+  "description": "Calculates astronomical dawn, sunrise, noon, sunset and dusk times for OSPy programs and mobile clients.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

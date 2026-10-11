@@ -3,6 +3,7 @@
   "id": "telegram_bot",
   "name": "Telegram Bot",
   "version": "1.0.1",
+  "description": "Sends Telegram notifications and accepts a limited set of OSPy control commands from subscribed chats.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

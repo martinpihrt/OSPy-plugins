@@ -3,6 +3,7 @@
   "id": "volt_temp_da",
   "name": "Voltage and Temperature Monitor",
   "version": "1.0.0",
+  "description": "Measures and logs voltages or LM35 temperatures through a PCF8591 I2C converter.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

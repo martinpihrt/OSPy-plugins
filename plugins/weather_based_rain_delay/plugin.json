@@ -3,6 +3,7 @@
   "id": "weather_based_rain_delay",
   "name": "Weather-based Rain Delay",
   "version": "1.0.0",
+  "description": "Sets OSPy rain delay from measured or Netatmo rainfall and configured weather thresholds.",
   "author": "Martin Pihrt, Vaclav Hrabe",
   "license": "GPL-3.0",
   "ospy": {

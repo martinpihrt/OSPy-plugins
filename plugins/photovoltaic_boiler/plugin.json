@@ -3,6 +3,7 @@
   "id": "photovoltaic_boiler",
   "name": "Photovoltaic Boiler",
   "version": "1.0.0",
+  "description": "Controls boiler heating between photovoltaic surplus and the public grid using configured temperature sources.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

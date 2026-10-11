@@ -3,6 +3,7 @@
   "id": "real_time",
   "name": "Real Time and NTP time",
   "version": "1.0.1",
+  "description": "Synchronizes system time with NTP and supported I2C real-time clocks.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

@@ -3,6 +3,7 @@
   "id": "system_watchdog",
   "name": "System Watchdog",
   "version": "1.0.0",
+  "description": "Configures and monitors the Raspberry Pi hardware watchdog to recover from system lockups.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {

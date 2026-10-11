@@ -3,6 +3,7 @@
   "id": "weather_dashboard",
   "name": "Weather Dashboard",
   "version": "1.0.2",
+  "description": "Displays selected OSPy sensor and plug-in values as configurable gauges or text.",
   "author": "Martin Pihrt",
   "license": "GPL-3.0",
   "ospy": {
