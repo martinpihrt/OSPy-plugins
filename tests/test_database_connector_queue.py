@@ -79,8 +79,10 @@ class DatabaseConnectorQueueTests(unittest.TestCase):
         self._install_module(name, module)
 
     def test_settings_template_reads_queue_count_from_plugin_options(self):
+        source = PLUGIN_PATH.read_text(encoding='utf-8')
         template = (ROOT / 'plugins' / 'database_connector' / 'templates' / 'database_connector.html').read_text(encoding='utf-8')
 
+        self.assertIn("skipped={'sql_name', 'sql_size', 'queue_size', 'queue_bytes'}", source)
         self.assertIn("$plugin_options['queue_size']", template)
         self.assertIn("name='queue_warning_mib'", template)
         self.assertIn("name='queue_max_mib'", template)

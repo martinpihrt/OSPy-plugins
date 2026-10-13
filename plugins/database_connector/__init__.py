@@ -704,7 +704,13 @@ class settings_page(ProtectedPage):
             qdict = web.input()
             verify_csrf(qdict)
             queue_warning_mib, queue_max_mib = queue_limits_from_input(qdict)
-            plugin_options.web_update(qdict)
+            # Backup names/sizes and queue counters are runtime values, not
+            # form fields. PluginOptions treats every list as integer input,
+            # so an existing backup filename must never be parsed here.
+            plugin_options.web_update(
+                qdict,
+                skipped={'sql_name', 'sql_size', 'queue_size', 'queue_bytes'},
+            )
             plugin_options.__setitem__('use_buffer', 'use_buffer' in qdict)
             plugin_options.__setitem__('use', 'use' in qdict)
             if 'queue_email_alerts_present' in qdict:

@@ -82,7 +82,7 @@ This table is generated from the `name`, `version` and `description` fields in e
 | [**CHMI**](plugins/chmi/) | `1.0.7` | Downloads CHMI or SHMU radar data, detects local rain and optionally controls a hardware map. |
 | [**CLI Control**](plugins/cli_control/) | `1.0.0` | Runs administrator-configured shell commands when OSPy station states change. |
 | [**Current Loop Tanks Monitor**](plugins/current_loop_tanks_monitor/) | `1.1.1` | Monitors up to four water tanks through an ADS1115 and 4-20 mA pressure sensors. |
-| [**Database Connector**](plugins/database_connector/) | `1.1.1` | Provides shared MySQL access, backup and durable queued writes for OSPy plug-ins. |
+| [**Database Connector**](plugins/database_connector/) | `1.1.2` | Provides shared MySQL access, backup and durable queued writes for OSPy plug-ins. |
 | [**Direct 16 Relay Outputs**](plugins/relay_16/) | `1.0.0` | Controls up to 16 direct Raspberry Pi GPIO relay outputs with configurable trigger polarity. |
 | [**Door Opening**](plugins/door_opening/) | `1.0.0` | Activates a selected OSPy station for a bounded door or gate opening interval. |
 | [**E-mail Notifications**](plugins/email_notifications/) | `1.0.1` | Sends OSPy event notifications through a STARTTLS SMTP server with an optional retry queue. |
