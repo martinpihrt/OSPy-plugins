@@ -2,6 +2,11 @@
 
 October 13 2026
 ----------------
+(Martin Pihrt) - Repository and Wiki documentation<br/>
+Added a generated GitHub Wiki with a task-oriented home page, installation, permissions, integrations, troubleshooting, hardware and I²C reference, a categorized catalog and one complete page for every official plug-in. Each plug-in page combines current manifest metadata, README guidance and shipped in-app help. The main README now links to the Wiki and its generated catalog instead of carrying detailed release and setup notes for only a few plug-ins. Added deterministic generation and regression coverage for all 64 plug-in pages.
+
+October 13 2026
+----------------
 (Martin Pihrt) - Database Connector v1.1.3<br/>
 Moved the successful settings `SeeOther` redirect outside the POST exception handler, so its normal HTTP 303 response is not reported as an internal error. Added a regression test for the real settings POST flow.
 

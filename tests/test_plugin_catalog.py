@@ -34,6 +34,16 @@ class PluginCatalogTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_catalog_links_to_the_user_documentation(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        for manifest in sorted(PLUGINS_DIR.glob("*/plugin.json")):
+            page = "Plugin-" + manifest.parent.name.replace("_", "-")
+            with self.subTest(plugin=manifest.parent.name):
+                self.assertIn(
+                    f"https://github.com/martinpihrt/OSPy-plugins/wiki/{page}",
+                    readme,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
