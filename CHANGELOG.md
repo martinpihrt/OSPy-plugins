@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+October 13 2026
+----------------
+(Martin Pihrt) - Database Connector v1.1.1<br/>
+The durable database queue now restores the original command timestamp for MySQL/MariaDB `CURRENT_TIMESTAMP` and timestamp-default writes, so all plug-ins using Database Connector keep measurement time after an outage. Added configurable 80 MiB warning and 100 MiB maximum queue sizes, one-time SSL e-mail alerts with an editable subject, SD-card protection by rejecting new commands past the maximum, queue size diagnostics and regression coverage.
+
 October 11 2026
 ---------------
 (Martin Pihrt) - Repository documentation<br/>
