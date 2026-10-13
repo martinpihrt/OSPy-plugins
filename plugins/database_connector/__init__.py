@@ -721,12 +721,12 @@ class settings_page(ProtectedPage):
                 start_queue_worker()
             elif not plugin_options['use_buffer']:
                 queue_stop_event.set()
-            raise web.seeother(plugin_url(settings_page), True)
         except:
             log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('database_connector -> settings_page POST')
             return self.core_render.notice('/', msg)
+        raise web.seeother(plugin_url(settings_page), True)
 
 class backup_page(ProtectedPage):
     """Load an html page for backup"""

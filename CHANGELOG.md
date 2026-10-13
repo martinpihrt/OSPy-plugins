@@ -2,6 +2,11 @@
 
 October 13 2026
 ----------------
+(Martin Pihrt) - Database Connector v1.1.3<br/>
+Moved the successful settings `SeeOther` redirect outside the POST exception handler, so its normal HTTP 303 response is not reported as an internal error. Added a regression test for the real settings POST flow.
+
+October 13 2026
+----------------
 (Martin Pihrt) - Database Connector v1.1.2<br/>
 Fixed saving Database Connector settings after a database backup existed. Runtime backup names, backup sizes and queue counters are now excluded from OSPy's generic option-form parser, which incorrectly treats every list as a list of integers; existing `.sql` backup files and saved options require no migration.
 

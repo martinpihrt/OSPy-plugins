@@ -22,8 +22,9 @@ class DatabaseConnectorQueueTests(unittest.TestCase):
             def __init__(self, _name, defaults):
                 super().__init__(defaults)
 
-            def web_update(self, values):
-                self.update(values)
+            def web_update(self, values, skipped=None):
+                self.last_skipped = set(skipped or ())
+                self.update({key: value for key, value in values.items() if key not in self.last_skipped})
 
         plugins = types.ModuleType('plugins')
         plugins.__path__ = []
@@ -79,16 +80,30 @@ class DatabaseConnectorQueueTests(unittest.TestCase):
         self._install_module(name, module)
 
     def test_settings_template_reads_queue_count_from_plugin_options(self):
-        source = PLUGIN_PATH.read_text(encoding='utf-8')
         template = (ROOT / 'plugins' / 'database_connector' / 'templates' / 'database_connector.html').read_text(encoding='utf-8')
 
-        self.assertIn("skipped={'sql_name', 'sql_size', 'queue_size', 'queue_bytes'}", source)
         self.assertIn("$plugin_options['queue_size']", template)
         self.assertIn("name='queue_warning_mib'", template)
         self.assertIn("name='queue_max_mib'", template)
         self.assertIn("name='queue_email_alerts'", template)
         self.assertIn("name='queue_email_subject'", template)
         self.assertNotIn('$queue_size', template)
+
+    def test_settings_post_redirects_without_reporting_an_error(self):
+        class SeeOther(Exception):
+            pass
+
+        self.module.web.seeother = SeeOther
+        self.module.web.input = lambda: {'use': 'use'}
+
+        with self.assertRaises(SeeOther):
+            self.module.settings_page().POST()
+
+        self.assertEqual(
+            self.module.plugin_options.last_skipped,
+            {'sql_name', 'sql_size', 'queue_size', 'queue_bytes'},
+        )
+        self.module.log.error.assert_not_called()
 
     def test_enqueue_preserves_command_order_and_commit_flag(self):
         self.module.enqueue_db('INSERT INTO sample VALUES (1)', commit=True)
