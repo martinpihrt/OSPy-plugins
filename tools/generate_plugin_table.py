@@ -51,7 +51,11 @@ def render_table() -> str:
         "| --- | --- | --- |",
     ]
     for plugin in load_plugins():
-        link = f"[**{plugin['name']}**](plugins/{plugin['directory']}/)"
+        wiki_page = "Plugin-" + plugin["directory"].replace("_", "-")
+        link = (
+            f"[**{plugin['name']}**]"
+            f"(https://github.com/martinpihrt/OSPy-plugins/wiki/{wiki_page})"
+        )
         lines.append(
             f"| {link} | `{plugin['version']}` | {plugin['description']} |"
         )
