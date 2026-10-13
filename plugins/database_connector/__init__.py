@@ -7,6 +7,7 @@ import web
 import json
 import traceback
 import time
+import html
 import subprocess
 import os
 import mimetypes
@@ -32,6 +33,10 @@ DB_ERROR_LOG_THROTTLE = 60
 DB_COMMAND_LOG_THROTTLE = 60
 DB_QUEUE_RETRY_INTERVAL = 10
 QUEUE_FILENAME = 'database_queue.sqlite3'
+MEBIBYTE = 1024 * 1024
+DEFAULT_QUEUE_WARNING_MIB = 80
+DEFAULT_QUEUE_MAX_MIB = 100
+QUEUE_ENTRY_OVERHEAD_BYTES = 8192
 
 plugin_options = PluginOptions(
     NAME,
@@ -46,6 +51,11 @@ plugin_options = PluginOptions(
         'sql_name': [],                # a list of all sql names in the plugin data directory
         'sql_size': [],                # sql size in bytes        
         'queue_size': 0,
+        'queue_bytes': 0,
+        'queue_warning_mib': DEFAULT_QUEUE_WARNING_MIB,
+        'queue_max_mib': DEFAULT_QUEUE_MAX_MIB,
+        'queue_email_alerts': False,
+        'queue_email_subject': _('OSPy Database Connector queue alert'),
     }
 )
 
@@ -140,6 +150,10 @@ def health():
             if state['last_success'] else _('Not available')
         ),
     }
+    if plugin_options.get('use_buffer', False):
+        queued_commands, queued_bytes = db_queue_status()
+        details[_('Queued database commands')] = '{} ({:.2f} MiB)'.format(
+            queued_commands, queued_bytes / float(MEBIBYTE))
     if state['last_error_message']:
         details[_('Last error')] = state['last_error_message']
     if not plugin_options['use']:
@@ -239,38 +253,177 @@ def queue_path():
     return os.path.join(plugin_data_dir(), QUEUE_FILENAME)
 
 
+def _queue_limit_mib(name, default):
+    return _positive_mib(plugin_options.get(name, default), default)
+
+
+def _positive_mib(value, default):
+    try:
+        return max(1, min(1024, int(value)))
+    except (TypeError, ValueError):
+        return default
+
+
+def queue_warning_bytes():
+    return _queue_limit_mib('queue_warning_mib', DEFAULT_QUEUE_WARNING_MIB) * MEBIBYTE
+
+
+def queue_max_bytes():
+    warning_mib = _queue_limit_mib('queue_warning_mib', DEFAULT_QUEUE_WARNING_MIB)
+    maximum_mib = _queue_limit_mib('queue_max_mib', DEFAULT_QUEUE_MAX_MIB)
+    return max(warning_mib + 1, maximum_mib) * MEBIBYTE
+
+
+def queue_limits_from_input(values):
+    warning_mib = _positive_mib(
+        values.get('queue_warning_mib', plugin_options.get('queue_warning_mib', DEFAULT_QUEUE_WARNING_MIB)),
+        DEFAULT_QUEUE_WARNING_MIB,
+    )
+    maximum_mib = _positive_mib(
+        values.get('queue_max_mib', plugin_options.get('queue_max_mib', DEFAULT_QUEUE_MAX_MIB)),
+        DEFAULT_QUEUE_MAX_MIB,
+    )
+    if warning_mib >= maximum_mib:
+        raise ValueError(_('The queue warning size must be lower than the maximum size.'))
+    return warning_mib, maximum_mib
+
+
+def _queue_used_bytes(connection):
+    page_size = connection.execute('PRAGMA page_size').fetchone()[0]
+    page_count = connection.execute('PRAGMA page_count').fetchone()[0]
+    free_pages = connection.execute('PRAGMA freelist_count').fetchone()[0]
+    return max(0, page_count - free_pages) * page_size
+
+
+def _queue_metadata(connection, key):
+    row = connection.execute(
+        'SELECT value FROM queue_metadata WHERE key = ?', (key,)
+    ).fetchone()
+    return row[0] if row else ''
+
+
+def _set_queue_metadata(connection, key, value):
+    connection.execute(
+        'INSERT OR REPLACE INTO queue_metadata (key, value) VALUES (?, ?)',
+        (key, str(value)),
+    )
+
+
+def _queue_alert_due(connection, key, active):
+    if not active:
+        connection.execute('DELETE FROM queue_metadata WHERE key = ?', (key,))
+        return False
+    if _queue_metadata(connection, key):
+        return False
+    _set_queue_metadata(connection, key, '1')
+    return True
+
+
+def _refresh_queue_alert_state(connection, used_bytes):
+    _queue_alert_due(connection, 'warning_alert_sent', used_bytes >= queue_warning_bytes())
+    _queue_alert_due(connection, 'limit_alert_sent', used_bytes >= queue_max_bytes())
+
+
 def init_db_queue():
     """Create the durable SQLite outbox used while the remote database is unavailable."""
     path = queue_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with queue_db_lock, sqlite3.connect(path, timeout=10) as connection:
-        connection.execute('CREATE TABLE IF NOT EXISTS pending_queries (id INTEGER PRIMARY KEY AUTOINCREMENT, sql TEXT NOT NULL, commit_after INTEGER NOT NULL DEFAULT 0, created_at REAL NOT NULL)')
+    with queue_db_lock:
+        connection = sqlite3.connect(path, timeout=10)
+        try:
+            connection.execute('CREATE TABLE IF NOT EXISTS pending_queries (id INTEGER PRIMARY KEY AUTOINCREMENT, sql TEXT NOT NULL, commit_after INTEGER NOT NULL DEFAULT 0, created_at REAL NOT NULL)')
+            connection.execute('CREATE TABLE IF NOT EXISTS queue_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
+            connection.commit()
+        finally:
+            connection.close()
+
+
+def db_queue_status():
+    if not plugin_options['use_buffer']:
+        return 0, 0
+    try:
+        init_db_queue()
+        with queue_db_lock:
+            connection = sqlite3.connect(queue_path(), timeout=10)
+            try:
+                count = connection.execute('SELECT COUNT(*) FROM pending_queries').fetchone()[0]
+                return count, _queue_used_bytes(connection)
+            finally:
+                connection.close()
+    except Exception as error:
+        log_db_error(_('Unable to read database queue') + ': {}'.format(error))
+        return 0, 0
 
 
 def db_queue_size():
-    if not plugin_options['use_buffer']:
-        return 0
-    try:
-        init_db_queue()
-        with queue_db_lock, sqlite3.connect(queue_path(), timeout=10) as connection:
-            return connection.execute('SELECT COUNT(*) FROM pending_queries').fetchone()[0]
-    except Exception as error:
-        log_db_error(_('Unable to read database queue') + ': {}'.format(error))
-        return 0
+    return db_queue_status()[0]
 
 
 def clear_db_queue():
     init_db_queue()
     with queue_db_lock:
-        with sqlite3.connect(queue_path(), timeout=10) as connection:
+        connection = sqlite3.connect(queue_path(), timeout=10)
+        try:
             connection.execute('DELETE FROM pending_queries')
+            _refresh_queue_alert_state(connection, 0)
+            connection.commit()
+        finally:
+            connection.close()
 
 
-def enqueue_db(sql, commit=False):
+def send_queue_email(kind, used_bytes):
+    """Send one alert through the configured SSL notification plug-in."""
+    if not plugin_options.get('queue_email_alerts', False):
+        return False
+    try:
+        from plugins.email_notifications_ssl import try_mail
+        used_mib = used_bytes / float(MEBIBYTE)
+        maximum_mib = queue_max_bytes() / float(MEBIBYTE)
+        if kind == 'limit':
+            title = _('Database queue limit reached')
+            text = _('New database commands are being rejected until queued commands are delivered or cleared.')
+        else:
+            title = _('Database queue is large')
+            text = _('Database commands remain stored locally until the database becomes available.')
+        subject = '{} - {}'.format(plugin_options.get('queue_email_subject', NAME), title)
+        body_text = '{}: {:.1f} MiB / {:.0f} MiB. {}'.format(title, used_mib, maximum_mib, text)
+        body_html = '<b>{}</b><p>{:.1f} MiB / {:.0f} MiB.</p><p>{}</p>'.format(
+            html.escape(title), used_mib, maximum_mib, html.escape(text))
+        return bool(try_mail(body_html, body_text, attachment=None, subject=subject))
+    except Exception:
+        log_db_error(_('Unable to send database queue alert') + ': ' + traceback.format_exc().splitlines()[-1])
+        return False
+
+
+def enqueue_db(sql, commit=False, created_at=None):
     init_db_queue()
-    with queue_db_lock, sqlite3.connect(queue_path(), timeout=10) as connection:
-        connection.execute('INSERT INTO pending_queries (sql, commit_after, created_at) VALUES (?, ?, ?)', (str(sql), int(bool(commit)), time.time()))
-    return -1
+    alert_kind = None
+    used_bytes = 0
+    result = None
+    with queue_db_lock:
+        connection = sqlite3.connect(queue_path(), timeout=10)
+        try:
+            sql_text = str(sql)
+            used_bytes = _queue_used_bytes(connection)
+            required_bytes = len(sql_text.encode('utf-8')) + QUEUE_ENTRY_OVERHEAD_BYTES
+            if used_bytes + required_bytes > queue_max_bytes():
+                if _queue_alert_due(connection, 'limit_alert_sent', True):
+                    alert_kind = 'limit'
+                log_db_error(_('Database queue limit reached; command was not queued.'))
+            else:
+                queued_at = time.time() if created_at is None else float(created_at)
+                connection.execute('INSERT INTO pending_queries (sql, commit_after, created_at) VALUES (?, ?, ?)', (sql_text, int(bool(commit)), queued_at))
+                used_bytes = _queue_used_bytes(connection)
+                if _queue_alert_due(connection, 'warning_alert_sent', used_bytes >= queue_warning_bytes()):
+                    alert_kind = 'warning'
+                _queue_alert_due(connection, 'limit_alert_sent', used_bytes >= queue_max_bytes())
+                result = -1
+            connection.commit()
+        finally:
+            connection.close()
+    if alert_kind is not None:
+        send_queue_email(alert_kind, used_bytes)
+    return result
 
 
 def process_db_queue(_queue_failure=False):
@@ -279,21 +432,29 @@ def process_db_queue(_queue_failure=False):
         try:
             init_db_queue()
             with queue_db_lock:
-                with sqlite3.connect(queue_path(), timeout=10) as connection:
-                    row = connection.execute('SELECT id, sql, commit_after FROM pending_queries ORDER BY id LIMIT 1').fetchone()
+                connection = sqlite3.connect(queue_path(), timeout=10)
+                try:
+                    row = connection.execute('SELECT id, sql, commit_after, created_at FROM pending_queries ORDER BY id LIMIT 1').fetchone()
+                finally:
+                    connection.close()
                 if row is None:
                     if _queue_failure:
                         return
                     queue_stop_event.wait(1)
                     continue
-                result = execute_db(row[1], commit=bool(row[2]), test=False, fetch=False, _from_queue=True, _queue_failure=True)
+                result = execute_db(row[1], commit=bool(row[2]), test=False, fetch=False, _from_queue=True, _queue_failure=True, _queued_at=row[3])
                 if result is None:
                     if _queue_failure:
                         log_db_error(_('Database queue replay failed; command remains queued.'))
                     queue_stop_event.wait(DB_QUEUE_RETRY_INTERVAL)
                     continue
-                with sqlite3.connect(queue_path(), timeout=10) as connection:
+                connection = sqlite3.connect(queue_path(), timeout=10)
+                try:
                     connection.execute('DELETE FROM pending_queries WHERE id = ?', (row[0],))
+                    _refresh_queue_alert_state(connection, _queue_used_bytes(connection))
+                    connection.commit()
+                finally:
+                    connection.close()
             if _queue_failure:
                 return
         except Exception as error:
@@ -314,8 +475,9 @@ def table_exists(table_name):
     return bool(rows)
 
 
-def execute_db(sql = "", commit = False, test = False, fetch = False, _from_queue=False, _queue_failure=False):
+def execute_db(sql = "", commit = False, test = False, fetch = False, _from_queue=False, _queue_failure=False, _queued_at=None):
     global is_installed_ok
+    submitted_at = time.time()
     if is_installed_ok:
         import mysql.connector
         from mysql.connector import errorcode
@@ -330,6 +492,10 @@ def execute_db(sql = "", commit = False, test = False, fetch = False, _from_queu
                 cur = cnx.cursor()
                 if not test:
                     cur.execute("USE {}".format(plugin_options['database']))
+                if _from_queue and _queued_at is not None:
+                    # MySQL/MariaDB applies this session value to CURRENT_TIMESTAMP
+                    # and TIMESTAMP defaults used by the queued statement.
+                    cur.execute('SET timestamp = {}'.format(int(float(_queued_at))))
             
                 rows = cur.execute(sql)
                 if rows is not None:
@@ -362,14 +528,14 @@ def execute_db(sql = "", commit = False, test = False, fetch = False, _from_queu
             else:
                 log_db_error(_('Database connection/query failed') + ': ' + _('Not connected'))
                 if plugin_options['use_buffer'] and not test and not fetch and not _from_queue:
-                    return queue_failed_db_command(sql, commit)
+                    return queue_failed_db_command(sql, commit, submitted_at)
                 return None
 
             return -1 if msg is None else msg
 
         except mysql.connector.Error as err:
             if plugin_options['use_buffer'] and not test and not fetch and not _from_queue and is_database_connection_error(err, errorcode):
-                return queue_failed_db_command(sql, commit)
+                return queue_failed_db_command(sql, commit, submitted_at)
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 log_db_error(_('Something is wrong with your user name or password'))
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
@@ -395,7 +561,7 @@ def execute_db(sql = "", commit = False, test = False, fetch = False, _from_queu
                     ConnectorError = ()
                     errorcode = None
                 if ConnectorError and isinstance(err, ConnectorError) and is_database_connection_error(err, errorcode):
-                    return queue_failed_db_command(sql, commit)
+                    return queue_failed_db_command(sql, commit, submitted_at)
             log_db_error(_('Database connection/query failed') + ': {}'.format(err))
             if _queue_failure:
                 log_db_error(_('Database queue replay failed; command remains queued.'))
@@ -418,10 +584,10 @@ def execute_db(sql = "", commit = False, test = False, fetch = False, _from_queu
     return None
 
 
-def queue_failed_db_command(sql, commit):
+def queue_failed_db_command(sql, commit, created_at=None):
     try:
         log_db_error(_('Database command failed; saving it to the queue for retry.'))
-        return enqueue_db(sql, commit=commit)
+        return enqueue_db(sql, commit=commit, created_at=created_at)
     except Exception as error:
         log_db_error(_('Unable to queue database command') + ': {}'.format(error))
         return None
@@ -522,7 +688,9 @@ class settings_page(ProtectedPage):
                 clear_db_queue()
                 log.info(NAME, _('Database queue cleared manually.'))
 
-            plugin_options.__setitem__('queue_size', db_queue_size())
+            queue_size, queue_bytes = db_queue_status()
+            plugin_options.__setitem__('queue_size', queue_size)
+            plugin_options.__setitem__('queue_bytes', queue_bytes)
             return self.plugin_render.database_connector(plugin_options, log.events(NAME))
 
         except:
@@ -535,19 +703,30 @@ class settings_page(ProtectedPage):
         try:
             qdict = web.input()
             verify_csrf(qdict)
-            plugin_options.web_update(qdict)
+            queue_warning_mib, queue_max_mib = queue_limits_from_input(qdict)
+            # Backup names/sizes and queue counters are runtime values, not
+            # form fields. PluginOptions treats every list as integer input,
+            # so an existing backup filename must never be parsed here.
+            plugin_options.web_update(
+                qdict,
+                skipped={'sql_name', 'sql_size', 'queue_size', 'queue_bytes'},
+            )
             plugin_options.__setitem__('use_buffer', 'use_buffer' in qdict)
             plugin_options.__setitem__('use', 'use' in qdict)
+            if 'queue_email_alerts_present' in qdict:
+                plugin_options.__setitem__('queue_email_alerts', 'queue_email_alerts' in qdict)
+            plugin_options.__setitem__('queue_warning_mib', queue_warning_mib)
+            plugin_options.__setitem__('queue_max_mib', queue_max_mib)
             if plugin_options['use_buffer'] and plugin_options['use'] and is_installed_ok:
                 start_queue_worker()
             elif not plugin_options['use_buffer']:
                 queue_stop_event.set()
-            raise web.seeother(plugin_url(settings_page), True)
         except:
             log.error(NAME, _('Database Connector') + ':\n' + traceback.format_exc())
             msg = _('An internal error was found in the system, see the error log for more information. The error is in part:') + ' '
             msg += _('database_connector -> settings_page POST')
             return self.core_render.notice('/', msg)
+        raise web.seeother(plugin_url(settings_page), True)
 
 class backup_page(ProtectedPage):
     """Load an html page for backup"""

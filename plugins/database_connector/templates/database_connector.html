@@ -110,8 +110,36 @@ input:checked + .slider:before {
                 <tr>
                     <td style='text-transform: none;'>$_('Messages in queue'):</td>
                     <td>
-                        <span>$plugin_options['queue_size']</span>
+                        <span>$plugin_options['queue_size'] ($_('used'): ${'%.2f' % (plugin_options['queue_bytes'] / float(1024 * 1024))} MiB)</span>
                         <a href="?clear_queue&$csrf_query()" class="button danger" onclick="return confirm($:{json.dumps(_('Clear all queued database commands?'), ensure_ascii=False)});">$_('Clear queue')</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Queue warning size (MiB)'):</td>
+                    <td title=$:{json.dumps(_('Send one e-mail alert when the durable queue reaches this size. The alert is armed again after the queue becomes smaller.'), ensure_ascii=False)}>
+                        <input name='queue_warning_mib' type='number' min='1' max='1023' value='$plugin_options["queue_warning_mib"]'>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Queue maximum size (MiB)'):</td>
+                    <td title=$:{json.dumps(_('New commands are rejected after this size to protect the SD card. It must be greater than the warning size.'), ensure_ascii=False)}>
+                        <input name='queue_max_mib' type='number' min='2' max='1024' value='$plugin_options["queue_max_mib"]'>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Send queue alert e-mail through SSL'):</td>
+                    <td title=$:{json.dumps(_('Use the configured E-mail Notifications SSL plug-in when the queue is large or the maximum size rejects a command.'), ensure_ascii=False)}>
+                        <input name='queue_email_alerts_present' type='hidden' value='1'>
+                        <label class="switch">
+                            <input name='queue_email_alerts' type='checkbox'${" checked" if plugin_options['queue_email_alerts'] else ""}>
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='text-transform: none;'>$_('Queue alert e-mail subject'):</td>
+                    <td>
+                        <input name='queue_email_subject' type='text' size='40' maxlength='120' value='$plugin_options["queue_email_subject"]'>
                     </td>
                 </tr>
             <tr>

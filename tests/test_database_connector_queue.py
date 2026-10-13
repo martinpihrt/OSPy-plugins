@@ -22,10 +22,12 @@ class DatabaseConnectorQueueTests(unittest.TestCase):
             def __init__(self, _name, defaults):
                 super().__init__(defaults)
 
-            def web_update(self, values):
-                self.update(values)
+            def web_update(self, values, skipped=None):
+                self.last_skipped = set(skipped or ())
+                self.update({key: value for key, value in values.items() if key not in self.last_skipped})
 
         plugins = types.ModuleType('plugins')
+        plugins.__path__ = []
         plugins.PluginOptions = PluginOptions
         plugins.plugin_url = lambda page: str(page)
         plugins.plugin_data_dir = lambda: self.temp_dir.name
@@ -81,7 +83,27 @@ class DatabaseConnectorQueueTests(unittest.TestCase):
         template = (ROOT / 'plugins' / 'database_connector' / 'templates' / 'database_connector.html').read_text(encoding='utf-8')
 
         self.assertIn("$plugin_options['queue_size']", template)
+        self.assertIn("name='queue_warning_mib'", template)
+        self.assertIn("name='queue_max_mib'", template)
+        self.assertIn("name='queue_email_alerts'", template)
+        self.assertIn("name='queue_email_subject'", template)
         self.assertNotIn('$queue_size', template)
+
+    def test_settings_post_redirects_without_reporting_an_error(self):
+        class SeeOther(Exception):
+            pass
+
+        self.module.web.seeother = SeeOther
+        self.module.web.input = lambda: {'use': 'use'}
+
+        with self.assertRaises(SeeOther):
+            self.module.settings_page().POST()
+
+        self.assertEqual(
+            self.module.plugin_options.last_skipped,
+            {'sql_name', 'sql_size', 'queue_size', 'queue_bytes'},
+        )
+        self.module.log.error.assert_not_called()
 
     def test_enqueue_preserves_command_order_and_commit_flag(self):
         self.module.enqueue_db('INSERT INTO sample VALUES (1)', commit=True)
@@ -132,8 +154,8 @@ class DatabaseConnectorQueueTests(unittest.TestCase):
         self.module.plugin_options['use_buffer'] = True
         calls = []
 
-        def execute(sql, commit=False, test=False, fetch=False, _from_queue=False, _queue_failure=False):
-            calls.append((sql, commit, _from_queue))
+        def execute(sql, commit=False, test=False, fetch=False, _from_queue=False, _queue_failure=False, _queued_at=None):
+            calls.append((sql, commit, _from_queue, _queued_at))
             return -1
 
         self.module.execute_db = execute
@@ -141,8 +163,95 @@ class DatabaseConnectorQueueTests(unittest.TestCase):
         self.module.process_db_queue(_queue_failure=True)
         self.module.process_db_queue(_queue_failure=True)
 
-        self.assertEqual(calls, [('INSERT INTO sample VALUES (1)', True, True), ('INSERT INTO sample VALUES (2)', False, True)])
+        self.assertEqual(
+            [call[:3] for call in calls],
+            [('INSERT INTO sample VALUES (1)', True, True), ('INSERT INTO sample VALUES (2)', False, True)],
+        )
+        self.assertTrue(all(call[3] > 0 for call in calls))
         self.assertEqual(self.module.db_queue_size(), 0)
+
+    def test_queue_rejects_a_command_larger_than_the_configured_limit(self):
+        self.module.plugin_options['queue_warning_mib'] = 1
+        self.module.plugin_options['queue_max_mib'] = 2
+
+        result = self.module.enqueue_db('x' * (3 * 1024 * 1024), commit=True)
+
+        self.assertIsNone(result)
+        self.assertEqual(self.module.db_queue_size(), 0)
+
+    def test_queue_limit_form_values_keep_existing_values_when_not_rendered(self):
+        self.module.plugin_options['queue_warning_mib'] = 37
+        self.module.plugin_options['queue_max_mib'] = 71
+
+        self.assertEqual(self.module.queue_limits_from_input({}), (37, 71))
+        with self.assertRaisesRegex(ValueError, 'warning size'):
+            self.module.queue_limits_from_input({
+                'queue_warning_mib': 100,
+                'queue_max_mib': 100,
+            })
+
+    def test_replay_sets_the_mysql_session_timestamp_to_the_queued_time(self):
+        self.module.is_installed_ok = True
+        executed = []
+
+        class Cursor:
+            def execute(self, sql):
+                executed.append(sql)
+                return None
+
+            def close(self):
+                pass
+
+        class Connection:
+            def is_connected(self):
+                return True
+
+            def cursor(self):
+                return Cursor()
+
+            def close(self):
+                pass
+
+            def commit(self):
+                pass
+
+        connector = types.SimpleNamespace(
+            connect=lambda **_kwargs: Connection(),
+            errorcode=types.SimpleNamespace(),
+        )
+        mysql_module = types.ModuleType('mysql')
+        mysql_module.connector = connector
+        self._install_module('mysql', mysql_module)
+        self._install_module('mysql.connector', connector)
+
+        result = self.module.execute_db(
+            'INSERT INTO sample VALUES (1)',
+            commit=True,
+            _from_queue=True,
+            _queued_at=1760000000.9,
+        )
+
+        self.assertEqual(result, -1)
+        self.assertEqual(executed[0], 'USE ospy')
+        self.assertEqual(executed[1], 'SET timestamp = 1760000000')
+        self.assertEqual(executed[2], 'INSERT INTO sample VALUES (1)')
+
+    def test_queue_alert_uses_the_configured_ssl_mail_subject(self):
+        sent = []
+        email_plugin = types.ModuleType('plugins.email_notifications_ssl')
+
+        def try_mail(body, text, attachment=None, subject=None):
+            sent.append((body, text, attachment, subject))
+            return True
+
+        email_plugin.try_mail = try_mail
+        self._install_module('plugins.email_notifications_ssl', email_plugin)
+        self.module.plugin_options['queue_email_alerts'] = True
+        self.module.plugin_options['queue_email_subject'] = 'Queue warning'
+
+        self.assertTrue(self.module.send_queue_email('warning', 80 * 1024 * 1024))
+        self.assertIn('Queue warning - Database queue is large', sent[0][3])
+        self.assertIn('80.0 MiB', sent[0][1])
 
     def test_clear_queue_removes_all_pending_commands(self):
         self.module.enqueue_db('INSERT INTO sample VALUES (1)')
