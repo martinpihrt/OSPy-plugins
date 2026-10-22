@@ -15,33 +15,15 @@ The complete [OSPy-plugins Wiki](https://github.com/martinpihrt/OSPy-plugins/wik
 
 ## Stable and test channels
 
-The `master` branch is the stable channel selected by OSPy by default. New
-plug-in changes are developed and verified in the `beta` branch first. After
-successful practical and automated testing, the same commits can be promoted
-from `beta` to `master` without rebuilding or changing them.
+The `master` branch is the stable channel selected by OSPy by default. New plug-in changes are developed and verified in the `beta` branch first. After successful practical and automated testing, the same commits can be promoted from `beta` to `master` without rebuilding or changing them.
 
-GitHub Actions runs the OSPy test suite on every push and pull request to
-`beta` or `master`. The tested plug-in revision is checked against both the
-OSPy `master` and OSPy `beta` branches on Python 3.11 and Python 3.14. All four
-jobs must pass before a beta change is promoted to the stable channel. Python
-3.11 remains the Raspberry Pi OS Bookworm baseline and Python 3.14 verifies
-compatibility with the latest stable Python feature release.
+GitHub Actions runs the OSPy test suite on every push and pull request to `beta` or `master`. The tested plug-in revision is checked against both the OSPy `master` and OSPy `beta` branches on Python 3.11 and Python 3.14. All four jobs must pass before a beta change is promoted to the stable channel. Python 3.11 remains the Raspberry Pi OS Bookworm baseline and Python 3.14 verifies compatibility with the latest stable Python feature release.
 
 ## Declared permission approval
 
-Every `plugin.json` must declare only the permissions the plug-in actually
-uses: `network`, `files`, `i2c`, `gpio`, `email`, `subprocess` and/or `system`.
-Starting with OSPy 3.0.294, newly installed plug-ins require explicit
-administrator approval of that complete set before their Python code starts.
-An update with the same or fewer permissions keeps its approval. Adding a
-permission requires a new approval and is skipped by automatic update until it
-has been reviewed. Existing installed plug-ins are approved once during the
-backward-compatible OSPy upgrade migration, including disabled plug-ins.
+Every `plugin.json` must declare only the permissions the plug-in actually uses: `network`, `files`, `i2c`, `gpio`, `email`, `subprocess` and/or `system`. Starting with OSPy 3.0.294, newly installed plug-ins require explicit administrator approval of that complete set before their Python code starts. An update with the same or fewer permissions keeps its approval. Adding a permission requires a new approval and is skipped by automatic update until it has been reviewed. Existing installed plug-ins are approved once during the backward-compatible OSPy upgrade migration, including disabled plug-ins.
 
-This is administrative consent and an audit record, not operating-system
-sandboxing. Plug-in authors must increase the manifest version whenever code
-or declared requirements change and must never omit a permission merely to
-avoid the approval prompt.
+This is administrative consent and an audit record, not operating-system sandboxing. Plug-in authors must increase the manifest version whenever code or declared requirements change and must never omit a permission merely to avoid the approval prompt.
 
 These programs are distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. http://opensource.org/licenses/gpl-3.0.html
 
@@ -112,7 +94,7 @@ This table is generated from the `name`, `version` and `description` fields in e
 | [**System Watchdog**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-system-watchdog) | `1.0.0` | Configures and monitors the Raspberry Pi hardware watchdog to recover from system lockups. |
 | [**Telegram Bot**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-telegram-bot) | `1.0.1` | Sends Telegram notifications and accepts a limited set of OSPy control commands from subscribed chats. |
 | [**Temperature Switch**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-temperature-switch) | `1.0.0` | Starts and stops OSPy programs from configured temperature sources and hysteresis limits. |
-| [**Thermostat**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-thermostat) | `1.1.1` | Controls up to 20 OSPy programs from independent temperature sources, hysteresis limits and operating windows. |
+| [**Thermostat**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-thermostat) | `1.1.2` | Controls up to 20 OSPy programs from temperature sources, hysteresis limits, operating windows and a heating-water condition. |
 | [**UPS Monitor**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-ups-adj) | `1.0.5` | Monitors mains power and can notify, shut down OSPy and switch off a UPS after a sustained outage. |
 | [**Usage Statistics**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-usage-statistics) | `1.0.1` | Downloads and displays anonymized public OSPy usage statistics. |
 | [**Venetian Blind**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-venetian-blind) | `1.2.8` | Controls configured Shelly or compatible blinds, including tilt positions, automation rules and mobile actions. |

@@ -57,6 +57,39 @@ def default_zone(name='Thermostat'):
     }
 
 
+def default_heating_water_options():
+    return {
+        'heating_water_enabled': False,
+        'heating_water_source': 'air_temp',
+        'heating_water_channel': 0,
+        'heating_water_value_type': 'temperature',
+        'heating_water_min_temp': 32.0,
+    }
+
+
+def normalize_heating_water_options(values):
+    options = default_heating_water_options()
+    if not isinstance(values, dict):
+        return options
+    for key in options:
+        if key in values:
+            options[key] = values[key]
+    options['heating_water_enabled'] = bool(options['heating_water_enabled'])
+    options['heating_water_source'] = str(
+        options['heating_water_source'] or 'air_temp')
+    if options['heating_water_source'] not in SOURCES:
+        options['heating_water_source'] = 'air_temp'
+    options['heating_water_channel'] = max(
+        0, safe_int(options['heating_water_channel'], 0))
+    options['heating_water_value_type'] = str(
+        options['heating_water_value_type'] or 'temperature')
+    if options['heating_water_value_type'] not in SHELLY_VALUE_TYPES:
+        options['heating_water_value_type'] = 'temperature'
+    options['heating_water_min_temp'] = clamp(
+        safe_float(options['heating_water_min_temp'], 32.0), -50, 100)
+    return options
+
+
 def valid_time(value):
     return isinstance(value, str) and TIME_PATTERN.match(value) is not None
 

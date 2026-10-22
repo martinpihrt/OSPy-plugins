@@ -111,6 +111,25 @@ class ThermostatModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.validate_zone(zone)
 
+    def test_heating_water_options_default_and_normalization(self):
+        defaults = model.normalize_heating_water_options({})
+        self.assertFalse(defaults['heating_water_enabled'])
+        self.assertEqual(defaults['heating_water_source'], 'air_temp')
+        self.assertEqual(defaults['heating_water_min_temp'], 32.0)
+
+        normalized = model.normalize_heating_water_options({
+            'heating_water_enabled': True,
+            'heating_water_source': 'invalid',
+            'heating_water_channel': '-2',
+            'heating_water_value_type': 'invalid',
+            'heating_water_min_temp': '120',
+        })
+        self.assertTrue(normalized['heating_water_enabled'])
+        self.assertEqual(normalized['heating_water_source'], 'air_temp')
+        self.assertEqual(normalized['heating_water_channel'], 0)
+        self.assertEqual(normalized['heating_water_value_type'], 'temperature')
+        self.assertEqual(normalized['heating_water_min_temp'], 100)
+
 
 class ThermostatInterfaceTests(unittest.TestCase):
     def test_settings_use_crud_cards_time_inputs_and_slider_switches(self):
@@ -123,8 +142,12 @@ class ThermostatInterfaceTests(unittest.TestCase):
         self.assertIn('name="time_limited" type="checkbox"', template)
         self.assertIn('name="start_time" type="time"', template)
         self.assertIn('name="end_time" type="time"', template)
+        self.assertIn('name="heating_water_enabled" type="checkbox"', template)
+        self.assertIn('name="heating_water_source"', template)
+        self.assertIn('name="heating_water_channel"', template)
+        self.assertIn('name="heating_water_min_temp"', template)
         self.assertIn('class="thermostatSlider"', template)
-        self.assertIn('/plugins/thermostat/static/thermostat.css?v=1.1.1', template)
+        self.assertIn('/plugins/thermostat/static/thermostat.css?v=1.1.2', template)
         self.assertIn('class="thermostatCardTitle"', template)
         self.assertIn('thermostatCardEnabled', template)
         self.assertIn('thermostatCardDisabled', template)
@@ -138,9 +161,11 @@ class ThermostatInterfaceTests(unittest.TestCase):
         help_template = (PLUGIN / 'templates' / 'thermostat_help.html').read_text(
             encoding='utf-8')
         self.assertEqual(model.MAX_THERMOSTATS, 20)
-        self.assertEqual(manifest['version'], '1.1.1')
+        self.assertEqual(manifest['version'], '1.1.2')
         self.assertIn('Up to 20 thermostats', readme)
         self.assertIn('Overnight windows', readme)
+        self.assertIn('heating-water temperature', readme)
+        self.assertIn('heating-water temperature', help_template)
         self.assertIn("$_('Create, edit or delete up to 20 thermostat cards.", help_template)
 
     def test_translation_catalog_files_are_not_part_of_the_plugin_change(self):

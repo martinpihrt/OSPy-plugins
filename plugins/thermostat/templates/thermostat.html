@@ -3,7 +3,7 @@ $def with(plugin_options, events, data, error='', open_zone='')
 $var title: $_('Thermostat')
 $var page: plugins
 
-<link href="/plugins/thermostat/static/thermostat.css?v=1.1.1" rel="stylesheet" type="text/css">
+<link href="/plugins/thermostat/static/thermostat.css?v=1.1.2" rel="stylesheet" type="text/css">
 
 <script>
     function updateThermostatForm(form) {
@@ -12,12 +12,23 @@ $var page: plugins
         jQuery(form).find(".operatingTimeRow").toggle(jQuery(form).find("input[name='time_limited']").is(":checked"));
     }
 
+    function updateHeatingWaterForm(form) {
+        let enabled = jQuery(form).find("input[name='heating_water_enabled']").is(":checked");
+        let source = jQuery(form).find(".heatingWaterSource").val();
+        jQuery(form).find(".heatingWaterConditionRow").toggle(enabled);
+        jQuery(form).find(".heatingWaterShellyValueRow").toggle(enabled && source === "shelly_cloud");
+    }
+
     jQuery(document).ready(function() {
         jQuery(".thermostatForm").each(function() {
             updateThermostatForm(this);
         });
+        updateHeatingWaterForm(jQuery(".thermostatGeneral"));
         jQuery(".thermostatSource, .thermostatTimeSwitch").change(function() {
             updateThermostatForm(jQuery(this).closest("form"));
+        });
+        jQuery(".heatingWaterSource, .heatingWaterSwitch").change(function() {
+            updateHeatingWaterForm(jQuery(this).closest("form"));
         });
         jQuery("button#cCancel").click(function() {
             window.location = "/";
@@ -58,6 +69,46 @@ $var page: plugins
                     <input name="check_interval" type="number" min="5" max="3600" value="$plugin_options['check_interval']"> $_('seconds')
                 </td>
                 <td colspan="2"><button class="submit" type="submit">$_('Save general settings')</button></td>
+            </tr>
+            <tr>
+                <td style="text-transform: none;">$_('Require heating-water temperature'):</td>
+                <td colspan="3" title=$:{json.dumps(_(u'When enabled, all thermostat programs run only while the selected heating-water temperature is above the configured minimum. Unavailable temperature stops the programs.'), ensure_ascii=False)}>
+                    <label class="thermostatSwitch">
+                        <input class="heatingWaterSwitch" name="heating_water_enabled" type="checkbox" aria-label=$:{json.dumps(_('Require heating-water temperature'), ensure_ascii=False)}${" checked" if data['heating_water']['heating_water_enabled'] else ""}>
+                        <span class="thermostatSlider"></span>
+                    </label>
+                </td>
+            </tr>
+            <tr class="heatingWaterConditionRow">
+                <td style="text-transform: none;">$_('Heating-water temperature source'):</td>
+                <td>
+                    <select name="heating_water_source" class="heatingWaterSource">
+                        $for source_id, source_name in data['sources']:
+                            <option value="$source_id"${' selected' if data['heating_water']['heating_water_source'] == source_id else ''}>$source_name</option>
+                    </select>
+                </td>
+                <td style="text-transform: none;">$_('Channel'):</td>
+                <td>
+                    <select name="heating_water_channel">
+                        $ heating_water_channels = data['channels'].get(data['heating_water']['heating_water_source'], [])
+                        $if heating_water_channels:
+                            $for channel_id, channel_name in heating_water_channels:
+                                <option value="$channel_id"${' selected' if int(data['heating_water']['heating_water_channel']) == int(channel_id) else ''}>$channel_name</option>
+                        $else:
+                            <option value="$data['heating_water']['heating_water_channel']">$_('No channels available')</option>
+                    </select>
+                </td>
+            </tr>
+            <tr class="heatingWaterConditionRow heatingWaterShellyValueRow">
+                <td style="text-transform: none;">$_('Shelly temperature'):</td>
+                <td>
+                    <select name="heating_water_value_type">
+                        $for value_type, value_label in data['shelly_value_types']:
+                            <option value="$value_type"${' selected' if data['heating_water']['heating_water_value_type'] == value_type else ''}>$value_label</option>
+                    </select>
+                </td>
+                <td style="text-transform: none;">$_('Minimum heating-water temperature'):</td>
+                <td title=$:{json.dumps(_(u'Thermostat programs run only when the heating-water temperature is above this value.'), ensure_ascii=False)}><input name="heating_water_min_temp" type="number" step="0.1" min="-50" max="100" value="$data['heating_water']['heating_water_min_temp']"> &deg;C</td>
             </tr>
         </table>
     </form>

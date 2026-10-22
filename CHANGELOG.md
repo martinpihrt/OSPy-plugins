@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+October 22 2026
+---------------
+(Martin Pihrt) - Thermostat v1.1.2<br/>
+Added an optional fail-closed heating-water-temperature condition for the thermostat. Administrators can select a DS probe, OSPy sensor or Shelly Cloud temperature and a threshold. Thermostat programs run only while the water is above that threshold; a low or unavailable reading stops all thermostat-controlled programs to avoid powering heating valves while the boiler is inactive.
+
 October 13 2026
 ----------------
 (Martin Pihrt) - Repository and Wiki documentation<br/>
