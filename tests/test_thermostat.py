@@ -146,8 +146,14 @@ class ThermostatInterfaceTests(unittest.TestCase):
         self.assertIn('name="heating_water_source"', template)
         self.assertIn('name="heating_water_channel"', template)
         self.assertIn('name="heating_water_min_temp"', template)
+        self.assertGreater(
+            template.index('name="heating_water_min_temp"'),
+            template.index('name="heating_water_channel"'))
+        self.assertGreater(
+            template.index("$_('Save general settings')"),
+            template.index('name="heating_water_min_temp"'))
         self.assertIn('class="thermostatSlider"', template)
-        self.assertIn('/plugins/thermostat/static/thermostat.css?v=1.1.2', template)
+        self.assertIn('/plugins/thermostat/static/thermostat.css?v=1.1.3', template)
         self.assertIn('class="thermostatCardTitle"', template)
         self.assertIn('thermostatCardEnabled', template)
         self.assertIn('thermostatCardDisabled', template)
@@ -161,7 +167,7 @@ class ThermostatInterfaceTests(unittest.TestCase):
         help_template = (PLUGIN / 'templates' / 'thermostat_help.html').read_text(
             encoding='utf-8')
         self.assertEqual(model.MAX_THERMOSTATS, 20)
-        self.assertEqual(manifest['version'], '1.1.2')
+        self.assertEqual(manifest['version'], '1.1.3')
         self.assertIn('Up to 20 thermostats', readme)
         self.assertIn('Overnight windows', readme)
         self.assertIn('heating-water temperature', readme)

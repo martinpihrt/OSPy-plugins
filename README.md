@@ -94,7 +94,7 @@ This table is generated from the `name`, `version` and `description` fields in e
 | [**System Watchdog**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-system-watchdog) | `1.0.0` | Configures and monitors the Raspberry Pi hardware watchdog to recover from system lockups. |
 | [**Telegram Bot**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-telegram-bot) | `1.0.1` | Sends Telegram notifications and accepts a limited set of OSPy control commands from subscribed chats. |
 | [**Temperature Switch**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-temperature-switch) | `1.0.0` | Starts and stops OSPy programs from configured temperature sources and hysteresis limits. |
-| [**Thermostat**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-thermostat) | `1.1.2` | Controls up to 20 OSPy programs from temperature sources, hysteresis limits, operating windows and a heating-water condition. |
+| [**Thermostat**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-thermostat) | `1.1.3` | Controls up to 20 OSPy programs from temperature sources, hysteresis limits, operating windows and a heating-water condition. |
 | [**UPS Monitor**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-ups-adj) | `1.0.5` | Monitors mains power and can notify, shut down OSPy and switch off a UPS after a sustained outage. |
 | [**Usage Statistics**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-usage-statistics) | `1.0.1` | Downloads and displays anonymized public OSPy usage statistics. |
 | [**Venetian Blind**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-venetian-blind) | `1.2.8` | Controls configured Shelly or compatible blinds, including tilt positions, automation rules and mobile actions. |

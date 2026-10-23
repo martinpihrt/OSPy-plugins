@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+October 23 2026
+---------------
+(Martin Pihrt) - Thermostat v1.1.3<br/>
+Fixed the heating-water threshold input being hidden together with the Shelly-only temperature selector when a DS or OSPy sensor was selected. The minimum temperature is now always shown while the heating-water condition is enabled, and the general Save button follows the complete condition configuration.
+
 October 22 2026
 ---------------
 (Martin Pihrt) - Thermostat v1.1.2<br/>

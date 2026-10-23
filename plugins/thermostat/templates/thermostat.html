@@ -3,7 +3,7 @@ $def with(plugin_options, events, data, error='', open_zone='')
 $var title: $_('Thermostat')
 $var page: plugins
 
-<link href="/plugins/thermostat/static/thermostat.css?v=1.1.2" rel="stylesheet" type="text/css">
+<link href="/plugins/thermostat/static/thermostat.css?v=1.1.3" rel="stylesheet" type="text/css">
 
 <script>
     function updateThermostatForm(form) {
@@ -68,7 +68,7 @@ $var page: plugins
                 <td title=$:{json.dumps(_(u'How often the temperature is checked. Operating time boundaries are handled independently of this interval.'), ensure_ascii=False)}>
                     <input name="check_interval" type="number" min="5" max="3600" value="$plugin_options['check_interval']"> $_('seconds')
                 </td>
-                <td colspan="2"><button class="submit" type="submit">$_('Save general settings')</button></td>
+                <td></td><td></td>
             </tr>
             <tr>
                 <td style="text-transform: none;">$_('Require heating-water temperature'):</td>
@@ -107,8 +107,15 @@ $var page: plugins
                             <option value="$value_type"${' selected' if data['heating_water']['heating_water_value_type'] == value_type else ''}>$value_label</option>
                     </select>
                 </td>
+                <td></td><td></td>
+            </tr>
+            <tr class="heatingWaterConditionRow">
                 <td style="text-transform: none;">$_('Minimum heating-water temperature'):</td>
                 <td title=$:{json.dumps(_(u'Thermostat programs run only when the heating-water temperature is above this value.'), ensure_ascii=False)}><input name="heating_water_min_temp" type="number" step="0.1" min="-50" max="100" value="$data['heating_water']['heating_water_min_temp']"> &deg;C</td>
+                <td></td><td></td>
+            </tr>
+            <tr>
+                <td colspan="4"><button class="submit" type="submit">$_('Save general settings')</button></td>
             </tr>
         </table>
     </form>
