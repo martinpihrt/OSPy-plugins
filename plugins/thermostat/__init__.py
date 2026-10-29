@@ -67,6 +67,14 @@ def _normalize_zones():
     return normalized
 
 
+def _normalize_heating_water_options():
+    normalized = model.normalize_heating_water_options(plugin_options)
+    for key, value in normalized.items():
+        if plugin_options.get(key) != value:
+            plugin_options[key] = value
+    return normalized
+
+
 def _safe_int(value, default=0):
     return model.safe_int(value, default)
 
@@ -318,6 +326,8 @@ class ThermostatChecker(Thread):
         self._sleep_time = 0
         self.zone_state = {}
         self.zone_temperatures = {}
+        self.heating_water_state = 'disabled'
+        self.heating_water_temperature = None
         self.footer = None
         self._last_error_log = 0
         self.start()
@@ -392,6 +402,57 @@ class ThermostatChecker(Thread):
                     last_enabled = True
 
                 footer_parts = []
+                heating_water = _normalize_heating_water_options()
+                previous_heating_water_state = self.heating_water_state
+                if heating_water['heating_water_enabled']:
+                    heating_water_temperature = get_temperature(
+                        heating_water['heating_water_source'],
+                        heating_water['heating_water_channel'],
+                        heating_water['heating_water_value_type'])
+                    if heating_water_temperature == INVALID_TEMPERATURE:
+                        self.heating_water_state = 'unavailable'
+                        self.heating_water_temperature = None
+                        footer_parts.append(_('Heating water temperature unavailable'))
+                    else:
+                        self.heating_water_temperature = heating_water_temperature
+                        if heating_water_temperature > heating_water['heating_water_min_temp']:
+                            self.heating_water_state = 'active'
+                            footer_parts.append(_('Heating water {:.1f}C').format(
+                                heating_water_temperature))
+                        else:
+                            self.heating_water_state = 'below_minimum'
+                            footer_parts.append(
+                                _('Heating water {:.1f}C (must be above {:.1f}C)').format(
+                                    heating_water_temperature,
+                                    heating_water['heating_water_min_temp']))
+                else:
+                    self.heating_water_state = 'disabled'
+                    self.heating_water_temperature = None
+
+                if self.heating_water_state != previous_heating_water_state:
+                    messages = {
+                        'active': _('Heating-water condition is active.'),
+                        'below_minimum': _('Heating-water condition is not met; stopping thermostat programs.'),
+                        'unavailable': _('Heating-water temperature is unavailable; stopping thermostat programs.'),
+                    }
+                    if self.heating_water_state in messages:
+                        log.info(NAME, datetime_string() + ' ' + messages[self.heating_water_state])
+
+                if heating_water['heating_water_enabled'] and self.heating_water_state != 'active':
+                    for zone in zones:
+                        if zone['enabled']:
+                            stop_program(zone['program'])
+                            self.zone_state[zone['id']] = 'heating_water_off'
+                            self.zone_temperatures[zone['id']] = None
+                    self.update_footer(' | '.join(footer_parts))
+                    with health_lock:
+                        health_state['last_cycle'] = time.time()
+                        health_state['last_error_message'] = ''
+                    self._sleep(_clamp(
+                        _safe_int(plugin_options.get('check_interval'), 30),
+                        MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL))
+                    continue
+
                 now = time.localtime()
                 now_minutes = now.tm_hour * 60 + now.tm_min
                 duplicate_programs = model.duplicate_enabled_program_ids(zones)
@@ -448,7 +509,7 @@ class ThermostatChecker(Thread):
                     elif temperature <= zone['low_temp']:
                         new_state = 'low'
                         action = zone['low_action']
-                    elif state in ('unknown', 'disabled', 'scheduled_off'):
+                    elif state in ('unknown', 'disabled', 'scheduled_off', 'heating_water_off'):
                         new_state = 'hold'
 
                     footer_parts.append('{} {:.1f}C'.format(zone['name'], temperature))
@@ -517,6 +578,10 @@ def health():
     enabled_zones = [zone for zone in zones if zone['enabled']]
     zone_states = checker.zone_state if checker is not None else {}
     temperatures = checker.zone_temperatures if checker is not None else {}
+    heating_water = _normalize_heating_water_options()
+    heating_water_state = checker.heating_water_state if checker is not None else 'unknown'
+    heating_water_temperature = (
+        checker.heating_water_temperature if checker is not None else None)
     missing = sum(
         1 for zone in enabled_zones
         if zone_states.get(zone['id'], 'unknown') in ('missing', 'setup_error')
@@ -535,6 +600,17 @@ def health():
             if state['last_cycle'] else _('Not available')
         ),
     }
+    if heating_water['heating_water_enabled']:
+        if heating_water_temperature is None:
+            details[_('Heating-water condition')] = _('Temperature unavailable')
+        elif heating_water_state == 'active':
+            details[_('Heating-water condition')] = _('{:.1f} C is above {:.1f} C').format(
+                heating_water_temperature, heating_water['heating_water_min_temp'])
+        else:
+            details[_('Heating-water condition')] = _('{:.1f} C is not above {:.1f} C').format(
+                heating_water_temperature, heating_water['heating_water_min_temp'])
+    else:
+        details[_('Heating-water condition')] = _('Disabled')
     for zone in enabled_zones:
         zone_state = zone_states.get(zone['id'], 'unknown')
         temperature = temperatures.get(zone['id'])
@@ -554,6 +630,18 @@ def health():
         return {
             'status': 'unknown',
             'summary': _('Thermostat is disabled.'),
+            'details': details,
+        }
+    if heating_water['heating_water_enabled'] and heating_water_state == 'unavailable':
+        return {
+            'status': 'warning',
+            'summary': _('Heating-water temperature is unavailable; thermostat programs are stopped.'),
+            'details': details,
+        }
+    if heating_water['heating_water_enabled'] and heating_water_state == 'below_minimum':
+        return {
+            'status': 'unknown',
+            'summary': _('Thermostat is waiting for heating-water temperature.'),
             'details': details,
         }
     if state['last_error'] and state['last_error'] >= state['last_cycle']:
@@ -607,6 +695,7 @@ def mobile_cards(**_kwargs):
 
 def template_data():
     zones = _normalize_zones()
+    heating_water = _normalize_heating_water_options()
     return {
         'sources': [
             ('air_temp', source_title('air_temp')),
@@ -620,6 +709,7 @@ def template_data():
             'ospy_sensor': get_sensor_channel_names(),
             'shelly_cloud': get_shelly_channel_names(),
         },
+        'heating_water': heating_water,
         'max_thermostats': MAX_THERMOSTATS,
         'new_zone': model.default_zone(_('New thermostat')),
         'can_add': len(zones) < MAX_THERMOSTATS,
@@ -690,6 +780,16 @@ class settings_page(ProtectedPage):
                 plugin_options['enabled'] = 'enabled' in qdict
                 plugin_options['use_footer'] = 'use_footer' in qdict
                 plugin_options['check_interval'] = _clamp(_safe_int(qdict.get('check_interval', plugin_options['check_interval']), 30), MIN_CHECK_INTERVAL, MAX_CHECK_INTERVAL)
+                plugin_options['heating_water_enabled'] = 'heating_water_enabled' in qdict
+                plugin_options['heating_water_source'] = qdict.get(
+                    'heating_water_source', plugin_options.get('heating_water_source', 'air_temp'))
+                plugin_options['heating_water_channel'] = qdict.get(
+                    'heating_water_channel', plugin_options.get('heating_water_channel', 0))
+                plugin_options['heating_water_value_type'] = qdict.get(
+                    'heating_water_value_type', plugin_options.get('heating_water_value_type', 'temperature'))
+                plugin_options['heating_water_min_temp'] = qdict.get(
+                    'heating_water_min_temp', plugin_options.get('heating_water_min_temp', 32.0))
+                _normalize_heating_water_options()
                 if was_enabled and not plugin_options['enabled']:
                     for zone in zones:
                         if zone['enabled']:

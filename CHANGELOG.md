@@ -1,5 +1,15 @@
 # OSPy-plugins Changelog
 
+October 23 2026
+---------------
+(Martin Pihrt) - Thermostat v1.1.3<br/>
+Fixed the heating-water threshold input being hidden together with the Shelly-only temperature selector when a DS or OSPy sensor was selected. The minimum temperature is now always shown while the heating-water condition is enabled, and the general Save button follows the complete condition configuration.
+
+October 22 2026
+---------------
+(Martin Pihrt) - Thermostat v1.1.2<br/>
+Added an optional fail-closed heating-water-temperature condition for the thermostat. Administrators can select a DS probe, OSPy sensor or Shelly Cloud temperature and a threshold. Thermostat programs run only while the water is above that threshold; a low or unavailable reading stops all thermostat-controlled programs to avoid powering heating valves while the boiler is inactive.
+
 October 13 2026
 ----------------
 (Martin Pihrt) - Repository and Wiki documentation<br/>
