@@ -5,6 +5,9 @@ November 3 2026
 (Martin Pihrt) - Thermostat v1.1.4<br/>
 Fixed persistence of the heating-water condition across OSPy restarts. The enabled state, source, channel, Shelly temperature value and minimum temperature are now restored from the saved plug-in configuration.
 
+(Martin Pihrt) - Continuous integration<br/>
+Added the required `webauthn` package to the OSPy test dependency installation so Restore Credentials tests run instead of returning an unavailable-dependency response.
+
 October 23 2026
 ---------------
 (Martin Pihrt) - Thermostat v1.1.3<br/>
