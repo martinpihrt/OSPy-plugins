@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+November 3 2026
+---------------
+(Martin Pihrt) - Thermostat v1.1.4<br/>
+Fixed persistence of the heating-water condition across OSPy restarts. The enabled state, source, channel, Shelly temperature value and minimum temperature are now restored from the saved plug-in configuration.
+
 October 23 2026
 ---------------
 (Martin Pihrt) - Thermostat v1.1.3<br/>

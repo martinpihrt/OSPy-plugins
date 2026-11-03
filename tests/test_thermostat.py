@@ -130,6 +130,18 @@ class ThermostatModelTests(unittest.TestCase):
         self.assertEqual(normalized['heating_water_value_type'], 'temperature')
         self.assertEqual(normalized['heating_water_min_temp'], 100)
 
+    def test_plugin_options_declare_persisted_heating_water_settings(self):
+        source = (PLUGIN / '__init__.py').read_text(encoding='utf-8')
+        expected_defaults = {
+            "'heating_water_enabled': False",
+            "'heating_water_source': 'air_temp'",
+            "'heating_water_channel': 0",
+            "'heating_water_value_type': 'temperature'",
+            "'heating_water_min_temp': 32.0",
+        }
+        for default in expected_defaults:
+            self.assertIn(default, source)
+
 
 class ThermostatInterfaceTests(unittest.TestCase):
     def test_settings_use_crud_cards_time_inputs_and_slider_switches(self):
@@ -167,7 +179,7 @@ class ThermostatInterfaceTests(unittest.TestCase):
         help_template = (PLUGIN / 'templates' / 'thermostat_help.html').read_text(
             encoding='utf-8')
         self.assertEqual(model.MAX_THERMOSTATS, 20)
-        self.assertEqual(manifest['version'], '1.1.3')
+        self.assertEqual(manifest['version'], '1.1.4')
         self.assertIn('Up to 20 thermostats', readme)
         self.assertIn('Overnight windows', readme)
         self.assertIn('heating-water temperature', readme)
