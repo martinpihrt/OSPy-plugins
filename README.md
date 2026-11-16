@@ -67,6 +67,7 @@ This table is generated from the `name`, `version` and `description` fields in e
 | [**Irrigation Safety**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-irrigation-safety) | `1.0.0` | Monitors irrigation flow, pressure and tank level, learns station flow ranges and can stop outputs and disable the scheduler when a confirmed fault occurs. |
 | [**Label Maker**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-labelmaker) | `1.0.0` | Generates EAN13 barcodes and configurable QR code images. |
 | [**LCD Display**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-lcd-display) | `1.0.2` | Displays OSPy status information on a 16x2 HD44780 LCD through a PCF8574 I2C expander. |
+| [**Linux System Updater**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-linux-system-updater) | `1.0.0` | Checks and installs Debian Linux package updates on a schedule with live status, exclusions, SSL e-mail notices and optional reboot verification. |
 | [**Modbus Stations**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-modbus-stations) | `1.0.0` | Controls OSPy station outputs through Modbus RTU serial relay boards. |
 | [**Monthly Water Level**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-monthly-water-level) | `1.0.1` | Applies a configurable irrigation percentage adjustment for each calendar month. |
 | [**MQTT**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-mqtt) | `1.0.1` | Shared MQTT client, status publishing and remote OSPy control. |

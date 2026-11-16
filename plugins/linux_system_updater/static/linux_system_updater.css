@@ -1,0 +1,36 @@
+.linuxUpdater { max-width: 1180px; }
+.linuxUpdaterHidden { display: none !important; }
+.linuxUpdaterError { margin: 10px 0; padding: 10px; border-left: 5px solid #a01822; background: #ffecef; color: #7d1018; white-space: pre-wrap; }
+.linuxUpdaterDashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin: 14px 0; }
+.linuxUpdaterDashboard article { border: 1px solid #c8cfda; border-radius: 8px; padding: 10px; background: #f8faff; min-width: 0; }
+.linuxUpdaterDashboard span, .linuxUpdaterDashboard strong { display: block; overflow-wrap: anywhere; }
+.linuxUpdaterDashboard span { color: #5c6572; font-size: .9em; }
+.linuxUpdaterDashboard strong { margin-top: 5px; color: #17233d; }
+.linuxUpdaterCard, .linuxUpdaterPending { border: 2px solid #2e3959; border-radius: 9px; padding: 12px; margin: 14px 0; background: #fff; }
+.linuxUpdaterCard > summary { cursor: pointer; font-weight: bold; color: #17233d; }
+.linuxUpdaterPending { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border-color: #bd7600; background: #fff8e8; }
+.linuxUpdaterPending form { margin-left: auto; }
+.linuxUpdaterOptions { width: 100%; }
+.linuxUpdaterOptions td { text-transform: none; vertical-align: top; padding: 7px; }
+.linuxUpdaterOptions input[type="text"], .linuxUpdaterOptions input[type="time"], .linuxUpdaterOptions input[type="number"], .linuxUpdaterOptions select, .linuxUpdaterOptions textarea { box-sizing: border-box; max-width: 100%; border: 1px solid #aeb7c5; border-radius: 5px; padding: 5px; }
+.linuxUpdaterOptions textarea, .linuxUpdaterOptions input[type="text"] { width: 95%; }
+.linuxUpdaterOptions small { display: block; margin-top: 4px; color: #5c6572; }
+.linuxUpdaterSwitch { position: relative; display: inline-block; width: 50px; height: 24px; }
+.linuxUpdaterSwitch input { opacity: 0; width: 0; height: 0; }
+.linuxUpdaterSwitch span { position: absolute; cursor: pointer; inset: 0; background: #c43a43; transition: .2s; border-radius: 24px; }
+.linuxUpdaterSwitch span::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; transition: .2s; border-radius: 50%; }
+.linuxUpdaterSwitch input:checked + span { background: #27864a; }
+.linuxUpdaterSwitch input:checked + span::before { transform: translateX(26px); }
+.linuxUpdaterActions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.linuxUpdaterInlineForm { display: inline; margin: 0; }
+.linuxUpdaterTableWrap { overflow-x: auto; }
+.linuxUpdaterTableWrap table { width: 100%; border-collapse: collapse; }
+.linuxUpdaterTableWrap th, .linuxUpdaterTableWrap td { padding: 7px; border-bottom: 1px solid #d8dde5; text-align: left; text-transform: none; }
+.linuxUpdaterPackage { font-family: monospace; font-weight: bold; }
+.linuxUpdaterSecurity { color: #a01822; font-weight: bold; }
+.linuxUpdaterExcluded { color: #78620c; font-weight: bold; }
+.linuxUpdaterOutput { min-height: 180px; max-height: 430px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid #aeb7c5; border-radius: 6px; background: #111827; color: #e5eefc; padding: 10px; }
+@media (max-width: 700px) {
+  .linuxUpdaterOptions, .linuxUpdaterOptions tbody, .linuxUpdaterOptions tr, .linuxUpdaterOptions td { display: block; width: 100%; }
+  .linuxUpdaterPending form { margin-left: 0; }
+}

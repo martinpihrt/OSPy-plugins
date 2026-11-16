@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+November 16 2026
+----------------
+(Martin Pihrt) - Linux System Updater v1.0.0<br/>
+Added a Debian Linux operating-system updater with daily, weekly and monthly checks, manual and delayed automatic package installation, exact package exclusions, APT transaction simulation, live browser output, E-mail Notifications SSL integration using its global recipients, optional reboot and post-boot OSPy confirmation. The worker uses fixed argument lists without a shell, does not block the irrigation scheduler, persists pending automatic work and reboot confirmation, exposes diagnostics health, and includes in-app help, repository documentation and regression coverage.
+
 November 3 2026
 ---------------
 (Martin Pihrt) - Thermostat v1.1.4<br/>

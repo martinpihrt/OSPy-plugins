@@ -112,6 +112,7 @@ CATEGORIES = OrderedDict(
                 "speed_monitor",
                 "system_debug",
                 "system_info",
+                "linux_system_updater",
                 "system_update",
                 "system_watchdog",
                 "usage_statistics",
