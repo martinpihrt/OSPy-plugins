@@ -7,7 +7,7 @@ The plug-in includes a `plugin.json` manifest and reports its worker, enabled th
 
 The thermostat plugin checks selected temperature sources and starts or stops selected OSPy programs when the configured temperature limits are reached.
 
-Optionally require a heating-water temperature before any thermostat program can run. Select its source and channel, then set the minimum temperature. When this condition is enabled, all thermostat programs run only while the measured water temperature is above the minimum; the plugin stops them if the temperature is below the minimum or unavailable.
+Optionally require a heating-water temperature before any thermostat program can run. Select its source and channel, then set the minimum temperature. When this condition is enabled, all thermostat programs run only while the measured water temperature is above the minimum; the plugin stops them if the temperature is below the minimum or unavailable. The enabled state, source, channel, Shelly temperature value and minimum temperature persist across an OSPy restart.
 
 Up to 20 thermostats can be created, edited and deleted as independent cards. Existing settings from the earlier three-slot version are retained automatically.
 

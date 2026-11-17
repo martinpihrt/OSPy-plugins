@@ -67,6 +67,7 @@ This table is generated from the `name`, `version` and `description` fields in e
 | [**Irrigation Safety**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-irrigation-safety) | `1.0.0` | Monitors irrigation flow, pressure and tank level, learns station flow ranges and can stop outputs and disable the scheduler when a confirmed fault occurs. |
 | [**Label Maker**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-labelmaker) | `1.0.0` | Generates EAN13 barcodes and configurable QR code images. |
 | [**LCD Display**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-lcd-display) | `1.0.2` | Displays OSPy status information on a 16x2 HD44780 LCD through a PCF8574 I2C expander. |
+| [**Linux System Updater**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-linux-system-updater) | `1.0.0` | Checks and installs Debian Linux package updates on a schedule with live status, exclusions, SSL e-mail notices and optional reboot verification. |
 | [**Modbus Stations**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-modbus-stations) | `1.0.0` | Controls OSPy station outputs through Modbus RTU serial relay boards. |
 | [**Monthly Water Level**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-monthly-water-level) | `1.0.1` | Applies a configurable irrigation percentage adjustment for each calendar month. |
 | [**MQTT**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-mqtt) | `1.0.1` | Shared MQTT client, status publishing and remote OSPy control. |
@@ -94,7 +95,7 @@ This table is generated from the `name`, `version` and `description` fields in e
 | [**System Watchdog**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-system-watchdog) | `1.0.0` | Configures and monitors the Raspberry Pi hardware watchdog to recover from system lockups. |
 | [**Telegram Bot**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-telegram-bot) | `1.0.1` | Sends Telegram notifications and accepts a limited set of OSPy control commands from subscribed chats. |
 | [**Temperature Switch**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-temperature-switch) | `1.0.0` | Starts and stops OSPy programs from configured temperature sources and hysteresis limits. |
-| [**Thermostat**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-thermostat) | `1.1.3` | Controls up to 20 OSPy programs from temperature sources, hysteresis limits, operating windows and a heating-water condition. |
+| [**Thermostat**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-thermostat) | `1.1.4` | Controls up to 20 OSPy programs from temperature sources, hysteresis limits, operating windows and a heating-water condition. |
 | [**UPS Monitor**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-ups-adj) | `1.0.5` | Monitors mains power and can notify, shut down OSPy and switch off a UPS after a sustained outage. |
 | [**Usage Statistics**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-usage-statistics) | `1.0.1` | Downloads and displays anonymized public OSPy usage statistics. |
 | [**Venetian Blind**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-venetian-blind) | `1.2.8` | Controls configured Shelly or compatible blinds, including tilt positions, automation rules and mobile actions. |

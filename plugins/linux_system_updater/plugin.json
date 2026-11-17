@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "linux_system_updater",
+  "name": "Linux System Updater",
+  "version": "1.0.0",
+  "description": "Checks and installs Debian Linux package updates on a schedule with live status, exclusions, SSL e-mail notices and optional reboot verification.",
+  "author": "Martin Pihrt",
+  "license": "GPL-3.0",
+  "ospy": {"min": "3.0.354"},
+  "python": {"min_version": "3.8"},
+  "dependencies": [
+    {"id": "email_notifications_ssl", "required": false}
+  ],
+  "hardware": {
+    "platforms": ["linux", "raspberry_pi", "beaglebone"]
+  },
+  "permissions": ["email", "files", "network", "subprocess", "system"],
+  "mobile": {"api_version": 1, "actions": []}
+}

@@ -1,0 +1,31 @@
+$def with()
+
+$var title: $_('Linux System Updater - help')
+$var page: plugins
+
+<div id="plugin">
+    <div class="title">$_('Linux System Updater - help')</div>
+    <p>$_('Linux System Updater checks and installs Debian Linux package updates without blocking the OSPy scheduler or other plug-ins. It requires apt-get and administrator privileges.')</p>
+    <h2>$_('Safety')</h2>
+    <ul>
+        <li>$_('The plug-in runs fixed APT argument lists without a shell and never accepts an arbitrary command from the browser.')</li>
+        <li>$_('When OSPy is not running as root, passwordless sudo must already be configured. The plug-in never requests or stores a sudo password.')</li>
+        <li>$_('Every installation is simulated first. If the simulation includes an excluded package, the update is refused. Existing apt-mark holds remain unchanged and are respected by APT.')</li>
+        <li>$_('Do not switch off the computer while APT or dpkg is installing packages. Disabling the plug-in does not forcibly terminate an active package transaction.')</li>
+    </ul>
+    <h2>$_('Schedule')</h2>
+    <p>$_('Enable scheduled checks and choose Daily, Weekly or Monthly. Weekly uses the selected weekday. Monthly uses the selected day, or the last day of a shorter month. Check now starts the same operation immediately.')</p>
+    <h2>$_('Automatic updates')</h2>
+    <p>$_('When automatic updates are enabled, available packages are announced and installation is delayed by the configured number of minutes, hours or days. The pending operation is saved across OSPy restarts and can be cancelled from this page before its deadline.')</p>
+    <p>$_('Immediately before installation, the plug-in sends another notification and simulates the exact APT transaction. With no exclusions it performs apt-get upgrade -y. With exclusions it upgrades only the allowed package names and rejects a transaction that would still include an excluded package.')</p>
+    <h2>$_('Manual updates')</h2>
+    <p>$_('When automatic updates are disabled, each available package has an Update button and all allowed packages can be updated together. Package names are accepted only from the most recent APT result.')</p>
+    <h2>$_('E-mail')</h2>
+    <p>$_('Notifications use the installed E-mail Notifications SSL plug-in. SMTP credentials and every recipient are taken only from that plug-in global settings. Linux System Updater stores only its enabled switch and subject.')</p>
+    <h2>$_('Restart verification')</h2>
+    <p>$_('If restart after update is enabled, OSPy uses its system reboot helper. A persistent marker contains the previous Linux boot identifier. After the next boot and successful OSPy plug-in start, a completion e-mail confirms that Linux restarted and OSPy is working.')</p>
+    <h2>$_('Live status')</h2>
+    <p>$_('The page refreshes its protected JSON status automatically. It shows the active stage, available packages, pending deadline, restart requirement and a bounded tail of APT output without requiring a page refresh.')</p>
+</div>
+
+<div id="controls"><a href=$plugins.plugin_url('linux_system_updater.settings_page') class="button danger">$_('Cancel')</a></div>

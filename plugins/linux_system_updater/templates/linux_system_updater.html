@@ -1,0 +1,235 @@
+$def with(plugin_options, state, error)
+
+$var title: $_('Linux System Updater')
+$var page: plugins
+
+<link href="/plugins/linux_system_updater/static/linux_system_updater.css?v=1.0.0" rel="stylesheet" type="text/css">
+<script>
+window.linuxUpdaterConfig = {
+    statusUrl: $:json.dumps(plugins.plugin_url('linux_system_updater.status_json'), ensure_ascii=False),
+    actionUrl: $:json.dumps(plugins.plugin_url('linux_system_updater.settings_page') + '?' + csrf_query(), ensure_ascii=False),
+    texts: {
+        none: $:{json.dumps(_('None'), ensure_ascii=False)},
+        update: $:{json.dumps(_('Update'), ensure_ascii=False)},
+        excluded: $:{json.dumps(_('Excluded'), ensure_ascii=False)},
+        security: $:{json.dumps(_('Security'), ensure_ascii=False)},
+        normal: $:{json.dumps(_('Standard'), ensure_ascii=False)},
+        failed: $:{json.dumps(_('Live status could not be loaded.'), ensure_ascii=False)},
+        remaining: $:{json.dumps(_('Time remaining'), ensure_ascii=False)},
+        available: $:{json.dumps(_('Available updates'), ensure_ascii=False)}
+    }
+};
+</script>
+<script>
+(function () {
+    "use strict";
+    let timer = null;
+
+    function localTime(value) {
+        if (!value) return "---";
+        return new Date(value * 1000).toLocaleString();
+    }
+
+    function duration(seconds) {
+        seconds = Math.max(0, Math.floor(seconds));
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const parts = [];
+        if (days) parts.push(days + " d");
+        if (hours || days) parts.push(hours + " h");
+        parts.push(minutes + " min");
+        return parts.join(" ");
+    }
+
+    function addCell(row, value, className) {
+        const cell = document.createElement("td");
+        cell.textContent = value == null ? "" : String(value);
+        if (className) cell.className = className;
+        row.appendChild(cell);
+        return cell;
+    }
+
+    function actionForm(packageName) {
+        const form = document.createElement("form");
+        form.method = "post";
+        form.action = window.linuxUpdaterConfig.actionUrl;
+        form.className = "linuxUpdaterInlineForm";
+        const action = document.createElement("input");
+        action.type = "hidden";
+        action.name = "action";
+        action.value = "update_package";
+        form.appendChild(action);
+        const packageInput = document.createElement("input");
+        packageInput.type = "hidden";
+        packageInput.name = "package";
+        packageInput.value = packageName;
+        form.appendChild(packageInput);
+        const button = document.createElement("button");
+        button.type = "submit";
+        button.className = "execute";
+        button.textContent = window.linuxUpdaterConfig.texts.update;
+        form.appendChild(button);
+        return form;
+    }
+
+    function render(state) {
+        document.getElementById("linuxUpdaterLiveError").classList.add("linuxUpdaterHidden");
+        document.getElementById("linuxUpdaterPhase").textContent = state.message || state.phase;
+        document.getElementById("linuxUpdaterCount").textContent = state.updates.length;
+        document.getElementById("linuxUpdaterLastCheck").textContent = localTime(state.last_check);
+        document.getElementById("linuxUpdaterNextCheck").textContent = localTime(state.next_check);
+        document.getElementById("linuxUpdaterLastUpdate").textContent = localTime(state.last_update);
+        document.getElementById("linuxUpdaterReboot").textContent = state.reboot_required ? "✓" : "—";
+        document.getElementById("linuxUpdaterOutput").textContent = (state.output || []).join("\n");
+        document.getElementById("linuxUpdaterErrorText").textContent = state.last_error || "";
+        document.getElementById("linuxUpdaterErrorText").classList.toggle("linuxUpdaterHidden", !state.last_error);
+
+        const pending = state.pending || {};
+        const pendingBox = document.getElementById("linuxUpdaterPending");
+        pendingBox.classList.toggle("linuxUpdaterHidden", !pending.execute_at);
+        if (pending.execute_at) {
+            document.getElementById("linuxUpdaterPendingTime").textContent = localTime(pending.execute_at);
+            document.getElementById("linuxUpdaterRemaining").textContent =
+                window.linuxUpdaterConfig.texts.remaining + ": " + duration(pending.execute_at - state.now);
+        }
+
+        const body = document.getElementById("linuxUpdaterPackages");
+        body.replaceChildren();
+        if (!state.updates.length) {
+            const row = document.createElement("tr");
+            const cell = addCell(row, window.linuxUpdaterConfig.texts.none);
+            cell.colSpan = 6;
+            body.appendChild(row);
+        } else {
+            state.updates.forEach(function (item) {
+                const row = document.createElement("tr");
+                addCell(row, item.name, "linuxUpdaterPackage");
+                addCell(row, item.installed);
+                addCell(row, item.candidate);
+                addCell(row, item.architecture);
+                addCell(row, item.security ? window.linuxUpdaterConfig.texts.security : window.linuxUpdaterConfig.texts.normal,
+                    item.security ? "linuxUpdaterSecurity" : "");
+                const action = addCell(row, "");
+                if (item.excluded) {
+                    action.textContent = window.linuxUpdaterConfig.texts.excluded;
+                    action.className = "linuxUpdaterExcluded";
+                } else if (!state.automatic_update && state.phase !== "updating" && state.phase !== "simulating") {
+                    action.appendChild(actionForm(item.name));
+                }
+                body.appendChild(row);
+            });
+        }
+        const allButton = document.getElementById("linuxUpdaterUpdateAll");
+        allButton.classList.toggle("linuxUpdaterHidden", state.automatic_update || !state.updates.length);
+        clearTimeout(timer);
+        timer = setTimeout(load, ["checking", "simulating", "updating", "rebooting", "waiting"].includes(state.phase) ? 1500 : 5000);
+    }
+
+    function load() {
+        jQuery.getJSON(window.linuxUpdaterConfig.statusUrl)
+            .done(render)
+            .fail(function () {
+                document.getElementById("linuxUpdaterLiveError").textContent = window.linuxUpdaterConfig.texts.failed;
+                document.getElementById("linuxUpdaterLiveError").classList.remove("linuxUpdaterHidden");
+                clearTimeout(timer);
+                timer = setTimeout(load, 5000);
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        load();
+        document.getElementById("linuxUpdaterCancel").addEventListener("click", function () {
+            window.location = "/";
+        });
+    });
+}());
+</script>
+
+<div id="plugin" class="linuxUpdater">
+    <div class="title">$_('Linux System Updater')</div>
+    <p><a href=$plugins.plugin_url('linux_system_updater.help_page') class="button upload">$_('Help')</a></p>
+
+    $if error:
+        <div class="linuxUpdaterError" role="alert">$error</div>
+    <div id="linuxUpdaterLiveError" class="linuxUpdaterError linuxUpdaterHidden" role="alert"></div>
+
+    <section class="linuxUpdaterDashboard" aria-label=$:{json.dumps(_('Live Linux update status'), ensure_ascii=False)}>
+        <article><span>$_('Status')</span><strong id="linuxUpdaterPhase">$state['message']</strong></article>
+        <article><span>$_('Available updates')</span><strong id="linuxUpdaterCount">$len(state['updates'])</strong></article>
+        <article><span>$_('Last check')</span><strong id="linuxUpdaterLastCheck">---</strong></article>
+        <article><span>$_('Next check')</span><strong id="linuxUpdaterNextCheck">---</strong></article>
+        <article><span>$_('Last update')</span><strong id="linuxUpdaterLastUpdate">---</strong></article>
+        <article><span>$_('Restart required')</span><strong id="linuxUpdaterReboot">—</strong></article>
+    </section>
+
+    <div id="linuxUpdaterPending" class="linuxUpdaterPending ${'' if state.get('pending') else 'linuxUpdaterHidden'}">
+        <strong>$_('Automatic update is pending')</strong>
+        <span id="linuxUpdaterPendingTime">---</span>
+        <span id="linuxUpdaterRemaining"></span>
+        <form action="$plugins.plugin_url('linux_system_updater.settings_page')" method="post">
+            $:csrf_input()
+            <input name="action" type="hidden" value="cancel_pending">
+            <button class="danger" type="submit">$_('Cancel automatic update')</button>
+        </form>
+    </div>
+
+    <details class="linuxUpdaterCard" open>
+        <summary>$_('Schedule and update settings')</summary>
+        <form action="$plugins.plugin_url('linux_system_updater.settings_page')" method="post">
+            $:csrf_input()
+            <input name="action" type="hidden" value="save_general">
+            <table class="optionList linuxUpdaterOptions">
+                <tr><td>$_('Enable scheduled checks'):</td><td><label class="linuxUpdaterSwitch"><input name="enabled" type="checkbox"${' checked' if plugin_options['enabled'] else ''}><span></span></label></td></tr>
+                <tr><td>$_('Check frequency'):</td><td><select name="schedule_frequency"><option value="daily"${' selected' if plugin_options['schedule_frequency'] == 'daily' else ''}>$_('Daily')</option><option value="weekly"${' selected' if plugin_options['schedule_frequency'] == 'weekly' else ''}>$_('Weekly')</option><option value="monthly"${' selected' if plugin_options['schedule_frequency'] == 'monthly' else ''}>$_('Monthly')</option></select></td></tr>
+                <tr><td>$_('Check time'):</td><td><input name="check_time" type="time" value="$plugin_options['check_time']" required></td></tr>
+                <tr><td>$_('Day of week'):</td><td><select name="week_day"><option value="0"${' selected' if int(plugin_options['week_day']) == 0 else ''}>$_('Monday')</option><option value="1"${' selected' if int(plugin_options['week_day']) == 1 else ''}>$_('Tuesday')</option><option value="2"${' selected' if int(plugin_options['week_day']) == 2 else ''}>$_('Wednesday')</option><option value="3"${' selected' if int(plugin_options['week_day']) == 3 else ''}>$_('Thursday')</option><option value="4"${' selected' if int(plugin_options['week_day']) == 4 else ''}>$_('Friday')</option><option value="5"${' selected' if int(plugin_options['week_day']) == 5 else ''}>$_('Saturday')</option><option value="6"${' selected' if int(plugin_options['week_day']) == 6 else ''}>$_('Sunday')</option></select></td></tr>
+                <tr><td>$_('Day of month'):</td><td><input name="month_day" type="number" min="1" max="31" value="$plugin_options['month_day']"></td></tr>
+                <tr><td>$_('Automatically install updates'):</td><td><label class="linuxUpdaterSwitch"><input name="automatic_update" type="checkbox"${' checked' if plugin_options['automatic_update'] else ''}><span></span></label></td></tr>
+                <tr><td>$_('Automatic update delay'):</td><td><input name="delay_value" type="number" min="1" max="365" value="$plugin_options['delay_value']"><select name="delay_unit"><option value="minutes"${' selected' if plugin_options['delay_unit'] == 'minutes' else ''}>$_('minutes')</option><option value="hours"${' selected' if plugin_options['delay_unit'] == 'hours' else ''}>$_('hours')</option><option value="days"${' selected' if plugin_options['delay_unit'] == 'days' else ''}>$_('days')</option></select></td></tr>
+                <tr><td>$_('Excluded packages'):</td><td><textarea name="excluded_packages" rows="4" placeholder="linux-image, docker-ce">$plugin_options['excluded_packages']</textarea><small>$_('Enter exact Debian package names separated by spaces, commas or new lines. Existing apt-mark holds are also respected.')</small></td></tr>
+                <tr><td>$_('Restart Linux after a successful update'):</td><td><label class="linuxUpdaterSwitch"><input name="reboot_after_update" type="checkbox"${' checked' if plugin_options['reboot_after_update'] else ''}><span></span></label></td></tr>
+                <tr><td>$_('Live output lines'):</td><td><input name="output_lines" type="number" min="50" max="500" value="$plugin_options['output_lines']"></td></tr>
+            </table>
+            <button class="submit" type="submit">$_('Save settings')</button>
+        </form>
+    </details>
+
+    <details class="linuxUpdaterCard">
+        <summary>$_('E-mail notifications')</summary>
+        <form action="$plugins.plugin_url('linux_system_updater.settings_page')" method="post">
+            $:csrf_input()
+            <input name="action" type="hidden" value="save_email">
+            <table class="optionList linuxUpdaterOptions">
+                <tr><td>$_('Send notifications through E-mail Notifications SSL'):</td><td><label class="linuxUpdaterSwitch"><input name="send_email" type="checkbox"${' checked' if plugin_options['send_email'] else ''}><span></span></label></td></tr>
+                <tr><td>$_('E-mail subject'):</td><td><input name="email_subject" type="text" maxlength="200" value="$plugin_options['email_subject']"></td></tr>
+                <tr><td colspan="2"><small>$_('Recipients and SMTP credentials are taken from the global E-mail Notifications SSL plug-in settings.')</small></td></tr>
+            </table>
+            <button class="submit" type="submit">$_('Save e-mail settings')</button>
+        </form>
+        <form class="linuxUpdaterInlineForm" action="$plugins.plugin_url('linux_system_updater.settings_page')" method="post">
+            $:csrf_input()<input name="action" type="hidden" value="test_email"><button class="execute" type="submit">$_('Send test e-mail')</button>
+        </form>
+    </details>
+
+    <section class="linuxUpdaterCard">
+        <h2>$_('Available package updates')</h2>
+        <div class="linuxUpdaterActions">
+            <form action="$plugins.plugin_url('linux_system_updater.settings_page')" method="post">
+                $:csrf_input()<input name="action" type="hidden" value="check_now"><button class="refresh" type="submit">$_('Check now')</button>
+            </form>
+            <form id="linuxUpdaterUpdateAll" class="${'linuxUpdaterHidden' if plugin_options['automatic_update'] or not state['updates'] else ''}" action="$plugins.plugin_url('linux_system_updater.settings_page')" method="post" onsubmit="return confirm($:{json.dumps(_('Install all allowed Linux updates now?'), ensure_ascii=False)})">
+                $:csrf_input()<input name="action" type="hidden" value="update_all"><button class="execute" type="submit">$_('Update all allowed packages')</button>
+            </form>
+        </div>
+        <div class="linuxUpdaterTableWrap"><table><thead><tr><th>$_('Package')</th><th>$_('Installed')</th><th>$_('Available')</th><th>$_('Architecture')</th><th>$_('Type')</th><th>$_('Action')</th></tr></thead><tbody id="linuxUpdaterPackages"><tr><td colspan="6">$_('Loading')</td></tr></tbody></table></div>
+    </section>
+
+    <section class="linuxUpdaterCard">
+        <h2>$_('Live operation output')</h2>
+        <div id="linuxUpdaterErrorText" class="linuxUpdaterError ${'' if state.get('last_error') else 'linuxUpdaterHidden'}">$state.get('last_error', '')</div>
+        <pre id="linuxUpdaterOutput" class="linuxUpdaterOutput">$'\n'.join(state.get('output', []))</pre>
+    </section>
+</div>
+
+<div id="controls"><button id="linuxUpdaterCancel" class="cancel danger">$_('Cancel')</button></div>

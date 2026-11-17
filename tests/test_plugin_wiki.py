@@ -29,7 +29,7 @@ class PluginWikiTests(unittest.TestCase):
 
     def test_every_manifest_has_a_complete_wiki_page(self):
         manifests = sorted(PLUGINS_DIR.glob("*/plugin.json"))
-        self.assertEqual(len(manifests), 64)
+        self.assertEqual(len(manifests), 65)
         for manifest in manifests:
             data = json.loads(manifest.read_text(encoding="utf-8"))
             page = self.wiki / f"Plugin-{manifest.parent.name.replace('_', '-')}.md"
@@ -53,7 +53,7 @@ class PluginWikiTests(unittest.TestCase):
             timeout=60,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("Wiki verified: 74 Markdown files", result.stdout)
+        self.assertIn("Wiki verified: 75 Markdown files", result.stdout)
         for required in (
             "Home.md",
             "Getting-Started.md",

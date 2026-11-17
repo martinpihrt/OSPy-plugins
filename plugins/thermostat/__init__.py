@@ -42,6 +42,11 @@ plugin_options = PluginOptions(
         'check_interval': 30,
         'use_footer': False,
         'zones': [],
+        'heating_water_enabled': False,
+        'heating_water_source': 'air_temp',
+        'heating_water_channel': 0,
+        'heating_water_value_type': 'temperature',
+        'heating_water_min_temp': 32.0,
     }
 )
 runtime = get_runtime()
