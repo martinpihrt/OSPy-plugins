@@ -695,10 +695,97 @@ def create_update_safety_backup(reason='before system update'):
             raise
     return create_system_backup(reason=reason)
 
-def perform_update():
+
+def _format_file_size(size):
+    value = float(max(0, int(size)))
+    for unit in ('B', 'KiB', 'MiB', 'GiB', 'TiB'):
+        if value < 1024.0 or unit == 'TiB':
+            return '{:.1f} {}'.format(value, unit)
+        value /= 1024.0
+
+
+def debug_log_backup_issue(root=None, max_expanded_size=None, sources=None):
+    """Return details when deleting only events.log makes a backup fit."""
+    root = os.path.abspath(root or os.getcwd())
+    if max_expanded_size is None or sources is None:
+        try:
+            from ospy.backup import MAX_EXPANDED_SIZE, _backup_sources
+            if max_expanded_size is None:
+                max_expanded_size = MAX_EXPANDED_SIZE
+            if sources is None:
+                sources = _backup_sources(root)
+        except (ImportError, AttributeError):
+            return {}
+
+    debug_path = os.path.abspath(os.path.join(root, 'ospy', 'data', 'events.log'))
+    total_size = 0
+    debug_size = 0
+    for unused_archive_name, source_path in sources:
+        try:
+            size = os.path.getsize(source_path)
+        except OSError:
+            continue
+        total_size += size
+        if os.path.normcase(os.path.abspath(source_path)) == os.path.normcase(debug_path):
+            debug_size = size
+
+    manifest_allowance = 1024 * 1024
+    if (debug_size <= 0 or
+            total_size + manifest_allowance <= max_expanded_size or
+            total_size - debug_size + manifest_allowance > max_expanded_size):
+        return {}
+    return {
+        'path': debug_path,
+        'display_path': 'ospy/data/events.log',
+        'size': debug_size,
+        'size_text': _format_file_size(debug_size),
+        'total_size': total_size,
+        'total_size_text': _format_file_size(total_size),
+        'limit': max_expanded_size,
+        'limit_text': _format_file_size(max_expanded_size),
+    }
+
+
+def debug_log_cleanup_message(issue):
+    return _(
+        'The safety backup cannot be created because the unrotated debug log '
+        'is too large.'
+    ) + ' {}: {} ({}: {}).'.format(
+        _('Debug log file'), issue['display_path'], _('Size'), issue['size_text']
+    )
+
+
+def delete_debug_log_for_update(root=None):
+    """Disable debug logging and delete only the verified events.log file."""
+    root = os.path.abspath(root or os.getcwd())
+    issue = debug_log_backup_issue(root)
+    if not issue:
+        return False
+    expected = os.path.abspath(os.path.join(root, 'ospy', 'data', 'events.log'))
+    if os.path.normcase(issue['path']) != os.path.normcase(expected):
+        raise RuntimeError(_('The debug log path is invalid.'))
+    if os.path.islink(expected) or not os.path.isfile(expected):
+        raise RuntimeError(_('The debug log is not a regular file.'))
+
+    options.debug_log = False
+    options.save_now()
+    os.remove(expected)
+    return True
+
+
+def perform_update(skip_debug_log_check=False):
     watchdog = None
     previous_commit = ''
     try:
+        if not skip_debug_log_check:
+            issue = debug_log_backup_issue()
+            if issue:
+                message = debug_log_cleanup_message(issue)
+                log.warning(NAME, message)
+                with health_lock:
+                    health_state['last_error'] = time.time()
+                    health_state['last_error_message'] = message
+                return message
         channel = selected_channel()
         branch = selected_branch()
         remote_branch = selected_remote_branch()
@@ -904,11 +991,39 @@ class status_json(ProtectedPage):
 class update_page(ProtectedPage):
     def GET(self):
         verify_csrf()
+        issue = debug_log_backup_issue()
+        if issue:
+            return self.plugin_render.system_update_debug_log_cleanup(issue)
         # SpustĂ­me aktualizaci a zĂ­skĂˇme hlĂˇĹˇku
         msg = perform_update()  # vracĂ­ text hlĂˇĹˇky
 
         # ZobrazĂ­me strĂˇnku s hlĂˇĹˇkou, restart probÄ›hne pozdÄ›ji v pozadĂ­
         return self.core_render.notice('/', msg)
+
+
+class cleanup_update_page(ProtectedPage):
+    def POST(self):
+        data = web.input(action='')
+        verify_csrf(data)
+        if data.get('action') != 'delete_debug_log_and_update':
+            return self.core_render.notice(
+                plugin_url(status_page), _('The debug log was not deleted.')
+            )
+        try:
+            if not delete_debug_log_for_update():
+                return self.core_render.notice(
+                    plugin_url(status_page),
+                    _('The debug log no longer blocks the safety backup. Start the update again.')
+                )
+            log.info(
+                NAME,
+                _('Debug logging was disabled and the oversized debug log file was deleted.')
+            )
+            message = perform_update(skip_debug_log_check=True)
+        except Exception:
+            log.error(NAME, _('Debug log cleanup failed:\n') + traceback.format_exc())
+            message = _('The debug log could not be deleted. The update was not started.')
+        return self.core_render.notice('/', message)
 
 
 class rollback_select_page(ProtectedPage):

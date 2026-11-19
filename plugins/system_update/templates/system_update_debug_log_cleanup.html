@@ -1,0 +1,26 @@
+$def with(issue)
+
+$var title: $_('Debug log blocks the safety backup')
+$var page: plugins
+
+<link href="/plugins/system_update/static/system_update.css" rel="stylesheet" type="text/css">
+
+<div class="section-box debug-log-cleanup" role="alert">
+  <h3>$_('Debug log blocks the safety backup')</h3>
+  <p>$_('The safety backup cannot be created because the unrotated debug log is too large.')</p>
+  <dl>
+    <dt>$_('Debug log file')</dt>
+    <dd><code>$issue['display_path']</code></dd>
+    <dt>$_('Size')</dt>
+    <dd>$issue['size_text']</dd>
+    <dt>$_('Maximum expanded backup size')</dt>
+    <dd>$issue['limit_text']</dd>
+  </dl>
+  <p><strong>$_('This action disables debug logging, permanently deletes the debug log file, and then continues the update.')</strong></p>
+  <form method="POST" action="$plugins.plugin_url('system_update.cleanup_update_page')" onsubmit="return confirm($:{json.dumps(_('Permanently delete the debug log and continue the update?'), ensure_ascii=False)});">
+    $:csrf_input()
+    <input type="hidden" name="action" value="delete_debug_log_and_update">
+    <button type="submit" class="button reboot danger">$_('Delete debug log and continue update')</button>
+    <a href="$plugins.plugin_url('system_update.status_page')" class="button cancel">$_('Cancel')</a>
+  </form>
+</div>

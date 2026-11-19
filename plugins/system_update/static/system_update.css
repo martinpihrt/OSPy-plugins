@@ -200,3 +200,31 @@ table.optionList {
   border-left: 4px solid #2E3959;
   background: #f8faff;
 }
+
+.debug-log-cleanup {
+  border-color: #ff9800;
+  background: #fff4e5;
+  color: #4a2b00;
+}
+
+.debug-log-cleanup dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 12px;
+}
+
+.debug-log-cleanup dt {
+  font-weight: bold;
+}
+
+.debug-log-cleanup dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.debug-log-cleanup form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}

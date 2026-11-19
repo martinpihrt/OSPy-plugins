@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+November 19 2026
+----------------
+(Martin Pihrt) - System Update v1.2.9<br/>
+When the unrotated technical debug log alone causes the verified pre-update backup to exceed OSPy's expanded-size allowance, a manual update now explains the cause and shows the file and size instead of ending with a traceback. A separate CSRF-protected confirmation disables debug logging, permanently deletes only the verified regular `ospy/data/events.log` file, retries the backup and continues the update. Automatic updates never delete the file and wait for administrator action. Added regression coverage for detection, deletion restrictions and the recovery interface.
+
 November 16 2026
 ----------------
 (Martin Pihrt) - Linux System Updater v1.0.0<br/>
