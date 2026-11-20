@@ -91,7 +91,7 @@ This table is generated from the `name`, `version` and `description` fields in e
 | [**Speed Monitor**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-speed-monitor) | `1.0.0` | Measures and logs Internet ping, download and upload performance at scheduled intervals. |
 | [**System Debug Information**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-system-debug) | `1.0.1` | Displays, downloads and clears the OSPy technical debug log. |
 | [**System Information**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-system-info) | `1.0.1` | Displays operating-system, hardware, network, process, storage, USB, serial and optional I2C information. |
-| [**System Update**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-system-update) | `1.2.8` | Checks, installs and safely rolls back OSPy updates from stable or beta Git branches with backup and watchdog protection. |
+| [**System Update**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-system-update) | `1.2.9` | Checks, installs and safely rolls back OSPy updates from stable or beta Git branches with backup and watchdog protection. |
 | [**System Watchdog**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-system-watchdog) | `1.0.0` | Configures and monitors the Raspberry Pi hardware watchdog to recover from system lockups. |
 | [**Telegram Bot**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-telegram-bot) | `1.0.1` | Sends Telegram notifications and accepts a limited set of OSPy control commands from subscribed chats. |
 | [**Temperature Switch**](https://github.com/martinpihrt/OSPy-plugins/wiki/Plugin-temperature-switch) | `1.0.0` | Starts and stops OSPy programs from configured temperature sources and hysteresis limits. |
