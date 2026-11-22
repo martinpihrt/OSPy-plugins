@@ -1,5 +1,10 @@
 # OSPy-plugins Changelog
 
+November 22 2026
+----------------
+(Martin Pihrt) - Thermostat v1.1.5<br/>
+Stopped the selected thermostat program whenever its temperature source is unavailable. Shelly Cloud readings now require the selected device to be online, so a cached last-known temperature from an offline Shelly device can no longer keep heating programs running. Added regression coverage and updated the plug-in help.
+
 November 19 2026
 ----------------
 (Martin Pihrt) - System Update v1.2.9<br/>

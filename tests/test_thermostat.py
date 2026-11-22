@@ -111,6 +111,25 @@ class ThermostatModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.validate_zone(zone)
 
+    def test_shelly_temperature_requires_online_device_and_live_value(self):
+        offline = {
+            'online': False,
+            'temperature': [23.8, 24.1],
+        }
+        self.assertIsNone(
+            model.shelly_temperature_value(offline, 'temperature'))
+
+        online = {
+            'online': True,
+            'temperature': [23.8, None],
+        }
+        self.assertEqual(
+            model.shelly_temperature_value(online, 'temperature'), 23.8)
+        self.assertIsNone(
+            model.shelly_temperature_value(online, 'temperature_2'))
+        self.assertIsNone(
+            model.shelly_temperature_value(online, 'temperature_3'))
+
     def test_heating_water_options_default_and_normalization(self):
         defaults = model.normalize_heating_water_options({})
         self.assertFalse(defaults['heating_water_enabled'])
@@ -179,12 +198,25 @@ class ThermostatInterfaceTests(unittest.TestCase):
         help_template = (PLUGIN / 'templates' / 'thermostat_help.html').read_text(
             encoding='utf-8')
         self.assertEqual(model.MAX_THERMOSTATS, 20)
-        self.assertEqual(manifest['version'], '1.1.4')
+        self.assertEqual(manifest['version'], '1.1.5')
         self.assertIn('Up to 20 thermostats', readme)
         self.assertIn('Overnight windows', readme)
         self.assertIn('heating-water temperature', readme)
         self.assertIn('heating-water temperature', help_template)
+        self.assertIn('offline', readme)
+        self.assertIn('offline', help_template)
         self.assertIn("$_('Create, edit or delete up to 20 thermostat cards.", help_template)
+
+    def test_unavailable_zone_temperature_stops_its_program(self):
+        source = (PLUGIN / '__init__.py').read_text(encoding='utf-8')
+        unavailable = source.index(
+            "if temperature == INVALID_TEMPERATURE:")
+        missing_state = source.index(
+            "self.zone_state[zone_id] = 'missing'", unavailable)
+        self.assertIn(
+            "stopped = stop_program(zone['program'])",
+            source[unavailable:missing_state],
+        )
 
     def test_translation_catalog_files_are_not_part_of_the_plugin_change(self):
         self.assertEqual(list(PLUGIN.rglob('*.po')), [])

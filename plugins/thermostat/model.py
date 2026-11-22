@@ -38,6 +38,24 @@ def clamp(value, minimum, maximum):
     return max(minimum, min(maximum, value))
 
 
+def shelly_temperature_value(device, value_type):
+    """Return a live Shelly temperature, or None when it is unavailable."""
+    if not isinstance(device, dict) or not device.get('online'):
+        return None
+    mapping = {
+        'temperature': 0,
+        'temperature_2': 1,
+        'temperature_3': 2,
+        'temperature_4': 3,
+        'temperature_5': 4,
+    }
+    index = mapping.get(value_type, 0)
+    values = device.get('temperature', [])
+    if not isinstance(values, (list, tuple)) or index >= len(values):
+        return None
+    return values[index]
+
+
 def default_zone(name='Thermostat'):
     return {
         'id': '',

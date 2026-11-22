@@ -7,6 +7,8 @@ The plug-in includes a `plugin.json` manifest and reports its worker, enabled th
 
 The thermostat plugin checks selected temperature sources and starts or stops selected OSPy programs when the configured temperature limits are reached.
 
+Temperature input is fail-closed. If a configured source does not provide a valid current temperature, the plug-in marks that thermostat unavailable and stops its selected program. For Shelly Cloud sources, cached temperature values from a device reported as offline are rejected.
+
 Optionally require a heating-water temperature before any thermostat program can run. Select its source and channel, then set the minimum temperature. When this condition is enabled, all thermostat programs run only while the measured water temperature is above the minimum; the plugin stops them if the temperature is below the minimum or unavailable. The enabled state, source, channel, Shelly temperature value and minimum temperature persist across an OSPy restart.
 
 Up to 20 thermostats can be created, edited and deleted as independent cards. Existing settings from the earlier three-slot version are retained automatically.
@@ -48,7 +50,7 @@ Plugin setup
   Select a DS probe, OSPy sensor or Shelly device.
 
 * Shelly temperature:
-  Select which Shelly temperature value is used. This option is shown only for the Shelly Cloud source and is useful for Shelly devices with more temperature probes. For example, Temperature 3 means the third temperature value reported by the selected Shelly device. DS probes and OSPy sensors do not use this option.
+  Select which Shelly temperature value is used. This option is shown only for the Shelly Cloud source and is useful for Shelly devices with more temperature probes. For example, Temperature 3 means the third temperature value reported by the selected Shelly device. An offline Shelly device is treated as unavailable even if the integration still contains its last temperature. DS probes and OSPy sensors do not use this option.
 
 * Program:
   Select the OSPy program controlled by this thermostat. One program can be assigned to only one enabled thermostat.

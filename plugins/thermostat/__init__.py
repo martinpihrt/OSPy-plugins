@@ -163,21 +163,6 @@ def get_channel_names(source):
     return []
 
 
-def get_shelly_value(device, value_type):
-    mapping = {
-        'temperature': ('temperature', 0),
-        'temperature_2': ('temperature', 1),
-        'temperature_3': ('temperature', 2),
-        'temperature_4': ('temperature', 3),
-        'temperature_5': ('temperature', 4),
-    }
-    key, index = mapping.get(value_type, ('temperature', 0))
-    value = device.get(key, [])
-    if index < len(value):
-        return value[index]
-    return INVALID_TEMPERATURE
-
-
 def get_temperature(source, channel, value_type):
     try:
         if source == 'air_temp':
@@ -204,7 +189,10 @@ def get_temperature(source, channel, value_type):
         if source == 'shelly_cloud':
             devices = get_shelly_devices()
             if channel < len(devices):
-                return float(get_shelly_value(devices[channel], value_type))
+                value = model.shelly_temperature_value(
+                    devices[channel], value_type)
+                if value is not None:
+                    return float(value)
     except Exception:
         pass
     return INVALID_TEMPERATURE
@@ -498,8 +486,9 @@ class ThermostatChecker(Thread):
 
                     temperature = get_temperature(zone['source'], zone['channel'], zone['value_type'])
                     if temperature == INVALID_TEMPERATURE:
+                        stopped = stop_program(zone['program'])
                         if state != 'missing':
-                            log.info(NAME, datetime_string() + ' ' + _('{} temperature is not available.').format(zone['name']))
+                            log.info(NAME, datetime_string() + ' ' + _('{} temperature is not available. Program stop result: {}.').format(zone['name'], _('OK') if stopped else _('not changed')))
                         self.zone_state[zone_id] = 'missing'
                         self.zone_temperatures[zone_id] = None
                         footer_parts.append('{} ---'.format(zone['name']))

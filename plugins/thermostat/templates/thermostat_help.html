@@ -9,6 +9,7 @@ $var page: plugins
     <p>$_('Create, edit or delete up to 20 thermostat cards. Existing settings from the earlier three-slot version are retained automatically.')</p>
     <p>$_('Use low and high temperature values with one decimal place to create hysteresis. For example, low 22.4 C and high 22.6 C means that no action is repeated while the temperature stays between these values.')</p>
     <p>$_('Temperature can be read from the Air Temperature DS probes, OSPy sensors, or Shelly Cloud values when the related plugin is configured.')</p>
+    <p>$_('If a configured temperature is unavailable, the thermostat stops its selected program. A Shelly Cloud device reported as offline is unavailable even when its last temperature is still cached.')</p>
     <p>$_('Optionally require a heating-water temperature before any thermostat program can run. Select the water-temperature source, channel and minimum temperature. Programs run only when the measured water temperature is above that value; they are stopped when the temperature is lower or unavailable.')</p>
     <p>$_('The Shelly temperature selector is used only for Shelly Cloud devices with more temperature values. For example, Temperature 3 means the third temperature value reported by the selected Shelly device.')</p>
     <p>$_('Each enabled thermostat must use a different OSPy program. Disabling or deleting a thermostat stops its selected program.')</p>
